@@ -81,20 +81,20 @@ typedef struct wd_func
 {
 	int (*wd_hndlkey) (WINDOW *w, int scancode, int keystate);
 	void (*wd_hndlbutton) (WINDOW *w, int x, int y, int n, int bstate, int kstate);
-
-	void (*wd_redraw) (WINDOW *w, RECT *area);
-	void (*wd_topped) (WINDOW *w);
-	void (*wd_newtop) (WINDOW *w);
-	void (*wd_closed) (WINDOW *w);
-	void (*wd_fulled) (WINDOW *w);
-	void (*wd_arrowed) (WINDOW *w, int arrows);
-	void (*wd_hslider) (WINDOW *w, int newpos);
-	void (*wd_vslider) (WINDOW *w, int newpos);
-	void (*wd_sized) (WINDOW *w, RECT *newsize);
-	void (*wd_moved) (WINDOW *w, RECT *newpos);
+	void (*wd_redraw) 	(WINDOW *w, RECT *area);
+	void (*wd_topped) 	(WINDOW *w);
+	void (*wd_bottomed)	(WINDOW *w);
+	void (*wd_newtop) 	(WINDOW *w);
+	void (*wd_closed) 	(WINDOW *w, int mode);
+	void (*wd_fulled) 	(WINDOW *w, int mbshift);
+	void (*wd_arrowed) 	(WINDOW *w, int arrows);
+	void (*wd_hslider) 	(WINDOW *w, int newpos);
+	void (*wd_vslider) 	(WINDOW *w, int newpos);
+	void (*wd_sized) 	(WINDOW *w, RECT *newsize);
+	void (*wd_moved) 	(WINDOW *w, RECT *newpos);
 	void (*wd_hndlmenu) (WINDOW *w, int title, int item);
-	void (*wd_top) (WINDOW *w);
-	void (*wd_iconify)(WINDOW *w);
+	void (*wd_top)     	(WINDOW *w);
+	void (*wd_iconify)	(WINDOW *w);
 	void (*wd_uniconify)(WINDOW *w);
 } WD_FUNC;
 
@@ -128,13 +128,20 @@ extern void xw_closedelete(WINDOW *w);
 
 extern void xw_set(WINDOW *w, int field,...);
 extern void xw_get(WINDOW *w, int field,...);
+extern void xw_setsize(WINDOW *w, RECT *size);
+extern void xw_getsize(WINDOW *w, RECT *size);
+extern void xw_getwork(WINDOW *w, RECT *size);
+extern void xw_getfirst(WINDOW *w, RECT *size);
+extern void xw_getnext(WINDOW *w, RECT *size);
 extern void xw_calc(int w_ctype, int w_flags, RECT *input,
 					RECT *output, OBJECT *menu);
 
 extern WINDOW *xw_find(int x, int y);
 extern WINDOW *xw_hfind(int handle);
 extern WINDOW *xw_top(void);
+extern WINDOW *xw_bottom(void);
 extern void xw_note_top(WINDOW *w);
+extern void xw_note_bottom(WINDOW *w);
 extern int xw_exist(WINDOW *w);
 extern WINDOW *xw_first(void);
 WINDOW *xw_last(void);
@@ -162,6 +169,7 @@ extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);
 extern void xw_menu_text(WINDOW *w, int item, const char *text);
 extern void xw_menu_tnormal(WINDOW *w, int item, int normal);
+extern void xw_redraw_menu(WINDOW *w, int object, RECT *r);
 
 extern int xw_hndlbutton(int x, int y, int n, int bstate, int kstate);
 extern int xw_hndlkey(int scancode, int keystate);

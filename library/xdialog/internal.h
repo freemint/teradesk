@@ -27,11 +27,6 @@
 #define cdecl
 #endif
 
-/*
-#define min(x,y)		(((x) < (y)) ? (x) : (y))
-#define max(x,y)		(((x) > (y)) ? (x) : (y))
-*/
-
 /* Vlaggen voor xd_redraw() */
 
 #define XD_RDIALOG	0x1
@@ -123,11 +118,7 @@ extern int
 	xd_ncolors,
 	xd_posmode,
 	xd_min_timer,
-	xd_aes4_0,
 	aes_flags,
-	aes_ver3d,
-	aes_ver3d,		/* 3d enlargement values */
-	colour_icons,
 	xresources,
 	xd_fdo_flag,
 	ckeytab[];
@@ -163,13 +154,5 @@ extern int xd_set_keys(OBJECT *tree, KINFO *kinfo);
 extern void xw_closeall(void);
 extern void xd_xuserdef(OBJECT *object, XUSERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
-/*
-extern int __xd_hndlkey(WINDOW *w, int key, int kstate);
-extern void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate);
-extern void __xd_topped(WINDOW *w);
-extern void __xd_closed(WINDOW *w);
-extern void __xd_hndlmenu(WINDOW *w, int title, int item);
-extern void __xd_top(WINDOW *w);
-*/
 
 #endif

@@ -39,8 +39,8 @@ typedef struct
 	struct fattr attrib;
 	ITMTYPE item_type;
 	ITMTYPE tgt_type;	/* target object type */
-	int icon;
-	const char *name;
+	int icon;			/* id. of an icon assignded to this object */
+	const char *name;	/* pointer to a name string of this object */
 	char alname[];		/* to be allocated together with NDTA */
 } NDTA;
 
@@ -51,25 +51,27 @@ typedef NDTA *RPNDTA[];			/* () ref NDTA */ /* array of pointers */
 
 typedef struct
 {
-	ITM_INTVARS;				/* Interne variabelen bibliotheek. */
-	WD_VARS;					/* other common header data */
+	ITM_INTVARS;			/* Interne variabelen bibliotheek. */
+	WD_VARS;				/* other common header data */
 
-	struct winfo *winfo;		/* pointer to WINFO structure. */
+	struct winfo *winfo;	/* pointer to WINFO structure. */
 
 	/* three window-type structures are identical up to this point */
 
-	char info[60];				/* info line of window */
+	char info[60];			/* info line of window */
 
-	const char *path;
-	const char *fspec;
+	const char *path;		/* Path of directory window */
+	const char *fspec;		/* filename mask for the window */
 
-	int fs_type;				/* We need to know the filesystem type for formatting purposes. */
-	int nfiles;					/* number of files in directory */
-	int nvisible;				/* number of visible files in directory */
-	int nselected;
-	long usedbytes;				/* total size of files in the dir. */
-	long visbytes;				/* total size of visible files */
-	int namelength;				/* length of longest name in the directory */
+	int fs_type;			/* We need to know the filesystem type for formatting purposes. */
+	int nfiles;				/* number of files in directory */
+	int nvisible;			/* number of visible files in directory */
+	int nselected;			/* number of selected items in directory */
+	long usedbytes;			/* total size of files in the dir. */
+	long visbytes;			/* total size of visible files */
+	int namelength;			/* length of longest name in the directory */
+	int llength;			/* length of a directory line in text mode */
+	int dcolumns;			/* number of directory columns in text mode */
 	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
 							/* ref to row of ref to NDTA */
 							/* ref () ref NDTA */
@@ -90,35 +92,47 @@ typedef struct
 #define BORDERS 4	/* Total length of left and right border of a dir line (system-font char widths) */
 #define XOFFSET	8	/* for positoning of icons in dir window */
 #define YOFFSET	4	/* for positioning of icons in dir window */ 
+#define CSKIP   2   /* skip space between directory columns */
 
 #define DO_PATH_TOP 	0
 #define DO_PATH_UPDATE	1
 
+extern const char *prevdir;
 
 void dir_init(void);
 void dir_default(void);
 
 int dir_save (XFILE *file, WINDOW *w, int lvl);
 boolean dir_add_window(const char *path, const char *thespec, const char *name);
+boolean dir_add_dwindow(const char *path);
 void dir_close(WINDOW *w, int mode);
 
 const char *dir_path(WINDOW *w);
-void get_dir_line(WINDOW *dw, char *s, int item);
-void dir_always_update (WINDOW *w);
+void dir_filemask(DIR_WINDOW *w);
+void dir_newfolder(WINDOW *w);
+void dir_sort(WINDOW *w, int sort);
+
+void dir_line(DIR_WINDOW *dw, char *s, int item);
+void dir_disp_mode(WINDOW *w);
+void dir_fields( WINDOW *w );
 
 void calc_nlines(DIR_WINDOW *w);		
-int linelength(DIR_WINDOW *w);			
+int linelength(DIR_WINDOW *w);
+void dir_columns(DIR_WINDOW *dw);
+			
 void dir_title(DIR_WINDOW *w);
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
-void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean clr,
-					boolean text, RECT *work); 
-void dir_prtcolumn(DIR_WINDOW *dw, int column, RECT *area, RECT *work);
+void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean text, RECT *work); 
+void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
+void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
 void dir_trim_slash ( char *path );
 boolean dir_do_path( char *path, int action );
 void dir_readnew(DIR_WINDOW *w);
-OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode, RECT *work);
+OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boolean smode, RECT *work);
 void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t size, int attrib);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);
+boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
+						int *list, ICND *icns, int x, int y, int kstate);
 

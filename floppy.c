@@ -80,19 +80,19 @@ static void fpenable
 {
 	if ( e )
 	{ 
-		fmtfloppy[FSIDES].ob_state   &= ~DISABLED;
-		fmtfloppy[FTRACKS].ob_state  &= ~DISABLED;
-		fmtfloppy[FSECTORS].ob_state &= ~DISABLED;
-		fmtfloppy[FDIRSIZE].ob_state &= ~DISABLED;
-		fmtfloppy[FLABEL].ob_state   &= ~DISABLED;
+		obj_enable(fmtfloppy[FSIDES]);
+		obj_enable(fmtfloppy[FTRACKS]);
+		obj_enable(fmtfloppy[FSECTORS]);
+		obj_enable(fmtfloppy[FDIRSIZE]);
+		obj_enable(fmtfloppy[FLABEL]);
 	}
 	else
 	{
-		fmtfloppy[FSIDES].ob_state   |= DISABLED;
-		fmtfloppy[FTRACKS].ob_state  |= DISABLED;
-		fmtfloppy[FSECTORS].ob_state |= DISABLED;
-		fmtfloppy[FDIRSIZE].ob_state |= DISABLED;
-		fmtfloppy[FLABEL].ob_state   |= DISABLED;  
+		obj_disable(fmtfloppy[FSIDES]);
+		obj_disable(fmtfloppy[FTRACKS]);
+		obj_disable(fmtfloppy[FSECTORS]);
+		obj_disable(fmtfloppy[FDIRSIZE]);
+		obj_disable(fmtfloppy[FLABEL]);  
 	}
 }
 
@@ -111,13 +111,13 @@ void prdisp
 	
 	perc = (current + 1) * 100 / total;
 	rsc_ltoftext(fmtfloppy, FPROGRES,  perc );
-	fmtfloppy[FPROGRES].ob_flags &= ~HIDETREE;
+	obj_unhide(fmtfloppy[FPROGRES]);
 	xd_draw ( &fdinfo, PROGRBOX, 1 );
 }
 
  
 /* 
- *  Formatting or copying of a floppy with a FAT-12 filesystem  
+ *  Formatting or copying of a floppy with a FAT-12 filesystem 
  */
 
 void formatfloppy
@@ -189,11 +189,8 @@ void formatfloppy
 	if ( mbsize < 40960L ) 
 		mbsize = 40960L; 
 
-	if ( (  sect0 = malloc( mbsize ) ) ==NULL ) 
-	{
-		xform_error ( ENSMEM );
+	if ( (  sect0 = malloc_chk( mbsize ) ) == NULL ) 
 		return;
-	}
 	
 	/* Initial states of some items, depending on action */
   
@@ -205,12 +202,12 @@ void formatfloppy
   
 	fpenable(0); /* disable editable format params fields */
   
-	fmtfloppy[FSSIDED].ob_state &= ~SELECTED; /* deselect all format buttons */
-	fmtfloppy[FDSIDED].ob_state &= ~SELECTED;
-	fmtfloppy[FHSIDED].ob_state &= ~SELECTED;
-	fmtfloppy[FESIDED].ob_state &= ~SELECTED;
+	obj_deselect(fmtfloppy[FSSIDED]); /* deselect all format buttons */
+	obj_deselect(fmtfloppy[FDSIDED]);
+	obj_deselect(fmtfloppy[FHSIDED]);
+	obj_deselect(fmtfloppy[FESIDED]);
   
-	fmtfloppy[FPROGRES].ob_flags |= HIDETREE; /* hide progress display */
+	obj_hide(fmtfloppy[FPROGRES]); /* hide progress display */
 
 	/*
 	 * Among other things, source and target bios device numbers are set below;
@@ -225,29 +222,29 @@ void formatfloppy
 	if ( format )	/* format disk */
 	{
 		rsc_title(fmtfloppy, FLTITLE, DTFFMT);		/* title */
-		fmtfloppy[FTGTDRV].ob_flags |= HIDETREE;  	/* hide "to ... " text */
-		fmtfloppy[FSSIDED].ob_state &= ~DISABLED; 	/* enable all format buttons */
-		fmtfloppy[FDSIDED].ob_state &= ~DISABLED;
-		fmtfloppy[FHSIDED].ob_state &= ~DISABLED;
-		fmtfloppy[FESIDED].ob_state &= ~DISABLED;
-		fmtfloppy[FPAR3].ob_flags   &= ~HIDETREE; 	/* show editable fields */
-		fmtfloppy[FLABEL].ob_flags  &= ~HIDETREE; 	/* show label field */
-		fmtfloppy[FLABEL].ob_state  &= ~DISABLED; 	/* it is editable */
-		tdevno = (int)fdrive - 'A';					/* target drive */
+		obj_hide(fmtfloppy[FTGTDRV]);  	/* hide "to ... " text */
+		obj_enable(fmtfloppy[FSSIDED]); 	/* enable all format buttons */
+		obj_enable(fmtfloppy[FDSIDED]);
+		obj_enable(fmtfloppy[FHSIDED]);
+		obj_enable(fmtfloppy[FESIDED]);
+		obj_unhide(fmtfloppy[FPAR3]); 	/* show editable fields */
+		obj_unhide(fmtfloppy[FLABEL]); 	/* show label field */
+		obj_enable(fmtfloppy[FLABEL]); 	/* it is editable */
+		tdevno = (int)fdrive - 'A';		/* target drive */
 	}
 	else 					/* copy disk */
 	{
-		rsc_title(fmtfloppy, FLTITLE, DTFCPY);		/* Title */
-		fmtfloppy[FTGTDRV].ob_flags  &= ~HIDETREE;	/* show "to ..." text */
-		fmtfloppy[FPAR3].ob_flags    |= HIDETREE;	/* hide format param fields */
-		fmtfloppy[FSSIDED].ob_state  |= DISABLED;	/* disable all format buttons */
-		fmtfloppy[FDSIDED].ob_state  |= DISABLED;
-		fmtfloppy[FHSIDED].ob_state  |= DISABLED;
-		fmtfloppy[FESIDED].ob_state  |= DISABLED;    
-		fmtfloppy[FLABEL].ob_flags   |= HIDETREE;	/* hide label field */
-		sdevno = (int)fdrive - 'A';					/* source drive */
-		tdevno = 1 & (1^sdevno);  					/* target is the other one */
-		drive[0] = tdevno + 'A';    				/* target drive letter */
+		rsc_title(fmtfloppy, FLTITLE, DTFCPY);	/* Title */
+		obj_unhide(fmtfloppy[FTGTDRV]);			/* show "to ..." text */
+		obj_hide(fmtfloppy[FPAR3]);				/* hide format param fields */
+		obj_disable(fmtfloppy[FSSIDED]);		/* disable all format buttons */
+		obj_disable(fmtfloppy[FDSIDED]);
+		obj_disable(fmtfloppy[FHSIDED]);
+		obj_disable(fmtfloppy[FESIDED]);    
+		obj_hide(fmtfloppy[FLABEL]);			/* hide label field */
+		sdevno = (int)fdrive - 'A';				/* source drive */
+		tdevno = 1 & (1^sdevno);  				/* target is the other one */
+		drive[0] = tdevno + 'A';    			/* target drive letter */
 		strcpy(fmtfloppy[FTGTDRV].ob_spec.tedinfo->te_ptext, drive); /* put into dialog */ 
 	}
 
@@ -344,7 +341,7 @@ void formatfloppy
   
 	} /* while... */
 
-	xd_change( &fdinfo, button, NORMAL, TRUE );
+	xd_drawbuttnorm(&fdinfo, button);
 
 	/* If selected OK */
   
@@ -369,7 +366,7 @@ void formatfloppy
 			   ( fatsize < 1 ) || ( fatsize > ((tspt - 1) / 2) ) || /* two fats + sector 0 fit on a track */
 			   ( dirsize < 32) || ( dirsize > ( (tspt * tbps) / 32 - 1) ) ) /* 32 byes per entry */
 			{
-				button = alert_iprint ( MFPARERR );
+				alert_iprint ( MFPARERR );
 				goto again; /* go back to dialog if params not correct*/
 			}
 		}         
@@ -391,10 +388,11 @@ void formatfloppy
 
 			if (mint)
 			{
-				if (!format)
-					lstats  = Dlock( 1, sdevno );
-				else
+				if (format)
 					lstats = 1;
+				else
+					lstats  = Dlock( 1, sdevno );
+
 				lstatt  = Dlock( 1, tdevno ); 
 
 				if ( lstats <  0 || lstatt < 0 ) 
@@ -596,13 +594,13 @@ void formatfloppy
 				     ( stracks != ttracks ) ||  /* number of tracks */ 
 				     ( sspt != tspt )  )        /* sectors per track */
 				{                 
-					button = alert_iprint ( MDIFERR ); 
+					alert_iprint ( MDIFERR ); 
 					goto endall;
 				}
 				
 				/* show format parameters of the source disk (they are the same as for target disk) */     
       
-				fmtfloppy[FPAR3].ob_flags &= ~HIDETREE;
+				obj_unhide(fmtfloppy[FPAR3]);
 
 				fpartoftext( ssides, sspt, stracks, dirsize );
 				prdisp ( -1, 100 );

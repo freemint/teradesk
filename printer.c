@@ -31,11 +31,11 @@
 #include <xscncode.h>
 #include <mint.h>
 
-#include "desk.h"
 #include "resource.h"
-#include "printer.h"
+#include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
+#include "printer.h"
 #include "font.h"
 #include "config.h"
 #include "window.h"
@@ -43,39 +43,64 @@
 #include "dir.h"
 #include "events.h"
 #include "copy.h"
+#include "viewer.h"
 
-#define PBUFSIZ	1024L
+#define PBUFSIZ	1024L /* Should be divisible by 16 !!! */
 
 
-#define plinelen options.V2_2.plinelen
+#define plinelen options.plinelen
 
-XATTR pattr;		/* item attributes */
+XATTR pattr;				/* item attributes */
+
+int printmode;				/* text, hex, raw */
+XFILE *printfile = NULL;	/* print file; if NULL print to port */
+
+
+/*
+ * Print a character through GEMDOS.
+ * Timeout is fixed here to 2000 * 1/200s = 10s.
+ */
 
 static boolean prtchar(char ch)
 {
 	long time;
-	boolean ready = FALSE, result;
+	boolean ready = FALSE, result = FALSE;
 	int button;
+	char s;
+	int error;
 
-	do
+	if ( printfile )
 	{
-		time = clock() + 1000;
-		while ((clock() < time) && (Cprnos() == 0));
-		if (Cprnos() != 0)
+		s = ch;
+		error = (int)x_fwrite(printfile, &s, 1L);
+		if ( error < 1 )
 		{
-			Cprnout(ch);
-			result = FALSE;
-			ready = TRUE;
-		}
-		else
-		{
-			button = alert_printf(2, APRNRESP);
+			xform_error(error);
 			result = TRUE;
-			ready = (button == 2) ? TRUE : FALSE;
 		}
 	}
-	while (ready == FALSE);
+	else
+	{
+		do
+		{
+			time = clock() + 2000;
+			while ((clock() < time) && (Cprnos() == 0));
+			if (Cprnos() != 0)
+			{
+				Cprnout(ch);
+				result = FALSE;
+				ready = TRUE;
+			}
+			else
+			{
+				button = alert_printf(2, APRNRESP);
+				result = TRUE;
+				ready = (button == 2) ? TRUE : FALSE;
+			}
+		}
+		while (ready == FALSE);
 
+	}
 	return result;
 }
 
@@ -95,49 +120,73 @@ static boolean print_eol(void)
 
 
 /* 
- * print_line prints a cr-lf terminated line for directory print 
+ * print_line prints a cr-lf terminated line for directory or hex-dump print 
  * If the line is longer than plinelen it is wrapped to the next printer line.
  * Function returns FALSE if ok, in style with other print functions
  */
 
 static boolean print_line 
 ( 
-	const char *dline 	/* 0-terminated line to print */
+	const char *dline 		/* 0-terminated line to print */
 )
 {
-	const char *p;					/* address of position in dline string */
-	int i;						/* position in printer line */
-	boolean status = FALSE;		/* prtchar print status */
+	const char 
+		*p;					/* address of position in dline string */
+
+	int 
+		i = 0;				/* position in printer line */
+
+	boolean 
+		status = FALSE;		/* prtchar print status */
 
 	p = dline;
-	i = 0;
+
 	while ( !status && (*p != 0) )
 	{
 		status = prtchar(*p); 		/* beware: prtchar is false when OK ! */
-		p++;
-		i++;
+		p++;						/* pointer to a char in the buffer */
+		i++;						/* print line length */
+
 		if ( !status && ((*p == 0) || (i >= plinelen)) ) /* end of line or line too long */
 		{
 			i = 0;					/* reset linelength counter */
 			status = print_eol();	/* print cr lf */
-		}	/* if...    */ 
-	} 		/* while... */
+		}							/* if...    */ 
+	} 								/* while... */
 
 	return status;					/* this one is FALSE if ok, too! */
 }
 
+
+/*
+ * Print a complete file. 
+ * The file is read PBUFSIZ characters at a time.
+ * Return 0 if successfull, error code otherwise.
+ */
+
 static int print_file(WINDOW *w, int item)
 {
-	int handle, error = 0, i, result = 0;
-	char *buffer;
-	const char *name;
-	long l;			/* index in buffer[] */
-	int ll = 0;		/* line length counter */
-	boolean stop = FALSE;
+	int 
+		handle,
+		i, 
+		error = 0,  
+		ll = 0,		/* line length counter */
+		result = 0;
+
+	char 
+		*buffer;
+
+	const 
+		char *name;
+
+	long 
+		l;			/* index in buffer[] */
+
+	boolean 
+		stop = FALSE;
 
 	if ((name = itm_fullname(w, item)) == NULL)
 		return XFATAL;
-
 
 	/* Print a header here */
 
@@ -153,34 +202,65 @@ static int print_file(WINDOW *w, int item)
 		}
 	}
 
-	buffer = malloc(PBUFSIZ);
+	/* Now print the file itself */
+
+	buffer = malloc_chk(PBUFSIZ + 1L);
 
 	if (buffer != NULL)
 	{
-		graf_mouse(HOURGLASS, NULL);
+		hourglass_mouse();
 
 		if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
 		{
+			long size = 0, a = 0;
+
 			do
 			{
+				/* Read no more than PBUFSIZ bytes (divisible by 16) */
+
 				if ((l = x_read(handle, PBUFSIZ, buffer)) >= 0)
 				{
-					for (i = 0; i < (int) l; i++)
+					buffer[l] = 0;
+
+					if ( printmode == PM_HEX )
 					{
-						/* line wrap & new line handling */
+						char tmp[HEXLEN + 2];
 
-						ll++;
-						if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
-							ll = 0; /* reset linelength counter at CR, LF or FF */
-						else if ( ll >= plinelen )
+						ll = 0;
+		
+						size = size + l;
+
+						for ( i = 0; i < ( ((int)l - 1) / 16 + 1); i++ )
 						{
-							ll = 0;
-							if (( stop = print_eol() ) == TRUE)
+							disp_hex(tmp, &buffer[ll], a, size, TRUE);
+							if ( (stop = print_line((const char *)(&tmp)) ) == TRUE )
 								break;
+							ll += 16;
+							a += 16;
 						}
+					}
+					else
+					{
+						for (i = 0; i < (int)l; i++)
+						{
+							/* line wrap & new line handling */
 
-						if ((stop = prtchar(buffer[i])) == TRUE)
+							if ( printmode == PM_TXT ) /* line wrap in text mode */
+							{
+								ll++;
+								if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
+									ll = 0; /* reset linelength counter at CR, LF or FF */
+								else if ( ll >= plinelen )
+								{
+									ll = 0;
+									if (( stop = print_eol() ) == TRUE)
+										break;
+								}
+							}
+
+							if ((stop = prtchar(buffer[i])) == TRUE)
 							break;
+						}
 					}
 
 					if ( escape_abort(TRUE) )
@@ -203,17 +283,15 @@ static int print_file(WINDOW *w, int item)
 		if (error != 0)
 			result = xhndl_error(MEPRINT, error, itm_name(w, item));
 
-		graf_mouse(ARROW, NULL);
+		arrow_mouse();
 		free(buffer);
 	}
 	else
-	{
-		xform_error(ENSMEM);
 		result = XFATAL;
-	}
 
 	free(name);
 
+	/* A formfeed at the end */
 	
 	if ( options.cprefs & P_HEADER )
 		if ( prtchar( (char)12 ) )
@@ -224,14 +302,14 @@ static int print_file(WINDOW *w, int item)
 
 
 /*
- * Check if an item can be printed
+ * Check if an item can be printed, depending on item type.
  */
 
 boolean check_print(WINDOW *w, int n, int *list)
 {
 	int i;
 	boolean noerror;
-	char *mes = "";
+	char *mes = empty;
 
 
 	for (i = 0; i < n; i++)
@@ -241,20 +319,18 @@ boolean check_print(WINDOW *w, int n, int *list)
 		switch (itm_type(w, list[i]))
 		{
 		case ITM_PRINTER:
-			rsrc_gaddr(R_STRING, MPRINTER, &mes);
+			mes = get_freestring(MPRINTER);
 			break;
 		case ITM_TRASH:
-			rsrc_gaddr(R_STRING, MTRASHCN, &mes);
+			mes = get_freestring(MTRASHCN);
 			break;
 		case ITM_DRIVE:
-			rsrc_gaddr(R_STRING, MDRIVE, &mes);
+			mes = get_freestring(MDRIVE);
 			break;
 		case ITM_FOLDER:
-			rsrc_gaddr(R_STRING, MFOLDER, &mes);
+			mes = get_freestring(MFOLDER);
 			break;
 		case ITM_PROGRAM:
-			rsrc_gaddr(R_STRING, MPROGRAM, &mes);
-			break;
 		case ITM_FILE:
 			noerror = TRUE;
 			break;
@@ -268,24 +344,6 @@ boolean check_print(WINDOW *w, int n, int *list)
 	return noerror;
 }
 
-
-/* 
- * Similar to print_file() but returns TRUE if successful 
- */
-
-boolean prt_file(WINDOW *w, int item)
-{
-	return (print_file(w, item) == 0) ? TRUE : FALSE;
-}
-
-
-/*
- * Routine item_print() didn't  work correctly, but printed only the first file!!!- 
- * seems like a part of the code (a loop) disappeared somehow, sometime; Anyway,
- * now replaced by a simpler routine print_list(), more in style with other 
- * file-list-dealing routines. So: item_print() removed.
- */ 
- 
 
 /* 
  * Print a list of items selected in a window, or print a directory. 
@@ -335,7 +393,7 @@ boolean print_list
 	if ( function == CMD_PRINTDIR && (options.cprefs & P_HEADER) )
 	{
 		strcpy ( dline, get_freestring(TDIROF) ); 		/* Get "Directory of " string */
-		get_dir_line( w, &dline[strlen(dline)], -1 );	/* Append window title */
+		strcpy(&dline[strlen(dline)], ((DIR_WINDOW *)w)->title);
 
 		if ( (noerror = !print_line(dline) ) == TRUE )
 			noerror = !print_eol();
@@ -362,19 +420,27 @@ boolean print_list
 			{
 				if ( function == CMD_PRINT )
 				{
-					/* Only files can be printed, ignore everything else */
+					/* 
+					 * Only files can be printed, ignore everything else 
+					 * Executable files (programs) are hex-dumped
+					 */
 
 					*folders = 0; 
 
-					if ( type == ITM_FILE )
+					if ( isfileprog(type) )
 					{
-						upd_copyname(NULL, NULL, name);
+						int oldmode = printmode;
 
+						if ( type == ITM_PROGRAM && printmode == PM_TXT )
+							printmode = PM_HEX; /* hex-dump */
+
+						upd_copyname(NULL, NULL, name);
 						result = print_file(w, list[i]);
 						*bytes -= attr.size;
 						*files -= 1;
+						upd_copyname(NULL, NULL, empty);
 
-						upd_copyname(NULL, NULL, "");
+						printmode = oldmode;
 					}
 
 				}
@@ -382,7 +448,7 @@ boolean print_list
 				{
 					/* Printing of a directory line (all kinds of items) */
 
-					get_dir_line( w, dline, list[i] );
+					dir_line((DIR_WINDOW *)w, dline,  list[i]);
 
 					if ( dline[1] == (char)7 )
 					{
@@ -415,7 +481,6 @@ boolean print_list
 			/* Update information on the number of folders/files/bytes remaining */
 
 			upd_copyinfo(*folders, *files, *bytes);
-
 		}
 
 		/* Check for user abort */
@@ -430,12 +495,12 @@ boolean print_list
 			break;
 	}
 
-
 	/* Print directory summary, if needed */
 
 	if ( result !=XABORT && result != XFATAL && (function == CMD_PRINTDIR) && (options.cprefs & P_HEADER) )
 	{
- 		get_dir_line ( w, dline, -2 );						/* get directory info line */
+		strcpy(dline, ((DIR_WINDOW *)w)->info);
+
 		if ( (noerror = !print_eol()) == TRUE )				/* print blank line */
 			if ( ( noerror = !print_line(dline) ) == TRUE )	/* print directory total */
 				if ( (noerror = !print_eol()) == TRUE )		/* print blank line */

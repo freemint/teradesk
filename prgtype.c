@@ -28,9 +28,9 @@
 #include <xdialog.h>
 #include <mint.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
-#include "resource.h"
 #include "lists.h" 
 #include "slider.h"
 #include "xfilesys.h"
@@ -44,9 +44,6 @@
 #define END			32767
 
 
-extern Options options;	/* need to know cfg file version */
-extern char *presets[];
-
 PRGTYPE
 	pwork,				/* work area for editing prgtypes */ 
 	*prgtypes; 			/* List of executable file types */
@@ -59,19 +56,18 @@ PRGTYPE
 
 void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
 {
-	strsncpy ( t->name, s->name, sizeof(SNAME) );
-	t->appl_type = s->appl_type;
-	t->limmem = s->limmem; 
-	t->flags = s->flags;	/* redundant, for compatibility */
+	PRGTYPE *next = t->next; 
+	*t = *s;
+	t->next = next;	
 }
+
 
 /*
  * Find (or create!) information about an executable file or filetype;
  * input: filename of an executable file or a filename mask;
  * output: program type data
  * if filetype has not been defined, default values are set.
- * Because of many changes, old code was not commented out 
- * but completely removed
+ * Also, if there is no list, set default values
  */
 
 void prg_info
@@ -82,18 +78,17 @@ void prg_info
 	PRGTYPE *pt				/* output information */ 
 )
 {
-	if ( !find_wild( (LSTYPE **)list, (char *)prgname, (LSTYPE *)pt, copy_prgtype ) )
+	if ( (list == NULL) || !find_wild( (LSTYPE **)list, (char *)prgname, (LSTYPE *)pt, copy_prgtype ) )
 	{
 		/* If program type not defined or name not given: default */
 
 		pt->appl_type = PGEM;	/* GEM program */
-		pt->flags &= ~(PT_ARGV | PT_SING);
-		pt->flags |= PT_PDIR;
-
+		pt->flags = PT_PDIR;
 		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
 	return;
 }
+
 
 /*
  * Check if filename is to be considered as that of a program;
@@ -144,11 +139,14 @@ static PRGTYPE *ptadd_one
 	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), END, copy_prgtype );
 }
 
-/* Remove all defined program types */
+
+/* 
+ * Remove all defined program types 
+ */
 
 static void rem_all_prgtypes(void)
 {
-	rem_all( (LSTYPE **)(&prgtypes), rem );
+	lsrem_all( (LSTYPE **)(&prgtypes), lsrem );
 }
 
 
@@ -172,23 +170,39 @@ boolean prgtype_dialog
 		info;			/* dialog info structure */
 
 	boolean
-		stat,			/* accept or not */
+		stat = FALSE,	/* accept or not */
 		stop = FALSE;	/* loop until true */
 
 	int 
+		lbl,			/* text "filetype" of "application" */
 		title,			/* resoruce index of title to be used for dialog */
 		button;			/* code of pressed button */
 
 	/* Determine which title to put on dialog, depending on use */
+
+
+	lbl = TFTYPE;
 
 	if ( !(use & LS_EDIT) )
 	{
 		title = DTADDPRG;
 	}
 	else
-		title = (use & LS_APPL) ? DTSETAPT : DTEDTPRG;
+	{
+		if ( use & LS_APPL )
+		{
+			addprgtype[PRGNAME].ob_flags &= ~EDITABLE;
+			title = DTSETAPT;
+			lbl = TAPP;
+		}
+		else
+		{
+			title = DTEDTPRG;
+		}
+	}
 
  	rsc_title(addprgtype, APTITLE, title);
+	rsc_title(addprgtype, PTTEXT, lbl);
 
 	/* Copy all data to dialog */
 
@@ -209,8 +223,8 @@ boolean prgtype_dialog
 	ltoa(pt->limmem / 1024L, addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext, 10);
 
 #else
-		addprgtype[MEMLIM].ob_state |= HIDETREE;
-		addprgtype[ATSINGLE].ob_state |= HIDETREE;
+		obj_hide(addprgtype[MEMLIM]);
+		obj_hide(addprgtype[ATSINGLE]);
 #endif
 	
 	/* Open the dialog, then loop until exit button */
@@ -252,20 +266,23 @@ boolean prgtype_dialog
 		else
 			stop = TRUE;
 
-		xd_change(&info, button, NORMAL, TRUE);
+		xd_drawbuttnorm(&info, button);
 	}
 	xd_close(&info);
+	addprgtype[PRGNAME].ob_flags |= EDITABLE;
 	return stat;
 }
 
 
-/* Use these kind-specific functions to manipulate program types list: */
+/* 
+ * Use these kind-specific functions to manipulate program types list:
+ */
 
 #pragma warn -sus
 static LS_FUNC ptlist_func =
 {
 	copy_prgtype,
-	rem,
+	lsrem,
 	prg_info,
 	find_lsitem,
 	prgtype_dialog
@@ -292,14 +309,13 @@ void prg_setprefs(void)
 	set_opt(setmask, options.cprefs, TOS_STDERR, PSTDERR);
 
 	rsc_title(setmask, DTSMASK, DTPTYPES);	
-	setmask[PGATT].ob_flags &= ~HIDETREE;
-	rsc_title(addprgtype, PTTEXT, TFTYPE);
+	obj_unhide(setmask[PGATT]);
 
 	/*  Edit programtypes list: add/delete/change */
 
 	button = list_edit( &ptlist_func, (LSTYPE **)(&prgtypes), NULL, sizeof(PRGTYPE), (LSTYPE *)(&pwork), LS_PRGT); 
 
-	setmask[PGATT].ob_flags |= HIDETREE;
+	obj_hide(setmask[PGATT]);
 
 	if ( button == FTOK )
 	{
@@ -310,6 +326,7 @@ void prg_setprefs(void)
 		wd_seticons();
 	}
 }
+
 
 /*
  * Initiaite (empty) list of (executable) program filetypes
@@ -324,26 +341,28 @@ void prg_init(void)
 }
 
 
-/* Set some default predefined program file types */
+/* 
+ * Set some default predefined program file types 
+ */
 
 void prg_default(void)
 {
 	rem_all_prgtypes();
 
 	/*
-	 * removed separate definition of types for mint/single
 	 * if mint is active, there is conversion to lowercase in ptadd_one
 	 * If mint is active, accessory is defined as program type 
 	 */
-	ptadd_one(presets[2], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.PRG 	*/
-	ptadd_one(presets[3], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.APP	*/
-	ptadd_one(presets[4], PGTP, PT_PDIR | PT_ARGV, 0L);		/*	*.GTP	*/
-	ptadd_one(presets[5], PTOS, PT_PDIR, 0L);				/*	*.TOS	*/
-	ptadd_one(presets[6], PTTP, PT_PDIR, 0L);				/*	*.TTP	*/
+
+	ptadd_one((char *)presets[2], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.PRG 	*/
+	ptadd_one((char *)presets[3], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.APP	*/
+	ptadd_one((char *)presets[4], PGTP, PT_PDIR | PT_ARGV, 0L);		/*	*.GTP	*/
+	ptadd_one((char *)presets[5], PTOS, PT_PDIR, 0L);				/*	*.TOS	*/
+	ptadd_one((char *)presets[6], PTTP, PT_PDIR, 0L);				/*	*.TTP	*/
 
 #if _MINT_
 	if ( mint )
-		ptadd_one(presets[7], PACC, PT_PDIR, 0L);			/*	*.ACC	*/
+		ptadd_one((char *)presets[7], PACC, PT_PDIR, 0L);			/*	*.ACC	*/
 #endif
 }
 
@@ -357,7 +376,7 @@ void prg_default(void)
 
 CfgEntry prg_table[] =
 {
-	{CFG_HDR, 0, "*type" },
+	{CFG_HDR, 0, "*" },
 	{CFG_BEG},
 	{CFG_S,   0, "name",  pwork.name	},
 	{CFG_L,   0, "limm",  &pwork.limmem	},
@@ -440,7 +459,7 @@ static CfgEntry prgty_table[] =
 
 CfgNest prg_config
 {
-	prg_table[0].s[0] = 'p';
+	prg_table[0].s = "ptype";
 	prg_table[2].flag = 0;
 
 	*error = handle_cfg(file, prgty_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_prgtypes, prg_default);

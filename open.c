@@ -28,12 +28,12 @@
 #include <mint.h>
 #include <xdialog.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "open.h"
-#include "printer.h"
-#include "resource.h"
 #include "xfilesys.h"
+#include "printer.h"
 #include "font.h"
 #include "config.h"
 #include "window.h" /* before dir.h and viewer.h */
@@ -46,6 +46,55 @@
 #include "applik.h"
 #include "library.h"
 #include "prgtype.h"
+
+extern APPLINFO awork;
+extern FTYPE fwork;
+extern LSTYPE *selitem;
+
+boolean onfile = FALSE; /* true if app is started to open a file */
+
+/*
+ * Handle the Show/Edit/Run... dialog. Return button index.
+ * If "Show" or "Edit" or "Cancel" is selected, just return the code;
+ * Otherwise open additional dialog(s).
+ */
+
+int open_dialog(void)
+{
+	XDINFO
+		owinfo;
+
+	int 
+		thebutton,
+		button = 0; /* assuming that no button will ever have index 0 */
+
+	xd_open(openw, &owinfo);
+	button = xd_form_do (&owinfo, ROOT);
+	thebutton = button;
+
+	switch(button)
+	{
+		case OWRUN:
+			prg_info(NULL, empty, 0, (PRGTYPE *)&awork);
+			log_shortname(awork.shname, awork.name);
+			if (!prgtype_dialog(NULL, 0, (PRGTYPE *)&awork, LS_APPL | LS_EDIT))
+				button = 0;
+			break;
+		case OWUSE:
+			log_shortname(fwork.filetype, awork.name);
+			app_install(LS_SELA); /* selitem is nonzero only if successful here */
+			if (!selitem)
+				button = 0;			
+		default:
+			break;
+	}
+
+	xd_buttnorm( &owinfo, thebutton);
+	xd_close(&owinfo);
+
+
+	return button;
+}
 
 
 /*
@@ -90,6 +139,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 	int 
 		item = initem;	/* "item", locally (i.e. maybe changed) */
 
+
 	if ( (kstate & 8) != 0 )
 		alternate = TRUE;
 	
@@ -125,16 +175,23 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 		if ( !theitem )
 		{
 			rsc_title( newfolder, NDTITLE, DTOPENIT );
-			newfolder[DIRNAME].ob_flags |= HIDETREE;
-			newfolder[OPENNAME].ob_flags &= ~HIDETREE;
+			obj_hide(newfolder[DIRNAME]);
+			obj_unhide(newfolder[OPENNAME]);
 			xd_init_shift(&newfolder[OPENNAME], openline);
 
 			button = xd_dialog( newfolder, ROOT );
 		}
 
-		if ( theitem || button == NEWDIROK )
+		/* Note: theitem must come first below */
+
+		if ( theitem || (button == NEWDIROK) )
 		{
-			if ( !theitem )
+			/* 
+			 * For some reason if(!theitem){}else{}  here
+			 * gives shorter code than if(theitem){}else{}
+			 */
+
+			if ( !theitem ) 
 			{
 				/* 
 				 * Object specified on a command line is opened.
@@ -151,16 +208,18 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 				/* 
 				 * Try to see if there is a command attached.
 				 * Separate comand from item name by inserting a '0'
-				 * instead of the (first) space between the two
+				 * instead of the (first) space between the two.
+				 * If there is no command, 'cmline' will point
+				 * to an empty string.
 				 */
 
-				cmline = "\0";
+				cmline = empty; /* first, cmline points to an empty string */
 
 				if ( (blank = strchr(openline,' ') ) != NULL )
 				{
 					*blank = 0;
 					cmline = blank;
-					cmline++;
+					cmline++; /* now cmline points to after the first blank */
 				}
 
 				/* Convert item name to uppercase */
@@ -188,7 +247,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 					*blank = ' ';
 
 			}
-			else 
+			else
 			{
 				if ( (realname = x_fllink(theitem)) == NULL )
 					return FALSE;
@@ -196,7 +255,6 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 				if ( thecommand && *thecommand )
 					cmline = thecommand;
 			}
-
 		}
 		else
 			return FALSE;
@@ -274,7 +332,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 					return FALSE;
 				}
 				else
-					deselect = dir_add_window(path, NULL, NULL); 
+					deselect = dir_add_dwindow(path); 
 			}
 			else
 				deselect = FALSE;
@@ -285,7 +343,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			/* Object is a parent folder */
 
 			if ((path = fn_get_path(wd_path(w))) != NULL)
-				deselect = dir_add_window(path, NULL, NULL); 
+				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;
 			break;
@@ -295,7 +353,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			/* Object is a folder */
 
 			if ((path = itm_fullname(w, item)) != NULL)
-				deselect = dir_add_window(path, NULL, NULL); 
+				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;
 			break;
@@ -306,14 +364,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 
 			if (( path = itm_fullname(w, item) ) != NULL )
 			{
-/* optimized for size
-				if ( cmline == NULL )
-					deselect = app_exec(path, NULL, NULL, NULL, 0, kstate);
-				else
-					deselect = app_exec(path, NULL, NULL, (int *)cmline, -1, kstate);		/* use efpath here to explicitely pass filename to application */
-*/
 				deselect = app_exec(path, NULL, NULL, (int *)cmline, cmline ? -1 : 0, kstate);						
-
 				free(path);
 			}
 
@@ -323,6 +374,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 
 			/* Object is a file */
 
+			onfile = TRUE;
 			if ((alternate == FALSE) && (appl = app_find(itm_name(w, item))) != NULL)
 				deselect = app_exec(NULL, appl, w, &item, 1, kstate);
 			else
@@ -330,27 +382,42 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 				/* File type assignment has been bypassed: now show/edit/cancel */
 
 				if ( theitem )
-					button = 1;
+					button = OWSHOW;
 				else
-					button = alert_printf(1, AOPENFIL);
+				{
+					memset(&awork, 0, sizeof(APPLINFO));
+					awork.name = itm_fullname(w, item);
+					button = open_dialog();
+				}
 
 				switch (button)
 				{
-					case 1:
+					case OWSHOW:
 						/* Call the viewer program or open a text window */
 						if ( (deselect = app_specstart(AT_VIEW, w, &item, 1, kstate)) == 0 )
 							deselect = txt_add_window(w, item, kstate, NULL);
 						break;
-					case 2:
+					case OWEDIT:
 						/* Call the editor program */
 						if ( (deselect = app_specstart(AT_EDIT, w, &item, 1, kstate)) == 0 )
 							alert_iprint(TNOEDIT);
 						break;
-					case 3:
+					case OWRUN:
+						/* Run this file as a program/application */
+						onfile = FALSE;
+						deselect = app_exec(NULL, &awork, NULL, NULL, 0, kstate);
+						break;
+					case OWUSE:
+						/* Open this file with the selected application */
+						deselect = app_exec(NULL, (APPLINFO *)selitem, w, &item, 1, kstate);
+						break;
+					default:
 						/* Do nothing */
 						break;
 				}
+				free(awork.name);
 			}
+			onfile = FALSE;
 			break;
 
 		default: 
@@ -358,7 +425,6 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			/* Object is a trashcan, printer, or not recognized */
 
 			deselect = FALSE;
-
 	}
 	return deselect;
 }

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>	
 #include <stdlib.h>
 #include <string.h>
@@ -28,9 +29,9 @@
 #include <mint.h>
 #include <library.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
-#include "resource.h"
 #include "lists.h" /* must be before slider.h */
 #include "slider.h"
 #include "xfilesys.h"
@@ -65,7 +66,6 @@ static ICONTYPE
 	*files,			/* pointer to list of icons assigned to files      */ 
 	*folders; 		/* pointer to list of icons assigned to folders    */
 
-extern char *presets[]; 
 
 
 /*
@@ -75,10 +75,11 @@ extern char *presets[];
 
 static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
 {
-	strcpy ( t->type, s->type );			/* associated file/filetype */
-	strcpy ( t->icon_name, s->icon_name);	/* icon name */
-	t->icon = s->icon;						/* icon identifier */
+	ICONTYPE *next = t->next;
+	*t = *s;
+	t->next = next;
 }
+
 
 /* 
  * Find an icon defined by associated file(type) in the files or folders list;
@@ -181,7 +182,6 @@ int icnt_geticon(const char *name, ITMTYPE type, boolean link)
 
 	if (icon < 0)
 		icon = 0;
-
 	*/
 
 	return icon;
@@ -247,13 +247,13 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 	if ( use & LS_FIIC )
 	{
-		addicon[ICSHFLD].ob_flags |=  HIDETREE;
-		addicon[ICSHFIL].ob_flags &= ~HIDETREE;
+		obj_hide(addicon[ICSHFLD]);
+		obj_unhide(addicon[ICSHFIL]);
 	}
 	else
 	{
-		addicon[ICSHFLD].ob_flags &= ~HIDETREE; 
-		addicon[ICSHFIL].ob_flags |=  HIDETREE;
+		obj_unhide(addicon[ICSHFLD]); 
+		obj_hide(addicon[ICSHFIL]);
 	}
 
 	rsc_title(addicon, AITITLE, title);
@@ -262,45 +262,38 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 	/* Set some fields as visible or invisible */
 
-	addicon[CHNBUTT].ob_flags |= HIDETREE;
-	addicon[ADDBUTT].ob_flags &= ~HIDETREE;
-	addicon[ICBTNS].ob_flags |= HIDETREE;
-	addicon[DRIVEID].ob_flags |= HIDETREE;
-	addicon[ICNLABEL].ob_flags |= HIDETREE; 
-	addicon[ICNTYPE].ob_flags &= ~HIDETREE;
-	addicon[ICNTYPT].ob_flags &= ~HIDETREE;
+	obj_hide(addicon[CHNBUTT]);
+	obj_unhide(addicon[ADDBUTT]);
+	obj_hide(addicon[ICBTNS]);
+	obj_hide(addicon[DRIVEID]);
+	obj_hide(addicon[ICNLABEL]); 
+	obj_unhide(addicon[ICNTYPE]);
+	obj_unhide(addicon[ICNTYPT]);
 
-	sl_info.type = 0;
-
-	sl_info.up_arrow = ICNUP;
-	sl_info.down_arrow = ICNDWN;
-	sl_info.slider = ICSLIDER;
-	sl_info.sparent = ICPARENT;
-
-	sl_info.lines = 1;
-	sl_info.n = n_icons;
-	sl_info.line = it->icon; 
-	sl_info.set_selector = set_iselector; 
-	sl_info.first = 0;
-	sl_info.findsel = 0;
+	icn_sl_init(it->icon, &sl_info);
 
 	button = sl_dialog(addicon, ICNTYPE, &sl_info); 
 
-	addicon[ICSHFLD].ob_flags |= HIDETREE; 
-	addicon[ICSHFIL].ob_flags |= HIDETREE;
-
+	obj_hide(addicon[ICSHFLD]); 
+	obj_hide(addicon[ICSHFIL]);
 
 	cv_formtofn( thename, addicon + ICNTYPE);
 
-	if ( (button == ADDICNOK ) && (check_dup( (LSTYPE **)list, thename, pos)) 
-		)
+	if 
+	( 
+		(button == ADDICNOK ) && 
+		(check_dup( (LSTYPE **)list, thename, pos)) 
+	)
 	{
 		strcpy(it->type, thename);
 		it->icon = sl_info.line;
 
-		strsncpy(it->icon_name,	
-		        icons[it->icon].ob_spec.ciconblk->monoblk.ib_ptext,
-		        sizeof(it->icon_name));
+		strsncpy
+		(
+			it->icon_name,	
+			icons[it->icon].ob_spec.ciconblk->monoblk.ib_ptext,
+			sizeof(it->icon_name)
+		);
 
 		return TRUE;
 	}
@@ -318,7 +311,7 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 static LS_FUNC itlist_func =
 {
 	copy_icntype,
-	rem,
+	lsrem,
 	icnt_info, 
 	find_lsitem,
 	icntype_dialog
@@ -328,7 +321,7 @@ static LS_FUNC itlist_func =
 #pragma warn .sus
 
 /* 
- * Handle the dialog for maintaiing lists of icons assigned to files 
+ * Handle the dialog for maintaining lists of icons assigned to files 
  */
 
 void icnt_settypes(void)
@@ -339,9 +332,9 @@ void icnt_settypes(void)
 	/* Set dialog title, show radio buttons for selecting icon list */
 
 	rsc_title(setmask, DTSMASK, DTITYPES);		
-	setmask[ICATT].ob_flags &= ~HIDETREE;
-	setmask[ITFILES].ob_state |= SELECTED; /* list_edit always starts from the 1st list */
-	setmask[ITFOLDER].ob_state &= ~SELECTED;
+	obj_unhide(setmask[ICATT]);
+	obj_select(setmask[ITFILES]); /* list_edit always starts from the 1st list */
+	obj_deselect(setmask[ITFOLDER]);
 
 	/*  Edit icontypes list: add/delete/change */
 
@@ -355,12 +348,12 @@ void icnt_settypes(void)
 				LS_ICNT
 	         ); 
 
-	/* Hide radio buttons for selecting icons list */
-
-	setmask[ICATT].ob_flags |= HIDETREE; 
-
 	if ( button == FTOK ) 
 		wd_seticons();
+
+	/* Hide radio buttons for selecting icons list */
+
+	obj_hide(setmask[ICATT]); 
 }
 
 
@@ -379,8 +372,8 @@ void icnt_init(void)
 
 static void rem_all_icontypes(void)
 {
-	rem_all((LSTYPE **)(&files), rem);
-	rem_all((LSTYPE **)(&folders), rem);
+	lsrem_all((LSTYPE **)(&files), lsrem);
+	lsrem_all((LSTYPE **)(&folders), lsrem);
 
 }
 
@@ -417,13 +410,13 @@ void icnt_default(void)
 	ilist[2] =	rsrc_icon_rscid ( APINAME, iname );  /*   PRG, APP, TOS  */
 #endif
 
-	itadd_one(&folders, presets[0],  ilist[0]);	/*	*		*/ 
-	itadd_one(&files, presets[1],   ilist[1]);	/* 	*.*		*/
+	itadd_one(&folders, (char *)presets[0],  ilist[0]);	/*	*		*/ 
+	itadd_one(&files, (char *)presets[1],   ilist[1]);	/* 	*.*		*/
 #if _PREDEF
-	itadd_one(&files, presets[2], ilist[2]);	/*	*.PRG	*/
-	itadd_one(&files, presets[3], ilist[2]);	/*	*.APP	*/
-	itadd_one(&files, presets[4], ilist[2]);	/*	*.GTP	*/
-	itadd_one(&files, presets[5], ilist[2]);	/*	*.TOS	*/
+	itadd_one(&files, (char *)presets[2], ilist[2]);	/*	*.PRG	*/
+	itadd_one(&files, (char *)presets[3], ilist[2]);	/*	*.APP	*/
+	itadd_one(&files, (char *)presets[4], ilist[2]);	/*	*.GTP	*/
+	itadd_one(&files, (char *)presets[5], ilist[2]);	/*	*.TOS	*/
 #endif
 
 #endif /* ENABLE_PREFEDIC */
@@ -483,9 +476,7 @@ static CfgNest one_itype
 
 		if (*error == 0 )
 		{
-			if ( iwork.type[0] == 0 
-				|| iwork.icon_name[0] == 0
-				)
+			if ( iwork.type[0] == 0 || iwork.icon_name[0] == 0)
 				*error = EFRVAL;
 			else
 			{
@@ -532,7 +523,7 @@ static CfgEntry icngrp_table[] =
 static CfgNest icngrp_cfg
 {
 	if ( io == CFG_LOAD )
-		rem_all((LSTYPE **)(*ppthis), rem);
+		lsrem_all((LSTYPE **)(*ppthis), lsrem);
 
 	*error = handle_cfg(file, icngrp_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL);
 }

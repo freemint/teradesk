@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -30,10 +30,10 @@
 
 #include "xwindow.h"
 #include "xdialog.h"
-
 #include "internal.h"
 
 extern int xd_vhandle;
+extern int xe_mbshift;
 
 #define ACC_WIND	19 /* from window.h !!! */
 
@@ -48,6 +48,7 @@ WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 #else
 	#define aes_pid gl_apid
 #endif
+
 
 /*
  * Send a message to this or other window owner
@@ -99,6 +100,7 @@ void xw_send_redraw(WINDOW *w, RECT *area)
 /*
  * Funktie voor het vinden van een WINDOW structuur, aan de hand
  * van de window handle.
+ * Find a window by its handle
  */
 
 WINDOW *xw_hfind(int handle)
@@ -149,19 +151,21 @@ WINDOW *xw_find(int x, int y)
 
 WINDOW *xw_top(void)
 {
-	int handle;
+	int thandle;
 	WINDOW *w;
 
-	xw_get(NULL, WF_TOP, &handle);		/* the real top window */
+	xw_get(NULL, WF_TOP, &thandle);		/* the real top window */
 
+	/* If any known window is topped, return a pointer to it */
 
-	if ((w = xw_hfind(handle)) != NULL)
+	if ((w = xw_hfind(thandle)) != NULL)
 	{
-		if ( w != windows && w->xw_type == ACC_WIND ) 
+		if ( w->xw_type == ACC_WIND ) 
 			xw_note_top(w);
 		return w;
 	}
 
+	/* No windows topped, search further */
 
 	w = windows;
 
@@ -173,6 +177,34 @@ WINDOW *xw_top(void)
 	}
 
 	return desktop;						/* or the desktop, if none other */
+}
+
+
+/*
+ * Return a pointer to the bottom window
+ */
+
+WINDOW *xw_bottom(void)
+{
+	int bhandle;
+	WINDOW *w;
+
+	xw_get(NULL, WF_BOTTOM, &bhandle);		/* the real bottom window */
+
+	/* If any known window is the bottom one, return a pointer to it */
+
+	if ((w = xw_hfind(bhandle)) != NULL)
+	{
+		if ( w->xw_type == ACC_WIND ) 
+			xw_note_bottom(w);
+		return w;
+	}
+
+	/* No windows found, search further */
+
+	w = xw_last();
+
+	return w;
 }
 
 
@@ -229,7 +261,7 @@ WINDOW *xw_first(void)
 
 WINDOW *xw_last(void)
 {
-	WINDOW *w;
+	WINDOW *w = NULL;
 
 	if (windows)
 	{
@@ -237,22 +269,24 @@ WINDOW *xw_last(void)
 
 		while (w->xw_next != NULL)
 			w = w->xw_next;
-		return w;
 	}
-	else
-		return NULL;
+
+	return w;
 }
 
+
 /*
- * Noify a window as the top window
+ * Note that a window is the top one.
+ * Nothing is done if the window is already topped.
  */
 
 void xw_note_top(WINDOW *w)
 {
-	if (w != windows)
+	if (w && w != windows)
 	{
-		if (w->xw_next != NULL)
+		if (w->xw_next)
 			w->xw_next->xw_prev = w->xw_prev;
+
 		w->xw_prev->xw_next = w->xw_next;
 		windows->xw_prev = w;
 		w->xw_prev = NULL;
@@ -263,6 +297,30 @@ void xw_note_top(WINDOW *w)
 			w->xw_func->wd_top(w);
 	}
 }
+
+
+/*
+ * Note that a window is the bottom one
+ */
+
+void xw_note_bottom(WINDOW *w)
+{
+	WINDOW *lw = xw_last();
+
+	if (!(w == lw || lw == windows || lw))
+	{
+		if (w->xw_next)
+			w->xw_next->xw_prev = w->xw_prev;
+
+		if (w->xw_prev)
+			w->xw_prev->xw_next = w->xw_next;
+
+		lw->xw_next = w;
+		w->xw_prev = lw;
+		w->xw_next = NULL;
+	}
+}
+
 
 /*
  * Funktie die van een bepaald window het bovenste window maakt.
@@ -285,24 +343,40 @@ static void xw_set_top(WINDOW *w)
 
 
 /*
+ * Set a window to bottom
+ */
+
+static void xw_set_bottom(WINDOW *w)
+{
+	xw_bottom();
+
+/* this will never happen
+	if ( w->xw_type == ACC_WIND )
+		xw_send(w, WM_BOTTOMED);
+	else
+
+*/
+	if (w->xw_type != ACC_WIND)
+		wind_set(w->xw_handle, WF_BOTTOM, w->xw_handle);
+
+	xw_note_bottom(w);
+}
+
+
+/*
  * Funktie voor het cyclen van windows. De funktie maakt van het
  * onderste window het bovenste.
  */
 
 void xw_cycle(void)
 {
-
 	WINDOW 
-		*nt = NULL;
-
-	/* Find the last open window */
-
-	nt = xw_last();
+		*lw = xw_last();
 
 	/* Set it as top window */
 
-	if ((nt != NULL) && (nt != windows))
-		xw_set_top(nt);
+	if ((lw != NULL) && (lw != windows))
+		xw_set_top(lw);
 }
 
 
@@ -327,7 +401,7 @@ static void xw_set_barpos(WINDOW *w)
 {
 	OBJECT *menu = w->xw_menu;
 
-	if (menu != NULL)
+	if (menu)
 	{
 		menu->ob_x = w->xw_work.x;
 		menu->ob_y = w->xw_work.y; 
@@ -341,7 +415,7 @@ static void xw_set_barpos(WINDOW *w)
  * bijvoorbeeld na een redraw event.
  */
 
-static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
+void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 {
 	RECT r1, r2, in;
 	OBJECT *menu = w->xw_menu;
@@ -373,7 +447,7 @@ static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 			vsl_type(xd_vhandle, 1);
 			vsl_width(xd_vhandle, 1);
 
-			xw_get(w, WF_FIRSTXYWH, &r2);
+			xw_getfirst(w, &r2);
 
 			while ((r2.w != 0) && (r2.h != 0))
 			{
@@ -703,21 +777,6 @@ int xw_handle(WINDOW *w)
 #endif
 
 
-/* no, don't use this 
-/*
- * Sometimes (but rarely) a check of window existence is needed ?
- */
-
-int xw_anytype(WINDOW *w)
-{
-	if ( w )
-		return w->xw_type;
-	else
-		return 0;
-}
-*/
-
-
 /*
  * Funktie voor het afhandelen van een button event. Als er voor
  * een bepaald window geen handler is geinstalleerd of als het
@@ -815,8 +874,7 @@ void xw_iconify(WINDOW *w, int width, int height)
 
 /*
  * Uniconify a window; it will revert to the size and position
- * it had before iconification (except that this is not saved in
- * the config file).
+ * it had before iconification.
  */
 
 void xw_uniconify(WINDOW *w)
@@ -840,30 +898,36 @@ int xw_hndlmessage(int *message)
 	WD_FUNC *func;
 	WINDOW *w;
 
-	if (   (message[0] < WM_REDRAW)
-	    || (message[0] > WM_UNICONIFY)
-	   )
+	/* Process only messages in this range */
+
+	if ((message[0] < WM_REDRAW) || (message[0] > WM_UNICONIFY) )
 		return FALSE;
+
+	/* An existing window must be specified in this message */
 
 	if ((w = xw_hfind(message[3])) == NULL)
 		return FALSE;
 
+	/* Which functions apply to this window */
+
 	func = w->xw_func;
+	
+	/* Do what is needed */
 
 	switch (message[0])
 	{
 	case WM_REDRAW:
-		xw_redraw_menu(w, w->xw_bar, (RECT *) &message[4]);
-		func->wd_redraw(w, (RECT *) &message[4]);
+		xw_redraw_menu(w, w->xw_bar, (RECT *)&message[4]);
+		func->wd_redraw(w, (RECT *)&message[4]);
 		break;
 	case WM_TOPPED:
 		func->wd_topped(w);
 		break;
 	case WM_CLOSED:
-		func->wd_closed(w);
+		func->wd_closed(w, 0);
 		break;
 	case WM_FULLED:
-		func->wd_fulled(w);
+		func->wd_fulled(w, xe_mbshift);
 		break;
 	case WM_ARROWED:
 		func->wd_arrowed(w, message[4]);
@@ -875,21 +939,27 @@ int xw_hndlmessage(int *message)
 		func->wd_vslider(w, message[4]);
 		break;
 	case WM_SIZED:
-		func->wd_sized(w, (RECT *) & message[4]);
+		func->wd_sized(w, (RECT *)&message[4]);
 		break;
 	case WM_MOVED:
-		func->wd_moved(w, (RECT *) & message[4]);
+		func->wd_moved(w, (RECT *)&message[4]);
 		break;
 	case WM_NEWTOP:
+	case WM_ONTOP:
 		if (func->wd_newtop != 0L)
 			func->wd_newtop(w);
+		break;
+	case WM_UNTOPPED:
+		xw_top(); /* just note the new top window ? */
+		break;
+	case WM_BOTTOMED:
+		func->wd_bottomed(w);
 		break;
 	case WM_ICONIFY:
 		func->wd_iconify(w);
 		break;
 	case WM_UNICONIFY:
 		func->wd_uniconify(w);
-		func->wd_sized( w, &(w->xw_nsize) );
 		break;
 	default :
 		return FALSE;
@@ -918,12 +988,7 @@ void xw_set(WINDOW *w, int field,...)
 	{
 	case WF_CURRXYWH:
 		r = va_arg(p, RECT *);
-
-		w->xw_size.x = r->x;
-		w->xw_size.y = r->y;
-		w->xw_size.w = r->w;
-		w->xw_size.h = r->h;
-
+		w->xw_size = *r;
 		wind_set(w->xw_handle, WF_CURRXYWH, w->xw_size.x,
 				 w->xw_size.y, w->xw_size.w, w->xw_size.h);
 		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
@@ -932,6 +997,9 @@ void xw_set(WINDOW *w, int field,...)
 		break;
 	case WF_TOP:
 		xw_set_top(w);
+		break;
+	case WF_BOTTOM:
+		xw_set_bottom(w);		
 		break;
 	default:
 		p1 = va_arg(p, int);
@@ -942,6 +1010,26 @@ void xw_set(WINDOW *w, int field,...)
 		break;
 	}
 	va_end(p);
+}
+
+
+/*
+ * Set window size (short call)
+ */
+
+void xw_setsize(WINDOW *w, RECT *size)
+{
+	xw_set(w, WF_CURRXYWH, size);
+}
+ 
+
+/*
+ * Get window size (short)
+ */
+
+void xw_getsize(WINDOW *w, RECT *size)
+{
+	xw_get(w, WF_CURRXYWH, size);
 }
 
 
@@ -977,26 +1065,16 @@ void xw_get(WINDOW *w, int field,...)
 
 	switch (field)
 	{
-	case WF_FIRSTXYWH:
-	case WF_NEXTXYWH:
-	case WF_FULLXYWH:
-	case WF_PREVXYWH:
-	  getrect:
-		r = va_arg(p, RECT *);
-		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
-		break;
 	case WF_WORKXYWH:
 		if (handle == 0)
 			goto getrect;
-		r = va_arg(p, RECT *);
 
+		r = va_arg(p, RECT *);
 		*r = w->xw_work;
 
 		if (w->xw_menu != NULL)
 		{
-			int height;
-
-			height = w->xw_menu[w->xw_bar].ob_height + 1;
+			int height = w->xw_menu[w->xw_bar].ob_height + 1;
 
 			r->y += height;
 			r->h -= height;
@@ -1005,13 +1083,16 @@ void xw_get(WINDOW *w, int field,...)
 	case WF_CURRXYWH:
 		if (handle == 0)
 			goto getrect;
-
 		r = va_arg(p, RECT *);
-
-		r->x = w->xw_size.x;
-		r->y = w->xw_size.y;
-		r->w = w->xw_size.w;
-		r->h = w->xw_size.h;
+		*r = w->xw_size;
+		break;
+	case WF_FIRSTXYWH:
+	case WF_NEXTXYWH:
+	case WF_FULLXYWH:
+	case WF_PREVXYWH:
+	  getrect:
+		r = va_arg(p, RECT *);
+		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 		break;
 	default:
 		if ((field >= 1) && (field <= sizeof(xw_get_argtab)))
@@ -1028,6 +1109,40 @@ void xw_get(WINDOW *w, int field,...)
 		break;
 	}
 	va_end(p);
+}
+
+
+/*
+ * Shorter form of xw_get to obtain WF_WORKXYWH
+ * and save some bytes at an expense in speed.
+ * This is the most often form of xw_get in TeraDesk
+ */
+
+void xw_getwork(WINDOW *w, RECT *size)
+{
+	xw_get(w, WF_WORKXYWH, size);
+}
+
+
+/*
+ * Similar to above, but obtain WF_FIRSTXYWH
+ */
+
+void xw_getfirst(WINDOW *w, RECT *size)
+{
+	xw_get(w, WF_FIRSTXYWH, size);
+}
+
+
+/*
+ * Similar to above, but obtain WF_NEXTXYWH
+ * As this would be used only in loops, benefit may  be doubtful,
+ * because of the speed penalty. Use with caution.
+ */
+
+void xw_getnext(WINDOW *w, RECT *size)
+{
+	xw_get(w, WF_FIRSTXYWH, size);
 }
 
 
@@ -1133,8 +1248,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  */
 
 WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
-				  RECT *msize, size_t wd_struct_size, OBJECT *menu,
-				  int *error)
+				  RECT *msize, size_t wd_struct_size, OBJECT *menu, int *error)
 {
 	WINDOW *w;
 
@@ -1164,7 +1278,9 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 	w->xw_flags = flags;
 	w->xw_func = functions;
 
-	if (windows != NULL)
+	/* Update pointers to previous and next windows */
+
+	if (windows)
 		windows->xw_prev = w;
 
 	w->xw_prev = NULL;
@@ -1179,6 +1295,7 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 
 /*
  * Funktie voor het openen van een window.
+ * A new window will be added as the first one in the list.
  *
  * Parameters:
  *
@@ -1330,7 +1447,7 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 
 	*error = 0;
 
-	xw_get(NULL, WF_WORKXYWH, &w->xw_size);
+	xw_getwork(NULL, &w->xw_size);
 	w->xw_work = w->xw_size;
 
 	if ((windows == NULL) && (w->xw_func->wd_top != 0L))

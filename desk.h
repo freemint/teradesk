@@ -29,11 +29,19 @@
 #include <d:\tmp\memdebug\memdebug.h>
 #endif
 
-char *itoa(int value, char *string, int radix);
-char *ltoa(long value, char *string, int radix);
 
 #undef O_APPEND
 
+/* 
+ * Some convenient macros for manipulating dialog objects
+ */
+
+#define obj_hide(x)		x.ob_flags |= HIDETREE
+#define obj_unhide(x)	x.ob_flags &= ~HIDETREE  
+#define obj_select(x)	x.ob_state |= SELECTED
+#define obj_deselect(x)	x.ob_state &= ~SELECTED
+#define obj_enable(x)	x.ob_state &= ~DISABLED
+#define obj_disable(x)	x.ob_state |= DISABLED
 
 /* 
  * Size of global memory buffer is larger for fuller 
@@ -54,56 +62,128 @@ char *ltoa(long value, char *string, int radix);
 
 #define PATH_MAX 128 /* from stdio.h */
 
+/* Diverse options which are bitflags */
+
+#define CF_COPY			0x0001	/* confirm copy             */
+#define CF_DEL			0x0002	/* confirm delete           */
+#define CF_OVERW		0x0004	/* confirm overwrite        */
+#define CF_PRINT		0x0008 	/* confirm print            */
+#define CF_TOUCH		0x0010  /* confitm touch (not used) */
+
+#define TOS_KEY			0x0020	/* 0 = continue, 1 = wait */
+#define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center  */
+
+#define P_GDOS			0x0080	/* use GDOS device for printing; currently NOT used */
+
+#define SAVE_COLORS		0x0100	/* save palette */
+#define TOS_STDERR		0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
+#define CF_CTIME		0x0400	/* change date & time */
+
+#define CF_CATTR		0x0800  /* change file attributes */
+#define CF_SHOWD		0x1000 	/* always show dialog */
+
+#define P_HEADER		0x2000	/* print header and formfeed */
+#define CF_FOLL			0x4000	/* follow links */
+
+/* Other diverse options */
+
+#define TEXTMODE		0		/* display directory as text */
+#define ICONMODE		1		/* display directory as icons */
+
+#define WD_SORT_NAME	0x00	/* sort directory by file name  */
+#define WD_SORT_EXT		0x01	/* sort directory by file type  */
+#define WD_SORT_DATE	0x02	/* sort directory by file date  */
+#define WD_SORT_LENGTH	0x03	/* sort directory by file size  */
+#define WD_NOSORT		0x04	/* don't sort directory         */
+#define WD_REVSORT	 	0x10	/* reverse sort order (bitflag) */
+
+/* Option bitflags for elements to be shown in directory windows */
+
+#define WD_SHSIZ 0x0001 /* show file size  */
+#define WD_SHDAT 0x0002 /* show file date  */
+#define WD_SHTIM 0x0004 /* show file time  */
+#define WD_SHATT 0x0008 /* show attributes */
+
+/* Option bitflags for settable video modes */
+
+#define VO_BLITTER 0x0001 	/* video option blitter ON  */
+#define VO_OVSCAN  0x0002 	/* video option overscan ON */
+#define VO_LDOUBL  0x0004	/* video option line doubling (Falcon) */
+
+
+/*
+ * It is assumed that the first menu item for which a keyboard shortcut
+ * can be defined is MOPEN and the last is MSAVEAS; the interval
+ * is defined below by MFIRST and MLAST. 
+ * Index of the fist relevant menu title is likewise defined.
+ * Beware of dimensioning options.kbshort[64]; it should be larger
+ * than NITEM below; currently, about 58 out of 64 are used.
+ */
+
+#define MFIRST MOPEN			/* first menu item for which a shortcut can be */
+#define MLAST  MSAVEAS			/* last menu item ... */
+#define TFIRST TLFILE			/* title under which the first item is */
+#define NITEM MLAST - MFIRST	/* number of, -1 */
 
 /* Executable file (program) types */
 
 typedef enum
 {
-	PGEM = 0, PGTP, PACC, PTOS, PTTP
+	PGEM = 0, 
+	PGTP, 
+	PACC, 
+	PTOS, 
+	PTTP
 } ApplType;
 
 
 /* Configuration options structure */
 
 typedef struct
-{
+{	
+	/* Desktop */
+
 	int version;				/* cfg. file version */
-	unsigned long magic;		/* fingerprint for identifying this file */
 	int cprefs;					/* copy and program preferences */
-	char mode;					/* text or icon mode */
-	char sort;					/* sorting rule      */
-	int attribs;				/* attributes of visible directory items */
-	int tabsize;				/* tab size          */
+	unsigned int dial_mode;		/* dialog mode (window/flying) */
+	int sexit;					/* save desk on exit */
+	char helpprg[16];			/* name of the help program */
+	int kbshort[NITEM + 2];		/* keyboard shortcuts */
+
+	/* Sizes */
+
 	int bufsize;				/* copy buffer size  */
-	unsigned char dsk_pattern;	/* desktop pattern   */
-	unsigned char dsk_color;	/* desktop colour    */
-	unsigned int dial_mode;
-	unsigned int resvd1;
-	int resvd2;					/* unused            */
-	struct V2_2_Opt				/* Put in a struct, so it is easier to handle older cfg versions. */
-	{
-		int vprefs;                 /* video preferences  */
-		char fields;                /* file data elements */
-		char place1[5];				/* placeholder for any future add-on */
-		int plinelen;				/* printer line length              */
-		unsigned char win_pattern;  /* window pattern   */
-		unsigned char win_color;    /* window colour    */
-		int vrez;                   /* video resolution */
-		int kbshort[64];			/* keyboard shortcuts */
-	} V2_2;
+	long max_dir;				/* maximum no of entries for 1 hierarchic level */
+	int plinelen;				/* printer line length */
+	int tabsize;				/* global tab size */
+	int cwin;					/* compare match window */
+
+	/* View */
+
+	char mode;					/* text or icon mode */
+	char aarr;					/* auto arrange directory items */
+	char sort;					/* sorting rule */
+	int attribs;				/* shown attributes of visible directory items */
+	char fields;                /* shown file data elements */
+
+	/* Video */
+
+	int vprefs;                 /* video preferences  */
+	int vrez;                   /* video resolution */
+	unsigned char dsk_pattern;	/* desktop pattern  */
+	unsigned char dsk_color;	/* desktop colour */
+	unsigned char win_pattern;  /* window pattern */
+	unsigned char win_color;    /* window colour */
+
 } Options;
 
-typedef struct
-{
-	long max_dir;				/* maximum no of entries for 1 hierarchic level */
-} V3_options;
 
 typedef struct
 {
 	int item;					/* nummer van icoon */
 	int m_x;					/* coordinaten middelpunt t.o.v. muis, alleen bij iconen */
 	int m_y;
-	int np;						/* aantal punten */
+	int np;						/* number of points in object's contour */
 	int coords[18];				/* coordinaten van schaduw */
 } ICND;
 
@@ -124,63 +204,16 @@ typedef char SNAME[18];   /* filetype mask; must be compatible with (longer than
 typedef char LNAME[132];  /* filename or path   */
 typedef char VLNAME[256]; /* a very long string */
 
-/* Diverse options */
-
-#define CF_COPY			0x0001	/* confirm copy             */
-#define CF_DEL			0x0002	/* confirm delete           */
-#define CF_OVERW		0x0004	/* confirm overwrite        */
-#define CF_PRINT		0x0008 	/* confirm print            */
-#define CF_TOUCH		0x0010  /* confitm touch (not used) */
-
-#define TOS_KEY			0x0020	/* 0 = continue, 1 = wait */
-#define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center  */
-
-#define SAVE_COLORS		0x0100	/* save palette */
-#define TOS_STDERR		0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
-#define CF_CTIME		0x0400	/* change date & time */
-
-#define CF_CATTR		0x0800  /* change file attributes */
-#define CF_SHOWD		0x1000 	/* always show dialog */
-
-#define P_HEADER		0x2000	/* print header and formfeed */
-#define CF_FOLL			0x4000	/* follow links */
-
-#define TEXTMODE		0	/* display directory as text */
-#define ICONMODE		1	/* display directory as icons */
-
-#define WD_SORT_NAME	0	/* sort directory by file name */
-#define WD_SORT_EXT		1	/* sort directory by file type */
-#define WD_SORT_DATE	2	/* sort directory by file date */
-#define WD_SORT_LENGTH	3	/* sort directory by file size */
-#define WD_NOSORT		4	/* don't sort directory        */
-
-#define WD_SHSIZ 0x0001 /* show file size  */
-#define WD_SHDAT 0x0002 /* show file date  */
-#define WD_SHTIM 0x0004 /* show file time  */
-#define WD_SHATT 0x0008 /* show attributes */
-
-#define VO_BLITTER 0x0001 /* video option blitter ON  */
-#define VO_OVSCAN  0x0002 /* video option overscan ON */
-
-/*
- * It is assumed that the first menu item for which a keyboard shortcut
- * can be defined is MOPEN and the last is MSAVEAS; the interval
- * is defined below by MFIRST and MLAST. 
- * Index of the fist relevant menu title is likewise defined.
- * Beware of dimensioning options.kbshort[64]; it should be larger
- * than NITEM below; currently, about 58 out of 64 are used.
- */
-
-#define MFIRST MOPEN			/* first menu item for which a shortcut can be */
-#define MLAST  MSAVEAS			/* last menu item ... */
-#define TFIRST TLFILE			/* title under which the first item is */
-#define NITEM MLAST - MFIRST	/* number of, -1 */
 
 extern Options options;
-extern V3_options v3_options;
 extern SCRINFO screen_info;
 extern int vdi_handle, ncolors, npatterns, max_w, max_h, ap_id, nfonts;
-extern char *global_memory;
+
+extern char 
+		*global_memory,
+		*empty,
+		*bslash,
+		*adrive;
 
 /* Flags to show a specific OS or AES type (detected from cookies) */
 
@@ -194,9 +227,12 @@ extern boolean
 extern int have_ssystem;
 #endif
 
-extern int colour_icons; 
+
+char *itoa(int value, char *string, int radix);
+char *ltoa(long value, char *string, int radix);
 
 long btst(long x, int bit);
+void *malloc_chk(size_t size);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 
 void get_opt(OBJECT *tree, int *flags, int opt, int button );
 char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */

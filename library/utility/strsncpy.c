@@ -31,6 +31,7 @@
 
 char *strsncpy(char *dst, const char *src, size_t len)	
 {
+	*dst = 0; /* just in case strncpy doesn't copy empty string */
 	strncpy(dst, src, len - 1);		/* len is typical: sizeof(achararray) */
 	*(dst + len - 1) = 0;
 	return dst;

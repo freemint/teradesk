@@ -34,6 +34,7 @@
 #define FA_ARCHIVE      0x20
 #define FA_PARDIR       0x40 /* pseudo attribute for parent dir */
 
+#define FA_ANY  (FA_READONLY | FA_HIDDEN | FA_SYSTEM | FA_SUBDIR | FA_ARCHIVE)
 
 /* Unix file attributen */
 

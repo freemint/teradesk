@@ -47,14 +47,13 @@ typedef struct ls_func
 	boolean (*ls_dialog)(LSTYPE **list, int pos, LSTYPE *item, int use);
 }LS_FUNC;
 
-void free_item( void **ptr );
 boolean find_wild ( LSTYPE **list, char *name, LSTYPE *work, void *func );
 int find_selected(void);
 LSTYPE *get_item(LSTYPE **list, int item);
 LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos);
-void rem (LSTYPE **list, LSTYPE *item);
-void rem_all(LSTYPE **list, void *rem_func);
-LSTYPE *lsadd ( LSTYPE **list, size_t size, LSTYPE *pt, int pos, void *copy_func );
+void lsrem(LSTYPE **list, LSTYPE *item);
+void lsrem_all(LSTYPE **list, void *rem_func);
+LSTYPE *lsadd( LSTYPE **list, size_t size, LSTYPE *pt, int pos, void *copy_func );
 boolean copy_all(LSTYPE **copy, LSTYPE **list, size_t size, void *copy_func ); 
 int cnt_types(LSTYPE **list );
 boolean check_dup( LSTYPE **list, char *name, int pos );
@@ -72,5 +71,5 @@ int list_edit(LS_FUNC *lsfunc,	LSTYPE **list1, LSTYPE **list2, size_t size, LSTY
 #define LS_APPL 256		/* use to set applications */
 #define LS_FIIC 512		/* work on list of icons assigned to files  */
 #define LS_FOIC 1024	/* work on list of icons assigned to folders */
-
+#define LS_SELA 2048	/* Select a one-time-use application */
 

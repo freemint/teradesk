@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -32,7 +32,6 @@
 #include <stddef.h>
 
 #include "xdialog.h"
-
 #include "internal.h"
 
 
@@ -130,9 +129,10 @@ void __xd_topped(WINDOW *w)
 /*
  * Funktie voor het afhandelen van een window closed event in een
  * niet modale dialoogbox.
+ *('mode' is for compatibility with WD_FUNC)
  */
 
-void __xd_closed(WINDOW *w)
+void __xd_closed(WINDOW *w, int mode)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 

@@ -45,3 +45,20 @@ void bell(void)
 {
 	Bconout(2, 7);
 }
+
+
+/* 
+ * Free memory allocated to an item and set pointer to NULL 
+ * (because in several places action is dependent on whether 
+ * the pointer is NULL when memory is not allocated)
+ */
+
+void free_item( void **ptr )
+{
+	if ( *ptr != 0L )
+	{
+		free(*ptr);
+		*ptr = 0L;
+	}
+}
+

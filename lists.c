@@ -27,10 +27,11 @@
 #include <vdi.h>
 #include <xdialog.h>
 #include <mint.h>
+#include <library.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
-#include "resource.h"
 #include "lists.h"
 #include "slider.h"
 #include "xfilesys.h"
@@ -42,25 +43,14 @@
 #include "xscncode.h"
 
 
-
-/* 
- * Free memory allocated to a list item and set pointer to NULL 
- * (because in several places action is dependent on whether 
- * the pointer is NULL)
- */
-
-void free_item( void **ptr )
-{
-	free(*ptr);
-	*ptr = NULL;
-}
+LSTYPE *selitem;
 
 
 /* 
  * Find in the list an item presented by a name possibly
- * containing wildcards; copy name (if given) and other data 
+ * containing wildcards; copy the name (if given) and other data 
  * (if match found) to work area. If a name is given, 
- * it is stripped off its path component, if there is any
+ * it is stripped off its path component, if there is any.
  */
 
 boolean find_wild 
@@ -80,21 +70,17 @@ boolean find_wild
 	void 
 		(*copyf)( LSTYPE *t, LSTYPE *s ) = copy_func;
 
-
 	if ( name != NULL )
 	{					
-		/* Find last occurence of "\" */
-	  
-		if ((filename = strrchr(name, '\\')) == NULL)
-			filename = name;
-		else
-			filename++;
+		/* Find the last occurence of "\" */
+
+		filename = fn_get_name((const char *)name);
 
 		/* Search in the list */
 
 		while (p != NULL)
 		{
-			/* If match found (match name only, no path!): */
+			/* If match found (match name only, no path!), then */
 
 			if (cmp_wildcard(filename, p->filetype) == TRUE)
 			{
@@ -113,7 +99,7 @@ boolean find_wild
 		strsncpy (work->filetype, filename, sizeof(SNAME));
 	}
 	else
-		work->filetype[0] = 0;
+		work->filetype[0] = 0;	/* if nonexistent, clear the name */
 
 	return FALSE;
 }
@@ -127,14 +113,13 @@ boolean find_wild
 
 int find_selected(void)
 {
-	int 
-		object;		/* object index of filetype field */
+	int object;		/* object index of filetype field */
 
 	return ((object = xd_get_rbutton(setmask, FTPARENT)) < 0) ? 0 : object - FTYPE1;
 }
 
 
-/* Get from a list pointer to an item specified by its ordinal number */
+/* Get from a list the pointer to an item specified by its ordinal number */
 
 LSTYPE *get_item
 ( 
@@ -163,12 +148,13 @@ LSTYPE *get_item
 
 
 /*
- * Get from a list pointer to an item specified by its name or name+path,
+ * Get from a list the pointer to an item specified by its name or name+path,
  * name possibly containing wildcards; for the search, name string is
  * stripped of its path component; this routine is NOT usable 
  * for applications list, only for filetypes, programtypes 
- * and icontypes (applications are searched for by their full name)
- * in parameter "pos" return also the index of this item in the list
+ * and icontypes (applications are searched for by their full name).
+ * Also used for the list of AV-protocol clients.
+ * In parameter "pos" return also the index of this item in the list
  * or -1 if not found
  */
 
@@ -201,7 +187,7 @@ LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
  * this routine is for filetypes, programtypes and icontypes
  */
 
-void rem
+void lsrem
 ( 
 	LSTYPE **list, 		/* list of filetype items */
 	LSTYPE *item		/* item to be removed */
@@ -239,7 +225,7 @@ void rem
  * clear documentype lists
  */
 
-void rem_all
+void lsrem_all
 (
 	LSTYPE **list,	/* pointer to list to work on */ 
 	void *rem_func	/* pointer to function to remove specific item kind */
@@ -298,9 +284,7 @@ LSTYPE *lsadd
 	 * set n->next always after copyf
 	 */
 
-	if ((n = malloc(size)) == NULL) 
-		xform_error(ENSMEM);
-	else
+	if ((n = malloc_chk(size)) != NULL) 
 	{
 		copyf( n, pt );			/* copy data from pt to n */
 
@@ -441,7 +425,6 @@ boolean check_dup
  * app_install-->list_edit-->app-dialog-->ft_dialog-->list_edit; 
  * therefore some care is taken in various places to recreate what is 
  * needed after this call. 
- *
  */
 
 int list_edit
@@ -479,7 +462,7 @@ int list_edit
 		redraw;				/* true if need to redraw dialog */
 
 	int 
-		pos,				/* index of item in the list */
+		pos = -1,			/* index of item in the list */
 		luse,				/* local copy of use parameter */
 		button,				/* index of pressed button */
 		wsel,				/* true if item selected in a dir window */
@@ -493,17 +476,20 @@ int list_edit
 	 * in a window (or desktop), or just called from the menu?
 	 */
 
-	if ( ((w = wd_selected_wd()) != NULL) && 
-	     ((item = wd_selected()) >= 0)    &&
-	      !( use & LS_DOCT )
-	   )
+	if
+	( 
+		( (use & LS_SELA) == 0 )           &&  
+		( (w = wd_selected_wd()) != NULL ) && 
+		( (item = wd_selected()) >= 0 )    &&
+		( ( use & LS_DOCT ) == 0 ) 
+	)
 	{
 		/* 
 		 * Yes, item(s?) selected from a directory window. Then,
 		 * get this item's path+name and type (file/folder or else).
 		 * check that this is a file or a folder 
 		 */
- 
+
 		wsel = TRUE;
 		item = wd_selected();
 
@@ -552,6 +538,7 @@ int list_edit
 		wsel = FALSE;
 		curitm = NULL;
 		pname = NULL;
+		selitem = NULL;
 
 		/*
 		 * It is needed now to make copies of list(s), because it might be
@@ -565,8 +552,8 @@ int list_edit
 
 		if ( !copyok )
 		{
-			rem_all(&clist1, lsfunc->lsrem);
-			rem_all(&clist2, lsfunc->lsrem);
+			lsrem_all(&clist1, lsfunc->lsrem);
+			lsrem_all(&clist2, lsfunc->lsrem);
 			return FTCANCEL;
 		}
 
@@ -574,6 +561,7 @@ int list_edit
 		luse = use | LS_FIIC;
 
 		ls_sl_init( cnt_types(list), set_selector, &sl_info, list); 
+
 		xd_open( setmask, &info );
 	}
 
@@ -600,8 +588,12 @@ int list_edit
 		}
 		else
 		{
+			/* 
+			 * dc marks a double click; relevant for filemasks and
+			 * selected applications only
+			 */
 			button = sl_form_do(setmask, ROOT, &sl_info, &info);
- 			dc = (button & 0x8000) ? TRUE : FALSE; /* relevant for filemasks only */
+ 			dc = (button & 0x8000) ? TRUE : FALSE; 
 			button &= 0x7FFF;
 		}
 
@@ -762,7 +754,6 @@ int list_edit
 						*list = anitem;
 
 					keyfunc( &info, &sl_info, CTL_CURDOWN );
-
 				}
 
 				break;
@@ -775,7 +766,7 @@ int list_edit
 				keep = TRUE;
 				redraw = TRUE;
 
-				if ( use & LS_FMSK )
+				if ( (use & LS_FMSK) || (use & LS_SELA) )
 				{
 					strcpy(setmask[FILETYPE].ob_spec.tedinfo->te_ptext, 
 					       setmask[button].ob_spec.tedinfo->te_ptext);
@@ -786,6 +777,8 @@ int list_edit
 						stop = TRUE;
 						button = FTOK;
 					}
+
+					pos = find_selected() + sl_info.line;
 				}
 
 				break;
@@ -831,7 +824,7 @@ int list_edit
 			/* Reset buttons in some cases */
 
 			if (!keep)
-				xd_change(&info, button, NORMAL, TRUE);
+				xd_drawbuttnorm(&info, button);
 
 			/* Sometimes must redraw add/delete/change buttons */
 
@@ -866,19 +859,27 @@ int list_edit
 
 		if ( button == FTOK )
 		{
-			rem_all(list1, lsfunc->lsrem);
+			lsrem_all(list1, lsfunc->lsrem);
 			*list1 = clist1;
 
 			if ( list2 != NULL )
 			{
-				rem_all(list2, lsfunc->lsrem);
+				lsrem_all(list2, lsfunc->lsrem);
 				*list2 = clist2;
 			}
+
+			/* 
+			 * This is specifically for selecting an application 
+			 * to open a file.
+			 */
+
+			if ( (use & LS_SELA) && (pos >= 0) )
+				selitem = get_item(list1, pos);
 		}
 		else
 		{
-			rem_all(&clist1, lsfunc->lsrem);
-			rem_all(&clist2, lsfunc->lsrem);
+			lsrem_all(&clist1, lsfunc->lsrem);
+			lsrem_all(&clist2, lsfunc->lsrem);
 		}
 
 		/* Close the dialog */

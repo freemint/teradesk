@@ -38,7 +38,9 @@
 
 int alert_msg(const char *string, ...);	
 int alert_printf(int def, int message,...);
-int alert_iprint( int message );
+void alert_iprint( int message );
+void alert_abort( int message );
+int alert_query( int message );
 
 void xform_error(int error);
 void hndl_error(int msg, int error);

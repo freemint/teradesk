@@ -13,7 +13,7 @@ mkdir a:\library\utility
 mkdir a:\library\xdialog
 
 e:
-cd terdesk3.0
+cd terdesk3.40
 
 
 copy -n copying      a:\

@@ -122,7 +122,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	fd_mask = 1L << fd;
 	i = Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L);
 
-	if (!i || !fd_mask)
+	if ( !(i && fd_mask) )
 	{	
 		/* timeout happened */
 		Fclose(fd);

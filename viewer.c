@@ -31,16 +31,17 @@
 #include <xscncode.h>
 #include <library.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "font.h"
-#include "resource.h"
 #include "xfilesys.h"
 #include "config.h"
 #include "screen.h"
 #include "window.h" /* moved before viewer.h */
 #include "viewer.h"
 #include "file.h"
+#include "sprintf.h"
 
 
 #define FWIDTH			256 /* max.possible width of text window in text mode */
@@ -53,31 +54,13 @@ WINFO textwindows[MAXWINDOWS];
 RECT tmax;
 FONT txt_font;
 
+static int displen;
+
 static void set_menu(TXT_WINDOW *w);
 
 static void txt_closed(WINDOW *w);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
 
-
-static WD_FUNC txt_functions =
-{
-	wd_type_hndlkey,
-	wd_type_hndlbutton,
-	wd_type_redraw,
-	wd_type_topped,
-	wd_type_topped,	
-	txt_closed,	/* the only one remaining specific for text window */
-	wd_type_fulled, 
-	wd_type_arrowed,
-	wd_type_hslider,
-	wd_type_vslider,
-	wd_type_sized,
-	wd_type_moved,
-	txt_hndlmenu,
-	/* wd_type_top, */ 0L,
-	wd_type_iconify,
-	wd_type_uniconify
-};
 
 
 /********************************************************************
@@ -87,6 +70,19 @@ static WD_FUNC txt_functions =
  ********************************************************************/
 
 /*
+ * Determine number of lines in a text window
+ */
+
+static long txt_nlines(TXT_WINDOW *w)
+{
+	if (w->hexmode)
+		return ( (w->size + 15L) / 16 );
+	else
+		return w->tlines;
+}
+
+
+/*
  * Determine width of a text window; depending on whether the display is
  * in hex mode or text mode, it will be either a fixed value or a value
  * determined from the longest line in the text. Line lengths are calculated
@@ -94,7 +90,7 @@ static WD_FUNC txt_functions =
  * (returned width will never be more than FWIDTH).
  */
 
-int txt_width(TXT_WINDOW *w)
+static int txt_width(TXT_WINDOW *w, int hexmode)
 {
 	long 
 		i,				/* line counter */
@@ -104,21 +100,22 @@ int txt_width(TXT_WINDOW *w)
 	/* 
 	 * If display is in hex mode, return a fixed width (HEXLEN); otherwise
 	 * scan pointers to all lines and find greatest difference between
-	 * two adjecent ones- that would be the maximum line length
+	 * two adjecent ones- that would be the maximum line length.
+	 * To each line length is added the total length of tab substitutes.
 	 */
 
-	if ( w->hexmode == 1)
+	if ( hexmode == 1)
 		return HEXLEN + 1;	/* fixed window width in hex mode */
 	else
 	{
-		/* Length of last (and first, if there is only one) line in the text */
+		/* Length of the last (and first, if there is only one) line in the text */
 
-		mw = (long)(w->lines[0]) + w->size - (long)(w->lines[w->tlines - 1]);
+		mw = (long)(w->lines[0]) + (w->size) - (long)(w->lines[w->tlines - 1])  + (long)(w->ntabs[0]) * (w->tabsize - 1);
 
 		/* Is length of any other line greater than the above? */
 
 		for ( i = 1; i < w->tlines; i++ ) 
-			mw = lmax(mw, (long)(w->lines[i]) - (long)(w->lines[i - 1]));
+			mw = lmax(mw, (long)(w->lines[i]) - (long)(w->lines[i - 1])  + (long)(w->ntabs[i]) * (w->tabsize - 1) );
 
 		/* Add the right margin */
 
@@ -129,25 +126,9 @@ int txt_width(TXT_WINDOW *w)
 		 * but not more than FWIDTH characters 
 		 */
 
-		mw = lmax(16L, lmin(mw, FWIDTH));
+		mw = lminmax(1L, mw, FWIDTH);
+
 		return (int)mw;
-	}
-}
-
-
-/*
- * Redraw all text windows 
- */
-
-void txt_draw_all(void)
-{
-	WINDOW *w = xw_first();
-
-	while (w)
-	{
-		if (xw_type(w) == TEXT_WIND)
-			wd_type_draw( (TYP_WINDOW *)w, TRUE );
-		w = w->xw_next;
 	}
 }
 
@@ -172,6 +153,65 @@ void txt_draw_all(void)
 static char hexdigit(int x)
 {
 	return (x <= 9) ? x + '0' : x + 'A' - 10;
+}
+
+
+/*
+ * Create a line in hex mode.
+ * tmp = output buffer tmp[HEXLEN + 2] with data in hex mode
+ * p = pointer to the beginning of the 16-byte line of text 
+ * a = index of 1st byte of the line from the file beginning
+ * size =  file size 
+ */
+
+void disp_hex( char *tmp, char *p, long a, long size, boolean toprint )
+{
+	long 
+		h = a;
+
+	int 
+		i,
+		j;
+
+	if (a >= size )
+	{
+		tmp[0] = 0;
+		return;
+	}
+
+	/* tmp[0] to tmp[6] display line offset from file beginning */
+	
+	for (i = 5; i >= 0; i--)
+	{
+		tmp[i] = hexdigit((int) h & 0x0F);
+		h >>= 4;
+	}
+	tmp[6] = ':';
+
+	/* Hexadecimal (in h) and ASCII (in 57+i) representation of 16 bytes */
+
+	for (i = 0; i < 16; i++)
+	{
+		j = 7 + i * 3;
+		tmp[j] = ' ';
+		if ((a + (long)i) < size)
+		{
+			tmp[j + 1] = hexdigit((p[i] >> 4) & 0x0F);
+			tmp[j + 2] = hexdigit(p[i] & 0x0F);
+			tmp[57 + i] = ( (p[i] == 0) || ((toprint == TRUE) && (p[i] < ' ')) )  ? '.' : p[i];
+		}
+		else
+		{
+			tmp[j + 1]  = ' ';
+			tmp[j + 2]  = ' ';
+			tmp[57 + i] = ' ';
+		}
+	}
+
+	tmp[55] = ' ';
+	tmp[56] = ' ';
+	tmp[73] = 0;
+
 }
 
 
@@ -208,7 +248,7 @@ static int txt_line
 		cntm = 0;				/* left margin visible character count */ 
 
 
-	/* Don't process invisible lines */
+	/* Don't process invisible or nonexistent lines */
 
 	if (line >= w->nlines)
 	{
@@ -247,13 +287,13 @@ static int txt_line
 
 		while (cnt < m)
 		{
-			if ((ch = *s++) == 0)
+			if ((ch = *s++) == 0)	/* null: ignore */
 				continue;
-			if (ch == '\n')	/* linefeed */
+			if (ch == '\n')			/* linefeed: end of line */
 				break;
-			if (ch == '\r')	/* carriage return */
+			if (ch == '\r')			/* carriage return: ignore */
 				continue;
-			if (ch == '\t')	/* tab (substitute) */
+			if (ch == '\t')			/* tab: substitute */
 			{
 				do
 				{
@@ -262,10 +302,11 @@ static int txt_line
 					cnt++;
 				}
 				while ((( cnt % tabsize) != 0) && (cnt < m));
+
 				continue;
 			}
-			if ( cnt  >= wpxm )
-				*d++ = ch;
+			if ( cnt  >= wpxm ) /* if righter than left edge... */
+				*d++ = ch;		/* set that character */
 
 			cnt++;
 		}
@@ -275,15 +316,12 @@ static int txt_line
 		/* Create a line in hex mode */
 
 		long 
-			a = 16L * line, 
-			h;
-
-		int 
-			j;
+			a = 16L * line;
 
 		char 
 			tmp[HEXLEN + 2], 
 			*p = &w->buffer[a];
+
 
 		if (w->px >= HEXLEN)
 		{
@@ -291,40 +329,7 @@ static int txt_line
 			return 0;
 		}
 
-		h = a;
-
-		/* tmp[0] to tmp[6] display line offset from  file beginning */
-
-		for (i = 5; i >= 0; i--)
-		{
-			tmp[i] = hexdigit((int) h & 0x0F);
-			h >>= 4;
-		}
-		tmp[6] = ':';
-
-		/* Hexadecimal (in h) and ASCII (in 57+i) representation of 16 bytes */
-
-		for (i = 0; i < 16; i++)
-		{
-			j = 7 + i * 3;
-			tmp[j] = ' ';
-			if ((a + (long)i) < w->size)
-			{
-				tmp[j + 1] = hexdigit((p[i] >> 4) & 0x0F);
-				tmp[j + 2] = hexdigit(p[i] & 0x0F);
-				tmp[57 + i] = (p[i] == 0) ? '\020' : p[i];
-			}
-			else
-			{
-				tmp[j + 1] = ' ';
-				tmp[j + 2] = ' ';
-				tmp[57 + i] = ' ';
-			}
-		}
-
-		tmp[55] = ' ';
-		tmp[56] = ' ';
-		tmp[73] = 0;
+		disp_hex(tmp, p, a, w->size, FALSE);
 
 		s = &tmp[wpxm + cntm]; /* same as &tmp[w->px - (MARGIN-cntm)] */
 
@@ -338,6 +343,8 @@ static int txt_line
 			cnt++;
 		}
 	}
+
+	/* Finish the line with a null */
 
 	*d = 0;
 	return (int) (d - dest);
@@ -379,7 +386,7 @@ static void txt_comparea(TXT_WINDOW *w, long line, int strlen, RECT *r, RECT *wo
  * work		- Werkgebied van het window
  */
 
-static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *work)
+static void txt_prtchar(TXT_WINDOW *w, int column, int nc, long line, RECT *area, RECT *work)
 {
 	RECT r, in;
 	int len, c;
@@ -391,19 +398,17 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *
 
 	txt_comparea(w, line, len, &r, work);
 	r.x += c * txt_font.cw;
-	r.w = txt_font.cw;
+	r.w = nc * txt_font.cw;
 
 	if (xd_rcintersect(area, &r, &in) == TRUE)
 	{
+		pclear(&in);
+
 		if (c < len)
 		{
-			s[c + 1] = 0;
-			pclear ( & r );
-			vswr_mode( vdi_handle, MD_TRANS );
-			v_gtext(vdi_handle, r.x, r.y, &s[c]);
+			s[min(c + nc, len)] = 0;
+			w_transptext(r.x, r.y, &s[c]);
 		}
-		else
-			pclear(&in); 
 	}
 }
 
@@ -421,22 +426,27 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *
 
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 {
-	RECT r, in;
-	int len;
-	char s[FWIDTH];
+	RECT 
+		r,
+		r2;
+
+	int 
+		len;
+
+	char 
+		s[FWIDTH];
 
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
+
+	r2 = r; 
+	r2.w = work->w;
+
+	if (rc_intersect2(area, &r2) == TRUE)
+		pclear(&r2); 
+
 	if (rc_intersect2(area, &r) == TRUE)
-	{
-		pclear(&r);
-		vswr_mode( vdi_handle, MD_TRANS );
-		v_gtext(vdi_handle, r.x, r.y, s);
-	}
-	r.x += r.w;
-	r.w = work->w - r.w;
-	if (xd_rcintersect(&r, area, &in) == TRUE)
-		pclear(&in); 
+		w_transptext(r.x, r.y, s);
 }
 
 
@@ -457,7 +467,7 @@ void txt_prtlines(TXT_WINDOW *w, RECT *area)
 
 	set_txt_default(txt_font.id, txt_font.size);
 
-	xw_get((WINDOW *) w, WF_WORKXYWH, &work);
+	xw_getwork((WINDOW *)w, &work);
 
 	for (i = 0; i < w->rows; i++)
 		txt_prtline(w, w->py + i, area, &work);
@@ -481,12 +491,12 @@ void txt_prtlines(TXT_WINDOW *w, RECT *area)
  * work		- werkgebied window
  */
 
-void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work)
+void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work)
 {
 	int i;
 
 	for (i = 0; i < w->rows; i++)
-		txt_prtchar(w, column, w->py + i, area, work);
+		txt_prtchar(w, column, nc, w->py + i, area, work);
 }
 
 
@@ -515,22 +525,14 @@ static void set_menu(TXT_WINDOW *w)
 static void txt_mode(TXT_WINDOW *w)
 {
 	if (w->hexmode == 0)
-	{
-		/* Switch to hex mode */
-
-		w->hexmode = 1;
-		w->nlines = (w->size + 15L) / 16L;	/* 16 bytes per line */
-	}
+		w->hexmode = 1;		/* switch to hex mode */
 	else
-	{
-		/* Switch to text mode */
+		w->hexmode = 0;		/* switch to text mode */
 
-		w->hexmode = 0;
-		w->nlines = w->tlines;
-	}
+	w->nlines = txt_nlines(w);
+	w->columns = txt_width(w, w->hexmode);
 
-	set_sliders((TYP_WINDOW *)w);
-	wd_type_draw ( (TYP_WINDOW *)w, TRUE );
+	wd_type_sldraw ((TYP_WINDOW *)w, TRUE );
 	set_menu(w);
 }
 
@@ -555,7 +557,11 @@ static void txt_tabsize(TXT_WINDOW *w)
 			w->tabsize = 1;
 
 		if (w->tabsize != oldtab)
-			wd_type_draw((TYP_WINDOW *)w,TRUE); 
+		{
+			w->twidth = txt_width(w, 0);
+			w->columns = (w->hexmode) ? txt_width(w, 1) : w->twidth;
+			wd_type_sldraw((TYP_WINDOW *)w, TRUE); 
+		}
 	}
 }
 
@@ -573,14 +579,18 @@ static void txt_rem(TXT_WINDOW *w)
 
 	if (w != NULL )
 	{
-		free(w->lines);	
+		free(w->lines);
+		free(w->ntabs);	
 		free(w->buffer);
-
 		free(w->name);
 
 		w->winfo->used = FALSE;
 		w->winfo->typ_window = NULL; 
+
+/* no need ?
 		w->winfo->flags.iconified = 0;
+*/
+
 	}
 }
 
@@ -617,7 +627,7 @@ void txt_closed(WINDOW *w)
  * item			- Menupunt dat geselekteerd is
  */
 
-static void txt_hndlmenu(WINDOW *w, int title, int item)
+void txt_hndlmenu(WINDOW *w, int title, int item)
 {
 	switch (item)
 	{
@@ -629,6 +639,7 @@ static void txt_hndlmenu(WINDOW *w, int title, int item)
 		break;
 	}
 
+	wd_type_nofull(w);
 	xw_menu_tnormal(w, title, 1);
 }
 
@@ -639,12 +650,19 @@ static void txt_hndlmenu(WINDOW *w, int title, int item)
  *																	*
  ********************************************************************/
 
-/* Funkties voor het tellen van de regels van een file */
+/* 
+ * Funkties voor het tellen van de regels van een file 
+ */
 
 static long count_lines(char *buffer, long length)
 {
-	char cr = '\n', *s = buffer;
-	long cnt = length, n = 1;
+	char 
+		cr = '\n', 
+		*s = buffer;
+
+	long 
+		cnt = length, 
+		n = 1;
 
 	do
 	{
@@ -663,30 +681,54 @@ static long count_lines(char *buffer, long length)
  *
  * Line end is detected by "\n" character (linefeed)
  * so this will be ok for TOS/DOS and Unix files but not for Mac files
- * (there, lineend is carriage-return only) 
+ * (there, lineend is carriage-return only).
+ * Number of tabs per lines is returned in *ntabs 
  */
 
-static void set_lines(char *buffer, char **lines, long length)
+static void set_lines(char *buffer, char **lines, int *ntabs, long length)
 {
-	char cr = '\n', *s = buffer, **p = lines;
-	long cnt = length;
+	char 
+		*s = buffer, 
+		**p = lines;
+
+	int 
+		*t = ntabs;
+
+	long 
+		cnt = length;
+
 
 	*p++ = s;
+	*t = 0;
+
 	do
 	{
-		if (*s++ == cr)
+		if (  *s =='\t' ) 	/* count first 255 tabs only */
+		{
+			if (*t < 255)
+				*t += 1;
+		}
+
+		if (*s++ == '\n')	/* count linefeeds */
+		{
+			*(++t) = 0;
 			*p++ = s;
+		}
 	}
 	while (--cnt > 0);
 }
 
 
 /*
- * Check if a character is printable
+ * Check if a character is printable.
+ * This is a (sort of) substitute for the more-primitive Pure-C function.
  * 
  * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf> and 'ÿ'
  * Also, characters higher than 127 (c < 0) are assumed to be printable
- * for the sake of codepages for other languages
+ * for the sake of codepages of other languages.
+ * 
+ * Note: this will not work well if default character is unsigned!
+ * In that case check c > 127 instead of c < 0 
  */
 
 static boolean isascii(char c)
@@ -711,8 +753,9 @@ extern long
  * or for any other purpose where found convenient.
  * Function returns error code, if there is any.
  * If parameter "tlines" is NULL, it is assumed that the routine will
- * be used for string searching; then lines will not be counted and set.
- * Note: for safety reasons, the routine allocates one byte more than
+ * be used for non-display purpose; then lines and tabs will not be 
+ * counted and set.
+ * Note: for safety reasons, the routine allocates several bytes more than
  * needed.
  */
 
@@ -722,7 +765,8 @@ int read_txtfile
 	char **buffer,		/* location of the buffer to receive text */
 	long *flength,		/* size of the file being read */
 	long *tlines,		/* number of text lines in the file */
-	char ***lines		/* pointers to beginnings of text lines */
+	char ***lines,		/* pointers to beginnings of text lines */
+	int **ntabs			/* a list of numbers of tabs per lines */
 )
 {
 	int 
@@ -730,78 +774,67 @@ int read_txtfile
 		error;		/* error code  */
 
 	long 
-		read,		/* number of bytes read from the file */ 
-		fl,			/* file length [bytes] */
-		length;		/* length of space reserved for file  */
+		read;		/* number of bytes read from the file */ 
 
 	XATTR 
 		attr;		/* file attributes */
 
 
+	*flength = 0L;
+
 	/* Get file attributes (follow the link in x_attr)  */
 
 	if ((error = (int)x_attr(0, name, &attr)) == 0)
 	{
-		*flength = attr.size;	/* output file length */
-		fl = *flength;			/* for local use      */
+		*flength = attr.size;	/* output param. file length */
 
-		/* Open file */
+		/* Open the file */
 
 		if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
 		{
-
-			char *msg_endfile;
-
-			/* 
-			 * Get "end of file" string for text window display;
-			 * this is not needed if reading is not for the purpose
-			 * of a display.
-			 */
-
-			length = fl + 2; /* why was this needed? */
-
-			if ( tlines != NULL )
-			{
-				rsrc_gaddr(R_STRING, MENDFILE, &msg_endfile);
-				length = length + strlen(msg_endfile);
-			}
-
 			/* Allocate buffer for complete file; read file into it  */
 		
-			if ((*buffer = malloc(length + 1L)) == NULL)		
+			if ((*buffer = malloc(*flength + 4L)) == NULL)		
 				error = ENSMEM;
 			else
 			{
-				read = x_read(handle, fl, *buffer);
+				read = x_read(handle, *flength, *buffer);
 
 				/* If completely read with success... */
 
-				if (read == fl)
+				if (read == *flength)
 				{				
-					/* And this has been read for display in a window */
+					/* And this has been read for a display in a window */
 
 					if ( tlines != NULL )
 					{
-						/* Append "End of file" string to end of data read */
+						/* 
+						 * There must be a linefeed -after- the end of file
+						 * or the display routine will not know when to stop
+						 */
 
-						strcpy( *buffer + fl, msg_endfile);
+						(*buffer)[*flength]='\n';
 
 						/* Count text lines in the file (in fact, in the buffer) */
 
-						fl = fl + 2;
-
-						*tlines = count_lines(*buffer, fl);
+						*tlines = count_lines(*buffer, *flength);
 
 						/* 
 						 * Allocate memory for pointers to beginnings of lines,
-						 * then find those beginnings
+						 * then find those beginnings. 
 						 */
 
-						if ((*lines = malloc(*tlines * sizeof(char *))) != NULL)
-							set_lines(*buffer, *lines, fl);
+						*ntabs = NULL;
+						if 
+						(
+							((*lines = malloc(*tlines * sizeof(char *))) != NULL) &&
+							((*ntabs = malloc((*tlines + 1L) * sizeof(int  *))) != NULL)
+						)
+							set_lines(*buffer, *lines, *ntabs, *flength);
 						else
 						{
 							error = ENSMEM;
+							free(*lines);
 							free(*buffer);
 						}
 					}
@@ -822,19 +855,35 @@ int read_txtfile
 
 
 /*
- * Set title to a text window 
- * See also dir_title() in dir.c
+ * A shorter form of the above
+ */
+
+int read_txtf
+(
+	const char *name,	/* name of file to read */
+	char **buffer,		/* location of the buffer to receive text */
+	long *flength		/* size of the file being read */
+)
+{
+	return read_txtfile( name, buffer, flength, NULL, NULL, NULL );
+}
+
+
+/*
+ * Set title to a text window. See also dir_title() in dir.c
  */
 
 void txt_title(TXT_WINDOW *w)
 {
-	int columns;
+	int 
+		d = (xd_aes4_0) ? 5 : 3, /* different because of iconify gadget */
+		columns;
 
 	/* 
 	 * How long can the title be? 
-	 * Note: "-5" takes into account window gadgets left/right of the title */
+	 * Note: "-d" takes into account window gadgets left/right of the title */
 
-	columns = min( w->scolumns - 5, (int)sizeof(w->title) );
+	columns = min( w->scolumns - d, (int)sizeof(w->title) );
 
 	/* Cramp it to fit window */
 
@@ -850,19 +899,27 @@ void txt_title(TXT_WINDOW *w)
  * Funktie voor het laden van een file in het geheugen.
  * Bij een leesfout wordt een waarde ongelijk 0 terug gegeven.
  * Alle buffers zijn dan vrijgegeven. 
+ * ASCII or Hex mode is determined from the first 256 bytes of file.
+ * Af at least 80% of those characters are ASCII printable ones,
+ * it is assumed that text mode should be applied.
  */
 
 static int txt_read(TXT_WINDOW *w, boolean setmode)
 {
-	int error;
+	int 
+		error;
 
-	graf_mouse(HOURGLASS, NULL);
+	hourglass_mouse();
 
 	/* Read complete file */
 
-	error = read_txtfile(w->name, &(w->buffer), &(w->size), &(w->tlines), &(w->lines) );
+	error = read_txtfile(w->name, &(w->buffer), &(w->size), &(w->tlines), &(w->lines), &(w->ntabs) );
 
-	graf_mouse(ARROW, NULL);
+	/* Determine text width */
+
+	w->twidth = txt_width(w, 0);
+
+	arrow_mouse();
 
 	if (error != 0)
 	{
@@ -881,36 +938,62 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 
 			for (i = 0; i < e; i++)
 			{
-				if (isascii(b[i]) != FALSE)
+				if ( isascii(b[i]) )
 					n++;
 			}
 
-			n = (n > 0) ? (n * 100) / e : 100;
+			n = (n * 100) / e;
 
-			w->hexmode = (n > ASCII_PERC) ? 0 : 1;
+			if (n > ASCII_PERC)
+				w->hexmode = 0;
+			else
+				w->hexmode = 1;
 
 			set_menu(w);
 		}
 
-		/* Calculate number of lines for display */
+		/* Determine window text length and width */
 
-		if (w->hexmode == 0)
-			w->nlines = w->tlines;
-		else
-			w->nlines = (w->size + 15) / 16;
-
-		if ((w->py + w->nrows) > w->nlines)
-			w->py = lmax(w->nlines - (long)w->nrows, 0L);
-
-
-		/* Set display title */
-
-		txt_title( w );
-
-		set_sliders ((TYP_WINDOW *)w); 
+		w->nlines = txt_nlines(w);
+		w->columns = txt_width(w, w->hexmode);
 	}
 
 	return error;
+}
+
+
+/*
+ * Reread a file into the same window.
+ * If filename is not given (NULL), keep old name
+ * and reread old file.
+ */
+
+int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
+{
+	int error;
+
+
+	free( w->buffer );
+	free( w->lines );
+	free( w->ntabs );
+
+	if (name)
+	{
+		free( w->name );
+		w->name = name;
+	}
+
+	error = txt_read(w, TRUE);
+	if ( error >= 0)
+	{
+		w->px = px;
+		w->py = py;
+		txt_title(w);
+		wd_type_sldraw((TYP_WINDOW *)w, FALSE);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 
@@ -919,7 +1002,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
  * If buffers are identical, return buffer length
  */
 
-long  compare_buf( char *buf1, char*buf2, long len )
+long compare_buf( char *buf1, char*buf2, long len )
 {
 	long i;
 
@@ -933,35 +1016,49 @@ long  compare_buf( char *buf1, char*buf2, long len )
 
 /*
  * Copy a number of bytes from source to destination, starting from
- * index "pos" substituting all nulls with something else; Not more than DISPLEN - 2
- * bytes will be copied, or less if buffer end is encountered first.
- * Add a 0 char at the end.
+ * index "pos", substituting all nulls with something else; 
+ * Not more than displen bytes will be copied, or less if buffer end 
+ * is encountered first. Add a 0 char at the end.
+ *
  * Note 1: "pos" should never be larger than "length" !!!! no checking done !
  * ("length" is length from the beginning of source, not counted from "pos").
  * Note 2: there is a similar substitution of zeros in showinfo.c;
  * take care to use the same substitute (maybe define a macro)
- * Note 3: It turned out that characters "[", "]" and "|" must be substituted too,
- * otherwise they will cause unwanted formatting of alertbox text.
  */
 
-#define DISPLEN 20
-
-static void copy_unnull( char *dest,  char *source, long length, long pos )
+static void copy_unnull( char *dest, char *source, long length, long pos )
 {
 	long i, n;
 
-	n = lmin( length - pos, DISPLEN - 1 );
+	char *d = dest;
 
+	n = lmin( length - pos, (long)displen );
+
+/*
 	for ( i = 0; i < n; i++ )
 	{
 		dest[i] = source[i + pos];
 
-		/* Some characters can't be printed */
+		/* Some characters can't be printed; substitute them */
 
-		if ( (dest[i] == 0) || (dest[i] == '|') || (dest[i] == '[') || (dest[i] == ']') )
-			dest[i] = 127; /* [DEL], usually represented by a triangle */		
+		if (dest[i] == 0)
+			dest[i] = SUBST_DISP; 		
 	}
 	dest[n] = 0;
+*/
+	for ( i = 0; i < n; i++ )
+	{
+		*d = source[i + pos];
+
+		/* Some characters can't be printed; substitute them */
+
+		if (*d == 0)
+			*d = SUBST_DISP; 
+
+		d++;		
+	}
+
+	*d = 0;
 }
 
 
@@ -969,37 +1066,25 @@ static void copy_unnull( char *dest,  char *source, long length, long pos )
  * Compare two files. Display  an alert box with appropriate text.
  * Note: both files are completely read into memory 
  * (can be inconvenient for large files).
- * If only one file is selected, a file selector is activated
- * to select the second file.
  * 
  * This routine attemts to compare files with some intelligence: 
  * if a difference is found, the routine tries to resynchronize the
- * contents of the files after a difference. Synchronization window
- * is currently fixed to about 1/2 of the length of the strings which are
- * displayed to show a difference (i.e.  synchronization window length 
- * is about 9 characters). This should be sufficient to resynchronize
- * the contents of the files after, e.g. an additional empty line, or
- * an additional (not too long) word in one of the files.
- * In principle, sync window width might be made configurable
- * through use of "sw" and "swx" below.
+ * contents of the files after a difference. 
  */
-
-#define sw   DISPLEN / 2 	/* width of sync window */
-#define swx2 DISPLEN - 1	/* (almost) twice the above */
 
 void compare_files( WINDOW *w, int n, int *list )
 {
 	char 
-		*name1 = NULL,			/* name of the 1st file */
-		*name2 = NULL,			/* Name of the 2nd file */
+		*name,					/* name of the file */
 		*buf1 = NULL,			/* buffer for file #1   */
-		*buf2 = NULL,			/* buffer for file #2   */
-		show1[DISPLEN],			/* to display file differences */
-		show2[DISPLEN];			/* to display file differences */
+		*buf2 = NULL;			/* buffer for file #2   */
 
 	int
-		button,					/* response in the alert box     */
-		error;					/* error code from reading files */
+		i,					/* a counter */
+		sw,					/* size of compare window */
+		swx2,				/* almost twice of above */
+		button,				/* response in the alert box     */
+		error = 0;			/* error code from reading files */
 
 	long
 		size1,				/* size of file #1 */
@@ -1017,161 +1102,205 @@ void compare_files( WINDOW *w, int n, int *list )
 		sync = TRUE, 		/* false while attempting to resynchronize */
 		diff = FALSE;		/* true if not equal files */
 
-	char
-		fname[20];			/* (part of) filename to display in the alert box */
+	XDINFO 
+		info;				/* dialog info structure */
 
 
-	/* Obtain full names of two files; first the first one */
+	/* If names were selected, use them */
 
-	name1 = itm_fullname( w, list[0] ); /* note: must free name1 later */
-	
-	if (name1)
+	for (i = 0; i < 2; i++)
 	{
-		/* Prepare a short name form for display purposes */
-
-		cramped_name(itm_name(w, list[0]), fname, (int)sizeof(fname) );
-
-		/* 
-		 * If exactly two files are selected, take the name of the second one; 
-		 * else, ask through the fileselector
-		 */
-
-		if ( n == 2 )
-			name2 = itm_fullname( w, list[1] );
+		if (i < n) /* i.e. if it is in the list */
+			name = itm_fullname( w, list[i] );
 		else
-		{
-			name2 = locate( "*.*", L_FILE ); /* same for name2 */
-			wd_drawall();
-		}
+			name = strdup(empty);
 
-		if ( name2 )
-		{
-			/* Don't do anything if second file is the same as the first one */
+		cv_fntoform(&compare[CFILE1 + i], name); 
+		free(name);
+	}
 
-			if ( strcmp(name1, name2) == 0 )
-				alert_iprint( MNOCOMP ); /* a file is identical to itself */
-			else
+	displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_pvalid);
+
+	compare[CFILE1].ob_flags |= EDITABLE;
+	compare[CFILE2].ob_flags |= EDITABLE;
+	compare[COMPWIN].ob_flags |= EDITABLE;
+	obj_hide(compare[CMPIBOX]);
+
+	if (options.cwin == 0)
+		options.cwin = 15;
+
+	itoa(options.cwin, compare[COMPWIN].ob_spec.tedinfo->te_ptext, 10);
+
+	/* Open the dialog, then loop while needed */
+
+	xd_open(compare, &info);
+
+	do
+	{
+		button = xd_form_do_draw(&info);
+
+		if (button == COMPOK)
+		{
+			/* Match-window width */
+
+			sw = atoi(compare[COMPWIN].ob_spec.tedinfo->te_ptext);
+			swx2 = 2 * sw - 1;
+
+			/* File names and window width must be given properly */
+
+			strip_name(cfile1, cfile1);
+			strip_name(cfile2, cfile2);
+
+			if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw == 0 )
 			{
-				/* OK; start comparison */ 
+				alert_iprint(MINVSRCH);
+				continue;
+			}
 
-				graf_mouse(HOURGLASS, NULL);
+			options.cwin = sw;
 
-				/* Read the files into buffers */
+			/* Fields are not editable anymore */
 
-				error = read_txtfile( name1, &buf1, &size1, NULL, NULL );
-				if ( error == 0 )
-					error = read_txtfile( name2, &buf2, &size2, NULL, NULL );
+			compare[CFILE1].ob_flags &= ~EDITABLE;
+			compare[CFILE2].ob_flags &= ~EDITABLE;
+			compare[COMPWIN].ob_flags &= ~EDITABLE;
 
-				if ( error == 0 )
+			/* Identical files are not compared */
+
+			if ( strcmp(cfile1, cfile2) == 0 )
+				break;
+
+			/* Start real work */
+
+			hourglass_mouse();
+
+			/* Read the files into buffers */
+
+			error = read_txtf( cfile1, &buf1, &size1 );
+			if ( error == 0 )
+				error = read_txtf( cfile2, &buf2, &size2 );
+
+			/* All ok, now start comparing */
+
+			if ( error == 0 )
+			{
+				/* Current indices: at the beginning */
+
+				i1 = 0; 
+				i2 = 0;
+
+				/* Scan until the end of the shorter file */
+
+				while ( (i1 < size1) && (i2 < size2) )
 				{
-					/* Current indices: at the beginning */
+					/* How many bytes to compare and not exceed the ends */
 
-					i1 = 0; 
-					i2 = 0;
+					nc = lmin( (size1 - i1), (size2 - i2) );
 
-					/* Scan until the ends of files */
+					/* How many bytes are equal ? Move to end of that */
 
-					while ( (i1 < size1) && (i2 < size2) )
+					in = compare_buf(&buf1[i1], &buf2[i2], nc);
+
+					i1n = i1 + in;
+					i2n = i2 + in;
+
+					/* If difference is found before file ends, report */
+
+					if ( (in < nc) || ((in >= nc) && ( (i1n < size1) || (i2n < size2) ))  )
 					{
-						/* How many bytes to compare and not exceed the ends */
+						/* 
+						 * If there is a difference, display strings;
+						 * Do so also if files have different lengths
+						 * and the end of one is reached
+						 */
 
-						nc = lmin( (size1 - i1), (size2 - i2) );
-
-						/* How many bytes are equal ? Move to end of that */
-
-						in = compare_buf(&buf1[i1], &buf2[i2], nc);
-
-						i1n = i1 + in;
-						i2n = i2 + in;
-
-						/* If difference is found before file ends, report */
-
-						if ( (in < nc) || ((in >=nc) && ( (i1n < size1) || (i2n < size2) ))  )
+						if ( sync || (in > swx2) )
 						{
+							arrow_mouse();
+							sync = FALSE;	
+							diff = TRUE;
+
+							i1 = i1n;
+							i2 = i2n;
+							i2o = i2;
+
+							/* Prepare something to display */
+
+							copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1 );
+							copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2 );
+							rsc_ltoftext(compare, COFFSET, i1 );
+
+							obj_unhide(compare[CMPIBOX]);
+							xd_draw(&info, CMPIBOX, MAX_DEPTH);
+							button = xd_form_do_draw(&info);
+
+							/* Stop further comparison ? */
+
+							if ( button == COMPCANC ) 
+								break;
+
+							hourglass_mouse();
+
 							/* 
-							 * If there is a difference, display an alert;
-							 * Do so also if files have different lengths
-							 * and the end of one is reached
+							 * Advance a little further and try to resync;
+							 * it is reasonable that this advance stays
+							 * inside the displayed area, but need not
+							 * be so (i.e. is optimum that sw is half of
+							 * display length)
 							 */
 
-							if ( sync || (in > swx2) )
-							{
-								graf_mouse(ARROW, NULL);
-								sync = FALSE;	
-								diff = TRUE;
-
-								i1 = i1n;
-								i2 = i2n;
-								i2o = i2;
-
-								/* Prepare something to display */
-
-								copy_unnull( show1, buf1, size1, i1 );
-								copy_unnull( show2, buf2, size2, i2 );
-
-								button = alert_printf(1, ACOMPDIF, i1, fname, show1, show2 );	
-
-								/* Stop further comparison ? */
-
-								if ( button == 2 ) 
-									break;
-
-								graf_mouse(HOURGLASS, NULL);
-
-								/* 
-								 * Advance a little further and try to resync;
-								 * it is reasonable that this advance stays
-								 * inside the displayed area
-								 */
-
-								i1 += sw; /* currently half of displayed length */
-								ii = 0;
-							}
-							else
-							{
-								ii++;
-								if ( ii == swx2 )
-								{
-									sync = TRUE;
-									i2 = i2o;
-								}
-							}
+							i1 += sw; 
+							ii = 0;
 						}
 						else
 						{
-							i1 = i1n;
-							i2 = i2n;
-							sync = TRUE;
+							ii++;
+							if ( ii == swx2 )
+							{
+								sync = TRUE;
+								i2 = i2o;
+							}
 						}
-
-						if ( sync )
-							i1++;
-						i2++;
+					}
+					else
+					{
+						i1 = i1n;
+						i2 = i2n;
+						sync = TRUE;
 					}
 
-					graf_mouse(ARROW, NULL);
+					if ( sync )
+						i1++;
+					i2++;
 
-					/* Report that files are identical */
+				} /* while */
 
-					if ( !diff ) 
-						alert_iprint(MCOMPOK);
-				}
-				else
+				arrow_mouse();
+				break;
 
-					/* Something went wrong while reading the files */
+			} /* error ? */
+			else
 
-					xform_error(error);
-			}
+				/* Something went wrong while reading the files */
 
-			/* Free allocated blocks */
+				xform_error(error);
+		} 
+		else
+			error = 1; /* in order not to show alert below */
+	} 
+	while(button != COMPCANC);
 
-			free(name2);
-			free(buf1);
-			free(buf2);
-		}
-		free(name1);
-	}
+	/* Close the dialog */
 
+	xd_close(&info);
+
+	free(buf1);
+	free(buf2);
+
+	/* Display info if files are identical */
+
+	if ( !diff && (error == 0) ) 
+		alert_iprint(MCOMPOK);
 }
 
 
@@ -1198,21 +1327,21 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 
 	wd_in_screen( info );
 
-	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &txt_functions, TFLAGS, &tmax,
+	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &wd_type_functions, TFLAGS, &tmax,
 									 sizeof(TXT_WINDOW), viewmenu, &errcode)) == NULL)
 	{
-		if (errcode == XDNMWINDOWS)
+		switch(errcode)
 		{
-			alert_iprint(MTMWIND);
-			*error = ERROR;
+			case XDNSMEM:
+				*error = ENSMEM;
+				break;
+			case XDNMWINDOWS:
+				alert_iprint(MTMWIND);
+			default:
+				*error = ERROR;
 		}
-		else if (errcode == XDNSMEM)
-			*error = ENSMEM;
-		else
-			*error = ERROR;
 
 		free(file);
-
 		return NULL;
 	}
 
@@ -1222,16 +1351,17 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	w->name = file;
 	w->buffer = NULL;
 	w->lines = NULL;
+	w->ntabs = NULL;
 	w->nlines = 0L;
 	w->tabsize = tabsize;
 	w->hexmode = hexmode;
 	w->winfo = info;
 
-	wd_calcsize(info, &size); 
+	/* Read text file */
 
-	graf_mouse(HOURGLASS, NULL);
+	hourglass_mouse();
 	*error = txt_read(w, setmode);
-	graf_mouse(ARROW, NULL);
+	arrow_mouse();
 
 	if (*error != 0)
 	{
@@ -1241,6 +1371,10 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	}
 	else
 	{
+		wd_calcsize(info, &size); 
+		txt_title(w);
+		set_sliders((TYP_WINDOW *)w);
+
 		wd_iopen((WINDOW *)w, &size); 
 		info->used = TRUE;
 		return (WINDOW *) w;
@@ -1270,7 +1404,10 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 		return FALSE;
 
 	if (txt_do_open(&textwindows[j], file, 0, 0, options.tabsize, FALSE, TRUE, &error) == NULL)
-		return xform_error(error), FALSE;
+	{
+		xform_error(error);
+		return FALSE;
+	}
 
 #if _SHOWFIND	
 	/* 
@@ -1295,9 +1432,8 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 
 		/* Note: "ppy" is now equal to line number + 1 */
 
-		tw->py = ppy - 1;
-		tw->px = find_offset - tw->lines[tw->py];
-		w_page((TYP_WINDOW *)tw, HORIZ | VERTI);
+		w_page( ((TYP_WINDOW *)tw, (int)(find_offset - tw->lines[tw->py]), ppy - 1L);
+
 	}
 #endif
 
@@ -1326,25 +1462,25 @@ void txt_init(void)
 
 /*
  * Calculate default positions and sizes of text windows;
- * windows get stacked rightwards and downwards
+ * windows will be stacked rightwards and downwards
  */
  
 void txt_default(void)
 {
 	int i;
+	WINFO *textw;
 
 	txt_font = def_font;
 
 	for (i = 0; i < MAXWINDOWS; i++)
 	{
-		textwindows[i].x = (i + 1) * screen_info.fnt_w - screen_info.dsk.x;
-		textwindows[i].y = screen_info.dsk.y + i * screen_info.fnt_h - screen_info.dsk.y;
-		textwindows[i].w = (screen_info.dsk.w * 9) / (10 * screen_info.fnt_w);
-		textwindows[i].h = (screen_info.dsk.h * 8) / (10 * screen_info.fnt_h);
-		textwindows[i].flags.fulled = 0;
-		textwindows[i].flags.iconified = 0;
-		textwindows[i].flags.resvd = 0;
-		textwindows[i].used = FALSE;
+		textw = &textwindows[i];
+		memset(textw, 0, sizeof(WINFO));
+
+		textw->x = (i + 1) * screen_info.fnt_w - screen_info.dsk.x;
+		textw->y = screen_info.dsk.y + i * screen_info.fnt_h - screen_info.dsk.y;
+		textw->w = (screen_info.dsk.w * 8) / (10 * screen_info.fnt_w);
+		textw->h = (screen_info.dsk.h * 7) / (10 * screen_info.fnt_h);
 	}
 }
 
@@ -1417,16 +1553,8 @@ CfgNest text_one
 
 		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl + 1);
 
-		if (*error == 0 )
-		{
-			if 
-			(   that.name[0] == 0
-				|| that.index >= MAXWINDOWS
-				|| that.tabsize > 40
-				|| that.px > 1000
-			)
-				*error = EFRVAL;
-		}
+		if ( (*error == 0 ) && (that.name[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
+			*error = EFRVAL;
 
 		if (*error == 0)
 		{
@@ -1443,10 +1571,12 @@ CfgNest text_one
 								that.py,
 								that.tabsize,
 								that.hexmode,
-								FALSE,
+								FALSE, /* setmode */
 								error
 							);
-				that.index++;
+
+				if (wd_checkopen(error))
+					that.index++;
 			}
 			else
 				*error = ENSMEM;
@@ -1454,6 +1584,10 @@ CfgNest text_one
 	}
 }
 
+
+/*
+ * Save a text window
+ */
 
 int text_save(XFILE *file, WINDOW *w, int lvl)
 {
@@ -1465,6 +1599,10 @@ int text_save(XFILE *file, WINDOW *w, int lvl)
 	return error;
 }
 
+
+/*
+ * Save or load configuration for text 9viewer) windows
+ */
 
 CfgNest view_config
 {

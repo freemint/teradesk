@@ -22,19 +22,19 @@
 ;
 ; Name of the created executable file:
 
-desktop.prg				; with _MINT_=1  for all systems
+desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 
 
 ; Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
 
-.C [-D_MINT_=1]			; 0 for single-TOS-only desktop
+.C [-D_MINT_=0]			; 0 for single-TOS-only desktop
 
 
 ; Define _MORE_AV as 1 for fuller support of AV-protocol features
 ; at the expense of larger memory needs.
 ; (sensible mostly for the multitasking version)
 
-.C [-D_MORE_AV=1] 		; 0 for Single-TOS-only desktop
+.C [-D_MORE_AV=0] 		; 0 for Single-TOS-only desktop
 
 
 ; Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.

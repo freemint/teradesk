@@ -24,13 +24,16 @@
 #define DEFAULT_EXT "*"
 #define TOSDEFAULT_EXT "*.*"
 
-/* Modes voor locate */
+extern char *fsdefext;
 
-#define L_FILE		0
-#define L_PROGRAM	1
-#define L_FOLDER	2
-#define L_LOADCFG	3
-#define L_SAVECFG	4
+/* Modes for locate(); must be in sequence */
+
+#define L_FILE		0	/* file */
+#define L_PROGRAM	1	/* program */
+#define L_FOLDER	2	/* folder */
+#define L_LOADCFG	3	/* load configuration */
+#define L_SAVECFG	4	/* save configuration */
+#define L_PRINTF	5	/* print file */
 
 void path_to_disp(char *path);
 char *fn_get_name(const char *path);
@@ -59,5 +62,3 @@ void force_mediach(const char *path);
 
 void cv_formtofn(char *dest, OBJECT *ob);
 void cv_fntoform(OBJECT *ob, const char *source);
-void cramped_name(const char *s, char *t, int w);
-void strip_name (char *dst, const char *src);

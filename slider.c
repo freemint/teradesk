@@ -25,51 +25,49 @@
 #include <stddef.h>
 #include <vdi.h>
 #include <boolean.h>
+#include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
 #include <library.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "events.h"
 #include "lists.h" 
-#include "resource.h"
 #include "slider.h"
 #include "file.h"
 
 
 OBJECT *dialog;
 
-extern int aes_ver3d;
-
-
 /* Set slider size and position */
 
 void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
-	int sh, s;
+	int sh, s, sparent = sl->sparent, slines = sl->lines;
 
-	sl->line = ((sl->n < sl->lines) || (sl->line < 0)) ? 0 : min(sl->line, sl->n - sl->lines);
+	sl->line = ((sl->n < slines) || (sl->line < 0)) ? 0 : min(sl->line, sl->n - slines);
 
 	/* Determine slider size. Minimum size is equal to font height */
 
-	ifh;sl->n > sl->lines)
+	if (sl->n > slines)
 	{
-		sh = (int) (((long) sl->lines * (long) tree[sl->sparent].r.h) / (long) sl->n);
+		sh = (int) (((long) slines * (long) tree[sparent].r.h) / (long) sl->n);
 		if (sh < screen_info.fnt_h)
 			sh = screen_info.fnt_h;
 	}
 	else
-		sh = tree[sl->sparent].r.h;
+		sh = tree[sparent].r.h;
 
 	tree[sl->slider].r.h = sh - 2 * aes_ver3d;
 
 	/* Determine slider position */
 
-	s = sl->n - sl->lines;
-	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long) (tree[sl->sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
+	s = sl->n - slines;
+	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long) (tree[sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
 
 	if (info != NULL)
-		xd_draw(info, sl->sparent, MAX_DEPTH);
+		xd_draw(info, sparent, MAX_DEPTH);
 }
 
 
@@ -110,13 +108,37 @@ static void do_arrows(int button, OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 		if ((first == TRUE) && mstate)
 		{
-			wait(250);
+			wait(ARROW_DELAY);
 			first = FALSE;
 		}
 	}
 	while (mstate);
 
-	xd_change(info, button, NORMAL, 1);
+	xd_drawbuttnorm(info, button);
+}
+
+
+/*
+ * Calculate to which item a slider points.
+ * newpos= position (0:1000) 
+ * lines=  number of items
+ */
+
+long calc_slpos(int newpos, long lines) 
+{
+	return ((lines * newpos) / 1000L);
+}
+
+
+/*
+ * Calculate slider position (0:1000) from the first visible item
+ * pos = index of first item
+ * lines = number of items
+ */
+
+int calc_slmill(long pos, long lines)
+{
+	return (int)((1000L * pos) / lines);
 }
 
 
@@ -129,20 +151,23 @@ static void do_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	newpos = (long)graf_slidebox(tree, sl->sparent, sl->slider, 1);
 	wind_update(END_MCTRL);
 
-	/* fix what seems to be a bug in graf_slidebox in AES4.1 ? */
+	/* 
+	 * Fix what seems to be a bug in graf_slidebox of Atari AES4.1 ? 
+	 * (wrong setting for small values of slider position)
+	 */
+
 	if ( newpos < 40 )
 		newpos = 0;
 
 	lines = (long) (sl->n - sl->lines);
-	sl->line = (int) (((long) newpos * lines) / 1000L);
-
+	sl->line = (int)calc_slpos(lines, newpos);
 	sl_set_slider(tree, sl, info);
 }
 
 
 static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
-	int my, oy, dummy, old, max;
+	int my, oy, dummy, old, maxi, slines = sl->lines;
 
 	graf_mkstate(&dummy, &my, &dummy, &dummy);
 	objc_offset(tree, sl->slider, &dummy, &oy);
@@ -151,18 +176,20 @@ static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	{
 		old = sl->line;
 
+		/* Note: do not use min() and max() here; would be longer */
+
 		if (my < oy)
 		{
-			sl->line -= sl->lines;
+			sl->line -= slines;
 			if (sl->line < 0)
 				sl->line = 0;
 		}
 		else
 		{
-			sl->line += sl->lines;
-			max = sl->n - sl->lines;
-			if (sl->line > max)
-				sl->line = max;
+			sl->line += slines;
+			maxi = sl->n - slines;
+			if (sl->line > maxi)
+				sl->line = maxi;
 		}
 
 		if (sl->line != old)
@@ -186,8 +213,8 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 		if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
 		{
 			selected += sl->first;
-			dialog[selected].ob_state &= ~SELECTED;
-			dialog[selected - 1].ob_state |= SELECTED;
+			obj_deselect(dialog[selected]);
+			obj_select(dialog[selected - 1]);
 			redraw = TRUE;
 		}
 		else if (sl->line > 0)
@@ -201,8 +228,8 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 		if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)))
 		{
 			selected += sl->first;
-			dialog[selected].ob_state &= ~SELECTED;
-			dialog[selected + 1].ob_state |= SELECTED;
+			obj_deselect(dialog[selected]);
+			obj_select(dialog[selected + 1]);
 			redraw = TRUE;
 		}
 		else if (sl->line < (sl->n - sl->lines))
@@ -251,7 +278,7 @@ int sl_form_do(OBJECT *tree, int start, SLIDER *sl, XDINFO *info)
 
 	do
 	{
-		button = xd_kform_do(info, start, (userkeys) keyfunc, sl);
+		button = xd_kform_do(info, start, (userkeys)keyfunc, sl);
 	}
 	while (sl_handle_button(button, tree, sl, info));
 
@@ -259,17 +286,46 @@ int sl_form_do(OBJECT *tree, int start, SLIDER *sl, XDINFO *info)
 }
 
 
+/*
+ * Currently, this routine is used only for setting icons.
+ * sl_abobutt -specifies the ind. of the Abort button
+ * sl_noop    -sets bitflags for open/close control: 0x01:
+ *             0x01 = do not open; 0x02 = do not close
+ */
+
+int 
+	sl_abobutt = -1,	/* Specify abort button for immediate closing */
+	sl_noop = 0;		/* Control opening and closing in multiple use */
+
 int sl_dialog(OBJECT *tree, int start, SLIDER *slider)
 {
-	XDINFO info;
+	static XDINFO info;
 	int button;
 
 	sl_init(tree, slider);
 
-	xd_open(tree, &info);
+	/* 
+	 * Open the dialog only if used on the first item; otherwise redraw.
+	 * (it would be better not to redraw from the root)
+	 */
+
+	if ( (sl_noop & 0x01) == 0 )
+		xd_open(tree, &info);
+	else
+		xd_draw(&info, ROOT, MAX_DEPTH);
+
+	/* Manipulate the dialog */
+
 	button = sl_form_do(tree, start, slider, &info) & 0x7FFF;
-	xd_change(&info, button, NORMAL, 0);
-	xd_close(&info);
+
+	/* Reset button to normal state */
+
+	xd_buttnorm(&info, button);
+
+	/* Close the dialog if not specified otherwise */
+
+	if ( (sl_noop & 0x02) == 0 || button == sl_abobutt )
+		xd_close(&info);
 
 	return button;
 }
@@ -289,7 +345,8 @@ void sl_init(OBJECT *tree, SLIDER *slider)
 
 
 /*
- * Fill-in and redraw contents of scrolled fields FTYPE1... FTYPEn 
+ * Fill-in and redraw contents of scrolled fields FTYPE1... FTYPEn
+ * in the list-manipulation dialog. See lists.c 
  */
 
 void set_selector(SLIDER *slider, boolean draw, XDINFO *info) 
@@ -327,19 +384,23 @@ void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 void ls_sl_init ( int n, void *set_sel, SLIDER *sl, LSTYPE **list )
 {
 	sl->type = 1;
-	sl->up_arrow = FTUP;
-	sl->down_arrow = FTDOWN;
-	sl->slider = FTSLIDER;	/* slider object                        */
-	sl->sparent = FTSPAR;	/* slider parent (background) object    */
-	sl->lines = NLINES;		/* number of visible lines in the box   */
-	sl->n = n;				/* number of items in the list          */
-	sl->line = 0;			/* index of first item shown in the box */
-	sl->list = list;		/* pointer to list of items to be shown */
-	sl->set_selector = set_sel;
-	sl->first = FTYPE1;		/* first object in the scrolled box     */
+	sl->up_arrow = FTUP;		/* up-arrow object   */
+	sl->down_arrow = FTDOWN;	/* down-arrow object */
+	sl->slider = FTSLIDER;		/* slider object     */
+	sl->sparent = FTSPAR;		/* slider parent (background) object    */
+	sl->lines = NLINES;			/* number of visible lines in the box   */
+	sl->n = n;					/* number of items in the list          */
+	sl->line = 0;				/* index of first item shown in the box */
+	sl->list = list;			/* pointer to list of items to be shown */
+	sl->set_selector = set_sel;	/* selector routine */
+	sl->first = FTYPE1;			/* first object in the scrolled box     */
 	sl->findsel = find_selected;
 
 	xd_set_rbutton(setmask, FTPARENT, FTYPE1 );
 	sl_init ( setmask, sl );
 }
 
+
+/* 
+ * See also icon.c for icn_sl_init() 
+ */

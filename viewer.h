@@ -21,6 +21,12 @@
  */
 
 
+
+#define MARGIN			2        
+#define HEXLEN			74 + MARGIN 
+#define SUBST_DISP		127 /* DEL char, usually represented by a triangle */
+
+
 /*
  * For structure compatibility reasons XW_INTVARS was substituted
  * by ITM_INTVARS (larger); it's a tradeoff for reusing a number of
@@ -42,15 +48,14 @@ typedef struct
 	const char *name;
 	char *buffer;				/* buffer met de tekst */
 	long size;					/* aantal bytes in de tekst */
+	int twidth;					/* text width incl. tab substitutes */
 	long tlines;				/* aantal regels in de tekst */
 	char **lines;				/* lijst met pointers naar het begin van alle tekstregels */
+	int *ntabs;				/* tabs per lines */
 	unsigned int hexmode : 1;	/* Hexmode flag. */
 
 } TXT_WINDOW;
 
-
-#define MARGIN			2        
-#define HEXLEN			74 + MARGIN 
 
 void txt_init(void);
 void txt_default(void);
@@ -60,14 +65,17 @@ int text_save(XFILE *file, WINDOW *w, int lvl);
 
 boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
 void txt_closed(WINDOW *w);
+void txt_hndlmenu(WINDOW *w, int title, int item);
 
-int txt_width(TXT_WINDOW *w); 
-void txt_draw_all(void);
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
 void txt_prtlines(TXT_WINDOW *w, RECT *area);
-void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work);
+void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work);
 void txt_title(TXT_WINDOW *w);
+int txt_read(TXT_WINDOW *w, boolean setmode);
+int txt_reread( TXT_WINDOW *w, char *name, int px, long py);
 
-int read_txtfile(const char *name, char **buffer, long *flength, long *tlines, char ***lines); 
+int read_txtfile(const char *name, char **buffer, long *flength, long *tlines, char ***lines, int **ntabs); 
+int read_txtf(const char *name, char **buffer, long *flength); 
 void compare_files( WINDOW *w, int n, int *list );
+void disp_hex( char *tmp, char *p, long a, long size, boolean toprint );
 

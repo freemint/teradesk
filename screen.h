@@ -23,7 +23,6 @@
 
 boolean clip_desk(RECT *r);
 void clipdesk_on(void);
-void clear(RECT *r);
 void pclear(RECT *r);
 void invert(RECT *r);
 boolean rc_intersect2(RECT *r1, RECT *r2);

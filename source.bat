@@ -11,7 +11,7 @@ mkdir e:\tera3s\library\utility
 mkdir e:\tera3s\library\xdialog
 
 e:
-cd terdesk3.0
+cd terdesk3.40
 
 
 copy -n copying      e:\tera3s\

@@ -84,17 +84,18 @@ CfgNest va_config;
 extern AVSETW avsetw;
 extern boolean va_reply;
 extern AVTYPE *avclients;
-extern AVSTAT *avstatus;
 
 void va_init(void);
-void va_close(WINDOW *w);
+WINDOW *va_accw(void);
 void va_delall(int ap_id);
 void rem_all_avstat(void);
 
 #if __USE_MACROS
 #define vastat_default rem_all_avstat
+#define va_close(w)  xw_closedelete(w)
 #else
 void vastat_default(void);
+void va_close(WINDOW *w);
 #endif
 
 void handle_av_protocol(const int *message);

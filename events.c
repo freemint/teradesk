@@ -28,10 +28,10 @@
 #include <xdialog.h>
 #include <xscncode.h>
 
+#include "desktop.h"
 #include "desk.h"
 #include "events.h"
 #include "error.h" 
-#include "desktop.h"
 
 
 static int event(int evflags, int mstate, int *key)

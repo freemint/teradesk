@@ -30,13 +30,13 @@ LIBRARY.LIB
 
 ;.C[-K -Y -I..\..\include]
 ;.S[-Y -S]
-;.L[-J -G -Y]
+;.L[-J -G -Y -V]
 
 ; No debug info below:
 
 .C[-C -G -K -I..\..\include]
 .S[-S]
-.L[-J -G]
+.L[-J -V]
 
 =
 

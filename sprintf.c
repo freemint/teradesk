@@ -32,7 +32,7 @@
 /*
  * "Write" into a string. 
  * Note: This routine is able to perform only basic formatting.
- * Recognized formats are -only- : %d %x %ld %lx %s.
+ * Recognized formats are -ONLY- : %d %x %ld %lx %s.
  * Maximum width of NUMERIC output should not exceed 15 characters.
  * Width specifier is supported. Output is a null-terminated string.
  */

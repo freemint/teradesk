@@ -29,8 +29,8 @@
 #include <string.h>			/* for load_colors */
 #include <library.h>
 
-#include "desk.h"
 #include "desktop.h"
+#include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
 #include "screen.h"
@@ -61,25 +61,20 @@ void clipdesk_on(void)
 
 
 /*
- * Clear a rectangle with white
- */
-
-void clear(RECT *r)		/* use v_bar for a white rectangle (for true colour) */
-{
-	clr_object( r, WHITE, 0);
-}
-
-
-/*
- * Similar to clear() above but clears with window pattern and colour 
+ * Clear a rectangle by filling it with pattern and colour. Use v_bar. 
  * (pattern and colour are those defined for window background)
  */
 
 void pclear(RECT *r)
 {
-	clr_object( r, options.V2_2.win_color, options.V2_2.win_pattern);
+	boolean doo = options.win_pattern && options.win_color;
+	clr_object( r, (doo) ? options.win_color : 0, (doo) ? options.win_pattern : -1 );
 }
 
+
+/*
+ * Find if two rectangles intersect. Return TRUE if they do.
+ */
 
 boolean rc_intersect2(RECT *r1, RECT *r2)
 {
@@ -106,6 +101,10 @@ boolean inrect(int x, int y, RECT *r)
 }
 
 
+/*
+ * Set default attributes for rectangles
+ */
+
 void set_rect_default(void)
 {
 	vswr_mode(vdi_handle, MD_XOR);
@@ -126,7 +125,7 @@ void draw_rect(int x1, int y1, int x2, int y2)
 {
 	int p[10];
 
-	graf_mouse(M_OFF, NULL);
+	moff_mouse();
 	xd_clip_on(&screen_info.dsk);
 
 	p[0] = p[6] = p[8] = x1;
@@ -137,9 +136,13 @@ void draw_rect(int x1, int y1, int x2, int y2)
 	v_pline(vdi_handle, 5, p);
 
 	xd_clip_off();
-	graf_mouse(M_ON, NULL);
+	mon_mouse();
 }
 
+
+/*
+ * Invert colours in a rectangle on the screen 
+ */
 
 void invert(RECT *r)
 {
@@ -155,6 +158,7 @@ void invert(RECT *r)
 
 /* 
  * Funktie vooor het verschuiven van een deel van het scherm. 
+ * Move a part of the screen to a new location.
  */
 
 void move_screen(RECT *dest, RECT *src)
@@ -172,6 +176,7 @@ void move_screen(RECT *dest, RECT *src)
 
 /* 
  * Funktie voor het initialiseren van het vdi. 
+ * Set default text attributes.
  */
 
 void set_txt_default(int font, int height)
@@ -181,7 +186,7 @@ void set_txt_default(int font, int height)
 	vswr_mode(vdi_handle, MD_REPLACE);
 
 	vst_font(vdi_handle, font);
-	vst_color(vdi_handle, 1);
+	vst_color(vdi_handle, 1); /* always black */
 	vst_rotation(vdi_handle, 0);
 	vst_alignment(vdi_handle, 0, 5, &dummy, &dummy);
 	vst_point(vdi_handle, height, &dummy, &dummy, &dummy, &dummy);
@@ -190,8 +195,8 @@ void set_txt_default(int font, int height)
 
 
 /*
- * Allocate space for a palette table and return pointer to it.
- * Table format: 3 * int16 per colour (red, green, blue in promiles)
+ * Allocate space for a palette table and return a pointer to it.
+ * Table format: 3 * int16 per colour (red, green, blue in promilles)
  */
 
 int *get_colors(void)
@@ -230,8 +235,6 @@ void set_colors(int *colors)
 
 
 #if PALETTES
-
-/* This is the newest version */
 
 static char *palide = "TeraDesk-pal";
 extern char *palname;
@@ -363,7 +366,10 @@ static CfgNest pal_config
 		*error = ENSMEM;
 }
  
-/* This is the newest version of load_colors() */
+
+/*
+ * Load colour palette
+ */
 
 int load_colors(void)
 {
@@ -384,6 +390,10 @@ int load_colors(void)
 	return error;
 }
 
+
+/*
+ * Save colour palette
+ */
 
 int save_colors(void)
 {

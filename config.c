@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -28,12 +29,12 @@
 #include <np_aes.h>
 #include <library.h>
 
+#include "desktop.h"
 #include "boolean.h"
 #include "desk.h"
 #include "error.h"
 #include "sprintf.h"
 #include "xfilesys.h"
-#include "desktop.h"
 #include "config.h"
 #include "file.h"
 
@@ -62,10 +63,8 @@ void wd_do_update(void);
 static char
 	*cname = "?";			/* name of curently open file */
 
-
 char
 	*lastnest = "?";		/* last remembered nesting keyword */
-
 
 int 
 	chklevel = 0;		/* summary nest level */
@@ -79,7 +78,7 @@ int
  * when read with some programs -including Pure-C editor!!!
  */
 
-char 
+static const char 
 /*
 	eol[3] = {'\r','\n', 0};
 */
@@ -119,9 +118,7 @@ static void append_fmt
 {
 
 	if ( src != NULL )
-{
 		strcpy(dest, src);
-}
 
 	if ( (flag & CFG_NOFMT) == 0 )
 	{
@@ -358,21 +355,20 @@ char *nonwhite(char *s)
 
 
 /* 
- * Strip <lf>, <cr> or <cr><lf> from line end (insert null-characters there) 
+ * Strip <lf>, <cr> or <cr><lf> from line end (insert null-characters there)
  */
 
-static char *crlf(char *f)
+static void crlf(char *f)
 {
-	int i;
-	
-	i = (int)strlen(f) - 1;
-	if (f[i] == '\n') 
-		f[i--] = 0; 	/* <lf> */
+	int i, j;
 
-	if (f[i] == '\r') 
-		f[i  ] = 0; 	/* <cr> */
+	for(j = 0; j < 2; j++)
+	{
+		i = (int)strlen(f) - 1;
+		if( (i >= 0) && ( (f[i] == '\n') || (f[i] == '\r')) )
+			f[i] = '\0';
+	}
 
-	return f;
 }
 
 
@@ -416,15 +412,12 @@ static void cfgcpy(char *d, char *s, int x)
 }
 
 
-
-
 /* 
  * Load a segment of configuration defined by one table.
  * Note: if an invalid record or value is encountered, the rest 
  * of the level is skipped in the hope that it will be possible to 
  * recover.
  */
-
 
 int CfgLoad
 (
@@ -442,7 +435,6 @@ int CfgLoad
 	char 
 		r[MAX_CFGLINE], 		/* string read from the file */
 		*s;						/* pointer to a positon in the above */
-
 
 	boolean
 		skip = FALSE;			/* true while recovering from errors */
@@ -771,7 +763,6 @@ int handle_cfgfile
 
 			wd_set_update(WD_UPD_COPIED, cname, NULL);
 			wd_do_update();
-
 		}
 	}
 	else
@@ -799,7 +790,10 @@ int handle_cfgfile
 			}
 			else
 			{
-				error = (n < 0) ? (int) n : EEOF;
+				if (n < 0)
+					error = (int)n;
+				else
+					error = EEOF;
 			}
 		
 			x_fclose(file);

@@ -77,3 +77,97 @@ void split_path( char *path, char *fname, const char *name )
 		}
 	}
 }
+
+
+/********************************************************************
+ *																	*
+ * Hulpfunkties voor dialoogboxen.									*
+ * HR 151102 strip_name, cramped_name courtesy XaAES				*
+ *																	*
+ ********************************************************************/
+
+/* 
+ * Strip leading and trailing spaces from a string. 
+ * Insert a zero byte at string end.
+ * This routine actualy copies the the characters to adestination
+ * which must already exist. The source is left unchanged. 
+ * Note1: only spaces are considered, not tabs, etc.
+ * Note2: destination can be at the same address as the source.
+ */
+
+void strip_name(char *to, const char *fro)
+{
+	const char *last = fro + strlen(fro) - 1;
+
+	/* Find first nonblank */
+
+	while (*fro && *fro == ' ')  fro++;
+
+	/* If there is a nonzero character... */
+
+	if (*fro)
+	{
+		while (*last == ' ')				/* strip tail */
+			last--;
+
+		while (*fro && (fro != last + 1) )	/* now copy */
+			*to++ = *fro++;
+	}
+
+	*to = 0;								/* terminate with a null */
+}
+
+
+/* 
+ * Fit a long filename or path into a shorter string
+ * should become c:\s...ng\foo.bar; 
+ * s = source, t=target, w= available target length
+ * Note 1: "ww" accomodates the termination byte as well
+ * Note 2: it is assumed that source string will never be longer
+ * than 255 bytes; there is no length checking.
+ */
+
+void cramped_name(const char *s, char *t, int ww)
+{
+	const char 
+		*q = s;		/* pointer to a location in source string */
+
+	char 
+		*p = t, 	/* pointer to a location in target string  */
+		tus[256];	/* temporary storage to form the cramped name */
+
+	int
+		w = ww - 1,	/* width -1 for termination byte */ 
+		l,			/* input string length */ 
+		d,			/* difference between input and output lengths */ 
+		h;			/* length of the first part of the name (before "...") */
+
+
+	strip_name(tus, s);		/* remove leading and trailing blanks; insert term. byte */
+	q = tus;				/* location of the new (trimmed) source */
+	l = (int)strlen(tus);	/* new (trimmed) string length */
+	d = l - w;				/* new length difference */
+
+	if (d <= 0)		/* (new) source is shorter than target (or same), so just copy */
+		strcpy(t, s);
+	else			/* (new) source is longer than the target, must cramp */
+	{
+		if (w < 12)				/* 8.3: destination is very short  */
+		{
+			strcpy(t, q + d);  	/* so copy only the last ch's */
+			t[0] = '<';			/* cosmetic, to show truncated name */
+		}
+		else					/* else replace middle of the string with "..." */
+		{
+			h = (w - 3) / 2;	/* half of dest. length minus "..." */ 
+			strncpy(p, q, h);	/* copy first half to  destination */
+			p += h;				/* add "..." */
+			*p++ = '.';
+			*p++ = '.';
+			*p++ = '.';
+
+			strcpy(p, q + l - (w - h - 4) );
+		}
+	}
+}
+

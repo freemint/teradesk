@@ -29,8 +29,8 @@
 #include <xdialog.h>
 #include <internal.h>
 
-#include "desk.h"
 #include "resource.h"
+#include "desk.h"
 #include "xfilesys.h"
 #include "screen.h"
 #include "lists.h" /* must be before slider.h */
@@ -39,6 +39,7 @@
 #include "font.h"
 #include "config.h"
 #include "va.h"	
+#include "window.h"
 
 
 #define MFSIZES 100 /* Maximum number of available font sizes */
@@ -96,7 +97,9 @@ static void draw_sample(RECT *r, RECT *c, char *text, FONTBLOCK *fbl)
 	RECT rr;
 
 	xd_clip_on(c);
-	clear(r);
+	pclear(r); /* now show window colour and pattern */
+	/* clr_object( r, WHITE, -1); as an alternative, to make white background */
+
 	xd_rcintersect(r, c, &rr); /* Why this complication ? */
 	xd_clip_on(&rr);
 
@@ -108,15 +111,14 @@ static void draw_sample(RECT *r, RECT *c, char *text, FONTBLOCK *fbl)
 	x = r->x + (r->w - extent[2] + extent[0] - 1) / 2;
 	y = r->y + (r->h - extent[7] + extent[1] - 1) / 2;
 
-	vswr_mode(vdi_handle, MD_TRANS); 
-	v_gtext(vdi_handle, x, y, text);
+	w_transptext(x, y, text);
 
 	xd_clip_off();
 }
 
 
 /*
- * Draw sample text in Teradesk's font selector
+ * Draw sample text in Teradesk's font selector, using selected font
  */
 
 static int cdecl draw_text(PARMBLK *pb)
@@ -211,7 +213,7 @@ static void set_theselector
 
 
 /*
- * Set font selector listbox for Teradesk
+ * Set font selector listbox for TeraDesk
  */
 
 static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
@@ -223,7 +225,7 @@ static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
 #if _FONT_SEL
 
 /*
- * Set font selector listbox for the nonmodal dialog
+ * Set font selector listbox for the nonmodal font-selector dialog
  */
 
 static void mset_fselector(SLIDER *slider, boolean draw, XDINFO *info)
@@ -295,7 +297,7 @@ static int get_size(FONTBLOCK *fbl)
 
 
 /*
- * Count fonts
+ * Count available fonts
  */
 
 void font_count
@@ -326,6 +328,8 @@ void font_count
 
 		vqt_width(vdi_handle, 'i', &iw, &dummy, &dummy);
 		vqt_width(vdi_handle, 'm', &mw, &dummy, &dummy);
+
+		/* If font is non-proportional, or proportional are also counted... */
 
 		if ( prop || (iw == mw) )
 		{
@@ -379,8 +383,10 @@ static void do_fd_button
 		newfont,			/* aux local font index */ 
 		state = NORMAL;		/* state to set current button to */
 
+#if _MINT_
 	boolean
 		drawbutt = TRUE;
+#endif
 
 	switch (button)
 	{
@@ -392,16 +398,17 @@ static void do_fd_button
 			if (((newfont = sl_info->line + button - WDFONT1) < fbl->nf) && (curobj != button))
 			{
 				if ((curobj >= WDFONT1) && (curobj < WDFONT1 + NLINES)) 
-					xd_change(info, curobj, NORMAL, 1);
+					xd_drawbuttnorm(info, curobj);
 				fbl->font = newfont;
 				fbl->cursize = get_size(fbl);
 				state = SELECTED;
 			}
 
 			/* This is needed only in XaAES */
-
+#if _MINT_
 			drawbutt = FALSE;
 			xd_draw(info, WDPARENT, MAX_DEPTH);
+#endif
 			break;
 		case WDFSUP:
 			if (fbl->cursize < fbl->nfsizes - 1)
@@ -418,7 +425,9 @@ static void do_fd_button
 	xd_draw(info, WDFTEXT, 0);
 	xd_draw(info, WDFSIZE, 0);
 
+#if _MINT_
 	if (drawbutt)				/* "if (drawbutt)" needed only in XaAES */
+#endif
 		xd_change(info, button, state, 1);
 }
 
@@ -456,14 +465,11 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 		return FALSE;
 	}
 
-
 	/* Allocate space for font data */
 
-	if ((fbl.fd = malloc((nfonts + 1) * sizeof(FONTDATA))) == NULL)
-	{
-		xform_error(ENSMEM);
+	if ((fbl.fd = malloc_chk((nfonts + 1) * sizeof(FONTDATA))) == NULL)
 		return FALSE;
-	}
+
 	wdfopen = TRUE;
 
 	/* Set code for the userdefined object which draws the sample text */
@@ -516,7 +522,7 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 		}
 	}
 
-	xd_change(&info, button, NORMAL, 0);
+	xd_buttnorm(&info, button);
 	xd_close(&info);
 	free(fbl.fd);
 	wdfopen = FALSE;
@@ -553,9 +559,9 @@ void fnt_close(XDINFO *dialog)
 
 void fnt_hndlbutton(XDINFO *dialog, int button)
 {
-	FNT_DIALOG *fnt_dial = (FNT_DIALOG *) dialog;
+	FNT_DIALOG *fnt_dial = (FNT_DIALOG *)dialog;
 
-	int msg[8]; /* must it be static ? */
+	int msg[8];
 
 	button &= 0x7FFF;
 
@@ -578,9 +584,8 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 			msg[6] = fnt_dial->color;
 			msg[7] = fnt_dial->effect;
 			appl_write(fnt_dial->ap_id, 16, msg);
-
 		case WDFCANC:
-			xd_change(dialog, button, NORMAL, 0);
+			xd_buttnorm(dialog, button);
 			fnt_close(dialog);
 			break;
 		default:
@@ -621,7 +626,10 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 		*xub = (XUSERBLK *)(o->ob_spec.userblk);
 
 
-	/* Check if it is already open- can't be twice */
+	/* 
+	 * Check if it is already open- can't be twice for the time being
+	 * (because the same objects from the resource are used)
+	 */
 
 	if ( wdfopen )
 	{
@@ -648,11 +656,8 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 	}
 	wdfopen = TRUE;
 
-	if ((fnt_dial = malloc(sizeof(FNT_DIALOG))) == NULL)
-	{
-		xform_error(ENSMEM);
+	if ((fnt_dial = malloc_chk(sizeof(FNT_DIALOG))) == NULL)
 		return;
-	}
 
 	/* Who calls this ? */
 
@@ -663,10 +668,9 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 
 	/* Allocate memory for fonts data */
 
-	if ((fnt_dial->fbl.fd = malloc((nfonts + 1) * sizeof(FONTDATA))) == NULL)
+	if ((fnt_dial->fbl.fd = malloc_chk((nfonts + 1) * sizeof(FONTDATA))) == NULL)
 	{
 		free(fnt_dial);
-		xform_error(ENSMEM);
 		return;
 	}
 
@@ -693,7 +697,6 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 
 	wtitle = get_freestring(DTFONSEL);
 	rsc_title(wdfont, WDFTITLE, DTAFONT);
-
 
 #if _DOZOOM
 	xd_nmopen(wdfont, (XDINFO *)fnt_dial, &fnt_funcs, 0, /* -1, -1, not used */ NULL, NULL, FALSE, wtitle);

@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -93,7 +93,8 @@ int xe_keycode(int scancode, int kstate)
  * Vervanging van evnt_multi, die eigen keycode terug levert. 
  */
 
-int xe_wmess;
+int xe_wmess = 0; /* in fact not used ever */
+int xe_mbshift;
 
 int xe_xmulti(XDEVENT *events)
 {
@@ -119,7 +120,6 @@ int xe_xmulti(XDEVENT *events)
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
 
-
 #ifdef __PUREC__
 
 	EvntMulti((EVENT *) events);
@@ -133,30 +133,29 @@ int xe_xmulti(XDEVENT *events)
 		(((unsigned long) events->ev_mthicount) << 16) | (unsigned long) events->ev_mtlocount,
 		&events->ev_mmox, &events->ev_mmoy, &events->ev_mmobutton,
 		&events->ev_mmokstate, &events->ev_mkreturn, &events->ev_mbreturn);
-
 #endif
 
-	
-	
-if 
-( 
-	(
-		( (events->ev_mwhich & MU_MESAG) !=0 ) 
-	)
-	&&
+	xe_mbshift = events->ev_mmokstate;
+
+/* not used ever
+	if 
 	( 
-		(events->ev_mmgpbuf[0] == WM_TOPPED) ||
-		(events->ev_mmgpbuf[0] == WM_CLOSED) ||
-		(events->ev_mmgpbuf[0] == WM_NEWTOP) 
+		(
+			( (events->ev_mwhich & MU_MESAG) !=0 ) 
+		)
+		&&
+		( 
+			(events->ev_mmgpbuf[0] == WM_TOPPED) ||
+			(events->ev_mmgpbuf[0] == WM_CLOSED) ||
+			(events->ev_mmgpbuf[0] == WM_NEWTOP) 
+		)
 	)
-)
-{
-	xe_wmess = 1;
-
-}
-else
-	xe_wmess = 0;
-
+	{
+		xe_wmess = 1;
+	}
+	else
+		xe_wmess = 0;
+*/
 
 	if (((r = events->ev_mwhich) & MU_MESAG) && (events->ev_mmgpbuf[0] == AV_SENDKEY))
 	{
@@ -175,7 +174,7 @@ else
 
 		if (!xd_dialogs && (level == 1))
 		{
-			if (xw_hndlkey(events->xd_keycode,events->ev_mmokstate) == TRUE)
+			if (xw_hndlkey(events->xd_keycode, events->ev_mmokstate) == TRUE)
 				r &= ~MU_KEYBD;
 		}
 	}

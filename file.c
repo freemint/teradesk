@@ -30,9 +30,10 @@
 #include <ctype.h>
 #include <vdi.h>
 #include <xdialog.h>
+#include <library.h>
 
-#include "desk.h"
 #include "desktop.h"
+#include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
 #include "config.h"
@@ -40,16 +41,19 @@
 #include "prgtype.h"
 
 
-#define CFG_EXT		"*.INF"
+#define CFG_EXT		"*.INF" /* default configuration-file extension */
+#define PRN_EXT		"*.PRN" /* default print-file extension */
+
 
 void wd_drawall(void);
+
 
 
 /* 
  * Trim path to be displayed in order to remove 
  * item name and backslash, so that more of the path can fit into field
  * (insert a null character at the appropriate location).
- * Do not trim if it is a path to a root directory. 
+ * Do not trim the backslash if it is a path to a root directory. 
  * Note: there is already a similar routine but it doesn't do 
  * quite the same thing
  */
@@ -68,12 +72,31 @@ void path_to_disp ( char *fpath )
 }
 
 
+/*
+ * Return pointer to the last backslash in a name;
+ * If a backslash does not exist, return pointer to the
+ * beginning of the string
+ */
+
+char *fn_last_backsl(const char *fname)
+{
+	char *e;
+
+	if ((e = strrchr(fname, '\\')) == NULL)
+		e = (char *)fname;
+
+	return e;
+}
+
+
 /* 
  * Geef een pointer terug die wijst naar het begin van de filenaam
  * in een padnaam.
  * This routine returns a pointer to the beginning of a name in
- * an existing fullname string. It doesn't allocate any memory for 
- * the name. If the fullname string does not exist, returns NULL.
+ * an existing fullname string. If there is no backslash in the
+ * name, it returns pointer to the beginning of the string.
+ * If the fullname string does not exist, returns NULL.
+ * It doesn't allocate any memory for the name. 
  */
 
 char *fn_get_name(const char *path)
@@ -83,10 +106,11 @@ char *fn_get_name(const char *path)
 	if (!path)
 		return NULL;
 
-	if ((h = strrchr(path, '\\')) == NULL)
-		return (char *)path;
-	else
-		return h + 1;
+	h = fn_last_backsl(path);
+	if ( h != path || *path == '\\' )
+		h++;
+
+	return h;
 }
 
 
@@ -102,10 +126,10 @@ char *fn_get_path(const char *path)
 	char *backsl;
 	long l;
 
+
 	/* If there is no backslash in the name, just take the whole path */
 
-	if ((backsl = strrchr(path, '\\')) == NULL)
-		backsl = (char *) path;
+	backsl = fn_last_backsl(path);
 
 	/* 
 	 * Compute path length. Treat special case for the root path:
@@ -117,11 +141,8 @@ char *fn_get_path(const char *path)
 
 	/* Allocate memory for the new path */
 
-	if ((backsl = malloc(l + 1)) == NULL)
-	{
-		xform_error(ENSMEM);
+	if ((backsl = malloc_chk(l + 1)) == NULL)
 		return NULL;
-	}
 
 	/* Copy the relevant part of the path to the new location */
 
@@ -155,54 +176,46 @@ char *fn_make_path(const char *path, const char *name)
  * Geef een pointer terug op een met malloc gereserveerd stuk
  * geheugen, waarin het path van oldname is samengevoegd met
  * newnameen. 
+ * Compose a new name from old fullname and a new name.
  */
 
 char *fn_make_newname(const char *oldname, const char *newname)
 {
-	char *backsl, *path, *h;
-	long l, tl, ml;
-	int error = 0;
+	char 
+		*backsl, 
+		*path; 
 
-	if ((backsl = strrchr(oldname, '\\')) == NULL)
-		backsl = (char *) oldname;
+	long 
+		l, 
+		tl; 
 
-	l = backsl - (char *) oldname;
+	int 
+		error = 0;
 
-	tl = l + strlen(newname) + 2L;
+	/* Find position of the last backslash  */
 
-	if ((path = malloc(tl)) != NULL)
+	backsl = fn_last_backsl(oldname);
+
+	l = backsl - (char *)oldname;		/* length of the path part */
+
+	tl = l + strlen(newname) + 2L;		/* total new length */
+
+	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
 	{
-		strncpy(path, oldname, l);
-		h = &path[l];
-		*h++ = '\\';
-		*h = 0;
+		strsncpy(path, oldname, l + 1);	/* copy the path */
 
-		if ((ml = x_pathconf(path, DP_NAMEMAX)) < 0)
-			ml = 256;
-
-		if (strlen(newname) > ml)
-			error = EFNTL;
+		if ( (error = x_checkname( path, newname ) ) == 0 )
+		{
+			strcat(path, bslash);
+			strcat(path, newname);
+		}
 		else
-		{
-			if ((ml = x_pathconf(path, DP_PATHMAX)) < 0)
-				ml = 0x7FFFFFFFL;
-
-			if ((tl - 1) > ml)
-				error = EPTHTL;
-			else
-				strcpy(h, newname);
-		}
-		if (error != 0)
-		{
-			free(path);
-			path = NULL;
-		}
+			free_item(&((void *)path));
 	}
-	else
-		error = ENSMEM;
 
-	if (error != 0)
-		xform_error(error);
+	/* Note: failed malloc will be reported in malloc_chk */
+
+	xform_error(error); /* Will ignore error >= 0 */
 
 	return path;
 }
@@ -210,15 +223,14 @@ char *fn_make_newname(const char *oldname, const char *newname)
 
 /* 
  * Strip filename (or path+filename) "fname" 
- * to get (path+)filename"name"  and extension "ext" 
+ * to get (path+)filename "name"  and extension "ext" 
  */
 
 static void split_name(char *name, char *ext, const char *fname)
 {
 	char *s, *d, *e;
 
-	if ((e = strrchr(fname, '\\')) == NULL)
-		e = (char *) fname;
+	e = fn_last_backsl(fname); 
 
 	if ((e = strchr(e, '.')) == NULL)
 	{
@@ -267,16 +279,16 @@ boolean isroot(const char *path)
 
 
 /* 
- * Locate a file using file-selector.
- * Return pointer to a full path+name specification (allocated inside)
+ * Locate an EXISTING file using file-selector.
+ * (for saving configuration and for printing, the file need not exist).
+ * Return pointer to a full path+name specification (allocated inside).
+ * If not found, return NULL.
  */
 
 char *locate(const char *name, int type)
 {
-	/* DjV: can VLNAME below  be a LNAME ? */
-
 	VLNAME
-		fname;
+		fname; /* can this be a LNAME ? */
 
 	char 
 		*newpath, 
@@ -292,17 +304,18 @@ char *locate(const char *name, int type)
 	int 
 		ex_flags;
 
-	cfgext = strdup(CFG_EXT); /* so that strlwr can be done upon it */
+	static const int
+		titles[] = {FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT};
+
+
+	cfgext = strdup( (type == L_PRINTF) ? PRN_EXT : CFG_EXT); /* so that strlwr can be done upon it */
 
 #if _MINT_
 	if (mint && cfgext)
-	{
 		strlwr(cfgext);
-		defext = DEFAULT_EXT;
-	}
-	else
 #endif
-		defext = TOSDEFAULT_EXT;
+
+	defext = ((type == L_LOADCFG) || (type == L_SAVECFG) || (type == L_PRINTF) ) ? cfgext : fsdefext;
 
 	if (type == L_FOLDER)
 	{
@@ -314,24 +327,15 @@ char *locate(const char *name, int type)
 	}
 	else
 	{
-		if (   (fspec = fn_make_newname(
-		                        name, 
-		                        (  cfgext && ((type == L_LOADCFG) || (type == L_SAVECFG)) )
-		                          ? cfgext
-		                          : defext
-		                        )
-		       ) == NULL
-		   )
-			{
+		if ((fspec = fn_make_newname(name, defext)) == NULL)
 				return NULL;
-			}
 
 		strcpy(fname, fn_get_name(name));
 		ex_flags = EX_FILE;
 	}
 
 	free(cfgext);
-	rsrc_gaddr(R_STRING, FSTLFILE + type, &title);	
+	title = get_freestring(titles[type]);
 
 	do
 	{
@@ -355,15 +359,15 @@ char *locate(const char *name, int type)
 		else
 		{
 			if ((type == L_PROGRAM) && (prg_isprogram(fname) == FALSE))
-				alert_printf(1, AFNPRG, fname);
+				alert_iprint(TPLFMT);
 			else
 			{
-				if (((newname = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG))
+				if (((newname = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
 				{
 					result = x_exist(newname, ex_flags);
 					if (result == FALSE)
 					{
-						alert_printf(1, AFNEXIST, fname);
+						alert_iprint(TFILNF);
 						free(newname);
 					}
 				}
@@ -409,14 +413,11 @@ void get_fsel
 	LNAME
 		name;		/* name obtained */
 
-#if _MINT_
-	if (mint)
-		defext = DEFAULT_EXT;
-	else
-#endif
-		defext = TOSDEFAULT_EXT;
 
-	rsrc_gaddr(R_STRING, FSTLFILE, &title);
+	defext = fsdefext;
+
+	title = get_freestring(FSTLFILE);
+
 	name[0] = 0;
 
 	path = xfileselector( defext, name, title );
@@ -439,7 +440,7 @@ void get_fsel
 		path_to_disp(path);
 
 		if (*name && !isroot(path))
-			strcat(path,"\\");
+			strcat(path, bslash);
 
 		fl = strlen(name);
 		pl = strlen(path);
@@ -466,9 +467,7 @@ void get_fsel
 		free(path);
 
 		if ( fl )
-		{
 			strcat( result, name );
-		}
 
 		if ( cc )
 		{
@@ -511,14 +510,15 @@ int chdir(const char *path)
 {
 	int error;
 	char *h;
+	char d;
 
-	h = (char *) path;
-	if (*path && (path[1] == ':'))
+	h = (char *)path;
+	if (*path && ((d = path[0] & 0xDF) >= 'A') && (d <= 'Z') && (path[1] == ':'))
 	{
-		x_setdrv((path[0] & 0xDF) - 'A');
-		h = (char *) path + 2;
+		x_setdrv(d - 'A');
+		h = (char *)path + 2;
 		if (*h == 0)
-			h = "\\";
+			h = bslash;
 	}
 	error = x_setpath(h);
 
@@ -578,11 +578,7 @@ boolean match_pattern(const char *t, const char *pat)
 {
 	bool valid = true;
 
-	while(    valid
-	      and (   ( *t && *pat)
-	           || (!*t && *pat == '*')	/* HR: catch empty that should be OK */
-	         )
-	      )
+	while(valid && ((*t && *pat) || (!*t && *pat == '*')))	/* HR: catch empty that should be OK */
 	{
 		switch(*pat)
 		{
@@ -603,7 +599,8 @@ boolean match_pattern(const char *t, const char *pat)
 				{
 					t++;
 					pat += 2;
-				} else
+				} 
+				else
 					valid = false;
 				break;
 			}
@@ -696,7 +693,7 @@ boolean cmp_wildcard(const char *fname, const char *wildcard)
 #endif
 		{
 			/*
-			 * For TOS (short filename) only: split filename into
+			 * For TOS & Geneva (short filenames) only: split filename into
 			 * name+extension. Compare name against wildcard name,
 			 * compare extension against wildcard extension.
 			 */
@@ -758,9 +755,7 @@ void force_mediach(const char *path)
 {
 	int drive, p = *path;
 
-	if (   p == 0
-	    || !(isalnum(p) && path[1] == ':')	/* alnum */
-	   )
+	if ((p == 0) || !(isalnum(p) && path[1] == ':'))	/* alnum */
 		return;
 
 	drive =   isalpha(p)
@@ -807,89 +802,6 @@ void force_mediach(const char *path)
 	}
 }
 
-
-/********************************************************************
- *																	*
- * Hulpfunkties voor dialoogboxen.									*
- * HR 151102 strip_name, cramped_name courtesy XaAES				*
- *																	*
- ********************************************************************/
-
-/* 
- * Strip leading and trailing spaces from a string. 
- * Insert a zero byte at string end.
- * This routine actualy copies the the characters to destination;
- * the source is left unchanged. 
- * Note1: only spaces are considered, not tabs, etc.
- */
-
-void strip_name(char *to, const char *fro)
-{
-	const char *last = fro + strlen(fro) - 1;
-
-	while (*fro && *fro == ' ')  fro++;
-	if (*fro)
-	{
-		while (*last == ' ')
-			last--;
-		while (*fro && (fro != last + 1) )
-			*to++ = *fro++;
-	}
-	*to = 0;
-}
-
-
-/* 
- * Fit a long filename or path into a shorter string
- * should become c:\s...ng\foo.bar; 
- * s = source, t=target, w= available target length
- * Note 1: "ww" accomodates the termination byte as well
- * Note 2: it is assumed that source string will never be longer
- * than 255 bytes; there is no length checking.
- */
-
-void cramped_name(const char *s, char *t, int ww)
-{
-	const char 
-		*q = s;		/* pointer to a location in source string */
-
-	char 
-		*p = t, 	/* pointer to a location in target string  */
-		tus[256];	/* temporary storage to form cramped name */
-
-	int
-		w = ww - 1,	/* width -1 for termination byte */ 
-		l,			/* input string length */ 
-		d,			/* difference between input and output lengths */ 
-		h;			/* length of the first part of the name (before "...") */
-
-	strip_name(tus, s);		/* remove leading and trailing blanks; insert term. byte */
-	q = tus;				/* location of the new (trimmed) source */
-	l = (int)strlen(tus);	/* new (trimmed) string length */
-	d = l - w;				/* new length difference */
-
-	if (d <= 0)		/* (new) source is shorter than target (or same), so just copy */
-		strcpy(t, s);
-	else			/* (new) source is longer than the target, must cramp */
-	{
-		if (w < 12)				/* 8.3: destination is very short  */
-		{
-			strcpy(t, q + d);  	/* so copy only the last ch's */
-			t[0] = '<';			/* cosmetic, to show truncated name */
-		}
-		else					/* else replace middle of the string with "..." */
-		{
-			h = (w - 3) / 2;	/* half of dest. length minus "..." */ 
-			strncpy(p, q, h);	/* copy first half to  destination */
-			p += h;				/* add "..." */
-			*p++ = '.';
-			*p++ = '.';
-			*p++ = '.';
-
-			strcpy(p, q + l - (w - h - 4) );
-		}
-	}
-}
 
 
 /*
@@ -951,7 +863,7 @@ static void cv_tos_form2fn(char *dest, const char *source)
 /* 
  * wrapper function for editable and possibly userdef fields. 
  * Fit a (possibly long) filename or path into a form (dialog) field
- * DjV note: now it is assumed that if the field is 12 characters long,
+ * Note: now it is assumed that if the field is 12 characters long,
  * then it will be for a 8+3 format (see also routine tos_fnform in resource.c)
  * Note: if the name is too long, it will be trimmed 
  */
@@ -972,7 +884,7 @@ void cv_fntoform(OBJECT *ob, const char *src)
 	 * for 8+3 names, possibly even if mint is around 
 	 */
 
-	if ( /* !mint && */ l < 14 )
+	if ( l < 14 )
 		cv_tos_fn2form(dst, src);
 	else
 	{	
@@ -981,9 +893,9 @@ void cv_fntoform(OBJECT *ob, const char *src)
 			if (( (ob->ob_type >> 8) & 0xff) == XD_SCRLEDIT)
 			{
 				l = sizeof(LNAME);
-				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(src) > sizeof(LNAME) */
+				xd_init_shift(ob, (char *)src); 	/* note: won't work ok if strlen(dest) > sizeof(LNAME) */
 			}
-			strsncpy(dst, src, (long)l); /* term. byte included in l */
+			strsncpy(dst, src, (long)l); 	/* term. byte included in l */
 
 			if ( strlen(src) > l - 1 )
 				alert_iprint(TFNTLNG);
@@ -996,7 +908,8 @@ void cv_fntoform(OBJECT *ob, const char *src)
 
 
 /* 
- * Convert filename from the dialog form into a convenient string 
+ * Convert filename from the dialog form into a convenient string.
+ * This routine does not allocate space for destination. 
  */
 
 void cv_formtofn(char *dest, OBJECT *ob)
@@ -1012,9 +925,6 @@ void cv_formtofn(char *dest, OBJECT *ob)
 	if (  l < 14 )
 		cv_tos_form2fn(dest, source);
 	else
-	{
-		strcpy(dest, source);
-		strip_name(dest, dest);
-	}
+		strip_name(dest, source);
 }
 	

@@ -48,12 +48,16 @@ void free_icons(void);
 
 void remove_icon(int object, boolean draw);
 void set_dsk_background(int pattern, int color);
+int limcolor(int col);
+int limpattern(int pat);
 
 int rsrc_icon(const char *name);
 boolean isfile(ITMTYPE type);
 
 int rsrc_icon_rscid(int id, char *name );
 void set_iselector(SLIDER *slider, boolean draw, XDINFO *info);
+void icn_sl_init(int line, SLIDER *sl);
 void regen_desktop(OBJECT *desk_tree);
 void draw_icrects( WINDOW *w, OBJECT *tree, RECT *r1);
+void rubber_rect(int x1, int x2, int y1, int y2, RECT *r);
 

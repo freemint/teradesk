@@ -44,21 +44,25 @@
 
 #include "internal.h"
 
-int aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
-	colour_icons = 0,   		/* result of appl_getinfo(2,,,) */
+int 
+	aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
+	colour_icons = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_hor3d    = 0,			/* 3d enlargement value */
 	aes_ver3d    = 0,			/* 3d enlargement value */
 	xresources   = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
 	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
-	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
-	xd_aes4_0,					/* AES 4.0 flag */
+	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE   */
+	xd_aes4_0,					/* flag that AES 4 is present    */
+	xd_has3d = 0,				/* result of appl-getinfo(13...) */
 	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
 	xd_bg_col = WHITE,			/* colour of background object */
-	xd_ind_col = LWHITE,		/* colour of indicator object */
-	xd_act_col = LWHITE,		/* colour of activator object */
-	xd_sel_col = BLACK;			/* colour of selected object */
+	xd_ind_col = LWHITE,		/* colour of indicator object  */
+	xd_act_col = LWHITE,		/* colour of activator object  */
+	xd_sel_col = BLACK;			/* colour of selected object   */
 
+
+/* Window elements for xdialog wndows */
 
 #define XD_WDFLAGS ( NAME | MOVER | CLOSER )
 
@@ -72,15 +76,22 @@ int
 
 void *(*xd_malloc) (size_t size);
 void (*xd_free) (void *block);
-static int (*xd_usermessage) (int *message) = 0L;	/*
+
+const char 
+	*xd_prgname;			/* Name of program, used in title bar of windows */
+
+char
+	*xd_cancelstring;		/* Possible texts on cancel/abort/undo buttons */
+
+OBJECT 
+	*xd_menu = NULL;			/* Pointer to menu tree of the program */
+
+static int 
+	(*xd_usermessage) (int *message) = 0L,	/*
                                    function which is called during a 
                                    form_do, if the message is not for
                                    the dialog window */
-const char *xd_prgname;			/* Name of program, used in title bar of windows */
-OBJECT *xd_menu = NULL;			/* Pointer to menu tree of the program */
-
-static 
-	int xd_nmnitems = 0,	/* Number of menu titles that have to be disabled */
+	xd_nmnitems = 0,		/* Number of menu titles that have to be disabled */
 	*xd_mnitems = 0,		/* Array with indices to menu titles in xd_menu,
                                which have to be disabled. The first index is
                                not a title, but the index of the info item. */
@@ -90,7 +101,7 @@ static
 
 
 XDOBJDATA 
-	*xd_objdata = NULL;	/* Arrays with USERBLKs */
+	*xd_objdata = NULL;		/* Arrays with USERBLKs */
 
 XDINFO 
 	*xd_dialogs = NULL,		/* Chained list of modal dialog boxes. */
@@ -111,7 +122,7 @@ extern void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int ksta
 extern void __xd_hndlmenu(WINDOW *w, int title, int item);
 
 extern void __xd_topped(WINDOW *w);
-extern void __xd_closed(WINDOW *w);
+extern void __xd_closed(WINDOW *w, int mode);
 extern void __xd_top(WINDOW *w);
 
 
@@ -124,6 +135,7 @@ static WD_FUNC xd_wdfuncs =
 	0L,				/* hndlbutton */
 	__xd_redraw,	/* redraw */
 	0L,				/* topped */
+	0L,				/* bottomed */
 	0L,				/* newtop */
 	0L,				/* closed */
 	0L,				/* fulled */
@@ -145,6 +157,7 @@ static WD_FUNC xd_nmwdfuncs =
 	__xd_hndlbutton,
 	__xd_redraw,
 	__xd_topped,
+	0L,
 	0L,
 	__xd_closed,
 	0L,
@@ -234,7 +247,7 @@ static void xd_disable_menu(void)
 
 
 /* 
- * Enable items in a menu 
+ * Enable all items in a menu 
  */
 
 static void xd_enable_menu(void)
@@ -253,7 +266,7 @@ static void xd_enable_menu(void)
 
 /* 
  * Funktie die ervoor zorgt dat een dialoogbox binnen het scherm valt.
- * Find minimum of two areas for clipping ? 
+ * Find the intersection of two areas for clipping ? 
  */
 
 static void xd_clip(XDINFO *info, RECT *clip)
@@ -337,7 +350,7 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
 			if ( xd_desk.w > 400 && xd_desk.h > 300 )
 			{
-				/* stack dialogs a little to the right/down, for nicer look */
+				/* stack dialogs a little to the right & down, for nicer looks */
 				info->drect.x += 16;
 				info->drect.y += 16;
 			}
@@ -368,8 +381,8 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 static void xd_rbutton(XDINFO *info, int parent, int object)
 {
 	int i, prvstate, newstate;
-	OBJECT *tree = info->tree;
-
+	OBJECT *tree = info->tree, *treei;
+	
 	i = tree[parent].ob_head;
 
 	if (info->dialmode == XD_WINDOW)
@@ -377,14 +390,16 @@ static void xd_rbutton(XDINFO *info, int parent, int object)
 
 	do
 	{
-		if (tree[i].ob_flags & RBUTTON)
+		treei = &tree[i];
+
+		if (treei->ob_flags & RBUTTON)
 		{
-			prvstate = tree[i].ob_state;
-			newstate = (i == object) ? tree[i].ob_state | SELECTED : tree[i].ob_state & ~SELECTED;
+			prvstate = treei->ob_state;
+			newstate = (i == object) ? treei->ob_state | SELECTED : treei->ob_state & ~SELECTED;
 			if (newstate != prvstate)
 				xd_change(info, i, newstate, TRUE);
 		}
-		i = tree[i].ob_next;
+		i = treei->ob_next;
 	}
 	while (i != parent);
 
@@ -398,6 +413,11 @@ static void xd_rbutton(XDINFO *info, int parent, int object)
  * Funktie ter vervanging van wind_update.							*
  *																	*
  ********************************************************************/
+
+/*
+ * This routine takes care of multiple-level wind-updates.
+ * Only on the first level is actual update done.
+ */
 
 int xd_wdupdate(int mode)
 {
@@ -649,8 +669,8 @@ static void __xd_moved(WINDOW *w, RECT *newpos)
 	XDINFO *info = xd_find_dialog(w, 3); /* 3 = modal or nonmodal */
 	RECT work;
 
-	xw_set(w, WF_CURRXYWH, newpos);
-	xw_get(w, WF_WORKXYWH, &work);
+	xw_setsize(w, newpos);
+	xw_getwork(w, &work);
 	xd_set_position(info, work.x, work.y);
 }
 
@@ -1041,7 +1061,6 @@ int xd_edit_char(XDINFO *info, int key)
 	default:
 		pos = oldpos - ((oldpos == maxlen) ? 1 : 0);
 		if (blk)
-			/* ch = key & 0xFF; DjV 067 150703 */
 			/* use only the first validation char ( i.e. [0] ) */
 
 			ch  = xd_chk_key(tedinfo->te_pvalid, 0, key); 
@@ -1192,80 +1211,59 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 
 
 /*
- * Button texts which are recognized as those for a "cancel" button
- * for an appropriate default action
- */
-
-static char cancel_buttons[][18] =
-{
-	"cancel",
-	"abbruch",
-	"annuler",
-	"avbryt",
-	"anuluj",
-	"afbryd",
-	"undo",
-	"abort",
-	"\0"
-};
-
-
-/*
- * Find a cencel button in a dialog (courtesy XaAES)
+ * Find a Cancel/Abort/Undo button in a dialog 
+ * Originally from XaAES, but completely reworked for multilingual use.
+ * Now all 'Cancel' words have to be defined in a string which can
+ * e.g. be read from the resource file
+ * Argument 'ob' is the pointer to the dialog object tree.
  */
 
 static int xd_find_cancel(OBJECT *ob)
 {
-	int f = 0;
+	int 
+		f = 0;
+
+	char
+		*s = NULL, 
+		t[16] = {'|'}; /* for "cancel" words up to 13 characters long */
 
 	do
 	{
-		if (   (   (ob[f].ob_type  & 0xff)                    == G_BUTTON
-		        || (ob[f].ob_type  & 0xff00)                  == (XD_BUTTON<<8)
+		t[1] = 0;
+
+		/* Consider only normal buttons and buttons with underlined text */
+
+		if (   (   (ob[f].ob_type)            == G_BUTTON
+		        || (ob[f].ob_type  & 0xff00)  == (XD_BUTTON<<8)
 		       )
-			&& (ob[f].ob_flags & (SELECTABLE|TOUCHEXIT|EXIT)) != 0       )
+			&& (ob[f].ob_flags & (SELECTABLE | TOUCHEXIT | EXIT)) != 0       )
 		{
-			/*
-			 * DjV 059 note: it seems to me that there is some waste here;
-			 * a) "cancel" texts above are never longer than 7 chars,
-			 *    so dimensioning to [18] above and 16 below is much too much;
-			 
-			 *    HR: Yes, but I wanted to leave room for languages having
-			          a very long word for cancel.
-			          Just adding the word without worrying *must* be enough.
-			 * b) possibly strnicmp could be used insead of stricmp below,
-			 *    so that "e" need not be copied into "t", and t[32] is not needed?
-			      HR: possibly. I think I didnt know about strnicmp
-			                    (or just to lazy to learn them all :-)
+			/* 
+			 * Attention: no checking of case! 
+			 * Define 'Cancel' words in *xd_cancelstring in exact case.
+			 * 'Cancel' words must not be longer than 13 characters
+			 * ( '|' + word + '|' + '\0'  should fit in t[] )
 			 */
 
-			int l;
-			char t[32]; char *s = t, *e;
+			s = xd_get_obspec(ob + f).free_string;
 
-			e = xd_get_obspec(ob+f).free_string;
-			l = (int)strlen(e);
-			if (l < 32)
+			/* Copy and strip no more than 13 characters + terminator */
+
+			if (s != NULL && *s >= ' ')
 			{
-				strcpy(t,e);
-				/* strip surrounding spaces */
-				e = t + l;
-				while (*s == ' ') s++;
-				while (*--e == ' ')  ;
-				*++e = 0;
-				if (e - s < 16)	/* No use comparing longer strings */
-				{
-					int i = 0;
-					while (cancel_buttons[i][0])
-					{
-						if (stricmp(s,cancel_buttons[i]) == 0)
-							return f;
-						else i++;
-					}
-				}
+				strsncpy(&t[1], s, 14);
+				strip_name(t, t);
 			}
+
+			strcat(t, "|"); 
+
+			if ( strstr(xd_cancelstring, t) != NULL )
+				return f;
 		}
+
 	}
-	while ( ! (ob[f++].ob_flags & LASTOB));
+	while ( !(ob[f++].ob_flags & LASTOB));
+
 	return -1;
 }
 
@@ -1301,7 +1299,7 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *kn
 			return FALSE;
 		}
 		break;
-	case UNDO:	
+	case UNDO:
 		if ((i = xd_find_cancel(tree)) > 0)
 		{
 			xd_change(info, i, SELECTED, TRUE);
@@ -1467,7 +1465,8 @@ int xd_movebutton(OBJECT *tree)
 
 
 /* 
- * Eigen form_do 
+ * Eigen form_do.
+ * Note: this will return -1 if closed without any button. 
  */
 
 
@@ -1477,6 +1476,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	XDEVENT events;
 	int cont = TRUE;
 	OBJECT *tree = info->tree;
+	boolean inw = TRUE;
 
 	KINFO kinfo[MAXKEYS];
 
@@ -1487,8 +1487,11 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	nkeys = xd_set_keys(tree, kinfo);
 
 	if (info->dialmode != XD_WINDOW)
+	{
+		inw = FALSE;
 		xd_wdupdate(BEG_MCTRL);
-		
+	}
+	
 	events.ev_mflags = MU_KEYBD | MU_BUTTON | MU_MESAG;
 
 	events.ev_mbclicks = 2;
@@ -1499,25 +1502,24 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	events.ev_mtlocount = 0;
 	events.ev_mthicount = 0;
 
-
 	events.ev_mmgpbuf[0] = 0; 
 	next_obj = 0;
 
+	/* Find the first editable objett,; if none found, return 'start' */
+ 
 	if ( start == 0 )
-		start = xd_find_obj(tree, 0, FMD_FORWARD);
+		start = xd_find_obj(tree, start, FMD_FORWARD);
 
 	xd_edit_init(info, start, cmode);
 
 	while (cont == TRUE)
 	{
-
 		xd_wdupdate(END_UPDATE);
 
 		which = xe_xmulti(&events);
 
 		if ( (which & MU_MESAG) != 0 ) 
 		{
-
 			if (xd_usermessage != 0L && xd_usermessage(events.ev_mmgpbuf) != 0)
 			{
 				next_obj = -1;
@@ -1525,15 +1527,16 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 			}
 			else if 
 			( 
-				(events.ev_mmgpbuf[0] == WM_CLOSED) &&
-				(info->dialmode == XD_WINDOW)  && 
+				(events.ev_mmgpbuf[0] == WM_CLOSED) && inw &&
 				(events.ev_mmgpbuf[3] == info->window->xw_handle ) 
 			)
 			{
-				/* if "Close" then act as if a cancel button was pressed */
+				/* if "Closer" then act as if a cancel button was pressed */
 
-				next_obj = xd_find_cancel(tree);
-				cont = FALSE;
+				if ((next_obj = xd_find_cancel(tree)) > 0)
+					cont = FALSE;
+				else
+					next_obj = 0;
 			}
 		}
 
@@ -1599,7 +1602,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		}
 	}
 
-	if (info->dialmode != XD_WINDOW)
+	if (!inw)
 		xd_wdupdate(END_MCTRL);
 
 	xd_edit_end(info);
@@ -1616,6 +1619,18 @@ int xd_form_do(XDINFO *info, int start)
 	return xd_kform_do(info, start, (userkeys) 0, NULL);
 }
 
+
+/*
+ * Same as above but immediately change button state to normal
+ */
+
+int xd_form_do_draw(XDINFO *info)
+{
+	int button;
+	button = xd_form_do(info, ROOT);
+	xd_change( info, button, NORMAL, 1);
+	return button;
+}
 
 /********************************************************************
  *																	*
@@ -1704,11 +1719,10 @@ static int xd_open_wzoom
 		{
 			WINDOW *w;
 			RECT wsize;
-
+			int d, thetype;
 			WD_FUNC *thefuncs;
 			size_t thesize;
 			OBJECT *themenu;
-			int thetype;
 
 			tree[db].ob_flags |= HIDETREE; /* hide dragbox */
 
@@ -1758,8 +1772,7 @@ static int xd_open_wzoom
 
 			if (wsize.x < xd_desk.x)
 			{
-				int d = xd_desk.x - wsize.x;
-
+				d = xd_desk.x - wsize.x;
 				info->drect.x += d;
 				tree->ob_x += d;
 				wsize.x = xd_desk.x;
@@ -1767,8 +1780,7 @@ static int xd_open_wzoom
 
 			if (wsize.y < xd_desk.y)
 			{
-				int d = xd_desk.y - wsize.y;
-
+				d = xd_desk.y - wsize.y;
 				info->drect.y += d;
 				tree->ob_y += d;
 				wsize.y = xd_desk.y;
@@ -1945,10 +1957,10 @@ RECT *xywh, int zoom,
 		prev = info->prev;
 	}
 
+
 	if (info->dialmode == XD_WINDOW)
 	{
 		WINDOW *w = info->window;
-
 
 		xd_wdupdate(BEG_UPDATE);
 
@@ -1995,7 +2007,7 @@ RECT *xywh, int zoom,
 	if (!nmd)
 		xd_dialogs = prev;
 
-/*!!! why ?	
+/*!!! why ?	btw. where is it defined
 	if ((prev != NULL) && (prev->dialmode == XD_WINDOW))
 		xd_scan_messages(XD_EVREDRAW, NULL);
 */
@@ -2049,7 +2061,7 @@ int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata)
 
 	xd_open(tree, &info);
 	exit = xd_kform_do(&info, start, userfunc, userdata);
-	xd_change(&info, exit, NORMAL, FALSE);
+	xd_buttnorm(&info, exit);
 	xd_close(&info);
 
 	return exit;
@@ -2072,9 +2084,7 @@ int xd_dialog(OBJECT *tree, int start)
 int xd_setdialmode(int new, int (*hndl_message) (int *message),
 				   OBJECT *menu, int nmnitems, int *mnitems)
 {
-	int old;
-
-	old = xd_dialmode;
+	int old = xd_dialmode;
 
 	/* Note: it is assumed that a correct dial mode is always given */
 
@@ -2095,12 +2105,23 @@ int xd_setdialmode(int new, int (*hndl_message) (int *message),
 
 int xd_setposmode(int new)
 {
-	int old;
-
-	old = xd_posmode;
+	int old = xd_posmode;
 	xd_posmode = new;
-
 	return old;
+}
+
+/*
+ * A small routine to set default colours in AES 4
+ * Otherwise, these have been set to WHITE and BLACK, respectively.
+ */
+
+void xd_aes4col(void)
+{
+	if ( xd_ncolors > 4 )
+	{
+		xd_bg_col = LWHITE;		/* gray background for some objects */		
+		xd_sel_col = LBLACK;	/* dark gray for selected objects */
+	}
 }
 
 
@@ -2155,15 +2176,20 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	v_opnvwk(work_in, &xd_vhandle, work_out);
 
 	if (xd_vhandle == 0)
+
+		/* Could not open */
+
 		return XDVDI;
 	else
 	{
+		/* It was successful */
+
 		xd_ncolors = work_out[13];
 
 		vq_extnd(xd_vhandle, 1, work_out);
 		xd_nplanes = work_out[4];
 
-		vsf_perimeter(xd_vhandle, 0);		/* no border; HR never used any other value */
+		vsf_perimeter(xd_vhandle, 0);		/* no borders in v_bar() */
 
 #ifdef __GNUC_INLINE__
 		if (load_fonts && vq_vgdos())
@@ -2174,9 +2200,9 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		else
 			*nfonts = 0;
 
-		/* proper appl_getinfo protocol, works also with MagiC */
-
 		/* 
+		 * Proper appl_getinfo protocol, works also with MagiC:
+		 *
 		 * Some AESses (at least Geneva 4, AES 4.1, NAES 1.1...) 
 		 * do not react to "?AGI" but in fact support appl_getinfo;
 		 * So below is forcing to use appl_getinfo with any AES 4.
@@ -2202,11 +2228,9 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 			xd_aes4_0 |= TRUE;
 
-			if ( xd_ncolors > 4 )
-			{
-				xd_bg_col = LWHITE;		/* gray background for some objects */		
-				xd_sel_col = LBLACK;	/* dark gray for selected objects */
-			}
+			/* Assume some colour settings */
+
+			xd_aes4col();
 
 			/* Information on "normal" AES font */
 
@@ -2233,17 +2257,20 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 			/* Information on object handling capabilites */
 
-			if ( appl_getinfo( 13, &ag1, &ag2, &ag3, &ag4 ))
+			if ( appl_getinfo( 13, &xd_has3d, &ag2, &ag3, &ag4 ))
 			{
 				if ( ag4 & 0x08 )				/* G_SHORTCUT unterstÅtzt ? */
 					aes_flags |= GAI_GSHORTCUT;
 				if ( ag4 & 0x04 )				/* MagiC (WHITEBAK) objects */
 					aes_flags |= GAI_WHITEBAK;
 
-				/* get 3D enlargement value */
+				/* get 3D enlargement value and real background colour */
 
-				if ( ag1 && ag2 )					/* 3D-Objekte und objc_sysvar() vorhanden? */
-					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-Look eingeschaltet? */
+				if ( xd_has3d && ag2 )					/* 3D-Objekte und objc_sysvar() vorhanden? */
+				{
+					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-enlargements   */
+					objc_sysvar( 0, BACKGRCOL, 0, 0, &xd_bg_col, &dummy); 		/* background colour */
+				}
 			}
 			
 			/* Set some details of font specifications */
@@ -2272,8 +2299,8 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 			/* 
 			 * Appl_getinfo is not supported, so probably  this is AES < 4 
 			 * except that TOS 4.0* (Falcon) identifies itself as AES 3.40 but
-			 * is still a "3D" AES. That particular case is dealt here, hopefully
-			 * without bad effects: AES4 is declared manually.
+			 * is still a "3D" AES. That particular case is dealt with here, 
+			 * hopefully without bad effects: AES4 is declared manually.
 			 */
 
 			if ( get_tosversion() > 0x400 && _GemParBlk.glob.version >= 0x330 )
@@ -2282,12 +2309,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 				aes_hor3d = 2;
 				aes_ver3d = 2;
 				colour_icons = TRUE;
-
-				if ( xd_ncolors > 4 )
-				{
-					xd_bg_col = LWHITE;		/* gray background for some objects */		
-					xd_sel_col = LBLACK;	/* dark gray for selected objects */
-				}
+				xd_aes4col();
 			}
 
 			/* Manually set  details of font specifications */
@@ -2326,6 +2348,10 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	}
 }
 
+
+/*
+ * Close all dialogs and then the workstation as well
+ */
 
 void exit_xdialog(void)
 {

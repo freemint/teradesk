@@ -28,7 +28,9 @@
 #include <tos.h>
 #include <boolean.h>
 
+#include "desktop.h"
 #include "environm.h"
+#include "desk.h"
 
 
 /*
@@ -62,7 +64,7 @@ long envlen(void)
 
 static char *findvar(const char *var)
 {
-	char *p, *p0; /* 322: p0 */
+	char *p, *p0;
 	long l;
 	boolean found = FALSE;
 
@@ -92,8 +94,8 @@ static char *findvar(const char *var)
 /*
  * Get the value of an environmental variable.
  * This routine is also able to find the value of 
- * (the 1st part of) ARGV, i.e. if the first character following 
- * a "=" is "\0", then the next character is pointed to.
+ * (the 1st part of) ARGV, i.e. if the first character  
+ * following a '=' is '\0', then the next character is pointed to.
  */
 
 char *getenv(const char *var)
@@ -144,21 +146,21 @@ char *new_env
 		*new,					/* allocated  space for the new enviro */
 		*newto,					/* where to put the old string */
 		*oldto,					/* where to put the new string */
-		*p = _BasPag->p_env;	/* whee is the old environment */
+		*p = _BasPag->p_env;	/* where is the old environment */
 
 	*newsize = 0;
 
 	/* Can this ever happen- that there is no global environment ? */
 
-	if (!p || !l)
+	if (!(p && l))
 	{
-		p = "\0";
+		p = empty;
 		l = 2;
 	}
 
 	/* Allocate space for the new environment */
 
-	if ( (new = malloc(l + size + 4L)) != NULL )
+	if ( (new = malloc_chk(l + size + 4L)) != NULL )
 	{
 		oldto = newto = new;
 
@@ -183,7 +185,7 @@ char *new_env
 
 /*
  * Clear (unset) ARGV environmental variable in the environment string
- * for TeraDesk itself: put a 0 instead of "A".
+ * for TeraDesk itself: put a 0 instead of "A" in "ARGV".
  * (is the program's environment string always allowed to write into ???)
  */
 
@@ -245,7 +247,7 @@ char *make_argv_env
 
 	/* Allocate new environment space */
 
-	if ((envp = malloc(argvl)) != NULL)
+	if ((envp = malloc_chk(argvl)) != NULL)
 	{
 		d = envp;
 

@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -38,17 +38,13 @@
 #include "xdialog.h"
 #include "internal.h"
 
-/*
-char *strsncpy(char *dst, const char *src, size_t len);
-*/
 
 
 extern RECT 
 	xd_desk;				/* Dimensions of desktop background. */
 
 extern int 
-	aes_hor3d, 
-	aes_ver3d,
+	xd_has3d,
 	xd_bg_col,
 	xd_ind_col,
 	xd_act_col,
@@ -259,7 +255,8 @@ static void set_linedef(int color)
 	vsl_type(xd_vhandle, 1);
 	vsl_width(xd_vhandle, 1);
 }
-nt
+
+
 /*
  * Set suitable (default) text attributes. Colour is always black.
  */
@@ -277,15 +274,16 @@ static void set_textdef(void)
 
 
 /*
- * Clear an object by drawing a borderless filled rectangle 
- * of desired colour and pattern (except pattern 0, then draw solid)
+ * Clear an object by drawing a borderless filled rectangle  
+ * of desired colour and pattern (except pattern -1, then draw solid)
+ * Rectangle is drawn in replace mode.
  */
 
 void clr_object(RECT *r, int color, int pattern)
 {
 	int pxy[4];
 
-	if ( pattern == 0 )
+	if ( pattern < 0 )
 		vsf_interior(xd_vhandle, FIS_SOLID);
 	else
 	{
@@ -301,7 +299,7 @@ void clr_object(RECT *r, int color, int pattern)
 
 /*
  * Divine whether a userdef object should be drawn in 3D:
- * - 3d flags must be set for indicator or activator
+ * - 3d flags must be set for indicator or activator (not background)
  * - there must be a 3D-capable AES (i.e. AES 4)
  * - there must be a 3D enlargement, or else at least 16 colours 
  *   (this should in most (but not all) cases detect whether Magic is in 3d mode)
@@ -317,7 +315,7 @@ static bool xd_is3dobj(int flags)
 			    f3d
 			&& (f3d != AES3D_2)   
 			&& (xd_aes4_0) 
-			&& (aes_hor3d > 0 || aes_ver3d > 0 || xd_ncolors > 4) 
+			&& (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_ncolors > 4) 
 		)
 		return TRUE;
 	
@@ -404,7 +402,7 @@ static void xd_drawbox
 	}
 
 	if ( xtype != XD_SCRLEDIT )
-		clr_object(&outsize, color, 0);
+		clr_object(&outsize, color, -1);
 
 	/* 
 	 * Draw a black frame of appropriate thickness (going outside of object);
@@ -423,7 +421,6 @@ static void xd_drawbox
 		  || IS_ACT(flags)
 	    )
 	{
-
 		if (flags & DEFAULT)
 			border = 2; /* actual border thickness will be 3 pixels */
 		else if (flags & EXIT)
@@ -437,7 +434,6 @@ static void xd_drawbox
 			color = BLACK;
 		set_linedef(color);
 		draw_frame( &outsize, 0, -border );
-
 	}
 
 	/* 
@@ -545,7 +541,7 @@ static int cdecl ub_drag(PARMBLK *pb)
 	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
 	xd_drawbox( &size, flags, pb->pb_tree[pb->pb_obj].ob_state, XD_DRAGBOX );
 
-	/* Draw "\" diagonal */
+	/* Draw "\" diagonal in the box */
 
 	pxy[0] = size.x - dh;
 	pxy[1] = size.y - dv;
@@ -612,17 +608,17 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	 */
 
 	/* low res, full circle (deselected) */
-	static short rbf_8x8[] = { 0x3800, 
-		                       0x4400, 
-	    	                   0x8200, 
+	static const short rbf_8x8[] = { 0x3800, 
+		     		           0x4400, 
+	    	     		       0x8200, 
 	        	               0x8200, 
-	            	           0x8200,
+	            	       	   0x8200,
 	                   	       0x4400, 
 	                           0x3800, 
 	                           0x0000 };
 
 	/* low res, center dot */
-	static short rbc_8x8[] = { 0x0000, 
+	static const short rbc_8x8[] = { 0x0000, 
 	                           0x0000, 
 	                           0x3800, 
 	                           0x3800, 
@@ -632,7 +628,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* low res, upper left arc and center dot */
-	static short rbu_8x8[] = { 0x3800, 
+	static const short rbu_8x8[] = { 0x3800, 
 	                           0x4400, 
 	                           0xB800, 
 	                           0xB800, 
@@ -642,7 +638,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* low res, lower right arc */
-	static short rbl_8x8[] = { 0x0000, 
+	static const short rbl_8x8[] = { 0x0000, 
 	                           0x0000, 
 	                           0x0200, 
 	                           0x0200, 
@@ -652,7 +648,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* med res (2:1 aspect ratio), full circle and center dot */
-	static short rbf_16x8[] = {0x1FD0, 
+	static const short rbf_16x8[] = {0x1FD0, 
 	                           0x6018, 
 	                           0x8784, 
 	                           0x8844, 
@@ -662,7 +658,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* med res (2:1 aspect ratio), center dot */
-	static short rbc_16x8[] = {0x0000, 
+	static const short rbc_16x8[] = {0x0000, 
 	                           0x0000, 
 	                           0x0780, 
 	                           0x0F40, 
@@ -672,7 +668,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* med res (2:1 aspect ratio), upper left arc and center dot */
-	static short rbu_16x8[] = { 0x1FD0, 
+	static const short rbu_16x8[] = { 0x1FD0, 
 	                            0x7810, 
 	                            0xD780, 
 	                            0xCFC0, 
@@ -682,7 +678,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                            0x0000 };
 
 	/* med res, lower right arc */
-	static short rbl_16x8[] = {0x0000, 
+	static const short rbl_16x8[] = {0x0000, 
 	                           0x0008, 
 	                           0x000C, 
 	                           0x000C, 
@@ -692,7 +688,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                           0x0000 };
 
 	/* high res, full circle, deselected center dot, 2D */
-	static short rbf_16x16[] = { 0x0000, 
+	static const short rbf_16x16[] = { 0x0000, 
 	                             0x03C0, 
 	                             0x0C30,
 	                             0x1008,
@@ -710,7 +706,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 						         0x0000 };
 
 	/* high res, center dot */
-	static short rbc_16x16[] = { 0x0000, 
+	static const short rbc_16x16[] = { 0x0000, 
 	                             0x0000, 
 	                             0x0000, 
 	                             0x0000, 
@@ -728,7 +724,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                             0x0000 };
 
 	/* high res, upper left arc and center dot, 3D */ 
-	static short rbu_16x16x3[] = { 0x0000, 
+	static const short rbu_16x16x3[] = { 0x0000, 
 	                               0x03C0, 
 	                               0x0FF0,
 	                               0x1C18,
@@ -746,7 +742,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	                               0x0000 };
 
 	/* high res, lower right arc, 3D */
-	static short rbl_16x16x3[] = { 0x0000, 
+	static const short rbl_16x16x3[] = { 0x0000, 
 	                               0x0000, 
 	                               0x0000, 
 	                               0x0000, 
@@ -769,7 +765,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	bool
 		do3d;			/* true if 3d effects should be employed */
 
-	static int
+	static const int
 		dmode[3] = {MD_REPLACE,	MD_TRANS, MD_TRANS}; /* drawing mode: */
 
 	int
@@ -946,7 +942,10 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
 	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;	
  
-	/* Define object size and position */
+	/* 
+	 * Define object size and position. Height of the object is
+	 * 3/4 of character height + 2 pixels + 3D enlargements
+	 */
 
 	size.x = pb->pb_x; /* intentionally without "+ aes_hor3d" here */
 	size.y = pb->pb_y + xd_regular_font.fnt_chh / 8 + aes_ver3d - 1;
@@ -966,7 +965,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 	if ( pb->pb_currstate & SELECTED )
 	{
 		if ( xd_is3dobj(flags) )
-			b = aes_hor3d - 1;
+			b = (aes_hor3d > 0) ? aes_hor3d - 1 : 1;
 		else
 			b = 0;
 
@@ -1058,7 +1057,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	xr = x + w + 3;
 
 	/* 
-	 * If Magic, colour & 3d mode, is hopefully detected, 
+	 * If Magic, in colour & 3d mode, is hopefully detected, 
 	 * create a background box; for other 3D AES, just clear the area
 	 * and set transparent mode
 	 */
@@ -1079,7 +1078,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 		else
 		{
 			/* other "gray background" AESses V4 */
-			clr_object(&size, xd_bg_col, 0);
+			clr_object(&size, xd_bg_col, -1);
 			tmode = MD_TRANS;
 		}
 	}
@@ -1107,7 +1106,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	{
 		vswr_mode(xd_vhandle, MD_REPLACE);
 		cb.x = xl;
-		clr_object(&cb, xd_bg_col, 0);
+		clr_object(&cb, xd_bg_col, -1);
 	}
 
 	if ( tw - blk->ob_shift > ow )
@@ -1119,7 +1118,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	{
 		vswr_mode(xd_vhandle, MD_REPLACE);
 		cb.x = xr;
-		clr_object(&cb, xd_bg_col, 0);
+		clr_object(&cb, xd_bg_col, -1);
 	} 
 
 	/* Copy visible part of the text to display */
@@ -1264,7 +1263,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 	size.w = (int)xd_strlen(string) * xd_regular_font.fnt_chw + 2 * gap;
 	size.h = xd_regular_font.fnt_chh + 2; 
 
-	clr_object(&size, xd_bg_col, 0);	
+	clr_object(&size, xd_bg_col, -1);	
 
 	/* Draw text */
 
@@ -1365,7 +1364,7 @@ static int cdecl ub_unknown(PARMBLK *pb)
 
 	set_linedef(BLACK);
 	vswr_mode(xd_vhandle, MD_REPLACE);
-	clr_object(frame, 0, 0);
+	clr_object(frame, 0, -1);
 	draw_frame(frame, 0, 0);
 
 	xd_clip_off();
@@ -1389,9 +1388,13 @@ static void xd_calc_cursor(XDINFO *info, RECT *cursor)
 
 	cursor->x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.fnt_chw;
 
+/* A slightly smaller cursor looks better in Magic
 	cursor->y -= 1;
 	cursor->w = 1;
 	cursor->h = xd_regular_font.fnt_chh + 2;
+*/
+	cursor->w = 1;
+	cursor->h = xd_regular_font.fnt_chh;
 }
 
 
@@ -1490,7 +1493,7 @@ static void xd_cur_remove(XDINFO *info)
 		}
 		else
 		{
-			xw_get(info->window, WF_FIRSTXYWH, &r1);
+			xw_getfirst(info->window, &r1);
 
 			while ((r1.w != 0) && (r1.h != 0))
 			{
@@ -1551,7 +1554,7 @@ void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
 	}
 	else
 	{
-		xw_get(info->window, WF_FIRSTXYWH, &r1);
+		xw_getfirst(info->window, &r1);
 
 		while ((r1.w != 0) && (r1.h != 0))
 		{
@@ -1620,8 +1623,12 @@ void xd_draw(XDINFO *info, int start, int depth)
 void xd_change(XDINFO *info, int object, int newstate, int draw)
 {
 	OBJECT *tree = info->tree;
+	int twostates;
 
-	int twostates = (newstate&0xff) | (tree[object].ob_state & (0xff00 | WHITEBAK));	/* preserve extended states */
+	if ( object < 0 ) 
+		return;
+
+	twostates = (newstate&0xff) | (tree[object].ob_state & (0xff00 | WHITEBAK));	/* preserve extended states */
 
 	if (info->dialmode != XD_WINDOW)
 		objc_change(tree, object, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h,
@@ -1634,6 +1641,27 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 			xd_draw(info, object, 0); /* 0: draw only this object */
 	}
 }
+
+
+/*
+ * Set a button to NORMAL without drawing it
+ */
+
+void xd_buttnorm(XDINFO *info, int button)
+{
+	xd_change(info, button, NORMAL, 0);
+}
+
+
+/*
+ * Set a button to NORMAL and draw it
+ */
+
+void xd_drawbuttnorm(XDINFO *info, int button)
+{
+	xd_change(info, button, NORMAL, 1);
+}
+
 
 /********************************************************************
  *																	*
@@ -1734,16 +1762,16 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 		{
 			switch(etype)
 			{
-			case XD_DRAGBOX:
-			case XD_SCRLEDIT:
+			case XD_DRAGBOX:	/* dragbox "ear" on thedialog */
+			case XD_SCRLEDIT:	/* scrolled text field */
 			case XD_FONTTEXT:
 				(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
 				break;
-			case XD_RECTBUT:
-			case XD_ROUNDRB:
-			case XD_TITLE:
-			case XD_RBUTPAR:
-			case XD_BUTTON :
+			case XD_RECTBUT:	/* checkbox button */
+			case XD_ROUNDRB:	/* round radio button */
+			case XD_TITLE:		/* title */
+			case XD_RBUTPAR: 	/* titled fram */
+			case XD_BUTTON :	/* rectangular button with text */
 				if ( must_userdef(object) )
 					(*nx)++;	/* userdef only if unsuported by AES */
 				break;

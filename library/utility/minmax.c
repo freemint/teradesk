@@ -22,6 +22,12 @@
 
 
 /*
+ * Note: to save space, do not use these fonctions to substirute 
+ * costructs like "if ( x > y ) x = y;" with "x = min(x,y);", etc.
+ */
+
+
+/*
  * Return the smaller of two integers
  */
 
@@ -42,6 +48,24 @@ int max(int x, int y)
 
 
 /*
+ * Return an integer within limits
+ */
+
+int minmax(int lo, int i, int hi)
+{
+	if ( i < lo )
+		return lo;
+	else
+	{
+		if ( i < hi )
+			return i;
+		else
+			return hi;
+	}
+}
+
+
+/*
  * Return the smaler of two long integers
  */
 
@@ -58,4 +82,22 @@ long lmin(long x, long y)
 long lmax(long x, long y)
 {
 	return (x > y) ? x : y;
+}
+
+
+/*
+ * Return an long integer within limits
+ */
+
+long lminmax(long lo, long i, long hi)
+{
+	if ( i < lo )
+		return lo;
+	else
+	{
+		if ( i < hi )
+			return i;
+		else
+			return hi;
+	}
 }

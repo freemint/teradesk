@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>			/* modern */
 #include <stdarg.h>
 #include <sprintf.h>
@@ -31,7 +32,7 @@
 #include "error.h"
 
 /* 
- * get_freestring routine gets pointer to a free-string in the resource,
+ * Obtain a pointer to a free-string in the resource,
  * identified by its index; handy for composing various texts.
  */
 
@@ -50,7 +51,7 @@ char *get_freestring( int stringid )
 
 char *get_message(int error)
 {
-	static char buffer[32], *s;
+	static char buffer[48], *s;
 	int msg;
 
 	switch (error)
@@ -95,12 +96,11 @@ char *get_message(int error)
 		msg = TCMDTLNG;
 		break;
 	default:
-		rsrc_gaddr(R_STRING, TERROR, &s);
+		s = get_freestring(TERROR);
 		sprintf(buffer, s, error);
 		return buffer;
 	}
-
-	rsrc_gaddr(R_STRING, msg, &s);
+	s = get_freestring(msg);
 
 	return s;
 }
@@ -140,8 +140,8 @@ int alert_printf(int def, int message,...)
 	int button;
 	char *string;
 
-	rsrc_gaddr(R_STRING, message, &string);
 
+	string = get_freestring(message);
 	va_start(argpoint, message);
 	button = vaprintf(def, string, argpoint);
 	va_end(argpoint);
@@ -153,19 +153,43 @@ int alert_printf(int def, int message,...)
 
 /*
  * Display a single-button alert box (" ! " icon) with a text 
- * identified only by string id "message";
+ * identified only by string-id "message";
  */
 
-int alert_iprint( int message )
+void alert_iprint( int message )
 {
-	return alert_printf( 1, AGENALRT, get_freestring( message ) );
+	alert_printf( 1, AGENALRT, get_freestring( message ) );
+}
+
+
+/*
+ * Display a single-button alert box (" Stop " icon) with a text 
+ * identified only by string-id "message", This is called
+ * for fatal errors which will stop TeraDesk.
+ */
+
+void alert_abort( int message )
+{
+	alert_printf( 1, AFABORT, get_freestring( message ) );
+}
+
+
+/*
+ * Display a two-buttons alert box (" ? " icon) with a text 
+ * identified only by string id "message", 
+ */
+
+int alert_query( int message )
+{
+	return alert_printf( 1, AQUERY, get_freestring( message ) );
 }
 
 
 /* 
  * Display an alert box (" ! " icon, except in one case) 
  * text being identified only by error code.
- * Anything undefined is "TOS error %d"
+ * Anything undefined is "TOS error %d".
+ * This routine ignores error codes >= 0.
  */
 
 void xform_error(int error)
@@ -173,7 +197,7 @@ void xform_error(int error)
 	/* Hopefully this optimization will work OK, hard to test it all now */
 
 	if ( error == _XDVDI )
-		alert_printf( 1, AVDIERR );	/* because of another icon here */
+		alert_abort( MVDIERR );	/* because of another icon here */
 	else
 		if ( error < 0 )
 			alert_printf( 1, AGENALRT, get_message(error) );
@@ -181,8 +205,8 @@ void xform_error(int error)
 
 
 /* 
- * Display an alert box identified by "message" and additional
- * error-message text idenified by "error" code 
+ * Display an alert box identified by "message" (alert-box id.)
+ * and additional error-message text idenified by "error" code 
  */
 
 void hndl_error(int message, int error)
@@ -195,8 +219,8 @@ void hndl_error(int message, int error)
 
 
 /* 
- * display alert box (" ! " icon) for some file-related errors;
- * DjV 068 230703: earlier, "msg" identified the alert-box form,
+ * display an alert box (" ! " icon) for some file-related errors;
+ * earlier, "msg" identified the alert-box form,
  * now it idenifies the first message text in AGFALERT alert box.
  * The alert box first displayes text "msg", then "file", then
  * the text associated to error code "error".
@@ -204,8 +228,10 @@ void hndl_error(int message, int error)
 
 int xhndl_error(int msg, int error, const char *file)
 {
-	int button;
-	char *message;
+	int 
+		button = 0, 
+		txtid = 0;
+
 
 	if ((error >= XFATAL) && (error <= XERROR))
 		return error;
@@ -215,32 +241,26 @@ int xhndl_error(int msg, int error, const char *file)
 			return XFATAL;
 		else
 		{
-			char *buttons;
-
-			/* Get some text related to error code */
-
-			message = get_message(error);
-
-			/* Display appropriate alert-box */
+			/* Display the appropriate alert-box */
 
 			if ((error == EFILNF) || (error == EACCDN) || (error == ELOCKED))
-			{
 				/* For: File not found, Access denied, File locked: */
-
-				rsrc_gaddr(R_STRING, TSKIPABT, &buttons);
-				button = alert_printf(1, AGFALERT, get_freestring(msg), file, message, buttons);
-				return ((button == 1) ? XERROR : XABORT);
-			}
+				txtid = TSKIPABT;
 			else if ( error != ENOMSG )
-			{
 				/* For all the rest... */
+				txtid = TABORT;
 
-				rsrc_gaddr(R_STRING, TABORT, &buttons);
-				alert_printf(1, AGFALERT, get_freestring(msg), file, message, buttons);
-				return XABORT;
-			}
-			else
-				return XABORT;
+			if (txtid)
+				alert_printf
+				(
+					1, AGFALERT, 
+					get_freestring(msg), 
+					file, 
+					get_message(error), 
+					get_freestring(txtid)
+				);
+
+			return (txtid == TSKIPABT && button == 1) ? XERROR : XABORT;
 		}
 	}
 }

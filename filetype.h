@@ -39,15 +39,11 @@ extern FTYPE
 
 CfgNest ft_config;
 
-void wd_set_filemask(WINDOW *w);
-char *wd_filemask(const char *mask);
+extern const char *presets[];
 
+char *wd_filemask(const char *mask);
 void ft_init(void);
 void ft_default(void);
-
 void copy_ftype(FTYPE *target, FTYPE *source);
 char *ft_dialog( const char *mask, FTYPE **list, int what );
-
-
-
 

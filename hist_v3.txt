@@ -2,6 +2,137 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                                     2002, 2003, 2004  Dj. Vukovic.
 
+Version 3.40
+------------
+
+- Some size and speed optimizations.
+
+- Option to automatically save desktop on exit (in Desk preferences).
+
+- Reduction of sizes of confirmation dialogs for file deletion and printing
+ (some empty space removed).
+
+- Improvement of the Show/Edit/Cancel dialog:
+  . It is a dialog now (again), not an alert;
+  . Added "Run" option  (treat the file as executable);
+  . Added "With" option (select an application to open the file with);
+
+- Improvement of the 'Print...' function; printing can be redirected
+  to a file. Also, three printing modes now exist, selectable from the 
+  confirm-print dialog:
+  . Text mode (lines wrapped; cr/lf inserted when appropriate);
+  . Hex dump;
+  . Raw data (file sent to printer as it is);
+
+- Improvement of 'Compare': there is a dialog now to enter parameters; 
+  width of resync window can be specified.
+  
+- 'Reverse sort' option for directory windows added.
+
+- Removed 'Show as text' menu item as redundant, in order to reduce size
+  (if added back to desktop.rsc, TeraDesk can still be compiled to use it); 
+  'Show as icons' can be checked/unchecked. If a keyboard shortcut was
+  defined for 'Show as text', an alert regarding 'shtx' record will
+  be generated. Should be ignored and desktop saved anew (didn't want
+  to bother with keeping compatibility for a single item).
+
+- Switchable auto-arrangement of objects in directory windows 
+  (i.e. fit current window width as well as possible).
+
+- Multicolumn display in directory windows in text mode if auto-arrange
+  is set, whenever a window is wide enough.
+
+- Improved action of 'Fuller' in directory windows: 
+  . Vertical size adjustment as well as horizontal. Works for text windows 
+    too. Any action which changes the dimensions of window contents now 
+    resets the 'fulled' state (without changing window size).
+  . Two 'fulled' modes: 1) window is expanded only as much as needed to
+    display contents; 2) if any [Shift] key is pressed while clicking on
+    the fuller gadget, the window is expanded to all of desktop. 
+ 
+- Improved calculation of slider positions in icon display mode.
+ 
+- Names of hiden files displayed in light (gray) type.
+
+- Update of text window content with [Escape] (re-read file).
+
+- Dragging a single file to a text window reads the file into the window.
+  (turned out to be quite convenient and faster than opening new windows).
+
+- Search can be aborted by pressing [Escape].
+
+- 'Search finished' information issued.
+
+- Improved detection of '3D' AESses.
+
+- Introduced environment variable TERAENV (not obligatory)  for setting
+  some configuration details which were not convenient to be set through
+  the configuration file (e.g. had to be set -before- reading that file).
+  Currently only "TERAENV=D" is understood: force TeraDesk to always draw
+  all extended-type objects by itself, even if an AES supports them.
+
+- Some improvements in handling of the Info... dialog.
+
+- Small improvement in handling of video mode(s). 
+
+- A redesign of desktop/window pattern and colour selector.
+
+- Warning issued before change of video resolution (reset).
+
+- An alert is displayed if an application fails to start (multitasking).
+  Does not work in all AESses.
+
+- Additional objects added to video-options dialog, as an anticipation
+  for some changes planned for a future release. Currently set to invisible.
+
+- Optimization of redraws in some dialogs (and after closing them).
+
+- An alert is displayed when appropriate, asking whether to
+  start another instance of a running application.
+
+- 'Window bottomed' message is now understood and acted upon.
+
+- Checks are made whether registered AV-protocol clients are still alive.
+  This is done before each program start.
+
+- Multiple registration of some AV-protocol clients avoided now.
+
+- Links to folders are correctly sorted among folders now.
+
+- Fixed a bug of using a noninitialized variable in setting program types
+  (i.e. an uncontrolled value could appear).
+
+- Fixed a bug in casting a windows-related structure.
+
+- Fixed some minor bugs in applying background patterns.
+
+- Fixed a bug related to AV-protocol and text windows.
+
+- Fixed a bug which could cause the AV-protocol to crash TeraDesk in
+  the unlikely case of Mint being run with memory protection over a
+  TOS version lower than 2.06.
+
+- Fixed some wrongly set object flags in DESKTOP.RSC
+
+- Fixed a bug which could freeze TeraDesk in a windowed dialog when 
+  translated to other languages (e.g. Russian).
+
+- Fixed a bug in cancelling the loading of configuration files 
+  (i.e. it could not be cancelled).
+
+- Fixed a bug which caused the entire configuration file to be rejected
+  upon loading if a path to a saved window did not exist anymore.
+
+- Fixed a bug in searching when file size range was specified.
+
+- Fixed a bug which could cause a crash when dialogs were closed by UNDO
+  button or 'Closer' gadget.
+
+- Fixed an old bug (from V3.0) which could cause memory corruption upon 
+  an empty line in a configuration file.
+
+- Updated the hypertext documentation, correcting a number of errors in it.
+
 
 Version 3.32
 ------------

@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -158,6 +158,13 @@ typedef struct
 
 typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 
+extern int
+	xd_aes4_0,
+	aes_hor3d,
+	aes_ver3d,		/* 3d enlargement values */
+	colour_icons;
+
+
 
 /* Funkties voor het openen en sluiten van een dialoog */
 
@@ -169,6 +176,8 @@ void xd_close(XDINFO *info);
 
 void xd_draw(XDINFO *info, int start, int depth);
 void xd_change(XDINFO *info, int object, int newstate, int draw);
+void xd_buttnorm(XDINFO *info, int button);
+void xd_drawbuttnorm(XDINFO *info, int button);
 void xd_own_xobjects( int setit );
 void clr_object(RECT *r, int color, int pattern);
 
@@ -177,6 +186,7 @@ void clr_object(RECT *r, int color, int pattern);
 
 int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata);
 int xd_form_do(XDINFO *info, int start);
+int xd_form_do_draw(XDINFO *info);
 int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata);
 int xd_dialog(OBJECT *tree, int start);
 

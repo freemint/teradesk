@@ -7,23 +7,25 @@
 
 ahcm.lib
 
-; -K: unsigned char; 
-; -Y: debug info 
 ; -C: nested comments; 
+; -K: unsigned char; 
 ; -P: absolute calls; 
-; -G: size optimization;
+; -G: size optimization (compiler); global symbols (linker);
+; -L: local symbols (linker)
+; -Y: debug info
+; -J: create library (linker) 
 
 ; With debug info:
 
 ;.C[ -K -Y -G -I..\..\include]
 ;.S[ -Y -S ]
-;.L[ -J -Y -L ]
+;.L[ -J -Y -L -V]
 
 ; Without debug info:
 
 .C[ -C -K -G -I..\..\include]
 .S[ -S ]
-.L[ -J -L ]
+.L[ -J -V]
 
 =
 

@@ -42,14 +42,14 @@ extern	OBJECT
 	*wdoptions,
 	*wdfont,
 	*helpno1,
-	*helpno2,
-	*helpno3,
 	*fmtfloppy, 
 	*vidoptions,
 	*copyoptions,
 	*ftydialog,
 	*searching,
-	*specapp;
+	*specapp,
+	*openw,
+	*compare;
 
 extern char 
 	*dirname,
@@ -66,7 +66,9 @@ extern char
 	*drvid,
 	*iconlabel,
 	*cpfile,
-	*cpfolder;
+	*cpfolder,
+	*cfile1,
+	*cfile2;
 
 
 void rsc_init(void);

@@ -21,32 +21,39 @@
  */
 
 
-/* Slider type: 0 - elementen in window kunnen niet geselekteerd
-                    worden.
-                1 - elementen in window kunnen wel geselekteerd
-                    worden.
-*/
+/* 
+ * Delay for sliders and other arrows; can be adjusted 
+ * for a comfortable feel (cca 100-300ms)
+ */
+
+#define ARROW_DELAY 250
+
+
+/* 
+ * Slider type: 0 - item(s) can not be selected in the listbox
+ *              1 - item(s) can be selected in the listbox
+ */
 
 typedef struct sliderinfo
 {
-	int type;
+	int type;					/* slider type (0 or 1) */
 
 	LSTYPE **list;				/* pointer to the list scrolled by this slider */
 
-	int up_arrow;				/* object nummers van pijltjes en sliders */
-	int down_arrow;
-	int slider;
-	int sparent;
-
-	int lines;					/* aantal regels in window */
-	int n;						/* totaal aantal regels */
-	int line;					/* nummer van de eerste regel in het window (0 - n-lines) */
+	int up_arrow;				/* 'up arrow' object index */
+	int down_arrow;				/* 'down arrow' object index */
+	int slider;					/* index of the slider object */
+	int sparent;				/* index of the slider parent (background) object */
+	int lines;					/* number of visible lines (list items) */
+	int n;						/* total number of lines (list items) */
+	int line;					/* index of the first visible item (0 - n-lines) */
 
 	void (*set_selector) (struct sliderinfo *slider, boolean draw, XDINFO *info);
 
 	int first;					/* index van eerste regel in objectboom */
 	int (*findsel) (void);		/* funktie voor het vinden van het geselekteerde object */
 } SLIDER;
+
 
 void sl_init(OBJECT *tree, SLIDER *slider);
 void sl_set_slider(OBJECT *tree, SLIDER *slider, XDINFO *info);
@@ -56,4 +63,6 @@ int sl_dialog(OBJECT *tree, int start, SLIDER *slider);
 void set_selector(SLIDER *slider, boolean draw, XDINFO *info);
 void ls_sl_init (int n, void *set_sel, SLIDER *sl, LSTYPE **list);
 int keyfunc(XDINFO *info, SLIDER *sl, int scancode); 
+long calc_slpos(int newpos, long lines);
+int calc_slmill(long pos, long lines);
 

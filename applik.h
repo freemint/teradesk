@@ -46,7 +46,7 @@ CfgNest app_config;
 void app_init(void);
 void app_default(void);
 
-void app_install(void);
+void app_install(int use);
 APPLINFO *app_find(const char *file);
 APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
 APPLINFO *find_fkey(int fkey);
@@ -54,3 +54,4 @@ boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, i
 void app_update(wd_upd_type type, const char *fname1, const char *fname2);
 int app_specstart(int flags, WINDOW *w, int *list, int n, int kstate);
 boolean app_checkspec(int flag, int pos);
+void log_shortname( char *dest, char* appname ); 

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,9 +30,9 @@
 #include <mint.h>
 #include <xdialog.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
-#include "resource.h"
 #include "version.h"
 #include "xfilesys.h"
 #include "font.h"
@@ -58,14 +59,14 @@ OBJECT *menu,
 	   *wdoptions,
 	   *wdfont,
 	   *helpno1,
-	   *helpno2,
-	   *helpno3,
 	   *fmtfloppy,
 	   *vidoptions, 
 	   *copyoptions,
 	   *ftydialog,
 	   *searching,
-	   *specapp;
+	   *specapp,
+	   *openw,
+	   *compare;
 
 char
 	 *dirname, /* should not be removed for the time being */
@@ -82,7 +83,9 @@ char
 	 *drvid,
 	 *iconlabel,
 	 *cpfile,
-	 *cpfolder;
+	 *cpfolder,
+	 *cfile1,
+	 *cfile2;
 
 	LNAME				/* scrolled text fields for file/folder/path names */
 		envlinetxt,
@@ -90,11 +93,12 @@ char
 		dirnametxt,
 		flnametxt,
 		opentxt,
-		cmdlinetxt;
+		cmdlinetxt,
+		cfile1txt,
+		cfile2txt;
 
 
 extern int 
-	xd_aes4_0, 		/* show if it is a 3D aes */
 	tos_version,	/* tos version, hex encoded */ 
 	aes_version;	/* aes version, hex encoded */
 
@@ -118,9 +122,10 @@ static void set_menubox(int box)
  * horizontal and vertical correction of object position to compensate
  * change of object size in 3D AESses, so that objects in sliders 
  * and similar arrangements do not overlap.
+ * Object width and position is adjusted to fit between a left and
+ * a right object.
  */
 
-extern int aes_hor3d, aes_ver3d;
 
 static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 {
@@ -145,10 +150,10 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 	tree[object].r.y = tree[up  ].r.y + tree[up    ].r.h + aes_ver3d + 1;
 	tree[object].r.h = tree[down].r.y - tree[object].r.y - aes_ver3d - 1;
 
-	/* Change fill pattern in sliders to dark gray when appropriate */
+	/* Change fill pattern in sliders to full dark gray when appropriate */
 
 	if ( xd_aes4_0 && ncolors > 4 )
-		tree[object].ob_spec.obspec.fillpattern = 7;
+		tree[object].ob_spec.obspec.fillpattern = 7; 
 }
 
 
@@ -181,10 +186,8 @@ void rsc_yfix
 
 static void mn_del(int box, int item)
 {
-
 	int i, y, ch_h = screen_info.fnt_h;
 	OBJECT *tree = menu;
-
 
 	tree[box].r.h -= ch_h;
 	y = tree[item].r.y;
@@ -223,23 +226,25 @@ static void rsc_fixmenus(void)
 
 	/* List of menuboxes and items in them to be deleted (maybe) */
 
-	static int mnbx[] = {
-				MNFILEBX,MNFILEBX,MNFILEBX,
-				MNVIEWBX,MNVIEWBX,MNVIEWBX,
-				MNOPTBOX,MNOPTBOX,
-				MNFILEBX,MNFILEBX,
-				MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,
-				MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
-				};
+	static int mnbx[] = 
+	{
+		MNFILEBX,MNFILEBX,MNFILEBX,
+		MNVIEWBX,MNVIEWBX,MNVIEWBX,
+		MNOPTBOX,MNOPTBOX,
+		MNFILEBX,MNFILEBX,
+		MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,
+		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
+	};
 
-	static int mnit[] = {
-				SEP1,SEP2,SEP3,
-				SEP5,SEP6,
-				SEP7,SEP8,
-				MDELETE,MFCOPY,
-				MSHSIZ,MSHDAT,MSHTIM,MSHATT,MSUNSORT,
-				MPRGOPT,SEP9,MWDOPT,MVOPTS,MSAVEAS
-				};
+	static int mnit[] = 
+	{
+		SEP1,SEP2,SEP3,
+		SEP5,SEP6,
+		SEP7,SEP8,
+		MDELETE,MFCOPY,
+		MSHSIZ,MSHDAT,MSHTIM,MSHATT,MSUNSORT,MREVS,
+		MPRGOPT,SEP9,MWDOPT,MVOPTS,MSAVEAS
+	};
 
 /* no harm done if it is always checked
 	if ( tos_version < 0x200 )
@@ -262,6 +267,8 @@ static void rsc_fixmenus(void)
 		/* 
 		 * memory needed for the menu is estimated from the
 		 * size of the Options menu box, because it is the largest
+		 * Note: if any item is added to the "View" menu, this
+		 * may change, and View menu will have to be checked
 		 */
 
 		xd_objrect(menu, MNOPTBOX, &boxrect);
@@ -283,11 +290,11 @@ static void rsc_fixmenus(void)
 			n = 19;
 		}
 		/*
-		 * Only the options menu is tested, but items from all boxes
+		 * Only the options menu is tested, but items from several boxes
 		 * are removed. Not very logical, but so it is for the time being
 		 * (a test showed that all menu boxes are of the approximately 
-		 * same size, "Options" being slightly larger than the others.
-		 * (If buffer size is sufficient, nothing will happen)
+		 * same size, "Options" being slightly larger than the others).
+		 * If buffer size is sufficient, nothing will happen.
 		 */
 
 		if (mnsize >= buffer.size)
@@ -307,7 +314,7 @@ static void rsc_fixmenus(void)
 
 	/* Adapt menu bar width to be the same as screen width */
 
-	xw_get(NULL, WF_WORKXYWH, &desk);
+	xw_getwork(NULL, &desk);
 	menu[menu->ob_head].r.w = desk.w;
 }
 
@@ -381,7 +388,7 @@ static void show_os( OBJECT *obj, int v )
 		tmp[5],
 		*tosversion = obj->ob_spec.tedinfo->te_ptext;
 
-	o = (int) strlen(itoa(v, tmp, 16)) - 4;
+	o = (int)strlen(itoa(v, tmp, 16)) - 4;
 
 	for (i = 0; i < 4; i++)
 		tosversion[i] = ((i + o) >= 0) ? tmp[i + o] : ' ';
@@ -394,7 +401,7 @@ static void show_os( OBJECT *obj, int v )
 
 void rsc_init(void)
 {
-	int i;
+	int i, v3d2 = 2 * aes_ver3d + 1;
 
 	xd_gaddr(R_TREE, MENU, &menu);
 	xd_gaddr(R_TREE, OPTIONS, &setprefs);
@@ -413,14 +420,14 @@ void rsc_init(void)
 	xd_gaddr(R_TREE, WOPTIONS, &wdoptions);
 	xd_gaddr(R_TREE, WDFONT, &wdfont);
 	xd_gaddr(R_TREE, HELP1, &helpno1);
-	xd_gaddr(R_TREE, HELP2, &helpno2);
-	xd_gaddr(R_TREE, HELP3, &helpno3);
 	xd_gaddr(R_TREE, FLOPPY, &fmtfloppy);
 	xd_gaddr(R_TREE, VOPTIONS, &vidoptions);
 	xd_gaddr(R_TREE, COPTIONS, &copyoptions);
 	xd_gaddr(R_TREE, ADDFTYPE, &ftydialog);	
 	xd_gaddr(R_TREE, SEARCH, &searching);
 	xd_gaddr(R_TREE, SPECAPP, &specapp);
+	xd_gaddr(R_TREE, OPENW, &openw);
+	xd_gaddr(R_TREE, COMPARE, &compare);
 
 	/*  
 	 * Handle pointers for scrolling editable texts. 
@@ -435,7 +442,9 @@ void rsc_init(void)
 	tgname  = xd_set_srcl_text(fileinfo,     FLTGNAME, tgnametxt  );
 	cmdline = xd_set_srcl_text(getcml,       CMDLINE,  cmdlinetxt );	 /* a command, i.e. very long */
 	          xd_set_srcl_text(applikation,  APNAME,   flnametxt );	
-	          xd_set_srcl_text(applikation,  APPATH,   dirnametxt );	
+	          xd_set_srcl_text(applikation,  APPATH,   dirnametxt );
+	cfile1 =  xd_set_srcl_text(compare, CFILE1, cfile1txt);
+	cfile2 =  xd_set_srcl_text(compare, CFILE2, cfile2txt);	
 	applcmdline = xd_set_srcl_text(applikation,  APCMLINE, cmdlinetxt); /* a command, i.e. long */
 	envline  = xd_set_srcl_text(applikation,     APLENV, envlinetxt );
 	spattfld = xd_set_srcl_text(searching, SMASK, dirnametxt ); 
@@ -453,17 +462,25 @@ void rsc_init(void)
 	 */
 
 	/* 
-	 * DjV note: rsc_xalign and rsc_yalign below change the dimensions
+	 * Note: rsc_xalign and rsc_yalign below change the dimensions
 	 * of dialog items so that they do not overlap with adjacent items;
 	 * this is supposed to prevent overlapping of scrolling arrow buttons
 	 * with scrolled-item fields.
 	 */
 
 	rsc_xalign(wdoptions, DSKPDOWN, DSKPUP, DSKPAT);
-	rsc_xalign(wdoptions, DSKCDOWN, DSKCUP, DSKCOLOR);
+	rsc_xalign(wdoptions, DSKCDOWN, DSKCUP, DSKPAT);
 	rsc_xalign(wdoptions, WINPDOWN, WINPUP, WINPAT);
-	rsc_xalign(wdoptions, WINCDOWN, WINCUP, WINCOLOR);
+	rsc_xalign(wdoptions, WINCDOWN, WINCUP, WINPAT);
+	wdoptions[DSKCUP].r.y   += v3d2;
+	wdoptions[DSKCDOWN].r.y += v3d2;
+	wdoptions[WINCUP].r.y  += v3d2;
+	wdoptions[WINCDOWN].r.y += v3d2;
+	wdoptions[DSKPAT].r.h   += v3d2;
+	wdoptions[WINPAT].r.h   += v3d2;
+	
 	rsc_xalign(wdfont, WDFSUP, WDFSDOWN, WDFSIZE);
+	rsc_xalign(vidoptions, VNCOLDN, VNCOLUP, VNCOL);
 	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
 
 	rsc_yalign(addicon, ICNUP, ICNDWN, ICPARENT);
@@ -478,7 +495,7 @@ void rsc_init(void)
 	 * perhaps a more compact solution should be used.
 	 */  
 
-	rsc_yfix( copyinfo, CMK1, CPT4, 3 );		/* copy info dialog     */
+	rsc_yfix( copyinfo, CPT4, CPT4, 1 );		/* copy info dialog     */
 	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy format dialog */		
 	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
@@ -522,7 +539,7 @@ void rsc_init(void)
 
 		/* 
 		 * Below are substituted "Files and links" with "Files" if no mint.
-		 * Once links get into dialogs by themselves, this should be removed
+		 * Once links get into dialogs separately, this should be removed
 		 */
 		rsc_title(copyinfo, CIFILES, SFILES);
 	}

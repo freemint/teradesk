@@ -28,9 +28,9 @@
 #include <xdialog.h>
 #include <mint.h>
 
+#include "resource.h" /* includes desktop.h */
 #include "desk.h"
 #include "error.h"
-#include "resource.h" /* includes desktop.h */
 #include "lists.h" /* must be above slider.h */
 #include "slider.h"
 #include "xfilesys.h"
@@ -53,7 +53,8 @@ FTYPE
  * so they are here defined once for all
  */
 
-char *presets[10] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG" };
+const char 
+	*presets[10] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG" };
 
 
 /*  
@@ -109,11 +110,12 @@ static void ftype_info
 ( 
 	FTYPE **list, 		/* list of defined masks */
 	char *filetype,		/* filetype to search for */ 
-	int dummy,			/* not used, exists for compatibility */
+	int use,			/* what is being done */
 	FTYPE *ft 			/* output information */
 )
 {
-	find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, NULL );
+	if ( !(use & LS_SELA) )
+		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, NULL );
 	return;
 }
 
@@ -124,7 +126,7 @@ static void ftype_info
 
 static void rem_all_filetypes(void)
 {
-	rem_all( (LSTYPE **)(&filetypes), rem ); 
+	lsrem_all( (LSTYPE **)(&filetypes), lsrem ); 
 }
 
 
@@ -200,16 +202,10 @@ static boolean filetype_dialog
 		else
 			stop = TRUE;
 
-		xd_change(&info, button, NORMAL, TRUE);
+		xd_drawbuttnorm(&info, button);
 	}
 	xd_close(&info);
 	return stat;
-}
-
-
-void wd_set_filemask(WINDOW *w)
-{
-	((ITM_WINDOW *) w)->itm_func->wd_filemask(w);
 }
 
 
@@ -235,7 +231,7 @@ char *wd_filemask(const char *mask)
 static LS_FUNC ftlist_func =
 {
 	copy_ftype,
-	rem,
+	lsrem,
 	ftype_info,
 	find_lsitem,
 	filetype_dialog
@@ -259,23 +255,24 @@ char *ft_dialog
 )
 {
 	OBJECT
-		savedial;	/* to save dialog before recursive call */
+		savedial;		/* to save the dialog before recursive calls */
 
 	int 
-		luse,		/* local value of use */
-		button,		/* code of pressed button */
-		ftb;		/* button, too   */
+		luse,			/* local value of use */
+		button,			/* code of pressed button */
+		ftb;			/* button, too   */
 
 	SNAME 
-		newmask;	/* newly specified filemask */
+		newmask;		/* newly specified filemask */
 
 	char 
-		*result;	/* to be return value of this routine */
+		*result = NULL;	/* to be return value of this routine */
 
 
 	/* 
 	 * If necessary, save the previous state of this dialog's root object
-	 * (to return to proper state after a recursive call) 
+	 * in order to return to proper state after a recursive call
+	 * (this will happen when assigning application documenttypes) 
 	 */
 
 	if ( use & LS_DOCT )
@@ -292,8 +289,8 @@ char *ft_dialog
 	if ( mask != NULL )
 	{
 		cv_fntoform(setmask + FILETYPE, mask);		
-		setmask[FILETYPE].ob_flags &= ~HIDETREE;
-		setmask[FTTEXT].ob_flags &= ~HIDETREE;
+		obj_unhide(setmask[FILETYPE]);
+		obj_unhide(setmask[FTTEXT]);
 	}
 
 	/*
@@ -301,7 +298,7 @@ char *ft_dialog
 	 * if-then-else could have been used below instead of switch...
 	 */
 
-	switch(luse)
+	switch( (luse & ~LS_SELA) )
 	{
 		case LS_FMSK:
 
@@ -309,7 +306,7 @@ char *ft_dialog
 
 			rsc_title(setmask, DTSMASK, DTFTYPES);
  			rsc_title(setmask, FTTEXT, TFTYPE ); 
-			setmask[MSKATT].ob_flags &= ~HIDETREE; 
+			obj_unhide(setmask[MSKATT]); 
 			setmask[FILETYPE].ob_flags |= EDITABLE;
 
 			/* Enter values of file attributes flags into dialog */
@@ -331,9 +328,9 @@ char *ft_dialog
 			rsc_title(setmask, DTSMASK, DTDTYPES);
 			rsc_title(setmask, FTTEXT, TAPP ); 
 			setmask[FILETYPE].ob_flags &= ~EDITABLE;
-			setmask[FTADD].ob_state &= ~SELECTED; 
-			setmask[FTDELETE].ob_state &= ~SELECTED;
-			setmask[FTCHANGE].ob_state &= ~SELECTED;
+			obj_deselect(setmask[FTADD]); 
+			obj_deselect(setmask[FTDELETE]);
+			obj_deselect(setmask[FTCHANGE]);
 			break;
 
 		default:
@@ -344,9 +341,9 @@ char *ft_dialog
 
 	button = list_edit( &ftlist_func, (LSTYPE **)(flist), NULL, sizeof(FTYPE), (LSTYPE *)(&fwork), luse);
 
-	setmask[MSKATT].ob_flags |= HIDETREE;
-	setmask[FILETYPE].ob_flags |= HIDETREE;
-	setmask[FTTEXT].ob_flags |= HIDETREE;
+	obj_hide(setmask[MSKATT]);
+	obj_hide(setmask[FILETYPE]);
+	obj_hide(setmask[FTTEXT]);
 
 	if ( button == FTOK )
 	{
@@ -362,10 +359,8 @@ char *ft_dialog
 			if ( mask != NULL )
 			{
 				cv_formtofn(newmask, &setmask[FILETYPE]);
-				if ((result = malloc(strlen(newmask) + 1)) != NULL)
+				if ((result = malloc_chk(strlen(newmask) + 1)) != NULL)
 					strcpy(result, newmask);
-				else
-					xform_error(ENSMEM);
 				return result;
 			}
 		}
@@ -413,15 +408,15 @@ void ft_default(void)
 	 * e.g. ftadd_one("*.C");
 	 */
 
-	ftadd_one(presets[0]);	/* 		* 		*/			
-	ftadd_one(presets[1]);	/* 		*.*		*/
+	ftadd_one((char *)presets[0]);	/* 		* 		*/			
+	ftadd_one((char *)presets[1]);	/* 		*.*		*/
 
 #if _PREDEF
 
 	/* Note: for upper/lowercase match see routine ftadd_one */
 
 	for ( i = 2; i < 10; i++ )
-		ftadd_one(presets[i]);
+		ftadd_one((char *)presets[i]);
 #endif
 }
 
@@ -432,7 +427,7 @@ void ft_default(void)
 
 CfgEntry ft_table[] =
 {
-	{CFG_HDR, 0, "*type"  },
+	{CFG_HDR, 0, "*"  },
 	{CFG_BEG},
 	{CFG_S,   0, "mask", fwork.filetype },
 	{CFG_END},
@@ -482,13 +477,16 @@ CfgNest one_ftype
 			else
 			{
 				if (
-						lsadd(  (LSTYPE **)ffthis,
+						lsadd
+						(  
+							(LSTYPE **)ffthis,
 		    				sizeof(FTYPE),
 		                	(LSTYPE *)&fwork,
 		                	END,
-		                	copy_ftype) == NULL
+		                	copy_ftype
+						) == NULL
 					)
-						*error = ENOMSG; /* there was an allert in lsadd */
+						*error = ENOMSG; /* there was an alert in lsadd */
 			}
 		}
 	}
@@ -503,7 +501,7 @@ CfgEntry filetypes_table[] =
 {
 	{CFG_HDR, 0, "*"     },
 	{CFG_BEG},
-	{CFG_NEST,0, "*type", one_ftype },		/* Repeating group */
+	{CFG_NEST,0, "*", one_ftype },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -515,12 +513,14 @@ CfgEntry filetypes_table[] =
 
 CfgNest ft_config
 {
+	char *fff = "ftype";
+
 	fthis = filetypes;
 	ffthis = &filetypes;
 
-	ft_table[0].s[0] = 'f'; 
-	filetypes_table[0].s =    "filetypes";
-	filetypes_table[2].s[0] = 'f';
+	ft_table[0].s = fff; 
+	filetypes_table[0].s = "filetypes";
+	filetypes_table[2].s = fff;
 	filetypes_table[3].type = CFG_ENDG;
 
 	*error = handle_cfg(file, filetypes_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_filetypes, ft_default);

@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-boolean prt_file(WINDOW *w, int item);
+#define PM_TXT 0	/* print data in text mode (line wrap) */
+#define PM_HEX 1	/* print data as hex dump */
+#define PM_RAW 2	/* print data as it is, no intervention */
+
+extern int printmode;		/* see above */
+extern XFILE *printfile;	/* print file; if NULL print to port */
+
 boolean check_print( WINDOW *w, int n, int *list); 
 boolean print_list(WINDOW *w, int n, int *list, long *folders, long *files, long *bytes, int function);

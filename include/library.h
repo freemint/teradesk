@@ -36,16 +36,21 @@ char *strsncpy(char *dst, const char *src, size_t len);
 
 int min(int x, int y);
 int max(int x, int y);
+int minmax(int lo, int i, int hi);
 long lmin(long x, long y);
 long lmax(long x, long y);
+int lminmax(long lo, long i, long hi);
 void bell(void);
 void digit(char *s, int x);
+void free_item( void **ptr );
 
 
 /* Funkties voor filenamen */
 
 void make_path( char *name,const char *path,const char *fname );
 void split_path( char *path,char *fname,const char *name );
+void strip_name (char *dst, const char *src);
+void cramped_name(const char *s, char *t, int w);
 
 /* Funkties voor cookie-jar */
 

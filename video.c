@@ -58,6 +58,7 @@ int
 #endif
 	vprefsold,		/* previous state of voptions */
 	bltstat,		/* presence of blitter        */
+	falmode = 0,	/* falcon video mode		  */
 	currez;  		/* current screen mode        */    
 
 long
@@ -71,6 +72,14 @@ long
 #define TT_VIDEO	2
 #define FALC_VIDEO	3
 #define MIL_VIDEO	4
+#define OTH_VIDEO	5
+
+
+/*
+ * Which resolution code is selected by which radiobutton 
+ */
+
+static const int rmap[10] = {VSTLOW, VSTMED, VSTHIGH, 0, VTTMED, 0, VTTHIGH, VTTLOW, 0, 0};
 
 	
 /* 
@@ -91,11 +100,16 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 	char
 		*acia;
 
-	static int ov_max_h, ov_max_w;
+	static int 
+		ov_max_h, 
+		ov_max_w,
+		idi, 
+		menu_h;
 
-	int std_x[4] = {320,640,1280,0};
-	int std_y[4] = {200,400,800,0};
-	static int idi, menu_h;
+	static const int 
+		std_x[4] = {320, 640, 1280, 0},
+		std_y[4] = {200, 400, 800, 0};
+
 	WINDOW *w;
 #endif
 
@@ -112,11 +126,19 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		
 		/* Try to find out about a couple of overscan types */
 		
-#if _OVSCAN		
+#if _OVSCAN	
+		{	
+			int work_out[58];	
+			vq_extnd(vdi_handle, 0, work_out);
+
+			max_w = work_out[0] + 1;	/* Screen width (pixels)  */
+			max_h = work_out[1] + 1;	/* Screen height (pixels) */
+		}
+
 		if (   ( (over = find_cookie('OVER')) != - 1 )
 		    || ( (over = find_cookie('Lace')) != - 1 ) )
 		{
-			/* Set initial values */
+			/* There is ST-overscan/lacescan. Set initial values */
 
 			if ( ovrstat < 0 )
 			{
@@ -124,6 +146,8 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 				ov_max_h = max_h;
 				menu_h = max_h - screen_info.dsk.h; 
 			}
+
+			/* Detect nonstandard resolution */
 
 			ovrstat = 0;
 			for ( idi = 0; idi < 3; idi++ )
@@ -137,9 +161,9 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 				}
 
 			if ( ovrstat != 0 )
-				options.V2_2.vprefs |= VO_OVSCAN;
+				options.vprefs |= VO_OVSCAN;
 			else
-				options.V2_2.vprefs &= ~VO_OVSCAN;
+				options.vprefs &= ~VO_OVSCAN;
 		}
 		else
 			over  = 0xffffffffL;
@@ -152,25 +176,24 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		else
 			bltstat = 0;
 		if ( bltstat & 0x0001 ) 	
-			options.V2_2.vprefs |= VO_BLITTER; 
+			options.vprefs |= VO_BLITTER; 
 		else
-			options.V2_2.vprefs &= ~VO_BLITTER;
+			options.vprefs &= ~VO_BLITTER;
     		
 		/* Which is the current standard resolution ? */
 	
 		currez = (int)xbios(4); /* Getrez() */   	
 		
-		options.V2_2.vrez = currez; 
+		options.vrez = currez; 
 
 	}
 	else /* set data */
 	{	
-
 		/* Set blitter, if present */
 	
 		if ( bltstat & 0x0002 )
 		{
-			if ( options.V2_2.vprefs & VO_BLITTER ) 
+			if ( options.vprefs & VO_BLITTER ) 
 				bltstat |= 0x0001;	
 			else
 				bltstat &= ~0x0001;
@@ -183,7 +206,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		 * that which is below is ok but not enough !!!!
 		 */
 
-		if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.V2_2.vprefs) && VO_OVSCAN) )
+		if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.vprefs) & VO_OVSCAN) )
 		{
 			oldstat = ovrstat;
 
@@ -192,13 +215,12 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 			s = Super (0L);
 			(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
 
-			if ( options.V2_2.vprefs & VO_OVSCAN )
+			if ( options.vprefs & VO_OVSCAN )
 			{
 				*acia = 0xD6; /* value for the acia reg- switch overscan ON */
 				ovrstat = 1;
 				max_h = ov_max_h;
 				max_w = ov_max_w;
-				vidoptions[VBLITTER].ob_state &= ~DISABLED;
 			}
 			else
 			{
@@ -206,7 +228,6 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 				ovrstat = 0;
 				max_w = std_x[idi];
 				max_h = std_y[idi];
-				vidoptions[VBLITTER].ob_state |= DISABLED;
 			}
 
 			/* 
@@ -235,14 +256,14 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 
 		if ( set == 1 )
 		{
-			wind_set(0, WF_NEWDESK, desktop, 0);
-
-			menu_bar(menu, 0); 
+			/* Calculate window sizes */
 
 			txt_init();
 			dir_init();
 
 			w = xw_first();
+
+			/* Change window sizes to fit screen */
 
 			while (w != NULL)
 			{
@@ -250,9 +271,18 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 				w = w->xw_next;
 			}
 
-			dsk_draw(); 
-			menu_bar(menu, 1); 
-           	wd_fields();
+			/* 
+			 * Regenerate desktop; doesn't do well with overscan
+			 * unless menu_bar() is done twice ???
+			 */
+
+			menu_bar(menu, 0);
+			wind_set(0, WF_NEWDESK, desktop, 0);
+			menu_bar(menu, 1);
+			dsk_draw();
+			menu_bar(menu, 1);
+
+ 			wd_drawall();
 		}
 
 		/* Change resolution */
@@ -267,7 +297,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 			 * This can be enhanced- include falcon modes, etc. 
 			 */
 
-			shel_write( SHW_RESCHNG, currez + 2, 0, (void *)&ignor, NULL );
+			shel_write( SHW_RESCHNG, currez + 2, falmode, (void *)&ignor, NULL );
 
 			/* If still alive, wait a bit... */
 
@@ -284,29 +314,30 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 
 
 /* 
- * Routine voptions handles video options dialog 
+ * Routine voptions() handles video options dialog 
  */ 
 
 int voptions(void)
 {
-    
-	int 
+   	int 
 		button,    /* selected button */
 		newrez,    /* desired resolution   */
-		rmap[16],  /* map standard resolutions to .rsc objects */
-		rimap[32]; /* inverse to above */
+		rimap[16]; /* inverse to rmap */
 	               /* dimensioning will be problematic */
-    	           /* if indices in rsc are large */
+    	           /* if object indices are large - check in desktop.rsc */
+
+
+
+
+/* for the next release
+	char 
+		*ap = "\0",		/* to display # of colours */
+		*s = vidoptions[VNCOL].ob_spec.free_string;	/* same */
+	
+	int
+		nc = ncolors;				/* same */
+*/
  
-	/* which button to select for which resolution code */ 
-  
-	rmap[0] = VSTLOW; 
-	rmap[1] = VSTMED;  
-	rmap[2] = VSTHIGH;
-	rmap[4] = VTTMED;  
-	rmap[6] = VTTHIGH;
-	rmap[7] = VTTLOW;
-    
 	/* which resolution code is selected by which button */
 
 	rimap[0] = -1; 
@@ -324,21 +355,6 @@ int voptions(void)
 	/* Set radiobutton for current resolution selected */
 	
 	xd_set_rbutton(vidoptions, VREZOL, rmap[currez]);
-	
-	/* 
-	 * Which video options are not available? Disable unavailables
-	 * (first disable all then enable only what is available) 
-	 * Or maybe better not- what about graphic cards and multisyncs? 
-	 * note: a TT was not available to test TT-related modes.   
-	 */
-	
-	vidoptions[VSTLOW].ob_state  |=  DISABLED;
-	vidoptions[VSTMED].ob_state  |=  DISABLED;
-	vidoptions[VSTHIGH].ob_state |=  DISABLED;
-
-	vidoptions[VTTLOW].ob_state  |=  DISABLED;
-	vidoptions[VTTMED].ob_state  |=  DISABLED;
-	vidoptions[VTTHIGH].ob_state |=  DISABLED; 
 
 	switch( (int)vdo )
 	{
@@ -346,39 +362,50 @@ int voptions(void)
 	
 			if ( currez == 6 )   /* tt-high? disable low and med res */
 			{
-				vidoptions[VTTHIGH].ob_state &= ~DISABLED; 
+				obj_enable(vidoptions[VTTHIGH]); 
 			}
 			else               /* tt-low/med? disable hi res */
 			{
-				vidoptions[VSTLOW].ob_state  &= ~DISABLED;
-				vidoptions[VSTMED].ob_state  &= ~DISABLED;
-		    	vidoptions[VSTHIGH].ob_state &= ~DISABLED;
-
-				vidoptions[VTTLOW].ob_state  &= ~DISABLED;
-				vidoptions[VTTMED].ob_state  &= ~DISABLED;
+				obj_enable(vidoptions[VSTLOW]);
+				obj_enable(vidoptions[VSTMED]);
+		    	obj_enable(vidoptions[VSTHIGH]);
+				obj_enable(vidoptions[VTTLOW]);
+				obj_enable(vidoptions[VTTMED]);
 			}
 			break;
 
 		case ST_VIDEO:
+
+#if _OVSCAN 
+			/* Overscan */
+  
+			if ( over != 0xffffffffL )
+			{
+				obj_unhide(vidoptions[VOVERSCN]);	
+  				set_opt( vidoptions, options.vprefs, VO_OVSCAN, VOVERSCN ); 
+			}
+#endif
+
 		case STE_VIDEO:
 	   
 			if ( currez == 2 )   /* st-high? disable low and med res */
 			{
-				vidoptions[VSTHIGH].ob_state &= ~DISABLED;
+				obj_enable(vidoptions[VSTHIGH]);
 			}
 			else               /* st-low/med? disable hi res */
 			{
-				vidoptions[VSTLOW].ob_state  &= ~DISABLED;
-				vidoptions[VSTMED].ob_state  &= ~DISABLED;
+				obj_enable(vidoptions[VSTLOW]);
+				obj_enable(vidoptions[VSTMED]);
 			}
 			break;
+
 		case FALC_VIDEO:
 
-			vidoptions[VSTLOW].ob_state  &= ~DISABLED;
-			vidoptions[VSTMED].ob_state  &= ~DISABLED;
-	    	vidoptions[VSTHIGH].ob_state &= ~DISABLED;
-
-			vidoptions[VTTMED].ob_state  &= ~DISABLED;
+			obj_enable(vidoptions[VSTLOW]);
+			obj_enable(vidoptions[VSTMED]);
+	    	obj_enable(vidoptions[VSTHIGH]);
+			obj_enable(vidoptions[VTTLOW]);
+			obj_enable(vidoptions[VTTMED]);
 
 			break;
 		case MIL_VIDEO:
@@ -389,13 +416,12 @@ int voptions(void)
 
 			/* For the time being, just enable all */
 
-			vidoptions[VSTLOW].ob_state  |=  DISABLED;
-			vidoptions[VSTMED].ob_state  |=  DISABLED;
-			vidoptions[VSTHIGH].ob_state |=  DISABLED;
-
-			vidoptions[VTTLOW].ob_state  |=  DISABLED;
-			vidoptions[VTTMED].ob_state  |=  DISABLED;
-			vidoptions[VTTHIGH].ob_state |=  DISABLED; 
+			obj_enable(vidoptions[VSTLOW]);
+			obj_enable(vidoptions[VSTMED]);
+			obj_enable(vidoptions[VSTHIGH]);
+			obj_enable(vidoptions[VTTLOW]);
+			obj_enable(vidoptions[VTTMED]);
+			obj_enable(vidoptions[VTTHIGH]); 
 
 			break;
 	}
@@ -403,45 +429,50 @@ int voptions(void)
 	/* Set button for blitter */
     
 	if ( bltstat & 0x0002 )		/* blitter is present */
-		set_opt ( vidoptions, options.V2_2.vprefs, VO_BLITTER, VBLITTER );
-	else						/* blitter not present */
-		vidoptions[VBLITTER].ob_state |=DISABLED;
+	{
+		obj_enable(vidoptions[VBLITTER]);
+		set_opt ( vidoptions, options.vprefs, VO_BLITTER, VBLITTER );
+	}
 
 	/* Palette */
 
 	set_opt ( vidoptions, options.cprefs, SAVE_COLORS, SVCOLORS );
-
-#if _OVSCAN 
-	/* Overscan */
-  
-	if ( (vdo == 0) && ( over != 0xffffffffL ) )
-  		set_opt( vidoptions, options.V2_2.vprefs, VO_OVSCAN, VOVERSCN ); 
-	else
-#endif
-		vidoptions[VOVERSCN].ob_flags |= HIDETREE;
 	
 	/* Dialog... */
 	
-	vprefsold = options.V2_2.vprefs;
+	vprefsold = options.vprefs;
+
+/* for the next release
+	if ( nc > 1024 )
+	{
+		nc /= 1024;
+		ap = "K";
+	}
+
+	itoa(nc, s, 10);
+	strcat(s, ap);
+*/
+
+	/* This will change in a future release ! */
+
 	button = xd_dialog( vidoptions, 0 );
   
 	/* If selected OK ... */
   
 	if ( button == VIDOK )
 	{
-	  
-		/* Set save palette flag */
+	  	/* Set save palette flag */
     
 		get_opt( vidoptions, &options.cprefs, SAVE_COLORS, SVCOLORS );
      
 		/* Set blitter, (couldn't have been selected if not present) */
     
-		get_opt( vidoptions, &options.V2_2.vprefs, VO_BLITTER, VBLITTER);
+		get_opt( vidoptions, &options.vprefs, VO_BLITTER, VBLITTER);
      
 #if _OVSCAN
 		/* Set overscan option (could not have been selected if not present) */
    
-		get_opt ( vidoptions, &options.V2_2.vprefs, VO_OVSCAN, VOVERSCN ); 
+		get_opt ( vidoptions, &options.vprefs, VO_OVSCAN, VOVERSCN ); 
 #endif
 			
 		/* Change resolution ? */
@@ -450,10 +481,17 @@ int voptions(void)
 		
 		get_set_video(1); /* execute settings which do not require a reset */
 
+		/* Will resolution be changed? Display an alert */
+
 		if ( newrez != currez && newrez != -1 )
 		{
-			currez = newrez;	 	/* new becomes old */
-			return 1;  		 		/* to initiate resolution change */				
+			button = alert_printf(1, ARESCH);
+
+			if ( button == 1 )
+			{
+				currez = newrez;	 	/* new becomes old */
+				return 1;  		 		/* to initiate resolution change */	
+			}			
 		}
 		 
 	}	/* OK button ? */

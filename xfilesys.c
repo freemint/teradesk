@@ -30,9 +30,9 @@
 #include <library.h>
 #include <mint.h>
 
+#include "desktop.h"
 #include "desk.h"
 #include "error.h"
-#include "desktop.h"
 #include "xfilesys.h"
 #include "file.h"
 
@@ -131,6 +131,12 @@ static int _fullname(char *buffer)
 	char *name, *h, *d, *s;
 	int error;
 
+	/* 
+	 * Note: there will probably be two alerts 
+	 * if string can not be duplicated, 
+	 * as strdup already displays an alert
+	 */
+
 	if ((name = strdup(buffer)) == NULL)
 		error = ENSMEM;
 	else
@@ -180,10 +186,7 @@ char *x_fullname(const char *file, int *error)
 	strcpy(buffer, file);
 
 	if ((*error = _fullname(buffer)) != 0)
-	{
-		free(buffer);
-		return NULL;
-	}
+		free_item(&((void *)buffer));
 
 	return buffer;
 }
@@ -225,10 +228,7 @@ char *x_getpath(int drive, int *error)
 	/* Append the rest */
 
 	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
-	{
-		free(buffer);
-		return NULL;
-	}
+		free_item(&((void *)buffer));
 	
 	return buffer;
 }
@@ -331,48 +331,26 @@ char *x_fllink( char *linkname )
 
 		if (mint)
 		{
-			if ( (tmp = malloc( sizeof(VLNAME) )) != NULL )
+			if ( (tmp = malloc_chk( sizeof(VLNAME) )) != NULL )
 			{
 				error = x_rdlink( (int)sizeof(VLNAME), tmp, linkname ); 
 	
 				/* If the name of the referenced item has been obtained... */
 
-				if ( !error )
-				{
-/* improved below
-					if ( strchr(tmp,'\\') == NULL )
-					{
-						/* referenced name does not contain a path, use that of the link */
-
-						char 
-							*lpath;
-
-						if ( (lpath = fn_get_path(linkname)) != NULL )
-						{
-							target = x_makepath(lpath, tmp, &error);
-							free(lpath);
-						}
-					}
-					else
-						target = strdup(tmp);
-*/
-					target = x_pathlink(tmp, linkname);
-				}
-				else
+				if ( error )
 					/* this is not a link, just copy the name */
 					target = strdup(linkname);
+				else
+					/* this is a link */
+					target = x_pathlink(tmp, linkname);
+
 			}
-			else /* tmp = NULL */
-				xform_error(ENSMEM);
 		}
 
 		if (tmp == NULL)
 
 #endif
 			target = strdup(linkname);
-
-		if ( target == NULL )
-			xform_error(ENSMEM);
 
 		free(tmp);
 	}
@@ -437,7 +415,7 @@ int x_getlabel(int drive, char *label)
 
 	Fsetdta(olddta);
 
-	return ((error == -49) || (error == -33)) ? 0 : error;
+	return ((error == ENMFIL) || (error == EFILNF)) ? 0 : error;
 }
 
 
@@ -456,7 +434,7 @@ int x_rename(const char *oldname, const char *newname)
 
 /* 
  * "Unlink" a file (i.e. delete) .
- * When operated on a symblic link, it deletes the link not the file
+ * When operated on a symblic link, it deletes the link, not the file
  */
 
 int x_unlink(const char *file)
@@ -486,6 +464,16 @@ int x_datime(DOSTIME *time, int handle, int wflag)
 
 
 /* 
+ * Aux. function for size optimization
+ */
+
+static long x_retresult(long result)
+{
+	return (result < 0) ? (long)xerror((int)result) : result;
+}
+
+
+/* 
  * Open a file 
  */
 
@@ -498,7 +486,7 @@ int x_open(const char *file, int mode)
 
 	result = Fopen(file, mode);
 
-	return (result < 0) ? xerror((int)result) : (int)result;
+	return (int)x_retresult(result);
 }
 
 
@@ -512,7 +500,7 @@ int x_create(const char *file, int attr)
 
 	result = Fcreate(file, attr);
 
-	return (result < 0) ? xerror((int)result) : (int)result;
+	return (int)x_retresult(result);
 }
 
 
@@ -536,7 +524,7 @@ long x_read(int handle, long count, char *buf)
 
 	result = Fread(handle, count, buf);
 
-	return (result < 0) ? (long) xerror((int) result) : result;
+	return x_retresult(result);
 }
 
 
@@ -550,7 +538,7 @@ long x_write(int handle, long count, char *buf)
 
 	result = Fwrite(handle, count, buf);
 
-	return (result < 0) ? (long) xerror((int) result) : result;
+	return x_retresult(result);
 }
 
 
@@ -560,7 +548,7 @@ long x_seek(long offset, int handle, int seekmode)
 
 	result = Fseek(offset, handle, seekmode);
 
-	return (result < 0) ? (long) xerror((int) result) : result;
+	return x_retresult(result);
 }
 
 
@@ -603,7 +591,7 @@ boolean x_inq_xfs(const char *path, boolean *casesens)
 
 	strcpy(p, path);
 	if (*(p + strlen(p) - 1) != '\\')
-		strcat(p, "\\");
+		strcat(p, bslash);
 
 	c = Dpathconf(p, DP_CASE);
 	t = Dpathconf(p, DP_TRUNC);
@@ -652,8 +640,7 @@ XDIR *x_opendir(const char *path, int *error)
 			if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
 			{
 				*error = xerror((int) dir->data.handle);
-				free(dir);
-				dir = NULL;
+				free_item(&((void *)dir));
 			}
 		}
 #endif
@@ -691,9 +678,8 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 
 		if (dir->data.gdata.first != 0)
 		{
-			/* 0x37 = READONLY | HIDDEN | SYSTEM | SUBDIR | ARCHIVE */
 			make_path(fspec, dir->path, "*.*");	
-			error = xerror(Fsfirst(fspec, 0x37));
+			error = xerror(Fsfirst(fspec, FA_ANY));
 			dir->data.gdata.first = 0;
 		}
 		else
@@ -810,7 +796,7 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 	
-		if ((result = xerror(Fsfirst(name, 0x37))) == 0) /* 0x37=anything but volume */
+		if ((result = xerror(Fsfirst(name, FA_ANY))) == 0) 
 			dta_to_xattr(&dta, xattr);
 
 		Fsetdta(olddta);
@@ -820,7 +806,10 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 
 
 /* 
- * Configuratie funkties 
+ * Configuratie funkties
+ * This function returns tha maximum possible path or name length.
+ * In single TOS those lengths are assigned fixed values, in Mint,
+ * they are obtained through Dpathconv. 
  */
 
 long x_pathconf(const char *path, int which)
@@ -840,7 +829,7 @@ long x_pathconf(const char *path, int which)
 		if (which == DP_PATHMAX)
 			 return PATH_MAX;			/* = 128 in TOS */
 		else if (which == DP_NAMEMAX)
-			return 12;
+			return 12;					/* 8 + 3 in TOS */
 		return 0;
 	}
 }
@@ -902,18 +891,26 @@ char *xfileselector(const char *path, char *name, const char *label)
 	char *buffer;
 	int error, button;
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)
-	{
-		xform_error(ENSMEM);
+	if ((buffer = malloc_chk(sizeof(LNAME))) == NULL)
 		return NULL;
-	}
+
 	strcpy(buffer, path);
 
+	/* A call to a file selector MUST be surrounded by wind_update() */
+
 	wind_update(BEG_UPDATE);
+
+	/* 
+	 * In fact there should be a check here if an alternative file selector
+	 * is installed, in such case the extended file-selector call can be used
+	 * although TOS is older than 1.04
+	 */
+
 	if ( tos_version >= 0x104 )
 		error = fsel_exinput(buffer, name, &button, (char *) label);
 	else
 		error = fsel_input(buffer, name, &button);
+
 	wind_update(END_UPDATE);
 
 	if ((error == 0) || (button == 0))
@@ -948,8 +945,7 @@ static int read_buffer(XFILE *file)
 	long n;
 
 	if ((n = x_read(file->handle, XBUFSIZE, file->buffer)) < 0)
-		return (int) n;
-
+		return (int)n;
 	else
 	{
 		file->write = (int) n;
@@ -993,13 +989,19 @@ static int write_buffer(XFILE *file)
 
 
 /* 
- * Open a real file 
+ * Open a real file. Return pointer to a XFILE structure
+ * which is created in this routine. 
  */
 
 XFILE *x_fopen(const char *file, int mode, int *error)
 {
-	int result = 0, rwmode = mode & O_RWMODE;
-	XFILE *xfile;
+	int 
+		result = 0, 
+		rwmode = mode & O_RWMODE;
+
+	XFILE 
+		*xfile;
+
 
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
 		result = ENSMEM;
@@ -1027,10 +1029,7 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 			result = EINVFN;
 
 		if (result != 0)
-		{
-			free(xfile);
-			xfile = NULL;
-		}
+			free_item(&((void *)xfile));
 	}
 
 	*error = result;
@@ -1052,11 +1051,16 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 XFILE *x_fmemopen(int mode, int *error)
 {
 	int 
-		result = 0, 
+		result = 0; 
+
+/* not needed
 		rwmode = mode & O_RWMODE; /* mode & 0x03 */
+*/
 
 	XFILE 
 		*xfile;
+
+	/* A memory block is allocated and some structures set */
 
 	if ((xfile = malloc(sizeof(XFILE))) == NULL)
 		result = ENSMEM;
@@ -1074,8 +1078,7 @@ XFILE *x_fmemopen(int mode, int *error)
 		if (rwmode != O_RDWR) /* 0x02 */
 		{
 			result = EINVFN; /* unknown function ? */
-			free(xfile);
-			xfile = NULL;
+			free_item(&xfile);
 		}
 */
 	}
@@ -1096,10 +1099,7 @@ int x_fclose(XFILE *file)
 	if (file->memfile)
 	{
 		error = 0;
-/*	not needed, already tested in free()
-		if (file->buffer)
-*/
-			free(file->buffer);
+		free(file->buffer);
 	}
 	else
 	{
@@ -1116,13 +1116,15 @@ int x_fclose(XFILE *file)
 }
 
 
+/* This routine (a pair to x_fwrite) is never used inTeraDesk
+
 /* 
  * Read file contents (not more than "lentgh" bytes)
  */
 
 long x_fread(XFILE *file, void *ptr, long length)
 {
-	long rem = length, n, size;
+	long remd = length, n, size;
 	char *dest = (char *) ptr, *src;
 	int read, write, error;
 
@@ -1132,20 +1134,20 @@ long x_fread(XFILE *file, void *ptr, long length)
 		write = file->write;
 		src = file->buffer;
 
-		while ((rem > 0) && (file->eof == FALSE))
+		while ((remd > 0) && (file->eof == FALSE))
 		{
 			if (read == write)
 				file->eof = TRUE;
 			else
 			{
 				*dest++ = src[read++];
-				rem--;
+				remd--;
 			}
 		}
 
 		file->read = read;
 
-		return (length - rem);
+		return (length - remd);
 	}
 	else
 	{
@@ -1165,17 +1167,17 @@ long x_fread(XFILE *file, void *ptr, long length)
 			read = file->read;
 			write = file->write;
 
-			while ((read < write) && (rem > 0))
+			while ((read < write) && (remd > 0))
 			{
 				*dest++ = src[read++];
-				rem--;
+				remd--;
 			}
 
 			file->read = read;
 
-			if ((rem >= XBUFSIZE) && (file->eof == FALSE))
+			if ((remd >= XBUFSIZE) && (file->eof == FALSE))
 			{
-				size = rem - (rem % XBUFSIZE);
+				size = remd - (remd % XBUFSIZE);
 
 				if ((n = x_read(file->handle, size, dest)) < 0)
 					return n;
@@ -1183,15 +1185,16 @@ long x_fread(XFILE *file, void *ptr, long length)
 				if (n != size)
 					file->eof = TRUE;
 
-				rem -= n;
+				remd -= n;
 			}
 		}
-		while ((rem > 0) && (file->eof == FALSE));
+		while ((remd > 0) && (file->eof == FALSE));
 
-		return (length - rem);
+		return (length - remd);
 	}
 }
 
+*/
 
 /* 
  * Write "length" bytes to a file;
@@ -1201,7 +1204,7 @@ long x_fread(XFILE *file, void *ptr, long length)
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
 	long 
-		rem = length, /* number of bytes remaining to be transferred */ 
+		remd = length, /* number of bytes remaining to be transferred */ 
 		n, 
 		size;
 
@@ -1225,7 +1228,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 
 		/* Go through all the data, until nothing remains */
 
-		while (rem > 0)
+		while (remd > 0)
 		{
 			if (write == file->bufsize)
 			{
@@ -1256,7 +1259,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 			/* Now write till the end of input */
 
 			dest[write++] = *src++;
-			rem--;
+			remd--;
 		}
 
 		file->write = write;
@@ -1271,10 +1274,10 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 		{
 			write = file->write;
 
-			while ((write < XBUFSIZE) && (rem > 0))
+			while ((write < XBUFSIZE) && (remd > 0))
 			{
 				dest[write++] = *src++;
-				rem--;
+				remd--;
 			}
 
 			file->write = write;
@@ -1285,9 +1288,9 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 					return (long) error;
 			}
 
-			if (rem >= XBUFSIZE)
+			if (remd >= XBUFSIZE)
 			{
-				size = rem - (rem % XBUFSIZE);
+				size = remd - (remd % XBUFSIZE);
 
 				if ((n = x_write(file->handle, size, dest)) < 0)
 					return n;
@@ -1295,11 +1298,11 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 				if (n != size)
 					return EDSKFULL;
 
-				rem -= n;
+				remd -= n;
 			}
-		} while (rem > 0);
+		} while (remd > 0);
 
-		return (length - rem);
+		return (length - remd);
 	}
 }
 
@@ -1330,12 +1333,6 @@ int x_fgets(XFILE *file, char *string, int n)
 	int i = 1, read, write, error;
 	char *dest, *src, ch, nl = 0;
 
-/* DjV 076: why? Disabled to use these routines for the memory file
-
-	if (file->memfile)
-		return EINVFN;
-*/
-
 /* DjV 076: why ? Just a safety precaution against careless use maybe?
 
 	if ((file->mode & O_RWMODE) != O_RDONLY)
@@ -1362,7 +1359,7 @@ int x_fgets(XFILE *file, char *string, int n)
 			/* 
 			 * end of buffer reached; read a new one, or this is end of file
 			 * Note: if used carefully, read_buffer() should never happen
-			 * with the memory file, because never should be more read
+			 * with a memory file, because never should be more read
 			 * than had been written
 			 */
 
@@ -1382,13 +1379,25 @@ int x_fgets(XFILE *file, char *string, int n)
 
 			if (nl != 0)
 			{
+				/* 
+				 * Handle the second character (if there is any) 
+				 * of <cr><lf> or <lf><cr> 
+				 */
+
 				ready = TRUE;
-				if ((((ch = src[read]) == '\n') || (ch == '\r')) && (nl != ch))
+				ch = src[read];
+				if (((ch == '\n') || (ch == '\r')) && (nl != ch))
 					read++;
 			}
 			else
 			{
-				if (((ch = src[read++]) == '\n') || (ch == '\r'))
+				/* 
+				 * Handle characters including the first character
+				 * of a <cr><lf> or <lf><cr> pair.
+				 */
+
+				ch = src[read++];
+				if ((ch == '\n') || (ch == '\r'))
 					nl = ch;
 				else if (i < n)
 				{
@@ -1402,7 +1411,6 @@ int x_fgets(XFILE *file, char *string, int n)
 	file->read = read; 
 
 	*dest = 0;
-
 	return 0;
 }
 

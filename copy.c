@@ -28,15 +28,15 @@
 #include <library.h>
 #include <tos.h>
 #include <mint.h>
-#include <xscncode.h>
 #include <xdialog.h>
+#include <xscncode.h>
 
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
-#include "events.h"
-#include "printer.h"
-#include "resource.h"
 #include "xfilesys.h"
+#include "printer.h"
+#include "events.h"
 #include "copy.h"
 #include "font.h"
 #include "file.h"
@@ -67,7 +67,7 @@ boolean
 	rename_files = FALSE; 
 
 static boolean 
-	set_oldpos, 
+	set_oldpos,
 	overwrite, 
 	updatemode = FALSE,
 	restoremode = FALSE;
@@ -85,6 +85,8 @@ DOSTIME
 int opattr;
 unsigned int Tgettime(void);
 unsigned int Tgetdate(void);
+
+static int sd = 0; /* amount of reducion of dialog size */
 
 static XDINFO cfdial;
 extern int tos_version;
@@ -105,11 +107,24 @@ static int del_folder(const char *name, int function, int prev);
 int open_cfdialog(long folders, long files, long bytes, int function) 
 {
 	int 
+		sd1 = copyinfo[COKBOX].r.y - copyinfo[CPT3].r.y - screen_info.fnt_h,
 		mask,
 		button, 
 		title;
 
 	cfdial_open = FALSE;
+
+	sd = 0;
+
+	/* Set default visibility and state of some objects */
+
+	obj_hide(copyinfo[PSETBOX]);
+	obj_hide(copyinfo[CSETBOX]);
+	obj_hide(copyinfo[CPT3]);
+	obj_hide(copyinfo[CPDEST]);
+	obj_hide(copyinfo[CPRFILE]);
+
+	xd_set_rbutton(copyinfo, PSETBOX, PRTXT + printmode);
 
 	/* (Almost) always display the dialog */
 
@@ -118,28 +133,43 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 		case CMD_COPY:
 			mask = CF_COPY;		
 			title = (rename_files == TRUE) ? DTCOPYRN : DTCOPY;
-			break;
+			goto unhide;
 		case CMD_MOVE:
 			mask = CF_COPY;	
 			title = (rename_files == TRUE) ? DTMOVERN : DTMOVE;
+			unhide:;
+			obj_unhide(copyinfo[CSETBOX]);
+			obj_unhide(copyinfo[CPT3]);
+			obj_unhide(copyinfo[CPDEST]);
 			break;
 		case CMD_DELETE:
 			mask = CF_DEL;
 			title = DTDELETE;
+			sd = sd1;
 			break;
 		case CMD_PRINT:
 			mask = CF_PRINT;
 			title = DTPRINT;
+			obj_unhide(copyinfo[PSETBOX]);
+			obj_unhide(copyinfo[CPRFILE]);
 			break;
 		case CMD_PRINTDIR: 
 			mask = CF_PRINT;
 			title = DTPRINTD;
+			obj_unhide(copyinfo[CPRFILE]);
+			sd = sd1 - screen_info.fnt_h;
 			break;		
 		case CMD_TOUCH:	
 			mask = CF_TOUCH;
 			title = DTTOUCH;
+			obj_unhide(copyinfo[CSETBOX]);
 			break;
 	}
+
+	/* Make the dialog as small as practical */
+
+	copyinfo[COKBOX].r.y -= sd;
+	copyinfo[COPYBOX].r.h -= sd;
 
 	/* In update or restore mode, override dialog title assignment */
 
@@ -149,7 +179,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 		title = DTRESTO;
 
 	/*
-	 *  Write numbers of folders, files and bytes to dialog fields;
+	 * Write numbers of folders, files and bytes to dialog fields;
 	 * note: as the open flag is still not set, nothing will be drawn
 	 */
 
@@ -177,12 +207,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 	if ( cfdial_open )
 	{
 		if ((options.cprefs & mask) != 0)	/* If confirm, call xd_form_do */
-			button = xd_form_do(&cfdial, 0);
-		else
-		{
-			/* This must exist, or the dialog is not drawn at the beginning */
-			xd_draw ( &cfdial, ROOT, MAX_DEPTH );
-		}
+			button = xd_form_do(&cfdial, ROOT);
 	}
 
 	set_oldpos = FALSE;
@@ -199,10 +224,19 @@ void close_cfdialog(int button)
 {
 	if (cfdial_open == TRUE)
 	{
-		xd_change(&cfdial, button, NORMAL, 0);
+		xd_buttnorm(&cfdial, button);
 
 		xd_close(&cfdial);
 		cfdial_open = FALSE;
+
+		copyinfo[COKBOX].r.y += sd;
+		copyinfo[COPYBOX].r.h += sd;
+		sd = 0;
+
+		if (printfile)
+			x_fclose(printfile); /* this does a free() as well */
+
+		printfile = NULL;
 	}
 }
 
@@ -240,7 +274,6 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
 {
 	if ( cfdial_open == TRUE )
 	{
-
 		/* Note: this can't be done selectively, because of transparency problems */
 
 		if ( folder != NULL )
@@ -249,7 +282,7 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
 			cv_fntoform(copyinfo + CPFILE, fn_get_name(file) ); 
 		if ( dest != NULL )
 			cv_fntoform(copyinfo + CPDEST, dest);
-		
+	
 		xd_draw(&cfdial, CNAMBOX, 1); 
 	}
 }
@@ -265,8 +298,7 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
  * Push an item onto the stack
  */
 
-static int push(COPYDATA **stack, const char *spath, const char *dpath,
-				boolean chk)
+static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean chk)
 {
 	COPYDATA *new;
 	int error = 0;
@@ -275,8 +307,8 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath,
 		error = ENSMEM;
 	else
 	{
-		new->spath = (char *) spath;
-		new->dpath = (char *) dpath;
+		new->spath = (char *)spath;
+		new->dpath = (char *)dpath;
 		new->chk = chk;
 		new->result = 0;
 		if ((new->dir = x_opendir(spath, &error)) != NULL)
@@ -310,7 +342,7 @@ static boolean pull(COPYDATA **stack, int *result)
 
 /* 
  * Read directory entry on the stack. 
- * Beware "*name" should be at least 256 characters long
+ * Beware "*name" buffer should be at least 256 characters long
  */
 
 static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
@@ -319,13 +351,13 @@ static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
 	char *fname;
 
 	/*
-	 * DjV 070 270703 changed name to &fname. Actually, for a DOSfs,
-	 * fname now points to a string which is also pointed from stack->dir;
+	 * Changed name to &fname. Actually, for a DOS/TOSfs,fname now points 
+	 * to a string which is also pointed from stack->dir;
 	 * for other FSes it points to a static space defined in x_xreaddir.
 	 */
 
 	while (((error = (int) x_xreaddir(stack->dir, &fname, 256, attr)) == 0) 
-		   && ((strcmp("..", fname) == 0) || (strcmp(".", fname) == 0)));
+		   && ((strcmp(prevdir, fname) == 0) || (strcmp(".", fname) == 0)));
 
 	strsncpy ( name, fname, 256 );
 
@@ -351,7 +383,7 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
 	int error, dummy;
-	VLNAME name;   					/* Can this be LNAME ? */
+	VLNAME name;   			/* Can this be LNAME ? */
 	XATTR attr;
 
 	int result = XSKIP;
@@ -362,17 +394,17 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 	*folders = 0;			/* folder count */
 	*files = 0;				/* files count  */
 	*bytes = 0;				/* bytes count  */
-	fpath = NULL;
-	found = FALSE;
+	fpath = NULL;			/* path of a found item */
+	found = FALSE;			/* flag that searched-for item is found */
+
+
+	hourglass_mouse();
 
 	if ((error = push(&stack, path, NULL, FALSE)) != 0)
 		return error;
 
 	do
 	{
-		if ( search )
-			graf_mouse(HOURGLASS, NULL);
-
 		if (error == 0)
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
@@ -383,7 +415,6 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 				{
 					if ( (found = searched_found( stack->spath, name, &attr)) == TRUE )
 						fpath = x_makepath(stack->spath, name, &error);
-
 				}
 				else
 					found = FALSE;
@@ -413,8 +444,8 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 					/* This item is a file */
 
 					/*
-					 * below: show hidden or file is not hidden, or
-					 * show system or file is not system
+					 * below: 'show hidden' is on, or file is not hidden, or
+					 * 'show system' is on, or file is not system
 					 */
 
 					if (   (   (attribs   & FA_HIDDEN) != 0
@@ -430,38 +461,39 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 
 						if ( search && found )	
 							if ( (result = object_info(ITM_FILE, fpath, name, &attr ) ) != 0 )
-/* this was most probably an error; should be fpath!
-								free(path);
-*/
 								free(fpath);
 					}
 				}
 			}
+
+			if ( search )
+			{
+				if ( escape_abort(TRUE) )
+					result = XABORT;
+				else if (found)
+					hourglass_mouse();
+			}
 		}
 
-		if ((eod == TRUE) || (error != 0))
+		/* Note: result==XABORT added for V3.40 */
+
+		if ((eod == TRUE) || (error != 0) || (result == XABORT) )
 		{
 			if ((ready = pull(&stack, &dummy)) == FALSE)
 				free(stack->sname);
 		}
 
-		/* 
-		 * Result will be 0 only if selected OK in dialogs 
-		 */ 
+		/* Result will be 0 only if selected OK in dialogs */ 
 
 		if ( search && (result != XSKIP) )
 		{
 			closeinfo();
 			if ( fpath != NULL && result == 0 )
 			{
-				/* Trim window path */
-
 				path_to_disp ( fpath );
-
 				menu_ienable(menu, MSEARCH, 0);  
 				wd_deselect_all(); 				 
 				dir_add_window ( fpath, NULL, name  ); 
-
 #if _SHOWFIND
 				if ( search_nsm > 0 )		/* Open a text window to show searched-for string */
 					txt_add_window (xw_top(), wd_selected(), 0, NULL);
@@ -473,7 +505,7 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 	}
 	while (ready == FALSE);
 
-		if ( search && (result != XSKIP) )
+	if ( search && (result != XSKIP) )
 		return XSKIP;
 	else
 		return error;
@@ -528,11 +560,13 @@ static boolean count_items
 	boolean
 		link;
 
+	/* Zero all sums */
+
 	*folders = 0;
 	*files = 0;
 	*bytes = 0;
 
-	graf_mouse(HOURGLASS, NULL);
+	hourglass_mouse();
 
 	while ((i < n) && (ok == TRUE))
 	{
@@ -542,7 +576,7 @@ static boolean count_items
 
 		error = 0;
 
-		if (link || (type == ITM_FILE) || (type == ITM_PROGRAM && function != CMD_PRINT))
+		if ( link || isfileprog(type) )
 		{
 			if ((error = itm_attrib(w, item, (link) ? 1 : 0, &attr)) == 0)
 			{
@@ -558,7 +592,7 @@ static boolean count_items
 			{
 				if ( function != CMD_PRINT && function != CMD_PRINTDIR )
 				{
-					if ((error = cnt_items(path, &dfolders, &dfiles, &length, 0x37, FALSE)) == 0)
+					if ((error = cnt_items(path, &dfolders, &dfiles, &length, FA_ANY, FALSE)) == 0)
 					{
 						*folders += dfolders + ((type == ITM_DRIVE) ? 0 : 1);
 						*files += dfiles;
@@ -584,7 +618,7 @@ static boolean count_items
 		i++;
 	}
 
-	graf_mouse(ARROW, NULL);
+	arrow_mouse();
 
 	if ((*files == 0) && (*folders == 0))
 		ok = FALSE;
@@ -611,7 +645,10 @@ static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 	long slength, dlength, size, mbsize;
 	void *buffer;
 
-	/* Create a buffer for copying: find the largest free block and leave 8KB */
+	/* 
+	 * Create a buffer for copying: If it is not possible to create the
+	 * buffer as specified, find the largest free block and leave 8KB 
+	 */
 
 	mbsize = (long) options.bufsize * 1024L;
 
@@ -619,7 +656,7 @@ static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 		size = mbsize;
 
 	/* 
-	 * Note: If size < 1024L and comparison continues, 
+	 * Note: If size < 1024L and evaluation in the next statement continues, 
 	 * buffer will be left allocated even though the opertion failed.
 	 * (In Pure-C this is not supposed to happen)
 	 */
@@ -758,11 +795,11 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 {
 	int 
 		i = 0, 
+		mes,
 		item;
 
 	const char 
-		*path, 
-		*mes;
+		*path; 
 
 	long l;
 
@@ -771,6 +808,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 
 	ITMTYPE 
 		type;
+
 
 	/* Check if all specified items can be copied */
 
@@ -804,19 +842,19 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 			switch (type)
 			{
 				case ITM_TRASH:
-					rsrc_gaddr(R_STRING, MTRASHCN, &mes);
+					mes = MTRASHCN;
 					break;
 				case ITM_PRINTER:
-					rsrc_gaddr(R_STRING, MPRINTER, &mes);
+					mes = MPRINTER;
 					break;
 				default:
-					mes = NULL;
+					mes = 0;
 					break;
 			}
 
-			if (mes != NULL)
+			if (mes != 0)
 			{
-				alert_printf(1, ANOCOPY, mes);
+				alert_printf(1, ANOCOPY, get_freestring(mes));
 				result = FALSE;
 			}
 		}
@@ -833,7 +871,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
  ********************************************************************/
 
 /*
- * Just rename a file and update windows if needed
+ * Just rename a single file and update windows if needed
  */  
 
 int frename(const char *oldfname, const char *newfname)
@@ -865,6 +903,7 @@ static int _rename(char *old, int function)
 	VLNAME
 		newfname; 
 
+
 	/* Get new name from the dialog */
 
 	cv_formtofn(newfname, &nameconflict[OLDNAME]);
@@ -883,13 +922,13 @@ static int _rename(char *old, int function)
 
 		if ( (error = frename(old, new)) !=  0 ) /* this updates windows as well */
 		{
-/*
- "function" propagates from the actual file operation, and it can be
- "move", "copy", etc. but this dialog always handles renames. Therefore,
- force error to move/rename error
-				result = copy_error(error, name, function);
-*/
-				result = copy_error(error, name, CMD_MOVE);
+			/*
+			 * "function" propagates from the actual file operation, and it can be
+			 * "move", "copy", etc. but this dialog always handles renames. Therefore,
+			 * force error to move/rename error
+			 */
+				
+			result = copy_error(error, name, CMD_MOVE);
 
 		}
 		free(new);
@@ -928,6 +967,16 @@ static int exist(const char *sname, int smode, const char *dname,
 }
 
 
+/* 
+ * Aux. routine which serves to reduce program size somewhat
+ */
+
+int set_posmode(int mode)
+{
+	return (set_oldpos) ? xd_setposmode(mode) : mode;
+}
+
+
 /*
  * Handle the name conflict dialog: Open, edit (in a loop), close.
  * This dialog also handles whatever is neded for the "update" and "restore"
@@ -953,7 +1002,7 @@ static int hndl_nameconflict
 		smode = attr->mode,
 		button, 
 		result = 0, 
-		oldmode, 
+		oldmode,
 		dmode;
 
 	XDINFO 
@@ -1018,7 +1067,7 @@ static int hndl_nameconflict
 	{
 		again = FALSE;
 
-		/* Obtain the pointer to name only part of destination */
+		/* Obtain the pointer to name-only part of destination */
 
 		dnameonly = fn_get_name(*dname);
 
@@ -1033,9 +1082,9 @@ static int hndl_nameconflict
 
 		if ((strcmp(sname, *dname) == 0) || ((dmode == S_IFDIR) && 
 #if _MINT_
-!((tos_version >= 0x104) || mint)
+			!((tos_version >= 0x104) || mint)
 #else
-tos_version < 0x104
+			tos_version < 0x104
 #endif
 		))
 			nameconflict[OLDNAME].ob_flags &= ~EDITABLE;
@@ -1058,29 +1107,28 @@ tos_version < 0x104
 		{
 			result = 0;
 
-			graf_mouse(ARROW, NULL);
+			arrow_mouse();
 
 			/* Open the dialog only the first time in the loop */
 
 			if (first)
 			{
-				if (set_oldpos == TRUE)
-					oldmode = xd_setposmode(XD_CURRPOS); 
+				oldmode = set_posmode(XD_CURRPOS); 
 
 				xd_open(nameconflict, &xdinfo);
 
-				if (set_oldpos == TRUE)
-					xd_setposmode(oldmode);
+				set_posmode(oldmode);
 
 				first = FALSE;
 			}
 			else
-				xd_draw(&xdinfo, ROOT, MAX_DEPTH);
+				xd_draw(&xdinfo, OLDNAME, MAX_DEPTH); 
 
-			button = xd_form_do(&xdinfo, NEWNAME);
-			xd_change(&xdinfo, button, NORMAL, 0);
+			/* Wait for a button, then immediately set it back to normal */ 
 
-			graf_mouse(HOURGLASS, NULL);
+			button = xd_form_do_draw(&xdinfo);
+
+			hourglass_mouse();
 
 			if (button == NCOK)
 			{
@@ -1156,7 +1204,7 @@ tos_version < 0x104
 	while ((again == TRUE) && ((result = exist(sname, smode, *dname, &dmode, &dxattr, function)) == XEXIST));
 
 	xd_close(&xdinfo);
-	set_oldpos = TRUE;
+	set_oldpos = TRUE; 
 
 	return result;
 }
@@ -1168,7 +1216,9 @@ tos_version < 0x104
 
 static int hndl_rename(char *name)
 {
-	int button,oldmode;
+	int 
+		oldmode,
+		button;
 
 	/* Write filenames to dialog fields */
 
@@ -1179,26 +1229,32 @@ static int hndl_rename(char *name)
 
 	rsc_title(nameconflict, RNMTITLE, DTRENAME);
 
-	/* Set editable and enabled fields */
+	/* Set editable and enabled fields. Only one field is editable */
 
 	nameconflict[OLDNAME].ob_flags &= ~EDITABLE;
-	nameconflict[NCALL].ob_state |= DISABLED;
+	obj_disable(nameconflict[NCALL]);
 
-	graf_mouse(ARROW, NULL);
+	arrow_mouse();
 
-	if (set_oldpos == TRUE)
-		oldmode = xd_setposmode(XD_CURRPOS);
+	/* 
+	 * This is needed in order to set multiple openings
+	 * of the dialog (when there is more than one file to rename)
+	 * in the same place on the screen
+	 */
+	
+	oldmode = set_posmode(XD_CURRPOS);
+
+	/* Now do the dialog */
 
 	button = xd_dialog(nameconflict, NEWNAME);
 
-	if (set_oldpos == TRUE)
-		xd_setposmode(oldmode);
+	set_posmode(oldmode);
 
 	set_oldpos = TRUE;
 
-	graf_mouse(HOURGLASS, NULL);
+	hourglass_mouse();
 
-	nameconflict[NCALL].ob_state &= ~DISABLED;
+	obj_enable(nameconflict[NCALL]);
 
 	if (button == NCOK)
 	{
@@ -1274,7 +1330,7 @@ int touch_file
 		}
 	}
 
-	return (error >=0) ? 0 : error;
+	return (error >= 0) ? 0 : error;
 }
 
 
@@ -1321,6 +1377,8 @@ static int copy_file(const char *sname, const char *dpath, XATTR *attr,
 
 	if ((rename_files == TRUE) && ((result = hndl_rename(name)) != 0))
 		return (result == XSKIP) ? 0 : result;
+
+	/* Is the new name perhaps too long ? */
 
 	if ((error = x_checkname(dpath, name)) == 0) 
 	{
@@ -1385,7 +1443,14 @@ static int copy_file(const char *sname, const char *dpath, XATTR *attr,
 						 * of date/time, or change of other attributes.
 						 */
 
-						if ( (oldattr & FA_READONLY) && ( ( ((oldattr ^ attr->attr) & 0x37) != FA_READONLY) || options.cprefs & CF_CTIME) )
+						if 
+						( 
+							((oldattr & FA_READONLY) != 0) && 
+							( 
+								( ( FA_ANY & (oldattr ^ attr->attr) ) != FA_READONLY) || 
+								((options.cprefs & CF_CTIME) != 0)
+							 ) 
+						)
 							error = EACCDN;
 						else
 							error = touch_file( sname, &time, (attr->attr & ~FA_SUBDIR), FALSE );
@@ -1496,6 +1561,8 @@ static int create_folder
 	if ((rename_files == TRUE) && ((result = hndl_rename(name)) != 0))
 		return result;
 
+	/* Is the new name perhaps too long ? */
+
 	if ((error = x_checkname(dpath, name)) == 0)
 	{
 		if ((*dname = x_makepath(dpath, name, &error)) != NULL)
@@ -1523,7 +1590,7 @@ static int create_folder
 				{
 					if (result == XSKIP)
 					{
-						if ((error = cnt_items(sname, &nfolders, &nfiles, &nbytes, 0x37, FALSE)) == 0)
+						if ((error = cnt_items(sname, &nfolders, &nfiles, &nbytes, FA_ANY, FALSE)) == 0)
 						{
 							*files -= nfiles;
 							*folders -= nfolders;
@@ -1567,7 +1634,6 @@ static int copy_path(const char *spath, const char *dpath,
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-
 				type = attr.mode & S_IFMT;
 				link = (type == S_IFLNK ) ? TRUE : FALSE;
 
@@ -1580,7 +1646,7 @@ static int copy_path(const char *spath, const char *dpath,
 
 					if ((stack->sname = x_makepath(stack->spath, name, &error)) != NULL)
 					{
-						upd_copyname(stack->dpath, stack->sname, "");
+						upd_copyname(stack->dpath, stack->sname, empty);
 
 						if ((tmpres = create_folder(stack->sname, stack->dpath, &stack->dname, &attr, folders, files, bytes, function, &tmpchk)) == 0)
 						{
@@ -1652,9 +1718,7 @@ static int copy_path(const char *spath, const char *dpath,
 				*folders -= 1;
 
 				if ((stack->result != XFATAL) && (stack->result != XABORT))
-				{
 					upd_copyinfo(*folders, *files, *bytes);
-				}
 			}
 		}
 		else
@@ -1737,7 +1801,7 @@ static boolean copy_list
 
 				if ((error = itm_attrib(w, item, 0, &attr)) == 0)
 				{
-					upd_copyname( dest, path, "" );
+					upd_copyname( dest, path, empty);
 
 					if ((tmpres = create_folder(path, dest, &dpath, &attr, folders, files, bytes, function, &chk)) == 0)
 					{
@@ -1790,7 +1854,7 @@ static boolean copy_list
  * Copy a list of file/folder/disk items 
  */
 
-static boolean itm_copy
+static boolean itm_copyit
 (
 	WINDOW *dw,		/* Destination window */ 
 	int dobject,	/* Destination object */ 
@@ -1811,7 +1875,7 @@ static boolean itm_copy
 
 
 	/* 
-	 * Check if operation makes sense, depending on the type
+	 * Check if the operation makes sense, depending on the type
 	 * of destination window (disallow copy to text window)
 	 * or object (disallow copy to nonexistent drives)
 	 */
@@ -1880,6 +1944,7 @@ static boolean itm_copy
 static int del_one( const char *name )
 {
 	int error;
+
 	if ((error = x_unlink(name)) == 0)
 		wd_set_update(WD_UPD_DELETED, name, NULL);
 	return error;
@@ -1967,7 +2032,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 					{
 						*folders -= 1;
 						stack->result = copy_error(error, name, CMD_DELETE);
-						upd_copyname( NULL, stack->spath, "" );
+						upd_copyname( NULL, stack->spath, empty);
 					}
 				}
 				if (type == S_IFREG || type == S_IFLNK)
@@ -2003,7 +2068,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 		{
 			if ((ready = pull(&stack, &result)) == FALSE)
 			{
-				upd_copyname(NULL, stack->sname, "");
+				upd_copyname(NULL, stack->sname, empty);
 
 				stack->result = (result == 0) ? del_folder(stack->sname, CMD_DELETE, stack->result) : result;
 				*folders -= 1;
@@ -2011,7 +2076,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 
 				if ((stack->result != XFATAL) && (stack->result != XABORT))
 				{
-					upd_copyname(NULL, stack->spath, "");
+					upd_copyname(NULL, stack->spath, empty);
 					upd_copyinfo(*folders, *files, *bytes);
 				}
 			}
@@ -2052,7 +2117,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 		{
 			type = itm_type(w, item);
 
-			if ((type == ITM_FILE) || (type == ITM_PROGRAM) || link )
+			if ( isfileprog(type) || link )
 			{
 				cpath = fn_get_path(path);
 
@@ -2075,7 +2140,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 			else
 			{
 				int tmpres;
-				upd_copyname(NULL, path, "");
+				upd_copyname(NULL, path, empty);
 
 				tmpres = del_path(path, name, folders, files, bytes);
 				if (type == ITM_FOLDER)
@@ -2146,7 +2211,7 @@ boolean itmlist_op
 		 * (the program crashed when touching or deleting items selected
 		 * as icons on the desktop- i.e. when there was no dir window path)
 		 */
-			dest = "A:\\";
+			dest = adrive;
 	}
 	else
 		dest = destpath;
@@ -2184,6 +2249,8 @@ boolean itmlist_op
 
 	if (cont == TRUE)
 	{
+		ITMTYPE itype0 = itm_type(w, list[0]);
+
 		/* 
 		 * Remember operation date and time, in case it is needed to
 		 * reset file data during copying. Also reset file attributes.
@@ -2208,9 +2275,9 @@ boolean itmlist_op
 
 		/* Show first source file name. It is blank if starting with a folder */
 
-		if ( itm_type(w, list[0]) == ITM_FILE || itm_type(w, list[0]) == ITM_PROGRAM )
+		if ( isfileprog( itype0) )
 		{
-			cv_fntoform( copyinfo + CPFILE, itm_name( w,list[0] ) );
+			cv_fntoform( copyinfo + CPFILE, itm_name( w, list[0] ) );
 			path_to_disp(spath);
 		}
 		else
@@ -2234,27 +2301,7 @@ boolean itmlist_op
 		set_opt(copyinfo, options.cprefs, CF_CTIME, CCHTIME); 
 		set_opt(copyinfo, options.cprefs, CF_CATTR, CCHATTR); 
 
-		/* Otherwise, hide these two buttons */
-
-		if ( function == CMD_DELETE || function == CMD_PRINT || function == CMD_PRINTDIR )
-			copyinfo[CSETBOX].ob_flags |= HIDETREE;
-		else
-			copyinfo[CSETBOX].ob_flags &= ~HIDETREE;
-
-		/* Also, destination path is hidden if it doesn't make sense */
-
-		if ( function != CMD_COPY  && function != CMD_MOVE )
-		{
-			copyinfo[CPT3].ob_flags |= HIDETREE;
-			copyinfo[CPDEST].ob_flags |= HIDETREE;
-		}
-		else
-		{
-			copyinfo[CPT3].ob_flags &= ~HIDETREE;
-			copyinfo[CPDEST].ob_flags &= ~HIDETREE;
-		}
-
-		/* Open the dialog. Wait for the button */
+		/* Open the dialog. Wait for a button */
 
 		button = open_cfdialog(folders, files, bytes, function);
 
@@ -2262,35 +2309,61 @@ boolean itmlist_op
 
 		if (button == COPYOK)
 		{
-			/* Check for copy options. Change date or attributes? */
-
-			get_opt( copyinfo, &options.cprefs, CF_CTIME, CCHTIME ); 
-			get_opt( copyinfo, &options.cprefs, CF_CATTR, CCHATTR ); 
-
 			/* Copy/move/touch/delete a list of files */
 
-			graf_mouse(HOURGLASS, NULL);
+			hourglass_mouse();
 
 			switch(function)
 			{
 				case CMD_COPY:
 				case CMD_MOVE:
 				case CMD_TOUCH:
+					get_opt( copyinfo, &options.cprefs, CF_CTIME, CCHTIME ); 
+					get_opt( copyinfo, &options.cprefs, CF_CATTR, CCHATTR ); 
 					result = copy_list(w, n, list, dest, &folders, &files, &bytes, function);
 					break;
 				case CMD_DELETE:
 					result = del_list(w, n, list, &folders, &files, &bytes);
 					break;
 				case CMD_PRINT:
+					printmode = xd_get_rbutton(copyinfo, PSETBOX) - PRTXT;
 				case CMD_PRINTDIR:
+				{
+					int tofile = 0;
+
+					printfile = NULL;
+					get_opt( copyinfo, &tofile, 1, CPRFILE ); 
+
+					if (tofile)
+					{
+						int error = 0;
+						LNAME thename = {0};
+						char *printname;
+
+						printname = locate(thename, L_PRINTF);
+
+						if (printname)
+							printfile = x_fopen(printname, O_DENYRW | O_WRONLY, &error);
+						free(printname);
+
+						xform_error(error);
+						if (!printfile)
+							goto forcexit;
+					}
+
 					result = print_list(w, n, list, &folders, &files, &bytes, function);
+				
+					break;
+				}
 				default:
 					result = FALSE;
 					break;
 			}
 
-			graf_mouse(ARROW, NULL);
+			arrow_mouse();
 		}
+
+		forcexit:;
 
 		/* 
 		 * Currently "change time" and "change attributes" are active 
@@ -2323,7 +2396,7 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kst
 	int wtype;
 	boolean result = FALSE;
 
-	wtype = xw_type(dw);
+	wtype = xw_type(dw);	/* Destination window type */
 
 	if ((wtype == DIR_WIND) || ((wtype == DESK_WIND) && (dobject >= 0)))
 	{
@@ -2355,7 +2428,7 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kst
 			}
 		}
 		else
-			return itm_copy(dw, dobject, sw, n, list, kstate);
+			return itm_copyit(dw, dobject, sw, n, list, kstate);
 	}
 	else
 	{

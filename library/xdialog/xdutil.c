@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 #ifdef __PUREC__
  #include <np_aes.h>
@@ -295,6 +296,7 @@ void xd_set_obspec(OBJECT *object, OBSPEC obspec)
 		object->ob_spec = obspec;
 }
 */
+
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 {
 	if ((object->ob_type & 0xFF) == G_USERDEF)

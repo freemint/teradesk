@@ -2,18 +2,19 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V2.1   15-11-02, Copyright 2002  H. Robbers.
              V2.3           , Copyright 2003  H. Robbers, Dj. Vukovic
              V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic        
-             V3.01  07-01-04, Copyright 2003, 2004  H. Robbers, Dj. Vukovic        
+             V3.01  07-01-04, Copyright 2003  H. Robbers, Dj. Vukovic        
              V3.30  23-04-04, Copyright 2004  H. Robbers, Dj. Vukovic
              V3.31  04-06-04, Copyright 2004  H. Robbers, Dj. Vukovic
-             V3.32  11-06-04  Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.32  11-06-04, Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.40  10-10-04, Copyright 2004  H. Robbers, Dj. Vukovic
 
-
-This is version 3.32 of the Tera Desktop, a replacement of the built-in TOS 
+This is version 3.40 of the Tera Desktop, a replacement for the builtin TOS 
 desktop for 16-bit and 32-bit Atari computers. This program is Freeware and 
-Open Source.  It is published under GPL license, which means that it may be 
-copied  and modified freely,  providing  that the  original authorships are 
-recognized where appropriate,  and that it,  or its derivatives, may not be 
-sold. See the included COPYING file for the details on GPL.
+Open Source. It is published under General Public License (GPL) which means 
+that it may be copied  and  modified freely,  providing  that the  original 
+authorships  are  recognized   where  appropriate,  and  that  it,  or  its 
+derivatives, may not be sold. See the included COPYING file for the details 
+on GPL.
  
 
 
@@ -53,6 +54,12 @@ TT, Falcon,  Hades, Milan or emulators. It uses about 200-250 KB of memory
 Although Tera Desktop can be used without the aid of a hard disk, the use  
 of one is strongly recommended.  
 
+It should be noted that  Tera Desktop  is not well optimized for use on
+machines with only  one floppy drive and no hard disk.  File copying in 
+TeraDesk is  done file-by-file which,  when copying files from one disk 
+to another on a machine  with only  one drive,  will mean a lot of disk 
+swapping. 
+
 Tera Desktop should work with all  existing versions of  TOS (i.e. starting
 with TOS 1.0) but it is much more useful with TOS versions 1.04 (also known 
 as TOS 1.4) and above.  
@@ -77,7 +84,7 @@ New Features in This Version
 ============================
 
 Please, see HIST_V3.TXT for a list of new features and bug fixes since the
-last released version (V3.31). Also read the manual TERADESK.HYP (you will 
+last released version (V3.32). Also read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information.
 
 
@@ -87,7 +94,7 @@ Installation
 
 1. A folder named e.g. DESKTOP or TERADESK can be created anywhere on your  
 floppy or hard disk, or in a RAM disk,  to hold Tera Desktop files.  It is 
-also possible,  although a bit untidy,  to run Tera Desktop  from the root 
+also possible,  although a bit untidy,  to put Tera Desktop  into the root 
 directory of a disk volume. 
 
 
@@ -97,17 +104,16 @@ TeraDesk:
        DESKTOP.PRG  (if  you  intend  to use multitasking)  OR   
        DESKTOS.PRG  (if you  will  work  in  Single-TOS  only)    
        DESKTOP.RSC    
-       ICONS.RSC    AND/OR  
+       ICONS.RSC    (if you will use monochrome icons) AND/OR  
        CICONS.PRG   (if your AES can support colour icons)   
  
 Note that DESKTOP.PRG will work  in single-TOS as well;  DESKTOS.PRG just 
 saves a  few kilobytes  of memory  by not  containing code  which is only 
-relevant in  multitasking environment,  and by having a somewhat  limited
-support for the AV-protocol (for the sake of smaller program size).
+relevant in multitasking environments,  and by having a somewhat  limited
+support of the AV-protocol (for the sake of smaller program size, too).
 
 If only DESKTOS.PRG is to be used, it may be renamed to DESKTOP.PRG after
-copying,  but this is not required  (the program will register  itself as
-"DESKTOP" anyway).  
+copying,  but this is needed only if AV-protocol will be used.
 
 You can (but need not) also copy  into this folder the files  TERADESK.INF
 and  TERADESK.PAL  from the  \EXAMPLES folder.  Note, however,  that these 
@@ -127,8 +133,8 @@ CFG2INF.PRG;  This  utility  (not included  in the binary distribution  but
 available  separately  on  TeraDesk 3  home page)  is basically  a  tweaked 
 compilation of the Tera Desktop version 3.01, with the  capability  to read
 only the old file format and to write only the new format. After converting
-the old configuration files,  CFG2INF.PRG is not needed anymore  and can be 
-removed.
+the old configuration files, CFG2INF.PRG and its resource file  will not be
+needed anymore  and can be removed.
 
 
 5. Cooperation  of  Tera Desktop   with  some other  applications  will  be 
@@ -151,7 +157,12 @@ the OS and utilities used.
 
 If you use (Single) TOS version 1.04  (also known as  TOS 1.4)  or greater, 
 you can set it up by installing it as an application,  and then setting its 
-boot status to 'Auto' (remember to save the desktop configuration). 
+boot status to 'Auto' (remember to save the desktop configuration). As from
+now on TeraDesk  will  take over  all  desktop tasks,  prior to  saving the
+desktop  configuration  all other applications  should be deinstalled,  all
+unneeded icons removed from the desktop and all windows closed. This is not
+required but will reduce the size of DESKTOP.INF (or NEWDESK.INF)  and will
+also free some memory. 
     
 If you have TOS version 1.0 or 1.02 you must use a program such as STARTGEM 
 to run DESKTOP from an AUTO folder.  
@@ -176,9 +187,10 @@ directive in MAGX.INF:
 
 
 7. All text strings used by Tera Desktop are located in DESKTOP.RSC (except
-a warning that DESKTOP.RSC can not be found).  It is possible to completely
-adapt TeraDesk  to other languages by using  a translated  DESKTOP.RSC  (if 
-someone is willing to supply it).
+default filenames and a warning that DESKTOP.RSC can not be found).  It is 
+possible  to completely  adapt TeraDesk  to other languages  by using a 
+translated DESKTOP.RSC and, possibly, ICONS.RSC and CICONS.RSC (if someone 
+is willing to supply it/them).
 
 
 8. The icon files supplied contain a basic set of icons only. Users can add 
@@ -187,7 +199,8 @@ and/or DESKCICN.RSC used by the built-in desktop of TOS 2/3/4  to ICONS.RSC
 and CICONS.RSC respectively, and use them with TeraDesk).
 
 TeraDesk, since V2.0, handles icons by name,  not by index.  Icons with the 
-following names should always be present in the icons resource file:
+following names (or their translated equivalents) should always be present 
+in the icons resource file:
 
 FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
 
@@ -216,19 +229,18 @@ environments if there is a need to preserve as much free memory as possible.
 Some Possible Future Developments 
 =================================
 
-- Optimization of code to reduce size and memory use
- 
-- Multi-column display of directory windows 
+- Further optimization of code to reduce size and memory use and 
+  increase speed
 
+- Improved algorithm for file copying when floppies are involved
+ 
 - Improved manipulation of file/folder attributes and access rights
 
 - Complete compliance to AV-protocol and Drag & Drop protocol
 
-- Improved handling of symbolic links
-
 - Better handling of memory-limit and no-multitask options
 
-- More functionality in Show/Edit/Cancel dialog/alert
+- Handling of Falcon video modes in 'Video options...'
 
 - Integration of a non-modal, windowed, long-names-capable fileselector
 
@@ -243,7 +255,9 @@ autoboot programs, accessories etc.).  Mention  TeraDesk  in the subject line
 of your e-mail.
 
 THE AUTHORS CAN NOT BE HELD RESPONSIBLE  for  any form of damage  caused by 
-this program; the usage of all components of TeraDesk is at your own risk.
+this program or any of its components; usage of all components of TeraDesk 
+is at your own risk. See also the accompanying file COPYING for the terms
+of the General Public License.
 
 PLEASE read the manual before you use the program.  You will need ST-Guide
 (not supplied with TeraDesk) for this.
@@ -256,6 +270,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; June 11th 2004
+                                            Beograd; September 30th 2004
 
 
