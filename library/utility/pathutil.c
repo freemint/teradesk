@@ -89,7 +89,7 @@ void split_path( char *path, char *fname, const char *name )
 /* 
  * Strip leading and trailing spaces from a string. 
  * Insert a zero byte at string end.
- * This routine actualy copies the the characters to adestination
+ * This routine actualy copies the the characters to a destination
  * which must already exist. The source is left unchanged. 
  * Note1: only spaces are considered, not tabs, etc.
  * Note2: destination can be at the same address as the source.
@@ -119,8 +119,8 @@ void strip_name(char *to, const char *fro)
 
 
 /* 
- * Fit a long filename or path into a shorter string
- * should become c:\s...ng\foo.bar; 
+ * Fit a long filename or path into a shorter string;
+ * a name should become e.g: c:\s...ng\foo.bar; 
  * s = source, t=target, w= available target length
  * Note 1: "ww" accomodates the termination byte as well
  * Note 2: it is assumed that source string will never be longer

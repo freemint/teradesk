@@ -174,7 +174,7 @@ int xe_xmulti(XDEVENT *events)
 
 		if (!xd_dialogs && (level == 1))
 		{
-			if (xw_hndlkey(events->xd_keycode, events->ev_mmokstate) == TRUE)
+			if (xw_hndlkey(events->xd_keycode, events->ev_mmokstate))
 				r &= ~MU_KEYBD;
 		}
 	}
@@ -212,7 +212,7 @@ int xe_xmulti(XDEVENT *events)
 
 			r &= ~MU_MESAG;
 		}
-		else if (xw_hndlmessage(events->ev_mmgpbuf) == TRUE)
+		else if (xw_hndlmessage(events->ev_mmgpbuf))
 			r &= ~MU_MESAG;
 	}
 
@@ -222,7 +222,7 @@ int xe_xmulti(XDEVENT *events)
 			events->ev_mbreturn = 2;	/* right button is double click */
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
 						  events->ev_mbreturn, events->ev_mmobutton,
-						  events->ev_mmokstate) == TRUE)
+						  events->ev_mmokstate))
 			r &= ~MU_BUTTON;
 	}
 

@@ -160,8 +160,9 @@ typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 
 extern int
 	xd_aes4_0,
+	xd_colaes,
 	aes_hor3d,
-	aes_ver3d,		/* 3d enlargement values */
+	aes_ver3d,
 	colour_icons;
 
 
@@ -175,6 +176,7 @@ void xd_close(XDINFO *info);
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
 void xd_draw(XDINFO *info, int start, int depth);
+void xd_drawdeep(XDINFO *info, int start);
 void xd_change(XDINFO *info, int object, int newstate, int draw);
 void xd_buttnorm(XDINFO *info, int button);
 void xd_drawbuttnorm(XDINFO *info, int button);
@@ -216,6 +218,7 @@ void exit_xdialog(void);
 
 /* Hulpfunkties */
 
+int xd_isrect(RECT *r);
 int xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
 int xd_inrect(int x, int y, RECT *r);
 long xd_initmfdb(RECT *r, MFDB *mfdb);
@@ -233,6 +236,8 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent);
 void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 
 OBSPEC xd_get_obspec(OBJECT *object);
+char *xd_ptext(OBJECT *object);
+void xd_zerotext(OBJECT *object);
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec);
 void *xd_get_scrled(OBJECT *tree, int edit_obj);
 void xd_init_shift(OBJECT *obj, char *text);

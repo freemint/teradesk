@@ -228,7 +228,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 		pinfo.appl_type = appl_type;
 		pinfo.new = TRUE;
 
-		while (pinfo.new == TRUE)
+		while (pinfo.new)
 		{
 			int aptype;
 
@@ -350,7 +350,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 				}
 			}
 
-			if (pinfo.new == TRUE)
+			if (pinfo.new)
 			{
 				char *h;
 
@@ -641,7 +641,7 @@ void start_prg
 
 #if _MINT_
 		if (mint)		
-			if ((appl_type == 1) && (background == TRUE))
+			if ((appl_type == 1) && background)
 			{
 				alert_iprint(MGEMBACK); 
 				goto errexit;

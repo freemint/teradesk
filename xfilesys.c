@@ -1344,7 +1344,7 @@ int x_fgets(XFILE *file, char *string, int n)
 
 	/* Has end-of-file been reached? */
 
-	if (x_feof(file) == TRUE)
+	if (x_feof(file))
 		return EEOF;
 
 	dest = string;
@@ -1363,7 +1363,7 @@ int x_fgets(XFILE *file, char *string, int n)
 			 * than had been written
 			 */
 
-			if (file->eof == TRUE)
+			if (file->eof)
 				ready = TRUE;
 			else
 			{
@@ -1421,7 +1421,7 @@ int x_fgets(XFILE *file, char *string, int n)
 
 boolean x_feof(XFILE *file)
 {
-	return ((file->eof == TRUE) && (file->read == file->write)) ? TRUE : FALSE;
+	return ((file->eof) && (file->read == file->write)) ? TRUE : FALSE;
 }
 
 

@@ -76,12 +76,13 @@ typedef struct
  */
 
 #define MAX_KEYLEN 20
+#define CFGSKIP 0x0002
 
 
-typedef void CfgNest(XFILE *file, char *key, int lvl, int io, int *error);
+typedef void CfgNest(XFILE *file, int lvl, int io, int *error);
 
 int	CfgLoad(XFILE *f, CfgEntry *tab, int maxs, int lvl);
 int CfgSave(XFILE *f, CfgEntry *tab, int lvl, boolean emp);
-int handle_cfg(XFILE *f, CfgEntry *tab, int maxs, int lvl, boolean emp, int io, void *ini, void *def);
+int handle_cfg(XFILE *f, CfgEntry *tab, int lvl0, int emp, int io, void *ini, void *def);
 int handle_cfgfile( char *name,	CfgEntry *tab, char *ident,	int io);
 char *nonwhite ( char *s);

@@ -248,13 +248,8 @@ static void va_checkclient(void)
 		next = f->next;
 
 		if (appl_find(f->name) < 0)
-		{
-/*
-			va_delall(f->ap_id);						/* remove windows */
-			lsrem((LSTYPE **)&avclients, (LSTYPE *)f);	/* remove client  */
-*/
 			rem_avtype(&avclients, f);
-		}
+
 		f = next;
 	}
 }
@@ -791,6 +786,7 @@ void handle_av_protocol(const int *message)
 		 * use "flags" parameter to pass window handle
 		 * which the client supplied in message [3]
 		 */
+
 		aw = xw_create(ACC_WIND, &aw_functions, message[3], NULL, sizeof(ACC_WINDOW), NULL, &error );
 		aw->xw_opened = TRUE;
 		aw->xw_ap_id = av_current;
@@ -898,10 +894,14 @@ void handle_av_protocol(const int *message)
 	case AV_SETWINDPOS:
 
 		avsetw.flag = TRUE;
+/*
 		avsetw.size.x = message[3];
 		avsetw.size.y = message[4];
 		avsetw.size.w = message[5];
 		avsetw.size.h = message[6];
+*/
+		avsetw.size = *( (RECT *)(&message[3]) ); /* shorter */
+
 		reply = FALSE;
 		break;
 
@@ -1320,7 +1320,7 @@ static CfgNest one_avstat
 		{
 			strcpy(this.name, a->name);
 			strcpy(this.stat, a->stat);
-			*error = CfgSave(file, stat_table, lvl + 1, CFGEMP); 
+			*error = CfgSave(file, stat_table, lvl, CFGEMP); 
 	
 			a = a->next;
 		}
@@ -1329,7 +1329,7 @@ static CfgNest one_avstat
 	{
 		memset(&avswork, 0, sizeof(avswork));
 
-		*error = CfgLoad(file, stat_table, MAX_CFGLINE - 1, lvl + 1); 
+		*error = CfgLoad(file, stat_table, MAX_CFGLINE - 1, lvl); 
 
 		if ( *error == 0 )
 		{
@@ -1383,5 +1383,5 @@ static CfgEntry va_table[] =
 
 CfgNest va_config
 { 
-	*error = handle_cfg(file, va_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_avstat, vastat_default);
+	*error = handle_cfg(file, va_table, lvl, CFGEMP, io, rem_all_avstat, vastat_default);
 }

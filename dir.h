@@ -99,10 +99,10 @@ typedef struct
 
 extern const char *prevdir;
 
-void dir_init(void);
-void dir_default(void);
 
-int dir_save (XFILE *file, WINDOW *w, int lvl);
+CfgNest dir_one;
+
+void dir_default(void);
 boolean dir_add_window(const char *path, const char *thespec, const char *name);
 boolean dir_add_dwindow(const char *path);
 void dir_close(WINDOW *w, int mode);
@@ -114,7 +114,7 @@ void dir_sort(WINDOW *w, int sort);
 
 void dir_line(DIR_WINDOW *dw, char *s, int item);
 void dir_disp_mode(WINDOW *w);
-void dir_fields( WINDOW *w );
+void dir_newdir( DIR_WINDOW *w );
 
 void calc_nlines(DIR_WINDOW *w);		
 int linelength(DIR_WINDOW *w);

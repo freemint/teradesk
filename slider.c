@@ -66,8 +66,8 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	s = sl->n - slines;
 	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long) (tree[sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
 
-	if (info != NULL)
-		xd_draw(info, sparent, MAX_DEPTH);
+	if (info)
+		xd_drawdeep(info, sparent);
 }
 
 
@@ -101,12 +101,12 @@ static void do_arrows(int button, OBJECT *tree, SLIDER *sl, XDINFO *info)
 			}
 		}
 
-		if (redraw == TRUE)
+		if (redraw)
 			sl->set_selector(sl, TRUE, info);
 
 		mstate = xe_button_state() & 1;
 
-		if ((first == TRUE) && mstate)
+		if (first && mstate)
 		{
 			wait(ARROW_DELAY);
 			first = FALSE;
@@ -243,7 +243,7 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 		return 0;
 	}
 
-	if (redraw == TRUE)
+	if (redraw)
 		sl->set_selector(sl, TRUE, info);
 
 	return 1;
@@ -312,7 +312,7 @@ int sl_dialog(OBJECT *tree, int start, SLIDER *slider)
 	if ( (sl_noop & 0x01) == 0 )
 		xd_open(tree, &info);
 	else
-		xd_draw(&info, ROOT, MAX_DEPTH);
+		xd_drawdeep(&info, ROOT);
 
 	/* Manipulate the dialog */
 
@@ -367,10 +367,10 @@ void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 
 	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */
 
-	if (draw == TRUE && info != NULL )
+	if (draw && info)
 	{
-		xd_draw(info, FTPARENT, MAX_DEPTH);
-		xd_draw(info, FTSPAR, MAX_DEPTH);
+		xd_drawdeep(info, FTPARENT);
+		xd_drawdeep(info, FTSPAR);
 	}
 }
 

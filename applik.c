@@ -113,7 +113,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 
 	/* Search for a pointer match */
 
-	while ((f != NULL) && (f != appl))
+	while (f && (f != appl))
 	{
 		prev = f;
 		f = f->next;
@@ -121,7 +121,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 
 	/* If match found, remove that item from the list */
 
-	if ( /* no need for this (f == appl) && */ (f != NULL) )
+	if ( f )
 	{
 		if (prev == NULL)
 			*list = f->next;
@@ -187,7 +187,7 @@ void appinfo_info
 
 	a = find_appl( list, name, NULL );	/* HR 120803 allow NULL when pos not needed */
 
-	if ( a != NULL )
+	if ( a )
 	{
 		/* Yes, use its data */
 
@@ -237,7 +237,7 @@ boolean check_dup_app( APPLINFO **list, APPLINFO *appl, int pos )
 		*f = *list;		/* pointer to current item in the list */
 
 
-	while (f != NULL)
+	while (f)
 	{
 		if ( i != pos )
 		{
@@ -280,7 +280,7 @@ static void unset_fkey(APPLINFO **list, int fkey)
 {
 	APPLINFO *f = *list;
 
-	while (f != NULL)
+	while (f)
 	{
 		if ( f->fkey == fkey )
 			f->fkey = 0;
@@ -306,7 +306,7 @@ static boolean check_fkey(APPLINFO **list, int fkey, int pos)
 	if ( fkey == 0 )
 		return TRUE;
 
-	while (f != NULL)
+	while (f)
 	{
 		if ( (i != pos) && (f->fkey == fkey) )
 		{
@@ -344,9 +344,9 @@ static boolean check_specapp( APPLINFO **list, int flag, int pos )
 	APPLINFO
 		*f = *list;
 
-	while( f != NULL )
+	while( f )
 	{
-		if (i != pos )
+		if (i != pos)
 		{
 			if ( (f->flags & flag) != NULL )
 			{
@@ -720,7 +720,7 @@ boolean app_dialog
 				appl->cmdline = newcmd;
 			}
   
-			if ( newenv != NULL )
+			if ( newenv )
 			{
 				free(appl->localenv);
 				appl->localenv = newenv;
@@ -836,12 +836,12 @@ APPLINFO *app_find(const char *file)
 	APPLINFO *h = applikations;
 	FTYPE *t;
 
-	while (h != NULL)
+	while (h)
 	{
 		t = h->filetypes;
 		while (t)
 		{
-			if (cmp_wildcard(file, t->filetype) == TRUE) 
+			if (cmp_wildcard(file, t->filetype)) 
 				return h;
 			t = t->next;
 		}
@@ -918,7 +918,7 @@ static char *app_build_cml
 
 	/* Special case: n = -1 : an explicitely given command line- just copy it */
 
-	if ( n == - 1 )
+	if ( n == -1 )
 	{
 		ltot = strlen(format);
 		tmp = malloc_chk(ltot + 2L);
@@ -1474,18 +1474,18 @@ static CfgNest this_atype
 	*error = 0;
 
 	prg_table[0].s = "atype";
-	prg_table[2].flag = CFG_INHIB;
+	prg_table[2].flag = CFG_INHIB; /* name mask do not make sense here */
 
 	if ( io == CFG_SAVE )
 	{
 		copy_prgtype( &pwork, (PRGTYPE *)(&awork) );
-		*error = CfgSave(file, prg_table, lvl + 1, CFGEMP);
+		*error = CfgSave(file, prg_table, lvl, CFGEMP);
 	}
 	else
 	{
 		memset(&pwork, 0, sizeof(pwork));
 
-		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME), lvl + 1); 
+		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME), lvl); 
 
 		if ( pwork.appl_type > PTTP )
 			*error = EFRVAL; 		
@@ -1511,14 +1511,15 @@ static void rem_all_doctypes(void)
 
 static CfgNest dt_config
 {
+	char *sss = "dtype";
 	fthis = awork.filetypes;
 	ffthis = &(awork.filetypes); 
-	ft_table[0].s = "dtype"; 
+	ft_table[0].s = sss; 
 	filetypes_table[0].s = "doctypes";
-	filetypes_table[2].s = "dtype";
+	filetypes_table[2].s = sss;
 	filetypes_table[3].type = CFG_END;
 
-	*error = handle_cfg(file, filetypes_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_doctypes, NULL);
+	*error = handle_cfg(file, filetypes_table, lvl, (CFGEMP | ((fthis) ? 0 : CFGSKIP)), io, rem_all_doctypes, NULL);
 }
 
 
@@ -1565,7 +1566,7 @@ static CfgNest one_app
 			strcpy(this.cmdline, awork.cmdline);
 			strcpy(this.localenv, awork.localenv);
 
-			*error = CfgSave(file, app_table, lvl + 1, CFGEMP); 
+			*error = CfgSave(file, app_table, lvl, CFGEMP); 
 	
 			h = h->next;
 		}
@@ -1575,7 +1576,7 @@ static CfgNest one_app
 		memset(&this, 0, sizeof(this));
 		memset(&awork,0, sizeof(awork));
 
-		*error = CfgLoad(file, app_table, (int)sizeof(LNAME), lvl + 1); 
+		*error = CfgLoad(file, app_table, (int)sizeof(LNAME), lvl); 
 
 		if ( *error == 0 )				/* got one ? */
 		{
@@ -1591,19 +1592,21 @@ static CfgNest one_app
 
 				/* 
 				 * As a guard against duplicate flags/keys assignment
-				 * for each application loaded, all previous spec app
-				 * or Fkey assignments (to that key) are cleared here, 
-				 * so only the last assignment remains.
+				 * for each application loaded, all previous spec. app
+				 * or Fkey assignments (to that key or spec. app flags) 
+				 * are cleared here, so only the last assignment remains.
 				 * Note: if adding the application to the list fails
 				 * a few lines later, this will leave Teradesk without
-				 * an spec app or this Fkey assignment. Might be called
+				 * a spec app or this Fkey assignment. Might be called
 				 * a bug, but probably not worth rectifying.
 				 */
 
 				unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW) ) );
 
-				if ( awork.fkey )
-					unset_fkey(&applikations, awork.fkey );
+				if (awork.fkey > 20)
+					awork.fkey = 0;
+
+				unset_fkey(&applikations, awork.fkey );
 
 				/* Add this application to list */
 
@@ -1645,7 +1648,7 @@ static CfgEntry applications_table[] =
 
 CfgNest app_config
 {
-	*error = handle_cfg(file, applications_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, app_default, app_default);
+	*error = handle_cfg(file, applications_table, lvl, CFGEMP, io, app_default, app_default);
 }
 
 

@@ -315,7 +315,7 @@ static bool xd_is3dobj(int flags)
 			    f3d
 			&& (f3d != AES3D_2)   
 			&& (xd_aes4_0) 
-			&& (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_ncolors > 4) 
+			&& (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes ) 
 		)
 		return TRUE;
 	
@@ -414,7 +414,7 @@ static void xd_drawbox
 	 */
 
 	if ( 
-		     xd_ncolors < 16 
+		     !xd_colaes
 		  || !xd_aes4_0 
 		  || xtype == XD_BUTTON 
 		  || xtype == XD_DRAGBOX 
@@ -857,7 +857,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	 * should be used, use full circle
 	 */
 
-	if ( xd_ncolors < 16 || !do3d || (do3d && IS_ACT(flags)) )
+	if ( !(xd_colaes && do3d) || (do3d && IS_ACT(flags)) )
 		rb[2] = bmf;  /* full circle */
 	else
 		rb[2] = bmc;  /* center dot  */
@@ -885,7 +885,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	}
 	else
 	{
-		if ( (xd_ncolors > 4) && do3d )
+		if ( xd_colaes && do3d )
 			ci[4] = 0;
 	}
 	ci[1] = xd_bg_col;
@@ -1070,7 +1070,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	/* This is an attempt to get rid of the white text background */
 
 	tmode  = MD_REPLACE;
-	if ( xd_aes4_0 && xd_ncolors > 4 ) 
+	if ( xd_aes4_0 && xd_colaes ) 
 	{
 		if ( aes_hor3d == 0 && ted->te_thickness != 0)
 			/* hopefully this branch is valid for Magic only */
@@ -1314,7 +1314,7 @@ static int cdecl ub_title(PARMBLK *pb)
 
 	/* Draw a box (or an underline, if there are too few colours) */
 
-	if ( xd_ncolors > 4 && xd_is3dobj(flags) )
+	if ( xd_colaes && xd_is3dobj(flags) )
 	{
 		size.x = pb->pb_x - 2;
 		size.y = pb->pb_y - 1;
@@ -1495,7 +1495,7 @@ static void xd_cur_remove(XDINFO *info)
 		{
 			xw_getfirst(info->window, &r1);
 
-			while ((r1.w != 0) && (r1.h != 0))
+			while(r1.w != 0 && r1.h != 0)
 			{
 				if (xd_rcintersect(&r1, &cursor, &r2))
 				{
@@ -1516,7 +1516,7 @@ static void xd_cur_remove(XDINFO *info)
 					xd_clip_off();
 				}
 
-				xw_get(info->window, WF_NEXTXYWH, &r1);
+				xw_getnext(info->window, &r1);
 			}
 		}
 
@@ -1556,7 +1556,7 @@ void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
 	{
 		xw_getfirst(info->window, &r1);
 
-		while ((r1.w != 0) && (r1.h != 0))
+		while (r1.w != 0 && r1.h != 0)
 		{
 			if ((flags & XD_RDIALOG) && xd_rcintersect(&r1, area, &r2))
 				objc_draw(tree, start, depth, r2.x, r2.y, r2.w, r2.h);
@@ -1564,7 +1564,7 @@ void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
 			if (draw_cur && xd_rcintersect(&r1, &cursor, &r2))
 				xd_credraw(info, &r2);
 
-			xw_get(info->window, WF_NEXTXYWH, &r1);
+			xw_getnext(info->window, &r1);
 		}
 	}
 
@@ -1601,12 +1601,20 @@ void xd_cursor_off(XDINFO *info)
 void xd_draw(XDINFO *info, int start, int depth)
 {
 	xd_wdupdate(BEG_UPDATE);
-
 	xd_cursor_off(info);
 	xd_redraw(info, start, depth, &info->drect, XD_RDIALOG);
 	xd_cursor_on(info);
-
 	xd_wdupdate(END_UPDATE);
+}
+
+
+/*
+ * A shorter form of the above, draw with all children.
+ */
+
+void xd_drawdeep(XDINFO *info, int start)
+{
+	xd_draw(info, start, MAX_DEPTH);
 }
 
 
@@ -1936,7 +1944,7 @@ void xd_set_userobjects(OBJECT *tree)
 				d = 1;
 				if (must_userdef(c_obj))
 					c_code = ub_title;
-				else if ( xd_ncolors > 4 && aes_ver3d == 0 )
+				else if ( xd_colaes && (aes_ver3d == 0) )
 					d += 2; /* mostly for magic */
 				c_obj->ob_height += 2 * d; 
 				c_obj->ob_y -= d + 1;

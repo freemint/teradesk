@@ -31,6 +31,7 @@
 #include <mint.h>
 #include <system.h>
 #include <xdialog.h>
+#include <internal.h>
 #include <xscncode.h>
 
 #include "resource.h"
@@ -61,9 +62,9 @@
 
 #define EVNT_FLAGS	(MU_MESAG|MU_BUTTON|MU_KEYBD) /* For the main loop */
 
-
-extern SEL_INFO 
-	selection;			/* Info on currecntly selected object */
+#define MAX_PLINE 132 	/* maximum printer line length */
+#define MIN_PLINE 32	/* minimum printer line length */
+#define DEF_PLINE 80	/* defeult printer line length */
 
 extern char 
 	*xd_cancelstring;	/* from xdialog; possible 'Cancel' texts */
@@ -74,8 +75,6 @@ Options
 int 
 	ap_id,			/* application id. of this program (TeraDesk) */
 	vdi_handle, 	/* current VDI station handle   */
-	ncolors,		/* number of available colours  */ 
-	npatterns,		/* number of available patterns */ 
 	max_w,			/* screen width */ 
 	max_h,			/* screen height */ 
 	nfonts;			/* number of available fonts    */
@@ -115,9 +114,9 @@ char
 	*palname,		/* name of colour palette file (teradesk.pal)    */
 	*global_memory,	/* Globally available buffer for passing params */
 	*infide = "TeraDesk-inf", /* File identifier header */
-	*empty = "\0",
-	*bslash = "\\",
-	*adrive = "A:\\";
+	*empty = "\0",		/* often used string */
+	*bslash = "\\",		/* often used string */
+	*adrive = "A:\\";	/* often used string */
 
 /*
  * Below is supposed to be the only text embedded in the code:
@@ -296,15 +295,12 @@ void *malloc_chk(size_t size)
 
 /*
  * Show information on current versions of TeraDesk, TOS, AES...
+ * Note: constant part of info for this dialog is handled in resource.c 
+ * This involves setting teradesk name and version, etc.
  */
 
 static void info(void)
 {
-	/* 
-	 * Note: constant part of info for this dialog is handled in resource.c 
-	 * This involves setting teradesk name and version, etc.
-	 */
-
 	long stsize, ttsize; 			/* sizes of ST-RAM and TT/ALT-RAM */
 
 	/* 
@@ -347,7 +343,6 @@ static void info(void)
  * for ST-Guide says so. How does this comply with unixoid filesystems? 
  * Maybe should use lowercase after all?)
  * Note 3: ST-guide supports a special path "*:\" meaning "all known paths" 
- * Note 4: Currenly there is no provision to use another hyp-viewer. 
  */
 
 static void showhelp (unsigned int key) 		
@@ -381,7 +376,7 @@ static void showhelp (unsigned int key)
 			if ( i == 2 )
 				obj_hide(helpno1[HELPOK]);
 
-			xd_draw(&info, ROOT, MAX_DEPTH);
+			xd_drawdeep(&info, ROOT);
 
 			button = xd_form_do(&info, ROOT);
 			xd_buttnorm(&info, button); 
@@ -864,18 +859,21 @@ static void copyprefs(void)
 			options.bufsize = 1;
 
 		options.plinelen = atoi(copyoptions[CPPLINE].ob_spec.tedinfo->te_ptext);
-		if ((options.plinelen < 32) || (options.plinelen > 132) )
-			options.plinelen = 80;
+		if ((options.plinelen < MIN_PLINE) || (options.plinelen > MAX_PLINE) )
+			options.plinelen = DEF_PLINE;
 	}
 }
 
 
-/* 
- * Initialize options. Set some values essential for operation
+/*
+ * Set default options to be in effect without a configuration file.
+ * Also set desktop and window background.
  */
 
-static void opt_init(void)
+static void opt_default(void)
 {
+	get_set_video(0);			/* get current video mode for default */
+	
 	memset( &options, 0, sizeof(options) );
 	options.version = CFG_VERSION;
 	options.max_dir = 256;
@@ -883,34 +881,19 @@ static void opt_init(void)
 	options.bufsize = 512;
 	options.tabsize = 8;
 	strcpy(options.helpprg, "ST-GUIDE");
-}
-
-
-/*
- * Set default options to be in effect without a configuration file.
- * Also set desktop background.
- */
-
-static void opt_default(void)
-{
-	opt_init();
-
 #if _PREDEF
 	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
 	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT;    
-	options.plinelen = 80; 							
+	options.plinelen = DEF_PLINE; 							
 	options.attribs = FA_SUBDIR | FA_SYSTEM;					
 #endif
 	options.mode = TEXTMODE;
 	options.aarr = 1;										    
 	options.sort = WD_SORT_NAME;							
-	get_set_video(0);			/* get current video mode for default */
-	
-	set_dsk_background((ncolors > 2) ? 7 : 4, 3);
+
+	set_dsk_background((xd_ncolors > 2) ? 7 : 4, 3);
 	options.win_pattern = 0;
 	options.win_color = 0; 
-
-	get_set_video(1);
 }
 
 
@@ -928,7 +911,7 @@ static void short_default(void)
 	memset( &options.kbshort[MOPEN - MFIRST], 0, (size_t)(MSAVESET - MFIRST + 1) );
 
 #if _PREDEF
-	options.kbshort[MOPEN - MFIRST] =    XD_CTRL | 'O';	/* ^O, etc. */
+	options.kbshort[MOPEN - MFIRST] =    XD_CTRL | 'O';		/* ^O, etc. */
 	options.kbshort[MSHOWINF - MFIRST] = XD_CTRL | 'I';
 	options.kbshort[MSEARCH - MFIRST] =  XD_CTRL | 'F';
 	options.kbshort[MPRINT - MFIRST] =   XD_CTRL | 'P';
@@ -951,15 +934,17 @@ static void load_options(void)
 {
 	int error = 0;
 
-	get_set_video(0);			/* get current video mode */
 
-	error = handle_cfgfile(infname, Config_table, infide, 0); 
+	noicons = FALSE;			/* so that missing ones be reported */
+
+	error = handle_cfgfile(infname, Config_table, infide, CFG_LOAD); 
 
 	/* If there was an error when loading options, set default values */
 
 	if (error != 0)
 	{
 		opt_default();		/* options */
+		get_set_video(1);	/* set video */
 		short_default();	/* kbd shortcuts */
 		dsk_default();		/* desktop */
 		ft_default();		/* filetypes */
@@ -983,21 +968,23 @@ static void load_options(void)
 
 static CfgNest opt_config
 {
+
 	if (io == CFG_SAVE)
 	{
 		/* Save options */
 
 		options.version = CFG_VERSION;
+		get_set_video(0);			/* get current video mode */
 
-		*error = CfgSave(file, Options_table, lvl + 1, CFGEMP); 
+		*error = CfgSave(file, Options_table, lvl, CFGEMP); 
 	}
 	else
 	{
-		/* Initialize options structure to zero then load options */
+		/* Initialize options structure to zero, then default, then load options */
 
-		opt_init();
+		opt_default();
 
-		*error = CfgLoad(file, Options_table, MAX_KEYLEN, lvl + 1); 
+		*error = CfgLoad(file, Options_table, MAX_KEYLEN, lvl); 
 
 		if ( *error >= 0 )
 		{
@@ -1011,19 +998,20 @@ static CfgNest opt_config
 			 * may crash the program or have other ugly consequences
 			 */
 
-			if ( options.plinelen < 32 ) 
-				options.plinelen = 80; 
+			if ( options.plinelen < MIN_PLINE ) /* probably not entered in the dialog */
+				options.plinelen = DEF_PLINE; 
 
-			if (   options.version < MIN_VERSION 
+			if 
+			(   options.version < MIN_VERSION 
 				|| options.version > CFG_VERSION 
 				|| (options.sort & ~WD_REVSORT) > WD_NOSORT
-				|| options.plinelen > 132
+				|| options.plinelen > MAX_PLINE
 				|| options.max_dir < 64 
 				|| options.max_dir > 2048
 				|| options.dial_mode > XD_WINDOW
 				|| options.vrez > 7 
-				)
-					*error = EFRVAL;
+			)
+				*error = EFRVAL;
 
 			if ( *error >= 0 )
 			{
@@ -1047,7 +1035,7 @@ static CfgNest opt_config
 				/* Load palette. Ignore errors */
 
 				if (options.cprefs & SAVE_COLORS)
-					load_colors();
+					handle_colors(CFG_LOAD);
 #endif
 				/* Set video state but do not change resolution */
 
@@ -1065,7 +1053,7 @@ static CfgNest opt_config
 
 static CfgNest short_config
 {
-	*error = handle_cfg(file, Shortcut_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, short_default);
+	*error = handle_cfg(file, Shortcut_table, lvl, CFGEMP, io, NULL, short_default);
 
 	if ( io == CFG_LOAD )
 	{
@@ -1086,7 +1074,7 @@ static void save_options(void)
 	/* First save the palette (ignore errors) */
 #if PALETTES
 	if (options.cprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
-		save_colors();
+		handle_colors(CFG_SAVE);
 #endif
 
 	/* Then save the configuration */
@@ -1209,34 +1197,20 @@ static boolean init(void)
 
 
 /* 
- * Initialize stuff related to VDI
+ * Initialize some stuff related to VDI
  * Note: work_out[] used here is local 
  */
 
 static void init_vdi(void)
 {
-	int dummy, work_out[58], pix_height;
+	int dummy, work_out[10];
 
-	screen_info.phy_handle = graf_handle(&screen_info.fnt_w, &screen_info.fnt_h, &dummy, &dummy);
+	/* Note: graf_handle returns screen physical handle, but it is not needed */
 
-	vq_extnd(vdi_handle, 0, work_out);
-
-	max_w = work_out[0] + 1;	/* Screen width (pixels)  */
-	max_h = work_out[1] + 1;	/* Screen height (pixels) */
-	ncolors = work_out[13];		/* Number of colours      */
-	npatterns = work_out[14];	/* Number of patterns     */
-	pix_height = work_out[4];
-
-	/* 
-	 * Note: vqt_attributes below uses work_out and destroys information
-	 * in work_out[0] to work_out[9]; not a nice thing to do!
-	 */
-
+	graf_handle(&screen_info.fnt_w, &screen_info.fnt_h, &dummy, &dummy);
+	screen_size();
 	vqt_attributes(vdi_handle, work_out);
-
-	fnt_setfont(1, (int) (((long) work_out[7] * (long) pix_height * 72L + 12700L) / 25400L), &def_font);
-
-	screen_info.vdi_handle = vdi_handle;
+	fnt_setfont(1, (int) (((long) work_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
 }
 
 
@@ -1620,7 +1594,6 @@ int main(void)
 {
 	int error;	/* return code from diverse routines */
 
-
 	/*
 	 * Get the value of the environment variable TERAENV
 	 * which may in the future set various aspects of TeraDesk.
@@ -1644,7 +1617,7 @@ int main(void)
 	 * Ssystem() is available only since Mint 1.15.
 	 */
 
-	fsdefext = TOSDEFAULT_EXT;	/* Set "*.* as a default filename extension */
+	fsdefext = (char *)TOSDEFAULT_EXT;	/* Set "*.* as a default filename extension */
 
 #if _MINT_
 
@@ -1663,7 +1636,7 @@ int main(void)
 	{
 		Psigsetmask(0x7FFFE14EL);
 		Pdomain(1);
-		fsdefext = DEFAULT_EXT;	/* Set "*" as a default filename extension */
+		fsdefext = (char *)DEFAULT_EXT;	/* Set "*" as a default filename extension */
 	}
 #endif
 

@@ -132,11 +132,11 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 	{
 		case CMD_COPY:
 			mask = CF_COPY;		
-			title = (rename_files == TRUE) ? DTCOPYRN : DTCOPY;
+			title = (rename_files) ? DTCOPYRN : DTCOPY;
 			goto unhide;
 		case CMD_MOVE:
 			mask = CF_COPY;	
-			title = (rename_files == TRUE) ? DTMOVERN : DTMOVE;
+			title = (rename_files) ? DTMOVERN : DTMOVE;
 			unhide:;
 			obj_unhide(copyinfo[CSETBOX]);
 			obj_unhide(copyinfo[CPT3]);
@@ -222,7 +222,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 void close_cfdialog(int button)
 {
-	if (cfdial_open == TRUE)
+	if (cfdial_open)
 	{
 		xd_buttnorm(&cfdial, button);
 
@@ -258,7 +258,7 @@ void upd_copyinfo(long folders, long files, long bytes)
 	rsc_ltoftext(copyinfo, NFILES, files);
 	rsc_ltoftext(copyinfo, NBYTES, bytes);
 
-	if (cfdial_open == TRUE)
+	if (cfdial_open)
 		xd_draw(&cfdial, CINFBOX, 1);
 }
 
@@ -266,21 +266,21 @@ void upd_copyinfo(long folders, long files, long bytes)
 /*
  * Display a more complete information for file copy.
  * Note1: see upd_copyinfo for proper setting of these fields in the resource. 
- * Note2: because of background colour problm in Magic, all fields are
+ * Note2: because of background colour problem in Magic, all fields are
  * always drawn in a background box.
  */
 
 void upd_copyname( const char *dest, const char *folder, const char *file )
 {
-	if ( cfdial_open == TRUE )
+	if ( cfdial_open )
 	{
 		/* Note: this can't be done selectively, because of transparency problems */
 
-		if ( folder != NULL )
+		if ( folder )
 			cv_fntoform(copyinfo + CPFOLDER, folder);
-		if ( file != NULL )
+		if ( file )
 			cv_fntoform(copyinfo + CPFILE, fn_get_name(file) ); 
-		if ( dest != NULL )
+		if ( dest )
 			cv_fntoform(copyinfo + CPDEST, dest);
 	
 		xd_draw(&cfdial, CNAMBOX, 1); 
@@ -477,7 +477,7 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 
 		/* Note: result==XABORT added for V3.40 */
 
-		if ((eod == TRUE) || (error != 0) || (result == XABORT) )
+		if (eod || (error != 0) || (result == XABORT) )
 		{
 			if ((ready = pull(&stack, &dummy)) == FALSE)
 				free(stack->sname);
@@ -496,14 +496,14 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 				dir_add_window ( fpath, NULL, name  ); 
 #if _SHOWFIND
 				if ( search_nsm > 0 )		/* Open a text window to show searched-for string */
-					txt_add_window (xw_top(), wd_selected(), 0, NULL);
+					txt_add_window (xw_top(), selection.selected, 0, NULL);
 #endif
 			}
 
 			return result; 
 		}
 	}
-	while (ready == FALSE);
+	while (!ready);
 
 	if ( search && (result != XSKIP) )
 		return XSKIP;
@@ -568,7 +568,7 @@ static boolean count_items
 
 	hourglass_mouse();
 
-	while ((i < n) && (ok == TRUE))
+	while ((i < n) && ok)
 	{
 		item = list[i];
 		type = itm_type(w, item);
@@ -657,7 +657,7 @@ static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 
 	/* 
 	 * Note: If size < 1024L and evaluation in the next statement continues, 
-	 * buffer will be left allocated even though the opertion failed.
+	 * buffer will be left allocated even though the operation failed.
 	 * (In Pure-C this is not supposed to happen)
 	 */
 
@@ -670,7 +670,7 @@ static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 		{
 			slength = x_read(fh1, size, buffer);
 			if (slength < 0)
-				error = (int) slength;
+				error = (int)slength;
 			else
 			{
 				fh2 = x_create(dname, src_attrib);
@@ -812,7 +812,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 
 	/* Check if all specified items can be copied */
 
-	while ((i < n) && (result == TRUE))
+	while ((i < n) && result)
 	{
 		item = list[i];
 
@@ -957,7 +957,7 @@ static int exist(const char *sname, int smode, const char *dname,
 		 * then return XOVERWRITE
 		 */
 
-		if ((overwrite == TRUE) && strcmp(sname, dname) && (*dmode == smode))
+		if (overwrite && strcmp(sname, dname) && (*dmode == smode))
 			return XOVERWRITE;
 		else
 			return XEXIST;
@@ -1122,7 +1122,7 @@ static int hndl_nameconflict
 				first = FALSE;
 			}
 			else
-				xd_draw(&xdinfo, OLDNAME, MAX_DEPTH); 
+				xd_drawdeep(&xdinfo, OLDNAME); 
 
 			/* Wait for a button, then immediately set it back to normal */ 
 
@@ -1201,7 +1201,7 @@ static int hndl_nameconflict
 				result = (button == NCABORT) ? XABORT : XSKIP;
 		}
 	}
-	while ((again == TRUE) && ((result = exist(sname, smode, *dname, &dmode, &dxattr, function)) == XEXIST));
+	while (again && ((result = exist(sname, smode, *dname, &dmode, &dxattr, function)) == XEXIST));
 
 	xd_close(&xdinfo);
 	set_oldpos = TRUE; 
@@ -1375,7 +1375,7 @@ static int copy_file(const char *sname, const char *dpath, XATTR *attr,
 
 	/* Check for name change (open dialog) */
 
-	if ((rename_files == TRUE) && ((result = hndl_rename(name)) != 0))
+	if (rename_files && ((result = hndl_rename(name)) != 0))
 		return (result == XSKIP) ? 0 : result;
 
 	/* Is the new name perhaps too long ? */
@@ -1558,7 +1558,7 @@ static int create_folder
 
 	strcpy(name, fn_get_name(sname)); 
 
-	if ((rename_files == TRUE) && ((result = hndl_rename(name)) != 0))
+	if (rename_files && ((result = hndl_rename(name)) != 0))
 		return result;
 
 	/* Is the new name perhaps too long ? */
@@ -1701,7 +1701,7 @@ static int copy_path(const char *spath, const char *dpath,
 				stack->result = XABORT;
 		}
 
-		if ((stack->result == XFATAL) || (stack->result == XABORT) || (eod == TRUE))
+		if ((stack->result == XFATAL) || (stack->result == XABORT) || eod )
 		{
 			if ((ready = pull(&stack, &result)) == FALSE)
 			{
@@ -2064,7 +2064,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 				stack->result = XABORT;
 		}
 
-		if ((stack->result == XFATAL) || (stack->result == XABORT) || (eod == TRUE))
+		if ((stack->result == XFATAL) || (stack->result == XABORT) || eod )
 		{
 			if ((ready = pull(&stack, &result)) == FALSE)
 			{
@@ -2247,7 +2247,7 @@ boolean itmlist_op
 
 	/* Yes, something has to be done */
 
-	if (cont == TRUE)
+	if (cont)
 	{
 		ITMTYPE itype0 = itm_type(w, list[0]);
 

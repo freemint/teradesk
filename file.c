@@ -343,12 +343,12 @@ char *locate(const char *name, int type)
 
 		free(fspec);
 
-		if (newpath == NULL)
+		if (!newpath)
 			return NULL;
 
 		if (type == L_FOLDER)
 		{
-			if (((newname = fn_get_path(newpath)) != NULL) && (isroot(newname) == TRUE))
+			if (((newname = fn_get_path(newpath)) != NULL) && isroot(newname))
 			{
 				alert_iprint(MNOROOT);
 				free(newname);
@@ -425,7 +425,7 @@ void get_fsel
 	/* Some fileselectors do not redraw what was below them... */
 
 	wd_drawall();
-	xd_draw( info, ROOT, MAX_DEPTH );
+	xd_drawdeep( info, ROOT );
 
 	/* If a path is specified, get rid of wildcards in it */
 
@@ -660,7 +660,7 @@ boolean cmp_part(const char *name, const char *wildcard)
 				i++;
 				while (name[j] != 0)
 				{
-					if (cmp_part(name + j, wildcard + i) == TRUE)
+					if (cmp_part(name + j, wildcard + i))
 						return TRUE;
 					j++;
 				}
@@ -758,9 +758,7 @@ void force_mediach(const char *path)
 	if ((p == 0) || !(isalnum(p) && path[1] == ':'))	/* alnum */
 		return;
 
-	drive =   isalpha(p)
-	        ? tolower(p) - 'a'
-	        : p - '0' + 'z' - 'a'  + 2;
+	drive =   isalpha(p) ? tolower(p) - 'a' : p - '0' + 'z' - 'a'  + 2;
 
 #if _MINT_
 	if (mint)
@@ -904,7 +902,6 @@ void cv_fntoform(OBJECT *ob, const char *src)
 			cramped_name(src, dst, l); /* term. byte included */
 	}	
 } 
-
 
 
 /* 

@@ -188,6 +188,7 @@ int alert_query( int message )
 /* 
  * Display an alert box (" ! " icon, except in one case) 
  * text being identified only by error code.
+ * Error code ENOMSG will not create an alert.
  * Anything undefined is "TOS error %d".
  * This routine ignores error codes >= 0.
  */
@@ -199,7 +200,7 @@ void xform_error(int error)
 	if ( error == _XDVDI )
 		alert_abort( MVDIERR );	/* because of another icon here */
 	else
-		if ( error < 0 )
+		if (error < 0 && error != ENOMSG)
 			alert_printf( 1, AGENALRT, get_message(error) );
 }
 

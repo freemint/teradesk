@@ -31,7 +31,8 @@
 
 /*
  * "Write" into a string. 
- * Note: This routine is able to perform only basic formatting.
+ * Note: This routine is able to perform only basic formatting,
+ * but sufficient for the needs of TeraDesk.
  * Recognized formats are -ONLY- : %d %x %ld %lx %s.
  * Maximum width of NUMERIC output should not exceed 15 characters.
  * Width specifier is supported. Output is a null-terminated string.

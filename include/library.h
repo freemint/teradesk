@@ -33,6 +33,7 @@ typedef struct
 /* Some general-purpose functions */
 
 char *strsncpy(char *dst, const char *src, size_t len);	
+char *strcpyj(char *dst, const char *src, size_t len);
 
 int min(int x, int y);
 int max(int x, int y);

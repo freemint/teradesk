@@ -277,7 +277,7 @@ static int print_file(WINDOW *w, int item)
 		else
 			error = handle;
 
-		if (stop == TRUE)
+		if (stop)
 			result = XABORT;
 
 		if (error != 0)

@@ -21,8 +21,8 @@
  */
 
 
-#define DEFAULT_EXT "*"
-#define TOSDEFAULT_EXT "*.*"
+#define DEFAULT_EXT presets[0]
+#define TOSDEFAULT_EXT presets[1]
 
 extern char *fsdefext;
 

@@ -178,7 +178,7 @@ btst.s
 ;binary only is provided; for the source see:
 ;http://members.ams.chello.nl/h.robbers/ahcm.zip
 ;If other library is used, it must execute free(NULL) 
-;without bad effects (i.e. no action shouod be taken in such case)
+;without bad effects (i.e. no action should be taken in such case)
 
 library\ahcm\ahcm.prj
 library\xdialog\xdialog.prj

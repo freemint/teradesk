@@ -29,6 +29,7 @@ extern int n_icons;
 extern OBJECT *desktop;
 extern WINDOW *desk_window;
 extern INAME iname;
+extern boolean noicons;
 
 boolean dsk_init(void);
 int dsk_load(XFILE *file);
@@ -55,6 +56,7 @@ int rsrc_icon(const char *name);
 boolean isfile(ITMTYPE type);
 
 int rsrc_icon_rscid(int id, char *name );
+int default_icon(ITMTYPE type);
 void set_iselector(SLIDER *slider, boolean draw, XDINFO *info);
 void icn_sl_init(int line, SLIDER *sl);
 void regen_desktop(OBJECT *desk_tree);

@@ -67,6 +67,8 @@ static ICONTYPE
 	*folders; 		/* pointer to list of icons assigned to folders    */
 
 
+static ITMTYPE
+	defictype;
 
 /*
  * Copy icon-file assignment data to another location 
@@ -85,7 +87,7 @@ static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
  * Find an icon defined by associated file(type) in the files or folders list;
  * return identifier of the icon.
  * Note: this function searches for an icon sequentially through a list.
- * On an low-end Atari, finding icons near the end of a largelist can take
+ * On a low-end Atari, finding icons near the end of a largelist can take
  * noticeable time. Routine cmp_wildcards() is rather slow.
  */
 
@@ -95,7 +97,7 @@ static int find_icon(const char *name, ICONTYPE *list)
 
 	while (p)
 	{
-		if (cmp_wildcard(name, p->type) == TRUE)
+		if (cmp_wildcard(name, p->type))
 			return min(n_icons - 1, p->icon);
 		p = p->next;
 	}
@@ -145,7 +147,8 @@ static void icnt_info
 
 /*  
  * Find icons in the icons resource file by name, not index.
- * Parameter "link" currently not used  
+ * Parameter "link" currently not used, but may be used someday,
+ * e.g. to set specific icons for links.  
  */
 
 int icnt_geticon(const char *name, ITMTYPE type, boolean link)
@@ -171,18 +174,6 @@ int icnt_geticon(const char *name, ITMTYPE type, boolean link)
 		if ((icon = find_icon(name, files)) < 0)
 			icon = rsrc_icon_rscid ( prg_isprogram(name) ? APINAME : FIINAME, iname ); 
 	}
-
-
-	/*
-	 * Better not: this below means that if icon is not found, then
-	 * the first icon in the resource file is assigned, whatever that first
-	 * icon may be (i.e. uncontrolled).
-	 * If below is disabled, -1 is returned in case of error
-	 *
-
-	if (icon < 0)
-		icon = 0;
-	*/
 
 	return icon;
 }
@@ -458,7 +449,7 @@ static CfgNest one_itype
 		while ((*error == 0) && pthis)
 		{
 			iwork = *pthis;
-			*error = CfgSave(file, icnt_table, lvl + 1, CFGEMP);
+			*error = CfgSave(file, icnt_table, lvl, CFGEMP);
 			pthis = pthis->next;
 		}
 	}
@@ -470,7 +461,7 @@ static CfgNest one_itype
 
 		/* Load configuration data for one icontype */
 
-		*error = CfgLoad(file, icnt_table, (int)sizeof(SNAME) - 1, lvl + 1); 
+		*error = CfgLoad(file, icnt_table, (int)sizeof(SNAME) - 1, lvl); 
 
 		/* Add to the list */
 
@@ -481,21 +472,18 @@ static CfgNest one_itype
 			else
 			{
 				iwork.icon = rsrc_icon(iwork.icon_name);
+				if ( iwork.icon < 0 )
+					iwork.icon = default_icon(defictype);	
 
-				/* Icons not found in the iconfile will be ignored */
-
-				if (iwork.icon >= 0)
-				{
-					if (
-						lsadd(	(LSTYPE **)ppthis,
-							sizeof(ICONTYPE),
-							(LSTYPE *)&iwork,
-							END,
-							copy_icntype
-				      		) == NULL
-						)
-							*error = ENOMSG; /* there was an alert in lsadd */
-				}
+				if (
+					lsadd(	(LSTYPE **)ppthis,
+						sizeof(ICONTYPE),
+						(LSTYPE *)&iwork,
+						END,
+						copy_icntype
+			      		) == NULL
+					)
+						*error = ENOMSG; /* there was an alert in lsadd */
 			}
 		}
 	}
@@ -508,7 +496,7 @@ static CfgNest one_itype
 
 static CfgEntry icngrp_table[] =
 {
-	{CFG_HDR, 0, "*" },
+	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
 	{CFG_NEST,0, "itype", one_itype  },		/* Repeating group */
 	{CFG_END},
@@ -525,7 +513,7 @@ static CfgNest icngrp_cfg
 	if ( io == CFG_LOAD )
 		lsrem_all((LSTYPE **)(*ppthis), lsrem);
 
-	*error = handle_cfg(file, icngrp_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL);
+	*error = handle_cfg(file, icngrp_table, lvl, (CFGEMP | ((pthis) ? 0 : CFGSKIP)), io, NULL, NULL);
 }
 
 
@@ -538,8 +526,8 @@ static CfgNest file_cfg
 	pthis = files;
 	ppthis = &files;
 	icngrp_table[0].s = "files";
-
-	icngrp_cfg(file, key, lvl, io, error);
+	defictype = ITM_FILE;
+	icngrp_cfg(file, lvl, io, error);
 }
 
 
@@ -552,8 +540,8 @@ static CfgNest folder_cfg
 	pthis = folders;
 	ppthis = &folders;
 	icngrp_table[0].s = "folders";
-
-	icngrp_cfg(file, key, lvl, io, error);
+	defictype = ITM_FOLDER;
+	icngrp_cfg(file, lvl, io, error);
 }
 
 
@@ -578,7 +566,7 @@ static CfgEntry icontypes_table[] =
 
 CfgNest icnt_config
 {
-	*error = handle_cfg(file, icontypes_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_icontypes, icnt_default);
+	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
 }
 
 

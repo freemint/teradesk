@@ -90,7 +90,8 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 		fd = (int)Fcreate(pipename, 0x02);
 
-	} while (fd == EACCDN);
+	} 
+	while (fd == EACCDN);
 
 	if (fd < 0)
 	{
@@ -188,7 +189,7 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 	i = Fwrite(fd, 4L, ext);
 	i += Fwrite(fd, 4L, &size);
-	i += Fwrite(fd, (long)strlen(name)+1, name); /* in Magic docs there is no + 1 */
+	i += Fwrite(fd, (long)strlen(name) + 1, name); /* in Magic docs there is no + 1 */
 
 	if (i != hdrlen) 
 		return DD_NAK;
@@ -211,7 +212,7 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 void ddclose(int fd)
 {
-	if ( fd >=0 )
+	if ( fd >= 0 )
 	{
 		Psignal(SIGPIPE, oldpipesig);
 		Fclose(fd);

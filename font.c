@@ -207,8 +207,8 @@ static void set_theselector
 		}
 	}
 
-	if (draw == TRUE)
-		xd_draw(info, WDPARENT, MAX_DEPTH);
+	if (draw)
+		xd_drawdeep(info, WDPARENT);
 }
 
 
@@ -407,7 +407,7 @@ static void do_fd_button
 			/* This is needed only in XaAES */
 #if _MINT_
 			drawbutt = FALSE;
-			xd_draw(info, WDPARENT, MAX_DEPTH);
+			xd_drawdeep(info, WDPARENT);
 #endif
 			break;
 		case WDFSUP:

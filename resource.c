@@ -129,8 +129,11 @@ static void set_menubox(int box)
 
 static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 {
-	tree[object].r.x = tree[left ].r.x + tree[left  ].r.w + (2 * aes_hor3d + 1);
-	tree[object].r.w = tree[right].r.x - tree[object].r.x - (2 * aes_hor3d + 1);
+	int h3d2 = 2 * aes_hor3d + 1;
+	OBJECT *ob = &tree[object];
+
+	ob->r.x = tree[left ].r.x + tree[left].r.w + h3d2;
+	ob->r.w = tree[right].r.x - ob->r.x - h3d2;
 }
 
 
@@ -143,8 +146,9 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 
 static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 {
-	tree[object].r.x = tree[object].r.x - aes_hor3d;
-	tree[object].r.w = tree[object].r.w + 2 * aes_hor3d - ((aes_hor3d) ? 1 : 0 );
+/* DjV
+	tree[object].r.x -= aes_hor3d;
+	tree[object].r.w += ( 2 * aes_hor3d - ((aes_hor3d) ? 1 : 0 ) );
 	tree[tree[object].ob_head].r.x += aes_hor3d;
 
 	tree[object].r.y = tree[up  ].r.y + tree[up    ].r.h + aes_ver3d + 1;
@@ -154,6 +158,25 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 
 	if ( xd_aes4_0 && ncolors > 4 )
 		tree[object].ob_spec.obspec.fillpattern = 7; 
+*/
+
+	OBJECT *ob = &tree[object];
+	int v3d1 = aes_ver3d + 1;
+
+	ob->r.x -= aes_hor3d;
+	ob->r.w += ( 2 * aes_hor3d - ((aes_hor3d) ? 1 : 0 ) );
+	tree[ob->ob_head].r.x += aes_hor3d;
+
+	ob->r.y = tree[up  ].r.y + tree[up].r.h + v3d1;
+	ob->r.h = tree[down].r.y - ob->r.y - v3d1;
+
+	/* Change fill pattern in sliders to full dark gray when appropriate */
+
+	if ( xd_aes4_0 && xd_colaes )
+		ob->ob_spec.obspec.fillpattern = 7; 
+
+
+
 }
 
 
@@ -226,7 +249,7 @@ static void rsc_fixmenus(void)
 
 	/* List of menuboxes and items in them to be deleted (maybe) */
 
-	static int mnbx[] = 
+	static const int mnbx[] = 
 	{
 		MNFILEBX,MNFILEBX,MNFILEBX,
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,
@@ -236,7 +259,7 @@ static void rsc_fixmenus(void)
 		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
 	};
 
-	static int mnit[] = 
+	static const int mnit[] = 
 	{
 		SEP1,SEP2,SEP3,
 		SEP5,SEP6,
@@ -248,8 +271,9 @@ static void rsc_fixmenus(void)
 
 /* no harm done if it is always checked
 	if ( tos_version < 0x200 )
-*/
+
 	{
+*/
 		int i, n, dummy;
 		long mnsize;
 		RECT boxrect;
@@ -302,7 +326,10 @@ static void rsc_fixmenus(void)
 			for ( i = 0; i < n; i++ )
 				mn_del(mnbx[i], mnit[i]);
 		}
+
+/* because always checked
 	}
+*/
 
 #endif
 
@@ -351,7 +378,7 @@ static char *tos_fnform( OBJECT *obj, int just )
 	obj->r.x += dx * screen_info.fnt_w;
 	obj->r.w = 12 * screen_info.fnt_w;
 
-	/* Change type */
+	/* Change object type */
 
 	obj->ob_type = G_FTEXT; /* no extended type */
 	obj->ob_spec.tedinfo = ted;
@@ -474,7 +501,7 @@ void rsc_init(void)
 	rsc_xalign(wdoptions, WINCDOWN, WINCUP, WINPAT);
 	wdoptions[DSKCUP].r.y   += v3d2;
 	wdoptions[DSKCDOWN].r.y += v3d2;
-	wdoptions[WINCUP].r.y  += v3d2;
+	wdoptions[WINCUP].r.y   += v3d2;
 	wdoptions[WINCDOWN].r.y += v3d2;
 	wdoptions[DSKPAT].r.h   += v3d2;
 	wdoptions[WINPAT].r.h   += v3d2;
@@ -499,7 +526,7 @@ void rsc_init(void)
 	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy format dialog */		
 	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
-	/* Assuming that filemask dialog and fonts dialog listboxes are the same size... */
+	/* Assuming that filemask dialog and fonts dialog listboxes have the same size... */
 
 	for ( i = 0; i < NLINES; i++)				/* setmask & font dialogs */
 	{
@@ -541,6 +568,7 @@ void rsc_init(void)
 		 * Below are substituted "Files and links" with "Files" if no mint.
 		 * Once links get into dialogs separately, this should be removed
 		 */
+
 		rsc_title(copyinfo, CIFILES, SFILES);
 	}
 
@@ -581,7 +609,7 @@ void rsc_title(OBJECT *tree, int object, int title)
 /*
  * Write a long integer into a formatted text field. 
  * Text is right-justified and padded with spaces on the left side.
- * Maximum length is 16 digits.
+ * Maximum length is 15 digits (no checking done).
  *
  * Parameters:
  *
@@ -591,6 +619,8 @@ void rsc_title(OBJECT *tree, int object, int title)
  *
  * Note: a good validation string must exist for the field, 
  * it is used to determine field length
+ * Note: it would be possible to use strcpyj() but there would be
+ * almost no gain in size.
  */
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
@@ -603,6 +633,8 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 	p = ti->te_ptext;
 	l1 = strlen(ti->te_pvalid);	/* Length of the text field.        */
 	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
+
+
 	l2 = strlen(s);				/* Length of the number as string.  */
 
 	i = 0;

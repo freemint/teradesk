@@ -106,7 +106,7 @@ typedef struct
 } SEL_INFO;
 
 /*
- * note: information on iconified is duplicated here for purpose
+ * note: information on iconified state is duplicated here for purpose
  * of saving/reloading; otherwise it is known to xdialog via
  * xw_iflag in WINDOW structure
  */
@@ -179,7 +179,26 @@ typedef struct
 	WINFO *windows;
 } NEWSINFO1;
 
+
+typedef struct
+{
+	int 
+		index;
+		px, 
+	    hexmode, 
+		tabsize;
+	long
+		py; 
+	LNAME 
+		path, 
+		spec;
+	WINDOW 
+		*w;
+} SINFO2;
+
 extern NEWSINFO1 thisw;
+extern SINFO2 that;
+extern SEL_INFO selection;
 
 extern CfgEntry 
 	fnt_table[],
@@ -225,15 +244,13 @@ void wd_seticons(void);
 
 /* Funkties voor het opvragen van informatie over geselekteerde objecten. */
 
-WINDOW *wd_selected_wd(void);
-int wd_nselected(void);
-int wd_selected(void);
 void wd_reset(WINDOW *w);
 void wd_deselect_all(void);
 void wd_fields(void);
 void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
 
+void wd_sizes(void);
 void wd_init(void);
 void wd_default(void);
 int wd_load(XFILE *file);
@@ -247,6 +264,7 @@ boolean wd_type_setfont(int title);
 void calc_rc(TYP_WINDOW *w, RECT *work); 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork); 
 void wd_calcsize(WINFO *w, RECT *size); 
+int wd_checkcreate(int code);
 
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
 void wd_type_hndlbutton(WINDOW *w, int x, int y, int n,
@@ -277,6 +295,7 @@ void w_pageright(TYP_WINDOW *w);
 void w_scroll(TYP_WINDOW *w, int type); 
 
 void wd_adapt(WINDOW *w);	
+void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch);
 
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
 void set_obji( OBJECT *obj, long i, long n, boolean selected, int icon_no, 

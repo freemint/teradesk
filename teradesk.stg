@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}  
 
 @autorefoff  
-                  User Manual for TeraDesk V3.40  
+                  User Manual for TeraDesk V3.41  
                        
              Wout Klaren, Henk Robbers, Djordje Vukovic  
   
-                            October 2004  
+                         November 2004  
                             
 @autorefon  
 
@@ -330,12 +330,12 @@ size in any old TOS version. See also TOS Version compatibility.
   
 If  TeraDesk  is to be used exclusively in high screen resolutions and  
 long-file-names-capable   environment,   length   of   the  scrollable  
-filename  and   pathname  fields   (see  Scrolled text fields)  can be  
-increased  in  the  dialogs.  TeraDesk uses these fields in such a way  
-that  it is  safe to use a resource editor and  increase the widths of  
-the  relevant  dialogs  and  scrollable  fields,  until  they suit the  
-user's  esthetic  and  other requirements.  Note that lengths of other  
-alphanumeric  editable fields (i.e. filetype masks and search strings)  
+filename and pathname fields (see Scrolled text fields) and the search
+string field  can be increased  in  the  dialogs.  TeraDesk uses these 
+fields in such a way  that  it is  safe to  use a resource editor  and
+increase the widths of the  relevant  dialogs  and  scrollable fields,  
+until  they suit the  user's  esthetic  and  other requirements.  Note 
+that lengths of other  alphanumeric  editable fields (e.g. name masks) 
 should NOT be changed.
 
 Screen resolution can be changed, depending on the AES and TOS version
@@ -394,7 +394,7 @@ root directory of a disk volume.
 Note  that  DESKTOP.PRG  will  work in single-TOS as well; DESKTOS.PRG  
 just  saves  a  few  kilobytes of memory  by not containing code which 
 is not relevant in  Single-TOS environment,  and by  having a somewhat 
-limited support for the AV-protocol  (this limitation  is imposed only
+limited support for The AV-protocol  (this limitation  is imposed only
 for the sake of smaller program size).
 
 If only DESKTOS.PRG is  to be used,  it may be renamed to  DESKTOP.PRG 
@@ -421,12 +421,12 @@ completely  adapt Tera Desktop  to other languages by using translated
 resource  files. Check the links on  Tera Desktop's home web page  for 
 currently available translation(s).
   
-3. If  you  use   ST-GUIDE,  copy  TERADESK.HYP and TERADESK.REF  from
-the \DOC folder to the folder where your other .HYP files are.  If you
-would like a translated  hypertext manual instead,  check the links on 
-Tera Desktop's home web page for currently available translations, and
-replace the English TERADESK.HYP and TERADESK.REF with translated ones
-if they exist.
+3. If you use ST-Guide or some other compatible hypertext viewer, copy
+TERADESK.HYP and TERADESK.REF from the \DOC folder to the folder where
+your other .HYP files are.  If you would like  a translated  hypertext
+manual instead,  check the links on  Tera Desktop's  home web page for 
+currently available translations, and replace the English TERADESK.HYP
+and TERADESK.REF with translated ones if they exist.
   
 4. ONLY if you want  to convert  TeraDesk V2.*  configuration files to 
 the new format of TeraDesk V3, you need to get also CFG2INF.PRG;  This  
@@ -507,13 +507,17 @@ memory as possible.
 8. The icon files supplied contain basic sets of icons only.  Users can 
 add icons at will, or use other icon files (for example, one can rename 
 DESKICON.RSC and/or  DESKCICN.RSC  used  by the built-in desktop of TOS 
-to ICONS.RSC and CICONS.RSC respectively, and use them with TeraDesk).
+to ICONS.RSC and CICONS.RSC respectively,  and use them with  TeraDesk,
+but any files used must contain  some icons essential to TeraDesk-  see 
+below).
 
 TeraDesk, since  V2.0, handles icons by name, not by index. Icons with 
 the following names (or their translated equivalents) should always be 
 present in the icons resource file(s):
 
  FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
+ 
+See also The icons files.
 
 9. Some  aspects of  Tera Desktop  can be  (or may be  in the  future)
 controlled through the environment variable TERAENV.  Its value should
@@ -1050,11 +1054,14 @@ resynchronize further comparison  in  the files  after a difference is
 found.  Width of the resynchronization window  can be  entered  in the 
 dialog, in the range of 1 to 99 characters.  Smaller window sizes will 
 set Tera Desktop to detect  small differences  closely following  each 
-other. Larger window sizes will set Tera Desk resynchronize comparison 
-after a large block of difference(s).
+other. Larger window sizes will set TeraDesk  to treat such cases as a
+single  difference and  to resynchronize  comparison  after skipping a 
+complete  block of  small differences.   It is recommended that window
+width be set smaller than available difference-display length, so that
+complete difference strings can be viewed. 
 
-This  function  completely reads both files into memory, and may be of  
-limited use on machines with minimum RAM.  
+This  function completely reads both files into memory,  and may be of  
+limited use on machines with small RAM.  
   
 @endnode  
   
@@ -1083,6 +1090,9 @@ String  to  be  searched  for is optional. If left blank, Tera Desktop
 will only search  for files  and folders matching the pattern mask. If  
 any  string is specified, Tera Desktop will search for it in the files  
 which match the name pattern.  
+
+If either the size range or the string is specified, search is limited
+to files only (i.e. directories matching the pattern will be ignored).
   
 If a match is found the Info... dialog is opened showing specification
 of  the  found  object.  If  a  search  string has been  entered, file
@@ -1120,8 +1130,9 @@ Search operation can be interrupted by pressing the [Esc] key.
 If a printable file is selected, this file will be printed. 
   
 If  no  objects  are  selected,  a listing of the top window directory  
-will  be  printed.  Amount  of  information  shown  will depend on the  
-settings in the 'View' menu.  
+will be printed.  Amount and order of  information  shown  will depend 
+on the   settings in the  'View'  menu  (it will be the same as on the
+screen).  
   
 It  is  possible  to  select more than one object before invoking this  
 menu item.  All files will be printed in turn.  Printing order will be 
@@ -1152,9 +1163,9 @@ appear in which additional printing options may be set:
    
   .Raw data: files will  be sent to the printer  as they are,  without 
    any modification.  This mode is convenient for printing print-files
-   created by some application. 
+   created by applications. 
    
-In  the  current  version of TeraDesk,  all printing  is done  through 
+In the current version of Tera Desktop,  all printing  is done through 
 GEMDOS, using Cprnout() function.
    
 If you  are  running TeraDesk in low or medium  screen resolution  and
@@ -1285,7 +1296,7 @@ format):
     number of sides  
     number of tracks  
     number of sectors per tracks  
-    directory size  
+    root directory size  
     volume label  
       
 If  this  operation  is  used  in a multitasking environment  (Mint or 
@@ -1324,11 +1335,14 @@ If option 3 is selected in a multitasking environment  the appropriate
 shutdown procedure is activated. 
    
 Note  that  only  a  very  simple  sequence of  shutdown operations is 
-performed:  shutdown is invoked by shel_write(...) function, which may 
-not  have  any  effect in older versions of the AES. After shel_write, 
-and  after  waiting for several seconds, if TeraDesk is still alive, a 
-Shutdown() is initiated (in restart mode), but only if Mint is present. 
-If TeraDesk is still alive after -that-, a brute-force reset is done. 
+performed:  shutdown is invoked by shel_write(...) function,  which is
+supposed to  cleanly  close  all running applications,  but which  may 
+not  have any  effect in older versions of the AES.  After shel_write, 
+and after  waiting for several seconds,  if TeraDesk is still alive, a 
+Shutdown() is initiated (in restart mode) if Mint is present. 
+
+If TeraDesk is still alive some time after -that-,  a brute-force reset 
+is done. 
    
 If a  more  sophisticated  shutdown  is required, an external Shutdown 
 utility should be used. 
@@ -2364,7 +2378,10 @@ specified disk volume in the existing top window.
 If  [Shift][Help] key combination is pressed, TeraDesk will attempt to 
 call ST-Guide,  if it is installed as an accessory  or already running
 in any other way,  to  open  TERADESK.HYP  file  containing  this user 
-manual. Another help program may be specified- see Configuration files
+manual. An alternative help program may be specified, but it must know 
+of VA_START and understand the syntax used by ST-Guide (Tera Desktop's
+help is opened as "*:\TERADESK.HYP") See also Configuration files  and
+The AV Protocol.
 
 Pressing  [Help]  key  invokes a Help dialog  with brief  explanations 
 of basic keyboard commands. 
@@ -2724,7 +2741,7 @@ represent.
   
 TeraDesk  holds  its  images  of  icons  in  the files named ICONS.RSC 
 and/or  CICONS.RSC; the first file should contain monochrome icons and 
-the  second  one colour icons. These files should reside in teraDesk's 
+the  second  one colour icons. These files should reside in TeraDesk's 
 folder (see Installation). 
   
 Icons  files  contains  the bit-maps of the icons which you can select 
@@ -2750,13 +2767,14 @@ file  is  64 Kb.  Do  not  add other sorts of object  to this resource
 file;  if you do, it will not load.  Owners of a Mega STE  or a TT  or 
 any other computer using TOS 2.06 or higher can also  use the resource 
 file which comes with these computers in place of ICON.RSC  as long as
-they copy it to Tera Desktop's folder and rename it to ICONS.RSC. Many
+they copy it to Tera Desktop's folder and rename it to  ICONS.RSC, and
+the file contains certain icons which are essential to TeraDesk.  Many
 suitable icon collections can be found on diverse ftp sites as well.
   
 The  icons  are  identified by the name held in the icon data. That is 
 the 12 characters name in 6X6 font  displayed  under or over the icon. 
 This makes it possible to have  the icons in any order in the resource 
-file. 
+file (note: do not use the "@" character in icon names / labels). 
   
 There must be at least 7 icons in the file, which are used to represent:  
   
@@ -2767,16 +2785,19 @@ There must be at least 7 icons in the file, which are used to represent:
       Folders:                icon named  'FOLDER'  
       Trash cans:             icon named  'TRASH'  
       Printers:               icon named  'PRINTER'  
-  
-Note  that  names  of  the above icons are not hard-coded but are read 
-from  DESKTOP.RSC;  thus, it is possible to customize them if TeraDesk 
-is translated to other language(s).  
- 
-If a required icon name can not be  found in  the icons  resource file, 
-icon name FILE is tried.  If that does not exist  either,  you loose an 
-icon.
 
-You can replace the default icons in the file by others of your choice.
+If an icon file is used which does not contain icons with these names,
+some icons in the file should be renamed using a resource editor. 
+   
+Note that names of the above default icons are not hard-coded  but are 
+read from  DESKTOP.RSC;  thus,  it is  possible to  customize  them if 
+TeraDesk is translated to other language(s).  
+   
+If an icon name can not be found in  the icons resource file, TeraDesk
+attempts  to use  one of the default icons  (see above),  according to
+item type. If that does not succeed either, the first icon in the icon
+resource file is used.
+
   
 @endnode  
   
@@ -3308,97 +3329,98 @@ and replies by sending an appropriate acknowledgment message.
 TeraDesk currently supports  a  large subset  of  AV-protocol  message
 exchanges (listed below as request/reply):
 
-AV_PROTOKOLL/VA_PROTOSTATUS:Establish client-server communication and
+AV_PROTOKOLL/VA_PROTOSTATUS:Establish client-server  communication and
                             inform each other of capabilities.
 
 AV_EXIT:                    Terminate communication. 
                             
 AV_SENDKEY:                 Pass an unused key code to the server
 
-VA_START/AV_STARTED:        Pass parameter(s) to the client. AV_STARTED
-                            reply is ignored.
+VA_START/AV_STARTED:        Pass parameter(s) to the client. 
+                            AV_STARTED reply is ignored.
 
 AV_ASKFILEFONT/VA_FILEFONT: Ask the server about the current 
                             directory window font
 
-AV_ASKCONFONT/VA_CONFONT:   Ask the server about the current console
-                            window font. Currently TeraDesk replies
-                            by sending the directory window font 
+AV_ASKCONFONT/VA_CONFONT:   Ask the server  about  the current console
+                            window font.  Currently  TeraDesk  replies
+                            by   sending  the  directory  window  font 
                             info. 
                             
-VA_FONTCHANGED:             Inform the AV-client which has previously
-                            demanded an info on the directory font 
+VA_FONTCHANGED:             Inform the AV-client which has  previously
+                            demanded  an info on  the  directory  font 
                             that the font has changed.
                                                            
-AV_OPENWIND/VA_WINDOPEN:    Tell the server to open a directory 
-                            window with the given path.
+AV_OPENWIND/VA_WINDOPEN:    Tell the server to open a directory window
+                            with the given path.
 
-AV_XWIND/VA_XOPEN:          Similar to the above, but with additional
-                            parameters passed. Currently, some of these
-                            additional parameters are ignored, so this
-                            capability is not fully compliant to the
+AV_XWIND/VA_XOPEN:          Similar to the above,  but with additional
+                            parameters passed.  Currently, some of the
+                            additional  parameters  are ignored;  this
+                            capability  is not fully compliant  to the
                             specifications.
                             
-AV_ACCWINDOPEN:             Inform the server that the client has 
-                            opened a window. This window is then 
-                            included in TeraDesk's window cycling and
-                            can also be closed from TeraDesks Window 
+AV_ACCWINDOPEN:             Inform  the server  that  the  client  has 
+                            opened  a  window.  This  window  is  then 
+                            included in TeraDesk's  window cycling and
+                            can also be closed from TeraDesk' s Window 
                             menu.
                             
-AV_ACCWINDCLOSED:           Inform the server that the client has 
+AV_ACCWINDCLOSED:           Inform the  server  that  the  client  has 
                             closed a window.
                             
-VA_DRAGACCWIND:             Inform the client that objects have been
+VA_DRAGACCWIND:             Inform the client  that objects  have been
                             placed to its window.
                             
 AV_COPY_DRAGGED/VA_COPY_COMPLETE:   Replies to to VA_DRAGACCWIND
 
-AV_DRAG_ON_WINDOW/VA_DRAG_COMPLETE: Inform the server that objects
-                                    have been placed on its windows 
+AV_DRAG_ON_WINDOW/VA_DRAG_COMPLETE: Inform  the  server  that  objects
+                                    have been placed  on  its  windows 
                                     or the desktop. 
                                                                                                                               
-AV_STARTPROG/VA_PROGSTART:  Tell the server to start an application
-                            with a given name, or an application 
+AV_STARTPROG/VA_PROGSTART:  Tell the server  to start  an  application
+                            with  a  given  name,  or  an  application 
                             which will open a file with a given name.  
                             
-AV_VIEW/VA_VIEWED:          Tell the server to start an application
-                            which is the viewer for the given file.
-                            Currently, TeraDesk does not distinguish
-                            between filetype-specific viewers and
-                            processing applications, and will start
-                            the first application for which the given
+AV_VIEW/VA_VIEWED:          Tell  the server  to start  an application
+                            which  is  the viewer for  the given file.
+                            Currently,  TeraDesk does not  distinguish
+                            between  filetype-specific   viewers   and
+                            processing applications,  and  will  start
+                            the first application  for which the given
                             filetype is assigned.
                             
-AV_PATH_UPDATE:             Tell the server to update a window with
+AV_PATH_UPDATE:             Tell the server  to  update  a window with
                             the given path.         
                             
-AV_FILEINFO/VA_FILECHANGED  Tell the server to show information on the
-                            files the names of which are passed.
+AV_FILEINFO/VA_FILECHANGED  Tell the server to show  information about
+                            the files the names of which are passed.
                             
 AV_DELFILE/VA_FILEDELETED   Tell the server to delete some files.
 
-AV_COPYFILE/VA_FILECOPIED   Tell the server to copy some files. In the
-                            current implementation, this function is 
-                            not fully compliant to specifications: 
+AV_COPYFILE/VA_FILECOPIED   Tell the server  to  copy  some files.  In 
+                            the current implementation,  this function 
+                            is not  fully compliant to specifications: 
                             symbolic links can not be created.
                              
-VA_PATH_UPDATE              Inform clients of a change in a directory. 
-                            In the current implementation the server 
-                            does not send this information to the 
-                            client to which some other reply is in 
+VA_PATH_UPDATE              Inform clients of a change  in a directory 
+                            In the  current implementation  the server 
+                            does  not send  this  information  to  the 
+                            client to which  some  other  reply  is in 
                             progress. 
 
-AV_STATUS                   Ask the server to save client's status  
+AV_STATUS                   Ask the server to save client's status.  
                    
-AV_GETSTATUS/VA_SETSTATUS   Aks the server about saved client status
+AV_GETSTATUS/VA_SETSTATUS   Aks the server about saved client status.
 
-AV_SETWINDPOS               Fix the position of the next client window
+AV_SETWINDPOS               Fix  the  position  of   the  next  client 
+                            window to be opened.
 
                                                              
 Messages currently not supported:
 
 AV_OPENCONSOLE/VA_CONSOLEOPEN  Open the console window 
-AV_ASKOBJECT/VA_OBJECT         Ask for names of selected objects
+AV_ASKOBJECT/VA_OBJECT         Ask for the names of selected objects.
 
 In the Single-TOS version, only the following messages are supported:
 
@@ -3413,19 +3435,23 @@ VA_DRAGACCWIND
 AV_COPY_DRAGGED/VA_COPY_COMPLETE
 AV_STARTPROG/VA_PROGSTARTED
 
-This limitation is a consequence of the desire to reduce the size of
-the Desktop program by  removing options which are  very unlikely to
-be used in Single-TOS. However, TeraDesk can be compiled for Single-
-TOS with full AV-protocol support as well.
+This limitation is  a consequence of the  desire to reduce the size of
+the Desktop program by removing options which are  very unlikely to be
+used in Single-TOS.  However,  TeraDesk can be compiled for Single-TOS 
+with full AV-protocol support as well.
 
-In a multitasking environment with  memory protection,  TeraDesk may
-run into problems  with some AV-protocol clients,  and fail with the
-'memory protection: type private' error.  This will most probably be
-a fault of a  badly programmed AV-protocol client.  In some cases it 
-can be  cured if  the memory-protection flag  in  the header  of the  
-offending AV-protocol-client is set to 'readable' or  (if it doesn't 
-help)  to  'supervisor'  or  'global'.  An example of  such  case is 
+In a multitasking  environment  with  memory protection,  TeraDesk may
+run into problems  with some AV-protocol clients,  and  fail with  the
+'memory protection: type private' error.  This  will most  probably be
+a fault of a  badly programmed  AV-protocol client.  In  some cases it 
+can be  cured  if  the memory-protection flag  in  the header   of the  
+offending AV-protocol-client is set to  'readable'  or  (if it doesn't 
+help)  to  'supervisor'  or  'global'.  An  example  of  such  case is 
 ST-Guide.
+
+Note that the nature of the  AV-protocol is  such that  the  AV-server
+(i.e. TeraDesk in this case) will  crash first,  if  it encounters  an 
+offending client;  the  client will not be affected.
 
 See also: Installation, TOS Version compatibility
 
@@ -3504,10 +3530,10 @@ contribution to various stages of the development of the Tera Desktop:
    Mark Matts              for distributing and supporting the Tera  
                            Desktop V1.* in the United Kingdom.  
                              
-   Ted Richards            for rewritting the English manual. 
+   Ted Richards            for rewritting the English manual of V1.* 
     
    Jean Jacques Cortes     for translating  the  resource  file  of 
-                           TeraDesk V1.* and 3.4* into French.  
+                           TeraDesk to French.  
                              
    Joachim Farbowky        for the German resource file of TeraDesk 
                            V1.* and for F_KEYS.RSC  

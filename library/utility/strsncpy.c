@@ -36,3 +36,33 @@ char *strsncpy(char *dst, const char *src, size_t len)
 	*(dst + len - 1) = 0;
 	return dst;
 }
+
+
+/*
+ * Copy a string and right-justify in a field with the length 'len'
+ * Termination zero byte is added -after- length 'len'.
+ * Length of 's' must not be grater than 'len'.
+ * Note: currently this routine is not used anywhere in teraDesk
+ * because using it (as opposed to direcy coding) gives a marginal 
+ * gain in program size (just several bytes) but a penalty in speed.
+ * Therefore this code is commented out
+ */
+
+/*
+char *strcpyj(char *d, const char *s, size_t len)
+{
+	size_t l, b;
+	int i = 0;
+
+	l = strlen(s);
+	if (l > len)
+		l = len;
+	b = len - l;
+
+	memset(d, ' ', b);
+	memcpy(d + b, s, l);
+	d[len] = 0;
+	return d;
+}
+*/
+

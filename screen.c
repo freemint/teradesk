@@ -28,6 +28,7 @@
 #include <mint.h>
 #include <string.h>			/* for load_colors */
 #include <library.h>
+#include <internal.h>
 
 #include "desktop.h"
 #include "desk.h"
@@ -37,6 +38,19 @@
 #include "config.h"
 #include "font.h"
 #include "window.h"
+
+
+/*
+ * Determine screen size by making an inquiry to the VDI
+ */
+
+void screen_size(void)
+{
+	int work_out[58];	
+	vq_extnd(vdi_handle, 0, work_out);
+	max_w = work_out[0] + 1;	/* Screen width (pixels)  */
+	max_h = work_out[1] + 1;	/* Screen height (pixels) */
+}
 
 
 /* 
@@ -79,7 +93,6 @@ void pclear(RECT *r)
 boolean rc_intersect2(RECT *r1, RECT *r2)
 {
 	RECT r;
-
 	return xd_rcintersect(r1, r2, &r);
 }
 
@@ -108,7 +121,6 @@ boolean inrect(int x, int y, RECT *r)
 void set_rect_default(void)
 {
 	vswr_mode(vdi_handle, MD_XOR);
-
 	vsl_color(vdi_handle, 1);
 	vsl_ends(vdi_handle, 0, 0);
 	vsl_type(vdi_handle, 7);
@@ -118,7 +130,7 @@ void set_rect_default(void)
 
 
 /*
- * Draw a rectangle
+ * Draw a simple rectangle
  */
 
 void draw_rect(int x1, int y1, int x2, int y2)
@@ -195,19 +207,20 @@ void set_txt_default(int font, int height)
 
 
 /*
- * Allocate space for a palette table and return a pointer to it.
- * Table format: 3 * int16 per colour (red, green, blue in promilles)
+ * Allocate space for a palette table, fill it and return a pointer to it.
+ * Table format: 3 * int16 per colour (red, green, blue in promilles).
+ * Return NULL if allocation is not successful.
  */
 
 int *get_colors(void)
 {
 	int i, *colors, *h;
 
-	if ((colors = malloc((long) ncolors * 3L * sizeof(int))) != NULL)
+	if ((colors = malloc((long)xd_ncolors * 3L * sizeof(int))) != NULL)
 	{
 		h = colors;
 
-		for (i = 0; i < ncolors; i++)
+		for (i = 0; i < xd_ncolors; i++)
 		{
 			vq_color(vdi_handle, i, 0, h);
 			h += 3;
@@ -226,7 +239,7 @@ void set_colors(int *colors)
 {
 	int i, *h = colors;
 
-	for (i = 0; i < ncolors; i++)
+	for (i = 0; i < xd_ncolors; i++)
 	{
 		vs_color(vdi_handle, i, h);
 		h += 3;
@@ -295,7 +308,7 @@ static CfgNest rgb_config
 
 	if ( io == CFG_SAVE )
 	{
-		for ( i = 0; i < ncolors; i++ )
+		for ( i = 0; i < xd_ncolors; i++ )
 		{
 			cwork.ind = i;
 
@@ -303,7 +316,7 @@ static CfgNest rgb_config
 			cwork.green = *thecolor++;
 			cwork.blue =  *thecolor++; 
 
-			*error = CfgSave(file, colour_table, lvl + 1, CFGEMP);
+			*error = CfgSave(file, colour_table, lvl, CFGEMP);
 
 			if (*error < 0)
 				break;
@@ -312,7 +325,7 @@ static CfgNest rgb_config
 	}
 	else
 	{
-		if ( palsize != ncolors )
+		if ( palsize != xd_ncolors )
 		{
 			alert_iprint(MECOLORS); 
 			*error = ENOMSG; /* abort but don't display more error messages */
@@ -324,7 +337,7 @@ static CfgNest rgb_config
 			cwork.green = 0;
 			cwork.blue = 0;
 
-			*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl + 1);
+			*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl);
 
 			if ( *error == 0 )
 			{
@@ -346,21 +359,29 @@ static CfgNest rgb_config
 }
 
 
+/*
+ * Load or save palette configuration data
+ */
+
 static CfgNest pal_config
 {
+	palette = get_colors();
+	palsize = xd_ncolors;
 	cwork.ind = 0;
 
-	/* Get current palette; this will allocate space for the new one */
-
-	palette = get_colors();
-
-	/* If space for the palette has been allocated, load data into it */
+	/* 
+	 * If space for the palette has been allocated, load data into it 
+	 * (or save data from it, depending on io)
+	 */
 
 	if ( palette )
 	{
-		*error = handle_cfg(file, palette_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL );
-		if (*error != 0)
-			free(palette);
+		*error = handle_cfg(file, palette_table, lvl, CFGEMP, io, NULL, NULL );
+
+		if (*error != 0 && io == CFG_LOAD)
+			set_colors(palette);
+
+		free(palette);
 	}
 	else 
 		*error = ENSMEM;
@@ -368,48 +389,16 @@ static CfgNest pal_config
  
 
 /*
- * Load colour palette
+ * Load or save complete colour palette configuration.
+ * Palete file is opened, read/written to, and closed.
+ * Note: temporary space for the palette is both allocated and freed here
  */
 
-int load_colors(void)
+int handle_colors(int io)
 {
-	int error;
-
-	/* Load palette from the file; temporary space for palette allocated here */
-
-	error = handle_cfgfile( palname, palette_root, palide, 0 );
-		
-	/* If everything is OK set new colours and free palette table */
-
-	if ( error == 0 )
-	{
-		set_colors(palette);
-		free(palette);
-	}
-
-	return error;
+	return handle_cfgfile( palname, palette_root, palide, io );
 }
 
-
-/*
- * Save colour palette
- */
-
-int save_colors(void)
-{
-	int error;
-
-	palsize = ncolors;
-
-	/* Write configuration; temporary space for palette is allocated here */
-
-	error = handle_cfgfile( palname, palette_root, palide, CFG_SAVE );
-
-	if ( error == 0 )
-		free(palette);
-
-	return error;
-}
 
 #endif		/* PALETTES */
 

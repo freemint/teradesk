@@ -70,7 +70,7 @@ boolean find_wild
 	void 
 		(*copyf)( LSTYPE *t, LSTYPE *s ) = copy_func;
 
-	if ( name != NULL )
+	if ( name )
 	{					
 		/* Find the last occurence of "\" */
 
@@ -78,11 +78,11 @@ boolean find_wild
 
 		/* Search in the list */
 
-		while (p != NULL)
+		while (p)
 		{
 			/* If match found (match name only, no path!), then */
 
-			if (cmp_wildcard(filename, p->filetype) == TRUE)
+			if (cmp_wildcard(filename, p->filetype))
 			{
 				/* Copy all data, using appropriate routine, then copy name */
 
@@ -478,9 +478,9 @@ int list_edit
 
 	if
 	( 
-		( (use & LS_SELA) == 0 )           &&  
-		( (w = wd_selected_wd()) != NULL ) && 
-		( (item = wd_selected()) >= 0 )    &&
+		( (use & LS_SELA) == 0 )           		&&  
+		( (w = selection.w) != NULL ) 			&& 
+		( (item = selection.selected) >= 0 )    &&
 		( ( use & LS_DOCT ) == 0 ) 
 	)
 	{
@@ -491,7 +491,7 @@ int list_edit
 		 */
 
 		wsel = TRUE;
-		item = wd_selected();
+		item = selection.selected;
 
 		if ( use & LS_ICNT )
 		{
@@ -772,7 +772,7 @@ int list_edit
 					       setmask[button].ob_spec.tedinfo->te_ptext);
 					xd_draw(&info, FILETYPE, 0);
 
-					if (dc == TRUE)
+					if (dc)
 					{
 						stop = TRUE;
 						button = FTOK;
@@ -815,7 +815,7 @@ int list_edit
 		{
 			/* Redraw fields FTYPE1... FTYPEn */
 
-			if ( redraw == TRUE || (use & LS_APPL) )
+			if ( redraw || (use & LS_APPL) )
 			{
 				set_selector(&sl_info, TRUE, &info);
 				sl_set_slider(setmask, &sl_info, &info); 

@@ -101,9 +101,9 @@ boolean prg_isprogram(const char *name)
 
 	p = prgtypes;
 
-	while (p != NULL)
+	while (p)
 	{
-		if (cmp_wildcard(name, p->name) == TRUE)
+		if (cmp_wildcard(name, p->name))
 			return TRUE;
 		p = p->next;
 	}
@@ -376,7 +376,7 @@ void prg_default(void)
 
 CfgEntry prg_table[] =
 {
-	{CFG_HDR, 0, "*" },
+	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
 	{CFG_S,   0, "name",  pwork.name	},
 	{CFG_L,   0, "limm",  &pwork.limmem	},
@@ -406,7 +406,7 @@ static CfgNest one_ptype
 			pwork.limmem = p->limmem;
 			pwork.flags = p->flags;
 	
-			*error = CfgSave(file, prg_table, lvl + 1, CFGEMP); 
+			*error = CfgSave(file, prg_table, lvl, CFGEMP); 
 	
 			p = p->next;
 		}
@@ -415,7 +415,7 @@ static CfgNest one_ptype
 	{
 		memset(&pwork, 0, sizeof(pwork));
 
-		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl + 1); 
+		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl); 
 
 		if (*error == 0 )
 		{
@@ -462,6 +462,6 @@ CfgNest prg_config
 	prg_table[0].s = "ptype";
 	prg_table[2].flag = 0;
 
-	*error = handle_cfg(file, prgty_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_prgtypes, prg_default);
+	*error = handle_cfg(file, prgty_table, lvl, CFGEMP, io, rem_all_prgtypes, prg_default);
 }
 

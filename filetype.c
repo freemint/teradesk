@@ -51,6 +51,8 @@ FTYPE
  * Some (mostly same) filetype masks are used 
  * in filetype.c, prgtype.c and icontype.c, 
  * so they are here defined once for all
+ * Note: items [0] and [1] MUST be * and *.*; they will be used
+ * as default filename extensions in mint and singletos.
  */
 
 const char 
@@ -286,7 +288,7 @@ char *ft_dialog
 
 	/* Make visible what is relevant for each particular use of this dialog */
 
-	if ( mask != NULL )
+	if ( mask )
 	{
 		cv_fntoform(setmask + FILETYPE, mask);		
 		obj_unhide(setmask[FILETYPE]);
@@ -427,7 +429,7 @@ void ft_default(void)
 
 CfgEntry ft_table[] =
 {
-	{CFG_HDR, 0, "*"  },
+	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
 	{CFG_S,   0, "mask", fwork.filetype },
 	{CFG_END},
@@ -453,12 +455,10 @@ CfgNest one_ftype
 	{
 		/* Save data: all defined filetypes */
 
-		while ( (*error == 0) && fthis)
+		while ((*error == 0) && fthis)
 		{
 			fwork = *fthis;
-
-			*error = CfgSave(file, ft_table, lvl + 1, CFGEMP); 
-
+			*error = CfgSave(file, ft_table, lvl, CFGEMP); 
 			fthis = fthis->next;
 		}
 	}
@@ -468,7 +468,7 @@ CfgNest one_ftype
 
 		memset( &fwork, 0, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
 
-		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME) - 1, lvl + 1); 
+		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME) - 1, lvl); 
 
 		if (*error == 0 )
 		{
@@ -499,9 +499,9 @@ CfgNest one_ftype
 
 CfgEntry filetypes_table[] =
 {
-	{CFG_HDR, 0, "*"     },
+	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_NEST,0, "*", one_ftype },		/* Repeating group */
+	{CFG_NEST,0, NULL, one_ftype },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -523,7 +523,7 @@ CfgNest ft_config
 	filetypes_table[2].s = fff;
 	filetypes_table[3].type = CFG_ENDG;
 
-	*error = handle_cfg(file, filetypes_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_filetypes, ft_default);
+	*error = handle_cfg(file, filetypes_table, lvl, CFGEMP, io, rem_all_filetypes, ft_default);
 }
 
 

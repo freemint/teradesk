@@ -49,11 +49,11 @@ int
 	colour_icons = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_hor3d    = 0,			/* 3d enlargement value */
 	aes_ver3d    = 0,			/* 3d enlargement value */
-	xresources   = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
 	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
 	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE   */
 	xd_aes4_0,					/* flag that AES 4 is present    */
+	xd_colaes = 0,				/* more than 4 colours available */
 	xd_has3d = 0,				/* result of appl-getinfo(13...) */
 	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
 	xd_bg_col = WHITE,			/* colour of background object */
@@ -72,6 +72,8 @@ int
 	xd_vhandle,					/* Vdi handle for library functions */
 	xd_nplanes,					/* Number of planes the current resolution */
 	xd_ncolors,					/* Number of colors in the current resolution */
+	xd_pix_height,				/* pixel size */
+	xd_npatterns,				/* Number of available patterns */
 	xd_min_timer;				/* Minimum time passed to xe_multi(). */
 
 void *(*xd_malloc) (size_t size);
@@ -1512,7 +1514,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 
 	xd_edit_init(info, start, cmode);
 
-	while (cont == TRUE)
+	while (cont)
 	{
 		xd_wdupdate(END_UPDATE);
 
@@ -1874,7 +1876,7 @@ Btw. can this be xd_malloc ???
 
 		tree[db].ob_flags &= ~HIDETREE; 
 		xd_save(info);
-		xd_draw(info,	ROOT,	MAX_DEPTH);
+		xd_drawdeep(info, ROOT);
 	}
 
 	return error;
@@ -2117,7 +2119,7 @@ int xd_setposmode(int new)
 
 void xd_aes4col(void)
 {
-	if ( xd_ncolors > 4 )
+	if ( xd_colaes )
 	{
 		xd_bg_col = LWHITE;		/* gray background for some objects */		
 		xd_sel_col = LBLACK;	/* dark gray for selected objects */
@@ -2184,7 +2186,11 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	{
 		/* It was successful */
 
+		xd_pix_height = work_out[4];
 		xd_ncolors = work_out[13];
+		xd_npatterns = work_out[14];
+		if ( xd_ncolors >= 16 ) 
+			xd_colaes = 1;
 
 		vq_extnd(xd_vhandle, 1, work_out);
 		xd_nplanes = work_out[4];
@@ -2244,7 +2250,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 			/* Information on colour icons and supported rsc format */
 
-			appl_getinfo(2, &ag1, &ag2, &colour_icons, &xresources);
+			appl_getinfo(2, &ag1, &ag2, &colour_icons, &dummy);
 
 			/* 
 			 * Information on supported window handling capabilities;

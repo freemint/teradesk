@@ -116,10 +116,11 @@ extern int
 	xd_vhandle,
 	xd_nplanes,
 	xd_ncolors,
+	xd_npatterns,
+	xd_pix_height,
 	xd_posmode,
 	xd_min_timer,
 	aes_flags,
-	xresources,
 	xd_fdo_flag,
 	ckeytab[];
 

@@ -36,6 +36,23 @@
 #include "internal.h"
 
 
+/* Currently not used anywhere in TeraDesk
+
+/*
+ * If a rectangle has a nonzero size, return 1, otherwise 0
+ */
+
+int xd_isrect(RECT *r)
+{
+	if (r->w != 0 && r->h != 0)
+		return 1;
+	else
+		return 0;
+}
+
+*/
+
+
 /* 
  * Funktie voor het omzetten van een RECT structuur naar een pxy array. 
  * (set diagonal points of a rectangle, not the whole perimeter)
@@ -271,6 +288,31 @@ OBSPEC xd_get_obspec(OBJECT *object)
 	else
 		return object->ob_spec;
 }
+
+
+/* not optimum to use
+
+/*
+ * Get a pointer to a text field in an object.
+ */
+
+char *xd_ptext(OBJECT *ob)
+{
+	return xd_get_obspec(ob).tedinfo->te_ptext;
+
+}
+
+
+/*
+ * Clear a text field
+ */
+
+void xd_zerotext(OBJECT *ob)
+{
+	*(xd_ptext(ob)) = 0;
+}
+
+*/
 
 
 /*

@@ -2,6 +2,46 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                                     2002, 2003, 2004  Dj. Vukovic.
 
+
+Version 3.41
+------------
+
+- Simplification of routines for loading and saving configuration files.
+  Also, eliminated saving of empty data structures, which will sometimes
+  result in somewhat smaller configuration files. Slightly better tolerance 
+  to faulty configuration files.
+
+- Simplification of routines for floppy formatting. An insignificant bug
+  corrected.
+
+- Some more code optimization and cleanup. Program size reduced by almost
+  a kilobyte, now actually smaller than V3.32!
+
+- Some corrections and additions in the hypertext manual.
+  
+- An alternative help application can be manually specified in the
+  configuration file (defaults to ST-Guide). Any application used
+  must know of VA_START and understand its syntax as used by ST-Guide
+  (this was actaully added in V3.40 but was not properly documented). 
+
+- Fixed incorrect handling (cramping) of of the names of selected files
+  when using 'Compare...'  more than once.
+  
+- Improved a somewhat ilogical behaviour of the 'Search...' function
+  when size range or search text are specified. In such cases only 
+  files will be name-matched now, not folders.
+
+- 'Select all' in directory windows does not needlessly select 
+  the parent directories anymore.
+
+- Better handling of missing icons, including the required ones. Missing
+  icons  turned out to be a realistic situation  if icon resource file(s) 
+  were changed. Previous version of TeraDesk created ugly empty rectangles 
+  in windows then. Now TeraDesk attempts to use one of the default icons, 
+  according to item type, and if that does not succeed either, uses the 
+  first icon in the icons resource file. Also, an alert is displayed. 
+
+
 Version 3.40
 ------------
 

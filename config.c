@@ -75,14 +75,14 @@ int
  * Using <cr><lf> is more in line with TOS standard, but can produce
  * significantly larger inf file. Using only <lf> produces smaller
  * files, is in line with mint standards, but can create problems 
- * when read with some programs -including Pure-C editor!!!
+ * when read with some programs -including the Pure-C editor!!!
  */
 
 static const char 
 /*
-	eol[3] = {'\r','\n', 0};
+	eol[3] = {'\r','\n', 0}; /* <cr> <lf> */
 */
-	eol[3] = {'\n', 0, 0};
+	eol[3] = {'\n', 0, 0};   /* <lf>      */
 
 /* 
  * Substitute all "%" in a string with  "$" ?? 
@@ -104,7 +104,7 @@ static boolean no_percent(char *s)
 
  
 /*
- * Append format and lineend strings to a keyword 
+ * Append format and line-end strings to a keyword 
  * depending on table entry type, then copy to output string.
  */
 
@@ -180,10 +180,15 @@ static void append_fmt
 
 static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 {
-	int error = 0;
+	int 
+		error = 0;
 
-	char s[MAX_CFGLINE];
-	va_list argpoint;
+	char 
+		s[MAX_CFGLINE];
+
+	va_list 
+		argpoint;
+
 
 	/* Print a number of tab characters */
 
@@ -211,13 +216,18 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 
 /* 
  * Save a part of configuration defined by one table.
- * Option "emp" to only write field if non zero or non empty  
+ * Option "emp" to only write field if non zero or non empty.
+ * Note: level is intrnally increased by one.  
  */
 
-int CfgSave(XFILE *fp, CfgEntry *tab, int level, bool emp) 
+int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp) 
 {
-	int error = 0;
-	char fmt[2*MAX_KEYLEN]; /* 2* because of "end..." */
+	int 
+		level = level0 + 1,
+		error = 0;
+
+	char 
+		fmt[2 * MAX_KEYLEN]; /* 2* because of "end..." */
 
 	while( (tab->type) && (error >= 0) )
 	{
@@ -236,7 +246,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level, bool emp)
 				if ( (tab->a != NULL) && (tab->s != NULL) )
 				{
 					error = 0;
-					(*(CfgNest *)tab->a)(fp, tab->s, level, 1, &error); 
+					(*(CfgNest *)tab->a)(fp, level, 1, &error); 
 				}
 				break;
 			case CFG_HDR:
@@ -417,6 +427,7 @@ static void cfgcpy(char *d, char *s, int x)
  * Note: if an invalid record or value is encountered, the rest 
  * of the level is skipped in the hope that it will be possible to 
  * recover.
+ * Note: level is internally increased by 1
  */
 
 int CfgLoad
@@ -424,10 +435,11 @@ int CfgLoad
 	XFILE *fp,			/* pointer to file definition structure */ 
 	CfgEntry *cfgtab, 	/* pointer to configuration table */
 	int maxs,			/* maximum length of value string (after "=") */ 
-	int level			/* nesting (indent) level */
+	int level0			/* nesting (indent) level */
 ) 
 {
 	int 
+		level = level0 + 1,		/* internally, level + 1 is used */
 		v,						/* aux, for type conversion */
 		error = 0,				/* error code */
 		tel = 0;				/* error counter */
@@ -446,7 +458,7 @@ int CfgLoad
 	{
 		CfgEntry *tab = cfgtab;
 
-		/* Strip line end and comment , then move to first nonblank */
+		/* Strip line end and comment, then move to first nonblank */
 
 		crlf(s);
 		nocomment(s);
@@ -474,7 +486,7 @@ int CfgLoad
 
 		/* Check for the end of configuration file */
 
-		if ( strncmp(s, "end", 3) == 0 )	/* end of everything */
+		if ( strcmp(s, "end") == 0 )	/* end of everything */
 		{
 			if ( chklevel == 0 )
 				chklevel = -999;	/* "end" is where it should be */
@@ -531,7 +543,7 @@ int CfgLoad
 						/* It is a nest, go one level deeper */
 						/* also remember this keyword for possible error output */
 						lastnest = tab->s;
-						(*(CfgNest *)tab->a)(fp, tab->s, level, 0, &error);
+						(*(CfgNest *)tab->a)(fp, level, 0, &error);
 
 						if ( error == EFRVAL )
 						{
@@ -613,7 +625,7 @@ int CfgLoad
 
 		/* If enough errors found, skip to the end of this level */
 
-		if (tel > 3)	/* Permit a maximum of three errors in the group */
+		if (tel > 3)	/* Permit a maximum of three errors in one group */
 		{
 			alert_iprint( BADCFG ); /* may not be a config file at all */
 			skip = TRUE;
@@ -652,38 +664,56 @@ int handle_cfg
 (
 	XFILE *fp, 			/* open file definition data */
 	CfgEntry *cfgtab, 	/* pointer to configuration table used */
-	int maxs, 			/* maximum string length to be read */
 	int level,			/* nesting level */ 
-	boolean emp, 		/* if TRUE, save empty fields */
+	int emp, 			/* if 0x0001 save empty fields, if 0x0002 skip all */
 	int io,				/* CFG_SAVE or 1= save data;  0= load data */
 	void *ini,			/* initial setup routine */
 	void *def			/* default setup routine */
 ) 
 {
-	int error;
-
+	int 
+		error = 0;
+	
 	void 
 		(*initial_setup)(void) = ini,
 		(*default_setup)(void) = def;
 
 	if ( io == CFG_SAVE )
-		return CfgSave( fp, cfgtab, level, emp );
+	{
+		/* 
+		 * Save configuration. 
+		 * If CFGEMP is set, always save. 
+		 * Otherwise save only if CFGSKIP is NOT set
+		 */
+
+		if (emp != CFGSKIP)
+			error = CfgSave( fp, cfgtab, level, (emp & 0x0001) );
+	}
 	else
 	{
-		if ( ini != NULL )
+		/* 
+		 * Load configuration, but first do initial setup:
+		 * usually clear all existing entries 
+		 */
+
+		if ( ini )
 			initial_setup();
 
-		error = CfgLoad( fp, cfgtab, maxs, level );
+		error = CfgLoad( fp, cfgtab, MAX_KEYLEN, level );
 
-		if ( error == EFRVAL && def != NULL )
+		if ( error == EFRVAL && (def != NULL) )
 		{
 		    alert_printf(1, ALOADCFG, cname, get_message(error));
-			if ( ini != NULL )
+
+			/* In case of error, again perform initial, then default setup */
+
+			if ( ini )
 				initial_setup();
 			default_setup();
 		}
-		return error;
 	}
+
+	return error;
 }
 
 
@@ -702,7 +732,8 @@ int handle_cfgfile
 	int io			/* 1=save, 0=read */
 )
 {
-	XFILE *file;
+	XFILE 
+		*file;
 
 	int 
 		n, 
@@ -752,9 +783,9 @@ int handle_cfgfile
 
 			error = fprintf_wtab(file, 0, fmt1, get_freestring(TDONTEDI), eol, eol);
 
-			/* Write complete configuration */
+			/* Write complete configuration (set level-1 here) */
 		
-			error = CfgSave(file, tab, 0, CFGEMP); 
+			error = CfgSave(file, tab, -1, CFGEMP); 
 
 			if (((h = x_fclose(file)) < 0) && (error == 0))
 				error = h;
@@ -781,10 +812,11 @@ int handle_cfgfile
 				/* 
 				 * Check the file identifier header. If it is OK, 
 				 * then read complete configuration 
+				 * (use level - 1 here)
 				 */
 
 				if (strncmp(identbuf, ident, strlen(ident)) == 0)
-					error = CfgLoad(file, tab, MAX_CFGLINE, 0); 
+					error = CfgLoad(file, tab, MAX_CFGLINE, -1); 
 				else
 					error = EFRVAL;
 			}

@@ -7,8 +7,9 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.31  04-06-04, Copyright 2004  H. Robbers, Dj. Vukovic
              V3.32  11-06-04, Copyright 2004  H. Robbers, Dj. Vukovic
              V3.40  10-10-04, Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.41  07-11-04, Copyright 2004  H. Robbers, Dj. Vukovic
 
-This is version 3.40 of the Tera Desktop, a replacement for the builtin TOS 
+This is version 3.41 of the Tera Desktop, a replacement for the builtin TOS 
 desktop for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source. It is published under General Public License (GPL) which means 
 that it may be copied  and  modified freely,  providing  that the  original 
@@ -65,8 +66,8 @@ with TOS 1.0) but it is much more useful with TOS versions 1.04 (also known
 as TOS 1.4) and above.  
 
 Since Version 2.0  Tera Desktop runs on modern  multitasking  environments,  
-such as:  MagiC, TOS with Geneva,  TOS with Mint and N.Aes,  XaAES or Atari 
-AES 4.1, etc.  
+such as: MagiC,  TOS with Geneva, TOS with Mint and an AES  (N.Aes, XaAES,
+MyAES or Atari AES 4.1) etc.  
 
 Some features of Tera Desktop may be nonfunctional, depending on the version
 of the OS and the AES used.
@@ -84,7 +85,7 @@ New Features in This Version
 ============================
 
 Please, see HIST_V3.TXT for a list of new features and bug fixes since the
-last released version (V3.32). Also read the manual TERADESK.HYP (you will 
+last released version (V3.40). Also read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information.
 
 
@@ -112,8 +113,9 @@ saves a  few kilobytes  of memory  by not  containing code  which is only
 relevant in multitasking environments,  and by having a somewhat  limited
 support of the AV-protocol (for the sake of smaller program size, too).
 
-If only DESKTOS.PRG is to be used, it may be renamed to DESKTOP.PRG after
-copying,  but this is needed only if AV-protocol will be used.
+If only DESKTOS.PRG is to be used, it may be renamed to DESKTOP.PRG  after
+copying, but this is needed only if some accessory which is an AV-protocol 
+client will be used.
 
 You can (but need not) also copy  into this folder the files  TERADESK.INF
 and  TERADESK.PAL  from the  \EXAMPLES folder.  Note, however,  that these 
@@ -196,16 +198,19 @@ is willing to supply it/them).
 8. The icon files supplied contain a basic set of icons only. Users can add 
 icons at will,  or use other icon files  (e.g. one can rename  DESKICON.RSC 
 and/or DESKCICN.RSC used by the built-in desktop of TOS 2/3/4  to ICONS.RSC  
-and CICONS.RSC respectively, and use them with TeraDesk).
+and  CICONS.RSC respectively,  and use them  with TeraDesk,  but any files
+used must contain some icons which are essential to TeraDesk- see below).
 
 TeraDesk, since V2.0, handles icons by name,  not by index.  Icons with the 
-following names (or their translated equivalents) should always be present 
-in the icons resource file:
+following names (or their translated equivalents)  should always be present 
+in the icons resource file as defaults:
 
 FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
 
-If a required icon name  can not be found in the icons resource file,  icon 
-named FILE is tried. If that does not exist either, you loose an icon.
+If an  icon name can not be  found  in the icons resource file,  TeraDesk
+attempts to use one of the default icons, according to  item type. If the 
+default icon does not exist either,  the first icon in the icons resource 
+file is used.
 
 To facilitate adaptation of TeraDesk to other languages, names of the seven 
 essential icons are  not  hard-coded but are read from  DESKTOP.RSC.  It is 
@@ -244,6 +249,7 @@ Some Possible Future Developments
 
 - Integration of a non-modal, windowed, long-names-capable fileselector
 
+- Capability to run TOS programs in a window in single-TOS
 
 
 Comments and Bug-Reports
@@ -270,6 +276,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; September 30th 2004
+                                            Beograd; November 7th 2004
 
 

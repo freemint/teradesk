@@ -57,7 +57,6 @@ FONT txt_font;
 static int displen;
 
 static void set_menu(TXT_WINDOW *w);
-
 static void txt_closed(WINDOW *w);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
 
@@ -400,7 +399,7 @@ static void txt_prtchar(TXT_WINDOW *w, int column, int nc, long line, RECT *area
 	r.x += c * txt_font.cw;
 	r.w = nc * txt_font.cw;
 
-	if (xd_rcintersect(area, &r, &in) == TRUE)
+	if (xd_rcintersect(area, &r, &in))
 	{
 		pclear(&in);
 
@@ -442,10 +441,10 @@ void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 	r2 = r; 
 	r2.w = work->w;
 
-	if (rc_intersect2(area, &r2) == TRUE)
+	if (rc_intersect2(area, &r2))
 		pclear(&r2); 
 
-	if (rc_intersect2(area, &r) == TRUE)
+	if (rc_intersect2(area, &r))
 		w_transptext(r.x, r.y, s);
 }
 
@@ -881,7 +880,8 @@ void txt_title(TXT_WINDOW *w)
 
 	/* 
 	 * How long can the title be? 
-	 * Note: "-d" takes into account window gadgets left/right of the title */
+	 * Note: "-d" takes into account window gadgets left/right of the title 
+	 */
 
 	columns = min( w->scolumns - d, (int)sizeof(w->title) );
 
@@ -928,7 +928,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 	}
 	else
 	{
-		if (setmode == TRUE)
+		if (setmode)
 		{
 			char *b;
 			int i, e, n = 0;
@@ -1034,18 +1034,6 @@ static void copy_unnull( char *dest, char *source, long length, long pos )
 
 	n = lmin( length - pos, (long)displen );
 
-/*
-	for ( i = 0; i < n; i++ )
-	{
-		dest[i] = source[i + pos];
-
-		/* Some characters can't be printed; substitute them */
-
-		if (dest[i] == 0)
-			dest[i] = SUBST_DISP; 		
-	}
-	dest[n] = 0;
-*/
 	for ( i = 0; i < n; i++ )
 	{
 		*d = source[i + pos];
@@ -1063,7 +1051,7 @@ static void copy_unnull( char *dest, char *source, long length, long pos )
 
 
 /*
- * Compare two files. Display  an alert box with appropriate text.
+ * Compare two files. Display differences found.
  * Note: both files are completely read into memory 
  * (can be inconvenient for large files).
  * 
@@ -1075,9 +1063,9 @@ static void copy_unnull( char *dest, char *source, long length, long pos )
 void compare_files( WINDOW *w, int n, int *list )
 {
 	char 
-		*name,					/* name of the file */
-		*buf1 = NULL,			/* buffer for file #1   */
-		*buf2 = NULL;			/* buffer for file #2   */
+		*name,				/* name of the file */
+		*buf1 = NULL,		/* buffer for file #1   */
+		*buf2 = NULL;		/* buffer for file #2   */
 
 	int
 		i,					/* a counter */
@@ -1106,6 +1094,20 @@ void compare_files( WINDOW *w, int n, int *list )
 		info;				/* dialog info structure */
 
 
+	/* Set initial values for some dialog elements */
+
+	displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_pvalid);
+
+	compare[CFILE1].ob_flags |= EDITABLE;
+	compare[CFILE2].ob_flags |= EDITABLE;
+	compare[COMPWIN].ob_flags |= EDITABLE;
+	obj_hide(compare[CMPIBOX]);
+
+	if (options.cwin == 0)
+		options.cwin = 15;	/* default value */
+
+	itoa(options.cwin, compare[COMPWIN].ob_spec.tedinfo->te_ptext, 10);
+
 	/* If names were selected, use them */
 
 	for (i = 0; i < 2; i++)
@@ -1118,18 +1120,6 @@ void compare_files( WINDOW *w, int n, int *list )
 		cv_fntoform(&compare[CFILE1 + i], name); 
 		free(name);
 	}
-
-	displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_pvalid);
-
-	compare[CFILE1].ob_flags |= EDITABLE;
-	compare[CFILE2].ob_flags |= EDITABLE;
-	compare[COMPWIN].ob_flags |= EDITABLE;
-	obj_hide(compare[CMPIBOX]);
-
-	if (options.cwin == 0)
-		options.cwin = 15;
-
-	itoa(options.cwin, compare[COMPWIN].ob_spec.tedinfo->te_ptext, 10);
 
 	/* Open the dialog, then loop while needed */
 
@@ -1151,7 +1141,7 @@ void compare_files( WINDOW *w, int n, int *list )
 			strip_name(cfile1, cfile1);
 			strip_name(cfile2, cfile2);
 
-			if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw == 0 )
+			if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw <= 0 )
 			{
 				alert_iprint(MINVSRCH);
 				continue;
@@ -1165,16 +1155,16 @@ void compare_files( WINDOW *w, int n, int *list )
 			compare[CFILE2].ob_flags &= ~EDITABLE;
 			compare[COMPWIN].ob_flags &= ~EDITABLE;
 
-			/* Identical files are not compared */
+			/* A file need not be compared to itself */
 
 			if ( strcmp(cfile1, cfile2) == 0 )
 				break;
 
 			/* Start real work */
 
-			hourglass_mouse();
+			hourglass_mouse(); /* this will take some time... */
 
-			/* Read the files into buffers */
+			/* Read the files into respective buffers */
 
 			error = read_txtf( cfile1, &buf1, &size1 );
 			if ( error == 0 )
@@ -1184,7 +1174,7 @@ void compare_files( WINDOW *w, int n, int *list )
 
 			if ( error == 0 )
 			{
-				/* Current indices: at the beginning */
+				/* Current indices: at the beginning(s) */
 
 				i1 = 0; 
 				i2 = 0;
@@ -1204,7 +1194,7 @@ void compare_files( WINDOW *w, int n, int *list )
 					i1n = i1 + in;
 					i2n = i2 + in;
 
-					/* If difference is found before file ends, report */
+					/* If a difference is found before file ends, report */
 
 					if ( (in < nc) || ((in >= nc) && ( (i1n < size1) || (i2n < size2) ))  )
 					{
@@ -1231,7 +1221,7 @@ void compare_files( WINDOW *w, int n, int *list )
 							rsc_ltoftext(compare, COFFSET, i1 );
 
 							obj_unhide(compare[CMPIBOX]);
-							xd_draw(&info, CMPIBOX, MAX_DEPTH);
+							xd_drawdeep(&info, CMPIBOX);
 							button = xd_form_do_draw(&info);
 
 							/* Stop further comparison ? */
@@ -1330,17 +1320,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &wd_type_functions, TFLAGS, &tmax,
 									 sizeof(TXT_WINDOW), viewmenu, &errcode)) == NULL)
 	{
-		switch(errcode)
-		{
-			case XDNSMEM:
-				*error = ENSMEM;
-				break;
-			case XDNMWINDOWS:
-				alert_iprint(MTMWIND);
-			default:
-				*error = ERROR;
-		}
-
+		*error = wd_checkcreate(errcode);
 		free(file);
 		return NULL;
 	}
@@ -1374,10 +1354,8 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 		wd_calcsize(info, &size); 
 		txt_title(w);
 		set_sliders((TYP_WINDOW *)w);
-
 		wd_iopen((WINDOW *)w, &size); 
-		info->used = TRUE;
-		return (WINDOW *) w;
+		return (WINDOW *)w;
 	}
 }
 
@@ -1395,10 +1373,10 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 	while ((j < MAXWINDOWS - 1) && (textwindows[j].used != FALSE))
 		j++;
 
-	if (textwindows[j].used == TRUE)
+	if (textwindows[j].used)
 		return alert_iprint(MTMWIND), FALSE;
 
-	if ( thefile != NULL )
+	if ( thefile )
 		file = thefile;
 	else if ((file = itm_fullname(w, item)) == NULL)
 		return FALSE;
@@ -1448,18 +1426,6 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
  *																	*
  ********************************************************************/
 
-void txt_init(void)
-{
-	RECT work;
-
-	xw_calc(WC_WORK, TFLAGS, &screen_info.dsk, &work, viewmenu);
-	tmax.x = screen_info.dsk.x;
-	tmax.y = screen_info.dsk.y;
-	tmax.w = work.w - (work.w % screen_info.fnt_w);
-	tmax.h = work.h - (work.h % screen_info.fnt_h);
-}
-
-
 /*
  * Calculate default positions and sizes of text windows;
  * windows will be stacked rightwards and downwards
@@ -1476,31 +1442,12 @@ void txt_default(void)
 	{
 		textw = &textwindows[i];
 		memset(textw, 0, sizeof(WINFO));
-
 		textw->x = (i + 1) * screen_info.fnt_w - screen_info.dsk.x;
-		textw->y = screen_info.dsk.y + i * screen_info.fnt_h - screen_info.dsk.y;
+		textw->y = screen_info.dsk.y + (i + 1) * screen_info.fnt_h;
 		textw->w = (screen_info.dsk.w * 8) / (10 * screen_info.fnt_w);
 		textw->h = (screen_info.dsk.h * 7) / (10 * screen_info.fnt_h);
 	}
 }
-
-
-typedef struct
-{
-	long 
-		py;
-	int 
-		px, 
-		index,
-	    hexmode, 
-		tabsize;
-	LNAME 
-		name;
-	WINDOW 
-		*w;
-} SINFO2;
-
-static SINFO2 that;
 
 
 /* 
@@ -1512,7 +1459,7 @@ static CfgEntry txtw_table[] =
 	{CFG_HDR, 0, "text" },
 	{CFG_BEG},
 	{CFG_D,   0, "indx", &that.index	},
-	{CFG_S,   0, "name",  that.name	    },
+	{CFG_S,   0, "name",  that.path	    },
 	{CFG_D,   0, "xrel", &that.px		},
 	{CFG_L,   0, "yrel", &that.py		},
 	{CFG_BD,  0, "hexm", &that.hexmode	},
@@ -1534,6 +1481,8 @@ CfgNest text_one
 		int i = 0;
 		TXT_WINDOW *tw;
 	
+		/* Identify window's index in WINFO by the pointer to that window */
+
 		while ((WINDOW *) textwindows[i].typ_window != that.w)
 			i++;
 	
@@ -1543,40 +1492,46 @@ CfgNest text_one
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
 		that.tabsize = tw->tabsize;
-		strcpy(that.name, tw->name);
+		strsncpy(that.path, tw->name, sizeof(that.path));
 	
-		*error = CfgSave(file, txtw_table, lvl + 1, CFGEMP);
+		*error = CfgSave(file, txtw_table, lvl, CFGEMP);
 	}
 	else
 	{
 		memset(&that, 0, sizeof(that));
+		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl);
 
-		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl + 1);
-
-		if ( (*error == 0 ) && (that.name[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
+		if ( (*error == 0 ) && (that.path[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
 			*error = EFRVAL;
 
 		if (*error == 0)
 		{
-			char *name = malloc(strlen(that.name) + 1);
+			char *name = malloc(strlen(that.path) + 1);
 			if (name)
 			{
-				strcpy(name, that.name);
+				strcpy(name, that.path);
 
-				/* Note: in case of error, name is deallocated in txt_do_open */
+				/* 
+				 * Window's index in WINFO is always taken from the file;
+				 * Otherwise, positions and size would not be preserved
+				 * Note: in case of error, name is deallocated in txt_do_open 
+				 */
 
-				txt_do_open(   &textwindows[that.index],
-								name,
-								that.px,
-								that.py,
-								that.tabsize,
-								that.hexmode,
-								FALSE, /* setmode */
-								error
-							);
+				txt_do_open
+				(
+					&textwindows[that.index],
+					name,
+					that.px,
+					that.py,
+					that.tabsize,
+					that.hexmode,
+					FALSE, /* setmode */
+					error
+				);
 
-				if (wd_checkopen(error))
-					that.index++;
+				/* If there is an error, display an alert */
+
+				wd_checkopen(error);
 			}
 			else
 				*error = ENSMEM;
@@ -1586,22 +1541,7 @@ CfgNest text_one
 
 
 /*
- * Save a text window
- */
-
-int text_save(XFILE *file, WINDOW *w, int lvl)
-{
-	int error = 0;
-
-	that.w = w;
-	text_one(file, "text", lvl + 1, true, &error );
-
-	return error;
-}
-
-
-/*
- * Save or load configuration for text 9viewer) windows
+ * Save or load configuration for text (viewer) windows
  */
 
 CfgNest view_config
@@ -1616,7 +1556,7 @@ CfgNest view_config
 	wtype_table[0].s = "views";
 	thisw.windows = &textwindows[0];
 
-	*error = handle_cfg(file, wtype_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL );
+	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL );
 }
 
 

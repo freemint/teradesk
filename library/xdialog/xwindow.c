@@ -423,7 +423,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 	/* don't redraw in iconified window */
 
-	if ( menu != NULL && w->xw_iflag == 0 )
+	if ( menu && (w->xw_iflag == 0) )
 	{
 		xd_objrect(w->xw_menu, object, &r1);
 		if (object == w->xw_bar)
@@ -435,7 +435,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 		pxy[1] = pxy[3] = w->xw_work.y + r1.h - 1;
 		pxy[2] = w->xw_work.x + w->xw_work.w - 1;
 
-		if (xd_rcintersect(r, &r1, &r1) == TRUE)
+		if (xd_rcintersect(r, &r1, &r1))
 		{
 			xd_wdupdate(BEG_UPDATE);
 			xd_mouse_off();
@@ -449,16 +449,16 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 			xw_getfirst(w, &r2);
 
-			while ((r2.w != 0) && (r2.h != 0))
+			while (r2.w != 0 && r2.h != 0)
 			{
-				if (xd_rcintersect(&r1, &r2, &in) == TRUE)
+				if (xd_rcintersect(&r1, &r2, &in))
 				{
 					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.x, in.y, in.w, in.h);
 					xd_clip_on(&in);
 					v_pline(xd_vhandle, 2, pxy);
 					xd_clip_off();
 				}
-				xw_get(w, WF_NEXTXYWH, &r2);
+				xw_getnext(w, &r2);
 			}
 			xd_mouse_on();
 			xd_wdupdate(END_UPDATE);
@@ -498,7 +498,7 @@ static void xw_menu_change(OBJECT *menu, int item, int select, RECT *box)
 {
 	int newstate = menu[item].ob_state;
 
-	newstate = (select == TRUE) ? newstate | SELECTED : newstate & ~SELECTED;
+	newstate = (select) ? newstate | SELECTED : newstate & ~SELECTED;
 	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
 }
 
@@ -641,7 +641,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 				if (item >= 0)
 					menu[item].ob_state &= ~SELECTED;
 
-				if (draw == TRUE)
+				if (draw)
 				{
 					pxy[0] = 0;
 					pxy[1] = 0;
@@ -1142,7 +1142,7 @@ void xw_getfirst(WINDOW *w, RECT *size)
 
 void xw_getnext(WINDOW *w, RECT *size)
 {
-	xw_get(w, WF_FIRSTXYWH, size);
+	xw_get(w, WF_NEXTXYWH, size);
 }
 
 

@@ -87,14 +87,15 @@ static size_t
 	search_length;	/* length of string to search for */
 
 static char 
+	*search_txt,	/* string to search for (directly in dialog field) */
 	*search_buf,	/* buffer to store file to search the string in */
 	**search_finds;	/* pointers to found strings */
 
 static LNAME 
-	search_pattern, /* store filename pattern for search */
-	search_txt;	    /* store string to search for */
+	search_pattern = {0}; /* store filename pattern for search */
 
 static boolean
+	nodirs,			/* TRUE if dirs are not to be searched */
 	nofound;		/* TRUE if no items ofund */
 
 
@@ -225,16 +226,17 @@ static int search_dialog(void)
 
 	/* Clear all fields */
 
-	*(searching[SGREP].ob_spec.tedinfo->te_ptext) = 0;
+	search_txt = searching[SGREP].ob_spec.tedinfo->te_ptext;
+
 	*spattfld = 0;
-
-	search_txt[0] = 0;
-
+	*search_txt = 0;	
 	*(searching[SLOSIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHISIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SLODATE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHIDATE].ob_spec.tedinfo->te_ptext) = 0;
+
 	set_opt( searching, search_icase, 1, IGNCASE); 
+	nodirs = TRUE;
 
 	/* Open the dialog */
 
@@ -250,21 +252,29 @@ static int search_dialog(void)
 
 		if ( button == SOK )
 		{
-			/* OK, get data out of dialog, but check it */
+			/* 
+			 * OK, get data out of dialog, but check it.
+			 * Directories will be searched for only if size range is not set
+			 * and search string is not set
+			 */
 
 			cv_formtofn( search_pattern, &searching[SMASK] );
 			search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
 			search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
 			if ( search_hisize == 0L )
+			{
 				search_hisize = 0x7FFFFFFFL; /* a very large size */
-				
+				if (search_losize == 0)
+					nodirs = FALSE;
+			}				
 			search_lodate = cv_formtod(searching[SLODATE].ob_spec.tedinfo->te_ptext);
 			search_hidate = cv_formtod(searching[SHIDATE].ob_spec.tedinfo->te_ptext);
 			if ( search_hidate == 0 )
 				search_hidate = 32671; 	     /* a very late date  */
 
-			strcpy (search_txt, searching[SGREP].ob_spec.tedinfo->te_ptext);
 			search_length = strlen(search_txt);
+			if (search_length > 0)
+				nodirs = TRUE;
 
 			get_opt( searching, &search_icase, 1, IGNCASE); 
 
@@ -374,11 +384,20 @@ boolean searched_found
 		{
 			/* ...and size range matched... */
 
-			if ( (found = ( ((attr->mode & S_IFMT) == S_IFDIR) || (attr->size >= search_losize && attr->size <= search_hisize))) == TRUE )
+			if
+			(
+				(
+					found = 
+					(
+						( ((attr->mode & S_IFMT) == S_IFDIR) && !nodirs ) || 
+			    		( ((attr->mode & S_IFMT) == S_IFREG) && (attr->size >= search_losize && attr->size <= search_hisize) )
+					)
+				) == TRUE 
+			)
 			{
 				/* Find string, if specified */
 
-				if ( search_txt[0] > 0 )
+				if ( *search_txt != 0 )
 				{
 					fpath = x_makepath(path, name, &error);
 					found = FALSE;
@@ -393,7 +412,8 @@ boolean searched_found
 						if ( (error = read_txtf( fpath,  &search_buf, &fl)) == 0)
 						{
 							/* 
-							 * for the sake of display of found locations, 
+							 * for the sake of display of found locations,
+							 * and also to enable search to the end of file, 
 							 * convert all 0-chars to something else 
 							 * (should be some char which can't be entered into
 							 * the string from the keyboard, e.g. [DEL])
@@ -486,8 +506,11 @@ void closeinfo(void)
 		xd_close (&dinfo);
 		dopen = FALSE;
 		obj_hide(fileinfo[MATCHBOX]);
-		search_txt[0] = 0;
-		*search_pattern = 0;
+
+/*
+		*search_txt = 0;		/* is this really necessary here ? */
+*/
+		*search_pattern = 0;	/* same ? */
 	}
 }
 
@@ -851,7 +874,7 @@ int object_info
 			dopen = TRUE;
 		}
 		else
-			xd_draw ( &dinfo, ROOT, MAX_DEPTH );
+			xd_drawdeep(&dinfo, ROOT);
 
 		/* Wait for a button pressed, then reset button to normal state */
 
@@ -1112,7 +1135,7 @@ void item_showinfo
 		if ( search_dialog() != SOK )
 			return;
 
-		if ( search_txt[0] != 0 )
+		if ( *search_txt != 0 )
 		{
 			/* obj_hide(fileinfo[ATTRBOX]); they do not overlap */
 			obj_unhide(fileinfo[MATCHBOX]);

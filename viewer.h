@@ -56,13 +56,9 @@ typedef struct
 
 } TXT_WINDOW;
 
+CfgNest text_one;
 
-void txt_init(void);
 void txt_default(void);
-
-
-int text_save(XFILE *file, WINDOW *w, int lvl);
-
 boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
 void txt_closed(WINDOW *w);
 void txt_hndlmenu(WINDOW *w, int title, int item);

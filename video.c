@@ -41,6 +41,7 @@
 #include "window.h"
 #include "icon.h"
 #include "events.h"
+#include "screen.h"
 
 static XDINFO vidinfo;
 
@@ -48,8 +49,6 @@ extern GRECT xd_desk;
 extern int tos_version;
 
 extern WINDOW *xd_deskwin; 
-void txt_init(void); 
-void dir_init(void); 
 
 int 
 #if _OVSCAN
@@ -127,13 +126,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		/* Try to find out about a couple of overscan types */
 		
 #if _OVSCAN	
-		{	
-			int work_out[58];	
-			vq_extnd(vdi_handle, 0, work_out);
-
-			max_w = work_out[0] + 1;	/* Screen width (pixels)  */
-			max_h = work_out[1] + 1;	/* Screen height (pixels) */
-		}
+		screen_size ();
 
 		if (   ( (over = find_cookie('OVER')) != - 1 )
 		    || ( (over = find_cookie('Lace')) != - 1 ) )
@@ -187,7 +180,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		options.vrez = currez; 
 
 	}
-	else /* set data */
+	else /* set data (set=1 or set=2) */
 	{	
 		/* Set blitter, if present */
 	
@@ -258,14 +251,13 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		{
 			/* Calculate window sizes */
 
-			txt_init();
-			dir_init();
-
-			w = xw_first();
+			wd_sizes();
 
 			/* Change window sizes to fit screen */
 
-			while (w != NULL)
+			w = xw_first();
+
+			while (w)
 			{
 				wd_adapt(w);
 				w = w->xw_next;
@@ -335,7 +327,7 @@ int voptions(void)
 		*s = vidoptions[VNCOL].ob_spec.free_string;	/* same */
 	
 	int
-		nc = ncolors;				/* same */
+		nc = xd_ncolors;				/* same */
 */
  
 	/* which resolution code is selected by which button */

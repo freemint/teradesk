@@ -26,7 +26,7 @@
 
 /*
  * Convert a number (range 0:99 only!!!) into string
- * (leading zeros shown)
+ * (leading zeros shown). Attention: no termination 0 byte.
  */
 
 void digit(char *s, int x)
@@ -62,3 +62,5 @@ void free_item( void **ptr )
 	}
 }
 
+
+ 

@@ -243,7 +243,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 					
 				/* Restore complete line (for the next opening) */
 
-				if ( blank != NULL )
+				if ( blank )
 					*blank = ' ';
 
 			}

@@ -207,7 +207,12 @@ typedef char VLNAME[256]; /* a very long string */
 
 extern Options options;
 extern SCRINFO screen_info;
-extern int vdi_handle, ncolors, npatterns, max_w, max_h, ap_id, nfonts;
+extern RECT *sdsk;	/* directly point to part of scree_info */
+extern int 
+	vdi_handle,		/* workstation handle */ 
+	max_w, max_h, 	/* maximum possible window size */
+	ap_id,			/* application id of TeraDesk itself */ 
+	nfonts;			/* number of available fonts */
 
 extern char 
 		*global_memory,
