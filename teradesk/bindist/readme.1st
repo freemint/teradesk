@@ -1,5 +1,0 @@
-This version of Teradesk supports MultiTOS and Geneva. Unfortunatly
-the ARGV protocol does not work properly on these operating systems.
-On MultiTOS the maximum length of the commandline is limited to
-127 characters with the ARGV protocol. Geneva crashes if the ARGV
-protocol is used.

@@ -22,6 +22,8 @@
 
 #define _BOOLEAN_
 
-typedef enum { FALSE,TRUE } boolean;
+#include <prelude.h>
+
+typedef enum bool boolean;
 
 #endif

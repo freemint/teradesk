@@ -44,6 +44,7 @@
 #define CTL_X		0x0218
 #define CTL_Y		0x0219
 #define CTL_Z		0x021A
+#define CTL_DEL		0x021F
 
 #define ALT_A		0x0441
 #define ALT_B		0x0442

@@ -19,7 +19,7 @@
  */
 
 #ifdef __PUREC__
- #include <aes.h>
+ #include <np_aes.h>
  #include <vdi.h>
 #else
  #include <aesbind.h>

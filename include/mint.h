@@ -314,6 +314,15 @@ int Dlock(int mode, int drive);
 /* General functions. */
 
 short Pdomain(short newdomain);
+enum		/* Ssystem() codes */
+{
+	S_OSNAME,
+	S_OSXNAME,
+	S_OSVERSION,
+	S_GETCOOKIE = 8,
+	S_SETCOOKIE
+};
+long Ssystem(short mode, long arg1, long arg2);    /* GEMDOS 0x154 */
 
 /* Standard library replacements. */
 

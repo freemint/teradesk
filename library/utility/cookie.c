@@ -41,26 +41,35 @@ static void cookie_reset( void )
 	jmpa6();
 }
 
-COOKIE *find_cookie( long name )
+extern int have_ssystem;
+
+long find_cookie( long name )		/* HR 151102: return cookie value or -1 */
 {
-	void *old_stack;
 	COOKIE *cookie;
-
-	old_stack = (void *)Super(NULL);
-
-	if ((cookie = p_cookie) != NULL)
+	if (have_ssystem)
+		Ssystem(S_GETCOOKIE, name, (long) &name);
+	else
 	{
-		while ((cookie->name != 0) && (cookie->name != name))
-			cookie++;
-		if (cookie->name == 0L)
-			cookie = NULL;
+		void *old_stack;
+	
+		old_stack = (void *)Super(NULL);
+	
+		if ((cookie = p_cookie) != NULL)
+		{
+			while ((cookie->name != 0) && (cookie->name != name))
+				cookie++;
+			if (cookie->name == 0L)
+				name = -1;
+			else
+				name = cookie->value;
+		}
+	
+		Super(old_stack);
 	}
-
-	Super(old_stack);
-
-	return cookie;
+	return name;
 }
 
+/* install_cookie is not used by Teradesk */
 /* r = -1 : fout,
    r =  0 : geen fout,
    r =  1 : nieuw cookie geinstalleerd, reset vast,
@@ -95,11 +104,11 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 				r = -1;
 			else
 			{
-				int end;
+				int e;		/* HR 151102: reserve 'end' for lamgiage */
 
-				end = (int)cookie[i].value - 1;
+				e = (int)cookie[i].value - 1;
 
-				for(j = 0;j < end;j++)
+				for(j = 0;j < e;j++)
 					buffer[j] = cookie[j];
 
 				p_cookie = buffer;

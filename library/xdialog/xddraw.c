@@ -19,7 +19,7 @@
  */
 
 #ifdef __PUREC__
- #include <aes.h>
+ #include <np_aes.h>
  #include <vdi.h>
 #else
  #include <aesbind.h>
@@ -117,32 +117,45 @@ static long xd_strlen(char *s)
 	return l;
 }
 
-#define prt_text(s, x, y, flags)  prt_xtndtext(s, x, y, flags, 0)
+#define prt_text(s, x, y, state)  prt_xtndtext(s, x, y, state, 0)
 
-static void prt_xtndtext(char *s, int x, int y, int flags, int attrib)
+static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
 {
-	char tmp[80], *h, *p = NULL;/* <- buffer is enlarged! */
+	char tmp[80], *h, *p = NULL;	/* <- buffer is enlarged! */
 
-	if (flags & DISABLED)
+	if (state & DISABLED)			/* HR 151102: changed confusing name 'flags' to 'state' :-) */
 		attrib ^= 2;
 
 	vst_effects(xd_vhandle, attrib);
 
-	/* I_A enhanced: now you can place '#' in text itself! */
-
 	h = strcpy(tmp, s);
 
-	while ((h = strchr(h, '#')) != NULL)
+	/* HR 151102: uses AES 4 WHITEBAK */
+	if (state & WHITEBAK)
 	{
-		strcpy(h, h + 1);
-		if (*h != '#')
+		int und = (state<<1)>>9;
+		if (und >= 0)
 		{
-			/* remember location of single '#' in text! */
-			p = h--;
+			und &= 0x7f;
+			if (und < strlen(tmp))
+				p = tmp + und;
 		}
-		/* else: double '#': make it one! */
-		h++;
 	}
+	else
+
+	/* I_A enhanced: now you can place '#' in text itself! */
+
+		while ((h = strchr(h, '#')) != NULL)
+		{
+			strcpy(h, h + 1);
+			if (*h != '#')
+			{
+				/* remember location of single '#' in text! */
+				p = h--;
+			}
+			/* else: double '#': make it one! */
+			h++;
+		}
 
 	v_gtext(xd_vhandle, x, y, tmp);
 
@@ -183,19 +196,19 @@ static void draw_rect(int x, int y, int w, int h)
 	v_pline(xd_vhandle, 5, pxy);
 }
 
-static void draw_frame(GRECT *frame, int start, int end)
+static void draw_frame(GRECT *frame, int start, int eind)		/* HR 151102: reserve 'end' for lamguage */
 {
 	int i, s, e;
 
-	if (start > end)
+	if (start > eind)
 	{
-		s = end;
+		s = eind;
 		e = start;
 	}
 	else
 	{
 		s = start;
-		e = end;
+		e = eind;
 	}
 
 	for (i = s; i <= e; i++)
@@ -288,7 +301,7 @@ static int cdecl ub_drag(PARMBLK *pb)
 	}
 	else
 	{
-		if (tree[object].ob_state == OUTLINED)
+		if (tree[object].ob_state & OUTLINED)		/* HR 151102 */
 		{
 			vsl_color(xd_vhandle, 1);
 			draw_frame(&frame, -3, -3);
@@ -685,6 +698,7 @@ static int cdecl ub_title(PARMBLK *pb)
 		vswr_mode(xd_vhandle, MD_TRANS);
 
 	set_textdef();
+	vswr_mode(xd_vhandle, MD_TRANS);			/* HR 151102 */
 	prt_text((char *) pb->pb_parm, x, y + (h - xd_regular_font.fnt_chh - 1) / 2,
 			 pb->pb_currstate);
 
@@ -946,12 +960,14 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 {
 	OBJECT *tree = info->tree;
 
+	int twostates = (newstate&0xff) | (tree[object].ob_state&(0xff00|WHITEBAK));	/* HR 151102: preserve extended states */
+
 	if (info->dialmode != XD_WINDOW)
 		objc_change(tree, object, 0, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h,
-					newstate, (int) draw);
+					twostates, (int) draw);
 	else
 	{
-		tree[object].ob_state = newstate;
+		tree[object].ob_state = twostates;
 
 		if (draw)
 			xd_draw(info, object, 1);
@@ -1026,10 +1042,21 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 	}
 }
 
+static int must_userdef(OBJECT *ob)
+{
+	if (!(aes_flags & GAI_WHITEBAK))
+		return TRUE;
+	if (ob->ob_state & WHITEBAK)
+		return FALSE;
+	return TRUE;
+}
+
 /* Funktie voor het zetten van de informatie van userdefined objects. */
+/* HR 151102: Dont set the progdefs if the AES supports the object types. */
 
 void xd_set_userobjects(OBJECT *tree)
 {
+	extern int aes_flags;				/* HR 151102 */
 	int etype, n, nx, d, object = 0;
 	OBJECT *c_obj;
 	USERBLK *c_ub;
@@ -1050,6 +1077,7 @@ void xd_set_userobjects(OBJECT *tree)
 
 	for (;;)
 	{
+		c_code = 0L;						/* HR 151102 */
 		c_obj = tree + object;
 		xuserblk = FALSE;
 		etype = (c_obj->ob_type >> 8) & 0xFF;
@@ -1062,44 +1090,56 @@ void xd_set_userobjects(OBJECT *tree)
 				c_code = ub_drag;
 				break;
 			case XD_ROUNDRB :
-				c_code = ub_roundrb;
+				if (must_userdef(c_obj))	/* HR 151102 */
+					c_code = ub_roundrb;
 				break;
 			case XD_RECTBUT :
-				c_code = ub_rectbut;
+				if (must_userdef(c_obj))	/* HR 151102 */
+					c_code = ub_rectbut;
 				break;
 			case XD_RECTBUTTRI :
-				c_code = ub_rectbuttri;
+				if (must_userdef(c_obj))	/* HR 151102 */
+					c_code = ub_rectbuttri;
 				break;
 			case XD_CYCLBUT :
 				c_code = ub_cyclebut;
 				break;
 			case XD_BUTTON :
-				d = xd_bborder(tree, object);
-
-				if (GET_3D(c_obj->ob_flags) && !IS_BG(c_obj->ob_flags))
+				if (must_userdef(c_obj))	/* HR 151102 */
 				{
-					xuserblk = TRUE;
-					if (xd_draw_3d)
-						d += 2;
+					d = xd_bborder(tree, object);
+	
+					if (GET_3D(c_obj->ob_flags) && !IS_BG(c_obj->ob_flags))
+					{
+						xuserblk = TRUE;
+						if (xd_draw_3d)
+							d += 2;
+					}
+	
+					c_obj->ob_x -= d;
+					c_obj->ob_y -= d;
+					c_obj->ob_width += 2 * d;
+					c_obj->ob_height += 2 * d;
+	
+					c_code = ub_button;
 				}
-
-				c_obj->ob_x -= d;
-				c_obj->ob_y -= d;
-				c_obj->ob_width += 2 * d;
-				c_obj->ob_height += 2 * d;
-
-				c_code = ub_button;
 				break;
 			case XD_RBUTPAR :
-				d = xd_regular_font.fnt_chh / 2;
-				c_obj->ob_y -= d;
-				c_obj->ob_height += d;
-				xd_translate(tree, object, d);
-				c_code = ub_rbutpar;
+				if (must_userdef(c_obj))	/* HR 151102 */
+				{
+					d = xd_regular_font.fnt_chh / 2;
+					c_obj->ob_y -= d;
+					c_obj->ob_height += d;
+					xd_translate(tree, object, d);
+					c_code = ub_rbutpar;
+				}
 				break;
 			case XD_TITLE :
-				c_code = ub_title;
-				c_obj->ob_height += 1;
+				if (must_userdef(c_obj))	/* HR 151102 */
+				{
+					c_code = ub_title;
+					c_obj->ob_height += 1;
+				}
 				break;
 			default :
 				/* yet unknown userdef! */
@@ -1107,17 +1147,20 @@ void xd_set_userobjects(OBJECT *tree)
 				break;
 			}
 
-			if (xuserblk)
+			if (c_code)				/* HR 151102 */
 			{
-				XUSERBLK *c_xub = (XUSERBLK *)c_ub;
-
-				xd_xuserdef(c_obj,  c_xub, c_code);
-				c_ub = (USERBLK *)(c_xub + 1);
-			}
-			else
-			{
-				xd_userdef(c_obj, c_ub, c_code);
-				c_ub++;
+				if (xuserblk)
+				{
+					XUSERBLK *c_xub = (XUSERBLK *)c_ub;
+	
+					xd_xuserdef(c_obj,  c_xub, c_code);
+					c_ub = (USERBLK *)(c_xub + 1);
+				}
+				else
+				{
+					xd_userdef(c_obj, c_ub, c_code);
+					c_ub++;
+				}
 			}
 		}
 

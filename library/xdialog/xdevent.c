@@ -19,7 +19,7 @@
  */
 
 #ifdef __PUREC__
- #include <aes.h>
+ #include <np_aes.h>
  #include <tos.h>
  #include <vdi.h>
 #else
@@ -169,6 +169,8 @@ int xe_xmulti(XDEVENT *events)
 
 	if ((r & MU_BUTTON) && !xd_dialogs && (level == 1))
 	{
+		if (events->ev_mmobutton == 2)
+			events->ev_mbreturn = 2;				/* HR 151102: right button is double click */
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
 						  events->ev_mbreturn, events->ev_mmobutton,
 						  events->ev_mmokstate) == TRUE)

@@ -25,9 +25,6 @@
 #define cdecl
 #endif
 
-#define FALSE			0
-#define TRUE			1
-
 #define min(x,y)		(((x) < (y)) ? (x) : (y))
 #define max(x,y)		(((x) > (y)) ? (x) : (y))
 
@@ -99,19 +96,24 @@ typedef struct
 	int fnt_chh;
 } XD_FONT;
 
-extern int xd_vhandle, xd_nplanes, xd_ncolors;
-extern int xd_posmode;
-extern int xd_min_timer;
+extern
+int xd_vhandle, xd_nplanes, xd_ncolors,
+    xd_posmode,
+    xd_min_timer,
+    xd_draw_3d,
+    xd_aes4_0,
+    aes_flags,			/* HR 151102 */
+    colour_icons,
+    xresources,
+    xd_fdo_flag,
+    ckeytab[];
+
 extern const char *xd_prgname;
 extern void *(*xd_malloc) (size_t size);
 extern void (*xd_free) (void *block);
 extern XDOBJDATA *xd_objdata;
 extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
-extern int xd_draw_3d;
-extern int xd_aes4_0;
-extern int xd_fdo_flag;
-extern int ckeytab[];
 extern OBJECT *xd_menu;
 extern GRECT xd_desk;
 extern XD_FONT xd_regular_font, xd_small_font;

@@ -18,8 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <np_aes.h>
+
 #ifdef __PUREC__
- #include <aes.h>
  #include <tos.h>
  #include <vdi.h>
  #include <multitos.h>
@@ -38,6 +39,11 @@
 #include "xdialog.h"
 
 #include "internal.h"
+
+int aes_flags = 0,				/* HR 151102: proper appl_info protocol (works with ALL Tos */
+	MagX_version = 0,
+	colour_icons = 0,
+	xresources = 0;
 
 #define XD_WDFLAGS	(NAME | MOVER)
 
@@ -358,42 +364,58 @@ void xd_mouse_on(void)
 
 int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 {
-	OBJECT *c_obj;
-	int etype, i = 0, cur = 0, ch;
-
-	/* I_A: ckeytab[] moved to XDEMODES.C */
-	char *h;
+	int i = 0, cur = 0;
 
 	for (;;)
-	{
-		c_obj = &tree[cur];
+	{	
+		char *h = NULL;				/* HR 151102 */
+		OBJECT *c_obj = &tree[cur];
 
-		etype = (c_obj->ob_type >> 8) & 0xFF;
+		int etype = (c_obj->ob_type >> 8) & 0xFF;
+		int state = c_obj->ob_state;
 
-		if (xd_is_xtndbutton(etype))
+	/* HR 151102: use AES 4 extended object state if there. */
+
+		if (   xd_is_xtndbutton(etype)
+		    || (c_obj->ob_type&0xff) == G_BUTTON
+		   )
 		{
-			/* I_A: changed to let '#' through if doubled! */
-
-			/* find single '#' */
-			for (h = (char *) xd_get_obspec(c_obj);
-#pragma warn -pia
-				 (h = strchr(h, '#')) && (h[1] == '#');
-#pragma warn .pia
-				 h += 2)
-				;
-
-			if (h)
+			if (state & WHITEBAK)
 			{
-				ch = toupper((int) h[1]);
-
-				if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')))
-					kinfo[i].key = XD_ALT | ch;
-				else
-					kinfo[i].key = 0;
-
-				kinfo[i].object = cur;
-				i++;
+				char *p = (char *) xd_get_obspec(c_obj);
+				int und = (state<<1)>>9;
+				if (und >= 0)
+				{
+					und &= 0x7f;
+					if (und < strlen(p))
+						h = p + und;
+				}
 			}
+			else if ( xd_is_xtndbutton(etype))
+			{
+				/* I_A: changed to let '#' through if doubled! */
+	
+				/* find single '#' */
+				for (h = (char *) xd_get_obspec(c_obj);
+					 (h = strchr(h, '#')) != 0 && (h[1] == '#');		/* HR 151102 != 0 */
+					 h += 2)
+					;
+	
+				if (h) h++;					/* HR 151102: pinpoint exactly */
+			}
+		}
+
+		if (h)		/* HR 151102: one of the above options. */
+		{
+			int ch = toupper((int) *h);			/* HR 151102: pinpointed exactly */
+
+			if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')))
+				kinfo[i].key = XD_ALT | ch;
+			else
+				kinfo[i].key = 0;
+
+			kinfo[i].object = cur;
+			i++;
 		}
 
 		if (xd_is_xtndspecialkey(etype))
@@ -882,6 +904,63 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 	return start;
 }
 
+static
+char cancel_buttons[][18] =
+{
+	"cancel",
+	"abbruch",
+	"annuler",
+	"avbryt",
+	"anuluj",
+	"afbryd",
+	"undo",
+	"\0"
+};
+
+int alert_msg(int def, const char *string, ...);
+
+/* HR 151102: courtesy XaAES */
+static
+int xd_find_cancel(OBJECT *ob)
+{
+	int f = 0;
+
+	do
+	{
+		if (   (   (ob[f].ob_type  & 0xff)                    == G_BUTTON
+		        || (ob[f].ob_type  & 0xff00)                  == (XD_BUTTON<<8)
+		       )
+			&& (ob[f].ob_flags & (SELECTABLE|TOUCHEXIT|EXIT)) != 0       )
+		{
+			int l;
+			char t[32]; char *s = t,*e;
+			e = (char *) xd_get_obspec(ob+f);
+			l = strlen(e);
+			if (l < 32)
+			{
+				strcpy(t,e);
+				/* strip surrounding spaces */
+				e = t + l;
+				while (*s == ' ') s++;
+				while (*--e == ' ')  ;
+				*++e = 0;
+				if (e-s < 16)	/* No use comparing longer strings */
+				{
+					int i = 0;
+					while (cancel_buttons[i][0])
+					{
+						if (stricmp(s,cancel_buttons[i]) == 0)
+							return f;
+						else i++;
+					}
+				}
+			}
+		}
+	}
+	while ( ! (ob[f++].ob_flags & LASTOB));
+	return -1;
+}
+
 int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
 					  int *knxtobject, int *knxtchar)
 {
@@ -914,6 +993,14 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
 			return FALSE;
 		}
 		break;
+	case UNDO:				/* HR 151102 */
+		if ((i = xd_find_cancel(tree)) > 0)
+		{
+			xd_change(info, i, SELECTED, TRUE);
+			*knxtobject = i;
+			return FALSE;
+		}
+		break;
 	default:
 		*knxtchar = kchar;
 		return TRUE;
@@ -933,8 +1020,9 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 	OBJECT *tree = info->tree;
 	int flags = tree[object].ob_flags, parent, oldstate, dummy;
 
-	if (xd_selectable(tree, object) &&
-		((flags & SELECTABLE) || (flags & TOUCHEXIT)))
+	if (   xd_selectable(tree, object)
+	    && ((flags & SELECTABLE) || (flags & TOUCHEXIT))
+	   )
 	{
 		oldstate = tree[object].ob_state;
 
@@ -1465,6 +1553,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 				 int load_fonts, int *nfonts)
 {
 	int dummy, i, work_in[11], work_out[57];
+
 #ifndef __PUREC__
 	extern short _global[];
 #endif
@@ -1474,13 +1563,13 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_prgname = prgname;
 	xd_multitos = FALSE;
 #ifdef __PUREC__
-	xd_draw_3d = (_GemParBlk.global[0] >= 0x330);
-	xd_aes4_0  = (_GemParBlk.global[0] >= 0x400);
+	xd_draw_3d = (_GemParBlk.glob.version >= 0x330);
+	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
 #else
 	xd_aes4_0 = (_global[0] >= 0x330);
 	xd_draw_3d = (_global[0] >= 0x400);
 #endif
-	xd_min_timer = 0;			/* Minimum time passed to xe_multi(). */
+	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 
 	wind_get(0, WF_WORKXYWH, &xd_desk.g_x, &xd_desk.g_y, &xd_desk.g_w, &xd_desk.g_h);
 	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);
@@ -1512,12 +1601,26 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		else
 			*nfonts = 0;
 
-		if (xd_aes4_0)
+/* HR 151102: proper appl_getinfo protocol, works also with MagiC */
+		if ( appl_find( "?AGI" ) == 0 )		/* appl_getinfo() vorhanden? */
+			aes_flags |= GAI_INFO;
+
+		if (aes_flags & GAI_INFO)
 		{
+			int ag1, ag2, ag3, ag4;
+			xd_aes4_0 |= TRUE;
 			appl_getinfo(0, &xd_regular_font.fnt_height, &xd_regular_font.fnt_id,
 						 &xd_regular_font.fnt_type, &dummy);
 			appl_getinfo(1, &xd_small_font.fnt_height, &xd_small_font.fnt_id,
 						 &xd_small_font.fnt_type, &dummy);
+			appl_getinfo(2, &ag1, &ag2, &colour_icons, &xresources);		/* HR 151102 */
+			if ( appl_getinfo( 13, &ag1, &ag2, &ag3, &ag4 ))		/* Unterfunktion 13, Objekte */
+			{
+				if ( ag4 & 0x08 )				/* G_SHORTCUT unterstÅtzt ? */
+					aes_flags |= GAI_GSHORTCUT;
+				if ( ag4 & 0x04 )				/* MagiC (WHITEBAK) objects */
+					aes_flags |= GAI_WHITEBAK;
+			}
 		}
 		else
 		{

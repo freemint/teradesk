@@ -19,7 +19,7 @@
  */
 
 #ifdef __PUREC__
- #include <aes.h>
+ #include <np_aes.h>
  #include <vdi.h>
 #else
  #include <aesbind.h>
@@ -261,7 +261,7 @@ int xd_get_tristate(int ob_state)
 
 int xd_set_tristate(int ob_state, int state)
 {
-	return (ob_state & ~TRISTATE_MASK) | state;
+	return (ob_state & ~TRISTATE_MASK) | (state&0xff);		/* HR 151102 */
 }
 
 int xd_is_tristate(OBJECT *object)

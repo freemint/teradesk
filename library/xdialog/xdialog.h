@@ -25,13 +25,7 @@
 #define cdecl
 #endif
 
-#ifdef __PUREC__
- #include <aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
+#include <np_aes.h>			/* HR 151102: modern */
 
 #ifndef __XWINDOW_H__
  #include "xwindow.h"

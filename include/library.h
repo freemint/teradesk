@@ -35,7 +35,7 @@ void split_path( char *path,char *fname,const char *name );
 
 /* Funkties voor cookie-jar */
 
-COOKIE *find_cookie( long name );
+long find_cookie( long name );		/* HR 151102: return cookie value or -1 */
 int install_cookie( long name,long value,COOKIE *buffer,long l );
 
 /* GEM uitbreidingen */
