@@ -338,8 +338,6 @@ void prg_default(void)
 	ptadd_one(presets[5], PTOS, PT_PDIR, 0L);				/*	*.TOS	*/
 	ptadd_one(presets[6], PTTP, PT_PDIR, 0L);				/*	*.TTP	*/
 
-
-
 #if _MINT_
 	if ( mint )
 		ptadd_one(presets[7], PACC, PT_PDIR, 0L);			/*	*.ACC	*/

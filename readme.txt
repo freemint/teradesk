@@ -4,9 +4,10 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic        
              V3.01  07-01-04, Copyright 2003, 2004  H. Robbers, Dj. Vukovic        
              V3.30  23-04-04, Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.31       -04, Copyright 2004  H. Robbers, Dj. Vukovic
 
 
-This is version 3.30 of the Tera Desktop, a replacement of the built-in TOS 
+This is version 3.31 of the Tera Desktop, a replacement of the built-in TOS 
 desktop for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source.  It is published under GPL license, which means that it may be 
 copied  and modified freely,  providing  that the  original authorships are 
@@ -72,7 +73,7 @@ New Features in This Version
 ============================
 
 Please, see HIST_V3.TXT for a list of new features and bug fixes since the
-last released version (V3.01). Also read the manual TERADESK.HYP (you will 
+last released version (V3.30). Also read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information.
 
 
@@ -131,7 +132,7 @@ order to do so, the following environment variables can be defined:
 These  declare  TeraDesk  as the  AV-Server and  as  the  font-selector. In 
 Single-TOS configuration  these protocols  can be used  by some accessories 
 (such as ST-Guide);  in multitasking  configurations  they  can be  used by 
-other concurrently running applications.
+a much larger number of concurrently running applications.
 
 The manner of declaration of environmental variables depend  on variants of 
 the OS and utilities used.
@@ -201,17 +202,19 @@ environments if there is a need to preserve as much free memory as possible.
 Some Possible Future Developments 
 =================================
 
-- Optimization of code to reduce size and memory use;
+- Optimization of code to reduce size and memory use
  
-- Multiple column display of directory windows 
+- Multi-column display of directory windows 
 
-- Improvement on manipulation of file/folder attributes and access rights
+- Improved manipulation of file/folder attributes and access rights
 
 - Complete compliance to AV-protocol and Drag & Drop protocol
 
 - Improved handling of symbolic links
 
 - Better handling of memory-limit and no-multitask options
+
+- More functionality in Show/Edit/Cancel dialog/alert
 
 - Integration of a non-modal, windowed, long-names-capable fileselector
 
@@ -225,7 +228,7 @@ autoboot programs, accessories etc.).  Mention  TeraDesk  in the subject line
 of your e-mail.
 
 THE AUTHORS CAN NOT BE HELD RESPONSIBLE  for  any form of damage  caused by 
-this program, the usage of all components of TeraDesk is at your own risk.
+this program; the usage of all components of TeraDesk is at your own risk.
 
 PLEASE read the manual before you use the program.  You will need ST-Guide
 (not supplied with TeraDesk) for this.
@@ -238,6 +241,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; April 23rd 2004
+                                            Beograd; May 28th 2004
 
 

@@ -91,9 +91,6 @@ boolean x_exist(const char *file, int flags)
 	XATTR attr;
 	int type, theflag;
 
-/* DjV 000
-	if (x_attr(0, file, &attr) != 0) /* follow the link */
-*/
 
 #if _MINT_
 	if ( x_attr( (flags & EX_LINK) ? 1 : 0, file,  &attr) != 0 )
@@ -278,6 +275,37 @@ int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 	return xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
 }
 
+
+/*
+ * Append a path to a link target definition, if it is not given.
+ * Return a path + name string (memory allocated here)
+ */
+
+char *x_pathlink( char *tgtname, char *linkname )
+{
+	char
+		*target,
+		*lpath;
+
+	int
+		error;
+
+	if ( strchr(tgtname,'\\') == NULL )
+	{
+		/* referenced name does not contain a path, use that of the link */
+
+		if ( (lpath = fn_get_path(linkname)) != NULL )
+		{
+			target = x_makepath(lpath, tgtname, &error);
+			free(lpath);
+		}
+	}
+	else
+		target = strdup(tgtname);
+
+	return target;
+}
+
 #endif
 
 
@@ -311,6 +339,7 @@ char *x_fllink( char *linkname )
 
 				if ( !error )
 				{
+/* improved below
 					if ( strchr(tmp,'\\') == NULL )
 					{
 						/* referenced name does not contain a path, use that of the link */
@@ -326,6 +355,8 @@ char *x_fllink( char *linkname )
 					}
 					else
 						target = strdup(tmp);
+*/
+					target = x_pathlink(tmp, linkname);
 				}
 				else
 					/* this is not a link, just copy the name */

@@ -71,7 +71,7 @@ void path_to_disp ( char *fpath )
 /* 
  * Geef een pointer terug die wijst naar het begin van de filenaam
  * in een padnaam.
- * This routine returns pointer to the beginning of a name in
+ * This routine returns a pointer to the beginning of a name in
  * an existing fullname string. It doesn't allocate any memory for 
  * the name. If the fullname string does not exist, returns NULL.
  */

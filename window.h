@@ -171,22 +171,25 @@ typedef struct winfo
 	int y;
 	int w;						/* afmetingen van het werkgebied */
 	int h;
+	int ix; /* position and size at iconify time */
+	int iy; 
+	int iw;
+	int ih;
 	WDFLAGS flags;
 	boolean used;
 	TYP_WINDOW *typ_window;
 }WINFO;
 
 
-/* Aux. structure for saving/loading  window data */
-
 typedef struct
 {
-	int i, x, y, ww, wh;
+	int i, x, y, ww, wh, ix, iy, iw, ih;
 	WDFLAGS flags;
 	FDATA font;
 	WINFO *windows;
 } NEWSINFO1;
 
+extern NEWSINFO1 thisw;
 
 extern CfgEntry 
 	fnt_table[],
@@ -194,7 +197,6 @@ extern CfgEntry
 	wtype_table[];
 
 extern FONT *cfg_font;
-extern NEWSINFO1 thisw;
 
 CfgNest positions;
 CfgNest cfg_wdfont;
@@ -217,6 +219,7 @@ void itm_rselect(WINDOW *w, int x, int y);
 boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
 boolean itm_list(WINDOW *w, int *n, int **list);
 void itm_set_menu ( WINDOW *w );
+void wd_setselection(WINDOW *w);
 
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
@@ -256,7 +259,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
 void wd_type_hndlbutton(WINDOW *w, int x, int y, int n,
 						   int button_state, int keystate);
 void wd_set_defsize(WINFO *w); 
-void wd_type_top(WINDOW *w); 			
+
 void wd_type_topped (WINDOW *w);		
 void wd_type_arrowed(WINDOW *w, int arrows);
 void wd_type_fulled(WINDOW *w);

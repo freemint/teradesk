@@ -71,7 +71,7 @@ static char *findvar(const char *var)
 
 	/* 
 	 * Find an "=" then retrace by "l" and compare name 
-	 * Note: this may not work correctly with tw variables
+	 * Note: this may not work correctly with the variables
 	 * which have the same trailing substrings (e.g. PERA= and OPERA=) !!!
 	 */
 
@@ -82,7 +82,7 @@ static char *findvar(const char *var)
 		else
 			while (*p++);
 	}
-	return (!found) ? NULL : p;
+	return (found) ? p : NULL;
 }
 
 

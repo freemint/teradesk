@@ -50,6 +50,7 @@ int aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
 	aes_ver3d    = 0,			/* 3d enlargement value */
 	xresources   = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
+	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
 	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
 	xd_aes4_0,					/* AES 4.0 flag */
 	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
@@ -501,9 +502,12 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 
 		if (h)		/* one of the above options. */
 		{
+/* doesn't seem to work for characters above 127
 			int ch = toupper((int) *h);			/* pinpointed exactly */
+*/
+			int ch = ((int)*h) & 0xDF;
 
-			if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')))
+			if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')) || (ch > 127) )
 				kinfo[i].key = XD_ALT | ch;
 			else
 				kinfo[i].key = 0;
@@ -556,12 +560,18 @@ static int xd_selectable(OBJECT *tree, int object)
 
 
 /* 
- * Zoek de button die bij een toets hoort. 
+ * Zoek de button die bij een toets hoort.
+ * Find if this is a hotkey 
  */
 
 int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 {
-	int i;
+	int i, k= (key & 0xFF);
+
+	/* Create "uppercase" of characters above 127 for other codepages */
+
+	if ( k > 127 )
+		key = ( (key & 0xFF00) | (k & 0xDF) );
 
 	for (i = 0; i < nk; i++)
 	{
@@ -766,11 +776,11 @@ static int xd_chk_key(char *valid, int pos, int key)
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
 	{
-		if (cvalid == 'X')
+		if (cvalid == 'X')				/* anything */
 			return ch;
-		else if ( cvalid == 'x' )
+		else if ( cvalid == 'x' )		/* anything uppercase */
 		{
-			if ((cch >= 'A') && (cch <= 'Z'))
+			if ( ((cch >= 'A') && (cch <= 'Z') ) || (key & 80) )
 				return cch;
 			else
 				return ch;
@@ -831,7 +841,7 @@ static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 
 void *xd_get_scrled(OBJECT *tree, int edit_obj)
 {
-	if (((tree[edit_obj].ob_type >> 8) & 0xff) == XD_SCRLEDIT)
+	if (((tree[edit_obj].ob_type >> 8) & 0xFF) == XD_SCRLEDIT)
 		return (XUSERBLK *)tree[edit_obj].ob_spec.userblk->ub_parm;
 	return NULL;
 }
@@ -1031,7 +1041,7 @@ int xd_edit_char(XDINFO *info, int key)
 	default:
 		pos = oldpos - ((oldpos == maxlen) ? 1 : 0);
 		if (blk)
-			/* ch = key & 0xff; DjV 067 150703 */
+			/* ch = key & 0xFF; DjV 067 150703 */
 			/* use only the first validation char ( i.e. [0] ) */
 
 			ch  = xd_chk_key(tedinfo->te_pvalid, 0, key); 
@@ -1505,18 +1515,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 
 		which = xe_xmulti(&events);
 
-/* DJV 000
-
-		if ((which & MU_MESAG) && (xd_usermessage != 0L))
-		{
-			if (xd_usermessage(events.ev_mmgpbuf) != 0)
-			{
-				next_obj = -1;
-				cont = FALSE;
-			}
-		}
-*/
-		if ( (which & MU_MESAG) != 0 ) /* DjV 000 */
+		if ( (which & MU_MESAG) != 0 ) 
 		{
 
 			if (xd_usermessage != 0L && xd_usermessage(events.ev_mmgpbuf) != 0)
@@ -1956,8 +1955,7 @@ RECT *xywh, int zoom,
 		if (!(nmd || prev) )
 			xd_enable_menu();
 
-		xw_close(w);
-		xw_delete(w);
+		xw_closedelete(w);
 
 		if ( nmd )
 		{
@@ -2189,7 +2187,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
          *	|| (appl_find ("?AGI") >= 0));
 		 */
 
-		/* if ( appl_find( "?AGI" ) == 0 )	*/	/* appl_getinfo() vorhanden? */
+		/* if ( appl_find( "?AGI" ) == 0 )	*/	/* appl_getinfo() supported? */
 
 		if ( xd_aes4_0 || (appl_find("?AGI") == 0) )
 			aes_flags |= GAI_INFO;
@@ -2263,6 +2261,11 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 				vqt_fontinfo(xd_vhandle, &dum, &dum,d, &dum, effects);
 				xd_regular_font.fnt_height = d[4];		/* celltop to baseline */
 			}
+
+			/* Is appl_control supported ? */
+
+			if (appl_getinfo(65, &ag1, &ag2, &ag3, &ag4))
+				aes_ctrl = ag1;
 		}
 		else
 		{

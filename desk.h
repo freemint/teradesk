@@ -181,6 +181,7 @@ extern char *global_memory;
 extern boolean 
 	mint,			/* mint or magic present */
 	magx,			/* magic present  */
+	naes,			/* naes present */
 	geneva;			/* geneva present */
 
 extern int have_ssystem;

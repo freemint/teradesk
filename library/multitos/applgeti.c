@@ -44,6 +44,7 @@ int appl_getinfo(int ap_gtype,
 	return _GemParBlk.intout[0];
 }
 
+
 int objc_sysvar(int mo, int which,
 				int  ivall, int  ival2,
                 int *oval1, int *oval2)
@@ -63,6 +64,24 @@ int objc_sysvar(int mo, int which,
 
 	*oval1 = _GemParBlk.intout[1];
 	*oval2 = _GemParBlk.intout[2];
+
+	return _GemParBlk.intout[0];
+}
+
+
+int appl_control(int ap_cid, int ap_cwhat, void *ap_cout)
+{
+	_GemParBlk.contrl[0] = 129;
+	_GemParBlk.contrl[1] = 2;
+	_GemParBlk.contrl[2] = 1;
+	_GemParBlk.contrl[3] = 1;
+	_GemParBlk.contrl[4] = 0;
+
+	_GemParBlk.intin[0] = ap_cid;
+	_GemParBlk.intin[1] = ap_cwhat;
+	_GemParBlk.addrin[0] = ap_cout;
+
+	aes();
 
 	return _GemParBlk.intout[0];
 }

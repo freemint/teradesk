@@ -3,7 +3,7 @@
  *                         2002, 2003  H. Robbers,
  *                         2003, 2004  Dj. Vukovic
  *
- * This file is part of Teradesk.
+ * This file is part of Teradesk. 
  *
  * Teradesk is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 #include <np_aes.h>	
 #include <stdlib.h>
@@ -61,12 +62,13 @@ static WD_FUNC aw_functions =
 	0L,						/* sized */
 	0L,						/* moved */
 	0L, 					/* hndlmenu placeholder */
-	wd_type_top,			/* top */
+	0L,						/* top */
 	0L,						/* iconify */
 	0L						/* uniconify */
 };
 
 boolean va_reply = FALSE;
+int av_current;
 
 extern FONT dir_font;
 
@@ -78,7 +80,7 @@ AVTYPE
 	*avclients;	/* List of signed-on AV-clients */
 
 AVSTAT
-	avswork,
+	avswork,	/* work area for client statuses */
 	*avstatus;	/* for logging status of AV clients */
 
 AVSETW
@@ -88,6 +90,8 @@ AVSETW
 static void copy_avstat( AVSTAT *t, AVSTAT *s);
 static void rem_avstat(AVSTAT **list, AVSTAT *t);
 
+
+
 /*
  * CLose a window of an av-client. In xw_close a WM_CLOSE is sent
  * to the client.
@@ -95,25 +99,25 @@ static void rem_avstat(AVSTAT **list, AVSTAT *t);
 
 void va_close(WINDOW *w)
 {
-	xw_close(w);
-	xw_delete(w);
+	xw_closedelete(w);
 }
 
 
 /* 
  * Delete all pseudowindows structures of AV-clients
+ * or all windows belonging to a single client, if ap_id >= 0
  * (because in single-tos all acc windows are closed anyway
  * when a program is started).
  */
 
-void va_delall(void)
+void va_delall(int ap_id)
 {
 	WINDOW *w = xw_last();
 
 	while(w)
 	{
-		if ( w->xw_type == ACC_WIND )
-			va_close(w);
+		if ( w->xw_type == ACC_WIND && (ap_id < 0 || w->xw_ap_id == ap_id) )
+			xw_closedelete(w);
 		w = w->xw_prev;
 	}
 }
@@ -147,26 +151,7 @@ AVTYPE *va_findclient(int ap_id)
 
 
 /*
- * Find a signed-on AV-client by its window handle
- */
-
-AVTYPE *va_findwindow(int handle)
-{
-	WINDOW *w = xw_first();
-
-	while(w)
-	{
-		if ( w->xw_handle == handle )
-			return va_findclient(w->xw_ap_id);
-
-		w = w->xw_next;
-	}
-	return NULL;
-}
-
-
-/*
- * Use these AV-client-list-specific functions to manipulate list: 
+ * Use these AV-client-list-specific functions to manipulate lists: 
  */
 
 #pragma warn -sus
@@ -198,6 +183,8 @@ static LS_FUNC avslist_func =
  * Note: accessories are an exception: they can be sent VA_START
  * even if they had not signed on (this is needed at least for 
  * ST-Guide, and maybe some other as well) 
+ * Note 2: other apss also understand VA_START but do not sign-on
+ * to the server. Pity.
  *
  * Parameters:
  *
@@ -211,7 +198,6 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 {
 	char prgname[9], *ptr;
 	int i, dest_ap_id;
-	AVTYPE *theclient;
 
 	/*
 	 * Check if globally available buffer is large enough 
@@ -251,12 +237,18 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 	 * (Some?) accessories (ST-Guide, at least) sign-on only when
 	 * they open a window, so it is necessary to be able to send
 	 * them a VA_START even if they are not signed on.
+	 * BUT: it seems that applications generally do NOT sign-on as
+	 * AV-protocol clients, so this severely restricts the behaviour
+	 * of the desktop vs applications. Maybe better to test each
+	 * time if an application is still running.
 	 */
 
+/*
 	theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i ); 
 
 	if (type != PACC && (!theclient || (theclient->avcap3 & VV_START) != 0) )
 		return FALSE; /* this is not a VA_START capable client */
+*/
 
 	/*
 	 * Check if the application is still running.
@@ -270,7 +262,9 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 	 * send a message to oneself? 
 	 */
 
-	if ((dest_ap_id = appl_find(prgname)) >= 0)
+	dest_ap_id = appl_find(prgname);
+
+	if (dest_ap_id >= 0)
 	{
 		if ( ap_id == dest_ap_id ) /* should this fix it ? */
 			return FALSE;
@@ -296,7 +290,8 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 
 #if _MORE_AV
 /*
- * Send all registered clients a message- if they support (and need) it
+ * Send all registered clients a message- if they support (and need) it.
+ * This routine must not be used if another handshake is in progress.
  */
 
 static void va_send_all(int cap, int *message)
@@ -348,17 +343,21 @@ boolean va_fontreply(int messid, int dest_ap_id)
 
 
 /*
- * Add a name to a reply string for an AV-client 
+ * Add a name to a reply string for an AV-client. If the name contains
+ * spaces, it will be quoted with single quotes ('). 
+ * Currently, names conatining quotes are not supported. 
  */
 
 boolean va_add_name(int type, const char *name )
 {
 	long 
-		l = strlen(name),
-		g = strlen(global_memory);
+		i,								/* character index */
+		l = strlen(name),				/* name length */
+		g = strlen(global_memory);		/* cumulative string length */
 
 	boolean
-		q = FALSE;		/* True if names are to be quoted */
+		q = FALSE;		/* True if name is to be quoted */
+
 
 
 	if ( g + l + 4 >= GLOBAL_MEM_SIZE )
@@ -381,7 +380,10 @@ boolean va_add_name(int type, const char *name )
 			q = TRUE;
 		}
 
-		/* Concatenate name */
+		/* 
+		 * Concatenate the name. If names containing quotes are to be
+		 * supported some day, this will have to be done differently
+		 */
 
 		strcat(global_memory, name);
 
@@ -390,7 +392,7 @@ boolean va_add_name(int type, const char *name )
 		if ( type == (int)ITM_FOLDER )
 			strcat(global_memory, "\\");
 
-		/* Unquote ? */
+		/* Unquote ? (q is reset on the next call of this routine) */
 
 		if (q)
 			strcat(global_memory,"'");
@@ -407,17 +409,23 @@ boolean va_add_name(int type, const char *name )
 
 boolean va_pathupdate( const char *path )
 {
+	int answer[8];
 
-	answer[0] = VA_PATH_UPDATE;			/* message id */
-	answer[1] = ap_id;
-	answer[2] = 0;
-	*(char **)(answer + 3) = global_memory;
-	answer[5] = 0;
-	answer[6] = 0;
-	answer[7] = 0;
+	if ( !va_reply )
+	{
+		answer[0] = VA_PATH_UPDATE;			/* message id */
+		answer[1] = ap_id;
+		answer[2] = 0;
+		*(char **)(answer + 3) = global_memory;
+		answer[5] = 0;
+		answer[6] = 0;
+		answer[7] = 0;
 
-	va_add_name( isroot(path)? ITM_DRIVE : ITM_FOLDER, path );
-	va_send_all( VV_PATH_UPDATE, answer);
+		*global_memory = 0;
+		va_add_name( isroot(path)? ITM_DRIVE : ITM_FOLDER, path );
+
+		va_send_all( VV_PATH_UPDATE, answer );
+	}
 
 	return TRUE;
 }
@@ -483,15 +491,15 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 
 /*
  * Initialize structures for using the AV-protocol.
- * Should be used before initialisation of windows.
+ * Should be used before initialization of windows.
  */
 
 void va_init(void)
 {
-	avclients = NULL;
-	avstatus = NULL;
+	avclients = NULL;		/* list of AV-protocol clients */
+	avstatus = NULL;		/* list of clients' statuses */
 	avsetw.flag = FALSE;
-	va_reply = FALSE;
+	va_reply = FALSE;		/* a reply to a client is not in progress */
 }
 
 
@@ -554,6 +562,7 @@ void handle_av_protocol(const int *message)
 		reply = TRUE;
 
 	AVTYPE
+		*oldclient,
 		*theclient;
 
 #if _MORE_AV
@@ -566,12 +575,15 @@ void handle_av_protocol(const int *message)
 	WINDOW 
 		*aw;
 
+	/* Clear the answer block; then set TeraDesk's ap_id where it will be */
+
 	memset( answer, 0, sizeof(answer) );
 	answer[1] = ap_id;
 
 	/* Find data for the client if it exists */
 
-	theclient = va_findclient(message[1]);
+	av_current = message[1];					/* who sent the message (its ap_id) */
+	theclient = va_findclient(av_current);		/* are there any data for it */
 
 	/* Ignore unknown clients, except if they are signing-on */
 
@@ -590,16 +602,33 @@ void handle_av_protocol(const int *message)
 		 */
 
 		strcpy(avwork.name, (*(char **)(message + 6)) );
-		avwork.ap_id = appl_find( (const char *)avwork.name);
-
+		avwork.ap_id = appl_find( (const char *)avwork.name );
 		avwork.avcap3 = message[3]; /* notify client-supported features */
 		avwork.flags = 0;
+
+
+/* It is probably better NOT to do this
+
+		/*
+		 * Check if an av-client with this name already exists.
+		 * If it does, delete it and its (pseudo)windows.
+		 * This is because a client might have terminated 
+		 * without notifying of its exit.
+		 * Note: this is not very good!!! it should be checked
+		 * if the client was still running.
+		 */		
+
+		if ( (oldclient = (AVTYPE *)find_lsitem( (LSTYPE **)(&avclients), avwork.name, &j)) != NULL )
+		{
+			va_delall(oldclient->ap_id);
+			rem( (LSTYPE **)(&avclients), (LSTYPE *)oldclient);
+		}
+*/
 
 		if (!lsadd((LSTYPE **)&avclients, sizeof(AVTYPE), (LSTYPE *)(&avwork), 32700, copy_avtype ))
 			reply = FALSE;
 		else 
 		{
-
 			strcpy(global_memory, "DESKTOP "); /* must be exactly 8 characters long */
 
 			answer[0] = VA_PROTOSTATUS;
@@ -639,7 +668,8 @@ void handle_av_protocol(const int *message)
 
 	case AV_EXIT:
 
-		rem( (LSTYPE **)&avclients, (LSTYPE *)va_findclient(message[3]));
+		va_delall(av_current); /* delete all client's windows, just in case */
+		rem( (LSTYPE **)&avclients, (LSTYPE *)va_findclient(av_current));
 		reply = FALSE;
 		break;
 
@@ -666,24 +696,23 @@ void handle_av_protocol(const int *message)
 		/* 
 		 * Create an av-client pseudowindow; 
 		 * use "flags" parameter to pass window handle
+		 * which the client supplied in message [3]
 		 */
 		aw = xw_create(ACC_WIND, &aw_functions, message[3], NULL, sizeof(ACC_WINDOW), NULL, &error );
 		aw->xw_opened = TRUE;
-		aw->xw_ap_id = message[1];
-
+		aw->xw_ap_id = av_current;
 		reply = FALSE;
 		break;
 
 	case AV_ACCWINDCLOSED:
 
-		/* Client has closed a window */
+		/* Client has closed a window, identified by its handle */
 
 		aw = xw_first();
 		while ( aw )
 		{
 			if ( aw->xw_handle == message[3] )
 				xw_delete(aw);
-
 			aw = aw->xw_next;
 		}
 		reply = FALSE;
@@ -697,7 +726,7 @@ void handle_av_protocol(const int *message)
 		{
 			answer[0] = VA_COPY_COMPLETE;
 			answer[3] = 1;
-			theclient ->flags &= ~AVCOPYING;
+			theclient->flags &= ~AVCOPYING;
 		}
 
 		break;
@@ -715,9 +744,10 @@ void handle_av_protocol(const int *message)
 
 	case AV_OPENWIND:
 
-		/* Open a directory window */
+		/* Open a directory window (path must be kept) */
 
 		path = strdup(*(char **)(message + 3));
+
 		if ( path && *path )
 		{
 			dir_trim_slash(path);
@@ -727,9 +757,8 @@ void handle_av_protocol(const int *message)
 
 			if ( !( message[0] == AV_XWIND && (message[7] & 0x01) && dir_do_path(path, DO_PATH_TOP)) )
 			{
-
 				mask = strdup(*(char **)(message + 5));
-				stat = ( path!= NULL && mask != NULL );
+				stat = ( (path != NULL) && (mask != NULL) );
 
 				if ( stat )
 					stat = (int)dir_add_window(path, mask, NULL);
@@ -753,7 +782,12 @@ void handle_av_protocol(const int *message)
 
 	case AV_VIEW:
 
-		/* Activate  viewer for the file */
+		/* 
+		 * Activate a viewer for the file. Currently, TeraDesk does not
+		 * differentiate between a viewer and a processing program;
+		 * so, behaviour for AV_VIEW and AV_STARTPROG is essentially
+		 * the same
+		 */
 
 		path = strdup(*(char **)(message + 3));
 
@@ -782,22 +816,22 @@ void handle_av_protocol(const int *message)
 
 	case AV_PATH_UPDATE:
 
-		/* 
-		 * Update a dir window. 
-		 */
+		/* Update a dir window */
 
 		path = strdup(*(char **)(message + 3));
 		if ( path && *path )
 		{
 			dir_trim_slash(path);
 			dir_do_path(path, DO_PATH_UPDATE);
-			free(path);
 		}
 
+		free(path);
 		reply = FALSE; /* no reply to this message */
 		break;
 
 	case AV_STATUS: 
+
+		/* Note: "path" has to be kept; it contains the status string */
 
 		path = strdup(*(char **)(message + 3));
 
@@ -805,18 +839,25 @@ void handle_av_protocol(const int *message)
 
 		if ( path )
 		{
+			/* A status string is supplied by the client */
+
 			if ( thestatus )
 			{
+				/* Yes, there is status string for this client */
+
 				if ( strcmp(thestatus->stat, path) == 0 )
+					/* string is the same, no need to keep "path" */
 					free(path);
 				else
 				{
+					/* sting changed; replace pointer to status string */
 					free(thestatus->stat);
 					thestatus->stat = path;
 				}
 			}
-			else if (!thestatus)	
+			else	
 			{
+				/* add this status string to the pool */
 				strcpy(avswork.name, theclient->name);
 				avswork.stat = path;
 
@@ -826,19 +867,26 @@ void handle_av_protocol(const int *message)
 		}
 
 		reply = FALSE;
-
 		break;
 		
 	case AV_GETSTATUS:
 
 		answer[0] = VA_SETSTATUS;
 
+		/* 
+		 * Note: if status is not available, NULL is supposed to be
+		 * returned as a pointer to the string. Maybe it would be better
+		 * to supply an empty string ???
+		 */
+
 		thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
 		if ( thestatus && thestatus->stat )
 		{
-			strcpy(global_memory, thestatus->stat );
+			strcpy(global_memory, thestatus->stat);
 			*(char **)(answer + 3) = global_memory;
 		}
+		else
+			*(char **)(answer + 3) = NULL;
 
 		break;
 
@@ -909,13 +957,13 @@ void handle_av_protocol(const int *message)
 		break;
 
 	case AV_DRAG_ON_WINDOW:
-		path = strdup(*(char **)(message + 6));
+		path = strdup(*(char **)(message + 6));	/* dousrce */
 		goto processname;
 	case AV_COPYFILE:
-		mask = strdup(*(char **)(message + 5));
+		mask = strdup(*(char **)(message + 5)); /* destination */
 	case AV_DELFILE:
 	case AV_FILEINFO:
-		path = strdup(*(char **)(message + 3));
+		path = strdup(*(char **)(message + 3)); /* source */
 
 		processname:;
 
@@ -988,7 +1036,9 @@ void handle_av_protocol(const int *message)
 						/* 
 						 * Some routines will perform differently when
 						 * working as a response to a VA-protocol command.
-						 * This is set through va_reply	
+						 * This is set through va_reply.
+						 * Note: these four messages may also provoke
+						 * a VA_PATH_UPDATE response	
 						 */
 
 						va_reply = TRUE;
@@ -1000,13 +1050,19 @@ void handle_av_protocol(const int *message)
 							stat = (int)itm_move( (WINDOW *)ww, 0, message[3], message[4], message[5]);	
 							break;
 						case AV_COPYFILE:
+						{
 							/* 
 							 * Note: this is not fully compliant to the
-							 * protocol: not all options are recognized
+							 * protocol: links can not be created
 							 */
+							int old_prefs = options.cprefs;
+							options.cprefs = (message[7] & 4) ? old_prefs : (old_prefs & ~CF_OVERW);
 							answer[0] = VA_FILECOPIED;
+							rename_files = (message[7] & 2) ? TRUE : FALSE;
 							stat = (int)itmlist_op((WINDOW *)ww, 1, &list, mask,( message[7] & 1) ? CMD_MOVE : CMD_COPY);
+							options.cprefs = old_prefs;
 							break;
+						}
 						case AV_DELFILE:
 							answer[0] = VA_FILEDELETED;
 							stat = (int)itmlist_op((WINDOW *)ww, 1, &list, NULL, CMD_DELETE);
@@ -1015,7 +1071,6 @@ void handle_av_protocol(const int *message)
 							answer[0] = VA_FILECHANGED;
 							item_showinfo((WINDOW *)ww, 1, &list, FALSE);
 							*(char **)(answer + 6) = global_memory;	
-
 							stat = 1; /* but it is not always so! */
 							break;
 						}
@@ -1070,17 +1125,9 @@ void handle_av_protocol(const int *message)
 	}
 
 	if ( reply )
-		appl_write(message[1], 16, answer);
+		appl_write(av_current, 16, answer);
 
-	/* 
-	 * Some of the operations involve windows. 
-	 * Maybe some menu items have to be enabled/disaled
-	 */
-	
-	aw = xw_top();
-
-	if ( xw_type(aw) != DESK_WIND )	
-		wd_type_top(aw);
+	answer[0] = 0;
 }
 
 
@@ -1088,14 +1135,18 @@ void handle_av_protocol(const int *message)
  * Remove all AV-clients status data from the list
  */
 
-static void rem_all_avstat(void)
+void rem_all_avstat(void)
 {
 	rem_all( (LSTYPE **)(&avstatus), rem_avstat );
 }
 
 
+#if !__USE_MACROS
 /*
- * Initialize AV-clients status data
+ * Initialize AV-clients status data.
+ * This routine is not really necessary; it exists 
+ * just for the consistency of style.
+ * It can be substituted with a macro.
  */
 
 void vastat_default(void)
@@ -1103,6 +1154,7 @@ void vastat_default(void)
 	rem_all_avstat();
 }
 
+#endif
 
 /*
  * Structures for saving and loading AV-protocol client status
@@ -1130,9 +1182,11 @@ CfgEntry stat_table[] =
 
 /*
  * Copy AV-clients status data into the list
+ * Note: for the status string, only the pointer is copied,
+ * the string itself is not duplicated.
  */
 
-static void copy_avstat( AVSTAT *t, AVSTAT *s)
+static void copy_avstat(AVSTAT *t, AVSTAT *s)
 {
 	strcpy(t->name, s->name);
 	t->stat = s->stat;
@@ -1145,8 +1199,8 @@ static void copy_avstat( AVSTAT *t, AVSTAT *s)
 
 static void rem_avstat(AVSTAT **list, AVSTAT *t)
 {
-	free(t->stat);
-	rem((LSTYPE **)list, (LSTYPE *)t);
+	free(t->stat);							/* the string itself */
+	rem((LSTYPE **)list, (LSTYPE *)t);		/* the list entry */
 }
 
 
@@ -1208,7 +1262,6 @@ static CfgNest one_avstat
 					*error = ENSMEM;
 			}
 		}
-
 	}
 }
 

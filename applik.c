@@ -76,9 +76,9 @@ APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos)
 	if (pos)
 		*pos = -1;			/* allow NULL when pos not needed */
 
-	if ( program != NULL )	
+	if ( program )	
 	{
-		while (h != NULL)
+		while (h)
 		{
 			if (pos)
 				(*pos)++;	
@@ -464,9 +464,6 @@ boolean app_dialog
 {
 	int
 		i,					/* local counter */ 
-/* not needed
-		tmpflags,			/* temporary appl->flags */
-*/
 		title,				/* rsc index of dialog title string */
 		button, 			/* code of pressed button */
 		button2,			/* for a subdialog */
@@ -909,7 +906,13 @@ static char *app_build_cml
 
 	if ( n == - 1 )
 	{
-		tmp = strdup(format);
+		ltot = strlen(format);
+		tmp = malloc(ltot + 2L);
+		if ( tmp )
+		{
+			tmp[0] = (ltot > 125) ? 127 : (char)ltot;
+			strcpy(&tmp[1], format);
+		}
 		return tmp;
 	}
 
@@ -955,7 +958,7 @@ static char *app_build_cml
 			if ( (hh == 'f') || (hh == 'n') || (hh == 'p') )
 			{
 				/*
-				 * Command line variables are ignoredif there are no files,
+				 * Command line variables are ignored if there are no files,
 				 * but other content of the command line is processed
 				 */
 
@@ -1003,23 +1006,6 @@ static char *app_build_cml
 
 							/* Is this, maybe, a link? */
 
-/* made simpler
-							if ( (error = itm_attrib( w, item, 1, &attrib )) != 0 )
-								goto error_exit1;
-
-#if _MINT_
-							if ( (attrib.mode & S_IFMT) == (unsigned int)S_IFLNK )
-							{ 
-								if ( (error = x_rdlink(sizeof(VLNAME), tgt, fullname)) != 0 )
-									goto error_exit1;
-								else
-									realname = tgt;
-							}
-							else
-#endif
-								realname = fullname;
-
-*/
 							/* 
 							 * Item can be a link; if so, resolve it;
 							 * if it is not a link, the name will be copied
@@ -1027,7 +1013,6 @@ static char *app_build_cml
 
 							realname = x_fllink(fullname);				
 							
-
 							if ((hh == 'f') || (type == ITM_DRIVE))
 							{
 								tmp = realname;
@@ -1439,8 +1424,6 @@ void app_init(void)
 void app_default(void)
 {
 	rem_all((LSTYPE **)(&applikations), rem_appl);
-	applikations = NULL; /* not needed here? */
-
 }
 
 
@@ -1614,19 +1597,13 @@ static CfgNest one_app
 				           ) == NULL 
 				   		)
 					{
-/* this should be done always !!!
-						free(name);
-						free(cmdline);
-						free(localenv);
-*/
 						rem_all((LSTYPE **)(&awork.filetypes), rem);
 						*error = ENOMSG;
 					}
 
-free(name);
-free(cmdline);
-free(localenv);
-
+					free(name);
+					free(cmdline);
+					free(localenv);
 				}	
 				else
 					*error = ENSMEM;

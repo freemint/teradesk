@@ -109,7 +109,7 @@ static WD_FUNC dir_functions =
 	wd_type_sized,
 	wd_type_moved,
 	0L, /* hndlmenu placeholder */
-	wd_type_top,
+	/* wd_type_top, */ 0L,
 	wd_type_iconify,
 	wd_type_uniconify
 };
@@ -392,7 +392,8 @@ static void dir_info(DIR_WINDOW *w, int n, long bytes)
 
 		rsrc_gaddr(R_STRING, (w->nvisible == 1) ? MISINGUL : MIPLURAL, &s);
 		rsrc_gaddr(R_STRING, MITEMS, &msg);
-		sprintf(w->info, msg, w->usedbytes, w->nvisible, s);
+		sprintf(w->info, msg, w->visbytes, w->nvisible, s);
+
 	}
 
 	xw_set((WINDOW *) w, WF_INFO, w->info);
@@ -456,8 +457,9 @@ static void dir_free_buffer(DIR_WINDOW *w)
 
 static void set_visible(DIR_WINDOW *w)
 {
-	long i;
+	long i, v = 0L;
 	int n = 0;
+
 
 	if (w->buffer == NULL)
 		return;
@@ -468,7 +470,7 @@ static void set_visible(DIR_WINDOW *w)
 
 		b->selected = FALSE;
 		b->newstate = FALSE;
-		
+
 		if (   (   (options.attribs  & FA_HIDDEN) != 0 /* permit hidden */
 		        || (b->attrib.attrib & FA_HIDDEN) == 0 /* or item is not hidden */
 		       )
@@ -486,6 +488,7 @@ static void set_visible(DIR_WINDOW *w)
 			   )
 		   )
 		{
+			v += b->attrib.size; /* do this always, or on files only ? */			
 			b->visible = TRUE;
 			n++;
 		}
@@ -493,6 +496,7 @@ static void set_visible(DIR_WINDOW *w)
 			b->visible = FALSE;
 	}
 	w->nvisible = n;
+	w->visbytes = v;
 }
 
 
@@ -564,12 +568,7 @@ static int copy_DTA(NDTA **dest, char *name, XATTR *src, XATTR *tgt, int index, 
 		 */
 
 		if ( options.mode )	
-		{
-/*
-			new->icon = icnt_geticon(name, new->item_type, new->link);
-*/
 			new->icon = icnt_geticon(name, new->tgt_type, new->link);
-		}
 
 		new->name = new->alname;		/* the pointer makes it possible to use NDTA in local name space (auto) */
 		strcpy(new->alname, name);
@@ -725,6 +724,7 @@ static int read_dir(DIR_WINDOW *w)
 		w->nfiles = 0;
 		w->nvisible = 0;
 		w->usedbytes = 0;
+		w->visbytes = 0;
 	}
 	else
 	{
@@ -737,6 +737,10 @@ static int read_dir(DIR_WINDOW *w)
 	return error;
 }
 
+
+/* 
+ * Set information to be displayed in window title and info line
+ */
 
 static void dir_setinfo(DIR_WINDOW *w)
 {
@@ -815,7 +819,7 @@ boolean dir_do_path( char *path, int action )
 		if ( xw_type(w) == DIR_WIND && wpath && path && (strcmp( path, wpath ) == 0) )
 		{
 			if ( action == DO_PATH_TOP )
-				wd_type_top( w );
+				wd_type_topped( w );
 			else			
 				dir_refresh_wd( (DIR_WINDOW *)w );
 			result = TRUE;
@@ -914,13 +918,9 @@ void dir_always_update(WINDOW *w)
 	dir_refresh_wd( (DIR_WINDOW *)w );
 }
 
-/********************************************************************
- *																	*
- * Funktie voor het zetten van de mode van een window.				*
- *																	*
- ********************************************************************/
 
 /* 
+ * Funktie voor het zetten van de mode van een window.
  * Display a directory window in text mode or icon mode 
  */
 
@@ -934,6 +934,7 @@ static void dir_disp_mode(WINDOW *w, int mode)
 	set_sliders((TYP_WINDOW *)w);
 	do_redraw(w, &work, TRUE); 		
 }
+
 
 /********************************************************************
  *																	*
@@ -963,12 +964,10 @@ static void dir_filemask(WINDOW *w)
 	}
 }
 
-/********************************************************************
- *																	*
- * Funkties voor het zetten van de file attributen van een window.	*
- *																	*
- ********************************************************************/
 
+/*
+ * Funkties voor het zetten van de file attributen van een window.	
+ */
 
 static void dir_fields(WINDOW *w, int attrib)
 {
@@ -976,12 +975,11 @@ static void dir_fields(WINDOW *w, int attrib)
 	dir_newdir((DIR_WINDOW *) w);
 }
 
-/********************************************************************
- *																	*
- * Funktie voor het zetten van de iconen van objecten in een 		*
- * window.															*
- *																	*
- ********************************************************************/
+
+/*
+ * Funktie voor het zetten van de iconen van objecten in een 
+ * window.
+ */
 
 static void dir_seticons(WINDOW *w)
 {
@@ -994,22 +992,17 @@ static void dir_seticons(WINDOW *w)
 	for (i = 0; i < n; i++)
 	{
 		NDTA *b = (*pb)[i];
-/*
-		b->icon = icnt_geticon(b->name, b->item_type, b->link);
-*/
 		b->icon = icnt_geticon(b->name, b->tgt_type, b->link);
-
 	}
 
 	if (options.mode != TEXTMODE)
 		wd_type_draw ((TYP_WINDOW *)w, FALSE );
 }
 
-/********************************************************************
- *																	*
- * Funktie voor het maken van een nieuwe directory.					*
- *																	*
- ********************************************************************/
+
+/*
+ * Funktie voor het maken van een nieuwe directory.
+ */
 
 static void dir_newfolder(WINDOW *w)
 {
@@ -1128,15 +1121,6 @@ void dir_newlink(WINDOW *w, char *target)
 }
 
 #endif
-
-
-
-
-/********************************************************************
- *																	*
- * Hulp funkties.													*
- *																	*
- ********************************************************************/
 
 
 /* 
@@ -1357,11 +1341,7 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item, boolean clip)
 		d = s; /* beginning of a directory line */
 
 		*d++ = ' ';
-/*
-		*d++ = (h->attrib.mode & S_IFMT) == S_IFDIR ? '\007' : ' '; /* dir mark */
-*/
 		*d++ = (h->tgt_type == ITM_FOLDER || h->tgt_type == ITM_PREVDIR) ? '\007' : ' '; /* dir mark */
-
 		*d++ = ' ';
 
 		p = h->name;
@@ -1444,7 +1424,6 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item, boolean clip)
 				 */
 
 				ltoa(h->attrib.size, t, 10); /* File size to string      */
-
 
 				/* Explicitely limit displayed size to 8 characters
 				 * display larger files as "12345678*" 
@@ -1538,20 +1517,6 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item, boolean clip)
 
 				/* These handle access rights for owner, group and others */
 	
-/* Note: this could be looped for brevity: */
-/*
-				*d++ = (h->attrib.mode & S_IRUSR) ? 'r' : '-';
-				*d++ = (h->attrib.mode & S_IWUSR) ? 'w' : '-';
-				*d++ = (h->attrib.mode & S_IXUSR) ? 'x' : '-';
-
-				*d++ = (h->attrib.mode & S_IRGRP) ? 'r' : '-';
-				*d++ = (h->attrib.mode & S_IWGRP) ? 'w' : '-';
-				*d++ = (h->attrib.mode & S_IXGRP) ? 'x' : '-';
-
-				*d++ = (h->attrib.mode & S_IROTH) ? 'r' : '-';
-				*d++ = (h->attrib.mode & S_IWOTH) ? 'w' : '-';
-				*d++ = (h->attrib.mode & S_IXOTH) ? 'x' : '-';
-*/
 				{
 					int j, bits[] = {S_IRUSR,S_IWUSR,S_IXUSR,S_IRGRP,S_IWGRP,S_IXGRP,S_IROTH,S_IWOTH,S_IXOTH};
 					char fl[] = {'r','w','x','r','w','x','r','w','x'};
@@ -1668,7 +1633,7 @@ static void dir_prtchar(DIR_WINDOW *dw, int column, int item, RECT *area, RECT *
 
 			/* Consider only lines containing text */
 
-			if ( s[c2] > 0 && s[3] > ' ' )
+			if ( s[3] != ' ' && s[3] != 0 )
 			{
 				if (link)
 					vst_effects(vdi_handle, italic);	
@@ -1695,7 +1660,7 @@ static void dir_prtchar(DIR_WINDOW *dw, int column, int item, RECT *area, RECT *
  ********************************************************************/
 
 /*
- * Count how many icons have to be drawin in a window
+ * Count how many icons have to be drawn in a window
  */
 
 long count_ic( DIR_WINDOW *dw, int sl, int lines )
@@ -1881,7 +1846,7 @@ void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 
 			/* Consider only lines with some text */
 
-			if ( s[3] > ' ' )
+			if ( s[3] != 0 && s[3] != ' ' )
 			{
 				vswr_mode( vdi_handle, MD_TRANS );
 
@@ -1949,12 +1914,6 @@ void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean clr,
 }
 
 
-/********************************************************************
- *																	*
- * Funkties voor scrollen.											*
- *																	*
- ********************************************************************/
-
 /* 
  * Funktie om een pagina naar boven te scrollen. 
  */
@@ -1968,11 +1927,9 @@ void dir_prtcolumn(DIR_WINDOW *dw, int column, RECT *area, RECT *work)
 }
 
 
-/********************************************************************
- *																	*
- * Funkties voor het openen en sluiten van windows.					*
- *																	*
- ********************************************************************/
+/*
+ * Remove a directory 
+ */
 
 static void dir_rem(DIR_WINDOW *w)
 {
@@ -1992,52 +1949,50 @@ void dir_close(WINDOW *w, int mode)
 {
 	char *p;
 
-	/* Reset the iconify flag for the window being closed */
-
 	if ( w != NULL )
+	{
 		((TYP_WINDOW *)w)->winfo->flags.iconified = 0;
 
-	if ((isroot(((DIR_WINDOW *) w)->path) == TRUE) || mode)
-	{
-		/* 
-		 * Either this is a root window, or it should be closed entirely;
-		 * In any case, close it.
-		 */
+		if ((isroot(((DIR_WINDOW *) w)->path) == TRUE) || mode)
+		{
+			/* 
+			 * Either this is a root window, or it should be closed entirely;
+			 * In any case, close it.
+			 */
 
-		xw_close(w);
-		dir_rem((DIR_WINDOW *) w);
-		wd_reset(NULL);
-		xw_delete(w);			/* after dir_rem (MP) */
-	}
-	else
-	{
-
-		/* 
-		 * Move one level up the diectory tree;
-		 * First, extract parent path from the window's path specification.
-		 * New memory is allocated for that; 
-		 */
-
-		if ((p = fn_get_path(((DIR_WINDOW *) w)->path)) != NULL)
+			xw_close(w);
+			dir_rem((DIR_WINDOW *) w);
+			wd_reset(NULL);
+			xw_delete(w);			/* after dir_rem (MP) */
+		}
+		else
 		{
 
-			/* Successful; free previous path */
+			/* 
+			 * Move one level up the diectory tree;
+			 * First, extract parent path from the window's path specification.
+			 * New memory is allocated for that; 
+			 */
 
-			free(((DIR_WINDOW *) w)->path);
+			if ((p = fn_get_path(((DIR_WINDOW *) w)->path)) != NULL)
+			{
 
-			((DIR_WINDOW *) w)->path = p;
+				/* Successful; free previous path */
 
-			dir_readnew((DIR_WINDOW *) w);
+				free(((DIR_WINDOW *) w)->path);
+
+				((DIR_WINDOW *) w)->path = p;
+
+				dir_readnew((DIR_WINDOW *) w);
+			}
 		}
 	}
 }
 
 
-/********************************************************************
- *																	*
- * Funkties voor het afhandelen van window events.					*
- *																	*
- ********************************************************************/
+/*
+ * Funkties voor het afhandelen van window events.
+ */
 
 
 static void dir_closed(WINDOW *w)
@@ -2099,6 +2054,8 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 	w->winfo = info;
 
 	wd_calcsize(info, &size); 
+
+	/* Now read the contents of the directory */
 
 	graf_mouse(HOURGLASS, NULL);
 	*error = dir_read(w);
@@ -2162,16 +2119,6 @@ boolean dir_add_window
 			fspec = (char *)thespec;
 		else
 		{
-/*
-#if _MINT_
-			if (mint)
-				fspec = strdup(DEFAULT_EXT);
-			else
-#endif	
-				fspec = strdup(TOSDEFAULT_EXT);
-*/
-
-
 			fspec = strdup(
 #if _MINT_
 					(mint) ? DEFAULT_EXT :
@@ -2182,9 +2129,7 @@ boolean dir_add_window
 		if (fspec == NULL)
 		{
 			/* Can't allocate a string for default file specification */
-/* done in strdup
-			xform_error(ENSMEM);
-*/
+
 			free(path);
 			return FALSE;
 		}
@@ -2258,7 +2203,6 @@ boolean dir_add_window
 							selection.selected = i;
 							selection.n = 1; 					
 							itm_select( dw, i, 3, TRUE );
-							itm_set_menu( dw );
 							break; /* don't search anymore */
 						}
 					}
@@ -2610,31 +2554,6 @@ static int itm_attrib(WINDOW *w, int item, int mode, XATTR *attr)
 }
 
 
-/* not needed anymore
-
-/*
- * Return name-length information about an object.
- * Note that this is valid only in dir.c; there is an
- * identically named, globally available routine in window.c
- */
-
-static long itm_info(WINDOW *w, int item, int which)
-{
-	long l = 0;
-
-	if ((which == ITM_PATHSIZE) || (which == ITM_FNAMESIZE))
-	{
-		l = strlen(((DIR_WINDOW *) w)->path); 	/* path length */
-		if (which == ITM_PATHSIZE)
-			return l;
-		if (((DIR_WINDOW *) w)->path[l - 1] != '\\')
-			l++;								/* add to total */
-	}
-	return l + strlen((*((DIR_WINDOW *) w)->buffer)[(long) item]->name);
-}
-*/
-
-
 /*
  * Is the item perhaps a link
  */
@@ -2643,6 +2562,7 @@ static boolean dir_islink(WINDOW *w, int item)
 {
 	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->link;
 }
+
 
 /* 
  * Funktie voor het zetten van de nieuwe status van de items in een
@@ -2684,6 +2604,7 @@ static void dir_setnws(DIR_WINDOW *w, boolean draw)
  * for the sake of colour icons when the background object has to be
  * redrawn as well.
  */
+
 #define MSEL 8 /* if so many icons change state, draw complete window */
 
 static void dir_drawsel(DIR_WINDOW *w)

@@ -63,12 +63,14 @@ typedef struct copydata
 	struct copydata *prev;
 } COPYDATA;
 
+boolean
+	rename_files = FALSE; 
+
 static boolean 
 	set_oldpos, 
 	overwrite, 
 	updatemode = FALSE,
-	restoremode = FALSE,
-	rename_files = FALSE; 
+	restoremode = FALSE;
 
 boolean cfdial_open;
 
@@ -139,9 +141,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 			break;
 	}
 
-	/*
-	 * In update or restore mode, override dialog title assignment
-	 */
+	/* In update or restore mode, override dialog title assignment */
 
 	if ( updatemode )
 		title = DTUPDAT;
@@ -241,24 +241,8 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
 	if ( cfdial_open == TRUE )
 	{
 
-/* can't do so because of transparency problems
-		if ( folder != NULL )
-		{
-			cv_fntoform(copyinfo + CPFOLDER, folder);
-			xd_draw(&cfdial, CPFOLDER, 0);
-		}
-		if ( file != NULL )
-		{
-			cv_fntoform(copyinfo + CPFILE, fn_get_name(file) ); 
-			xd_draw(&cfdial, CPFILE, 0);
-		}
+		/* Note: this can't be done selectively, because of transparency problems */
 
-		if ( dest != NULL )
-		{
-			cv_fntoform(copyinfo + CPDEST, dest);
-			xd_draw(&cfdial, CPDEST, 0);
-		}
-*/
 		if ( folder != NULL )
 			cv_fntoform(copyinfo + CPFOLDER, folder);
 		if ( file != NULL )
@@ -357,20 +341,17 @@ static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
 }
 
 
-/********************************************************************
- *																	*
- * Routine voor het tellen van het aantal files en folders in een	*
- * directory.						                                *
- * Also used to recursively search for a file/folder 				*
- * 																	*
- ********************************************************************/
+/*																
+ * Routine voor het tellen van het aantal files en folders in een directory.						                                *
+ * Also used to recursively search for a file/folder
+ */
 
 int cnt_items(const char *path, long *folders, long *files, long *bytes, int attribs, boolean search)
 {
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
 	int error, dummy;
-	char name [256];   					/* Can this be LNAME ? */
+	VLNAME name;   					/* Can this be LNAME ? */
 	XATTR attr;
 
 	int result = XSKIP;
@@ -732,11 +713,9 @@ static int linkcopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 #endif
 
 
-/********************************************************************
- *																	*
- * Routine voor het afhandelen van fouten.							*
- *																	*
- ********************************************************************/
+/*
+ * Routine voor het afhandelen van fouten.
+ */
  
 int copy_error(int error, const char *name, int function)
 {
@@ -770,13 +749,8 @@ int copy_error(int error, const char *name, int function)
 }
 
 
-/********************************************************************
- *																	*
- * Routine voor het controleren van het kopieren.					*
- *																	*
- ********************************************************************/
-
 /*
+ * Routine voor het controleren van het kopieren.
  * Check if all items can be copied (or deleted)
  */
 
@@ -886,8 +860,10 @@ static int _rename(char *old, int function)
 
 	char 
 		*new, 
-		*name, 
-		newfname[256]; 
+		*name;
+ 
+	VLNAME
+		newfname; 
 
 	/* Get new name from the dialog */
 
@@ -992,12 +968,8 @@ static int hndl_nameconflict
 
 	smode &= S_IFMT;
 
-	/* Does destination already exist ? If not, just return */
+	/* Does destination already exist ? */
 
-/*
-	if ((result = exist(sname, smode, *dname, &dmode, &dxattr, function)) != XEXIST)
-		return result;
-*/
 	result = exist(sname, smode, *dname, &dmode, &dxattr, function);
 
 	/* 
@@ -1143,7 +1115,8 @@ tos_version < 0x104
 			{
 				if ((button == NCOK) && strcmp(dupl, newname))
 				{
-					char *new, name[256]; /* DjV: Can this be a LNAME ? */
+					char *new; 
+					VLNAME name; /* Can this be a LNAME ? */
 
 					cv_formtofn(name, &nameconflict[NEWNAME]);
 
@@ -1505,9 +1478,17 @@ static int create_folder
 	boolean *chk
 )
 {
-	int error, result;
-	long nfiles, nfolders, nbytes;
-	char name[256];
+	int 
+		error, 
+		result;
+
+	long 
+		nfiles, 
+		nfolders, 
+		nbytes;
+
+	VLNAME 
+		name;
 
 
 	strcpy(name, fn_get_name(sname)); 
@@ -1572,7 +1553,7 @@ static int copy_path(const char *spath, const char *dpath,
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
 	int error, result;
-	char name[256];
+	VLNAME name;
 	XATTR attr;
 	unsigned int type;
 	boolean link;
@@ -1599,7 +1580,7 @@ static int copy_path(const char *spath, const char *dpath,
 
 					if ((stack->sname = x_makepath(stack->spath, name, &error)) != NULL)
 					{
-						upd_copyname(stack->dpath, stack->sname, NULL);
+						upd_copyname(stack->dpath, stack->sname, "");
 
 						if ((tmpres = create_folder(stack->sname, stack->dpath, &stack->dname, &attr, folders, files, bytes, function, &tmpchk)) == 0)
 						{
@@ -1621,7 +1602,6 @@ static int copy_path(const char *spath, const char *dpath,
 					{
 						*folders -= 1;
 						stack->result = (tmpres == XSKIP) ? stack->result : tmpres;
-						upd_copyname(NULL, "", NULL);
 					}
 				}
 
@@ -1640,7 +1620,6 @@ static int copy_path(const char *spath, const char *dpath,
 						stack->result = copy_error(error, name, function);
 					*files -= 1;
 					*bytes -= attr.size;
-					upd_copyname(NULL, NULL, "");
 				}
 			}
 			else
@@ -1749,9 +1728,6 @@ static boolean copy_list
 				else
 					result = copy_error(error, name, function);
 				*files -= 1;
-
-				upd_copyname( NULL, NULL, "");
-
 				break;
 			case ITM_FOLDER:
 				if ( function == CMD_TOUCH )	
@@ -1783,9 +1759,6 @@ static boolean copy_list
 					result = tmpres;
 
 				*folders -= 1;
-
-				upd_copyname( dest, "", "" );
-
 				break;
 			case ITM_DRIVE:
 				upd_copyname(dest, cpath, name );
@@ -1912,6 +1885,7 @@ static int del_one( const char *name )
 	return error;
 }
 
+
 /* 
  * Delete a single file or a link.
  * Il "follow" is true and the object is a link, both the link and the 
@@ -1993,7 +1967,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 					{
 						*folders -= 1;
 						stack->result = copy_error(error, name, CMD_DELETE);
-						upd_copyname( NULL, stack->spath, NULL );
+						upd_copyname( NULL, stack->spath, "" );
 					}
 				}
 				if (type == S_IFREG || type == S_IFLNK)
@@ -2010,7 +1984,6 @@ static int del_path(const char *path, const char *fname, long *folders,
 						stack->result = copy_error(error, name, CMD_DELETE);
 					*files -= 1;
 					*bytes -= attr.size;
-					upd_copyname(NULL, NULL, "");
 				}
 			}
 			else
@@ -2030,7 +2003,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 		{
 			if ((ready = pull(&stack, &result)) == FALSE)
 			{
-				upd_copyname(NULL, stack->sname, NULL);
+				upd_copyname(NULL, stack->sname, "");
 
 				stack->result = (result == 0) ? del_folder(stack->sname, CMD_DELETE, stack->result) : result;
 				*folders -= 1;
@@ -2038,7 +2011,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 
 				if ((stack->result != XFATAL) && (stack->result != XABORT))
 				{
-					upd_copyname(NULL, stack->spath, NULL);
+					upd_copyname(NULL, stack->spath, "");
 					upd_copyinfo(*folders, *files, *bytes);
 				}
 			}
@@ -2060,7 +2033,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 {
 	int i, item, error, result;	
 	ITMTYPE type;
-	const char *path, *name;
+	const char *cpath, *path, *name;
 	XATTR attr;
 	boolean ulink, link;
 
@@ -2081,7 +2054,9 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 			if ((type == ITM_FILE) || (type == ITM_PROGRAM) || link )
 			{
-				upd_copyname(NULL, NULL, name);
+				cpath = fn_get_path(path);
+
+				upd_copyname(NULL, cpath, name);
 
 				if ((error = itm_attrib(w, item, (link) ? 1 : 0, &attr)) == 0)
 				{
@@ -2094,12 +2069,13 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 				else
 					result = copy_error(error, name, CMD_DELETE);
 				*files -= 1;
-				upd_copyname(NULL, NULL, "");
+
+				free(cpath);
 			}
 			else
 			{
 				int tmpres;
-				upd_copyname(NULL, path, NULL);
+				upd_copyname(NULL, path, "");
 
 				tmpres = del_path(path, name, folders, files, bytes);
 				if (type == ITM_FOLDER)
@@ -2107,7 +2083,6 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 					result = (tmpres == 0) ? del_folder(path, CMD_DELETE, result) : tmpres;
 					*folders -= 1;
 				}
-				upd_copyname(NULL, NULL, "");
 			}
 			free(path);
 		}
@@ -2180,8 +2155,8 @@ boolean itmlist_op
 
 	switch (function )
 	{
-		case CMD_MOVE:
 		case CMD_COPY:
+		case CMD_MOVE:
 			result = check_copy(w, n, list, dest);
 			break;
 		case CMD_TOUCH:
@@ -2268,7 +2243,7 @@ boolean itmlist_op
 
 		/* Also, destination path is hidden if it doesn't make sense */
 
-		if ( function != CMD_COPY && function != CMD_MOVE )
+		if ( function != CMD_COPY  && function != CMD_MOVE )
 		{
 			copyinfo[CPT3].ob_flags |= HIDETREE;
 			copyinfo[CPDEST].ob_flags |= HIDETREE;
@@ -2337,14 +2312,11 @@ boolean itmlist_op
 }
 
 
-/********************************************************************
- *																	*
- * Hoofdprogramma kopieer gedeelte.									*
- *																	*
- ********************************************************************/
+/*
+ * Hoofdprogramma kopieer gedeelte.
+ */
 
-boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
-				  int *list, int kstate)
+boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate)
 {
 	const char *program;
 	ITMTYPE type;

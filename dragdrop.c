@@ -27,7 +27,7 @@
 #include <mint.h>
 #include <error.h>
 
-static char pipename[] = "U:\\PIPE\\DRAGDROP.AA";
+static char pipename[24];
 static void  *oldpipesig;
 
 
@@ -57,15 +57,22 @@ static void  *oldpipesig;
  * -2 if appl_write fails
  */
 
-int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char exts[] )
+int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
 {
-	int fd, i;
-	int msg[8];
-	long fd_mask;
-	char c;
+	int 
+		fd,		/* pipe handle */ 
+		i,
+		msg[8];	/* message buffer */
 
-	pipename[17] = 'A';
-	pipename[18] = 'A' - 1;
+	long 
+		fd_mask;
+
+	char 
+		c = 0;
+
+	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
+
+	/* Find the first available pipe */
 
 	fd = -1;
 	do
@@ -73,6 +80,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 		pipename[18]++;
 		if (pipename[18] > 'Z')
 		{
+			pipename[18] = 'A'; 
 			pipename[17]++;
 			if (pipename[17] > 'Z')
 				break;
@@ -80,13 +88,13 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 
 		/* Mode 2 means "get EOF if nobody has pipe open for reading" */
 
-		fd = Fcreate(pipename, 2);
+		fd = (int)Fcreate(pipename, 0x02);
 
 	} while (fd == EACCDN);
 
 	if (fd < 0)
 	{
-		/*	v_gtext(v_hl,736,1,"Fcreate error"); */
+		/* fcreate error */
 		return fd;
 	}
 
@@ -99,12 +107,12 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 	msg[4] = msx;
 	msg[5] = msy;
 	msg[6] = kstate;
-	msg[7] = ( ((int)pipename[17]) << 8) | (pipename[18] /* &0xff */ ); /* was [18] THEN [17] */
+	msg[7] = ( ( ((int)pipename[17]) << 8) + pipename[18] );
 	i = appl_write(dpid, 16, msg);
 
 	if (i == 0)
 	{
-		/*	v_gtext(v_hl,736,1,"appl_write error"); */
+		/* appl_write error */
 		Fclose(fd);
 		return -2;
 	}
@@ -117,7 +125,6 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 	if (!i or !fd_mask)
 	{	
 		/* timeout happened */
-		/*	v_gtext(v_hl,736,1,"ddcreate: Fselect timeout"); */
 		Fclose(fd);
 		return -1;
 	}
@@ -128,11 +135,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 
 	if ( (i != 1) || (c != DD_OK) )
 	{
-	/*	if (i != 1)
-			v_gtext(v_hl,736,1,"ddcreate: read error");
-		else
-			v_gtext(v_hl,736,1,"ddcreate: DD_NAK");
-	*/	
+		/* read error or DD_NAK */
 		Fclose(fd);
 		return -1;
 	}
@@ -143,7 +146,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char e
 
 	if (i != DD_EXTSIZE)
 	{
-		/*	v_gtext(v_hl,736,1,"Error reading extensions");	*/
+		/* error reading extensions */
 		Fclose(fd);
 		return -1;
 	}
@@ -174,8 +177,9 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
-	hdrlen = 9 + strlen(name);
-	i = (int)Fwrite(fd, 2L, &hdrlen);
+	hdrlen = 9 + strlen(name); /* in Magic docs it is 8 + ... */
+
+	i = (int)Fwrite(fd, 2L, &hdrlen);	/* send header length */
 
 	/* Now send the header */
 
@@ -184,7 +188,7 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 	i = Fwrite(fd, 4L, ext);
 	i += Fwrite(fd, 4L, &size);
-	i += Fwrite(fd, (long)strlen(name)+1, name);
+	i += Fwrite(fd, (long)strlen(name)+1, name); /* in Magic docs there is no + 1 */
 
 	if (i != hdrlen) 
 		return DD_NAK;
@@ -196,17 +200,21 @@ int ddstry(int fd, char *ext, char *name, long size)
 	if (i != 1) 
 		return DD_NAK;
 
-	return c;
+	return (int)c;
 
 }
 
 
 /*
- * Close a drag & drop operation
+ * Close a drag & drop operation. If handle is -1, don't do anything.
  */
 
 void ddclose(int fd)
 {
-	Psignal(SIGPIPE, oldpipesig);
-	Fclose(fd);
+	if ( fd >=0 )
+	{
+		Psignal(SIGPIPE, oldpipesig);
+		Fclose(fd);
+	}
+	fd = -1;
 }

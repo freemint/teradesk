@@ -63,8 +63,10 @@ int xe_keycode(int scancode, int kstate)
 	if ((scan < 59) || (scan == 74) || (scan == 78) || (scan == 83) ||
 		(scan == 96) || ((scan >= 99) && (scan <= 114)) || (scan >= 117))
 	{
+
 		if (scan >= 120)
 			scan -= 118;
+
 
 		if ((keycode = scancode & 0xFF) == 0)
 		{
@@ -74,6 +76,7 @@ int xe_keycode(int scancode, int kstate)
 			keycode = toupper((int) ((unsigned char) (((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
 #endif
 		}
+
 		keycode |= nkstate;
 	}
 	else
@@ -89,6 +92,8 @@ int xe_keycode(int scancode, int kstate)
 /* 
  * Vervanging van evnt_multi, die eigen keycode terug levert. 
  */
+
+int xe_wmess;
 
 int xe_xmulti(XDEVENT *events)
 {
@@ -111,10 +116,6 @@ int xe_xmulti(XDEVENT *events)
 
 	/* No message events when a dialog is opened and the dialog is not in a window. */
 
-/* test only
-	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW))
-		events->ev_mflags &= ~MU_MESAG;
-*/
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
 
@@ -135,11 +136,32 @@ int xe_xmulti(XDEVENT *events)
 
 #endif
 
+	
+	
+if 
+( 
+	(
+		( (events->ev_mwhich & MU_MESAG) !=0 ) 
+	)
+	&&
+	( 
+		(events->ev_mmgpbuf[0] == WM_TOPPED) ||
+		(events->ev_mmgpbuf[0] == WM_CLOSED) ||
+		(events->ev_mmgpbuf[0] == WM_NEWTOP) 
+	)
+)
+{
+	xe_wmess = 1;
+
+}
+else
+	xe_wmess = 0;
+
+
 	if (((r = events->ev_mwhich) & MU_MESAG) && (events->ev_mmgpbuf[0] == AV_SENDKEY))
 	{
 		events->ev_mkreturn = events->ev_mmgpbuf[4];
 		events->ev_mmokstate = events->ev_mmgpbuf[3];
-
 		r &= ~MU_MESAG;
 		r |= MU_KEYBD;
 	}
@@ -147,6 +169,9 @@ int xe_xmulti(XDEVENT *events)
 	if (r & MU_KEYBD)
 	{
 		events->xd_keycode = xe_keycode(events->ev_mkreturn, events->ev_mmokstate);
+
+		if (events->ev_mmgpbuf[0] == AV_SENDKEY)
+			events->xd_keycode |= XD_SENDKEY;
 
 		if (!xd_dialogs && (level == 1))
 		{
@@ -169,11 +194,8 @@ int xe_xmulti(XDEVENT *events)
 			{
 				bell();
 				xw_set(xd_dialogs->window, WF_TOP);
-				r &= ~MU_MESAG; /* DjV 000 */
+				r &= ~MU_MESAG; 
 			}
-/* DJV 000
-			r &= ~MU_MESAG;
-*/
 		}
 		else if (((events->ev_mmgpbuf[0] == WM_TOPPED) ||
 				 (events->ev_mmgpbuf[0] == WM_NEWTOP)) &&

@@ -565,14 +565,11 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 	switch (button)
 	{
 		case WDFOK:
-			msg[0] = FONT_CHANGED;
-/* it seems that this should contain ap_id of teradesk, not the client app.
-			msg[1] = fnt_dial->ap_id;
-*/
 			/* 
 			 * Unfortunately, message structure is not the same 
 			 * as for VA-messages
 			 */
+			msg[0] = FONT_CHANGED;
 			msg[1] = ap_id;
 			msg[2] = 0;
 			msg[3] = fnt_dial->win;

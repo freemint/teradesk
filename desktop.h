@@ -598,126 +598,128 @@
 
 #define MVALIDCF         102 /* Free String */
 
-#define MEPAL            103 /* Free String */
+#define BADCFG           103 /* Free String */
 
-#define BADCFG           104 /* Free String */
+#define TFRVAL           104 /* Free String */
 
-#define TFRVAL           105 /* Free String */
+#define MCOMPOK          105 /* Free String */
 
-#define MCOMPOK          106 /* Free String */
+#define MNOCOMP          106 /* Free String */
 
-#define MNOCOMP          107 /* Free String */
+#define DTFONSEL         107 /* Free String */
 
-#define DTFONSEL         108 /* Free String */
+#define DTNEWDIR         108 /* Free String */
 
-#define DTNEWDIR         109 /* Free String */
+#define DTOPENIT         109 /* Free String */
 
-#define DTOPENIT         110 /* Free String */
+#define MNOITEM          110 /* Free String */
 
-#define MNOITEM          111 /* Free String */
+#define TDONTEDI         111 /* Free String */
 
-#define TDONTEDI         112 /* Free String */
+#define TNOLOCK          112 /* Free String */
 
-#define TNOLOCK          113 /* Free String */
+#define DTFIINF          113 /* Free String */
 
-#define DTFIINF          114 /* Free String */
+#define DTFOINF          114 /* Free String */
 
-#define DTFOINF          115 /* Free String */
+#define DTDRINF          115 /* Free String */
 
-#define DTDRINF          116 /* Free String */
+#define TCRETIM          116 /* Free String */
 
-#define TCRETIM          117 /* Free String */
+#define TACCTIM          117 /* Free String */
 
-#define TACCTIM          118 /* Free String */
+#define TNOEDIT          118 /* Free String */
 
-#define TNOEDIT          119 /* Free String */
+#define DTAFONT          119 /* Free String */
 
-#define DTAFONT          120 /* Free String */
+#define TFSOPEN          120 /* Free String */
 
-#define TFSOPEN          121 /* Free String */
+#define DTNEWLNK         121 /* Free String */
 
-#define DTNEWLNK         122 /* Free String */
+#define TLINKTO          122 /* Free String */
 
-#define TLINKTO          123 /* Free String */
+#define DTLIINF          123 /* Free String */
 
-#define DTLIINF          124 /* Free String */
+#define TNOTGT           124 /* Free String */
 
-#define TNOTGT           125 /* Free String */
+#define DTUPDAT          125 /* Free String */
 
-#define DTUPDAT          126 /* Free String */
+#define DTRESTO          126 /* Free String */
 
-#define DTRESTO          127 /* Free String */
+#define SNFILES          127 /* Free String */
 
-#define SNFILES          128 /* Free String */
+#define SFILES           128 /* Free String */
 
-#define SFILES           129 /* Free String */
+#define SMULTI           129 /* Free String */
 
-#define SMULTI           130 /* Free String */
+#define DWTITLE          130 /* Free String */
 
-#define ARESTLOW         131 /* Alert-string */
+#define MENUREG          131 /* Free String */
 
-#define AVDIERR          132 /* Alert-string */
+#define ARESTLOW         132 /* Alert-string */
 
-#define ALOADCFG         133 /* Alert-string */
+#define AVDIERR          133 /* Alert-string */
 
-#define ASAVECFG         134 /* Alert-string */
+#define ALOADCFG         134 /* Alert-string */
 
-#define AAPPLPM          135 /* Alert-string */
+#define ASAVECFG         135 /* Alert-string */
 
-#define APRGNFND         136 /* Alert-string */
+#define AAPPLPM          136 /* Alert-string */
 
-#define AAPPNFND         137 /* Alert-string */
+#define APRGNFND         137 /* Alert-string */
 
-#define AILLCOPY         138 /* Alert-string */
+#define AAPPNFND         138 /* Alert-string */
 
-#define AILLDEST         139 /* Alert-string */
+#define AILLCOPY         139 /* Alert-string */
 
-#define ANOCOPY          140 /* Alert-string */
+#define AILLDEST         140 /* Alert-string */
 
-#define ANODRAGP         141 /* Alert-string */
+#define ANOCOPY          141 /* Alert-string */
 
-#define ANOPRINT         142 /* Alert-string */
+#define ANODRAGP         142 /* Alert-string */
 
-#define AFNEXIST         143 /* Alert-string */
+#define ANOPRINT         143 /* Alert-string */
 
-#define AFNPRG           144 /* Alert-string */
+#define AFNEXIST         144 /* Alert-string */
 
-#define AICNPMEM         145 /* Alert-string */
+#define AFNPRG           145 /* Alert-string */
 
-#define AICNNFND         146 /* Alert-string */
+#define AICNPMEM         146 /* Alert-string */
 
-#define AICNFNF          147 /* Alert-string */
+#define AICNNFND         147 /* Alert-string */
 
-#define AICNFRD          148 /* Alert-string */
+#define AICNFNF          148 /* Alert-string */
 
-#define AREMICNS         149 /* Alert-string */
+#define AICNFRD          149 /* Alert-string */
 
-#define APRNRESP         150 /* Alert-string */
+#define AREMICNS         150 /* Alert-string */
 
-#define AERADISK         151 /* Alert-string */
+#define APRNRESP         151 /* Alert-string */
 
-#define AFMTERR          152 /* Alert-string */
+#define AERADISK         152 /* Alert-string */
 
-#define AERRACC          153 /* Alert-string */
+#define AFMTERR          153 /* Alert-string */
 
-#define ALRTQUIT         154 /* Alert-string */
+#define AERRACC          154 /* Alert-string */
 
-#define ADUPKEY          155 /* Alert-string */
+#define ALRTQUIT         155 /* Alert-string */
 
-#define AABOOP           156 /* Alert-string */
+#define ADUPKEY          156 /* Alert-string */
 
-#define AGENALRT         157 /* Alert-string */
+#define AABOOP           157 /* Alert-string */
 
-#define AFILEDEF         158 /* Alert-string */
+#define AGENALRT         158 /* Alert-string */
 
-#define AGFALERT         159 /* Alert-string */
+#define AFILEDEF         159 /* Alert-string */
 
-#define AUNKRTYP         160 /* Alert-string */
+#define AGFALERT         160 /* Alert-string */
 
-#define ACOMPDIF         161 /* Alert-string */
+#define AUNKRTYP         161 /* Alert-string */
 
-#define AVALIDCF         162 /* Alert-string */
+#define ACOMPDIF         162 /* Alert-string */
 
-#define ADUPFLG          163 /* Alert-string */
+#define AVALIDCF         163 /* Alert-string */
 
-#define AOPENFIL         164 /* Alert-string */
+#define ADUPFLG          164 /* Alert-string */
+
+#define AOPENFIL         165 /* Alert-string */

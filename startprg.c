@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -156,7 +157,7 @@ static void close_windows(void)
 {
 	int handle;
 
-	va_delall();
+	va_delall(-1);
 
 	if ( aes_version >= 0x140 )
 		wind_new();
@@ -177,6 +178,7 @@ static void close_windows(void)
 /* 
  * Execute a singletask program with a command line
  */
+
 
 static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_type)
 {
@@ -285,9 +287,12 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			 * moment and waits for a mouse button click, for reasons unclear.
 			 * This seems to be fixed by simulating a click here.
 			 * As far as I can see there are no bad effects on other apps?
+			 * Note: in single-tos, all windows will by this time have been
+			 * closed, so the criteria in sim_click for simulating a click
+			 * will always be satisfied.
 			 */
-
-			sim_click();
+		
+			sim_click(); 
 
 			/* Start a program using Pexec */
 
@@ -361,7 +366,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 			clean_up();
 		}
-
+			
 		shel_write(SHW_NOEXEC, 1, 0, "", "\0\0");
 
 		/* Draw the desktop and menu bar, then reopen all windows */
@@ -409,20 +414,26 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
  * (Thing seems to suffer from the same problem).
  * Code below seems to cure that:
  * a mouse click is simulated (after executing a program) by appl_tplay.
- * Note: sim_click() is also used when starting a program, see above.
+ * Note1: sim_click() is also used when starting a program, see above.
+ * Note2: code below seems to be a woring compromise fit both for
+ * the unpatched and the patched TOS 2.06.
+ * Note 3: TOS 3.06 being essentially the same as 2.06, this should
+ * apply to it, too ???
  */
 
 void sim_click(void)
 {
  
-	if ( (tos_version >= 0x206)  
+	if ( (tos_version == 0x206 || tos_version == 0x306 )  
 #if _MINT_
 	             && !(mint || geneva) 
 #endif
 	   ) 
 	{
 		WINDOW *tw;
-		int twt;
+		XDEVENT events;
+
+		int twt = 0, p[8] = {0,1, 1,1, 0,1, 0,0};
 
 		tw = xw_top();
 
@@ -431,10 +442,19 @@ void sim_click(void)
 
 		if ( twt != DIR_WIND && twt != TEXT_WIND )
 		{
-			int p[8] = {0,1, 1,1, 0,1, 0,0};
-			appl_tplay( (void *)(&p), 1, 4 );
-			appl_tplay( (void *)(&p[4]), 1, 4 );
+			appl_tplay( (void *)(&p), 2, 4 );
 		}
+
+		events.ev_mflags = MU_BUTTON | MU_TIMER;
+		events.ev_mbclicks = 0x102;
+		events.ev_mbmask = 3;
+		events.ev_mbstate = 0;
+		events.ev_mm1flags = 0;
+		events.ev_mm2flags = 0;
+		events.ev_mtlocount = 100;
+		events.ev_mthicount = 0;
+
+		xe_xmulti(&events); 
 	}
 }
 
@@ -684,7 +704,7 @@ void start_prg
 		/* Fix a TOS bug */
 
 		sim_click();
-
+ 
 		if (error < 0)
 			xform_error(error);
 	}

@@ -124,6 +124,7 @@ extern WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 extern void xw_open(WINDOW *wd, RECT *size);
 extern void xw_close(WINDOW *w);
 extern void xw_delete(WINDOW *w);
+extern void xw_closedelete(WINDOW *w);
 
 extern void xw_set(WINDOW *w, int field,...);
 extern void xw_get(WINDOW *w, int field,...);
@@ -133,6 +134,7 @@ extern void xw_calc(int w_ctype, int w_flags, RECT *input,
 extern WINDOW *xw_find(int x, int y);
 extern WINDOW *xw_hfind(int handle);
 extern WINDOW *xw_top(void);
+extern void xw_note_top(WINDOW *w);
 extern int xw_exist(WINDOW *w);
 extern WINDOW *xw_first(void);
 WINDOW *xw_last(void);

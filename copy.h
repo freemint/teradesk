@@ -32,6 +32,7 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 #define CMD_TOUCH    8 
 
 extern boolean cfdial_open;
+extern boolean rename_files;
 
 int open_cfdialog(long folders, long files, long bytes, int function);
 void close_cfdialog(int button);

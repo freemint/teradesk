@@ -67,7 +67,8 @@ typedef struct
 	int nfiles;					/* number of files in directory */
 	int nvisible;				/* number of visible files in directory */
 	int nselected;
-	long usedbytes;
+	long usedbytes;				/* total size of files in the dir. */
+	long visbytes;				/* total size of visible files */
 	int namelength;				/* length of longest name in the directory */
 	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
 							/* ref to row of ref to NDTA */

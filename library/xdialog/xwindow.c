@@ -41,6 +41,30 @@ static WINDOW *windows = NULL;		/* lijst met windows. */
 static WINDOW *desktop;				/* pointer to desktop window. */
 WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 
+
+#ifdef __PUREC__
+	extern int ap_id;		/* Defined in application. */
+	#define aes_pid ap_id
+#else
+	#define aes_pid gl_apid
+#endif
+
+/*
+ * Send a message to this or other window owner
+ */
+
+static void xw_send(WINDOW *w, int messid )
+{
+	int message[8];
+
+	memset(message, 0, (size_t)16 );
+
+	message[0] = messid;
+	message[1] = aes_pid;
+	message[3] = w->xw_handle;
+	appl_write(w->xw_ap_id, 16, message);
+}
+
 /*
  * Stuur een redraw boodschap naar een window.
  *
@@ -56,12 +80,6 @@ WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 
 void xw_send_redraw(WINDOW *w, RECT *area)
 {
-#ifdef __PUREC__
-	extern int ap_id;		/* Defined in application. */
-	#define aes_pid ap_id
-#else
-	#define aes_pid gl_apid
-#endif
 
 	int message[8];
 
@@ -134,21 +152,27 @@ WINDOW *xw_top(void)
 	int handle;
 	WINDOW *w;
 
-	xw_get(NULL, WF_TOP, &handle);
+	xw_get(NULL, WF_TOP, &handle);		/* the real top window */
+
 
 	if ((w = xw_hfind(handle)) != NULL)
+	{
+		if ( w != windows && w->xw_type == ACC_WIND ) 
+			xw_note_top(w);
 		return w;
+	}
+
 
 	w = windows;
 
 	while (w)
 	{
 		if (w->xw_opened)
-			return w;
+			return w;					/* else, first teradesk's window */
 		w = w->xw_next;
 	}
 
-	return desktop;
+	return desktop;						/* or the desktop, if none other */
 }
 
 
@@ -216,25 +240,15 @@ WINDOW *xw_last(void)
 		return w;
 	}
 	else
-	{
 		return NULL;
-	}
 }
 
-
 /*
- * Funktie die van een bepaald window het bovenste window maakt.
- * Set a window to be the top window
- *
- * Parameters:
- *
- * w	- window dat het bovenste moet worden.
+ * Noify a window as the top window
  */
 
-static void xw_set_top(WINDOW *w)
+void xw_note_top(WINDOW *w)
 {
-	wind_set(w->xw_handle, WF_TOP, w->xw_handle);
-
 	if (w != windows)
 	{
 		if (w->xw_next != NULL)
@@ -250,6 +264,25 @@ static void xw_set_top(WINDOW *w)
 	}
 }
 
+/*
+ * Funktie die van een bepaald window het bovenste window maakt.
+ * Set a window to be the top window
+ *
+ * Parameters:
+ *
+ * w	- window dat het bovenste moet worden.
+ */
+
+static void xw_set_top(WINDOW *w)
+{
+	if ( w->xw_type == ACC_WIND )
+		xw_send(w, WM_TOPPED);
+	else
+		wind_set(w->xw_handle, WF_TOP, w->xw_handle);
+
+	xw_note_top(w);
+}
+
 
 /*
  * Funktie voor het cyclen van windows. De funktie maakt van het
@@ -258,18 +291,13 @@ static void xw_set_top(WINDOW *w)
 
 void xw_cycle(void)
 {
+
 	WINDOW 
-		*w = windows, 
 		*nt = NULL;
 
 	/* Find the last open window */
 
-	while (w != NULL)
-	{
-		if (w->xw_opened)
-			nt = w;
-		w = w->xw_next;
-	}
+	nt = xw_last();
 
 	/* Set it as top window */
 
@@ -746,7 +774,12 @@ int xw_hndlkey(int scancode, int keystate)
 
 	if (w != NULL)
 	{
-		if (w->xw_func->wd_hndlkey != 0)
+		if ( scancode == 0x2217 ) /* ^W from AV-protocol client */
+		{
+			xw_cycle();
+			return TRUE;
+		}		
+		else if (w->xw_func->wd_hndlkey != 0)
 			return w->xw_func->wd_hndlkey(w, scancode, keystate);
 		else
 			return FALSE;
@@ -1133,6 +1166,7 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 
 	if (windows != NULL)
 		windows->xw_prev = w;
+
 	w->xw_prev = NULL;
 	w->xw_next = windows;
 	windows = w;
@@ -1176,13 +1210,20 @@ void xw_open(WINDOW *w, RECT *size)
 
 static void xw_rem(WINDOW *w)
 {
+	/* Take care of the next and the previous */
+
 	if (w->xw_prev == NULL)
+		/* This was the first window; now, the next one is the first */
 		windows = w->xw_next;
 	else
+		/* This is not the first one; mark the next window as the next from the previous */
 		w->xw_prev->xw_next = w->xw_next;
 
 	if (w->xw_next != NULL)
+		/* Mark the previous window in the next one */
 		w->xw_next->xw_prev = w->xw_prev;
+
+	/* Release memory for this window */
 
 	(*xd_free)(w);
 }
@@ -1203,20 +1244,15 @@ void xw_close(WINDOW *w)
 	WINDOW *tw;
 
 	if (xw_exist(w))
-	{
-		if ( w->xw_type != ACC_WIND )
-			wind_close(w->xw_handle);
+	{	
+		if ( w->xw_type == ACC_WIND )
+			xw_send(w, WM_CLOSED);
 		else
-		{
-			int message[8];
-			memset(message, 0, (size_t)16);
-			message[0] = WM_CLOSED;
-			appl_write(w->xw_ap_id, 16, message);
-		}
+			wind_close(w->xw_handle);
 
 		w->xw_opened = FALSE;
 		w->xw_iflag = 0;
-		if ((tw = xw_top()) != NULL)
+		if ( (tw = xw_top()) != NULL)
 		{
 			if (tw->xw_func->wd_top != 0L)
 				tw->xw_func->wd_top(tw);
@@ -1243,6 +1279,17 @@ void xw_delete(WINDOW *w)
 			wind_delete(w->xw_handle);
 		xw_rem(w);
 	}
+}
+
+
+/*
+ * Close and delete a window
+ */
+
+void xw_closedelete(WINDOW *w)
+{
+	xw_close(w);
+	xw_delete(w);
 }
 
 

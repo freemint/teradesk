@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
@@ -416,10 +417,8 @@ int voptions(void)
 	if ( (vdo == 0) && ( over != 0xffffffffL ) )
   		set_opt( vidoptions, options.V2_2.vprefs, VO_OVSCAN, VOVERSCN ); 
 	else
-		vidoptions[VOVERSCN].ob_state |= DISABLED;
-#else
-	vidoptions[VOVERSCN].ob_flags |= HIDETREE;
 #endif
+		vidoptions[VOVERSCN].ob_flags |= HIDETREE;
 	
 	/* Dialog... */
 	

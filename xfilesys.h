@@ -165,6 +165,7 @@ int x_mkdir(const char *path);
 int x_rmdir(const char *path);
 int x_mklink(const char *newname, const char *oldname);
 int x_rdlink( int tgtsize, char *tgt, const char *linkname );
+char *x_pathlink( char *tgtname, char *linkname );
 char *x_fllink( char *linkname );
 int x_dfree(DISKINFO *diskinfo, int drive);
 int x_getdrv(void);

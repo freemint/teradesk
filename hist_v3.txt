@@ -2,6 +2,64 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                                     2002, 2003, 2004  Dj. Vukovic.
 
+Version 3.31
+------------
+
+- Corrected position of an object in desktop.rsc (Info... dialog).
+
+- Fixed a bug in handling symbolic links without a path to the target.
+  (path of the link is assumed now).
+
+- Fixed a bug in passing parameters after the program name in VA_PROGSTART 
+  and in Open... dialog.
+
+- Fixed a bug of not being able to display items with names starting
+  with a character code > 127.
+
+- Fixed a bug in redrawing dialog and windows after font changes.
+
+- Fixed a bug in passing parameters in drag & drop.
+
+- Fixed a bug which crashed the desktop if an attempt was made to
+  open more than one item through Open...
+
+- More relaxed application of VA_START and AV_EXIT to those AV-protocol 
+  clients which do not correctly sign-on / off with the AV-server.
+
+- Improved the initial implementation of VA_PATH_UPDATE which interfered 
+  with the handshake for some other AV-protocol messages; a client could 
+  freeze during some operations.
+
+- Improved cycling of AV-protocol-client windows.
+
+- Improved display of item names during copying/moving/deleting.
+
+- Positions and sizes of iconified windows are correctly saved in the 
+  configuration file.
+
+- Redesigned routines for enabling/disabline menu items depending on
+  the context; this resulted in reduction of code size, welcome to counter
+  the increase caused by other changes.
+
+- More logical calculation of total items size in info lines of directory
+  windows- only items matching the current mask (i.e. visible ones) 
+  are summed up.
+
+- Better handling of a TOS 2.06 bug which manifested itself as a need
+  for an additional mouseclick after (and sometimes before) a program
+  was started, and there were no windows open. Version 3.30 did not 
+  work well in this respect with unpatched TOS 2.06 (possibly relevant 
+  in TOS 3.06 as well ?)
+
+- Clicking on desktop area now properly tops TeraDesk (may not work with 
+  all AESses).
+
+- Some left-over strings moved from the code to the resource file.
+
+- More relaxed treatment of character codes in order to enable dialog 
+  and menu hotkeys with characters particular to other languages
+  (the upper half of the 256-character set). 
+
 
 Version 3.30
 ------------

@@ -66,9 +66,7 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	/* Determine slider position */
 
 	s = sl->n - sl->lines;
-	tree[sl->slider].r.y = (s > 0) ? (int) (((long) (tree[sl->sparent].r.h - sh) * (long) sl->line) / (long) s) : 0;
-
-	tree[sl->slider].r.y += aes_ver3d;
+	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long) (tree[sl->sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
 
 	if (info != NULL)
 		xd_draw(info, sl->sparent, MAX_DEPTH);
@@ -128,11 +126,16 @@ static void do_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	long lines;
 
 	wind_update(BEG_MCTRL);
-	newpos = graf_slidebox(tree, sl->sparent, sl->slider, 1);
+	newpos = (long)graf_slidebox(tree, sl->sparent, sl->slider, 1);
 	wind_update(END_MCTRL);
 
+	/* fix what seems to be a bug in graf_slidebox in AES4.1 ? */
+	if ( newpos < 40 )
+		newpos = 0;
+
 	lines = (long) (sl->n - sl->lines);
-	sl->line = (int) (((long) newpos * lines + 500L) / 1000L);
+	sl->line = (int) (((long) newpos * lines) / 1000L);
+
 	sl_set_slider(tree, sl, info);
 }
 

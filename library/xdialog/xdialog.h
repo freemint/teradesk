@@ -44,6 +44,7 @@
 #define XD_SHIFT		0x0100
 #define XD_CTRL			0x0200
 #define XD_ALT			0x0400
+#define XD_SENDKEY		0x2000	/* mark that this is passed through AV */
 #define XD_SCANCODE		0x8000
 
 /* Extended types (1 t/m 63) */

@@ -64,6 +64,8 @@
 Options options;
 V3_options v3_options;
 
+extern SEL_INFO selection;
+
 CfgNest opt_config, short_config, dsk_config;
 
 /* Root level of configuration data */
@@ -205,12 +207,13 @@ SCRINFO screen_info;
 FONT def_font;
 
 static int 
-	menu_items[5] = {MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
+	menu_items[6] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
 
 #if _MINT_
 boolean
 	mint = FALSE, 		/* true if Mint  is present  */
 	magx = FALSE,		/* True if MagiC is present  */	
+	naes = FALSE,		/* TRUE if N.AES is present  */
 	geneva = FALSE;		/* True if Geneva is present */
 
 int 
@@ -433,7 +436,7 @@ static void disp_short
 			string[i--] = 'D';
 			break;
 		default:				/* Other  */
-			if ( kbshort ) 
+			if ( kbshort != 0 ) 
 				string[i--] =  (char)(kbshort & 0xFF);
 			break; 	
 	}
@@ -493,7 +496,7 @@ static void ins_shorts(void)
  * Check for duplicate or invalid keys in menu shortcuts.
  */
 
-static boolean check_key(int button, int i, int *tmp)
+static boolean check_key(int button, int i, unsigned int *tmp)
 {
 	int  j;
 
@@ -508,7 +511,7 @@ static boolean check_key(int button, int i, int *tmp)
 		for ( j = 0; j <= NITEM; j++ ) 
 		{
 			/* XD_ALT below in order to skip items related to menu boxes */
-			if (   ( (tmp[i] & XD_SCANCODE) != 0 )
+			if (   ( ( (tmp[i] & XD_SCANCODE) != 0 ) && ( (tmp[i] & 0xFF) < 128) )
 		    	|| (   (tmp[i] & ~XD_ALT) != 0 && (i != j) && tmp[i] == tmp[j] ) /* duplicate */
 				|| tmp[i] == (XD_CTRL | BACKSPC) /* ^BS illegal, can't differentiate */
 				|| tmp[i] == (XD_CTRL | TAB)	 /* ^TAB illegal, can't differentiate */
@@ -579,12 +582,15 @@ static void setpreferences(void)
 
 	static /* DjV 075 why static ??? */ XDINFO prefinfo; 
 	static int menui = MFIRST;/* .rsc index of currently displayed menu item */
-	int mi;					/* menui - MFIRST */
-	int redraw;				/* true if to redraw menu item and key def */
-	int lm;					/* length of text field in current menu item */
-	int lf;					/* length of form for menu item text */
-	int i;				 	/* counters */
-	int tmp[NITEM+2];		/* temporary kbd shortcuts (until OK'd) */
+
+	int 
+		mi,					/* menui - MFIRST */
+		redraw,				/* true if to redraw menu item and key def */
+		lm,					/* length of text field in current menu item */
+		lf,					/* length of form for menu item text */
+		i;					/* counters */
+
+	unsigned int tmp[NITEM+2];		/* temporary kbd shortcuts (until OK'd) */
 	char aux[5];			/* temp. buffer for string manipulation */
 	char *tabsize = setprefs[TABSIZE].ob_spec.tedinfo->te_ptext;
 
@@ -660,14 +666,19 @@ static void setpreferences(void)
 				case 0:						/* nothing defined */
 					break;
 				case 1:						/* single-character shortcut */
-					tmp[mi] = (int)aux[0];
+					tmp[mi] = aux[0] & 0x00FF;
 					break;
 				case 2:						/* two-character ^something shortcut */
-					if (    aux[0] == '^' 
-					     && aux[1] >= 'A'
-						 && aux[1] <= 'Z'
-					   )
-						tmp[mi] =  (int)aux[1] | XD_CTRL;
+					if 
+					(    
+						(aux[0] == '^')  &&
+					
+					    ( 
+							((aux[1] >= 'A') && (aux[1] <= 'Z')) || 
+							( (aux[i] & 80) != 0 )
+						)
+					)
+						tmp[mi] = (aux[1] & 0x00FF) | XD_CTRL;
 					else
 						tmp[mi] = XD_CTRL;  /* illegal/ignored menu object */
 					break;	
@@ -854,6 +865,7 @@ static void short_default(void)
 	options.V2_2.kbshort[MQUIT - MFIRST] =    XD_CTRL | 'Q';
 	options.V2_2.kbshort[MDELETE - MFIRST] =  XD_CTRL | 0x7f; 	/* ^DEL */
 	options.V2_2.kbshort[MSAVESET - MFIRST] = XD_CTRL | 'S';
+	options.V2_2.kbshort[MCYCLE - MFIRST] =   XD_CTRL | 'W';
 #endif
 	ins_shorts();
 }
@@ -867,7 +879,16 @@ static void load_options(void)
 {
 	int error = 0;
 
+	/* 
+	 * Any AV-client's windows must be closed before loading settings;
+	 * otherwise, indices of open windows will be wrong when loaded.
+	 * Maybe this should be improved in the next version
+	 */
+
+	va_delall(-1);
+
 	get_set_video(0);				/* get current video mode */
+
 	v3_options.max_dir = 256;		/* start amount for the dir pointer array */
 
 	error = handle_cfgfile(infname, Config_table, infide, 0); 
@@ -968,6 +989,7 @@ static CfgNest opt_config
 		/* Set video state but do not change resolution */
 
 		get_set_video(1);
+
 	}
 }
 
@@ -1286,27 +1308,37 @@ static void hndlmenu(int title, int item, int kstate)
 
 int scansh ( int key, int kstate )
 {
-	int a;
+	int 
+		a = key & 0xff,
+		h = a & 0x80;		/* foreign characters */
 
-	a = key & 0xff;
-	if ( a <= 'z' && a >= 'a' )
+/*
+		if ( h ) 
+			a &= 0xDF;
+*/
+
+	if ( (a <= 'z' && a >= 'a')  || h )		/* lowercase or foreign */
 		a &= 0xdf; 							/* to uppercase  */
 	if ( kstate == 4 ) 						/* ctrl          */	
 		if ( a == SPACE || a == ESCAPE )	/* ^SP ^ESC      */
 			a |= XD_CTRL;
 		else if ( a == 0x1f ) 				/* ^DEL          */
 			a |= ( XD_CTRL | 0x60 );
-		else 								/* ^A ... ^\     */
+		else  if (!h) 						/* ^A ... ^\     */
 			a |= ( XD_CTRL | 0x40 );
-	else
-	if ( kstate > 2 || key < 0 ) 			/* everything but shift or plain */
+
+		else
+			a |= (XD_CTRL | (a & 0xdf) );	/* ^foreign */
+
+	else if ( kstate > 2 || key < 0 ) 		/* everything but shift or plain */
 		a = -1;								/* shortcut def. is never this value */
+
 	return a;
 }
 
 
 /* 
- * Handle keybard commands 
+ * Handle keyboard commands 
  */
 
 static void hndlkey(int key, int kstate)
@@ -1334,7 +1366,9 @@ static void hndlkey(int key, int kstate)
 	}
 	else
 	{
-		k = scansh ( key, kstate );
+		k = scansh( key, kstate );
+
+		/* Find if this is defined as a menu shortcut */
 
 		title = TFIRST;
 		while (   (options.V2_2.kbshort[i] != k) && (i <= ( MLAST - MFIRST)) )
@@ -1366,7 +1400,6 @@ static void hndlkey(int key, int kstate)
 					{
 						path[0] = (char) i + 'A';
 						dir_add_window(path, NULL, NULL);
-						itm_set_menu(xw_top());
 					}
 					else
 						xform_error(ENSMEM);
@@ -1429,6 +1462,8 @@ int hndlmessage(int *message)
  * Main event loop in the program 
  */
 
+extern int xe_wmess;
+
 static void evntloop(void)
 {
 	int event;
@@ -1452,13 +1487,38 @@ static void evntloop(void)
 	events.ev_mtlocount = 0;
 	events.ev_mthicount = 0;
 
+#if _MINT_
+	if ( !mint )
+#endif
+	{
+		events.ev_mtlocount = 500;
+		events.ev_mflags |= MU_TIMER;
+	}	
+
 	while (!quit)
 	{
+		/* 
+		 * Some research is needed to determine if an accessory
+		 * window is topped. A call to get the top window will
+		 * actually update his information
+		 */
+
+		xw_top();
+
+		/*
+		 * Enable/disable menu items depending on current context.
+		 * Note: in order for this to work with AV-protcol clients
+		 * in single-TOS, the loop has to be executed 
+		 * every once in a while (like 500ms defined above)
+		 */
+
+		itm_set_menu(selection.w);
+
 		event = xe_xmulti(&events);
 
-		/*	
-		 * HR 151102: This imposed a unsolved problem with N.Aes 1.2 
-		 * (lockup of teradesk after live moving) 
+		/*		
+		 * HR 151102: This imposed a unsolved problem with N.Aes 1.2 	
+		 * (lockup of teradesk after live moving) 	
 		 * It is not a essential function. 
 		 */
 
@@ -1467,13 +1527,16 @@ static void evntloop(void)
 		if (event & MU_MESAG)
 		{
 			if (events.ev_mmgpbuf[0] == MN_SELECTED)
-				hndlmenu(events.ev_mmgpbuf[3], events.ev_mmgpbuf[4], events.ev_mmokstate);
+				hndlmenu(events.ev_mmgpbuf[3], events.ev_mmgpbuf[4], events.ev_mmokstate);	
 			else
 				_hndlmessage(events.ev_mmgpbuf, TRUE);
 		}
 
 		if (event & MU_KEYBD)
+		{
 			hndlkey(events.xd_keycode, events.ev_mmokstate);
+		}
+		
 	}
 }
 
@@ -1501,6 +1564,7 @@ int main(void)
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
 	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;
+	naes   = (find_cookie('nAES') == -1) ? FALSE : TRUE;
 	mint  |= magx;			/* Quick & dirty */
 
 	if (mint)
@@ -1524,12 +1588,15 @@ int main(void)
 	tos_version = get_tosversion();
 	aes_version = _GemParBlk.glob.version;
 
+/* Move after reading the resource
 	/* 
 	 * Inform AES of TeraDesk's capabilities regarding messages 
 	 * (should it be tested for version 0x340 or 0x400 here ?)
 	 */
-
+/*
 	if  (aes_version >= 0x400)
+*/
+	if ( aes_version >=0x399 ) /* for Magic */
 	{
 		/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
 
@@ -1537,16 +1604,35 @@ int main(void)
 		menu_register(ap_id, "  Tera Desktop");
 	}
 
+*/
+
 	/* Load the resource file */
 
 	if (rsrc_load(RSRCNAME) == 0)
 		form_alert(1, msg_resnfnd);
 	else
 	{
+		/* 
+		 * Inform AES of TeraDesk's capabilities regarding messages 
+		 * (should it be version 0x340, 0x399 or 0x400 here ?)
+		 */
+
+		if ( aes_version >= 0x399 ) 
+		{
+			/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
+
+			shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); 
+			menu_register(ap_id, get_freestring(MENUREG));
+		}
+
 		/* Initialize x-dialogs */
 
+/*
 		if ((error = init_xdialog(&vdi_handle, malloc, free,
 								  "Tera Desktop", 1, &nfonts)) < 0)
+*/
+		if ((error = init_xdialog(&vdi_handle, malloc, free,
+								  get_freestring(DWTITLE), 1, &nfonts)) < 0)
 			xform_error(error);
 		else
 		{
@@ -1568,6 +1654,8 @@ int main(void)
 
 				if ((error = alloc_global_memory()) == 0)
 				{
+
+					/* Proceed if config file name is initialized ok */
 
 					if ( exec_deskbat() == FALSE )
 					{
@@ -1591,7 +1679,7 @@ int main(void)
 
 								/* Start quitting / shutting down */
 
-								va_delall();		/* remove pseudowindows  */
+								va_delall(-1);		/* remove all pseudowindows  */
 								wd_del_all();		/* remove windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
 								xw_close_desk();	/* remove desktop window */

@@ -84,15 +84,20 @@ extern boolean va_reply;
 extern AVTYPE *avclients;
 extern AVSTAT *avstatus;
 
-void va_close(WINDOW *w);
-void va_delall(void);
 void va_init(void);
+void va_close(WINDOW *w);
+void va_delall(int ap_id);
+void rem_all_avstat(void);
+
+#if __USE_MACROS
+#define vastat_default rem_all_avstat
+#else
 void vastat_default(void);
+#endif
 
 void handle_av_protocol(const int *message);
 int va_start_prg(const char *program, ApplType type, const char *cmdline);
 AVTYPE *va_findclient(int ap_id);
-AVTYPE *va_findwindow(int handle);
 boolean va_add_name(int type, const char *name );
 boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
 boolean va_fontreply(int messid, int dest_ap_id);

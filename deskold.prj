@@ -1,0 +1,189 @@
+
+;  Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+;                                2002, 2003  H. Robbers,
+;                                2003, 2004  Dj. Vukovic
+;
+;  This file is part of Teradesk.
+;
+;  Teradesk is free software; you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation; either version 2 of the License, or
+;  (at your option) any later version.
+;
+;  Teradesk is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+;
+;  You should have received a copy of the GNU General Public License
+;  along with Teradesk; if not, write to the Free Software
+;  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+;
+;
+; Name of the created executable file:
+
+desktos.prg		; with _MINT_=0  i.e. for single-TOS only
+;desktop.prg			; with _MINT_=1  for all systems
+
+
+; Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
+
+.C [-D_MINT_=0]			; 0 for single-TOS-only desktop 
+
+
+; Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.
+; It is of no use for anyone who doesn't have this hardware installed. 
+
+.C [-D_OVSCAN=1] ; 
+
+
+; Define __USE_MACROS as 1 to use macros instead of some function calls
+; and so save a little in program size
+
+.C [-D__USE_MACROS=1]; 
+
+
+; Define CFGEMP as 1 if you want to write empty (i.e. value = 0) config fields
+; CFGEMP is passed to every CfgSave call; so it is still
+; configurable per individual config table
+
+.C [-DCFGEMP=0]
+
+
+; Define PALETTES as 0 if you dont want the palette load/save stuff
+; in text mode (palette won't be saved at all then)
+
+.C [-DPALETTES=1]
+
+
+; Define _PREDEF as 1 to compile setting of some predefined values
+; (for file types, keyboard shortcuts, etc.) - or define as 0 for
+; minimum executable size 
+; (save about 0.5 KB but have to set everything manually then) 
+
+.C [-D_PREDEF=1]
+
+
+; Define _SHOWFIND as 1 to activate code which opens a text window 
+; at appropriate position in the file which is the result of a string 
+; search- but this may be an overdoing, therefore disabled here.
+
+.C [-D_SHOWFIND=0]
+
+
+; Define _MENUDEL as 1 to delete some menu items in TOS 1.4 and older which
+; has a limited screen buffer size. If TeraDesk will not be used with these
+; tos versions, it can be set to 0 to reduce slightly the size of the program.
+
+.C [-D_MENUDEL=1]
+
+
+;Define _FONT_SEL as 1 to compile system-wide font selector (FONT protocol)
+
+.C [-D_FONT_SEL=1]
+
+
+; Define _MORE_AV as 1 for fuller support of AV-protocol features
+; at the expense of larger memory needs.
+; (sensible mostly for the multitasking version)
+
+.C [-D_MORE_AV=0]
+
+
+; Define AES_RECT as 1 if you use GRECT(x,y,w,h} instead of GRECT{g_x,g_y,g_w,g_h}
+
+.C [-DAES_RECT=1]
+
+
+; Compiler and linker options: 
+;
+; -K: unsigned char; 
+; -Y: debug info 
+; -C: nested comments; 
+; -P: absolute calls; 
+; -G: size optimization (compiler); global symbols (linker)
+; -V: verbose output (assembler & linker)
+
+;.C [-W-par]
+.C [-C -P -G -Ilibrary\xdialog -Iinclude]
+.S [-S -V -Iinclude]
+.L [-S=8192 -H=512 -V]
+
+=
+
+; Standard startup code
+
+pcstart.o
+
+; Note: only dependencies from the main directory are listed below!!!
+
+;GEM part and main program
+
+main.c		(desk.h,environm.h,error.h,events.h,font.h,open.h,resource.h,desktop.h,version.h,xfilesys.h,config.h,window.h,dir.h,file.h,lists.h,slider.h,filetype.h,icon.h,prgtype.h,screen.h,icontype.h,applik.h,va.h,video.h)
+config.c	(desk.h,error.h,sprintf.h,xfilesys.h,desktop.h,config.h,file.h)
+resource.c	(desk.h,resource.h,desktop.h,version.h,xfilesys.h,font.h,config.h,window.h,lists.h)
+window.c	(desk.h,error.h,events.h,resource.h,desktop.h,xfilesys.h,font.h,config.h,window.h,dir.h,file.h,lists.h,slider.h,filetype.h,icon.h,icontype.h,copy.h,prgtype.h,viewer.h,applik.h,floppy.h,showinfo.h,printer.h,open.h,dragdrop.h,screen.h)
+icon.c		(sprintf.h,desk.h,error.h,events.h,resource.h,desktop.h,open.h,file.h,lists.h,slider.h,xfilesys.h,copy.h,config.h,font.h,window.h,showinfo.h,dir.h,icon.h,icontype.h,screen.h,viewer.h,video.h,filetype.h,applik.h)
+copy.c		(desk.h,error.h,events.h,printer.h,resource.h,desktop.h,xfilesys.h,copy.h,font.h,file.h,config.h,window.h,lists.h,slider.h,filetype.h,viewer.h,applik.h,showinfo.h,dir.h)
+printer.c	(desk.h,resource.h,desktop.h,printer.h,error.h,xfilesys.h,font.h,config.h,window.h,file.h,dir.h,events.h,copy.h)
+lists.c		(desk.h,error.h,resource.h,desktop.h,lists.h,slider.h,xfilesys.h,file.h,config.h,filetype.h,font.h,window.h)
+applik.c	(desk.h,error.h,resource.h,desktop.h,startprg.h,xfilesys.h,file.h,config.h,prgtype.h,font.h,window.h,lists.h,slider.h,filetype.h,applik.h,va.h)
+prgtype.c	(desk.h,resource.h,desktop.h,printer.h,error.h,xfilesys.h,font.h,config.h,window.h,file.h,dir.h,events.h,copy.h)
+icontype.c	(desk.h,error.h,resource.h,desktop.h,lists.h,slider.h,xfilesys.h,file.h,config.h,prgtype.h,font.h,window.h,icon.h,icontype.h,filetype.h)
+filetype.c	(desk.h,error.h,resource.h,desktop.h,lists.h,slider.h,xfilesys.h,file.h,config.h,filetype.h,font.h,window.h)
+screen.c	(desk.h,desktop.h,error.h,xfilesys.h,screen.h,config.h,font.h,window.h)
+showinfo.c	(desk.h,error.h,resource.h,desktop.h,xfilesys.h,lists.h,slider.h,icon.h,file.h,font.h,config.h,viewer.h,window.h,showinfo.h,copy.h,dir.h)
+font.c		(desk.h,resource.h,desktop.h,xfilesys.h,screen.h,lists.h,slider.h,error.h,font.h,va.h)
+va.c		(desk.h,font.h,va.h)
+dragdrop.c	(error.h)
+
+;TOS gedeelte
+;TOS part
+
+environm.c	(environm.h)
+startprg.c	(desk.h,environm.h,error.h,events.h,resource.h,desktop.h,xfilesys.h,file.h,lists.h,slider.h,icon.h,screen.h,startprg.h,font.h,config.h,window.h)
+floppy.c	(resource.h,desktop.h,desk.h,file.h,xfilesys.h,font.h,window.h,showinfo.h,events.h)
+video.c		(error.h,xfilesys.h,resource.h,desktop.h,desk.h,lists.h,slider.h,icon.h,font.h,config.h,window.h)
+file.c		(desk.h,desktop.h,error.h,xfilesys.h,config.h,file.h,prgtype.h)
+
+
+;Builtin modules
+
+dir.c		(desk.h,sprintf.h,xfilesys.h,font.h,config.h,window.h,dir.h,error.h,events.h,file.h,lists.h,slider.h,filetype.h,icon.h,resource.h,desktop.h,screen.h,showinfo.h,copy.h,icontype.h,open.h)
+open.c		(desk.h,error.h,open.h,printer.h,resource.h,desktop.h,xfilesys.h,font.h,config.h,window.h,dir.h,file.h,viewer.h,lists.h,slider.h,filetype.h,applik.h,prgtype.h)
+viewer.c	(desk.h,error.h,font.h,resource.h,desktop.h,xfilesys.h,config.h,screen.h,window.h,viewer.h,file.h)
+
+
+
+;Vervangingen en aanvullingen van bibliotheekfuncties
+;Replacements of and additions to library functions
+
+events.c	(desk.h,events.h,error.h,desktop.h)
+slider.c	(desk.h,events.h,lists.h,resource.h,desktop.h,slider.h,file.h)
+sprintf.c	
+strdup.c	(desk.h)
+xfilesys.c	(desk.h,error.h,desktop.h,xfilesys.h)
+error.c		(desktop.h,error.h)
+
+btst.s
+
+
+;Specific libraries:
+;Note: ahcm source is not part of the TeraDesk package.
+;binary only is provided; for the source see: 
+;http://members.ams.chello.nl/h.robbers/ahcm.zip
+
+library\ahcm\ahcm.prj
+library\xdialog\xdialog.prj
+library\multitos\multitos.prj
+library\mint\mintlib.prj
+library\utility\library.prj
+
+
+; Standard libraries 
+
+pcstdlib.lib
+pctoslib.lib
+pcgemlib.lib
+
+;pcextlib.lib ; needed for debugging only

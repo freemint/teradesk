@@ -73,7 +73,7 @@ static WD_FUNC txt_functions =
 	wd_type_sized,
 	wd_type_moved,
 	txt_hndlmenu,
-	wd_type_top,
+	/* wd_type_top, */ 0L,
 	wd_type_iconify,
 	wd_type_uniconify
 };
@@ -275,9 +275,6 @@ static int txt_line
 
 		long 
 			a = 16L * line, 
-/*
-			i, 
-*/
 			h;
 
 		int 
@@ -573,14 +570,17 @@ static void txt_rem(TXT_WINDOW *w)
 {
 	/* in free() there is a test if address is NULL, no need to check here */
 
-	free(w->lines);	
-	free(w->buffer);
+	if (w != NULL )
+	{
+		free(w->lines);	
+		free(w->buffer);
 
-	free(w->name);
+		free(w->name);
 
-	w->winfo->used = FALSE;
-	w->winfo->typ_window = NULL; 
-	w->winfo->flags.iconified = 0;
+		w->winfo->used = FALSE;
+		w->winfo->typ_window = NULL; 
+		w->winfo->flags.iconified = 0;
+	}
 }
 
 
@@ -602,8 +602,7 @@ static void txt_rem(TXT_WINDOW *w)
 void txt_closed(WINDOW *w)
 {
 	txt_rem((TXT_WINDOW *) w);
-	xw_close(w);
-	xw_delete(w);
+	xw_closedelete(w);
 }
 
 
@@ -661,7 +660,9 @@ static long count_lines(char *buffer, long length)
  * Funktie voor het maken van een lijst met pointers naar het begin
  * van elke regel in de file. 
  *
- * Line end is detected by "\n" character (linefeed) 
+ * Line end is detected by "\n" character (linefeed)
+ * so this will be ok for TOS/DOS and Unix files but not for Mac files
+ * (there, lineend is carriage-return only) 
  */
 
 static void set_lines(char *buffer, char **lines, long length)
@@ -683,12 +684,14 @@ static void set_lines(char *buffer, char **lines, long length)
  * Check if a character is printable
  * 
  * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf> and 'ÿ'
+ * Also, characters higher than 127 (c < 0) are assumed to be printable
+ * for the sake of codepages for other languages
  */
 
 static boolean isascii(char c)
 {
 	if (((c >= ' ') && (c <= '~')) || (c == '\t') || (c == '\r') ||
-		(c == '\n') || (c == 'ÿ'))
+		(c == '\n') || (c == 'ÿ') || (c < 0) )
 		return TRUE;
 	else
 		return FALSE;
@@ -762,10 +765,7 @@ int read_txtfile
 				length = length + strlen(msg_endfile);
 			}
 
-			/* 
-			 * Allocate buffer for complete file; read file into it 
-			 * HR 120803 use malloc; Malloc fragmentates memory too much 
-			 */
+			/* Allocate buffer for complete file; read file into it  */
 		
 			if ((*buffer = malloc(length + 1L)) == NULL)		
 				error = ENSMEM;
@@ -939,7 +939,7 @@ long  compare_buf( char *buf1, char*buf2, long len )
  * ("length" is length from the beginning of source, not counted from "pos").
  * Note 2: there is a similar substitution of zeros in showinfo.c;
  * take care to use the same substitute (maybe define a macro)
- * Note 3: It turned out that characters [, ] and | must be substituted too,
+ * Note 3: It turned out that characters "[", "]" and "|" must be substituted too,
  * otherwise they will cause unwanted formatting of alertbox text.
  */
 

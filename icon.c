@@ -130,7 +130,7 @@ static WD_FUNC dsk_functions =
 	0L,
 	0L,
 	0L,
-	dsk_top,
+	/* dsk_top */ 0L,
 	0L,
 	0L 
 };
@@ -531,6 +531,11 @@ static void icn_select(WINDOW *w, int selected, int mode, boolean draw)
 		for (i = 0; i < max_icons; i++)
 			if (desk_icons[i].item_type != ITM_NOTUSED)
 				desk_icons[i].newstate = (i == selected) ? TRUE : desk_icons[i].selected;
+		break;
+	case 4: /* select all */
+		for (i = 0; i < max_icons; i++)
+			if (desk_icons[i].item_type != ITM_NOTUSED)
+				desk_icons[i].newstate = TRUE;
 		break;
 	}
 
@@ -1578,21 +1583,16 @@ static void dsk_hndlbutton(WINDOW *w, int x, int y, int n,
 /*
  * Disable some menu items for desktop window as the top one.
  * Disable or enable some other items, depending on the number
- * of open windows
+ * of open windows.
+ * Note: this is not necessary anymore; the routine sskeleton has been kept,
+ * however, just in case...
  */
 
+/*
 static void dsk_top(WINDOW *w)
 {
-	int 
-		i, 
-		items1[] = {MNEWDIR,MSEARCH,MCOMPARE,MDELETE,MDUPLIC,MSELALL},
-		items2[] = {MCLOSE, MCLOSEW, MCYCLE};
-
-	for ( i = 0; i < 6; i++ )
-		menu_ienable(menu, items1[i], 0);
-	for ( i = 0; i < 3; i++ )
-		menu_ienable(menu, items2[i], (wd_wcount() > 1) ? 1 : 0);
 }
+*/
 
 
 /*
@@ -2013,7 +2013,6 @@ void dsk_options(void)
 	int oldbutton = -1; 	/* aux for arrow_form_do */
 	XDINFO info;
 	boolean
-		changed = FALSE,
 		stop = FALSE, 
 		draw = FALSE;
 
@@ -2046,18 +2045,9 @@ void dsk_options(void)
 		case WOVIEWER:
 		case WODIR:
 
-			wd_type_setfont( (button == WOVIEWER) ? DTVFONT : DTDFONT);			
+			/* note: wd_type_setfont redraws all windows, so: */
 
-			/* DjV 051 230503 ---vvv--- */
-			/* is this needed ?
-			oldmode = xd_setposmode(XD_CURRPOS);
-			xd_open(wdoptions, &info);
-			xd_setposmode(oldmode);
-			*/
-
-			/* note: wd_type_setfont above redraws all windows, so: */
-
-			if ( changed )
+			if ( wd_type_setfont( (button == WOVIEWER) ? DTVFONT : DTDFONT) )
 				xd_draw(&info, ROOT, MAX_DEPTH);
 
 			break;

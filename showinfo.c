@@ -895,24 +895,31 @@ int object_info
 
 						if ( error == 0 )
 							changed = TRUE;
-
 #if _MINT_
 						if ( link && strcmp(tgname, ltgtname) != NULL )
 						{
 							/* It should be checked here whether the target exists */
 
-							if ( !(x_exist(tgname, EX_FILE) || x_exist(tgname, EX_DIR) ) )
-								alert_iprint(TNOTGT);
+							char *tgpname = x_pathlink(tgname, newname);
 
-							error = x_unlink( newname );
-							if ( !error )
+							if ( tgpname )
 							{
-								error = x_mklink( newname, tgname );
-								changed = TRUE;
-							} 
+								if ( !(x_exist(tgpname, EX_FILE) || x_exist(tgpname, EX_DIR) ) )
+									alert_iprint(TNOTGT);
+
+								free(tgpname);
+
+								error = x_unlink( newname );
+								if ( !error )
+								{
+									error = x_mklink( newname, tgname );
+									changed = TRUE;
+								} 
+							}
+							else
+								error = ENSMEM;
 						}
 #endif
-
 						/* Currently, setting of folder attributes is not supported */
 
 						if ( type != ITM_FOLDER && error == 0)
@@ -922,9 +929,6 @@ int object_info
 								(new_attribs != attrib) || 
 								(optime.time != attr->mtime) || 
 								(optime.date != attr->mdate) 
-/*
-								|| ( link && changed )
-*/
 							)
 							{
 								/* 

@@ -59,9 +59,7 @@
 boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thecommand)
 {
 	char
-/* not needed
-		*fullname,		/* full name of an object in a window */
-*/
+
 		*realname,		/* link target name */ 
 		*path;			/* constructed path of the item to open */
 
@@ -313,9 +311,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 				else
 					deselect = app_exec(path, NULL, NULL, (int *)cmline, -1, kstate);		/* use efpath here to explicitely pass filename to application */
 */
-
 				deselect = app_exec(path, NULL, NULL, (int *)cmline, cmline ? -1 : 0, kstate);						
-
 
 				free(path);
 			}
