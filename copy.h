@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,8 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
-				  int *list, int kstate);
+
 
 
 #define CMD_COPY	 0
@@ -34,6 +33,7 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 extern boolean cfdial_open;
 extern boolean rename_files;
 
+boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
 int open_cfdialog(long folders, long files, long bytes, int function);
 void close_cfdialog(int button);
 void upd_copyinfo(long folders, long files, long bytes);

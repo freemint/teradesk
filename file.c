@@ -273,10 +273,12 @@ boolean isroot(const char *path)
 
 char *locate(const char *name, int type)
 {
-	/* DjV: can [256] below  be a LNAME ? */
+	/* DjV: can VLNAME below  be a LNAME ? */
+
+	VLNAME
+		fname;
 
 	char 
-		fname[256], 
 		*newpath, 
 		*newname, /* local */ 
 		*fspec, 
@@ -951,6 +953,7 @@ static void cv_tos_form2fn(char *dest, const char *source)
  * Fit a (possibly long) filename or path into a form (dialog) field
  * DjV note: now it is assumed that if the field is 12 characters long,
  * then it will be for a 8+3 format (see also routine tos_fnform in resource.c)
+ * Note: if the name is too long, it will be trimmed 
  */
 
 void cv_fntoform(OBJECT *ob, const char *src)
@@ -977,10 +980,13 @@ void cv_fntoform(OBJECT *ob, const char *src)
 		{	
 			if (( (ob->ob_type >> 8) & 0xff) == XD_SCRLEDIT)
 			{
-				l = (int)sizeof(LNAME);
+				l = sizeof(LNAME);
 				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(src) > sizeof(LNAME) */
 			}
-			strsncpy(dst, src, l); /* term. byte included in l */
+			strsncpy(dst, src, (long)l); /* term. byte included in l */
+
+			if ( strlen(src) > l - 1 )
+				alert_iprint(TFNTLNG);
 		}
 		else
 			cramped_name(src, dst, l); /* term. byte included */

@@ -2,6 +2,26 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                                     2002, 2003, 2004  Dj. Vukovic.
 
+
+Version 3.32
+------------
+
+- Fixed a bug in memory allocation when composing the ARGV string;
+  it could cause errors or even a crash at launching a program or exiting 
+  from a program.
+
+- Fixed a bug which could lead to confusing environmental variables
+  with identical trailing ends (e.g. PATH and ATH).
+
+- Fixed a bug in checking string length when creating links.
+
+- Fixed a bug which disabled entry of certain characters in the form
+  for application path.
+
+- Fixed a variable-initialization bug related to scrolled editable 
+  text fields in some dialogs.
+
+
 Version 3.31
 ------------
 

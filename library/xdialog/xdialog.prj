@@ -39,10 +39,10 @@ xdialog.lib
 .L[ -J -L ]
 
 =
-xdialog.c	(xdialog.h, xwindow.h, xscncode.h, internal.h)
-xdnmdial.c	(xdialog.h, xwindow.h, xscncode.h, internal.h)
-xdevent.c	(xdialog.h, xwindow.h, internal.h)
-xddraw.c	(xdialog.h, xwindow.h, internal.h)
-xdutil.c	(xdialog.h, internal.h)
-xdemodes.c	(xdialog.h, xscncode.h, internal.h)
-xwindow.c	(xdialog.h, xwindow.h, internal.h)
+xdialog.c
+xdnmdial.c
+xdevent.c
+xddraw.c
+xdutil.c
+xdemodes.c
+xwindow.c

@@ -42,7 +42,7 @@
  * than the size of LNAME
  */
 
-#define XD_MAX_SCRLED 130	
+#define XD_MAX_SCRLED 131	/* must be LNAME -1 */
 
 /* Vlaggen voor xd_form_button() */
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -33,7 +33,7 @@
  * "Write" into a string. 
  * Note: This routine is able to perform only basic formatting.
  * Recognized formats are -only- : %d %x %ld %lx %s.
- * Maximum width of numeric output should not exceed 15 characters.
+ * Maximum width of NUMERIC output should not exceed 15 characters.
  * Width specifier is supported. Output is a null-terminated string.
  */
 

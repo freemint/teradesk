@@ -127,6 +127,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			rsc_title( newfolder, NDTITLE, DTOPENIT );
 			newfolder[DIRNAME].ob_flags |= HIDETREE;
 			newfolder[OPENNAME].ob_flags &= ~HIDETREE;
+			xd_init_shift(&newfolder[OPENNAME], openline);
 
 			button = xd_dialog( newfolder, ROOT );
 		}

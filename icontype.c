@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -155,7 +155,7 @@ int icnt_geticon(const char *name, ITMTYPE type, boolean link)
 
 	if ((type == ITM_PREVDIR) || (type == ITM_FOLDER))
 	{
-		/* Find a folder icon. If not found, use default */
+		/* Find an icon in the folder group. If not found, use default */
 
 		if ((icon = find_icon(name, folders)) < 0)
 			icon = rsrc_icon_rscid ( FOINAME, iname ); 
@@ -163,7 +163,7 @@ int icnt_geticon(const char *name, ITMTYPE type, boolean link)
 	else
 	{
 		/* 
-		 * Find a file icon (match the name against wildcard masks). 
+		 * Find an icon in the file group (match the name against wildcard masks). 
 		 * If not found, use default file and program icons
 		 */
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -74,6 +74,7 @@ typedef struct
 							/* ref to row of ref to NDTA */
 							/* ref () ref NDTA */
 							/* ptr to ptr_array */
+
 	/* I first defined simply NDTA **buffer, which is not the same,
 	   doesnt look correct and indeed didnt work.
 	   I didnt see a way to define type ref () ref NDTA (algol 68) in C

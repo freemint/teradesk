@@ -259,8 +259,7 @@ static void set_linedef(int color)
 	vsl_type(xd_vhandle, 1);
 	vsl_width(xd_vhandle, 1);
 }
-
-
+nt
 /*
  * Set suitable (default) text attributes. Colour is always black.
  */

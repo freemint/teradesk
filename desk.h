@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <boolean.h>
 #include <stddef.h>
 
@@ -32,6 +33,12 @@ char *itoa(int value, char *string, int radix);
 char *ltoa(long value, char *string, int radix);
 
 #undef O_APPEND
+
+
+/* 
+ * Size of global memory buffer is larger for fuller 
+ * AV-protocol support 
+ */
 
 #if _MORE_AV
 #define GLOBAL_MEM_SIZE 2048L

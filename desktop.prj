@@ -51,7 +51,7 @@ desktop.prg			; with _MINT_=1  for all systems
 
 
 ; Define PALETTES as 0 if you dont want the palette load/save stuff
-; in text mode (palette won't be saved at all then)
+; (palette won't be saved at all then)
 
 .C [-DPALETTES=1]
 
@@ -72,7 +72,7 @@ desktop.prg			; with _MINT_=1  for all systems
 
 
 ; Define _MENUDEL as 1 to delete some menu items in TOS 1.4 and older which
-; has a limited screen buffer size. If TeraDesk will not be used with these
+; have a limited screen buffer size. If TeraDesk will not be used with these
 ; tos versions, it can be set to 0 to reduce slightly the size of the program.
 
 .C [-D_MENUDEL=1]
@@ -87,7 +87,7 @@ desktop.prg			; with _MINT_=1  for all systems
 ; at the expense of larger memory needs.
 ; (sensible mostly for the multitasking version)
 
-.C [-D_MORE_AV=1]
+.C [-D_MORE_AV=1] ; 0 for Single-TOS-only desktop
 
 
 ; Define AES_RECT as 1 if you use GRECT(x,y,w,h} instead of GRECT{g_x,g_y,g_w,g_h}
@@ -172,6 +172,8 @@ btst.s
 ;Note: ahcm source is not part of the TeraDesk package.
 ;binary only is provided; for the source see:
 ;http://members.ams.chello.nl/h.robbers/ahcm.zip
+;If other library is used, it must support free(NULL) 
+;without bad effects (i.e. no action taken)
 
 library\ahcm\ahcm.prj
 library\xdialog\xdialog.prj
@@ -186,4 +188,4 @@ pcstdlib.lib
 pctoslib.lib
 pcgemlib.lib
 
-pcextlib.lib ; needed for debugging only
+;pcextlib.lib ; needed for debugging only

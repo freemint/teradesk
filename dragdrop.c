@@ -72,7 +72,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
 
-	/* Find the first available pipe */
+	/* Find the first available pipe; extensions are .AA to .ZZ */
 
 	fd = -1;
 	do
@@ -122,7 +122,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	fd_mask = 1L << fd;
 	i = Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L);
 
-	if (!i or !fd_mask)
+	if (!i || !fd_mask)
 	{	
 		/* timeout happened */
 		Fclose(fd);

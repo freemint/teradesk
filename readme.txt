@@ -4,16 +4,18 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic        
              V3.01  07-01-04, Copyright 2003, 2004  H. Robbers, Dj. Vukovic        
              V3.30  23-04-04, Copyright 2004  H. Robbers, Dj. Vukovic
-             V3.31       -04, Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.31  04-06-04, Copyright 2004  H. Robbers, Dj. Vukovic
+             V3.32  11-06-04  Copyright 2004  H. Robbers, Dj. Vukovic
 
 
-This is version 3.31 of the Tera Desktop, a replacement of the built-in TOS 
+This is version 3.32 of the Tera Desktop, a replacement of the built-in TOS 
 desktop for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source.  It is published under GPL license, which means that it may be 
 copied  and modified freely,  providing  that the  original authorships are 
 recognized where appropriate,  and that it,  or its derivatives, may not be 
 sold. See the included COPYING file for the details on GPL.
  
+
 
 Package manifest:
 =================
@@ -38,6 +40,7 @@ There also exists a source distribution which contains the complete source
 tree of TeraDesk, to be compiled and linked with Pure-C 1.1; source of the 
 AHCM memory-allocation system can be downloaded from:
 http://members.ams.chello.nl/h.robbers/ahcm.zip
+
 
 
 Hardware and Operating System Requirements
@@ -69,12 +72,14 @@ to a query is supplied by TOS/AES, in which case Tera Desktop may work with
 unnecessary limitations or else try to activate features which may not work.  
 
 
+
 New Features in This Version
 ============================
 
 Please, see HIST_V3.TXT for a list of new features and bug fixes since the
-last released version (V3.30). Also read the manual TERADESK.HYP (you will 
+last released version (V3.31). Also read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information.
+
 
 
 Installation
@@ -84,6 +89,7 @@ Installation
 floppy or hard disk, or in a RAM disk,  to hold Tera Desktop files.  It is 
 also possible,  although a bit untidy,  to run Tera Desktop  from the root 
 directory of a disk volume. 
+
 
 2. The following files  should  be copied  to the location  specified  for 
 TeraDesk:  
@@ -97,7 +103,7 @@ TeraDesk:
 Note that DESKTOP.PRG will work  in single-TOS as well;  DESKTOS.PRG just 
 saves a  few kilobytes  of memory  by not  containing code  which is only 
 relevant in  multitasking environment,  and by having a somewhat  limited
-support for the AV-protocol.
+support for the AV-protocol (for the sake of smaller program size).
 
 If only DESKTOS.PRG is to be used, it may be renamed to DESKTOP.PRG after
 copying,  but this is not required  (the program will register  itself as
@@ -110,10 +116,12 @@ may not be appropriate  for your setup  (Tera Desktop will attempt to obey
 everything specified in the configuration files, no matter what the actual 
 environment is).
 
+
 3. If you use ST-GUIDE,  copy TERADESK.HYP and TERADESK.REF from the  \DOC 
 folder to the folder where your other .HYP files are.  
 
-4. ONLY if you need to convert TeraDesk V2.* configuration files to the new 
+
+4. ONLY IF you need to convert TeraDesk V2.* configuration files to the new 
 format of TeraDesk V3.*, you need to  get also the  Configuration convertor 
 CFG2INF.PRG;  This  utility  (not included  in the binary distribution  but 
 available  separately  on  TeraDesk 3  home page)  is basically  a  tweaked 
@@ -121,6 +129,7 @@ compilation of the Tera Desktop version 3.01, with the  capability  to read
 only the old file format and to write only the new format. After converting
 the old configuration files,  CFG2INF.PRG is not needed anymore  and can be 
 removed.
+
 
 5. Cooperation  of  Tera Desktop   with  some other  applications  will  be 
 improved if  it is  announced  that certain  protocols  can be  handled. In 
@@ -136,6 +145,7 @@ a much larger number of concurrently running applications.
 
 The manner of declaration of environmental variables depend  on variants of 
 the OS and utilities used.
+
 
 6. It is convenient to set TeraDesk to start automatically at system boot. 
 
@@ -164,10 +174,12 @@ directive in MAGX.INF:
 
      #_SHL path\to\TeraDesk\desktop.prg 
 
+
 7. All text strings used by Tera Desktop are located in DESKTOP.RSC (except
 a warning that DESKTOP.RSC can not be found).  It is possible to completely
-adapt TeraDesk to other languages by a translated DESKTOP.RSC  (if someone
-is willing to supply it).
+adapt TeraDesk  to other languages by using  a translated  DESKTOP.RSC  (if 
+someone is willing to supply it).
+
 
 8. The icon files supplied contain a basic set of icons only. Users can add 
 icons at will,  or use other icon files  (e.g. one can rename  DESKICON.RSC 
@@ -180,12 +192,13 @@ following names should always be present in the icons resource file:
 FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
 
 If a required icon name  can not be found in the icons resource file,  icon 
-name FILE is tried. If that does not exist either, you loose an icon.
+named FILE is tried. If that does not exist either, you loose an icon.
 
 To facilitate adaptation of TeraDesk to other languages, names of the seven 
 essential icons are  not  hard-coded but are read from  DESKTOP.RSC.  It is 
 possible, by editing this file, to change the names by which the icons will
 be searched for in the icon resource file(s).
+
 
 9. When used  in an environment  which  is  supposed  to  support   colour  
 icons, TeraDesk tries to load the colour  icon  file  CICONS.RSC.  If this 
@@ -197,6 +210,7 @@ handling colour icons, but that doesn't seem to work with TeraDesk. In such
 cases, CICONS.RSC  file should be removed,  and TeraDesk will fall  back to  
 monochrome  icons.   Colour  icons  file  can  also  be  removed  in  other 
 environments if there is a need to preserve as much free memory as possible.
+
 
 
 Some Possible Future Developments 
@@ -217,6 +231,7 @@ Some Possible Future Developments
 - More functionality in Show/Edit/Cancel dialog/alert
 
 - Integration of a non-modal, windowed, long-names-capable fileselector
+
 
 
 Comments and Bug-Reports
@@ -241,6 +256,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; May 28th 2004
+                                            Beograd; June 11th 2004
 
 

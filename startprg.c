@@ -261,6 +261,8 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 				set_title(pname);
 			}
 
+			/* Why is this ? */
+
 			appl_exit();
 			appl_init();
 
@@ -285,6 +287,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			/* 
 			 * At least one application (i.e. Megapaint 6) stops at this
 			 * moment and waits for a mouse button click, for reasons unclear.
+			 * Most probably this is related to a bug in TOS 2.06;
 			 * This seems to be fixed by simulating a click here.
 			 * As far as I can see there are no bad effects on other apps?
 			 * Note: in single-tos, all windows will by this time have been
@@ -314,8 +317,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 					while (Bconstat(2))
 						Bconin(2);
 
-					while (!Bconstat(2) &&
-						   (vq_mouse(vdi_handle, &mbs, &d, &d), mbs == 0));
+					while (!Bconstat(2) && (vq_mouse(vdi_handle, &mbs, &d, &d), mbs == 0));
 				}
 
 				v_exit_cur(vdi_handle);
@@ -574,7 +576,7 @@ void start_prg
 
 			tmpenv = make_argv_env(fname, cmdline + 1, &envl);
 
-			buildenv = malloc(newenvl + envl + 2L);
+			buildenv = malloc(newenvl + envl + 2L); /* +2L probably not needed here */
 
 			if ( !(tmpenv && buildenv) )
 			{
@@ -711,7 +713,6 @@ void start_prg
 #if _MINT_
 	else
 	{
-
 		int wiscr = SHW_PARALLEL;
 
 		/* AES is multitasking, use shel_write() to start program. */
@@ -725,10 +726,10 @@ void start_prg
 		{
 			/* Start other types of applications */
 
-			int mode;
-			void *p[5];
+			int mode;			/* launch mode */
+			void *p[5];			/* parameters for the extended call */
 			char *h;
-			VLNAME prgpath;
+			VLNAME prgpath;		/* program path */
 
 			/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
 
@@ -760,12 +761,12 @@ void start_prg
 	
 			/* Set pointers for extended mode */
 
-			p[0] = fname;			/* pointer to name                */
-			(long)p[1] = limmem;	/* value for Psetlimit()          */
-			p[2] = NULL;			/* value for Prenice()            */
-			p[3] = prgpath;			/* pointer to default directory   */
-			p[4] = (doenv) ? buildenv : NULL;
-	
+			p[0] = fname;						/* pointer to name                */
+			(long)p[1] = limmem;				/* value for Psetlimit()          */
+			p[2] = NULL;						/* value for Prenice()            */
+			p[3] = prgpath;						/* pointer to default directory   */
+			p[4] = (doenv) ? buildenv : NULL;	/* pointer to environment string  */
+		
 			if ( magx )
 				(char)cmdline[0] = 255;  /* So Magic will provide ARGV if needed */
 			else

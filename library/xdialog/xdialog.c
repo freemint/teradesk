@@ -780,7 +780,7 @@ static int xd_chk_key(char *valid, int pos, int key)
 			return ch;
 		else if ( cvalid == 'x' )		/* anything uppercase */
 		{
-			if ( ((cch >= 'A') && (cch <= 'Z') ) || (key & 80) )
+			if ( ((cch >= 'A') && (cch <= 'Z') ) || (key & 0x80) )
 				return cch;
 			else
 				return ch;
@@ -860,10 +860,10 @@ void xd_init_shift(OBJECT *obj, char *text)
 	TEDINFO *tedinfo = xd_get_obspec(obj).tedinfo;
 
 	int
-		tl = (int)strlen(text), 
-		vl = (int)strlen(tedinfo->te_pvalid);
+		tl = (int)strlen(text), 				/* real string length */
+		vl = (int)strlen(tedinfo->te_pvalid);	/* form length */
 
-	blk->ob_shift = max(tl - vl, 0);
+	blk->ob_shift = max(tl - vl, 0);			/* offset of first visible char */
 }
 
 
@@ -909,7 +909,7 @@ int xd_edit_char(XDINFO *info, int key)
 		newpos,	/* new position in edited string (i.e. tedinfo->te_ptext) */ 
 		oldpos,	/* previous position in same */ 
 		curlen,	/* length of edited string   */ 
-		maxlen, 
+		maxlen,	/* maximum possible length of editable string */ 
 		flen,	/* length of editable field (i.e. tedinfo->te_pvalid) */ 
 		pos, 
 		ch,

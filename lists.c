@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 #include <np_aes.h>
 #include <stdlib.h>
@@ -101,7 +102,7 @@ boolean find_wild
 
 				if ( copy_func != NULL )
 					copyf( work, p );
-				strsncpy (work->filetype, filename, sizeof(work->filetype));
+				strsncpy (work->filetype, filename, sizeof(SNAME));
 				return TRUE;
 			}
 			p = p->next;
@@ -109,7 +110,7 @@ boolean find_wild
 
 		/* Not found in the list; just copy the name */
 
-		strsncpy (work->filetype, filename, sizeof(work->filetype));
+		strsncpy (work->filetype, filename, sizeof(SNAME));
 	}
 	else
 		work->filetype[0] = 0;
@@ -432,7 +433,7 @@ boolean check_dup
  *       LS_DOCT : use to set documenttypes
  *       LS_PRGT : use to set programtypes
  *       LS_ICNT : use to set icontypes
- *       LS_APPS : use to set applications
+ *       LS_APPL : use to set applications
  *
  * Function returns identification of pressed exit button
  *
@@ -834,7 +835,7 @@ int list_edit
 
 			/* Sometimes must redraw add/delete/change buttons */
 
-			if ( (use & LS_APPL) && button >= FTADD && button <= FTCHANGE )
+			if ( (use & LS_APPL) && (button >= FTADD) && (button <= FTCHANGE) )
 				xd_draw( &info, TSBUTT, 1);
 		}
 		else			/* if selected from a window, stop immediately */

@@ -67,12 +67,12 @@ static WD_FUNC aw_functions =
 	0L						/* uniconify */
 };
 
-boolean va_reply = FALSE;
-int av_current;
+boolean va_reply = FALSE;	/* true if AV-protocol handshake is in progress */
+int av_current;				/* ap_id of the currently messaging AV-client */
 
 extern FONT dir_font;
 
-static int answer[8];
+static int answer[8];		/* buffer for answers to AV-clients */
 
 
 AVTYPE 
@@ -93,7 +93,7 @@ static void rem_avstat(AVSTAT **list, AVSTAT *t);
 
 
 /*
- * CLose a window of an av-client. In xw_close a WM_CLOSE is sent
+ * Close a window of an av-client. In xw_close a WM_CLOSE is sent
  * to the client.
  */
 
@@ -155,7 +155,7 @@ AVTYPE *va_findclient(int ap_id)
  */
 
 #pragma warn -sus
-static LS_FUNC avlist_func =
+static LS_FUNC avlist_func =	/* for the list of clients */
 {
 	copy_avtype,
 	rem,
@@ -164,7 +164,7 @@ static LS_FUNC avlist_func =
 	NULL
 };
 
-static LS_FUNC avslist_func =
+static LS_FUNC avslist_func =	/* for the list of status srings */
 {
 	copy_avstat,
 	rem_avstat,
@@ -179,11 +179,11 @@ static LS_FUNC avslist_func =
 /*
  * Check if the application is already running, has signed as
  * an av-client, and supports VA_START.
- * If true, then use the VA_STARTcommand.
+ * If true, then use the VA_START command.
  * Note: accessories are an exception: they can be sent VA_START
  * even if they had not signed on (this is needed at least for 
  * ST-Guide, and maybe some other as well) 
- * Note 2: other apss also understand VA_START but do not sign-on
+ * Note 2: some other apss also understand VA_START but do not sign-on
  * to the server. Pity.
  *
  * Parameters:
@@ -258,8 +258,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 	 * next time CAB can not be started: check below
 	 * returns dest_ap_id = 0, as if it is already running.
 	 * Maybe avoid it so that a check is made if destination
-	 * is the same as the current- does it make sense to
-	 * send a message to oneself? 
+	 * is the same as the current 
 	 */
 
 	dest_ap_id = appl_find(prgname);
@@ -346,6 +345,8 @@ boolean va_fontreply(int messid, int dest_ap_id)
  * Add a name to a reply string for an AV-client. If the name contains
  * spaces, it will be quoted with single quotes ('). 
  * Currently, names conatining quotes are not supported. 
+ * This routine is also used to create a list of names to be sent
+ * to an application using the Drag & drop protocol
  */
 
 boolean va_add_name(int type, const char *name )
@@ -562,7 +563,9 @@ void handle_av_protocol(const int *message)
 		reply = TRUE;
 
 	AVTYPE
+/* not used for the time being, see below
 		*oldclient,
+*/
 		*theclient;
 
 #if _MORE_AV
@@ -928,6 +931,7 @@ void handle_av_protocol(const int *message)
 				if ( (item = itm_find(aw, message[3], message[4])) >= 0 )
 				{
 					/* An item can be located */
+
 					itype = itm_type(aw, item);
 					if ( itype >= ITM_NOTUSED && itype <= ITM_LINK )
 					{
@@ -957,7 +961,7 @@ void handle_av_protocol(const int *message)
 		break;
 
 	case AV_DRAG_ON_WINDOW:
-		path = strdup(*(char **)(message + 6));	/* dousrce */
+		path = strdup(*(char **)(message + 6));	/* source */
 		goto processname;
 	case AV_COPYFILE:
 		mask = strdup(*(char **)(message + 5)); /* destination */

@@ -52,7 +52,7 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 	/* Determine slider size. Minimum size is equal to font height */
 
-	if (sl->n > sl->lines)
+	ifh;sl->n > sl->lines)
 	{
 		sh = (int) (((long) sl->lines * (long) tree[sl->sparent].r.h) / (long) sl->n);
 		if (sh < screen_info.fnt_h)

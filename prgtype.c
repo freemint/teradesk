@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+ *                               2002, 2003  H. Robbers,
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -17,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 #include <np_aes.h>	
 #include <stdlib.h>
@@ -127,7 +130,7 @@ static PRGTYPE *ptadd_one
 	long limmem			/* memory limit for this program type */
 )
 {
-	strsncpy ( (char *)pwork.name, filetype, sizeof(pwork.name) );
+	strsncpy ( (char *)pwork.name, filetype, sizeof(SNAME) );
 
 #if _MINT_
 	if ( mint && !magx )

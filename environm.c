@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -57,27 +57,30 @@ long envlen(void)
 
 
 /*
- * Find an environmental variable
+ * Find an environmental variable in the string contaning all variables
  */
 
 static char *findvar(const char *var)
 {
-	char *p;
+	char *p, *p0; /* 322: p0 */
 	long l;
 	boolean found = FALSE;
 
 	l = strlen(var);
-	p = _BasPag->p_env;
+	p0 = _BasPag->p_env;
+	p = p0;
 
 	/* 
 	 * Find an "=" then retrace by "l" and compare name 
 	 * Note: this may not work correctly with the variables
 	 * which have the same trailing substrings (e.g. PERA= and OPERA=) !!!
+	 * So it is checked whether this string is at the beginning or there
+	 * is an empty space before it.
 	 */
 
 	while ((*p) && (found == FALSE))
 	{
-		if ((p[l] == '=') && (strncmp(p, var, l) == 0))
+		if ((p[l] == '=') && (strncmp(p, var, l) == 0) && ( (p == p0) || (p[-1] <= ' ') ) )
 			found = TRUE;
 		else
 			while (*p++);
@@ -134,12 +137,14 @@ char *new_env
 	size_t *newsize		/* new environment string size including two trailing zeros */
 )
 {
-	long l = envlen() - 1; /* this will include one trailing zero */
+	long 
+		l = envlen() - 1; 		/* this will include one trailing zero */
+
 	char 
-		*new,
-		*newto,
-		*oldto,
-		*p = _BasPag->p_env;
+		*new,					/* allocated  space for the new enviro */
+		*newto,					/* where to put the old string */
+		*oldto,					/* where to put the new string */
+		*p = _BasPag->p_env;	/* whee is the old environment */
 
 	*newsize = 0;
 
@@ -158,9 +163,9 @@ char *new_env
 		oldto = newto = new;
 
 		if ( where == 1 )
-			oldto += size;
+			oldto += size; 	/* where to put the old string */
 		else	
-			newto += l;
+			newto += l;		/* where to put the new string */
 
 		memcpy(oldto, p, l);
 	
@@ -177,10 +182,12 @@ char *new_env
 
 
 /*
- * Clear (unset) ARGV environmental variable: put a 0 instead of "A"
+ * Clear (unset) ARGV environmental variable in the environment string
+ * for TeraDesk itself: put a 0 instead of "A".
+ * (is the program's environment string always allowed to write into ???)
  */
 
-void clr_argv(void)
+void clr_argv(void) 
 {
 	char *p;
 
@@ -194,12 +201,17 @@ void clr_argv(void)
  * If "program" is not NULL, it is assumed that ARGV is built.
  * ARGV environment is different in that there is a zero byte after "ARGV=",
  * and also a zero byte after each subsequent parameter.
- * Result: pointer to environment or NULL if an error occured.
+ * Result: pointer to new environment or NULL if an error occured.
  * Also return final string size in "size"
  * Created environment string (and size) includes two trailing zeros.
  */
 
-char *make_argv_env(const char *program, const char *cmdline, size_t *size)
+char *make_argv_env
+(
+	const char *program,	/* program name */ 
+	const char *cmdline,	/* command line or an environment string */ 
+	size_t *size			/* resultant size of the string */
+)
 {
 	long 
 		argvl = 0;			/* Size of allocated space */
@@ -217,10 +229,17 @@ char *make_argv_env(const char *program, const char *cmdline, size_t *size)
 		q = FALSE;			/* quoting flag */
 
 	
+	/* Length of command line + two trailing zeros */
+
 	argvl = strlen(cmdline) + 2L; 
 
+	/* 
+	 * Length of "ARGV=" + length of program name + zero byte after "="
+	 * + zero byte after program name 
+	 */
+
 	if ( program )
-		argvl += sizeof(name) + strlen(program) + 1L;
+		argvl += strlen(program) + 7L; 
 	
 	*size = 0;
 
@@ -249,7 +268,7 @@ char *make_argv_env(const char *program, const char *cmdline, size_t *size)
 
 		/* 
 		 * Add the command line (or the environment string)
-		 * Strip spaces and insert zeros except if spaces are quoted 
+		 * Strip spaces and insert zeros instead, except if spaces are quoted 
 		 */
 
 		s = cmdline;
@@ -257,12 +276,16 @@ char *make_argv_env(const char *program, const char *cmdline, size_t *size)
 		{
 			if ((h == ' ') && !q )
 			{
+				/* If not between quotes, substitute blanks with a single 0 */
+
 				*d++ = 0;
 				while (*s == ' ')
 					s++;
 			}
 			else if (h == 34 || h == 39) /* 34= double quote, 39=single quote */
 			{
+				/* two consequtive quotes mean that one is part of the string */
+
 				if (*s == 34 || *s == 39)
 					*d++ = *s++;
 				else

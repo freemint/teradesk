@@ -30,6 +30,7 @@
 #include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
+#include <internal.h>
 
 
 #include "desk.h"
@@ -119,7 +120,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 
 	/* If match found, remove that item from the list */
 
-	if ( (f == appl) && (f != NULL) )
+	if ( /* no need for this (f == appl) && */ (f != NULL) )
 	{
 		if (prev == NULL)
 			*list = f->next;
@@ -155,7 +156,9 @@ static void copy_app( APPLINFO *t, APPLINFO *s )
 	if ( s->name )
 		t->name = strdup(s->name);
 	if ( s->cmdline )
+{
 		t->cmdline = strdup(s->cmdline);
+}
 	if ( s->localenv )
 		t->localenv = strdup(s->localenv);
 
@@ -490,7 +493,6 @@ boolean app_dialog
 		*list = NULL,		/* working copy of the list of filetypes */
 		*newlist;			/* first same at list, then maybe changed in ft_dialog */
 
-
 	/* 
 	 * Set dialog title(s); create copy of filetypes list if needed 
 	 * i.e. if application setup is edited, copy list of filetypes to temporary;
@@ -521,7 +523,7 @@ boolean app_dialog
 	rsc_title(addprgtype, PTTEXT, TAPP);
 
 	/*
-	 * Copy application name, path, command line and environment to dialog;
+	 * Copy application name, path, command line and environment to dialog fields;
 	 * as application name is stored as path+name it has to be split-up
 	 * in order to display path separately
 	 */
@@ -530,15 +532,22 @@ boolean app_dialog
 
 	cv_fntoform(&applikation[APNAME], thisname);
 	cv_fntoform(&applikation[APPATH], thispath);
-	strcpy(applcmdline, appl->cmdline); 
-	strcpy(envline, appl->localenv); 
+	strncpy(applcmdline, appl->cmdline, XD_MAX_SCRLED); 
+	xd_init_shift(&applikation[APCMLINE], applcmdline);
+	strncpy(envline, appl->localenv, XD_MAX_SCRLED);
+	xd_init_shift(&applikation[APLENV], envline); 
+
+	/* Display alerts if strings were too long */
+
+	if ( strlen(appl->cmdline) > XD_MAX_SCRLED || (strlen(appl->localenv) > XD_MAX_SCRLED) )
+		alert_iprint(TCMDTLNG);
 
 	/* Put F-key value, if any, into the dialog */
 
 	set_fkey(appl->fkey);
 
-	/* Open the dialog for editing application setup */
 
+	/* Open the dialog for editing application setup */
 	xd_open(applikation, &info);
 
 	while (quit == FALSE)
@@ -1532,6 +1541,11 @@ static CfgNest one_app
 
 		while ((*error == 0) && h)
 		{
+			/* 
+			 * It is assumed that strings will never be too long
+			 * (length should be checked in the dialog)
+			 */
+
 			awork = *h;
 			strcpy(this.name, awork.name);
 			strcpy(this.cmdline, awork.cmdline);
@@ -1555,20 +1569,22 @@ static CfgNest one_app
 				*error = EFRVAL;
 			else
 			{
+/* optimized below
 				char *name = malloc(strlen(this.name) + 1);
 				char *cmdline = malloc(strlen(this.cmdline) + 1);
 				char *localenv = malloc(strlen(this.localenv) + 1);
 
-				if (name && cmdline)
+				if (name && cmdline && localenv)
 				{
 					strcpy(name, this.name);
 					strcpy(cmdline, this.cmdline);
 					strcpy(localenv, this.localenv);
 
-					log_shortname( awork.shname, name );
 					awork.name = name;
 					awork.cmdline = cmdline;
 					awork.localenv = localenv;
+
+					log_shortname( awork.shname, name );
 
 					/* 
 					 * As a guard against duplicate flags/keys assignment
@@ -1607,6 +1623,45 @@ static CfgNest one_app
 				}	
 				else
 					*error = ENSMEM;
+
+*/
+
+				awork.name = (char *)&this.name;
+				awork.cmdline = (char *)&this.cmdline;
+				awork.localenv = (char *)&this.localenv;
+
+				log_shortname( awork.shname, awork.name );
+
+				/* 
+				 * As a guard against duplicate flags/keys assignment
+				 * for each application loaded, all previous spec app
+				 * or Fkey assignments (to that key) are cleared here, 
+				 * so only the last assignment remains.
+				 * Note: if adding the application to the list fails
+				 * a few lines later, this will leave Teradesk without
+				 * an spec app or this Fkey assignment. Might be called
+				 * a bug, but probably not worth rectifying.
+				 */
+
+				unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW) ) );
+
+				if ( awork.fkey )
+					unset_fkey(&applikations, awork.fkey );
+
+				/* Add this application to list */
+
+				if ( lsadd( 
+				            (LSTYPE **)&applikations, 
+				             sizeof(awork), 
+				             (LSTYPE *)&awork, 
+				             END, 
+				             copy_app 
+				          ) == NULL 
+				   		)
+				{
+					rem_all((LSTYPE **)(&awork.filetypes), rem);
+					*error = ENOMSG;
+				}
 			}
 		}
 	}

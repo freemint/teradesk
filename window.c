@@ -3,7 +3,7 @@
  *                               2002, 2003  H. Robbers,
  *                               2003, 2004  Dj. Vukovic
  *
- * This file is part of Teradesk.
+ * This file is part of Teradesk. 
  *
  * Teradesk is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -3555,8 +3555,8 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 
 /*
  * Set-up background object for icon(s) in a window;
- * this routine is used for an iconified window and for
- * directory window in icon mode 
+ * this routine is used for a iconified windows and for
+ * directory windows in icon mode 
  */
 
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work )

@@ -20,6 +20,7 @@ copy -n cfg2inf.txt  e:\tera3s\
 copy -n hist_v3.txt  e:\tera3s\
 copy -n ann*.txt     e:\tera3s\
 copy -n teradesk.stg e:\tera3s\
+copy -n udo_fo.img   e:\tera3s\
 
 copy -n *.c         e:\tera3s\
 copy -n *.h         e:\tera3s\

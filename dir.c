@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -1013,8 +1013,7 @@ static void dir_newfolder(WINDOW *w)
 
 	dw = (DIR_WINDOW *) w;
 
-	*dirname = 0;
-
+	cv_fntoform(&newfolder[DIRNAME], "\0");
 	rsc_title(newfolder, NDTITLE, DTNEWDIR);
 	newfolder[DIRNAME].ob_flags &= ~HIDETREE;
 	newfolder[OPENNAME].ob_flags |= HIDETREE;
@@ -1085,12 +1084,17 @@ void dir_newlink(WINDOW *w, char *target)
 	rsrc_gaddr(R_STRING, TLINKTO, &linkto);
 	targetname = fn_get_name(target);
 
+	/* The string pointed to by dirname is a LNAME, therefore sizeof() below */
+
 	strcpy(dirname, linkto);
-	strncat(dirname, targetname, sizeof(dirname) - strlen(linkto) );
+	strncat(dirname, targetname, sizeof(LNAME) - strlen(linkto) - 1L ); 
+
+	/* This will always be a scrolled editable text, so xd_init_shift can be simply applied */
 
 	rsc_title(newfolder, NDTITLE, DTNEWLNK);
 	newfolder[DIRNAME].ob_flags &= ~HIDETREE;
 	newfolder[OPENNAME].ob_flags |= HIDETREE;
+	xd_init_shift(&newfolder[DIRNAME], dirname);
 
 	button = xd_dialog(newfolder, DIRNAME);
 

@@ -517,6 +517,7 @@ void rsc_init(void)
 		tos_fnform(&nameconflict[OLDNAME], -1);
 		tos_fnform(&searching[SMASK], -1);
 		tos_fnform(&newfolder[DIRNAME], -1);
+
 		xd_get_obspec(&applikation[APPATH]).tedinfo->te_pvalid[0] = 'x';
 
 		/* 
@@ -540,22 +541,6 @@ void rsc_init(void)
 
 	show_os( &infobox[INFOTV], tos_version );
 	show_os( &infobox[INFOAV], aes_version );
-
-/* ok, hidden in the resource file now
-	/*
-	 * As SETMASK dialog is now to be reused for several purposes, some
-	 * use-dependent items are here made invisible. For each use (when needed)
-	 * they are to be made visible before opening the dialog and then
-	 * invisible after closing it.
-	 * (this could be handled in the resource file as well- hide them there)
-	 */
-
-	setmask[FILETYPE].ob_flags |= HIDETREE; 
-	setmask[FTTEXT].ob_flags |= HIDETREE;
-	setmask[MSKATT].ob_flags |= HIDETREE; 
-	setmask[PGATT].ob_flags |= HIDETREE; 
-	setmask[ICATT].ob_flags |= HIDETREE;
-*/
 
 	rsc_fixmenus();
 }

@@ -22,6 +22,7 @@ copy -n cfg2inf.txt  a:\
 copy -n hist_v3.txt  a:\
 copy -n ann*.txt     a:\
 copy -n teradesk.stg a:\
+copy -n udo_fo.img   a:\
 
 copy -n *.c         a:\
 copy -n *.h         a:\

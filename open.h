@@ -1,5 +1,6 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
