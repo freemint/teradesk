@@ -55,7 +55,7 @@ unsigned char xd_emode_specs[XD_EMODECOUNT] =
 	__XD_IS_ELEMENT |
 	  __XD_IS_SELTEXT,			/* XD_CYCLBUT(12): IA: cycling button. used with pop-ups mostly. */
 	__XD_IS_ELEMENT,			/* XD_SCRLEDIT(13): HR 021202: scrollable editable texts. */
-	__XD_IS_NOTYETDEF,			/* (14) */
+	__XD_IS_ELEMENT,			/* XD_FONTTEXT(14): font sample text  */
 	__XD_IS_NOTYETDEF,			/* (15) */
 	__XD_IS_NOTYETDEF,			/* (16) */
 	__XD_IS_NOTYETDEF,			/* (17) */

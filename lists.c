@@ -48,18 +48,10 @@
  * the pointer is NULL)
  */
 
-void free_item( void *ptr )
+void free_item( void **ptr )
 {
-/* not needed
-	if ( ptr != NULL )
-	{
-*/
-		free(ptr);
-		ptr = NULL;
-
-/* not needed
-	}
-*/
+	free(*ptr);
+	*ptr = NULL;
 }
 
 
@@ -186,10 +178,10 @@ LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
 
 	*pos = -1;
 
-	if (name == NULL )
+	if (name == NULL)
 		return NULL;
 
-	while (f != NULL)
+	while (f)
 	{
 		*pos = *pos + 1;
 		if ( cmp_wildcard( f->filetype, fn_get_name(name) ) )
@@ -233,8 +225,7 @@ void rem
 			*list = f->next;
 		else
 			prev->next = f->next;
-
-		free_item(f);
+		free_item(&(void *)f);
 	}
 }
 
@@ -495,7 +486,6 @@ int list_edit
 
 	char
 		*pname;				/* pointer to path+name of item in a dir window */
-
 
 	/* 
 	 * Has this routine been called to operate on a selection 
@@ -789,12 +779,14 @@ int list_edit
 					strcpy(setmask[FILETYPE].ob_spec.tedinfo->te_ptext, 
 					       setmask[button].ob_spec.tedinfo->te_ptext);
 					xd_draw(&info, FILETYPE, 0);
+
 					if (dc == TRUE)
 					{
 						stop = TRUE;
 						button = FTOK;
 					}
 				}
+
 				break;
 
 			case ITFOLDER:
@@ -838,9 +830,6 @@ int list_edit
 			/* Reset buttons in some cases */
 
 			if (!keep)
-/*
-				xd_change(&info, button, NORMAL, (stop == FALSE) ? 1 : 0);
-*/
 				xd_change(&info, button, NORMAL, TRUE);
 
 			/* Sometimes must redraw add/delete/change buttons */
@@ -860,9 +849,10 @@ int list_edit
 		/* 
 		 * List item was selected from the window, so no lists have been 
 		 * copied, just the path+name allocated has to be free'd
+		 * and pointer set to NULL.
 		 */
 
-		free_item(pname);
+		free_item(&(void *)pname);
 	}
 	else
 	{

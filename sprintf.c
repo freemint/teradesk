@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>	
 #include <stdlib.h>
 #include <stdarg.h>
@@ -85,11 +86,6 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					break;
 				case 'd':
 				case 'x':
-/*
- This did not correctly format "%x for int with highest bit set."
-					value = (lng == TRUE) ? va_arg(argpoint, long) : va_arg(argpoint, int);
-					ltoa(value, tmp, (*s == 'x') ? 16 : 10);
-*/
 					if ( *s == 'x' )
 					{
 						radix = 16;
@@ -136,8 +132,9 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 	return (int) (d - buffer);
 }
 
+
 /*
- * Write into a string- substitute function
+ * Write into a string- substitute a standard function
  */
 
 int sprintf(char *buffer, const char *format,...)
@@ -158,8 +155,9 @@ int vaprintf( int def,const char *string,va_list argpoint )
 	char s[256];
 
 	vsprintf(s,string,argpoint);
-	return form_alert(def,s);
+	return form_alert(def,s); 
 }
+
 
 int aprintf( int def,const char *string, ... )
 {

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #ifdef __PUREC__
  #include <np_aes.h>
  #include <tos.h>
@@ -32,14 +33,17 @@
 
 #include <ctype.h>
 #include <stddef.h>
+#include <library.h>
 
 #include "xdialog.h"
 #include "internal.h"
 
 #define AV_SENDKEY		0x4710
 
-/* Funktie voor het converteren van een VDI scancode  naar een
-   eigen scancode. */
+/* 
+ * Funktie voor het converteren van een VDI scancode  naar een
+ * eigen scancode. 
+ */
 
 int xe_keycode(int scancode, int kstate)
 {
@@ -81,7 +85,10 @@ int xe_keycode(int scancode, int kstate)
 	return keycode;
 }
 
-/* Vervanging van evnt_multi, die eigen keycode terug levert. */
+
+/* 
+ * Vervanging van evnt_multi, die eigen keycode terug levert. 
+ */
 
 int xe_xmulti(XDEVENT *events)
 {
@@ -94,16 +101,21 @@ int xe_xmulti(XDEVENT *events)
 	old_mtlocount = events->ev_mtlocount;
 	old_mflags = events->ev_mflags;
 
-	/* Check if the time out time is shorter than the minimum time.
-	   If true set to the minimum time. */
+	/* 
+	 * Check if the time out time is shorter than the minimum time.
+	 * If true set to the minimum time. 
+	 */
 
 	if ((events->ev_mthicount == 0) && (events->ev_mtlocount < xd_min_timer))
 		events->ev_mtlocount = xd_min_timer;
 
-	/* No message events when a dialog is opened and the dialog is
-	   not in a window. */
+	/* No message events when a dialog is opened and the dialog is not in a window. */
 
+/* test only
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW))
+		events->ev_mflags &= ~MU_MESAG;
+*/
+	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
 
 
@@ -155,18 +167,28 @@ int xe_xmulti(XDEVENT *events)
 		{
 			if (xw_hfind(events->ev_mmgpbuf[3]) != xd_dialogs->window)
 			{
-				Bconout(2, 7);
+				bell();
 				xw_set(xd_dialogs->window, WF_TOP);
+				r &= ~MU_MESAG; /* DjV 000 */
 			}
+/* DJV 000
 			r &= ~MU_MESAG;
+*/
 		}
 		else if (((events->ev_mmgpbuf[0] == WM_TOPPED) ||
 				 (events->ev_mmgpbuf[0] == WM_NEWTOP)) &&
 				 xd_dialogs)
 		{
-			if (xw_hfind(events->ev_mmgpbuf[3]) != xd_dialogs->window)
-				Bconout(2, 7);
-			xw_set(xd_dialogs->window, WF_TOP);
+			WINDOW *ww = xw_hfind(events->ev_mmgpbuf[3]);
+
+			if (ww != xd_dialogs->window )
+				bell();
+
+			if ( xd_nmdialogs && ww == xd_nmdialogs->window )
+				xw_set(ww, WF_TOP);
+			else
+				xw_set(xd_dialogs->window, WF_TOP);
+
 			r &= ~MU_MESAG;
 		}
 		else if (xw_hndlmessage(events->ev_mmgpbuf) == TRUE)
@@ -192,6 +214,7 @@ int xe_xmulti(XDEVENT *events)
 	return r;
 }
 
+
 /*
  * Bepaal de huidige toestand van de muis buttons.
  */
@@ -204,6 +227,7 @@ int xe_button_state(void)
 
 	return mstate;
 }
+
 
 /*
  * Funktie voor het wachten op een bepaald muis event.

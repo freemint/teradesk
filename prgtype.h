@@ -27,11 +27,8 @@ typedef struct prgtype
 	struct prgtype *next;	/* pointer to next item */
  /* ---^^^--- compatible with FTYPE and LSTYPE structures */
 	ApplType appl_type;		/* type of program */
-	boolean argv;			/* uses ARGV */
-	boolean path;			/* program directory is default */
-	boolean single;			/* run only in single mode (in Magic) */
 	long limmem;			/* memory limit for this type in multitasking */
-	int flags;				/* temporary; for load/save same as argv + path + single */
+	int flags;				/* argv + path + single */
 } PRGTYPE;
 
 /* For consistency with other flags which are saved as bits... */
@@ -42,7 +39,11 @@ typedef struct prgtype
 #define AT_EDIT 0x0008	/* set as editor */
 #define AT_AUTO 0x0010	/* set as startup/autostart */
 #define AT_SHUT 0x0020	/* set as shutdown */
-#define AT_VIDE 0x0040	/* set video */
+#define AT_VIDE 0x0040	/* set for video mode change */
+#define AT_SRCH 0x0080	/* set as file search app */
+#define AT_FFMT 0x0100	/* set as floppy format application */
+#define AT_VIEW 0x0200	/* set as viewer */
+#define AT_CONS 0x0400	/* set as console */
 
 extern CfgEntry prg_table[];
 extern PRGTYPE pwork;
@@ -58,10 +59,7 @@ void copy_prgtype ( PRGTYPE *t, PRGTYPE *s );
 void prg_init(void);
 void prg_default(void);
 
-#if !TEXT_CFG_IN
-int prg_load(XFILE *file);
-#endif
-
 boolean prg_isprogram(const char *name);
+void sim_click(void);
 
 

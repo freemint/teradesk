@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>	
 #include <stddef.h>
 #include <stdlib.h>
@@ -33,12 +34,18 @@
 #include "error.h"
 #include "desktop.h"
 #include "xfilesys.h"
+#include "file.h"
 
 #define XBUFSIZE	2048L
 
 static boolean flock;
 extern int tos_version, aes_version;
 
+
+/*
+ * Check if a filename or path + name is valid in this OS/
+ * Return 0 if OK.
+ */
 
 int x_checkname(const char *path, const char *name)
 {
@@ -50,6 +57,7 @@ int x_checkname(const char *path, const char *name)
 
 	return 0;
 }
+
 
 /* 
  * Create a path+filename string from path "path" and filename "name".
@@ -71,28 +79,55 @@ char *x_makepath(const char *path, const char *name, int *error)
 	return p;
 }
 
+
 /* 
- * Check if a file or folder exists 
+ * Check if a file or folder or link exists. Return true if it exists.
+ * If EX_LINK is set in flags, check for the link itself;
+ * otherwise follow the link. 
  */
 
 boolean x_exist(const char *file, int flags)
 {
 	XATTR attr;
+	int type, theflag;
 
-	if (x_attr(0, file, &attr) != 0)
-		return FALSE;
+/* DjV 000
+	if (x_attr(0, file, &attr) != 0) /* follow the link */
+*/
+
+#if _MINT_
+	if ( x_attr( (flags & EX_LINK) ? 1 : 0, file,  &attr) != 0 )
+#else
+	if (x_attr(0, file, &attr) != 0) 
+#endif
+		return FALSE; /* x_attr can't find trget */
 	else
 	{
-		if (((attr.mode & S_IFMT) == S_IFDIR) && ((flags & EX_DIR) == 0))
-			return FALSE;
-		else
+		type = attr.mode & S_IFMT;
+
+		switch(type)
 		{
-			if (((attr.mode & S_IFMT) != S_IFDIR) && ((flags & EX_FILE) == 0))
-				return FALSE;
+			case S_IFDIR:
+				theflag = EX_DIR;
+				break;
+			case S_IFREG:
+				theflag = EX_FILE;
+				break;
+#if _MINT
+			case S_IFLNK:
+				theflag = EX_LINK;
+				break;
+#endif
 		}
+
+		if ( (flags & theflag) == 0 )
+			return FALSE;
+
 		return TRUE;
 	}
 }
+
+
 
 static int _fullname(char *buffer)
 {
@@ -222,6 +257,99 @@ int x_rmdir(const char *path)
 }
 
 
+#if _MINT_
+
+/*
+ * Create a symbolic link. "newname" will point to a real object "oldname"
+ */
+
+int x_mklink(const char *newname, const char *oldname)
+{
+	return xerror( (int)Fsymlink( (char *)oldname, (char *)newname ) );
+}
+
+
+/*
+ * Read target name of a symbolic link 
+ */
+
+int x_rdlink( int tgtsize, char *tgt, const char *linkname )
+{
+	return xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
+}
+
+#endif
+
+
+/*
+ * Obtain the name of the object referenced by a link (link target); 
+ * if "linkname" is not the name of a link, or, if some other error happens, 
+ * just copy the name.This routine allocates space for the output "real" 
+ * object name. If te name of the target does not contain a path, append
+ * the path of the link.
+ */
+
+char *x_fllink( char *linkname )
+{	
+	char 
+		*tmp = NULL,
+		*target = NULL;
+
+	if ( linkname )
+	{
+#if _MINT_
+		int 
+			error = EACCDN;
+
+		if (mint)
+		{
+			if ( (tmp = malloc( sizeof(VLNAME) )) != NULL )
+			{
+				error = x_rdlink( (int)sizeof(VLNAME), tmp, linkname ); 
+	
+				/* If the name of the referenced item has been obtained... */
+
+				if ( !error )
+				{
+					if ( strchr(tmp,'\\') == NULL )
+					{
+						/* referenced name does not contain a path, use that of the link */
+
+						char 
+							*lpath;
+
+						if ( (lpath = fn_get_path(linkname)) != NULL )
+						{
+							target = x_makepath(lpath, tmp, &error);
+							free(lpath);
+						}
+					}
+					else
+						target = strdup(tmp);
+				}
+				else
+					/* this is not a link, just copy the name */
+					target = strdup(linkname);
+			}
+			else /* tmp = NULL */
+				xform_error(ENSMEM);
+		}
+
+		if (tmp == NULL)
+
+#endif
+			target = strdup(linkname);
+
+		if ( target == NULL )
+			xform_error(ENSMEM);
+
+		free(tmp);
+	}
+
+	return target;
+}
+
+
 /* 
  * Get information about free space on a disk volume 
  */
@@ -281,6 +409,7 @@ int x_getlabel(int drive, char *label)
 	return ((error == -49) || (error == -33)) ? 0 : error;
 }
 
+
 /* File funkties */
 
 /* 
@@ -295,7 +424,8 @@ int x_rename(const char *oldname, const char *newname)
 
 
 /* 
- * "Unlink" a file (i.e. delete) 
+ * "Unlink" a file (i.e. delete) .
+ * When operated on a symblic link, it deletes the link not the file
  */
 
 int x_unlink(const char *file)
@@ -305,7 +435,7 @@ int x_unlink(const char *file)
 
 
 /* 
- * Get GEMDOS file attributes 
+ * Get/set GEMDOS file attributes 
  */
 
 int x_fattrib(const char *file, int wflag, int attrib)
@@ -415,18 +545,6 @@ long x_seek(long offset, int handle, int seekmode)
 static void dta_to_xattr(DTA *dta, XATTR *attrib)
 {
 
-/* handle this differently now in set_visible()
-	/* 
-	 * DjV 004 300103 Add pseudo attribute "parent dir" 
-	 * note: can this be a problem? A document on TOS functions
-	 * states that bits 6 and 7 (i.e. 0x40 and 0x80, and FA_PARDIR = 0x40 !)
-	 * of attribute field are "reserved"?
-	 */
-
-	if ( (dta->d_fname[0] == '.') && (dta->d_fname[1] == '.') )
-		dta->d_attrib |= FA_PARDIR;
-*/
-
 	attrib->mode = 0777;
 	if (dta->d_attrib & FA_SUBDIR)
 		attrib->mode |= S_IFDIR;
@@ -470,7 +588,6 @@ boolean x_inq_xfs(const char *path, boolean *casesens)
 
 /* 
  * Open a directory
- * DjV 071 270703 code size reduction 
  */
 
 XDIR *x_opendir(const char *path, int *error)
@@ -517,12 +634,11 @@ XDIR *x_opendir(const char *path, int *error)
 
 /* 
  * Read a directory entry 
- * Note: DjV 070: In order to increase speed, only the pointer is passed, 
+ * Note: In order to increase speed, only the pointer is passed, 
  * and the name is no more copied to output location (in all uses of this
  * routine in TeraDesk, obtained name is immediately copied elsewhere).
  * **buffer should probably be considered as readonly,
  * not to be written to or used for permanent storage
- * DjV 070 270703 code size reduction
  */
 
 long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib) 
@@ -604,9 +720,9 @@ long x_rewinddir(XDIR *dir)
 	}
 	else
 	{
-		/* File system with long filenames */
+		/* File system with long filenames (why this long/int nonsense?) */
 	
-		return (long)xerror(Drewinddir(dir->data.handle));
+		return (long)xerror((int)Drewinddir(dir->data.handle));
 	}
 #endif /* _MINT_ */
 }
@@ -636,7 +752,7 @@ long x_closedir(XDIR *dir)
 	{
 		/* File system with long filenames */
 	
-		error = (long)xerror(Dclosedir(dir->data.handle));
+		error = (long)xerror((int)Dclosedir(dir->data.handle));
 	}
 #endif /* _MINT_ */
 
@@ -653,7 +769,7 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 {
 #if _MINT_
 	if (mint)
-		return xerror(Fxattr(flag, name, xattr));
+		return xerror((int)Fxattr(flag, name, xattr));
 	else
 #endif
 	{
@@ -691,7 +807,7 @@ long x_pathconf(const char *path, int which)
 #endif
 	{
 		if (which == DP_PATHMAX)
-			 return 128;
+			 return PATH_MAX;			/* = 128 in TOS */
 		else if (which == DP_NAMEMAX)
 			return 12;
 		return 0;
@@ -700,7 +816,7 @@ long x_pathconf(const char *path, int which)
 
 
 /* 
- * Funkties voor het uitvoeren van programma's 
+ * Execute a program through Pexec
  */
 
 long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
@@ -713,40 +829,6 @@ long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
 		result = 0;
 
 	return result;
-}
-
-
-/* Geheugen funkties */
-
-
-/* 
- * Allocate a memory block, return address of the block
- * HR 120803 only used now for interrogation 
- */
-
-void *x_alloc(long amount)
-{
-	return Malloc(amount);
-}
-
-
-/* 
- * Deallocate a memory block 
- */
-
-int x_free(void *block)
-{
-	return xerror(Mfree(block));
-}
-
-
-/* 
- * Shrink a block of allocated memory 
- */
-
-int x_shrink(void *block, long newsize)
-{
-	return xerror(Mshrink(0, block, newsize));
 }
 
 
@@ -826,6 +908,10 @@ char *xfileselector(const char *path, char *name, const char *label)
  *																	*
  ********************************************************************/
 
+/*
+ * Read a buffer from an open file
+ */
+
 static int read_buffer(XFILE *file)
 {
 	long n;
@@ -842,6 +928,11 @@ static int read_buffer(XFILE *file)
 		return 0;
 	}
 }
+
+
+/*
+ * Write a buffer into an open file
+ */
 
 static int write_buffer(XFILE *file)
 {
@@ -923,7 +1014,7 @@ XFILE *x_fopen(const char *file, int mode, int *error)
  * If allocation is unsuccessful, return ENSMEM (-39)
  * If not read/write mode it returned EINVFN (-32) 
  * (why bother?, this routine is used only once, so this check
- * is disabled but use carefully then!)
+ * is disabled, but use carefully then!)
  * If OK, return 0
  */
 
@@ -959,7 +1050,6 @@ XFILE *x_fmemopen(int mode, int *error)
 	}
 
 	*error = result;
-
 	return xfile;
 }
 
@@ -1114,29 +1204,19 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 				 * Existing buffer has been filled (or this is the first record)
 				 * If this is the first "record" then allocate 128 bytes;
 				 * otherwise, try to increase the allocated amount;
-				 * if it is not possible at the same location,
-				 * allocate a new one and then copy old contents
 				 */
 
-				if (file->buffer)
+				new  = malloc(file->bufsize + 128L);
+				if ( new )
 				{
-					new = realloc(file->buffer, file->bufsize + 128L);
-
-					/* 
-					 * HR 120803: the official realloc doesn't initialize 
-					 * the new buffer, must be copied explicitely.
-					 */
-
-					if (new != file->buffer)
+					if ( file->buffer )
+					{
 						memcpy(new, file->buffer, file->bufsize);
+						free(file->buffer);
+					}
 				}
 				else
-					new = malloc(128L);
-
-				/* Memory allocation has failed ? */
-
-				if (new == NULL)
-					return ENSMEM;
+					return ENSMEM;	
 
 				dest = file->buffer = new;
 				file->bufsize += 128;
@@ -1209,60 +1289,6 @@ long x_fseek(XFILE *file, long offset, int mode)
 }
 
 
-
-#if !TEXT_CFG_IN
-
-/* 
- * It is imparative that this function has a maximum
- * be it only to protect the stack in certain calling functions. 
- */
-
-char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
-{
-	int l;
-	size_t ll;	/* a long is expected in some calls later */
-
-	long n;
-	char *s;
-
-	if ((n = x_fread(file, &l, sizeof(int))) == sizeof(int))
-	{
-		ll = (size_t)l;
-		if (ll > max - 1)		/* max is basically the size of an array that leaves place for a null character. */
-			ll = max - 1;
-
-		if (string == NULL)
-		{
-			if ((s = malloc(ll + 1L)) == NULL)
-			{
-				*error = ENSMEM;
-				return NULL;
-			}
-		}
-		else
-			s = string;
-
-		if ((n = x_fread(file, s, ll + 1L)) != ll + 1L) 
-		{
-			if (string == NULL)
-				free(s);
-			*error = (n < 0) ? (int) n : EEOF;
-			return NULL;
-		}
-	}
-	else
-	{
-		*error = (n < 0) ? (int) n : EEOF;
-		return NULL;
-	}
-
-	*error = 0;
-
-	return s;
-}
-#endif
-
-
 /* 
  * Read a string from a file, but not more than "n" characters 
  */
@@ -1277,7 +1303,6 @@ int x_fgets(XFILE *file, char *string, int n)
 
 	if (file->memfile)
 		return EINVFN;
-
 */
 
 /* DjV 076: why ? Just a safety precaution against careless use maybe?

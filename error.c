@@ -31,7 +31,6 @@
 #include "error.h"
 
 /* 
- * DjV 035 120203
  * get_freestring routine gets pointer to a free-string in the resource,
  * identified by its index; handy for composing various texts.
  */
@@ -46,8 +45,7 @@ char *get_freestring( int stringid )
 
 /* 
  * Retrieve a text string related to some errors, identified by error code.
- * Anything undefined is "TOS error #%d"
- * 
+ * Anything undefined is "TOS error #%d" 
  */
 
 char *get_message(int error)
@@ -179,7 +177,6 @@ void xform_error(int error)
 	else
 		if ( error < 0 )
 			alert_printf( 1, AGENALRT, get_message(error) );
-
 }
 
 

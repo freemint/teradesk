@@ -21,6 +21,7 @@
  */
 
 #include <string.h>
+#include <stddef.h>
 #include <library.h>
 
 
@@ -43,3 +44,35 @@ void make_path( char *name, const char *path, const char *fname )
 	strcpy(name + l, fname);
 }
 
+
+/*
+ * Split a full (file)name (path+filename) into "path" and "fname" parts.
+ * Space for path and fname has to be allocated beforehand.
+ * Path is always finished with a "\"
+ */
+
+void split_path( char *path, char *fname, const char *name )
+{
+	char *backsl;
+
+	backsl = strrchr(name,'\\');
+	if (backsl == NULL)
+	{
+		*path = 0;
+		strcpy(fname, name); /* no path, there is just filename */
+	}
+	else
+	{
+		strcpy(fname, backsl + 1);
+		if (backsl == name)
+			strcpy(path, "\\");
+		else
+		{
+			long l = (backsl - (char *)name);
+
+			strsncpy(path, name, l + 1);		/* secure copy */
+			if ((l == 2) && (path[1] == ':'))
+				strcat(path, "\\");
+		}
+	}
+}

@@ -64,7 +64,7 @@
 								   NORMAL / SELECTED / CHECKED */
 #define XD_CYCLBUT		12		/* IA: cycling button. used with pop-ups mostly. */
 #define XD_SCRLEDIT		13		/* HR 021202: scrolling editable text fields. */
-
+#define XD_FONTTEXT		14		/* font sample text */
 #define XD_UP			52		/* Codes voor buttons met bediening cursortoetsen */
 #define XD_DOWN			53
 #define XD_LEFT			54
@@ -161,19 +161,7 @@ typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 /* Funkties voor het openen en sluiten van een dialoog */
 
 void xd_open(OBJECT *tree, XDINFO *info);
-void xd_open_wzoom(OBJECT *tree, XDINFO *info
-#if _DOZOOM
-/* DjV 060 260603 conditional */
-, RECT *xywh, int zoom
-#endif
-);
 void xd_close(XDINFO *info);
-void xd_close_wzoom(XDINFO *info
-#if _DOZOOM
-/* DjV 060 260603 conditional */
-, RECT *xywh, int zoom
-#endif
-);
 
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
@@ -234,7 +222,7 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent);
 void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 
 OBSPEC xd_get_obspec(OBJECT *object);
-void xd_set_obspec(OBJECT *object, OBSPEC obspec);
+void xd_set_obspec(OBJECT *object, OBSPEC *obspec);
 void *xd_get_scrled(OBJECT *tree, int edit_obj);
 void xd_init_shift(OBJECT *obj, char *text);
 
@@ -258,17 +246,20 @@ int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
 
 /* Funkties voor niet modale dialoogboxen. */
 
-int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-			  int start, int x, int y, OBJECT *menu, 
+int xd_nmopen
+(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
+int start, 
+/* int x, int y, not used */ 
+OBJECT *menu, 
 #if _DOZOOM
-/* DjV 060 280603 conditional */
-              RECT *xywh, int zoom, 
+RECT *xywh, int zoom, 
 #endif
-              const char *title);
+const char *title);
+
+
 void xd_nmclose(XDINFO *info
 #if _DOZOOM
-/* DjV 060 280603 conditional */
-, RECT *xywh, int zoom
+,RECT *xywh, int zoom
 #endif
 );
 

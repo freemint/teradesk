@@ -18,4 +18,4 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-boolean item_open(WINDOW *w, int item, int kstate);
+boolean item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );

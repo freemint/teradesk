@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #ifdef __PUREC__
  #include <np_aes.h>
  #include <vdi.h>
@@ -1002,7 +1003,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 
 /* 
 
-some object types defined inprevious versions are never used in TeraDesk;
+some object types defined in previous versions are never used in TeraDesk;
 so, they are here extracted into a separate file
 
 #include "xdunused.h"
@@ -1022,7 +1023,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	TEDINFO *ted = blk->ob_spec.tedinfo;
 
 	char 
-		s[132],
+		s[132],							/* same as size of LNAME !!! */
 		*text = s,
 	    *save = ted->te_ptext;			/* pointer to editable text field */
 
@@ -1034,9 +1035,9 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	    y = pb->pb_y,
 	    w = pb->pb_w,
 	    h = pb->pb_h,
-		xl, xr,							/* positions of < > markers */
-	    tw = (int)strlen(save),			/* length of text in the field */
-	    ow = strlen(ted->te_pvalid);	/* length of validation field */
+		xl, xr,								/* positions of < > markers */
+	    tw = (int)strlen(save),				/* length of text in the field */
+	    ow = (int)strlen(ted->te_pvalid);	/* length of validation field */
 
 	RECT 
 		size,							/* size of the text box */
@@ -1261,7 +1262,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 
 	size.x = x - gap;
 	size.y = y - 1;
-	size.w = xd_strlen(string) * xd_regular_font.fnt_chw + 2 * gap;
+	size.w = (int)xd_strlen(string) * xd_regular_font.fnt_chw + 2 * gap;
 	size.h = xd_regular_font.fnt_chh + 2; 
 
 	clr_object(&size, xd_bg_col, 0);	
@@ -1736,6 +1737,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 			{
 			case XD_DRAGBOX:
 			case XD_SCRLEDIT:
+			case XD_FONTTEXT:
 				(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
 				break;
 			case XD_RECTBUT:
@@ -1915,6 +1917,9 @@ void xd_set_userobjects(OBJECT *tree)
 			case XD_SCRLEDIT:	
 				/* Scrolled editable text; always userdefined */
 				c_code = ub_scrledit;
+				break;
+			case XD_FONTTEXT:
+				c_code = ub_unknown;
 				break;
 			default:
 				/* yet unknown userdef! */

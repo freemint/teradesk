@@ -25,9 +25,12 @@
 #include <string.h>
 
 #include "desk.h"
+#include "error.h"
 
 /*
  * Duplicate 's', returning an identical malloc'd string.
+ * This is a replacement for a library routine; this one
+ * displays an alert if memory can not be allocated
  */
 
 char *strdup(const char *s)
@@ -39,6 +42,8 @@ char *strdup(const char *s)
 
 	if ((new = malloc(l)) != NULL)
 		memcpy(new, s, l);
+	else
+		xform_error(ENSMEM);
 
 	return new;
 }

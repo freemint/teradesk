@@ -23,7 +23,6 @@
 #include <np_aes.h>	
 #include <stddef.h>
 #include <vdi.h>
-
 #include <boolean.h>
 #include <xdialog.h>
 #include <xscncode.h>
@@ -62,6 +61,7 @@ static int event(int evflags, int mstate, int *key)
 	return result;
 }
 
+
 /*
  * Check if there is a key pressed.
  *
@@ -94,6 +94,11 @@ int key_state(int *key, boolean hndl_msg)
 		return 0;
 }
 
+
+/*
+ * Clear the keyboard buffer
+ */
+
 void clr_key_buf(void)
 {
 	int dummy;
@@ -101,13 +106,29 @@ void clr_key_buf(void)
 	while (key_state(&dummy, FALSE) > 0);
 }
 
+
+/*
+ * Wait for a button click
+ */
+
 void wait_button(void)
 {
 	while (xe_button_state());
 }
 
+
 /*
- * Handle all messages still in the message buffer.
+ * Wait dt milliseconds
+ */
+
+void wait(int dt)
+{
+	evnt_timer(dt, 0);
+}
+
+
+/*
+ * Handle (ignore) all messages still in the message buffer.
  *
  * Result	: 0 OK
  *			 -1 if a message is received which terminates the program
@@ -122,6 +143,7 @@ int clr_msg_buf(void)
 	else
 		return 0;
 }
+
 
 /*
  * This is a routine for confirmation of an abort caused

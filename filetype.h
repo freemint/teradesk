@@ -45,10 +45,6 @@ char *wd_filemask(const char *mask);
 void ft_init(void);
 void ft_default(void);
 
-#if !TEXT_CFG_IN
-int ft_load(XFILE *file, FTYPE **list);
-#endif
-
 void copy_ftype(FTYPE *target, FTYPE *source);
 char *ft_dialog( const char *mask, FTYPE **list, int what );
 

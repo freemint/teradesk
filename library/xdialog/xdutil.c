@@ -1,4 +1,4 @@
-/*
+/* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
  *                                            2003  Dj. Vukovic
@@ -105,6 +105,8 @@ int xd_inrect(int x, int y, RECT *r)
 
 /* 
  * Funktie voor het berekenen van de grootte van de schermbuffer. 
+ * Compute size of the screen buffer, depending on resolution
+ * and number of colours planes
  */
 
 long xd_initmfdb(RECT *r, MFDB *mfdb)
@@ -277,6 +279,7 @@ OBSPEC xd_get_obspec(OBJECT *object)
 
 /* Use correct types ! */
 
+/* Possibly an error; declaration changed to *obspec
 void xd_set_obspec(OBJECT *object, OBSPEC obspec)
 {
 	if ((object->ob_type & 0xFF) == G_USERDEF)
@@ -291,6 +294,23 @@ void xd_set_obspec(OBJECT *object, OBSPEC obspec)
 	else
 		object->ob_spec = obspec;
 }
+*/
+void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
+{
+	if ((object->ob_type & 0xFF) == G_USERDEF)
+	{
+		USERBLK *userblk = object->ob_spec.userblk;
+
+		if (IS_XUSER(userblk))
+			((XUSERBLK *)userblk)->ob_spec = *obspec;
+		else
+			userblk->ub_parm = *(long *)obspec;
+	}
+	else
+		object->ob_spec = *obspec;
+}
+
+
 
 
 /* DjV 074 ---vvv--- */

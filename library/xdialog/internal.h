@@ -36,7 +36,13 @@
 
 #define XD_RDIALOG	0x1
 #define XD_RCURSOR	0x2
-#define XD_MAX_SCRLED 130		/* maximum size of scrolling editable texts. */ /* HR 240203 */
+
+/* 
+ * Maximum size of scrolled editable text should be a little less
+ * than the size of LNAME
+ */
+
+#define XD_MAX_SCRLED 130	
 
 /* Vlaggen voor xd_form_button() */
 
@@ -79,6 +85,7 @@ typedef struct xuserblk
 	int ob_type;					/* Original object type. */
 	int ob_flags;					/* Original object flags. */
 	OBSPEC ob_spec;					/* Original object specifier. */ 
+	long other;						/* can be handy sometimes */
 	int ob_shift;					/* For scrledit: left position of letterbox. */
 } XUSERBLK;
 
@@ -92,6 +99,14 @@ typedef struct
 	int key;
 	int object;
 } KINFO;
+
+typedef struct
+{
+	XW_INTVARS;
+	XDINFO *xd_info;
+	int nkeys;
+	KINFO kinfo[MAXKEYS];
+} XD_NMWINDOW;
 
 typedef struct
 {
@@ -148,5 +163,13 @@ extern int xd_set_keys(OBJECT *tree, KINFO *kinfo);
 extern void xw_closeall(void);
 extern void xd_xuserdef(OBJECT *object, XUSERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
+/*
+extern int __xd_hndlkey(WINDOW *w, int key, int kstate);
+extern void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate);
+extern void __xd_topped(WINDOW *w);
+extern void __xd_closed(WINDOW *w);
+extern void __xd_hndlmenu(WINDOW *w, int title, int item);
+extern void __xd_top(WINDOW *w);
+*/
 
 #endif

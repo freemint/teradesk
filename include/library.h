@@ -38,6 +38,8 @@ int min(int x, int y);
 int max(int x, int y);
 long lmin(long x, long y);
 long lmax(long x, long y);
+void bell(void);
+void digit(char *s, int x);
 
 
 /* Funkties voor filenamen */

@@ -80,7 +80,6 @@ static boolean prtchar(char ch)
 
 
 /* 
- * DjV 029 150203 
  * print_eol() prints CR LF for end of line;
  * same as prtchar above, it returns FALSE when OK!
  */
@@ -167,9 +166,8 @@ static int print_file(WINDOW *w, int item)
 				{
 					for (i = 0; i < (int) l; i++)
 					{
-						/*  DjV 031 150203
-						 * line wrap & new line handling;
-						 */
+						/* line wrap & new line handling */
+
 						ll++;
 						if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
 							ll = 0; /* reset linelength counter at CR, LF or FF */

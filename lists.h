@@ -47,7 +47,7 @@ typedef struct ls_func
 	boolean (*ls_dialog)(LSTYPE **list, int pos, LSTYPE *item, int use);
 }LS_FUNC;
 
-void free_item( void *ptr );
+void free_item( void **ptr );
 boolean find_wild ( LSTYPE **list, char *name, LSTYPE *work, void *func );
 int find_selected(void);
 LSTYPE *get_item(LSTYPE **list, int item);

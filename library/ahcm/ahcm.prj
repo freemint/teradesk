@@ -1,0 +1,31 @@
+;
+; Thread safe and debug friendly memory allocator
+;
+; (c) 2001 - 2003 by Henk Robbers @ Amsterdam
+;
+; 
+
+ahcm.lib
+
+; -K: unsigned char; 
+; -Y: debug info 
+; -C: nested comments; 
+; -P: absolute calls; 
+; -G: size optimization;
+
+; With debug info:
+
+;.C[ -K -Y -G -I..\..\include]
+;.S[ -Y -S ]
+;.L[ -J -Y -L ]
+
+; Without debug info:
+
+.C[ -C -K -G -I..\..\include]
+.S[ -S ]
+.L[ -J -L ]
+
+=
+
+ahcm.c (ahcm.h)
+

@@ -30,6 +30,7 @@
 #include <xdialog.h>
 
 #include "desk.h"
+#include "error.h"
 #include "resource.h"
 #include "version.h"
 #include "xfilesys.h"
@@ -58,17 +59,21 @@ OBJECT *menu,
 	   *wdfont,
 	   *helpno1,
 	   *helpno2,
+	   *helpno3,
 	   *fmtfloppy,
 	   *vidoptions, 
 	   *copyoptions,
 	   *ftydialog,
-	   *searching;
+	   *searching,
+	   *specapp;
 
 char
 	 *dirname, /* should not be removed for the time being */
 	 *openline,/* specification for open- must not be reused */
 	 *oldname, /* must stay */
 	 *newname, /* must stay */
+	 *tgname,
+	 *envline,
 	 *finame,
 	 *flname,
 	 *cmdline,	
@@ -79,14 +84,19 @@ char
 	 *cpfile,
 	 *cpfolder;
 
-char 
-	dirnametxt[132],
-     flnametxt[132],
-     opentxt[132],
-     cmdlinetxt[132];
+	LNAME				/* scrolled text fields for file/folder/path names */
+		envlinetxt,
+		tgnametxt,
+		dirnametxt,
+		flnametxt,
+		opentxt,
+		cmdlinetxt;
 
-extern int xd_aes4_0; /* show if it is a 3D aes */
-extern int tos_version, aes_version;
+
+extern int 
+	xd_aes4_0, 		/* show if it is a 3D aes */
+	tos_version,	/* tos version, hex encoded */ 
+	aes_version;	/* aes version, hex encoded */
 
 
 /*
@@ -120,10 +130,10 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 
 
 /*
- * Note: rsc_yalign is currently applied -only- to slider background objects;
+ * rsc_yalign is currently applied -only- to slider background objects;
  * therefore the calculation is slightly different than in rsc_xalign,
  * because these objects are -not- marked to be set in 3D.
- * Note: this routine also changes the size of the slider itself.
+ * Note2: this routine also changes the size of the slider itself.
  */
 
 static void rsc_yalign(OBJECT *tree, int up, int down, int object)
@@ -163,7 +173,8 @@ void rsc_yfix
 
 /* 
  * Funktie voor het verwijderen van een menupunt uit een menu 
- * Delete a menu item
+ * Delete a menu item when the screen buffer is too small
+ * for the complete menu.
  */
 
 #if _MENUDEL
@@ -195,8 +206,6 @@ static void mn_del(int box, int item)
  * Fix position and contents of the main menu, if necessary
  */
 
-#define MFILEBX MOPEN-1 /* until name set in the resource definition */
-
 static void rsc_fixmenus(void)
 {
 	RECT desk;
@@ -212,9 +221,31 @@ static void rsc_fixmenus(void)
 
 #if _MENUDEL
 
+	/* List of menuboxes and items in them to be deleted (maybe) */
+
+	static int mnbx[] = {
+				MNFILEBX,MNFILEBX,MNFILEBX,
+				MNVIEWBX,MNVIEWBX,MNVIEWBX,
+				MNOPTBOX,MNOPTBOX,
+				MNFILEBX,MNFILEBX,
+				MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,
+				MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
+				};
+
+	static int mnit[] = {
+				SEP1,SEP2,SEP3,
+				SEP5,SEP6,
+				SEP7,SEP8,
+				MDELETE,MFCOPY,
+				MSHSIZ,MSHDAT,MSHTIM,MSHATT,MSUNSORT,
+				MPRGOPT,SEP9,MWDOPT,MVOPTS,MSAVEAS
+				};
+
+/* no harm done if it is always checked
 	if ( tos_version < 0x200 )
+*/
 	{
-		int dummy;
+		int i, n, dummy;
 		long mnsize;
 		RECT boxrect;
 		MFDB mfdb;
@@ -228,6 +259,11 @@ static void rsc_fixmenus(void)
 			} words;
 		} buffer;
 
+		/* 
+		 * memory needed for the menu is estimated from the
+		 * size of the Options menu box, because it is the largest
+		 */
+
 		xd_objrect(menu, MNOPTBOX, &boxrect);
 		mnsize = xd_initmfdb(&boxrect, &mfdb);
 
@@ -236,11 +272,16 @@ static void rsc_fixmenus(void)
 		 * Older TOSses (in fact older AESses ?)  can not.
 		 */
 
-		if ( /* tos1_4() */  aes_version >= 0x140 )
+		if ( aes_version >= 0x140 )
+		{
 			wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
+			n = 12;
+		}
 		else
+		{
 			buffer.size = 8000L;
-
+			n = 19;
+		}
 		/*
 		 * Only the options menu is tested, but items from all boxes
 		 * are removed. Not very logical, but so it is for the time being
@@ -249,47 +290,20 @@ static void rsc_fixmenus(void)
 		 * (If buffer size is sufficient, nothing will happen)
 		 */
 
-		if (mnsize > buffer.size)
+		if (mnsize >= buffer.size)
 		{
-			/* First remove the (non-essential) separator lines */
-
-			mn_del(MFILEBX, SEP1);
-			mn_del(MFILEBX, SEP2);
-			mn_del(MFILEBX, SEP3);
-			mn_del(MNVIEWBX,SEP5);
-			mn_del(MNVIEWBX,SEP6);
-			mn_del(MNOPTBOX, SEP7);
-			mn_del(MNOPTBOX, SEP8);
-
-			/* Even more must be deleted for oldest TOS (AES?) versions */
-
-			if ( /* !(tos1_4() */ aes_version < 0x140 )
-			{
-				mn_del(MFILEBX, MDELETE);
-				mn_del(MFILEBX, MPRINT);
-				mn_del(MFILEBX, MFCOPY);
-
-				mn_del(MNVIEWBX,MSHSIZ);
-				mn_del(MNVIEWBX,MSHDAT);
-				mn_del(MNVIEWBX,MSHTIM);
-				mn_del(MNVIEWBX,MSHATT);
-				mn_del(MNVIEWBX,MSUNSORT);
-
-				mn_del(MNOPTBOX, MPRGOPT);
-				mn_del(MNOPTBOX, SEP9);
-				mn_del(MNOPTBOX, MWDOPT);
-				mn_del(MNOPTBOX, MVOPTS);
-				mn_del(MNOPTBOX, MSAVEAS);
-			}
+			for ( i = 0; i < n; i++ )
+				mn_del(mnbx[i], mnit[i]);
 		}
 	}
 
 #endif
 
-	/* Move two rightmost menu boxes left to fit the screen (if needed) */
+	/* Move some menu boxes left to fit the screen (if needed) */
 
-	set_menubox(MNOPTBOX);
 	set_menubox(MNVIEWBX);
+	set_menubox(MNWINBOX);
+	set_menubox(MNOPTBOX);
 
 	/* Adapt menu bar width to be the same as screen width */
 
@@ -299,9 +313,9 @@ static void rsc_fixmenus(void)
 
 
 /*
- * Convert a scrolled text field to a G_FTEXT suitable for a filename 
- * in 8+3 format (always exactly 12 characters long). The routine is 
- * to be used when the OS does not support long filenames. 
+ * Convert a scrolled text field to a normal G_FTEXT suitable for a filename 
+ * in 8+3 format (always exactly 12 characters long). The routine is to be 
+ * used when the OS does not support long filenames. 
  * Object changes position depending on the value of "just":
  *
  *  just = 0: no change of position
@@ -339,7 +353,8 @@ static char *tos_fnform( OBJECT *obj, int just )
 	/* 
 	 * Change validation and template strings; 
 	 * It is assumed that the original (scrolled text) strings are 
-	 * never shorter than the new ones, so the same locations are used
+	 * never shorter than the new ones, so the same locations are used.
+	 * The remaining old string space is currently wasted !
 	 */
 
 	strcpy(ted->te_pvalid, "FFFFFFFFFFF");
@@ -399,26 +414,30 @@ void rsc_init(void)
 	xd_gaddr(R_TREE, WDFONT, &wdfont);
 	xd_gaddr(R_TREE, HELP1, &helpno1);
 	xd_gaddr(R_TREE, HELP2, &helpno2);
+	xd_gaddr(R_TREE, HELP3, &helpno3);
 	xd_gaddr(R_TREE, FLOPPY, &fmtfloppy);
 	xd_gaddr(R_TREE, VOPTIONS, &vidoptions);
 	xd_gaddr(R_TREE, COPTIONS, &copyoptions);
 	xd_gaddr(R_TREE, ADDFTYPE, &ftydialog);	
 	xd_gaddr(R_TREE, SEARCH, &searching);
+	xd_gaddr(R_TREE, SPECAPP, &specapp);
 
 	/*  
 	 * Handle pointers for scrolling editable texts. 
-	 * Some strings are reused to save space.
-	 */
+	 * Some strings are reused to save space. 
+	 */ 
 
 	dirname = xd_set_srcl_text(newfolder,    DIRNAME,  dirnametxt );
-	openline = xd_set_srcl_text(newfolder,   OPENNAME, opentxt );
+	openline = xd_set_srcl_text(newfolder,   OPENNAME, opentxt );		/* a command, i.e. very long */
 	oldname = xd_set_srcl_text(nameconflict, OLDNAME,  dirnametxt );
 	newname = xd_set_srcl_text(nameconflict, NEWNAME,  flnametxt );
 	flname  = xd_set_srcl_text(fileinfo,     FLNAME,   flnametxt  );
-	cmdline = xd_set_srcl_text(getcml,       CMDLINE,  cmdlinetxt );
+	tgname  = xd_set_srcl_text(fileinfo,     FLTGNAME, tgnametxt  );
+	cmdline = xd_set_srcl_text(getcml,       CMDLINE,  cmdlinetxt );	 /* a command, i.e. very long */
 	          xd_set_srcl_text(applikation,  APNAME,   flnametxt );	
 	          xd_set_srcl_text(applikation,  APPATH,   dirnametxt );	
-	applcmdline = xd_set_srcl_text(applikation,  APCMLINE, cmdlinetxt);
+	applcmdline = xd_set_srcl_text(applikation,  APCMLINE, cmdlinetxt); /* a command, i.e. long */
+	envline  = xd_set_srcl_text(applikation,     APLENV, envlinetxt );
 	spattfld = xd_set_srcl_text(searching, SMASK, dirnametxt ); 
 
 	/* Pointers to some other texts */
@@ -461,7 +480,7 @@ void rsc_init(void)
 
 	rsc_yfix( copyinfo, CMK1, CPT4, 3 );		/* copy info dialog     */
 	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy format dialog */		
-
+	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
 	/* Assuming that filemask dialog and fonts dialog listboxes are the same size... */
 
@@ -472,7 +491,7 @@ void rsc_init(void)
 	}		
 
 	/*
-	 * If mint (or magic) is not present, set validation strings for
+	 * If neither mint nor magic is present, set validation strings for
 	 * all file/filetype input fields to (automatically convert to) uppercase
 	 * and modify their length to 12 characters (8+3 format).
 	 * note: for scrolled text fields it is currently sufficient to put just
@@ -499,6 +518,12 @@ void rsc_init(void)
 		tos_fnform(&searching[SMASK], -1);
 		tos_fnform(&newfolder[DIRNAME], -1);
 		xd_get_obspec(&applikation[APPATH]).tedinfo->te_pvalid[0] = 'x';
+
+		/* 
+		 * Below are substituted "Files and links" with "Files" if no mint.
+		 * Once links get into dialogs by themselves, this should be removed
+		 */
+		rsc_title(copyinfo, CIFILES, SFILES);
 	}
 
 	*drvid = 0;
@@ -506,14 +531,17 @@ void rsc_init(void)
 
 	/* Fill-in constant part of info-box dialog */
 
+#if _MINT_
+	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(SMULTI);
+#endif
 	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = INFO_VERSION;
 	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = INFO_COPYRIGHT;
-	infobox[INFOSYS ].ob_spec.tedinfo->te_ptext = INFO_SYSTEMS; 
 	infobox[OTHRINFO].ob_spec.tedinfo->te_ptext = INFO_OTHER;
 
 	show_os( &infobox[INFOTV], tos_version );
 	show_os( &infobox[INFOAV], aes_version );
 
+/* ok, hidden in the resource file now
 	/*
 	 * As SETMASK dialog is now to be reused for several purposes, some
 	 * use-dependent items are here made invisible. For each use (when needed)
@@ -527,6 +555,7 @@ void rsc_init(void)
 	setmask[MSKATT].ob_flags |= HIDETREE; 
 	setmask[PGATT].ob_flags |= HIDETREE; 
 	setmask[ICATT].ob_flags |= HIDETREE;
+*/
 
 	rsc_fixmenus();
 }
@@ -535,7 +564,7 @@ void rsc_init(void)
 /* 
  * Modify a R_STRING-type text in a dialog (i.e. a dialog title) 
  * by pointing to another string in the resource tree
- * Note: is something wrong here: Structure passed by value?
+ * Note: see also routine get_freestring() in error.c
  */
 
 void rsc_title(OBJECT *tree, int object, int title)
@@ -543,13 +572,13 @@ void rsc_title(OBJECT *tree, int object, int title)
 	OBSPEC s;
 
 	xd_gaddr(R_STRING, title, &s);
-	xd_set_obspec(tree + object, s);
+	xd_set_obspec(tree + object, &s); 
 }
 
 
 /*
  * Write a long integer into a formatted text field. 
- * Text is right justified and padded with spaces on the left side.
+ * Text is right-justified and padded with spaces on the left side.
  * Maximum length is 16 digits.
  *
  * Parameters:
@@ -578,11 +607,11 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 
 	while (i < (l1 - l2))
 	{
-		*p++ = ' ';						/* Fill with spaces. */
+		*p++ = ' ';				/* Fill with spaces. */
 		i++;
 	}
 
-	strsncpy(p, s, l2 + 1);						/* Copy number. */
+	strsncpy(p, s, l2 + 1);		/* Copy number. */
 }
 
 

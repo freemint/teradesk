@@ -49,6 +49,7 @@ void remove_icon(int object, boolean draw);
 void set_dsk_background(int pattern, int color);
 
 int rsrc_icon(const char *name);
+boolean isfile(ITMTYPE type);
 
 int rsrc_icon_rscid(int id, char *name );
 void set_iselector(SLIDER *slider, boolean draw, XDINFO *info);

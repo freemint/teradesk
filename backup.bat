@@ -1,9 +1,12 @@
 echo Backup of TeraDesk 3 source files to a floppy disk
 echo (-n = overwrite without confirmation)
 
+format A: -dh -vteradesk
+
 mkdir a:\include
 mkdir a:\pure_c
 mkdir a:\library
+mkdir a:\library\ahcm
 mkdir a:\library\mint
 mkdir a:\library\multitos
 mkdir a:\library\utility
@@ -17,8 +20,8 @@ copy -n copying      a:\
 copy -n readme.txt   a:\
 copy -n cfg2inf.txt  a:\
 copy -n hist_v3.txt  a:\
+copy -n ann*.txt     a:\
 copy -n teradesk.stg a:\
-copy -n backup.bat   a:\
 
 copy -n *.c         a:\
 copy -n *.h         a:\
@@ -28,6 +31,12 @@ copy -n desktop.rs* a:\
 copy -n *.bat       a:\
 
 copy -n .\include\*.h a:\include\*.h
+
+
+copy -n .\library\ahcm\*.s    a:\library\ahcm\*.c
+copy -n .\library\ahcm\*.s    a:\library\ahcm\*.h
+copy -n .\library\ahcm\*.s    a:\library\ahcm\*.lib
+copy -n .\library\ahcm\*.prj  a:\library\ahcm\*.prj
 
 copy -n .\library\mint\*.c    a:\library\mint\*.c
 copy -n .\library\mint\*.h    a:\library\mint\*.h 

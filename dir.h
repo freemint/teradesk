@@ -38,15 +38,14 @@ typedef struct
 	int index;
 	struct fattr attrib;
 	ITMTYPE item_type;
+	ITMTYPE tgt_type;	/* target object type */
 	int icon;
-/*	const char *icname;  HR 120803 never set */
 	const char *name;
 	char alname[];		/* to be allocated together with NDTA */
 } NDTA;
 
 /* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
-#define OLD_DIR 0
 
 typedef NDTA *RPNDTA[];			/* () ref NDTA */ /* array of pointers */
 
@@ -70,9 +69,6 @@ typedef struct
 	int nselected;
 	long usedbytes;
 	int namelength;				/* length of longest name in the directory */
-#if OLD_DIR
-	NDTA *buffer;
-#else
 	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
 							/* ref to row of ref to NDTA */
 							/* ref () ref NDTA */
@@ -83,7 +79,7 @@ typedef struct
 	   without the intermediate RPNDTA type .
 	   But at least this way it works.
 	*/
-#endif
+
 	boolean refresh;
 
 } DIR_WINDOW;
@@ -93,16 +89,15 @@ typedef struct
 #define XOFFSET	8	/* for positoning of icons in dir window */
 #define YOFFSET	4	/* for positioning of icons in dir window */ 
 
+#define DO_PATH_TOP 	0
+#define DO_PATH_UPDATE	1
+
 
 void dir_init(void);
 void dir_default(void);
 
-#if !TEXT_CFG_IN
-int dir_load_window(XFILE *file); 	
-#endif
-
 int dir_save (XFILE *file, WINDOW *w, int lvl);
-boolean dir_add_window(const char *path, const char *name);
+boolean dir_add_window(const char *path, const char *thespec, const char *name);
 void dir_close(WINDOW *w, int mode);
 
 const char *dir_path(WINDOW *w);
@@ -117,8 +112,11 @@ void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean clr,
 					boolean text, RECT *work); 
 void dir_prtcolumn(DIR_WINDOW *dw, int column, RECT *area, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
+void dir_trim_slash ( char *path );
+boolean dir_do_path( char *path, int action );
 void dir_readnew(DIR_WINDOW *w);
 OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode, RECT *work);
-void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type, size_t size, int attrib);
+void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t size, int attrib);
 ITMTYPE diritem_type( char *fullname );
+void dir_newlink(WINDOW *w, char *target);
 

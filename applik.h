@@ -28,17 +28,13 @@ typedef struct appl
 	struct appl *next;
  /* ---^^^--- compatible with FTYPE and LSTYPE structures */
 	ApplType appltype;
-	boolean argv;
-	boolean path;
-	boolean single;
 	long limmem;
-	int flags;				/* temporary; for load/save same as argv + path + single */
+	int flags;				/* argv + path + single */
 /* ---^^^--- compatible with PRGTYPE structure */
 	char *cmdline;
+	char *localenv;
 	char *name;
 	int fkey;
-	boolean edit;
-	boolean autostart;
 	FTYPE *filetypes;
 } APPLINFO;
 
@@ -49,15 +45,11 @@ CfgNest app_config;
 void app_init(void);
 void app_default(void);
 
-#if !TEXT_CFG_IN
-int app_load(XFILE *file);
-#endif
-
 void app_install(void);
 APPLINFO *app_find(const char *file);
 APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
 APPLINFO *find_fkey(int fkey);
-boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate, boolean dragged);
+boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate);
 void app_update(wd_upd_type type, const char *fname1, const char *fname2);
-/* void app_autostart(void); */
-void app_specstart(int flags);
+int app_specstart(int flags, WINDOW *w, int *list, int n, int kstate);
+boolean app_checkspec(int flag, int pos);

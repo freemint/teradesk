@@ -434,6 +434,7 @@ void formatfloppy
 								errtxt = get_freestring( TWPROT );
 							else
 								errtxt = &nothing;
+
 							button = alert_printf( 3, AFMTERR, (int)istat, itrack, errtxt );
 							switch ( button )
 							{
@@ -494,7 +495,7 @@ void formatfloppy
 		    
         		/* 
 				 * calculate FAT size; always use optimized 12-bit FATs; 
-				 * for each cluster use use 3/2 bytes, add 2 for FAT header 
+				 * for each cluster use use 3/2 bytes, add 2 for FAT header. 
 				 * fomula below will generally give 3- and 5-sector FATs 
 				 * for DD and HD respectively 
 				 */

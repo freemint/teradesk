@@ -42,17 +42,21 @@ extern	OBJECT
 	*wdfont,
 	*helpno1,
 	*helpno2,
+	*helpno3,
 	*fmtfloppy, 
 	*vidoptions,
 	*copyoptions,
 	*ftydialog,
-	*searching;	
+	*searching,
+	*specapp;
 
 extern char 
 	*dirname,
 	*openline,
 	*oldname,
 	*newname,
+	*tgname,
+	*envline,
 	*finame,
 	*flname,
 	*cmdline,
@@ -63,8 +67,6 @@ extern char
 	*cpfile,
 	*cpfolder;
 
-extern char 
-   cmdlinetxt[];
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);

@@ -1,4 +1,4 @@
-/*
+/* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
  *                               2003, 2004  Dj. Vukovic
@@ -42,7 +42,6 @@
 
 #define CFG_EXT		"*.INF"
 
-
 void wd_drawall(void);
 
 
@@ -71,16 +70,21 @@ void path_to_disp ( char *fpath )
 
 /* 
  * Geef een pointer terug die wijst naar het begin van de filenaam
- * in een padnaam. 
+ * in een padnaam.
+ * This routine returns pointer to the beginning of a name in
+ * an existing fullname string. It doesn't allocate any memory for 
+ * the name. If the fullname string does not exist, returns NULL.
  */
 
 char *fn_get_name(const char *path)
 {
 	char *h;
 
-	if ((h = strrchr(path, '\\')) == NULL)
-		return (char *) path;
+	if (!path)
+		return NULL;
 
+	if ((h = strrchr(path, '\\')) == NULL)
+		return (char *)path;
 	else
 		return h + 1;
 }
@@ -88,8 +92,9 @@ char *fn_get_name(const char *path)
 
 /* 
  * Geef een pointer terug op een met malloc gereserveerd stuk
- * geheugen, waarin het pad van de padnaam van een file wordt gezet. 
- * Space is allocated for the new path here
+ * geheugen, waarin het pad van de padnaam van een file wordt gezet.
+ * Extract the path part of the full name. Space is allocated for 
+ * the extracted path here
  */
 
 char *fn_get_path(const char *path)
@@ -102,7 +107,10 @@ char *fn_get_path(const char *path)
 	if ((backsl = strrchr(path, '\\')) == NULL)
 		backsl = (char *) path;
 
-	/* Compute path length. Treat special case for the root path */
+	/* 
+	 * Compute path length. Treat special case for the root path:
+	 * add one to the length so that "\" is included
+	 */
 
 	if (((l = backsl - (char *) path) == 2) && (path[1] == ':'))
 		l++;
@@ -128,6 +136,7 @@ char *fn_get_path(const char *path)
 /*
  * Create a path+filename by concatenating two strings;
  * memory is allocated for the resulting string; return pointer to it.
+ * If memory can not be allocated, display an alert box.
  */
 
 char *fn_make_path(const char *path, const char *name)
@@ -137,6 +146,7 @@ char *fn_make_path(const char *path, const char *name)
 
 	if ((result = x_makepath(path, name, &error)) == NULL)
 		xform_error(error);
+
 	return result;
 }
 
@@ -230,7 +240,9 @@ static void split_name(char *name, char *ext, const char *fname)
 
 
 /* 
- * Check if path is to a root directory on drive 
+ * Check if path is to a root directory on drive.
+ * This is determined by analyzing the name.
+ * No check of the actual disk contents is made. 
  */
 
 boolean isroot(const char *path)
@@ -278,22 +290,23 @@ char *locate(const char *name, int type)
 	int 
 		ex_flags;
 
-	cfgext = strdup(CFG_EXT);
+	cfgext = strdup(CFG_EXT); /* so that strlwr can be done upon it */
 
 #if _MINT_
-	if (mint)
+	if (mint && cfgext)
 	{
 		strlwr(cfgext);
-		defext = "*";
+		defext = DEFAULT_EXT;
 	}
 	else
 #endif
-		defext = "*.*";
+		defext = TOSDEFAULT_EXT;
 
 	if (type == L_FOLDER)
 	{
 		if ((fspec = fn_make_path(name, defext)) == NULL)
-			return NULL;
+			return NULL; 
+
 		fname[0] = 0;
 		ex_flags = EX_DIR;
 	}
@@ -301,18 +314,22 @@ char *locate(const char *name, int type)
 	{
 		if (   (fspec = fn_make_newname(
 		                        name, 
-		                        (  (type == L_LOADCFG) || (type == L_SAVECFG) )
+		                        (  cfgext && ((type == L_LOADCFG) || (type == L_SAVECFG)) )
 		                          ? cfgext
 		                          : defext
 		                        )
 		       ) == NULL
 		   )
-			return NULL;
+			{
+				return NULL;
+			}
+
 		strcpy(fname, fn_get_name(name));
 		ex_flags = EX_FILE;
 	}
 
-	rsrc_gaddr(R_STRING, FSTLFILE + type, &title);
+	free(cfgext);
+	rsrc_gaddr(R_STRING, FSTLFILE + type, &title);	
 
 	do
 	{
@@ -381,7 +398,6 @@ void get_fsel
 		sl;			/* string length */
 
 	char
-		*s,			/* pointer to last '\' in fileselector result */
 		*c,			/* pointer to aft part of the string */
 		*cc,		/* copy of the above */
 		*path,		/* path obtained */
@@ -393,11 +409,11 @@ void get_fsel
 
 #if _MINT_
 	if (mint)
-		defext = "*";
+		defext = DEFAULT_EXT;
 	else
 #endif
-		defext = "*.*";
-	
+		defext = TOSDEFAULT_EXT;
+
 	rsrc_gaddr(R_STRING, FSTLFILE, &title);
 	name[0] = 0;
 
@@ -410,21 +426,23 @@ void get_fsel
 
 	/* If a path is specified, get rid of wildcards in it */
 
-	if ( path )
+	if ( path ) 
 	{
-		if ( ( s = strrchr(path, '\\') ) != NULL )
-		{
-			if ( name[0] || isroot(path)  )
-				*(++s) = 0;
-			else	
-				*s = 0;
-		}
+		/* 
+		 * There will always be something after the last "\"
+		 * so, after trimming in path_to_disp, it is safe to add
+		 * a "\" again, if a name has to be concatenated
+		 */
+
+		path_to_disp(path);
+
+		if (*name && !isroot(path))
+			strcat(path,"\\");
 
 		fl = strlen(name);
 		pl = strlen(path);
 
 		tl = fl + pl;
-
 
 		sl = strlen(result);
 		if ( sl + tl >= len )
@@ -439,17 +457,16 @@ void get_fsel
 		if ( *pos < sl )
 		{
 			if ( (cc = strdup(c)) == NULL )
-			{
-				xform_error(ENSMEM);
 				return;
-			}
 		}
 
 		strsncpy( c, path, pl + 1 ); /* must include null at end here! */
 		free(path);
 
 		if ( fl )
+		{
 			strcat( result, name );
+		}
 
 		if ( cc )
 		{
@@ -538,7 +555,7 @@ boolean check_drive(int drv)
  * There are (were) two alternative routines for matching wildcards,
  * depending on whether the Desktop was multitasking-capable or not:
  * match_pattern() and cmp_part() .The first one was used for 
- * multitasking-capable desktop ad the other for single-tos only.
+ * multitasking-capable desktop and the other for single-tos only.
  * This has been changed so that match_pattern() is always used.
  */
 
@@ -611,9 +628,10 @@ boolean match_pattern(const char *t, const char *pat)
 	return valid && toupper(*t) == toupper(*pat);
 }
 
+
+
 /* let's not use it anymore
 #else
-
 
 /* 
  * Compare part of a filename (i.e. extension or name itself)
@@ -661,35 +679,13 @@ boolean cmp_part(const char *name, const char *wildcard)
 #endif
 */
 
+
 /* 
  * Compare a filename against a wildcard pattern 
  */
 
 boolean cmp_wildcard(const char *fname, const char *wildcard)
 {
-/* old
-
-#if _MINT_
-
-		/* For long filenames: use another routine */
-
-        return match_pattern(fname, wildcard);
-#else
-		/*
-		 * For TOS (short filename) only: split filename into
-		 * name+extension. Compare name against wildcard name,
-		 * compare extension against wildcard extension.
-		 */
-
-		char name[10], ext[4], wname[10], wext[4];
-
-		split_name(name, ext, fname);      /* name and extension */
-		split_name(wname, wext, wildcard); /* wildcard name and extension */
-		if (cmp_part(name, wname) == FALSE)
-			return FALSE;
-		return cmp_part(ext, wext);
-#endif
-*/
 #if _MINT_
 
 		if ( mint )
@@ -888,11 +884,6 @@ void cramped_name(const char *s, char *t, int ww)
 			*p++ = '.';
 			*p++ = '.';
 
-/* 
- * this may leave a space unused at the end, depending on odd/even length
- * of the source, so maybe a little better as changed below:
- *		strcpy(p, q + l - h);
- */
 			strcpy(p, q + l - (w - h - 4) );
 		}
 	}
@@ -1008,11 +999,11 @@ void cv_formtofn(char *dest, OBJECT *ob)
 	int  l    = xd_get_obspec(ob).tedinfo->te_txtlen; /* this includes the term. byte */
 
 	/* 
-	 * The only 12-chars long fields in TeraDesk should be 
+	 * The only 12-characters-long fields in TeraDesk should be 
 	 * for 8+3 names, possibly even if mint is around 
 	 */
 
-	if ( /* !mint && */ l < 14 )
+	if (  l < 14 )
 		cv_tos_form2fn(dest, source);
 	else
 	{

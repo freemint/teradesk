@@ -31,8 +31,8 @@ void move_screen(RECT *dest, RECT *src);
 void set_txt_default(int font, int height);
 int *get_colors(void);
 void set_colors(int *colors);
-int load_colors(XFILE *file);
-int save_colors(XFILE *file);
+int load_colors(void);
+int save_colors(void);
 void set_rect_default(void);
 void draw_rect(int x1, int y1, int x2, int y2);
 

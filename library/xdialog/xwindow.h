@@ -33,6 +33,7 @@
 						struct window *xw_next;	\
 						int xw_type;			\
 						int xw_handle;			\
+						int xw_ap_id;			\
 						int xw_opened;			\
 						int xw_flags;			\
 						struct wd_func *xw_func;\
@@ -41,7 +42,7 @@
 						int xw_mparent;			\
 						RECT xw_size;			\
 						RECT xw_nsize;	/* size before iconify */ \
-						int iflag;      /* flag for iconify    */ \
+						int xw_iflag;      /* flag for iconify    */ \
 						RECT xw_work
 
 /*
@@ -134,9 +135,7 @@ extern WINDOW *xw_hfind(int handle);
 extern WINDOW *xw_top(void);
 extern int xw_exist(WINDOW *w);
 extern WINDOW *xw_first(void);
-extern WINDOW *xw_next(void);
 WINDOW *xw_last(void);
-WINDOW *xw_prev(void);
 
 #if __USE_MACROS
 #define xw_type(w)		((w)->xw_type)
@@ -146,10 +145,17 @@ extern int xw_type(WINDOW *w);
 extern int xw_handle(WINDOW *w);
 #endif
 
+/* 
+ * The two macros below are not used; provided just in case, as a 
+ * substitute for xw_next() and xw_prev() routines which can not be 
+ * used the way they were
+ */
+
+#define xw_next(w) ((w)->xw_next)
+#define xw_prev(w) ((w)->xw_prev)
+
 extern void xw_cycle(void);
-
 extern void xw_send_redraw(WINDOW *w, RECT *area);
-
 extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);
 extern void xw_menu_text(WINDOW *w, int item, const char *text);

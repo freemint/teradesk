@@ -31,23 +31,25 @@
 #include <mint.h>
 #include <xdialog.h>
 
+
 #include "desk.h"
 #include "error.h"
 #include "resource.h"
 #include "startprg.h"
 #include "xfilesys.h"
 #include "file.h"
+#include "events.h"
 #include "config.h"	
 #include "prgtype.h"
 #include "font.h"
 #include "window.h"
+#include "dir.h"
 #include "lists.h"
 #include "slider.h" 
 #include "filetype.h" 
 #include "library.h"
 #include "applik.h"
 #include "va.h"
-#include "edit.h"	  
 
 
 APPLINFO
@@ -57,8 +59,6 @@ APPLINFO
 extern PRGTYPE *prgtypes;   /* list of executable filetypes */
 
 extern Options options;		/* need to know cfg file version */
-
-extern char *editor;	
 
 void wd_drawall(void);
 
@@ -126,16 +126,17 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 		else
 			prev->next = f->next;
 
-		free_item( f->name ); 	/* deallocate app name */
-		free_item( f->cmdline);	/* and command line    */
+		free_item( &(void *)(f->name) ); 		/* deallocate app name */
+		free_item( &(void *)(f->cmdline) );		/* and command line    */
+		free_item( &(void *)(f->localenv) );	/* and environment     */
 		rem_all((LSTYPE **)(&(f->filetypes)), rem); /* deallocate documenttyoe list */
-		free_item(f);
+		free_item( &(void *)f );
 	}
 }
 
 
 /*
- * Copy an application dataset from one location to another;
+ * Copy an application definition from one location to another;
  * Space for both has to be already allocated; 
  * for name, commandline and documenttypes, memory is allocated here 
  */
@@ -145,17 +146,21 @@ static void copy_app( APPLINFO *t, APPLINFO *s )
 	copy_prgtype ( (PRGTYPE *)t, (PRGTYPE *)s );
 
 	t->fkey = s->fkey;
-	t->edit = s->edit;
-	t->autostart = s->autostart;
 
 	t->name = NULL;
 	t->cmdline = NULL;
+	t->localenv = NULL;
 	t->filetypes = NULL;
 
-	if ( s->name != NULL )
+	if ( s->name )
 		t->name = strdup(s->name);
-	if ( s->cmdline != NULL )
+	if ( s->cmdline )
 		t->cmdline = strdup(s->cmdline);
+	if ( s->localenv )
+		t->localenv = strdup(s->localenv);
+
+	/* Note: below will commence even if allocation above failed ! */
+
 	copy_all ( (LSTYPE **)(&(t->filetypes)), (LSTYPE **)(&(s->filetypes)), sizeof(FTYPE), copy_ftype);
 }
 
@@ -194,34 +199,28 @@ void appinfo_info
 
 		prg_info( &prgtypes, name, 0, (PRGTYPE *)appl );
 
+		/* Pass name, if given; otherwise set empty string */
+
+		appl->name = strdup ( (name) ? name : "\0");
+
 		/* 
-		 * Pass name, if given, otherwise set empty string 
+		 * Create default command line and environment; 
+		 * set no documenttypes and F-key 
 		 */
 
-		if ( name != NULL )
-			appl->name = strdup(name);
-		else
-			appl->name = strdup("\0");
-
-		/* Create a default command line; set no documenttypes and F-key */
-
 		appl->cmdline = strdup("%f");
+		appl->localenv = strdup("\0");
 		appl->filetypes = NULL; 
 		appl->fkey = 0;
-		appl->edit = FALSE;
-		appl->autostart = FALSE;
+		appl->flags &= ~(AT_EDIT | AT_AUTO | AT_SHUT | AT_VIDE | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW );
 
-		/* Check if allocation of name and commandline strings  was successful */
-
-		if ( appl->name == NULL || appl->cmdline == NULL )
-			xform_error ( ENSMEM );
 	}
 }
 
 
 /*
  * Check duplicate application assignment; this routine differs
- * from check_dup in lists.c in that the full app path+name is compared
+ * from check_dup in lists.c in that the full app path+name is compared.
  * Perhaps this routine should be improved to check for duplicate
  * documenttype assignments (one document should not be assigned
  * to several applications)
@@ -307,25 +306,76 @@ static boolean check_fkey(APPLINFO **list, int fkey, int pos)
 
 	while (f != NULL)
 	{
-		if ( i != pos )
+		if ( (i != pos) && (f->fkey == fkey) )
 		{
-			if ( f->fkey == fkey )
-			{
-				button = alert_printf( 2, ADUPFLG, f->shname );
-				if ( button == 1 )
-				{
-					return TRUE;
-				}
-				else
-					return FALSE;
-			}
-		}
+			button = alert_printf( 2, ADUPFLG, f->shname );
 
+			if ( button == 1 )
+				return TRUE;
+			else
+				return FALSE;
+		}
 		i++;
 		f = f->next;
 	}
 
 	return TRUE;
+}
+
+
+/*
+ * Check if a special application is already marked with "flag" at a position
+ * other than "pos". If it is, an alert appears asking for confirmation 
+ * to change the settings. 
+ * Use pos=-1 to check if it is marked at all (no alert appears then).
+ * Return FALSE if an application is already marked.
+ * Return TRUE if it is OK to mark an application with this flag.
+ * Note: bit flags can be combined.
+ */
+
+static boolean check_specapp( APPLINFO **list, int flag, int pos )
+{
+	int
+		button,
+		i = 0;
+
+	APPLINFO
+		*f = *list;
+
+	while( f != NULL )
+	{
+		if (i != pos )
+		{
+			if ( (f->flags & flag) != NULL )
+			{
+				if ( pos != -1 )
+					button = alert_printf( 2, ADUPFLG, f->shname );
+
+				if ( button != 1 )
+					return FALSE;
+			}
+		}
+		i++;
+		f = f->next;
+	}
+	return TRUE;
+}
+
+
+/*
+ * Reset special-app flags specified in "flags"
+ * for all applications in the list
+ */
+
+static void unset_specapp(APPLINFO **list, int flags)
+{
+	APPLINFO *app = *list;
+	
+	while(app)
+	{
+		app->flags &= ~flags;
+		app = app->next;
+	}
 }
 
 
@@ -341,6 +391,11 @@ static boolean app_set_path(APPLINFO *info, const char *newpath)
 
 	if ((h = strdup(newpath)) == NULL)
 	{
+		/* 
+		 * Note: there will be two alerts here, as strdup above
+		 * also announces insufficient memory
+		 */
+
 		alert_printf(1, AAPPLPM, fn_get_name(newpath));
 		return FALSE;
 	}
@@ -407,14 +462,17 @@ boolean app_dialog
 	int use					/* use of this dialog (add/edit) */
 )
 {
-	int 
+	int
+		i,					/* local counter */ 
+/* not needed
+		tmpflags,			/* temporary appl->flags */
+*/
 		title,				/* rsc index of dialog title string */
 		button, 			/* code of pressed button */
+		button2,			/* for a subdialog */
 		fkey;				/* code of associated F-key */
 
 	boolean
-		newedit = FALSE,	/* true if app is to be set as an editor */
-		wasedit = FALSE,	/* true if application was an editor */
 		stat = FALSE, 
 		quit = FALSE;		/* true when ok to exit loop */
 
@@ -424,6 +482,7 @@ boolean app_dialog
 		thispath;			/* path of the current application */
 
 	char
+		*newenv = NULL,		/* pointer to the changed text */
 		*newcmd = NULL,		/* pointer to the changed text */ 
 		*newpath = NULL;	/* pointer to the changed text */
 
@@ -448,11 +507,13 @@ boolean app_dialog
   	}
 	else
 	{
+/* can this ever happen ?
 		if ( appl->name[0] > ' ' && !prg_isprogram(fn_get_name(appl->name)) )
 		{
 			alert_printf(1, AFNPRG, isroot(appl->name) ? appl->name : appl->shname); /* Not a program filetype ! */
 			return FALSE;
 		}
+*/
 		title = (use & LS_WSEL ) ? DTINSAPP : DTADDAPP; /* Install or edit - set title */
 		list = appl->filetypes;
 	}
@@ -462,43 +523,18 @@ boolean app_dialog
 	rsc_title( applikation, APDTITLE, title );
 	rsc_title(addprgtype, PTTEXT, TAPP);
 
-	/* Is this, perhaps, the editor program ? */
-
-	applikation[ISEDIT].ob_state &= ~SELECTED;
-	
-#if TEXT_CFG_IN
-	if (appl->edit)		
-	{
-		applikation[ISEDIT].ob_state |= SELECTED;
-		wasedit = TRUE;
-	}
-#else
-	if ( editor != NULL )
-	{
-		if ( strcmp( editor, appl->name ) == 0 )
-		{
-			applikation[ISEDIT].ob_state |= SELECTED;
-			wasedit = TRUE;
-		}
-	}
-#endif
-
-	/* Is this an autostart application? */
-
-	set_opt(applikation, appl->autostart, 1, ISAUTO);
-
 	/*
-	 * Copy application name, path and command line to dialog fields;
+	 * Copy application name, path, command line and environment to dialog;
 	 * as application name is stored as path+name it has to be split-up
-	 * in order to to display path separately
+	 * in order to display path separately
 	 */
 
 	split_path( thispath, thisname, appl->name );
 
 	cv_fntoform(&applikation[APNAME], thisname);
 	cv_fntoform(&applikation[APPATH], thispath);
-
-	strcpy(applcmdline, appl->cmdline);
+	strcpy(applcmdline, appl->cmdline); 
+	strcpy(envline, appl->localenv); 
 
 	/* Put F-key value, if any, into the dialog */
 
@@ -522,6 +558,29 @@ boolean app_dialog
 		
 		switch (button)
 		{
+		case SETUSE:
+			/* 
+			 * Set special use of this application;
+			 * Adjust maximum value of i in two loops below
+			 * to be equal to number of checkboxes in the dialog (currently 7)
+			 */
+			{
+				int ord[] = {ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW};
+
+				for ( i = 0; i < 7; i++ )
+					set_opt(specapp, appl->flags, AT_EDIT << i, ord[i] );
+
+				button2 = xd_dialog(specapp, ROOT);
+
+				if ( button2 == SPECOK )
+				{
+					for ( i = 0; i < 7; i++ )
+						get_opt(specapp, &(appl->flags), AT_EDIT << i, ord[i] );
+				}	
+
+				break;
+			}
+
 		case APPFTYPE:
 
 			/* Set associated document types; must recreate dialog title afterwards */
@@ -558,11 +617,9 @@ boolean app_dialog
 			if ( !check_fkey(applist, fkey, pos) )
 				break;
 
-			/* Check for duplicate editor assignment */
+			/* Check for duplicate spec. application assignment */
 
-			get_opt(applikation, (int *)(&newedit), 1, ISEDIT); 
-
-			if ( !check_edit(applist, newedit, pos) )
+			if ( !check_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW )), pos) )
 				break;
 
 			/* 
@@ -603,10 +660,7 @@ boolean app_dialog
 			if ( strcmp(thispath, appl->name) != 0 )
 			{
 				if ( ( newpath = strdup(thispath) ) == NULL )
-				{
-					xform_error(ENSMEM);
 					goto exit2;
-				}
 			}
 
 			/* 
@@ -617,10 +671,16 @@ boolean app_dialog
 			if ( (strcmp(applcmdline, appl->cmdline) != 0) )
 			{
 				if ((newcmd = strdup(applcmdline)) == NULL)
-				{
-					xform_error(ENSMEM);
 					goto exit2;
-				}
+			}
+
+			/* Same for local environment */
+
+			strip_name(envline, envline);
+			if ( (strcmp(envline, appl->localenv) != 0) )
+			{
+				if ((newenv = strdup(envline)) == NULL)
+					goto exit2;
 			}
 
 			/* 
@@ -652,7 +712,7 @@ boolean app_dialog
 				rem_all((LSTYPE **)(&list), rem);
 			}
 
-			/* Change app name and command line if changed */
+			/* Set new app name, command line and environment if changed */
 
 			if ( newpath != NULL )
 			{
@@ -666,29 +726,20 @@ boolean app_dialog
 				appl->cmdline = newcmd;
 			}
   
+			if ( newenv != NULL )
+			{
+				free(appl->localenv);
+				appl->localenv = newenv;
+			}
+
 			/* Set also the f-key. (remove all other assignments of this key) */
 
 			unset_fkey(applist, fkey);
 			appl->fkey = fkey;
 
-			/* Set this app as editor program, if so said */
+			/* Reset special app flags from other applications */
 
-			if ( newedit )
-			{
-				unset_edit(applist);
-				appl->edit = TRUE;
-				edit_set(appl->name);
-			}
-			else
-			{
-				appl->edit = FALSE;	
-				if ( wasedit )
-					edit_set(NULL);
-			}
-
-			/* Set autostart flag if needed */
-
-			get_opt(applikation, (int *)(&appl->autostart), 1, ISAUTO);
+			unset_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW )) );
 
 			quit = TRUE;
 			stat = TRUE;
@@ -720,7 +771,7 @@ boolean app_dialog
 
 
 /* 
- * Use these list kind-specific functions to manipulate applications lists: 
+ * Use these list-specific functions to manipulate applications lists: 
  */
 
 #pragma warn -sus
@@ -810,10 +861,14 @@ APPLINFO *find_fkey(int fkey)
 
 
 /*
- * Determine the length of the command line.
+ * Build a command line from the format string and the selected objects.
+ * Commad line variables understood: %f (fullname), %n (name), %p (path)
+ * Return pointer to an allocated space containing the complete command line,
+ * including length information in the first byte (if the command is
+ * longer than 125 bytes, 127 is entered as length).
  */
 
-static long app_get_arglen
+static char *app_build_cml
 (
 	const char *format,
 	WINDOW *w,
@@ -821,188 +876,272 @@ static long app_get_arglen
 	int n
 )
 {
-	const char *c = format;
-	char h, *mes;
-	long l = 0;
-	int i, item;
-	ITMTYPE type;
+	boolean
+		quote;
 
-	while (*c)
-	{
-		if ( (*c++ == '%') && (n > 0) ) 
-		{
-			h = tolower(*c++);
-			if ((h == 'n') || (h == 'f'))
-			{
-				for (i = 0; i < n; i++)
-				{
-					item = sellist[i];
-					type = itm_type(w, item);
-
-					if ((type == ITM_TRASH) || (type == ITM_PRINTER))
-					{
-						switch (type)
-						{
-						case ITM_TRASH:
-							rsrc_gaddr(R_STRING, MTRASHCN, &mes);
-							break;
-						case ITM_PRINTER:
-							rsrc_gaddr(R_STRING, MPRINTER, &mes);
-							break;
-						}
-						if (alert_printf(1, ANODRAGP, mes) == 1)
-							continue;
-						else
-							return -1L;
-					}
-					else
-					{
-						if (i != 0)
-							l++;
-						if ((h == 'f') || (type == ITM_DRIVE))
-							l += itm_info(w, item, ITM_FNAMESIZE);
-						else if (h == 'n')
-							l += itm_info(w, item, ITM_NAMESIZE);
-					}
-				}
-			}
-			else
-				l++;
-		}
-		else
-			l++;
-	}
-
-	return l;
-}
-
-
-/*
- * Build a command line from the format string and the selected objects.
- */
-
-static boolean app_set_cml
-(
-	const char *format,
-	WINDOW *w,
-	int *sellist,
-	int n,
-	char *dest		
-)
-{
 	const char 
-		*c = format, 
+		*c = format,
 		*s;
 
 	char 
+		quotechar = 39, 	/* 34=double quote; 39=single quote */
 		h, 
-		*d = dest, 
-		*tmp;
+		hh,
+		*d,
+		*tmp,
+		*build = NULL,		/* buffer for building the command name */
+		*realname = NULL,	/* name to be used- either item name or link target */
+		*fullname = NULL;	/* full name of the item */
 
 	int 
-		i, 
+		i, 			/* item counter */
+		error,
 		item;
+
+	long
+		ltot,	/* total length of the current command line */
+		ml;
 
 	ITMTYPE 
 		type;
 
+	/* Special case: n = -1 : an explicitely given command line- just copy it */
+
+	if ( n == - 1 )
+	{
+		tmp = strdup(format);
+		return tmp;
+	}
+
+	/*
+	 * Any argument will not be longer than VLNAME-1. Therefore it seems
+	 * safe to assume that a complete command line will be shorter
+	 * than (n+1) * (sizeof(VLNAME) + 2). A temporary buffer for constructing
+	 * the command line is dimensioned so, with two bytes per arg. to spare
+	 * for an occasional quote (it can't overflow)
+	 */
+
+	ml = (n + 1) * (sizeof(VLNAME) + 2);
+
+	if ( (build = malloc(ml)) == NULL )
+		return NULL; 
+
+	/* Keep the first byte for length information */
+
+	d = build;
+
+	*d++ = '*'; /* will be substituted by length info */
+
+	ltot = 1;
+
+	/* Trim leading blanks from input */
 
 	while (*c == ' ')
 		c++;
 
+	/* Process input (i.e. format line) until 0-byte encountered */
+
 	while ((h = *c++) != 0)
 	{
-		if ((h == '%') &&  (n > 0) )
+		if (h == '%') 
 		{
+			/* A command line variable has maybe been encountered */
+
 			h = *c++;
-			if ((tolower(h) == 'f') || (tolower(h) == 'n'))
+			hh = tolower(h);
+
+			/* Handled: %f, %n, %p */
+
+			if ( (hh == 'f') || (hh == 'n') || (hh == 'p') )
 			{
-				for (i = 0; i < n; i++)
+				/*
+				 * Command line variables are ignoredif there are no files,
+				 * but other content of the command line is processed
+				 */
+
+				if ( n > 0 )
 				{
-					item = sellist[i];
-					type = itm_type(w, item);
-
-					if ((type != ITM_TRASH) && (type != ITM_PRINTER))
+					for (i = 0; i < n; i++)
 					{
-						if (i != 0)
-							*d++ = ' ';
+						item = sellist[i];
+						type = itm_type(w, item);
+						quote = FALSE;	
 
-						if ((tolower(h) == 'f') || (type == ITM_DRIVE))
+						if ((type == ITM_TRASH) || (type == ITM_PRINTER))
 						{
-							if ((tmp = itm_fullname(w, item)) == NULL)
-								return FALSE;
+							switch (type)
+							{
+								case ITM_TRASH:
+									rsrc_gaddr(R_STRING, MTRASHCN, &tmp);
+									break;
+								case ITM_PRINTER:
+									rsrc_gaddr(R_STRING, MPRINTER, &tmp);
+									break;
+							}
+							if (alert_printf(1, ANODRAGP, tmp) == 1)
+								continue;
+							else
+								goto error_exit2;
 						}
 						else
 						{
-							if ((tmp = strdup(itm_name(w, item))) == NULL)
-								return FALSE;
+							/* Always separate arguments by blanks */	
+
+							if (i != 0)
+							{
+								*d++ = ' ';
+								ltot++;
+							}
+
+							/* Get the full name of an item (allocate fullname) */
+
+							if ((fullname = itm_fullname(w, item)) == NULL)
+							{
+								free(build);
+								return NULL;
+							}
+
+							/* Is this, maybe, a link? */
+
+/* made simpler
+							if ( (error = itm_attrib( w, item, 1, &attrib )) != 0 )
+								goto error_exit1;
+
+#if _MINT_
+							if ( (attrib.mode & S_IFMT) == (unsigned int)S_IFLNK )
+							{ 
+								if ( (error = x_rdlink(sizeof(VLNAME), tgt, fullname)) != 0 )
+									goto error_exit1;
+								else
+									realname = tgt;
+							}
+							else
+#endif
+								realname = fullname;
+
+*/
+							/* 
+							 * Item can be a link; if so, resolve it;
+							 * if it is not a link, the name will be copied
+							 */
+
+							realname = x_fllink(fullname);				
+							
+
+							if ((hh == 'f') || (type == ITM_DRIVE))
+							{
+								tmp = realname;
+							}
+							else if ( hh == 'n' )
+							{
+								tmp = fn_get_name(realname);
+							}
+							else if ( hh == 'p' )
+							{
+								tmp = realname;
+								*fn_get_name(realname) = 0;
+							}
+
+							if ( !tmp )
+								goto error_exit2;
+
+							if (isupper(h))
+								strlwr(tmp);
+
+							if ( ltot + strlen(tmp) >= ml )
+							{
+								error = ECOMTL;
+								goto error_exit1;
+							}
+
+							/* Quote the name if it contains blanks */
+
+							if ( strchr(tmp, ' ') != NULL )
+							{
+								quote = TRUE;
+								ltot++;
+								*d++ = quotechar; /* quote */
+							}
+
+							s = tmp;
+							while (*s)
+							{
+								*d++ = *s++;
+								ltot++;
+							}
+
+							if (quote )
+							{
+								ltot++;
+								*d++ = quotechar; /* unquote */
+							}
+
+							free(fullname);
+							free(realname);
 						}
-
-						if (isupper(h))
-							strlwr(tmp);
-
-						s = tmp;
-						while (*s)
-							*d++ = *s++;
-						free(tmp);
 					}
 				}
 			}
 			else
+			{
+				ltot++;
+				if ( ltot >= ml )
+				{
+					error = ECOMTL;
+					goto error_exit1;
+				}
 				*d++ = h;
+			}
 		}
 		else
+		{
+			ltot++;
+			if ( ltot >= ml )
+			{
+				error = ECOMTL;
+				goto error_exit1;
+			}
 			*d++ = h;
+		}
 	}
+
+	/* add zero termination byte */
 
 	*d++ = 0;
 
-	return TRUE;
+	/* Copy to destination */
+
+	tmp = strdup( build );
+
+	/* Insert length information */
+
+	if ( ltot > 126 )
+		*tmp = 127;
+	else
+		*tmp = ltot - 1; /* -1 because "*" was the first character */
+
+	/* Cleanup and exit */
+
+	free(build);
+	return tmp;
+
+	/* Handle errors */
+
+	error_exit1:;
+
+	xform_error( error );
+ 
+	error_exit2:;
+
+	free(build);
+	free(fullname);
+	free(realname);
+	return NULL;
 }
 
 
 /*
- * Check and build the command line from the format string and
- * the selected objects. Space is allocated for the resulting
- * commandline string 
- */
-
-static char *app_build_cml
-(
-	const char *format,	/* format string */
-	WINDOW *w,			/* pointer to a window with selected items */
-	int *list,			/* list of item indexes */
-	int n				/* number of selected items */
-)
-{
-	long l;
-	char *cmdline;
-
-	if ((l = app_get_arglen(format, w, list, n) ) < 0) 
-		return NULL;
-
-	l += 2;		/* Length byte and terminating 0. */
-
-	if ((cmdline = malloc(l)) != NULL)
-	{
-		if (app_set_cml(format, w, list, n, cmdline + 1) == FALSE) 
-		{
-			free(cmdline);
-			return NULL;
-		}
-
-		if ((l = strlen(cmdline + 1)) <= 125)
-			*cmdline = (char) l;
-		else
-			*cmdline = 127;
-	}
-
-	return cmdline;
-}
-
-
-/*
- * Start a program or an application.
+ * Start a program or an installed application.
  *
  * Parameters:
  *
@@ -1014,24 +1153,17 @@ static char *app_build_cml
  *			  application, or NULL if no objects were dragged to
  *			  the program (i.e. program was started directly)
  * sellist	- list of selected objects in 'w'
+ *            or (char *)sellist to pass an explicit command line if n = -1
  * n		- number of selected objects in 'w', or 0 if no objects
+ *            or -1 if a verbatim command line is passed
  *			  are dragged to the program.
- * kstate   - 
- * dragged	- currently not used
+ * kstate   - keyboard state (shift,alternate...)
  *
  * Result: TRUE if succesfull, FALSE if not.
  */
 
-/*
- * modified to use *program to pass explicit 
- * path and name of file to open in case of n=-1 && app != NULL
- * 290903: modified again to instead use (char *)sellist to pass
- * a verbatim command line instead of a filename. Use *program
- * as is should be used- for program name. n=-1 is still used.
- */
-
 boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
-				 int *sellist, int n, int kstate, boolean dragged)
+				 int *sellist, int n, int kstate)
 {
 
 	APPLINFO 
@@ -1039,16 +1171,19 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 
 	const char 
 		*cl_format,				/* Format of commandline. */
-		*name,					/* Program name. */
+		*name,					/* Program (real) name. */
 		*def_path;				/* Default path of program. */
 
 	char 
-		*fullname,				/* full name of the app file searched for */
-		*newcmd = NULL,			/* same but if built from elements */
-		thecommand[132];		/* final command line */
-		
+		*fullname;				/* full name of the app file searched for */
+
+	char
+		*theenv = NULL,			/* local environment for the application */
+		*thecommand = NULL;		/* command line */
+
 	long
-		limmem;					/* mem.limit in multitask */
+		cmllen,					/* length of the command line */
+		limmem;					/* mem.limit in multitask (bytes) */
 
 	boolean 
 		argv,					/* Use ARGV protocol flag. */
@@ -1059,7 +1194,7 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		appl_type;				/* Type of program */
 
 	PRGTYPE
-		pwork;					/* contains programtype data */
+		*thework;
 
 	static SNAME
 		prevcall;				/* previously called ttp */
@@ -1068,41 +1203,42 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		thiscall;				/* name of this ttp */
 
 
-	/* Clear the command line which might be passed on to a program */
+	/* 
+	 * Maybe a link was specified. Find the real object, because
+	 * its type has to be determined. If the object is not a link,
+	 * its name will be copied in x_fllink()
+	 */
 
-	thecommand[0] = 0;
-	thecommand[1] = 0;
+	name = x_fllink((char *)program);
 
 	/* If application is NULL, findout if 'program' is installed as an application. */
 
-	/* HR 120803 allow NULL when pos not needed */
-
-	appl = (app == NULL) ? find_appl(&applikations, program, NULL) : app; 
+	appl = (app == NULL) ? find_appl(&applikations, name, NULL) : app; 
 
 	if (appl == NULL)
 	{
-		/* 
-		 * 'program' is not installed as an application. 
-		 * Use default settings for this executable file type 
-		 */
-
-		cl_format = "%f";
-		name = (char *) program;
-
-		prg_info(&prgtypes, name, 0, &pwork);
-		appl_type = pwork.appl_type;
-		argv = pwork.argv;
-		single = pwork.single;
-		limmem = pwork.limmem;
-		def_path = (pwork.path) ? NULL : wd_toppath();
-
 		/* Abort if program does not exist. */
 
 		if (x_exist(name, EX_FILE) == FALSE)
 		{
 			alert_printf(1, APRGNFND, fn_get_name(name));
+			free(name);
 			return FALSE;
 		}
+
+		/* 
+		 * 'program' is not installed as an application. 
+		 * Use default settings for this executable file type.
+		 * Default data are filled into pwork.
+		 * Default command line is a full filename passed.
+		 * Default path is either the program directory path or the top window 
+		 * path (which may also default to program directory path if no
+		 * directory window is topped).
+		 */
+
+		cl_format = "%f";
+		prg_info(&prgtypes, name, 0, &pwork);
+		thework = &pwork;
 	}
 	else
 	{
@@ -1110,15 +1246,13 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		 * 'app' is not NULL or 'program' is installed as an
 		 * application. Use the settings set by the user in the
 		 * 'Install application' dialog. 
+		 * Local environment is passed only if the string is not empty.
 		 */
 
 		cl_format = appl->cmdline;
-		name = appl->name;
-		appl_type = appl->appltype;
-		argv = appl->argv;
-		single = appl->single;
-		limmem = appl->limmem;
-		def_path = (appl->path == TRUE) ? NULL : wd_toppath();
+		name = x_fllink(appl->name);
+		theenv = (appl->localenv[0]) ? appl->localenv : NULL;
+		thework = (PRGTYPE *)appl;
 
 		/* 
 		 * If the application file does not exist, ask the user to
@@ -1130,121 +1264,148 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 			int button;
 
 			if ((button = alert_printf(1, AAPPNFND, fn_get_name(name))) == 3)
+			{
+				free(name);
 				return FALSE;
+			}
 			else if (button == 2)
 			{
 				rem_appl(&applikations, appl); 
+				free(name);
 				return FALSE;
 			}
-			/* DjV: note: instead of "fullname" there was "newname" here, but 
+
+			/* 
+			 * Locate the file using file selector.
+			 * DjV: note: instead of "fullname" there was "newname" here, but 
 			 * that seems wrong, as newname (global) should always have pointed
 			 * to an editable field in nameconflict dialog
 			 */
 			else if ((fullname = locate(name, L_PROGRAM)) == NULL)
+			{
+				free(name);		
 				return FALSE;
+			}
 			else 
 			{
-				free(name); /* this is appl->name; is not worth anything anymore */
-				appl->name = fullname;
-				name = fullname;
+				free(name); /* is not worth anything anymore, have fullname */
 
-				/* 
-				 * Create a short name here, or applications list 
-				 * in the dialog will look wrong  
-				 */
+				/* Maybe a link was selected. Locate real object */
 
-				log_shortname( appl->shname, appl->name );
+				name = x_fllink(fullname);
+				if ( name )
+				{
+					/* 
+					 * Create a short name here, or applications list 
+					 * in the dialog will look wrong  
+					 */
+
+					appl->name = strdup(name);
+					log_shortname( appl->shname, appl->name );
+				}
+				else
+					appl->name = "\0";
 			}
 		}
 	}
 
-	if (n == 0)
+	appl_type = thework->appl_type;
+	argv = thework->flags & PT_ARGV;
+	single = thework->flags & PT_SING;
+	limmem = thework->limmem;
+	def_path = (thework->flags & PT_PDIR) ? NULL : wd_toppath();
+
+	/* 
+	 * Further action depends on the type of the program and whether
+	 * there are filenames passed to it.
+	 */
+
+	if ( (n == 0) && ( (appl_type == PTTP) || (appl_type == PGTP) ) )
 	{
 		/* 
 		 * If there are no files passed to the program (n is 0) and
 		 * the program is a TTP or GTP program, then ask the user to
 		 * enter a command line.
-	     */
+		 * Remember the command line if the same ttp program
+		 * is started again (remember name of the program as well)
+		 */
 
-		if ((appl_type == PTTP) || (appl_type == PGTP))
+		log_shortname( (char *)thiscall, (char *)name );
+
+		if ( strcmp( thiscall, prevcall ) != 0 )
 		{
-			int j;
-
-			/* 
-			 * Remember the command line if the same ttp program
-			 * is started again (remember name of the program as well)
-			 */
-
-			log_shortname( (char *)thiscall, (char *)name );
-
-			if ( strcmp( thiscall, prevcall ) != 0 )
-			{
-				cmdline[0] = 0;
-				strcpy( prevcall, thiscall );
-			}
-
-			if (xd_dialog(getcml, CMDLINE) != CMLOK)
-				return FALSE;
-
-			j = strlen(cmdline);
-
-			thecommand[0] = j;
-			strcpy( &thecommand[1], cmdline );
-
+			cmdline[0] = 0;	/* clear the dialog field */
+			strcpy( prevcall, thiscall );
 		}
-		else
-			prevcall[0] = 0;
-	}
-	else if ( n > 0 )
-	{
-		/* 
-		 * There are files passed to the program, build the command line. 
-		 * Note: new command line string space is allocated here
-		 * (and also in the next app_build_cml). It looks as if this
-		 * space must exist at least for some time after the program
-		 * has been started- therefore it must not be free'd?
-		 * To achieve this, the new command line is copied into 
-		 * a permanent location- the one which is also used in the
-		 * commandline dialog
-		 */ 
 
-		if ((newcmd = app_build_cml(cl_format, w, sellist, n )) == NULL) 
+		if (xd_dialog(getcml, CMDLINE) != CMLOK)
+			return FALSE;
+			
+		/* 
+		 * cmdline below is from the dialog. Copy any possible length,
+		 * and put command line length (or 127) into first byte
+		 */
+
+		cmllen = strlen(cmdline);
+
+		if ( (thecommand = malloc(cmllen + 2L)) == NULL )
 			return FALSE;
 
-		strcpy(thecommand, newcmd);
-		prevcall[0] = 0;
+		thecommand[0] = (cmllen > 125) ? 127 : (char)cmllen;
+		thecommand[1] = 0;
+		strncpy(&thecommand[1], cmdline, (size_t)cmllen);
 	}
 	else
 	{
-		if ( n == -1 )		/* File to open is passed by explicit path or name or other command */
+		/* 
+		 * There are filesnames passed, or this is not a TTP/GTP program;
+		 * build the command line 
+		 */
+
+		if ((thecommand = app_build_cml( (n == -1) ? (char *)sellist : cl_format, w, sellist, n)) == NULL)
 		{
-			if ((newcmd = app_build_cml( (char *)sellist, w, sellist, n)) == NULL)
-				return FALSE;
-			strcpy(thecommand, newcmd);
+			free(name);
+			return FALSE;
 		}
+
 		prevcall[0] = 0;
 	}
 
-	/* Check if the commandline is too long. */
+	/* 
+	 * Do not use ARGV on programs not installed as applications
+	 * if the command line is sufficiently short
+	 */
 
-	if (   argv == FALSE
-	    && strlen(thecommand + 1) > 125
-	   )
+	cmllen = strlen(thecommand + 1);
+	if (  !find_appl(&applikations, name, NULL) && (cmllen < 126) )
+		argv = FALSE;
+
+	/* Check if the commandline is too long (max 125 if ARGV is not recognized)  */
+
+	if ( !argv && (cmllen > 125)  )
 	{
 		xform_error ( ECOMTL ); 
 		result = FALSE;
 	}
 	else	/* No error, start the program. */
 	{
-		/* something is wrong here! see va.c */
 
-		if (!va_start_prg(name, &thecommand[1]))
-			start_prg(name, thecommand, def_path, appl_type, argv, single, limmem, kstate);
+		if ( name )
+		{
+			/* something is wrong here! see va_start_prg in va.c */
 
-		result = TRUE;
+			if (!va_start_prg(name, appl_type, &thecommand[1]) )
+				start_prg(name, thecommand, def_path, appl_type, argv, single, limmem, theenv, kstate);
+
+			result = TRUE;
+		}
+		else
+			result = FALSE;
 	}
 
-	free(newcmd);
+	free(name);
+	free(thecommand);
+
 	return result;
 }
 
@@ -1283,19 +1444,15 @@ void app_default(void)
 }
 
 
-#if ! TEXT_CFG_IN
-
-#include "app_load.h"		/* has to go anyhow */
-
-#endif
-
-
-
 typedef struct
 {
-	LNAME name,
-	      cmdline;
-	FTYPE ftype;
+	VLNAME 
+		name,
+		cmdline,
+		localenv;
+	      
+	FTYPE 
+		ftype;
 } SINFO;
 
 static
@@ -1316,15 +1473,6 @@ static CfgNest this_atype
 	if ( io == CFG_SAVE )
 	{
 		copy_prgtype( &pwork, (PRGTYPE *)(&awork) );
-
-		/* Bit/bool should be considered temporary */
-
-		bool_to_bit( &pwork.flags, PT_ARGV, pwork.argv );
-		bool_to_bit( &pwork.flags, PT_PDIR, pwork.path );
-		bool_to_bit( &pwork.flags, PT_SING, pwork.single);
-		bool_to_bit( &pwork.flags, AT_EDIT, awork.edit );
-		bool_to_bit( &pwork.flags, AT_AUTO, awork.autostart );
-
 		*error = CfgSave(file, prg_table, lvl + 1, CFGEMP);
 	}
 	else
@@ -1336,27 +1484,20 @@ static CfgNest this_atype
 		if ( pwork.appl_type > PTTP )
 			*error = EFRVAL; 		
 		else
-		{
-			/* This bit_to_bool should be considered temporary */
-
-			bit_to_bool( pwork.flags, PT_ARGV, &pwork.argv );
-			bit_to_bool( pwork.flags, PT_PDIR, &pwork.path );
-			bit_to_bool( pwork.flags, PT_SING, &pwork.single);
-			bit_to_bool( pwork.flags, AT_EDIT, &awork.edit);
-			bit_to_bool( pwork.flags, AT_AUTO, &awork.autostart);
-
 			copy_prgtype( (PRGTYPE *)(&awork), &pwork );
-		}
 	}
 }
+
 
 /*
  * Clear a list of associated doctypes
  */
+
 static void rem_all_doctypes(void)
 {
 	rem_all((LSTYPE **)(&awork.filetypes), rem);
 }
+
 
 /*
  * Load or save configuration for associated documenttypes 
@@ -1385,11 +1526,8 @@ static CfgEntry app_table[] =
 	{CFG_BEG},
 	{CFG_S,   0, "path", this.name		},
 	{CFG_S,   0, "cmdl", this.cmdline	},
+	{CFG_S,   0, "envr", this.localenv  },
 	{CFG_D,  0, "fkey", &awork.fkey	    },
-/*
-	{CFG_BD,  0, "edit", &awork.edit	    },
-	{CFG_BD,  0, "auto", &awork.autostart   },
-*/
 	{CFG_NEST,0, "atype",     this_atype    },
 	{CFG_NEST,0, "doctypes",  dt_config		},
 	{CFG_END},
@@ -1414,13 +1552,13 @@ static CfgNest one_app
 			awork = *h;
 			strcpy(this.name, awork.name);
 			strcpy(this.cmdline, awork.cmdline);
+			strcpy(this.localenv, awork.localenv);
 
 			*error = CfgSave(file, app_table, lvl + 1, CFGEMP); 
 	
 			h = h->next;
 		}
 	}
-#if TEXT_CFG_IN
 	else
 	{
 		memset(&this, 0, sizeof(this));
@@ -1436,33 +1574,32 @@ static CfgNest one_app
 			{
 				char *name = malloc(strlen(this.name) + 1);
 				char *cmdline = malloc(strlen(this.cmdline) + 1);
+				char *localenv = malloc(strlen(this.localenv) + 1);
 
 				if (name && cmdline)
 				{
 					strcpy(name, this.name);
 					strcpy(cmdline, this.cmdline);
+					strcpy(localenv, this.localenv);
 
 					log_shortname( awork.shname, name );
 					awork.name = name;
 					awork.cmdline = cmdline;
-
+					awork.localenv = localenv;
 
 					/* 
 					 * As a guard against duplicate flags/keys assignment
-					 * for each application loaded, all previous editor
+					 * for each application loaded, all previous spec app
 					 * or Fkey assignments (to that key) are cleared here, 
 					 * so only the last assignment remains.
 					 * Note: if adding the application to the list fails
 					 * a few lines later, this will leave Teradesk without
-					 * an editor or this Fkey assignment. Might be called
+					 * an spec app or this Fkey assignment. Might be called
 					 * a bug, but probably not worth rectifying.
 					 */
 
-					if ( awork.edit )
-					{
-						unset_edit(&applikations);
-						edit_set(awork.name);
-					}
+					unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW) ) );
+
 					if ( awork.fkey )
 						unset_fkey(&applikations, awork.fkey );
 
@@ -1477,18 +1614,25 @@ static CfgNest one_app
 				           ) == NULL 
 				   		)
 					{
+/* this should be done always !!!
 						free(name);
 						free(cmdline);
+						free(localenv);
+*/
 						rem_all((LSTYPE **)(&awork.filetypes), rem);
 						*error = ENOMSG;
 					}
+
+free(name);
+free(cmdline);
+free(localenv);
+
 				}	
 				else
 					*error = ENSMEM;
 			}
 		}
 	}
-#endif
 }
 
 
@@ -1516,50 +1660,60 @@ CfgNest app_config
 }
 
 
-
 /*
  * Start applications with a special use.
  * It can be: an editor, an autostart or a shutdown app.
  * There can be only one editor, but several startup or
  * shutdown applications. 
- * There is a delay of 0.5 seconds between autostart apps
+ * There is a delay of 1 or 2 seconds between autostart apps
  * but a delay of 10 seconds between shutdown apps.
  * 
  * Note: this routine can be improved, to better handle
  * simultaneous or sequential launch of applications.
+ *
+ * Routine returns the number of application started 
+ * (successfully or otherwise)
  */
 
-void app_specstart(int flags)
+int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 {
 	APPLINFO *app = applikations;
-	int cnt = 0, delayt;
 
-	if ( flags & AT_SHUT )
+	int	n = 0, delayt;
+
+	if ( (flags & AT_SHUT) || (flags & AT_VIDE) )
 		delayt = 10000;
 	else
-		delayt = 500;
+	{
+#if _MINT_
+		if ( mint || geneva )
+			delayt = 2000;
+		else
+#endif
+			delayt = 1000;
+	}
 
 	while (app != NULL)
 	{
 		if ( ( app->flags & flags) != NULL )
 		{
-			/* Maybe wait a little bit until next one ?? */
+			/* Delay a little bit before the next application */
 
-			if ( cnt )
-			{
-				evnt_timer(delayt, 0); 
-				wd_drawall();
-			}
-		
-			cnt++;
+			if ( n )
+				wait(delayt); 
+			n++;
 
 			/* Start a marked application */
 
-			app_exec(NULL, app, NULL, NULL, 0, 0, FALSE);
+			app_exec(NULL, app, w, list, nn, kstate);
 
-			if ( (flags & AT_EDIT) != NULL )
+			/* Some types should not be multiply defined- exit after the first one */
+
+			if ( (flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW ) ) != 0 )
 				break;
+
 		}
 		app = app->next;
 	}
+	return n;
 }

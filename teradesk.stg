@@ -1,50 +1,35 @@
 @subject "Documentation/Utilities"  
 @database "User Manual for TeraDesk"  
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  
-@$VER: December 2003  
+@$VER: April 2004  
 @width 70  
-@default Title  
-  
-@node "Title"  
-  
-@{U}Title                                                         TeraDesk@{u}  
-  
-@autorefoff  
-
-
-
-                     User Manual for TeraDesk V3.01  
-                       
-                                   by  
-  
-               Wout Klaren, Henk Robbers, Djordje Vukovic  
-  
-                              January 2004  
+@default Main  
   
   
-@autorefon  
-                               Contents  
-  
-  
-  
-@endnode  
-  
-  
-@node Main "Contents"  
+@node Main "Contents"
+@alias "Title"  
 @symbol "Contents"  
-@toc "Title"  
   
 @{U}Contents                                                      TeraDesk@{u}  
-   
- 1  Introduction  
- 2  Installation  
- 3  Conventions and background information  
- 4  Menus and Dialogues  
- 5  Icons and Objects  
- 6  TeraDesk Windows  
- 7  Configuration files  
- 8  The ARGV protocol  
- 9  Acknowledgements  
+
+@autorefoff  
+                  User Manual for TeraDesk V3.30  
+                       
+             Wout Klaren, Henk Robbers, Djordje Vukovic  
+  
+                            April 2004  
+@autorefon  
+
+    1  Introduction  
+    2  Installation  
+    3  Conventions and background  
+    4  Menus and Dialogs  
+    5  Icons and Objects 
+    6  Symbolic Links
+    7  TeraDesk Windows  
+    8  Configuration files  
+    9  Supported Protocols  
+   10  Acknowledgements  
   
 @endnode  
   
@@ -73,12 +58,24 @@
   
 @{U}1.1  About the Tera Desktop                                   TeraDesk@{u}  
   
-Tera  Desktop  is  a  replacement  for  the  ST, STE or TT desktop. It  
-provides more facilities  than the standard TOS desktop(s) (especially  
-the ones  in TOS versions 1.*) and windows are drawn and scrolled much  
-faster  in it; It allows icons for files and programs and provides the  
-ability to view files in windows.  
+Tera Desktop (TeraDesk) is a replacement for the ST, STE or TT desktop. 
+It provides more facilities  than the built-in TOS desktop (especially  
+the ones in TOS versions 1.*). 
   
+TeraDesk is currently the only open-souce desktop available for 16-bit
+and 32-bit  Atari computers.  Developers' goal has  been  to  maintain 
+TeraDesk as a small, simple, fast and reliable desktop, which would be 
+functional in the  modern multitasking  environments and  all flavours 
+and versions of TOS-compatible operating  system(s),  and yet to keep, 
+as much as reasonable, familiarity with the original TOS desktop. 
+
+TeraDesk is NOT intended  to be a direct replacement for the excellent 
+but  resources-demanding desktops like  Thing or Jinnee,  but  instead
+is designed to be used  where  disk space or  system memory  and speed 
+limitations (or price) make the use of those fine desktops impractical
+(e.g. TeraDesk's  size and memory usage is currently only about 1/3 to 
+1/2 of Jinnee's in a similar setup). 
+
 TeraDesk  was  initially  developed  by  Wout Klaren. Version 1.41 was  
 released in 1994 and here the development stopped for some time.  
   
@@ -96,15 +93,14 @@ Dj.Vukovic;  they are a significant  further improvement of TeraDesk's
 functionality, the program having undergone a significant redesign.  
   
   
-The program may  be  copied and distributed freely  provided that  the 
-terms of the GPL (see accompanying file COPYING) are respected. 
- 
-The  program  must  not  sold  without the  written permission  of the  
-authors.  If  the  program  is  distributed  by a PD library, only the  
-costs of the disk and distribution may be recovered.  
+The program may  be  copied and distributed freely  provided  that  the 
+terms of the GPL (see accompanying file COPYING) are respected. If  the  
+program  is  distributed  by a PD library,  only the  costs of the disk 
+and distribution may be recovered.  
   
 Tera Desktop files (included in the binary distribution) are:  
   
+             COPYING          Copy of the GPL  
              DESKTOP.PRG      The Tera Desktop program  
              DESKTOS.PRG      Reduced version for single TOS only  
              DESKTOP.RSC      English resource file  
@@ -117,8 +113,6 @@ Tera Desktop files (included in the binary distribution) are:
              TERADESK.REF     Reference file for the above  
              TERADESK.INF     Sample configuration file 
              TERADESK.PAL     Sample palette file 
-             TERADESK.BAT     Sample startup file 
-             COPYING          Copy of the GPL  
 
 There also exists a source distribution which contains the complete
 source tree of TeraDesk, to be compiled and linked with PureC 1.1
@@ -155,7 +149,7 @@ source tree of TeraDesk, to be compiled and linked with PureC 1.1
   
 Tera  Desktop  can  be  used on any Atari ST series computer and their  
 offspring,  TT,  Falcon,  Hades, Milan or emulators. It uses about 200  
-KB of memory (depending on the complexity of configuration).  
+to 250 KB of memory (depending on the complexity of configuration).  
   
 Although  Tera Desktop can be used without the aid of a hard disk, the  
 use  of  one  is  strongly  recommended.  
@@ -197,21 +191,22 @@ or Atari AES 4.1.
   
 TeraDesk 3.* has been tested with the following system configurations:  
   
-TOS 1.00 (RAM loaded)  
+TOS 1.00 (RAM-loaded)  
   
-TOS 1.02 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.963  
+TOS 1.02 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.970  
   
 TOS 1.04  
-TOS 1.04 (RAM loaded)  
+TOS 1.04 (RAM-loaded)  
 TOS 1.04 + NVDI 2.0   
-TOS 1.04 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.963  
+TOS 1.04 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.970  
   
 TOS 2.06  
 TOS 2.06 + NVDI 4.11  
 TOS 2.06 + NVDI 4.11 + Wdialog 2  
 TOS 2.06 + Geneva 4 / 6 + NVDI 4.11  
-TOS 2.06 + Mint 1.15.0  + NVDI 4.11 + AES 4.1 / N.Aes 1.1 / XaAES 0.963  
-TOS 2.06 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.963  
+TOS 2.06 + Mint 1.15.0  + NVDI 4.11 + AES 4.1 / N.Aes 1.1 / XaAES 0.970 
+ 
+TOS 2.06 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.970  
 
 TOS 3.05 + NVDI 2.0   
 TOS 3.06  
@@ -220,7 +215,7 @@ Hades TOS 3.06 + oVDI
 Hades TOS 3.06 + Mint 1.16 + oVDI + N.Aes 2.0 / XaAES
 
 TOS 4.04  
-TOS 4.04 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.963  
+TOS 4.04 + Mint 1.15.12 + AES 4.1 / N.Aes 2.0 / XaAES 0.970  
   
 Milan TOS 4.09 + MiNT 1.15.12 + N.Aes 1.2 / XaAES  
   
@@ -240,12 +235,15 @@ icons  when  TeraDesk  was  running in TOS 2.06 (only). An attempt was
 made  to  cure  this,  but  it  is  not  sure  yet whether it has been  
 completely successful.  
   
-Window  de-iconification  behaves  in  a somewhat weird way with XaAES  
-0.963  if  iconified  windows  have  been  moved.  There are also some
-other minor redraw problems in XaAES. These problem do not appear with 
-any other AES  TeraDesk was tested with, and  are  more  likely to  be
-faults of XaAES than TeraDesk.  
-  
+An intermittent problem exists with  Magic 6.10 in  ST-Low resolution.
+Screen does not get properly redrawn after leaving the "Options" menu.
+Possibly not a real problem but a magic-configuration issue?  
+
+Change  of  screen  resolution works with various success in different  
+AESses  (generally  supported with AES 4 versions only), e.g. in TOS +  
+Geneva  or  TOS  +  Mint  +  AES4.1  it works perfectly; in some other  
+environments it doesn't work so well, or not at all.  
+
 TeraDesk  makes  several  inquires  trying  to determine TOS- and AES-  
 versions  and  their  capabilities and limitations. If some version of  
 TOS  or  AES  is  not  able to answer these queries, TeraDesk tries to  
@@ -253,11 +251,6 @@ make guesses  which  may  not  always be correct.  It is also possible
 that  incorrect  answer  to  a  query is supplied by TOS/AES, in which  
 case TeraDesk  may  work  with unnecessary limitations  or else try to  
 activate features which may not work.  
-  
-Change  of  screen  resolution works with various success in different  
-AESses  (generally  supported with AES 4 versions only), e.g. in TOS +  
-Geneva  or  TOS  +  Mint  +  AES4.1  it works perfectly; in some other  
-environments it doesn't work so well, or not at all.  
   
 See also Screen resolutions.  
   
@@ -278,10 +271,10 @@ See also Screen resolutions.
 It  is  recommended that you use Tera Desktop in high or medium screen  
 resolution.  When  used  in  low (ST-low) resolution, it may work with  
 some   restrictions,   depending   on  TOS  version,  because  of  the  
-limitation  (imposed  by  the  AES) on the size of menus (small screen  
-buffer  size). This limitation is met by removing some menu items when  
-insufficient screen buffer size is detected  (this should never happen
-EXCEPT in ST-low and ST-medium resolution):  
+limitation  (imposed by the older versions of the AES)  on the size of 
+menus (small screen buffer  size).  This limitation is met by removing 
+some menu items when insufficient screen buffer size is detected (this 
+should never happen EXCEPT in ST-low and ST-medium resolution):  
   
 - In TOS 1.04 and older, menu separator bars are removed;  
   
@@ -300,11 +293,12 @@ EXCEPT in ST-low and ST-medium resolution):
        -Video options...   
        -Save as...  
        
-Configuration items set by removed menu items can still  be set in the
-configuration file.        
+Configuration items set by removed menu items  can still be set in the
+configuration  file.  These  options  are  also  still  available  via 
+keyboard shortcuts. See also Desk preferences...      
    
 In  ST-High  resolution  there  should  not be any problems related to  
-menu size in any TOS version. See also TOS Version compatibility.  
+menu size in any old TOS version. See also TOS Version compatibility.  
   
 If  TeraDesk  is to be used exclusively in high screen resolutions and  
 long-file-names-capable   environment,   length   of   the  scrollable  
@@ -317,7 +311,7 @@ alphanumeric  editable fields (i.e. filetype masks and search strings)
 should NOT be changed.
 
 Screen resolution can be changed, depending on the AES and TOS version
-used, through Video options... dialogue. This feature does not work in
+used, through Video options... dialog.  This  feature does not work in
 all AESses, though; generally, it is effective only with some versions
 of AES 4. 
  
@@ -355,8 +349,10 @@ resulting from the use of Tera Desktop no matter how it is caused.
 Tera Desktop should be installed as follows:  
   
 1. Create  a  folder called e.g. DESKTOP or TERADESK anywhere on your  
-floppy or hard disk (or in a RAM disk).  
-  
+floppy or hard disk (or in a RAM disk) to hold Tera Desktop files. It
+is also possible, although a bit untidy, to run Tera Desktop from the
+root directory of a disk volume.   
+
 2. Copy into this folder the files:  
   
        DESKTOP.PRG  (if  you  intend  to use multitasking)  OR   
@@ -366,30 +362,33 @@ floppy or hard disk (or in a RAM disk).
        CICONS.PRG   (if your AES can support colour icons)   
   
 Note  that  DESKTOP.PRG  will  work in single-TOS as well; DESKTOS.PRG  
-just  saves  a  few  kilobytes of memory by not containing  code which 
-is not relevant in Single-TOS environment.  
+just  saves  a  few  kilobytes of memory  by not containing code which 
+is not relevant in  Single-TOS environment,  and by  having a somewhat 
+limited support for the AV-protocol.
 
+If only DESKTOS.PRG is  to be used,  it may be renamed to  DESKTOP.PRG 
+after copying,  but this is not  required  (the program  will register 
+itself to the AES as "DESKTOP" in all cases).  
+  
 You can  also copy  into this folder  TERADESK.BAT,  TERADESK.INF  and
 TERADESK.PAL  from the  \EXAMPLES folder.  Note, however,  that  these 
 example  configuration  files  are  set  for one  particular  computer
-configuration,  and you may get some warning messages that they do not
-fit your current setup. 
+configuration, and may not be appropriate for your setup (Tera Desktop
+will attempt to obey everything  specified in the configuration files, 
+no matter what the actual environment is).
   
-3. If  you  use  ST-GUIDE,  copy  TERADESK.HYP and TERADESK.REF from
+3. If  you  use   ST-GUIDE,  copy  TERADESK.HYP and TERADESK.REF  from
 the \DOC folder to the folder where your other .HYP files are.  
   
-4.  If  you  need  to convert TeraDesk V2.* configuration files to the  
-new  format  of  TeraDesk  V3, you need to get also CFG2INF.PRG;  This  
+4. ONLY if you need  to convert  TeraDesk V2.*  configuration files to 
+the new format of TeraDesk V3, you need to get also CFG2INF.PRG;  This  
 utility  (not  included in  the  binary  distribution  but   available 
 separately)  is basically a  tweaked compilation  of the  Tera Desktop 
 itself, with  the  capability to read  only the old file format and to
 write  only the new  format-  hence  an inappropriately large size  of
 CFG2INF.PRG;  use it  only  to convert your old *.CFG files (use first  
 Load Settings...  then  Save Settings as...), and  then promptly  dump  
-it  to the trash bin.  Note that the last version of  CFG2INF.PRG uses
-the resource files of TeraDesk  V3.01, so  do not attempt to put  this
-program (i.e. CFG2INF.PRG) in a  directory containing  an incompatible
-version of DESKTOP.RSC.  
+it  to the trash bin.  
 
 See also Configuration files for more details.  
   
@@ -398,21 +397,28 @@ TeraDesk Version 3.01.
   
 After copying the necessary files, Tera Desktop can now  be started in 
 the usual way by double clicking on its name.  
+
+5.  Cooperation of Tera Desktop  with some other applications  will be
+improved if it is announced  that certain protocols can be handled. In
+order to do so, the following environment variables can be defined:
+
+ AVSERVER=DESKTOP
+ FONTSELECT=DESKTOP
+ 
+These declare  TeraDesk as the AV-Server (see The AV Protocol)  and as
+the font-selector (see The FONT Protocol). In Single-TOS configuration
+these protocols can be used by some accessories (such as ST-Guide); in
+multitasking configurations they can be used  by concurrently  running
+applications. See also Supported Protocols.
+
+The manner of declaration of environmental variables depend on variants 
+of the OS and utilities used.
   
-5. It is convenient to set TeraDesk to start automatically  at  system
+6. It is convenient to set TeraDesk to start automatically  at  system
 boot. If you have TOS version 1.04 (also known as TOS 1.4) or greater, 
-you can set it up for that in this way: 
-  
-- In the TOS built-in desktop, select the file DESKTOP.PRG by single   
-  clicking on it.  
-  
-- Select 'Install application' from the Options menu.  
-  
-- Change to boot status from 'Normal' to 'Auto'  
-  
-- Click on 'Install'  
-  
-- Save the desktop configuration  
+you can set it up for that by  installing TeraDesk  as  an application
+and changing its boot status from "Normal" to "Auto". Remember to save
+desktop configuration after this.
   
 If  you  have  TOS  version 1.0 or 1.02  you must use a program such as  
 STARTGEM to run DESKTOP from an AUTO folder.  
@@ -424,8 +430,7 @@ following directive into your GEM.CNF file:
   
 Then,  the  built-in  desktop of AES 4.1 will not be loaded at startup  
 and  TeraDesk  will  run  as  the  desktop  instead. Beside being more  
-elegant,  this  also  saves  some  memory  (steps 5 to 9 above are not  
-needed if you define TeraDesk as shell).
+elegant,  this  also  saves  some  memory.
 
 If you use Geneva, N.AES or XaAES, you should in a similar way specify
 Teradesk as the shell in the appropriate  places in the  configuration
@@ -433,29 +438,35 @@ files  of these  AESses (i.e. in  GEM.CNF,  N_AES.CNF and XA_EXEC.SCL,
 respectively). 
     
 If  you  use  MagiC,  TeraDesk  should be specified as a shell via the  
-#_SHL  directive in MAGX.INF; a more adventurous user can also attempt  
-to   edit  MAGIC.RAM  with  a  hex  editor,  and  -carefully-  replace  
-instances  of  "MAGXDESK.APP"  with  "TERADESK.PRG",  with  a possible  
-change  of path, taking care not to exceed original path length. Then,  
-in   a   case  of  a  major  crash,  TeraDesk  should  be  reactivated  
-automatically, not MAGXDESK.APP.  
+#_SHL  directive in MAGX.INF.
   
-6. Geneva 4  declares itself  as capable  of  handling  colour  icons.  
-However,  this  doesn't  seem  to  work  with  TeraDesk. In this case,  
-CICONS.RSC  file  should  be  removed,  and TeraDesk will fall back to  
-monochrome icons  (this problem does not exist with Geneva 6).  Colour
-icons file can also be removed if there is a need to preserve  as much
-free memory as possible.
+7. Some versions of AES (e.g. Geneva 4) declare themselves  as capable
+of handling colour icons, but that doesn't seem to work with TeraDesk. 
+In such cases,  CICONS.RSC  file should be removed, and  TeraDesk will 
+fall back to  monochrome icons.  Colour icons file can also be removed 
+in other  environments  if there  is a need  to preserve  as much free 
+memory as possible.
+
+8. The icon files supplied contain a basic set of icons only. Users can 
+add icons at will, or use other icon files (for example, one can rename 
+DESKICON.RSC and/or  DESKCICN.RSC  used  by the built-in desktop of TOS 
+to ICONS.RSC and CICONS.RSC respectively, and use them with TeraDesk).
+
+TeraDesk, since V2.0, handles icons by name, not by index. Icons with the 
+following names should always be present in the icons resource file:
+
+FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
+
   
 @endnode  
   
   
-@node "Conventions and background information"  
+@node "Conventions and background"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
   
-@{U}3  Conventions and background information                     TeraDesk@{u}  
+@{U}3  Conventions and background                                 TeraDesk@{u}  
   
  3.1  Conventions  
  3.2  Types of program files  
@@ -465,11 +476,11 @@ free memory as possible.
   
   
 @node "Conventions"  
-@toc "Conventions and background information"  
+@toc "Conventions and background"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Conventions and background information  
+      Conventions and background  
   
 @{U}3.1  Conventions                                              TeraDesk@{u}  
   
@@ -527,11 +538,11 @@ shortcuts.
   
   
 @node "Types of program files"  
-@toc "Conventions and background information"  
+@toc "Conventions and background"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Conventions and background information  
+      Conventions and background  
   
 @{U}3.2  Types of program files                                   TeraDesk@{u}  
   
@@ -582,18 +593,18 @@ the parameters it expects, may not work properly.
   
 See also :   
   
-Set applications... Set program types...  The program type dialogue  
-The command line dialogue
+Set applications... Set program types...  The program type dialogu  
+The command line dialogu
   
 @endnode  
   
   
 @node "Running a program"  
-@toc "Conventions and background information"  
+@toc "Conventions and background"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Conventions and background information  
+      Conventions and background  
   
 @{U}3.3  Running a program                                        TeraDesk@{u}  
   
@@ -608,7 +619,7 @@ parameter dialog box is displayed for GTP and TTP files.
 so that it is started when you double click on it. 
   
 3.  Third  method  is to install the program as an application, and to 
-set  up  a  function  key (in 'Set applications' dialogue) so that the 
+set  up  a  function  key  (in 'Set applications' dialog)  so that the 
 program is started when the key is pressed. 
   
 4.  Fourth  method  is to install the program as an application and to 
@@ -633,41 +644,42 @@ boot time and activated by selecting their appropriate menu item.
 @endnode  
   
   
-@node "Menus and Dialogues"  
+@node "Menus and Dialogs"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
      
-@{U}4  Menus and Dialogues                                        TeraDesk@{u}  
+@{U}4  Menus and Dialogs                                          TeraDesk@{u}  
   
 4.1  Menu title: Desk  
 4.2  Menu title: File  
-4.3  Menu title: View  
-4.4  Menu title: Options  
+4.3  Menu title: View
+4.4  Menu title: Window  
+4.5  Menu title: Options  
   
-4.5  Keyboard shortcuts  
+4.6  Keyboard shortcuts  
   
-4.6  The listbox dialogue  
-4.7  The program type dialogue  
-4.8  The icon selector dialogue  
-4.9  The font selector dialogue  
-4.10 The copy info dialogue  
-4.11 The name conflict dialogue  
-4.12 The command line dialogue  
+4.7  The listbox dialog  
+4.8  The program type dialog  
+4.9  The icon selector dialog  
+4.10 The font selector dialog  
+4.11 The copy info dialog  
+4.12 The name conflict dialog  
+4.13 The command line dialog  
   
-4.13 Scrolled text fields  
+4.14 Scrolled text fields  
 
-4.14 Rendering of dialogue objects
+4.15 Rendering of dialog objects
   
 @endnode  
   
    
 @node "Menu title: Desk"  
-@toc "Menus and Dialogues"  
+@toc "Menus and Dialogs"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
 @{U}4.1  Menu title: Desk                                        TeraDesk @{u}  
   
@@ -684,29 +696,29 @@ slots for currently active accesory programs.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Desk  
   
 @{U}4.1.1 TeraDesk info...                                        TeraDesk@{u}  
   
-When  this  item is selected, a dialogue box with the copyright notice  
+When  this  item  is selected, a dialog box with the  copyright notice  
 will  appear.  Version  of  Tera  Desktop  and date of compilation are  
 shown.  
   
-The dialogue also shows the TOS and AES version numbers and the amount   
-of free memory (ST-RAM, and, if available, TT/Alt-RAM).  
+The dialog also shows the TOS and AES version numbers and the sizes of
+the largest blocks of free memory (ST-RAM, and TT/Alt-RAM).  
   
 @endnode  
   
      
   
 @node "Menu title: File"  
-@toc "Menus and Dialogues"  
+@toc "Menus and Dialogs"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
 @{U}4.2  Menu title: File                                         TeraDesk@{u}  
   
@@ -714,19 +726,16 @@ The  items under this title enable you to perform diverse file, folder
 and disk- related operations.  
   
    4.2.1  Open...  
-   4.2.2  Object info...  
-   4.2.3  New folder...  
+   4.2.2  Info...  
+   4.2.3  New...  
    4.2.4  Compare files  
    4.2.5  Search...  
    4.2.6  Print...  
    4.2.7  Delete...  
-   4.2.8  Close  
-   4.2.9  Close window  
-   4.2.10 Cycle windows  
-   4.2.11 Select all  
-   4.2.12 Copy disk...  
-   4.2.13 Format disk...  
-   4.2.14 Quit/Shutdown  
+   4.2.8  Select all  
+   4.2.9  Copy disk...  
+   4.2.10 Format disk...  
+   4.2.11 Quit/Shutdown  
   
 @endnode  
   
@@ -736,7 +745,7 @@ and disk- related operations.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
@@ -759,31 +768,34 @@ an alert with the Show/Edit/Cancel options is displayed.
 - Selecting Edit calls an installed editor (if it has been installed)  
   to open the file.  
     
-If the object  is an executable file (program), it is started.  
+If the object  is an executable file (program), it is started.
+
+If the object is a symbolic link, it is always followed to the target
+object, and the action appropriate for the target is commenced.  
   
-If no objects are selected, a dialogue opens in which the full path and   
+If no objects are selected,  a dialog opens in which  the full path and   
 name of the object can be entered in the '@{"scrolled editable field" link "Scrolled text fields"}'. TeraDesk tries to divine the type of the   
 item  so  specified:  a  file,  a folder, an application or a document  
 assigned  to an application, and acts accordingly, as presented above.  
-If  an  application  is  specified  in  the  dialogue, its name can be  
+If  an  application  is  specified  in  the  dialog,  its name  can be  
 followed by a command tail (after a blank character).  
   
 Name of the last object opened and the trailing command  are preserved 
-in the dialogue across calls.  
+in the dialog across calls.  
 
 @endnode  
   
   
-@node "Object info..."  
+@node "Info..."  
 @toc "Menu title: File"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.2  Object info...                                         TeraDesk@{u}  
+@{U}4.2.2  Info...                                                TeraDesk@{u}  
   
 When  this  item  is selected, Tera Desktop displays information about  
 an object (or objects) you have previously selected:  
@@ -804,15 +816,22 @@ Archive,  Hidden and System) are also displayed, although they are not
 settable  in TOS (they can be set e.g. on a floppy disk manipulated in  
 Windows  on  a  PC).  With TOS version 1.04 and above, the folder name  
 can be changed.  
-  
-3. If  the  selected  object  is  a disk volume, the drive letter, the  
+
+3. If the selected object is a symbolic link, its  name, the time  and 
+date of creation  and its size will be displayed.  File attributes are
+also  displayed,  but changing  them will  NOT affect the link itself.
+The path and name of the object  the link is referencing  is displayed,
+and it can be edited. Note that if this item is changed, the  symbolic
+link will in fact be deleted and a new one created.
+
+4. If  the  selected  object  is  a disk volume, the drive letter, the  
 volume  label,  the  number  of files and folders on it, the number of  
 used  and  available bytes, the total free space on it and the cluster  
 size  will be displayed. If the disk is empty, it is possible that the  
 total  space  and  the  free space will be different; this is due to a  
 bug in TOS.  
   
-4.  If  no  object  has  been  selected,  Tera  Desktop  will  display 
+5.  If  no  object  has  been  selected,  Tera  Desktop  will  display 
 information  on the disk volume of the top directory window, if any is 
 open. If there are no open windows, this menu item is disabled. 
   
@@ -826,7 +845,7 @@ time   on   all  selected  file  items.  Selecting  this  button  when
 information  on  a  folder is shown, will cause setting of attributes,  
 date  and  time on all files in the folder and its subfolders, but the  
 data  for  the folders themselves will not be affected. This action is  
-confirmed  by  the  appearance  of  a  dialogue  in which the user can  
+confirmed  by  the  appearance  of   a  dialog  in which  the user can  
 select  whether  only file attributes should be set, or time and date,  
 or both.  
   
@@ -839,27 +858,52 @@ displayed item and show the next selected item.
 Selecting  'Abort'  will  cause closing the dialog and cancellation of  
 all changes.  
 
-Object info... dialogue can  appear on the screen  as a result of  the
+Info... dialog  can  also  appear  on  the  screen  as a result of the 
 Format disk...  operation  (to show  the  configuration  of  the newly
 formatted floppy disk) and also as a result of the Search... operation
 (to found show item(s)  which match the search criteria;  in this last
-case the dialogue may contain  additional data showing  the results of
+case  the dialog may contain  additional data  showing  the results of
 the string search in the shown file.
   
-See also: Scrolled text fields, Search... Format disk... 
+See also: 
+
+Scrolled text fields, Search... Format disk... Set Applications...
   
 @endnode  
+
+@node "New..."  
+@toc "Menu title: File"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4  
+      Menus and Dialogs  
+@image udo_fo.img 7  
+         Menu title: File  
+
+@{U}4.2.5  New...                                                 TeraDesk@{u}  
+  
+By  selecting  this  item  you  can  name  and  create  a  new  folder  
+(directory) in the current (top window) directory. Alternatively, if a
+single object is selected when this menu item is activated, a symbolic
+link to the selected object will be  created in the current directory.
+Note that the latter option  will be enabled only  if the  file system 
+and the operating system support symbolic links. 
+  
+See also: Scrolled text fields,  Symbolic Links  
+  
+@endnode  
+
   
 @node "Compare files"  
 @toc "Menu title: File"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.3   Compare files                                         TeraDesk@{u}  
+@{U}4.2.4   Compare files                                         TeraDesk@{u}  
   
 Tera  Desktop  has  the capability to compare contents of files. It is  
 enabled  only  when a selection of exactly one or two files is made in  
@@ -887,13 +931,13 @@ limited use on machines with minimum RAM.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.4   Search...                                             TeraDesk@{u}  
+@{U}4.2.5   Search...                                             TeraDesk@{u}  
   
-When  this  item  is selected, a dialogue appears in  which  the  name 
+When  this  item  is selected, a dialog  appears  in  which  the  name 
 pattern (name or name mask)  to   be  searched  for  in  the  selected
 folders  and / or disk volumes is  specified.  
   
@@ -908,14 +952,14 @@ will  only  search for files and folders matching the pattern mask. If
 any  string is specified, Tera Desktop will search for it in the files  
 witch match the name pattern.  
   
-If  a  match  is  found  the Object info... dialogue is opened showing  
-specification  of  the  found  object.  If  a  search  string has been  
-entered,  file contents surrounding the found string are displayed; to  
-save  space,  the  string  itself is replaced by [...] so that more of  
-the  text  preceding  and  following the string can be displayed. Note  
-that  some  characters  which  would  corrupt  the  formatting  of the  
-displayed text are replaced by a substitute- the [Del] character which 
-is in most fonts represented by a small triangle.  
+If a match is found the Info... dialog is opened showing specification
+of  the  found  object.  If  a  search  string has been  entered, file
+contents surrounding the found string are displayed;  to  save  space,
+the  string  itself  is replaced by [...]  so that more  of  the  text
+preceding  and  following the string can be displayed. Note  that some
+characters  which  would  corrupt  the  formatting   of the  displayed
+text are replaced by a substitute- the [Del] character which   in most 
+fonts is represented by a small triangle.  
   
 Note  that  each  file  searched  for strings is first completely read  
 into  memory. Therefore, searching for strings in large files  may not 
@@ -926,36 +970,20 @@ limitation.
   
 @endnode  
   
-@node "New folder..."  
-@toc "Menu title: File"  
-@image udo_fo.img 1  
-   Contents  
-@image udo_fo.img 4  
-      Menus and Dialogues  
-@image udo_fo.img 7  
-         Menu title: File  
   
-@{U}4.2.5  New folder...                                          TeraDesk@{u}  
-  
-By  selecting  this  item  you  can  name  and  create  a  new  folder  
-(directory) in the current (top window) directory.  
-  
-See also: Scrolled text fields.  
-  
-@endnode  
   
 @node "Print"  
 @toc "Menu title: File"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
 @{U}4.2.6  Print...                                               TeraDesk@{u}  
   
-If a printable file is selected, this file will be printed.  
+If a printable file is selected, this file will be printed. 
   
 If  no  objects  are  selected,  a listing of the top window directory  
 will  be  printed.  Amount  of  information  shown  will depend on the  
@@ -967,7 +995,7 @@ menu item. All files will be printed in turn.
 If a viewer window is topped, the file in this window will be printed.  
   
 You can modify the behaviour of the operation in the Copy and print...   
-options dialogue.  
+options dialog.  
    
 If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0, this menu item may not be visible, because of the limitations
@@ -983,7 +1011,7 @@ See also: TOS Version compatibility  Screen resolutions...
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
@@ -991,10 +1019,13 @@ See also: TOS Version compatibility  Screen resolutions...
   
 If  anything  that is a real file or folder is selected, this menu can  
 be  used to delete the selected items. Note that write-protected items  
-can not be deleted (see Object info...)  
+can not be deleted (see Info...).
+
+If a symbolic link is selected,  either the link itself or  the target
+object can be deleted.  
   
 You can modify the behaviour of the operation in the  Copy and print...   
-options dialogue.  
+options dialog.  
 
 If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0, this menu item may not be visible, because of the limitations
@@ -1004,76 +1035,20 @@ See also: TOS Version compatibility  Screen resolutions...
   
 @endnode  
   
-@node "Close"  
-@toc "Menu title: File"  
-@image udo_fo.img 1  
-   Contents  
-@image udo_fo.img 4  
-      Menus and Dialogues  
-@image udo_fo.img 7  
-         Menu title: File  
-  
-@{U}4.2.8  Close                                                  TeraDesk@{u}  
-  
-If  you  select  this item, the current (top) window is closed. If the 
-window  is  the  directory  window  of a folder, it is replaced by the 
-window  of  the  directory which is one level higher. If the window is 
-the  directory  window of a disk volume root, the window is closed. If 
-the window is a text (viewer) window, it is closed. 
-  
-@endnode  
-  
-  
-@node "Close window"  
-@toc "Menu title: File"  
-@image udo_fo.img 1  
-   Contents  
-@image udo_fo.img 4  
-      Menus and Dialogues  
-@image udo_fo.img 7  
-         Menu title: File  
-  
-@{U}4.2.9  Close window                                           TeraDesk@{u}  
-  
-The effect of selecting this item is similar to that of 'Close'; the   
-difference is that the window of a folder is NOT replaced by the one   
-of the parent folder.  
-  
-@endnode  
-  
-  
-@node "Cycle windows"  
-@toc "Menu title: File"  
-@image udo_fo.img 1  
-   Contents  
-@image udo_fo.img 4  
-      Menus and Dialogues  
-@image udo_fo.img 7  
-         Menu title: File  
-  
-@{U}4.2.10 Cycle windows                                          TeraDesk@{u}  
-  
-When  this  item  is  selected, the bottom window is moved to the top. 
-This  is  particularly useful when one window is covered completely by 
-others  for  you can view this hidden window without having to move or 
-delete the windows which cover it. 
-  
-@endnode  
-  
   
 @node "Select all"  
 @toc "Menu title: File"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.11  Select all                                            TeraDesk@{u}  
+@{U}4.2.8  Select all                                             TeraDesk@{u}  
   
 By selecting this item you can select all the files and folders in   
-the top desktop window in one fell swoop.  
+the top desktop window.  
   
 @endnode  
   
@@ -1084,11 +1059,11 @@ the top desktop window in one fell swoop.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.12 Copy disk...                                           TeraDesk@{u}  
+@{U}4.2.9 Copy disk...                                            TeraDesk@{u}  
   
 When  this  item is selected and a floppy drive icon is also selected, 
 a  physical copy, sector by sector, of the floppy will be made. Before 
@@ -1110,12 +1085,11 @@ function.
 
 If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0, this menu item may not be visible, because of the limitations
-in this TOS version. 
+of the menu size in this TOS version.  However,  in such cases  it can
+still be accessed through a keyboard shortcut.
 
 See also: TOS Version compatibility  Screen resolutions...
 
-See also Screen resolutions. 
-    
 @endnode  
   
   
@@ -1124,16 +1098,16 @@ See also Screen resolutions.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.13 Format disk...                                         TeraDesk@{u}  
+@{U}4.2.10 Format disk...                                         TeraDesk@{u}  
   
 When this item is selected and a floppy drive icon is also selected,  
-the dialogue of the Floppy format function appears on the screen.  
+the dialog of the Floppy format function appears on the screen.  
   
-The dialogue offers many options:  
+The dialog offers many options:  
   
 4 densities:  
      Single sided    (SSDD)  
@@ -1168,11 +1142,11 @@ See also Screen resolutions.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: File  
   
-@{U}4.2.13 Quit/Shutdown                                          TeraDesk@{u}  
+@{U}4.2.11 Quit/Shutdown                                          TeraDesk@{u}  
   
 Select this item to quit Tera Desktop and either:  
 1: return to the standard desktop   
@@ -1187,21 +1161,23 @@ Note  that  only  a  very  simple  sequence of  shutdown operations is
 performed:  shutdown is invoked by shel_write(...) function, which may 
 not  have  any  effect in older versions of the AES. After shel_write, 
 and  after  waiting for several seconds, if TeraDesk is still alive, a 
-brute-force reset is performed. 
+Shutdown() is initiated (in restart mode), but only if Mint is present. 
+If TeraDesk is still alive after -that-, a brute-force reset is done. 
    
-If  a  more  sophisticated  shutdown  is required, a separate Shutdown 
+If a  more  sophisticated  shutdown  is required, an external Shutdown 
 utility should be used. 
    
+See also Set applications...
      
 @endnode  
   
   
 @node "Menu title: View"  
-@toc "Menus and Dialogues"  
+@toc "Menus and Dialogs"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
 @{U}4.3  Menu title: View                                         TeraDesk@{u}  
   
@@ -1221,7 +1197,7 @@ folders and files in a directory are displayed in a window.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: View  
   
@@ -1245,7 +1221,7 @@ this menu.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: View  
   
@@ -1261,7 +1237,7 @@ in a window are sorted. The possibilities are:
                5.   View unsorted  
   
 Items  are sorted in the ascending order. Note that, in 'Sort by size' 
-and Sort by date modes,  it is contrary to the TOS desktop which lists 
+and 'Sort by date' modes it is contrary to the TOS desktop which lists 
 first the largest and newest files. 
   
 If  you  select  'View  unsorted', items are displayed in the order in 
@@ -1273,7 +1249,7 @@ history of additions and deletions in the particular directory.
 The mode selected applies to all open windows.  
 
 If you  are  running TeraDesk in low or medium  screen resolution  and
-TOS 1.0, View unsorted  menu item  may not be visible,  because of the 
+TOS 1.0, 'View unsorted'  menu item may not be visible, because of the 
 limitations in this TOS version. 
 
 See also: TOS Version compatibility  Screen resolutions
@@ -1286,7 +1262,7 @@ See also: TOS Version compatibility  Screen resolutions
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: View  
   
@@ -1308,7 +1284,7 @@ The attributes which are set are denoted as follows:
                d        directory  
                -        permission not granted or attribute not set.  
   
-For TOS file systems:  
+For TOS file system(s):  
                s        system file  
                h        hidden file  
                w        writable file (opposite of write protected)  
@@ -1324,6 +1300,7 @@ For VFAT or UNIX file systems:
               w        write permission  
               x        execute permission  
   
+(In some file systems the last three attributes are 'faked').
 
 If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0,  these  menu  items   may not  be  visible,  because  of  the 
@@ -1339,7 +1316,7 @@ See also: TOS Version compatibility  Screen resolutions...
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: View  
   
@@ -1352,7 +1329,7 @@ Double  clicking  on  a  mask  in  the  list  has the double effect of
 selecting the mask and exiting the box as if you selected 'OK'. 
   
 It  is  also  possible  to  delete the mask which is selected, edit an 
-existing mask or add a new one to the list. See The listbox dialogue. 
+existing mask or add a new one to the list. See The listbox dialog. 
   
 The  selected  mask  ONLY  applies  to  the directory window  that was 
 current (Top) when this item was selected.  
@@ -1368,57 +1345,183 @@ These selections are global, i.e. they apply to ALL directory windows.
 
 A complete filename can be specified  for the mask as well,  either by
 entering it manually, or by selecting a name in a directory window and
-then opening this dialogue.
+then opening this dialog.
        
 @endnode  
+ 
+ 
+ 
   
-  
-@node "Menu title: Options"  
-@toc "Menus and Dialogues"  
+@node "Menu title: Window
+@toc "Menus and Dialogs"
+@image udo_fo.img 1
+   Contents
+@image udo_fo.img 4
+      Menus and Dialogs
+      
+@{U}4.4  Menu title: Window                                       TeraDesk@{u}  
+         
+   4.4.1  Close  
+   4.4.2  Close window
+   4.4.3  Duplicate  
+   4.4.4  Cycle windows  
+
+@endnode
+
+
+
+
+@node "Close"  
+@toc "Menu title: Window"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
+@image udo_fo.img 7  
+         Menu title: Window 
   
-@{U}4.4  Menu title: Options                                      TeraDesk@{u}  
+@{U}4.4.1  Close                                                  TeraDesk@{u}  
   
- 4.4.1   Set applications...  
- 4.4.2   Set program types...  
- 4.4.3   Set desk icons...  
- 4.4.4   Set window icons...  
- 4.4.5   Remove icons...  
- 4.4.6   Desk preferences...  
- 4.4.7   Copy and print...  
- 4.4.8   Window options...  
- 4.4.9   Video options...  
- 4.4.10  Load settings...  
- 4.4.11  Save settings  
- 4.4.12  Save settings as...  
+If  you  select  this item, the current (top) window is closed. If the 
+window  is  the  directory  window  of a folder, it is replaced by the 
+window  of  the  directory which is one level higher. If the window is 
+the  directory  window of a disk volume root, the window is closed. If 
+the window is a text (viewer) window, it is closed. 
+
+If an application has  signed-on itself as an  AV-protocol client, its
+windows  can be included in the TeraDesk's  list of windows;  in  such 
+cases, the 'Close' command applies to the client's windows as well.
+
+See also Supported Protocols
   
 @endnode  
   
+
+  
+@node "Close window"  
+@toc "Menu title: Window"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4  
+      Menus and Dialogs  
+@image udo_fo.img 7  
+         Menu title: Window  
+  
+@{U}4.4.2  Close window                                           TeraDesk@{u}  
+  
+The effect of selecting this item is similar to that of 'Close'; the   
+difference is that the window of a folder is NOT replaced by the one   
+of the parent folder.  
+
+If an application has  signed-on itself as an  AV-protocol client, its
+windows  can be included in the TeraDesk's  list  of windows;  in such 
+cases, the 'Close window' command  applies  to the client's windows as 
+well.
+
+See also Supported Protocols
+
+  
+@endnode  
+
+
+
+@node "Duplicate"  
+@toc "Menu title: Window"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4  
+      Menus and Dialogs  
+@image udo_fo.img 7  
+         Menu title: Window  
+  
+@{U}4.4.2  Duplicate                                              TeraDesk@{u}  
+  
+A new directory or text window is opened  with the  same content as the 
+top window.
+  
+@endnode  
+  
+
+  
+@node "Cycle windows"  
+@toc "Menu title: Window"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4  
+      Menus and Dialogs  
+@image udo_fo.img 7  
+         Menu title: File  
+  
+@{U}4.4.4 Cycle windows                                           TeraDesk@{u}  
+  
+When  this  item  is  selected, the bottom window is moved to the top. 
+This  is  particularly useful when one window is covered completely by 
+others  for  you can view this hidden window without having to move or 
+delete the windows which cover it. 
+
+If an application has  signed-on itself as an  AV-protocol client, its
+windows  can be included in the TeraDesk's  list  of windows;  in such 
+cases, the 'Cycle windows' command  applies to the client's windows as 
+well. Note that some AV-protocol clients send ^W as a simulation  of a
+keyboard shortcut command to cycle windows.  This originated  from the
+Gemini desktop which ^W as the shortcut for 'Cycle windows' but is not
+very suitable for an environment with configurable keyboard commands. 
+ 
+
+See also Supported Protocols
+
+  
+@endnode  
+  
+
+  
+@node "Menu title: Options"  
+@toc "Menus and Dialogs"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4  
+      Menus and Dialogs  
+  
+@{U}4.5  Menu title: Options                                      TeraDesk@{u}  
+  
+ 4.5.1   Set applications...  
+ 4.5.2   Set program types...  
+ 4.5.3   Set desk icons...  
+ 4.5.4   Set window icons...  
+ 4.5.5   Remove icons...  
+ 4.5.6   Desk preferences...  
+ 4.5.7   Copy and print...  
+ 4.5.8   Window options...  
+ 4.5.9   Video options...  
+ 4.5.10  Load settings...  
+ 4.5.11  Save settings  
+ 4.5.12  Save settings as...  
+  
+@endnode  
+  
+
   
 @node "Set applications..."  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.1  Set applications...                                    TeraDesk@{u}  
+@{U}4.5.1  Set applications...                                    TeraDesk@{u}  
   
-This menu item displays The listbox dialogue in which you can edit the
-list  of  installed   applications.  The  dialogue  shows   a list  of 
+This menu item displays  The listbox dialog in which  you can edit the
+list  of   installed   applications.  The  dialog  shows   a  list  of 
 application  names   (program  names  only,  ignoring  paths).  If  an 
 application  name  is  longer  than can fit in the list box, a cramped 
 form  of  name  is  displayed. You can add an application to the list, 
 edit  settings  of  an  already-installed  application  or  delete  an 
 application  from  the  list. If you press the Add or Edit button, the 
-second  level  of  dialogue  opens,  in   which  the  settings  for an 
+second  level  of   dialog  opens,  in   which   the  settings  for an 
 application  can  be  edited (if you select the option while a program 
-file  is  selected  in  a  window, the second-level dialogue will open 
+file  is  selected  in  a  window, the  second-level dialog  will open 
 immediately). 
   
 Parameters which can be set, either all manually, or by taking some of   
@@ -1441,32 +1544,66 @@ them from the name and location of a file selected in a window, are:
   when  you  invoke  it  by  double  clicking  on  it  or by dragging an 
   application document. 
   
-  The  symbols  %f  and  %n  have  a special meaning when entered in the 
+  The  symbols  %f, %n and %p have a special meaning when entered in the 
   command line: 
   
-  %f This is replaced by the application document file name.  
+  %f This is replaced by the path (including drive, directory and name)   
+  of the application file.  
   
   %F as %f, however file names are converted to lower case.  
-  
-  %n This is replaced by the path (including drive, directory and name)   
-  of the application file.  
+
+  %n This is replaced by the application document file name.  
   
   %N as %n, however file names are converted to lower case.  
   
-- Function key upon which the application can be started:  
-  Numbers  1 to 10 correspond the the [F1] to [F10] keys and 11 to 20 to 
-  the same keys with [Shift] held down. 
+  %p This is replaced by the application document path.  
   
-- Flags for setting the application as autostart or as an editor:  
-  Only  one application can be marked as an editor. Several applications 
-  can be set as autostart (see Running a program) 
-    
+  %P as %n, however path names are converted to lower case.  
+   
+- Local environment string  to be  passed to the application.  Several
+  environment variables  can be  specified in this string,  using  the 
+  format:  VAR1=VAL1 VAR2=VAL2  etc.  i.e.  assignments  separated  by 
+  blanks but without blanks around "=". Note that this  capability may
+  not be functional (yet) in XaAES, and may even cause a crash.
+  
+- Function key upon which the application can be started:  
+  Numbers  1 to 10 correspond the the [F1] to [F10] keys and 11 to 20 
+  to the same keys with [Shift] held down. 
+  
+- Special use of the application.
+  A second-level dialog opens in which flags for assigning a special 
+  role to the application can be. One of the following roles can be 
+  assigned to an application:
+ 
+  . Editor              (only one can be specified)
+  . Viewer              (only one can be specified)
+  . Autostart
+  . Shutdown 
+  . Resolution change   (only one can be specified)
+  . File search         (only one can be specified)
+  . Floppy format       (only one can be specified)
+  
+  Applications specified for viewer, shutdown, resolution change, file
+  search and floppy format will,  if specified,  substitute TeraDesk's 
+  internal routines.
+  
+  Applications flagged as 'Autostart' are executed automatically when
+  TeraDesk starts.  There is a delay of  a couple of seconds  between
+  each application being started.
+  
+  Applications flagged as 'Shutdown' will execute  with a delay of 10
+  seconds between them, when "Shutdown" is selected in the File menu.
+  This (or these) application(s),  if specified,  have to perform all
+  activities needed for shutdown;  the internal shutdown procedure of 
+  TeraDesk will be disabled.
+   
+     
 - Application program type:  
-  A  second-level  dialogue (The program type dialogue) appears in which 
+  A  second-level  dialog   (The program type dialog)   appears in which 
   you can set the type of application program. 
     
 - List of assigned document types:  
-  The  listbox  dialogue  appears  in which  a list of filetypes or file 
+  The  listbox  dialog   appears  in which  a list of  filetypes or file 
   names which will be opened by this applications can be edited.  
  
   The  standard  TOS  desktop  only  allows you to specify one extension 
@@ -1494,17 +1631,18 @@ them from the name and location of a file selected in a window, are:
      
 @endnode  
   
+
   
 @node "Set program types..."  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.2  Set program types...                                   TeraDesk@{u}  
+@{U}4.5.2  Set program types...                                   TeraDesk@{u}  
   
 With  this  menu  option  you  can  determine which files Tera Desktop 
 recognises  as  containing a program and set various other features. A 
@@ -1525,9 +1663,9 @@ select  an  entry.  Any  file  which  matches  one  of  the  masks  is
 recognised  by  Tera  Desktop to be a program. You can add a new mask, 
 edit  one  already  there  which  you  have selected or delete the one 
 selected  by  clicking  on  the  appropriate  button.  See The listbox 
-dialogue for more details. 
+dialog for more details. 
   
-If  you  add  or  edit  a  mask, The program type dialogue box will be 
+If  you  add  or  edit  a  mask, The program type  dialog box  will be 
 shown  in  which  you  must define the file type and set the ARGV flag 
 and other information for the program. 
   
@@ -1535,8 +1673,8 @@ If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
-See also: Types of program files  The program type dialogue  
-TOS Version compatibility  Screen resolutions...  
+See also: Types of program files  The program type dialog  
+TOS Version compatibility  Screen resolutions... Supported Protocols  
 
 @endnode  
   
@@ -1547,11 +1685,11 @@ TOS Version compatibility  Screen resolutions...
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.3  Set desk icons...                                      TeraDesk@{u}  
+@{U}4.5.3  Set desk icons...                                      TeraDesk@{u}  
   
 You  can  use  this  menu  option  to install or change an icon on the 
 desktop.  When  you  first  select  it,  a  mini-icon  appears  on the 
@@ -1559,9 +1697,9 @@ desktop;  you  can move this about the screen with your mouse till you
 release  the left mouse button; by then you will have placed it at the 
 position  you  wish  the  new icon to be displayed (if you select this 
 option  while  a  desktop  icon  is selected the mini icon will not be 
-shown, and a dialogue will open immediately). 
+shown, and a dialog will open immediately). 
   
-When  you  release  the  mouse  button, The icon selector dialogue box 
+When  you  release  the  mouse  button,  The icon selector dialog  box 
 appears.  You  can  define  the  type of icon and its actual design in 
 this. There are three types of Icon each of which has a special use: 
   
@@ -1590,59 +1728,63 @@ Icons can be placed on the desktop only one at a time.
   
 @endnode  
   
+
   
 @node "Set window icons..."  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.3  Set window icons...                                    TeraDesk@{u}  
+@{U}4.5.4  Set window icons...                                    TeraDesk@{u}  
   
 With  this  menu  item you can determine the way files and folders are 
 displayed  when  they  are  displayed  by  icons  (see  Show as...) in 
 directory windows.  
  
-When  you  select  it,  The  listbox  dialogue is displayed. The first 
-thing you must do is to select either files or folders. 
+When  you  select  it, The listbox dialog is displayed. The first thing 
+you must do is to select either files or folders. 
   
-The  dialogue  box  contains a window showing a list of file or folder 
+The  dialog  box  contains a window  showing a list of  file or folder 
 name  masks.  You  can scroll through these by clicking on the arrows. 
 Each  mask  on  the  list  is  associated with an icon and any file or 
 folder  whose  name  matches  the  mask  is depicted by the associated 
 icon.  
  
 You  can add new masks and icons to the list by selecting 'Add' when a 
-new  dialog  box with The icon selector dialogue is displayed. You can 
+new  dialog  box with  The icon selector dialog is displayed.  You can 
 enter  a  mask  and  select an icon. You can also delete an entry from 
 the list by selecting 'Delete' or edit it with 'Edit'. 
   
 If  you  activate  this option while a file or folder is selected in a 
-window, The icon-selector dialogue will immediately appear. This gives 
+window, The icon-selector dialog will  immediately appear.  This gives 
 you  a chance to assign icons in a way similar to that existing in the 
 TOS desktop. 
   
 @endnode  
+
+
   
 @node "Remove icons..."  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.5  Remove icons...                                        TeraDesk@{u}  
+@{U}4.5.5  Remove icons...                                        TeraDesk@{u}  
   
 If  you first select icon(s) on the desktop, you can remove it/them by 
 selecting this menu item. 
   
 @endnode  
   
+
   
 @node "Desk preferences..."  
 @alias "User defined shortcuts"  
@@ -1650,33 +1792,29 @@ selecting this menu item.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.6  Desk preferences...                                    TeraDesk@{u}  
+@{U}4.5.6  Desk preferences...                                    TeraDesk@{u}  
   
 - Set the dialog box display mode:  
-   Dialogue boxes can be drawn in one of three modes.  
+   Dialog boxes can be drawn in one of two modes.  
    Each mode has its advantages:  
   
-    1. Normal (like TOS desktop) mode.  
-       None of the special features associated with the other modes   
-       are available. Dialogues are fixed to the original position.  
-         
-    2. Flying (or buffered mode).  
-       In this mode, the screen under a dialogue box is saved in a   
+     1. Flying (or buffered mode).  
+       In this mode, the screen under a dialog box is saved in a   
        buffer. It can thus be restored rapidly if the box is moved or   
-       resized. In this mode it is possible to move a dialogue box   
+       resized. In this mode it is possible to move a dialog box   
        about the screen by clicking on a special button (the 'ear')  
        in its top right corner.  
   
-    3. Window mode.  
-       In this mode, dialogue boxes appear in windows. This has the   
+    2. Window mode.  
+       In this mode, dialog boxes appear in windows. This has the   
        advantage that you can use accessories while the box is   
-       displayed and can move the dialogue box about the screen.  
+       displayed and can move the dialog box about the screen.  
   
-Note that dialogue boxes displayed by other programs are not effected.  
+Note that dialog boxes displayed by other programs are not effected.  
   
   
 - Determine the position of the dialog box:  
@@ -1721,37 +1859,40 @@ Note that dialogue boxes displayed by other programs are not effected.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.7  Copy and print...                                      TeraDesk@{u}  
+@{U}4.5.7  Copy and print...                                      TeraDesk@{u}  
   
 By  selecting this menu item, you can set your preferences just as you 
 can  in  the standard desktop. When you select the menu item, a dialog 
 box is displayed. In this you can: 
   
-1. Toggle confirmation of copies.  
+1. Toggle confirmation of copies and moves.  
+  
+3. Toggle confirmation of overwrites.  
   
 2. Toggle confirmation of deletes.  
   
-3. Toggle confirmation of overwrites  
-  
 4. Toggle confirmation of print operations.  
+
+5. Set whether links whould be followed in copy and delete operations 
+   or whether the operations should be performed on the links themselves. 
   
-5. Control whether The copy info dialogue will appear  
+6. Control whether The copy info dialog will appear.  
   
-6. Control the printing of headers and separators before/after each
+7. Control the printing of headers and separators before/after each
    item being printed  
   
-7. Set  the  size of the copy buffer.  This is an area of RAM which is 
+8. Set  the  size of the copy buffer.  This is an area of RAM which is 
    used  to  store  the  contents  of files  being copied. In general, 
    the larger you set it the faster copying will be performed. 
   
-8. Set printer line length; lines longer than this are warped.  
+9. Set printer line length; lines longer than this are warped.  
   
 The  dialog  boxes  displayed  when  a  confirmation  is necessary are 
-similar to those in the standard desktop. See Copy info dialogue. 
+similar to those in the standard desktop. See Copy info dialog. 
   
 @endnode  
   
@@ -1763,11 +1904,11 @@ similar to those in the standard desktop. See Copy info dialogue.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.8  Window options...                                      TeraDesk@{u}  
+@{U}4.5.8  Window options...                                      TeraDesk@{u}  
   
 If  you  select this menu option, you can determine the appearances of 
 the  desktop  and  of directory and view windows (see below). A dialog 
@@ -1783,7 +1924,7 @@ box is displayed in which you can:
   
 5. Select  a  font and a font size  for text appearing in directory or 
 view  windows.  You  must  first  select  'Directory  font' or 'Viewer 
-font'.  The  font selector dialogue will appear to choose desired font 
+font'.  The  font selector dialog  will appear to choose  desired font 
 and its size. Currently, only monospaced fonts are considered. 
 
 Number of available patterns is limited to eight. There is no limit on
@@ -1796,19 +1937,21 @@ in this TOS version.
 See also: TOS Version compatibility  Screen resolutions...  
   
 @endnode  
+
+
   
 @node "Video options..."  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.9  Video options...                                       TeraDesk@{u}  
+@{U}4.5.9  Video options...                                       TeraDesk@{u}  
   
-Some  or  many  of the facilities presented in this dialogue might not 
+Some  or  many  of the  facilities  presented in this dialog might not 
 work  in  certain types of environment. It depends highly on the video 
 hardware and the OS on which TeraDesk is running.
   
@@ -1849,7 +1992,13 @@ If you  are  running TeraDesk in low or medium  screen resolution  and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
-See also: TOS Version compatibility  Screen resolutions...  
+If an external utility is marked for screen resolution, Video options
+dialog will not appear. In such case the external utility will have to 
+do all the work on changing the video mode.
+
+See also: TOS Version compatibility  Screen resolutions...
+Set applications...  
+
 
   
 @endnode  
@@ -1859,34 +2008,35 @@ See also: TOS Version compatibility  Screen resolutions...
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.10  Load settings...                                      TeraDesk@{u}  
+@{U}4.5.10  Load settings...                                      TeraDesk@{u}  
   
 If  you  select  this  menu  item, you can load settings that you have 
 previously  saved in a file. The file selector is displayed; enter the 
 name of the file containing the settings required.  Default  name  for 
 the configuration file of TeraDesk is TERADESK.INF;  depending  on the
-settings made in Video options... dialogue, palette file  TERADESK.PAL
+settings  made in  Video options... dialog, palette file  TERADESK.PAL
 may also be loaded automatically.  
 
 See also Save settings, Save settings as... and Configuration files.
   
 @endnode  
   
+
   
 @node "Save settings"  
 @toc "Menu title: Options"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.11  Save settings                                       TeraDesk@{u}  
+@{U}4.5.11  Save settings                                       TeraDesk@{u}  
   
 If  you  select  this menu item, you can save all the current settings 
 to  a file call TERADESK.INF and, optionally, save the current palette 
@@ -1905,11 +2055,11 @@ See also Load settings, Save settings as... and Configuration files.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
 @image udo_fo.img 7  
          Menu title: Options  
   
-@{U}4.4.12  Save settings as...                                   TeraDesk@{u}  
+@{U}4.5.12  Save settings as...                                   TeraDesk@{u}  
   
 If  you select this menu option you can save the current settings in a 
 file  whose  name  you  can  choose.  In this way you can have several 
@@ -1925,23 +2075,23 @@ in this TOS version.
 
 See also: TOS Version compatibility  Screen resolutions...  
  
-  
 @endnode  
   
+
   
 @node "Keyboard shortcuts"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.5 Keyboard shortcuts                                        TeraDesk@{u}  
+@{U}4.6 Keyboard shortcuts                                        TeraDesk@{u}  
   
 Beside  being  selected  by  a  mouse,  menu  items  can  be set to be 
 selected  by  pressing  a  key  or  a  key combination. These keyboard 
-shortcuts are set in the Desk preferences... dialogue. 
+shortcuts are set in the Desk preferences... dialog. 
   
-Likewise,  most  buttons  in  dialogue boxes can also be selected by a 
+Likewise,  most  buttons  in  dialog boxes  can also be  selected by a 
 key:  Press  and  hold  down [Alternate] and then press the key of the 
 character in the button that is underlined. 
   
@@ -1960,22 +2110,24 @@ containing  this user manual. Note that, for the moment, the .HYP file
 has  -NOT-  been  completely  updated  to  reflect all changes and new 
 features in TeraDesk Version 3. 
   
-Pressing  [Help]  key  invokes a Help dialogue with brief explanations 
+Pressing  [Help]  key  invokes a Help dialog  with brief  explanations 
 of basic keyboard commands. 
   
 @endnode  
+
+
   
-@node "The listbox dialogue"  
+@node "The listbox dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.6 The listbox dialogue                                      TeraDesk@{u}  
+@{U}4.7 The listbox dialog                                        TeraDesk@{u}  
   
 TeraDesk   maintains  lists  of  filetype  masks,  window icon  types, 
 executable   program   types,   installed  applications  and  assigned 
-filetypes.  The same type of dialogue, containing a scrollable listbox 
+filetypes.  The same type of dialog,  containing a  scrollable listbox 
 and  five  edit buttons is used to maintain all these lists, but it is 
 invoked through diverse menu items, depending on the use: 
  
@@ -1990,19 +2142,19 @@ Set window icons... to  maintain lists of  icons assigned  to  certain
 filenames or filetypes or folder names  
   
 Set document types... to maintain lists of  document types assigned to 
-applications.  This  is  a  second-level  dialogue and it is activated 
-from the Set applications... dialogue. 
+applications.  This is  a second-level dialog and it is activated from 
+the Set applications... dialog. 
   
 Listbox content  is manipulated  by five buttons  (Add,  Edit,  Delete,   
 Up-arrow and Down-arrow).   
   
-Add:  opens  a second-level dialogue to fill-in data for an item which 
+Add:  opens  a second-level dialog  to fill-in data  for an item which 
 will be added to the list at the highlighted  position.  Depending  on 
-the type of item being added,  an appropriate dialogue is opened.
+the type of item being added,  an appropriate dialog is opened.
   
-Edit:  opens  a  second-level  dialogue  to  edit  data for an already 
+Edit:  opens  a  second-level  dialog  to  edit  data  for an  already 
 existing  item.  Depending on  the  type  of  item  being  edited,  an 
-appropriate dialogue is opened.
+appropriate dialog is opened.
   
 Delete: deletes the highlighted item in the list.  
   
@@ -2027,14 +2179,15 @@ a window).
   
 @endnode  
   
+
   
-@node "The program type dialogue  
+@node "The program type dialog  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.7 The program type dialogue                                 TeraDesk@{u}  
+@{U}4.8 The program type dialog                                   TeraDesk@{u}  
   
 Here  you can specify the behaviour of the application when started in 
 any way other than double clicking: 
@@ -2073,36 +2226,39 @@ some  GTP  or  TTP  programs do not support the ARGV protocol; you can
 toggle its use on and off by clicking on the box. 
   
 @endnode  
+
   
   
-@node "The icon selector dialogue"  
+@node "The icon selector dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.8 The icon selector dialogue                                TeraDesk@{u}  
+@{U}4.9 The icon selector dialog                                  TeraDesk@{u}  
   
-This  dialogue  appears  when desktop or window icons are installed or 
+This  dialog  appears  when desktop  or window icons  are installed or 
 edited.  It  displays  a  field in which the icon title cen be edited, 
 and  a  listbox  in  which  the available icons (from the ICONS.RSC or 
 CICONS.RSC  files)  are  shown.  By selecting OK the displayed icon is 
 assigned. 
   
 See also: Set desk icons... Set window icons... Remove icons 
+Supported Protocols
   
 @endnode  
   
+
   
-@node "The font selector dialogue"  
+@node "The font selector dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogu  
         
-@{U}4.9 The font selector dialogue                                TeraDesk@{u}  
+@{U}4.10 The font selector dialog                                 TeraDesk@{u}  
   
-The  font  selector  dialogue  opens  upon  clicking  the  buttons for 
+The  font  selector  dialog    opens  upon  clicking  the  buttons for 
 setting  the  directory  window font or the viewer window font. On the 
 left  side  there  is  a  scrollable  listbox from which a font can be 
 selected  (only monospaced fonts are displayed). A small window on the 
@@ -2110,22 +2266,24 @@ right  shows  a  sample  text  in  the  slected font. Font size can be
 selected among available ones. 
   
 TeraDesk is supposed to be able to supply this dialog as a system-wide   
-font selector upon receiving the FONT_SELECT message (? not tested ?)  
+font selector upon receiving the FONT_SELECT message.
+
+See The FONT Protocol  
   
 @endnode  
   
   
-@node "The copy info dialogue"  
+@node "The copy info dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
   
-@{U}4.10 The copy info dialogue                                   TeraDesk@{u}  
+@{U}4.11 The copy info dialog                                     TeraDesk@{u}  
   
-If  a selection is made in the Copy and print... options dialogue that 
-some  file  operations  should  be  confirmed, Copy info dialogue will 
+If  a selection is made in the  Copy and print... options dialog  that 
+some  file  operations  should  be  confirmed,  Copy info dialog  will 
 appear. 
   
 It  shows  the  numbers of folders and files on which the operation is 
@@ -2133,52 +2291,53 @@ to  be  performed,  the  initial  source path and, if appropriate, the
 destination path. 
   
 For copy, touch and move/rename  operations, two checkbox buttons  are 
-shown in the dialogue:  
+shown in the dialog:  
   
 - Change date and time  
 - Reset attributes  
   
 If  'Change date and time'   is  set,  all files acted upon  will have 
 their date and time stamp  changed to current values  (or, in the case 
-of "touch" operation, to values specified in Object info... dialogue). 
+of "touch" operation, to values specified in Info... dialog). 
   
 If  'Reset attributes' is set, attributes (read-only, system, etc.) of 
 all files acted upon will be reset to normal values   (or, in the case 
-of "touch" operation, to values specified in Object info... dialogue).
+of "touch" operation, to values specified in Info... dialog).
 
-See also: Object info... Copy and print...
-  
+See also: Info... Copy and print...
   
 @endnode  
+
+
   
-@node "The name conflict dialogue"  
+@node "The name conflict dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.11  The name conflict dialogue                              TeraDesk@{u}  
+@{U}4.12  The name conflict dialog                                TeraDesk@{u}  
   
 If  a  name  conflict  occurs during copying or renaming of files, the 
-name  conflict  dialogue  appears,  giving  the user an opportunity to 
+name  conflict  dialog  appears,  giving  the user  an opportunity  to 
 rename one or both of the files which caused the conflict, to continue 
 the operation anyway (overwriting the old item), or to abort it. 
   
-  
 @endnode  
   
+
   
-@node "The command line dialogue"  
+@node "The command line dialog"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.12 The command line dialogue                                TeraDesk@{u}  
+@{U}4.13 The command line dialog                                  TeraDesk@{u}  
   
 When  a  TTP-type  or GTP-type program (see Types of program files) is 
 activated  by  clicking  on  its  name or icon, or through the Open... 
-menu,  a  dialogue  box  will  appear  through which it is possible to 
+menu,  a  dialog  box  will  appear  through which  it is possible  to 
 enter  the  required  parameters.  If  the  program  is  activated  by 
 dragging  a  file  onto  the  program  name or icon, this box will not 
 appear. 
@@ -2197,13 +2356,13 @@ See also: Scrolled text fields.
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
+      Menus and Dialogs  
   
-@{U}4.13 Scrolled text fields                                     TeraDesk@{u}  
+@{U}4.14 Scrolled text fields                                     TeraDesk@{u}  
   
 In  manu  cases it is needed to enter a long text (usually a path or a 
-long  filename)  into a dialogue text field. However, practical length 
-of  a  dialogue  text  field  is  limited  by dialogue size and screen 
+long  filename)  into a dialog  text field. However, practical  length 
+of  a  dialog  text  field  is  limited  by  dialog  size  and  screen 
 resolution. 
   
 To  overcome  this  difficulty a new object type has been implemented: 
@@ -2222,12 +2381,12 @@ TeraDesk  is  run  in  an environment which does not support long file
 names.  In  the  opposite  case  (i.e. if Mint or MagiC are detected), 
 filename forms will be longer and of the scrolled text field type. 
   
-Scrolled-text fields appear in the following dialogues:  
+Scrolled-text fields appear in the following dialogs:  
   
     Open...  
-    Object info...  
+    Info...  
+    New... 
     Search...  
-    New folder... 
     Command line 
     Name conflict...  
     Set applications...  
@@ -2235,14 +2394,14 @@ Scrolled-text fields appear in the following dialogues:
 @endnode  
   
 
-@node "Rendering of dialogue objects"  
+@node "Rendering of dialog objects"  
 @image udo_fo.img 1  
    Contents  
 @image udo_fo.img 4  
-      Menus and Dialogues  
-@{U}4.14 Rendering of dialogue objects                            TeraDesk@{u}  
+      Menus and Dialogs  
+@{U}4.15 Rendering of dialog objects                              TeraDesk@{u}  
       
-Some object types  in TeraDesk  dialogues,  such as the circular radio 
+Some object types  in  TeraDesk  dialogs,  such as the  circular radio 
 buttons, the checkbox buttons, titled frames,  buttons with underlined 
 text, etc. are not supported by all versions of the AES.  In  order to
 display  them on the screen,  the  following approach  is adopted:  An
@@ -2313,7 +2472,7 @@ in  the  'Add'  and 'Edit' options in the 'Set desk icons...' and also
   
 TeraDesk  decides  on the screen workstation data whether ICONS.RSC or 
 CICONS.RSC  should  be  loaded.  If  CICONS.RSC file can not be found, 
-TeraDesk falls back to monochrome ICONS.RSC. 
+TeraDesk falls back to monochrome ICONS.RSC file. 
   
 It  is  recommended  to  have  only  monochrome  icons  in  ICONS.RSC. 
 (Otherwise  TeraDesk  might crash on older single TOS's) In CICONS.RSC 
@@ -2333,18 +2492,19 @@ of  ICON.RSC  as long as they copy it to the DESKTOP folder and rename
 it as ICONS.RSC. 
   
 The  icons  are  identified by the name held in the icon data. That is 
-the  12  character  6X6  name  displayed  under or over the icon. This 
-makes it possible to have the icons in any order in the resource file. 
+the 12 characters in 6X6 font  name displayed  under or over the icon. 
+This makes it possible to have  the icons in any order in the resource 
+file. 
   
 There must be at least 7 icons in the file, which are used to represent:  
   
-      Floppy disk drives     named "FLOPPY"  
-      Hard disk partitions   named "HARD DISC"  
-      Files                  named "FILE"  
-      Programs               named "APP"  
-      Folders                named "FOLDER"  
-      Trash cans             named "TRASH"  
-      Printers               named "PRINTER"  
+      Floppy disk drives:     icon named  "FLOPPY"  
+      Hard disk partitions:   icon named  "HARD DISC"  
+      Files:                  icon named  "FILE"  
+      Programs:               icon named  "APP"  
+      Folders:                icon named  "FOLDER"  
+      Trash cans:             icon named  "TRASH"  
+      Printers:               icon named  "PRINTER"  
   
 Note  that  names  of  the above icons are not hard-coded but are read 
 from  DESKTOP.RSC;  thus, it is possible to customize them if TeraDesk 
@@ -2354,8 +2514,7 @@ If a required icon name can not be  found in  the icons  resource file,
 icon name FILE is tried.  If that does not exist  either,  you loose an 
 icon.
 
-You  can  replace  the  default  icons  in  the  file by others of your 
-choice. 
+You can replace the default icons in the file by others of your choice. 
   
 @endnode  
   
@@ -2423,17 +2582,17 @@ file.
 C.  With all other files, a dialog box is displayed and you can opt to 
 Show, Edit or Cancel. 
   
-a.  If  you  opt to view the file, a window is opened and the contents 
+  - If  you  opt to view the file, a window is opened and the contents 
 of  the  file  are  displayed in it. If the first 256 bytes contain at 
 least  90%  ASCII  character,  the  file  is  displayed in ASCII mode, 
 otherwise  it  is  displayed  in HEX mode. See section 6.2 for further 
 details. 
   
-b.  If  you  opt  to edit the file, the application which is marked as 
+  - If  you  opt  to edit the file, the application which is marked as 
 the  editor  is  run  and  the  name  of the file is passed to it as a 
 parameter. 
   
-c. If you opt to cancel, you return to the Tera Desktop.  
+  - If you opt to cancel, you return to the Tera Desktop.  
   
 See also: Keyboard shortcuts, Menu title: File, Open...  
   
@@ -2463,8 +2622,6 @@ first 4 destination require the source to be a file or folder.
 Source  files  and  folders  (with their contents) are copied into the 
 drive. 
   
-If you want to perform a disk copy, use some program such as FCOPY.  
-  
 2. File, Folder -> Folder  
   
 Source files or folders will be copied into the folder.  
@@ -2489,21 +2646,27 @@ parameter (which it may ignore if it is not of GTP or TTP type).
 The contents of the file are sent to the printer.  
   
 7. File(s) -> window of an appications.  
+
+If the window is that of an application supporting th AV-protocol, the
+VA_DRAGACCWIND message is sent to the application,  which has  to take 
+an action on the dropped object(s). 
   
 If  TeraDesk  is running on a suitable multitasking operating system a 
 drag&drop  message  is  sent  to  the  appication.  If the application 
-understands  drag&drop,  it  will take action on the dropped object(s) 
+understands  Drag & Drop, it will take action on the dropped object(s) 
 as defined by the application.  
  
-If  the  application  doesnt  react,  the action will time out and the 
-user will be notified. 
+If  the  application  doesn't  react, the action will time out and the 
+user will be notified.  
+
+See also: Supported Protocols
   
   
 8. File, Folder, Drive -> Desktop  
   
 If  the  source object was already on the desktop, it will be moved to 
 a  new  position  defined  by  the  mouse position when the button was 
-released 
+released. 
   
 If  the  source  object  was  in a directory window, the object will be 
 installed  on the desktop as an icon. Once so installed it can be used 
@@ -2512,16 +2675,23 @@ as if it were in a window.
 Note  that  all  copy  operations  mentioned  above can be modified by 
 pressing  [Control]  as  the  mouse  button  is released. When this is 
 done,  the file or folder is moved rather than copied; this means that 
-the source is deleted after it is copied to the destination. 
+the source is deleted after it is copied  to the destination. 
   
 If,  instead,  [Alternate]  is  pressed  as  the button is released, a 
 dialog  box  is displayed. With the aid of this you can rename the new 
 version of the source which is placed in the destination. 
+
+Another way to modify a copy operation is  to press the  left or right 
+[Shift] key when the operation  is initiated.  This will  activate the
+"Update" or "Restore" copy modes respectively, in which existing files 
+will be overwritten only if they have an older time/date (update mode) 
+or a newer  time/date (restore mode) than the file being copied to the 
+location. 
   
 Note  also  that  if  a file or folder, which is installed in the Tera 
 Desktop as an icon, is deleted, the icon is removed as well. 
   
-If  during  a  copy  operation, a file or folder with the same name as 
+If, during  a  copy  operation, a file or folder with the same name as 
 the  source  is  found  in  the destination, a dialog box will appear. 
 This  gives  you  the  opportunity  to  rename  the destination object 
 (note:  it  should  be  possible  to  rename  the source as well; this 
@@ -2529,24 +2699,78 @@ option  is currently disabled by error), to overwrite the destination,
 to  abort the operation or to continue. This dialog box will be appear 
 in all such instances of a name conflict and cannot be switched off.  
  
-Finally  note  that a touch, move, copy, delete or print operation can 
+Finally, note  that a touch, move, copy, delete or print operation can 
 be aborted by pressing the [Esc] key. 
   
 @endnode  
   
+  
+@node "Symbolic Links"
+@toc "Main"
+@image udo_fo.img 1
+   Contents  
+  
+@{U}7  Symbolic Links                                             TeraDesk@{u}  
+
+Symbolic links are  special  files  which contain pointers to files or 
+folders which may be located  elsewhere on a disk drive. They  are not
+supported by all versions of the operationg system or the file system.
+(i.e. you have to use Mint or Magic in order to exploit symbolic links
+because the standard GEMDOS does not support them).
+
+Symbolic links  can be created by  using the New... menu title  in the
+File  menu.  If a  single object  is selected when  this menu title is
+activated,  a symbolic link to that object  will be created in the top
+directory window.
+
+Symbolic links  are deleted just like normal files and  folders.  Note
+that when a link is  deleted the object it  is referencing (target) is
+NOT deleted.  During copying and moving, links  are copied/moved,  not
+the  actual objects they are referencing.  However, this behaviour can
+be modified by checking "Follow links" in Copy and Print...
+
+Information on symbolic links can be read through Show info... dialog.
+It will permit renaming  of the link  or changing  of the path  to the
+object it  is referencing  (changing the path to the  target object in
+fact amounts to deleting the link and creating a new one).
+
+When an object  which is  a symbolic link is "opened", the path to the 
+target is followed to establish what type  of the object it is  (file,
+folder or program). Appropriate action is then taken. 
+
+When an object which is a link is passed as an argument  to a program,
+the path to the target is followed  so that the  real object name will
+be passed. 
+
+Note that in the current  version  of TeraDesk  this  may  not  always
+work consistently, e.g. if an object is  opened in  a folder  which is
+open in an object which  is a link to  a folder,  the  real path  will
+not be passed.
+
+When a symbolic link contains only the name of  the referenced object,
+TeraDesk will supply the path of the link itself ( and append the name
+of  the referenced  object).  Paths  containing  ".\" or ".."  are not 
+supported in the current version of TeraDesk.
+
+Manipulation of symbolic links is a new feature since  TeraDesk 3.22;
+it is possible that not everything yet works correctly. Use with some
+caution.
+
+@endnode
+
   
 @node "TeraDesk Windows"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
   
-@{U}6  TeraDesk Windows                                           TeraDesk@{u}  
+@{U}8  TeraDesk Windows                                           TeraDesk@{u}  
   
 Two kinds of windows may be displayed on the desktop:  
   
-6.1  Directory windows  
+8.1  Directory windows  
   
-6.2  Text windows  
+8.2  Text windows  
   
 You  can  control  windows  in  the  standard manner using the various 
 boxes  and  sliders.  In  Tera  Desktop  you  can also control them by 
@@ -2558,21 +2782,27 @@ pressing various keys; these produce specific effects:
   
 [<user defined shortcut>] Close the window  
   
-[Cursor  (arrow)] These keys scroll the window in the direction of the 
+[Cursor (arrow)]  These keys scroll the window in the direction of the 
 arrow.  If the Shift key is pressed at the same time as the arrow key, 
 the  window  scroll  over  a whole page, otherwise by a single line or 
 column.  
  
-It  is  possible  to  'iconify'  the windows of TeraDesk in the AESses 
-which   support  that  operation  (i.e.  are  AES  4  compatible).  An 
+It  is  possible  to  "iconify"  the windows of TeraDesk in the AESses 
+which  support that operation  (i.e. which are  AES 4  compatible). An 
 iconified  window  is  reduced  in  size  so that it contains just one 
 icon:  a  file,  a  folder  or  a  disk drive, depending on the window 
 content.  To  iconify  a  window,  click  on the window gadget usually 
 represented  by  a  triangle, in the upper right corner of the window. 
 Click again to deiconify a window. 
   
-An  iconified  window, until moved, maintains the original position of 
-the upper left corner of the normal window 
+An  iconified  window maintains, until moved, the original position of 
+the upper left corner of the normal window.  If an iconified window is
+moved, when it is deiconified it will return to the  position and size
+it had at the moment it was iconified (original positions and sizes of
+iconified windows  are not saved  in the configuration file; iconified
+windows restored  from the configuration file will appear in a minimum
+size at the position where the iconified window was when configuration
+was saved.
   
 @endnode  
   
@@ -2584,7 +2814,7 @@ the upper left corner of the normal window
 @image udo_fo.img 4  
       Windows  
   
-@{U}6.1  Directory windows                                        TeraDesk@{u}  
+@{U}8.1  Directory windows                                        TeraDesk@{u}  
   
 The  contents  (folders  and files) of a directory are shown as in the 
 standard  desktop.  Files and folders can be displayed in text mode or 
@@ -2606,7 +2836,7 @@ Keyboard shortcuts
 @image udo_fo.img 4  
       Windows  
   
-@{U}6.2  Text windows                                             TeraDesk@{u}  
+@{U}8.2  Text windows                                             TeraDesk@{u}  
   
 The  contents of a file are displayed. They may be displayed either in 
 ASCII mode or in Hex mode. 
@@ -2641,37 +2871,12 @@ See also: Menu title: File, Keyboard shortcuts
 @image udo_fo.img 1  
    Contents  
   
-@{U}7 Configuration files                                         TeraDesk@{u}  
+@{U}8 Configuration files                                         TeraDesk@{u}  
   
-TeraDesk 3.* can use three configuration files:  
+TeraDesk 3.* can use two configuration files:  
   
 TERADESK.INF holds complete configuration of the desktop.  
 TERADESK.PAL holds the colour palette.  
-TERADESK.BAT is the optional "startup" batch file. 
-  
-The  palette  file  is  optional  and  can  be  used to restore colour 
-palette  after  programs  which  corrupt it. Whether it is used or not 
-can be specified in Video options... 
-
-The startup batch file is optional, too. It makes TeraDesk able to run
-a program when it starts up, even before it is fully initialized.  The 
-first line of DESKTOP.BAT should establish the location of the program 
-you want TeraDesk to run, using the CD (change directory) command. The 
-second line contains the name of the  program and  any parameters that 
-should be passed to that program.  The rest of the TERADESK.BAT should 
-contain a list of alternate desktop configuration files that  TeraDesk 
-will automatically load, depending on the resolution it is running in.
-Here is an example of a TERADESK.BAT file,  used  to make a backup of
-vital configuration files each time TeraDesk loads:
-
- cd c:\zip
- zip files.zip c:\teradesk\*.inf c:\teradesk\*.pal
- #640,200 medres.inf
- #640,400 teradesk.inf
- #640,480 ttmed.inf
- 
-TeraDesk has also another way to start programs automatically  when it 
-starts. See Set applications...
   
 Contrary  to  TeraDesk  V2.*,  which  used a binary configuration file 
 named  DESKTOP.CFG,  the  configuration  files of TeraDesk V3.* are in 
@@ -2684,94 +2889,289 @@ upgrades.  Editing  configuration  files  by  hand,  unless  you  know
 -exactly-  what  you  are  doing, can cause undesired effects, or even 
 crash TeraDesk. 
   
-In  order  to  save  space,  lines  in  the  configuration  files  are 
-terminated   by   <LF>   only  (this  can  be  easily  changed  during 
-compilation  of  the  program). However, TeraDesk will not complain of 
+In  order  to  save  space,  lines  in  the  configuration  files are 
+terminated   by  <LF>  only   (this  can  be  easily  changed  during 
+compilation  of the  program). However, TeraDesk will not complain of 
 <CR><LF> line termination either. 
   
-Blocks  of  information  in  the configuration files are structured by 
-blank  lines  and indentation of one or several <TAB> characters. This 
+Blocks  of  information  in the configuration files are structured by 
+blank  lines and indentation of one or several <TAB> characters. This 
 is purely a cosmetic effect. 
   
-If you want to convert your TeraDesk V2.* configuration file(s) to the   
-new format, use CFG2INF.PRG (see Installation).  
+The  palette  file  is  optional  and  can  be used to restore colour 
+palette  after  programs which  corrupt it. Whether it is used or not 
+can be specified in Video options... 
+  
+If you want to convert your  TeraDesk V2.* configuration  file(s)  to 
+the new format, use CFG2INF.PRG (see Installation).  
   
 @endnode  
   
-@node "The ARGV protocol"  
+
+@node "Supported Protocols"
+@toc "Main"
+@image udo_fo.img 1
+   Contents
+  
+@{U}9  Supported Protocols                                        TeraDesk@{u}  
+   
+TeraDesk supports several protocols for passing information between
+the applications:
+
+  9.1 The ARGV Protocol
+  9.2 The AV Protocol
+  9.3 The FONT Protocol
+  9.4 The Drag & Drop Protocol
+  
+@endnode
+   
+
+@node "The ARGV Protocol"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
+@image udo_fo.img 4
+      Supported Protocols   
   
-@{U}8  The ARGV protocol                                          TeraDesk@{u}  
+@{U}9.1  The ARGV Protocol                                        TeraDesk@{u}  
+                                     
+In  GEMDOS the length of a command line is limited to 125 characters. 
+The ARGV protocol makes  much longer command lines possible.  This is
+done by passing the parameters through the ARGV environment variable. 
   
-In  GEMDOS  the length of a command line is limited to 125 characters. 
-The ARGV protocol makes much longer command lines possible. 
-  
-A disadvantage  of the  protocol is  that many programs do not support 
-such  long  command  lines  and  may  even crash. For this reason Tera 
-Desktop  enables  you  to  switch  the protocol on and off in 'Install 
-application' and 'Program options'.  
+A disadvantage  of the  protocol is that many programs do not support 
+such  long  command  lines  and may  even crash. For this reason Tera 
+Desktop  enables  you  to  switch  the protocol on and off in 
+Set applications and Program options.  
  
-There  are  two  ways  you  can  avoid  this  difficulty with the ARGV 
+There  are  two  ways  you  can  avoid  this difficulty with the ARGV 
 protocol: 
   
-1. Install  programs  which  do not  support the ARGV separately using 
-the  'Set  program  types...' menu item. Enter their full names in the 
-list  of  program mask but switch off the ARGV protocol for them. Make 
+1. Install  programs  which  do not support the ARGV separately using 
+the 'Set  program  types...' menu item. Enter their full names in the 
+list  of program mask but switch off the ARGV protocol for them. Make 
 sure you enter their names before any masks which they might match. 
   
-2. Do the reverse of 1. Switch off  the ARGV protocol for all programs 
+2. Do the reverse of 1. Switch off the ARGV protocol for all programs 
 but enter the names of those that do separately. 
   
-Another  possibility  is to install them as applications with the ARGV 
-protocol switched off . 
+Another  possibility is to install them as applications with the ARGV 
+protocol switched off. 
   
 @endnode  
   
+@node "The AV Protocol"  
+@toc "Main"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4
+      Supported Protocols   
+
+@{U}9.2  The AV Protocol                                          TeraDesk@{u}  
+
+The AV protocol  (first developed for use with Gemini desktop) allows
+certain blocks  of  information  to  be  passed  between concurrently
+running applications, and certain actions to be performed  based upon
+that information. In order to utilize this protocol an "AV-Server" is 
+declared through an environment variable, e.g. for TeraDesk:
+
+  AVSERVER=DESKTOP
+
+Clients using this protocol sign-on to the server and request certain
+actions by sending messages. Generally, the server performs an action
+and replies by sending an appropriate acknowledgment message.
+  
+TeraDesk currently supports  a large subset  of  AV-protocol  message
+exchanges (listed below as request/reply):
+
+AV_PROTOKOLL/VA_PROTOSTATUS:Establish client-server communication and
+                            inform each other of capabilities.
+
+AV_EXIT:                    Terminate communication. 
+                            
+AV_SENDKEY:                 Pass an unused key code to the server
+
+VA_START/AV_STARTED:        Pass parameter(s) to the client. AV_STARTED
+                            reply is ignored.
+
+AV_ASKFILEFONT/VA_FILEFONT: Ask the server about the current 
+                            directory window font
+
+AV_ASKCONFONT/VA_CONFONT:   Ask the server about the current console
+                            window font. Currently TeraDesk replies
+                            by sending the directory window font 
+                            info. 
+                            
+VA_FONTCHANGED:             Inform the AV-client which has previously
+                            demanded an info on the directory font 
+                            that the font has changed.
+                                                           
+AV_OPENWIND/VA_WINDOPEN:    Tell the server to open a directory 
+                            window with the given path.
+
+AV_XWIND/VA_XOPEN:          Similar to the above, but with additional
+                            parameters passed. Currently, some of these
+                            additional parameters are ignored.
+                            
+AV_ACCWINDOPEN:             Inform the server that the client has 
+                            opened a window. This window is then 
+                            included in TeraDesk's window cycling and
+                            can also be closed from TeraDesks Window 
+                            menu.
+                            
+AV_ACCWINDCLOSED:           Inform the server that the client has 
+                            closed a window.
+                            
+VA_DRAGACCWIND:             Inform the client that objects have been
+                            placed to its window.
+                            
+AV_COPY_DRAGGED/VA_COPY_COMPLETE:   Replies to to VA_DRAGACCWIND
+
+AV_DRAG_ON_WINDOW/VA_DRAG_COMPLETE: Inform the server that objects have
+                                    been paced on its windows or 
+                                    desktop
+                                                                                                                              
+AV_STARTPROG/VA_PROGSTART:  Tell the server to start an application
+                            with a given name, or an application 
+                            which will open a file with a given name.  
+                            
+AV_VIEW/VA_VIEWED:          Tell the server to start an application
+                            which is the viewer for the given file.
+                            Currently, TeraDesk does not distinguish
+                            between filetype-specific viewers and
+                            processing applications, and will start
+                            the first application for which the given
+                            filetype is assigned.
+                            
+AV_PATH_UPDATE:             Tell the server to update a window with
+                            the given path.         
+                            
+AV_FILEINFO/VA_FILECHANGED  Tell the server to show information on the
+                            files the names of which are passed.
+                            
+AV_DELFILE/VA_FILEDELETED   Tell the server to delete some files.
+
+AV_COPYFILE/VA_FILECOPIED   Tell the server to copy some files.
+
+VA_PATH_UPDATE              Inform clients of a change in a directory
+
+AV_STATUS                   Ask the server to save client's status  
+                   
+AV_GETSTATUS/VA_SETSTATUS   Aks the server about saved client status
+
+AV_SETWINDPOS               Fix the position of the next client window
+
+                                                             
+Messages currently not supported:
+
+AV_OPENCONSOLE/VA_CONSOLEOPEN  Open the console window 
+AV_ASKOBJECT/VA_OBJECT         Ask for names of selected objects
+
+In the Single-TOS version, only the following messages are supported:
+
+AV_PROTOKOLL/VA_PROTOSTATUS
+AV_EXIT
+AV_SENDKEY
+VA_START/AV_STARTED
+AV_ASKFILEFONT/VA_FILEFONT
+AV_ACCWINDOPEN
+AV_ACCWINDCLOSED
+VA_DRAGACCWIND
+AV_COPY_DRAGGED/VA_COPY_COMPLETE
+AV_STARTPROG/VA_PROGSTARTED
+
+See also: Installation
+
+@endnode
+ 
+
+@node "The FONT Protocol"  
+@toc "Main"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4
+      Supported Protocols   
+
+@{U}9.3  The FONT Protocol                                        TeraDesk@{u}  
+
+TeraDesk supports the most important functions  of the FONT protocol, 
+which was introduced by Christian Grunenberg.
+
+TeraDesk can be installed  as a font selector for  other applications  
+supporting this protocol  (e.g. ST-Guide).  When an applications asks 
+for a font change, The font selector of TeraDesk will be opened.
+
+For successful operation the following criteria must be fulfilled:
+
+-TeraDesk  must be running in  parallel to  the application-   either
+ the application running  as a desk accessory under Single-TOS or one
+ working in a multitasking environment
+
+-The environmental variable FONTSELECT must be set: 
+
+ FONTSELECT=DESKTOP
+
+See also: Installation
+
+@endnode
+
+@node "The Drag & Drop Protocol"  
+@toc "Main"  
+@image udo_fo.img 1  
+   Contents  
+@image udo_fo.img 4
+      Supported Protocols   
+
+@{U}9.4  The Drag & Drop Protocol                                  TeraDesk@{u}  
+
+This protocol was introduced by Atari for MultiTOS.
+
+This protocol  is automatically  operated if one or more objects in a 
+window  are   Drag & Dropped  onto  a  window  belonging  to  another 
+application. TeraDesk can currently  operate only  as  a  Drag & Drop
+sender,  i.e. it can not  receive objects dragged to its windows from
+other applications (however, TeraDesk can act both as a sender and as
+a receiver when objects are drag & dropped using the AV-protocol).
+
+See Dragging Objects, The AV Protocol
+
+@endnode
+
   
 @node "Acknowledgements"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
   
-@{U}9  Acknowledgements                                           TeraDesk@{u}  
+@{U}10  Acknowledgements                                           TeraDesk@{u}  
   
-The  authors  would  like  to  thank  the  following  people for their 
+The  authors  would like  to  thank  the  following  people for their 
 contribution to various stages of the development of the Tera Desktop: 
   
    Ric Klaren,  
    Ger Hobbelt and  
    Hans Wessels            for testing the Tera Desktop,  designing  
                            some icons and making some  improvements  
-                           to the program code.  
+                           to the program code of V1.*  
    Keith Frisby and  
    Mark Matts              for distributing and supporting the Tera  
-                           Desktop in the United Kingdom.  
+                           Desktop V1.* in the United Kingdom.  
                              
-   Ted Richards            for rewritting the English manual.  
+   Ted Richards            for rewritting the English manual. 
+    
    Jean Jacques Cortes     for translating  the  resource  file  of 
                            TeraDesk V1.* in French.  
                              
    Joachim Farbowky        for the German resource file of TeraDesk 
                            V1.* and for F_KEYS.RSC  
   
-   Wout Klaren; October 1993  
-               
-                             
-   Martin Tarenskeen       For kindly translating 'manual.txt' to  
-                           hypertext by using UDO.  
+   Martin Tarenskeen       For kindly updating and translating 
+                           'manual.txt' to hypertext by using UDO.  
   
-   Henk Robbers; March 2003  
-
+   Dennis W. van der Burg    
+   Milan Jurik
+   Odd Skancke             For testing TeraDesk 3.*  
      
-   Dennis W. van der Burg  For testing TeraDesk 3.0*  
-   Odd Skancke   
-     
-   Djordje Vukovic  
-   December 2003; January 2004  
-  
-  
 @endnode  
   
   

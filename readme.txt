@@ -2,47 +2,17 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V2.1   15-11-02, Copyright 2002  H. Robbers.
              V2.3           , Copyright 2003  H. Robbers, Dj. Vukovic
              V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic        
-             V3.01  07-01-04, Copyright 2003  H. Robbers, Dj. Vukovic        
+             V3.01  07-01-04, Copyright 2003, 2004  H. Robbers, Dj. Vukovic        
+             V3.30  23-04-04, Copyright 2004  H. Robbers, Dj. Vukovic
 
 
-
-This is version 3.01 of the Tera Desktop. It is a replacement of the desktop 
-of the ST and TT. This program is Freeware and Open Source, published under 
-GPL license, which means that it may be copied and modified freely, providing 
-that the original authorships are recognized where appropriate. See the 
-included COPYING file for the details on GPL.
+This is version 3.30 of the Tera Desktop, a replacement of the built-in TOS 
+desktop for 16-bit and 32-bit Atari computers. This program is Freeware and 
+Open Source.  It is published under GPL license, which means that it may be 
+copied  and modified freely,  providing  that the  original authorships are 
+recognized where appropriate,  and that it,  or its derivatives, may not be 
+sold. See the included COPYING file for the details on GPL.
  
-Tera Desktop may not be sold. If this program is included in a PD-library, 
-only the costs of disks etc. may be charged.
-
-
-Brief Version History
-=====================
-
-Version 1.41 was released in '94 and here the development stopped for some 
-time.
-
-Version 1.42 was the first one published (in the year 2002) under the GPL.
-
-Version 2.0 was an adaptation by H. Robbers to modern AES's (like N.AES, 
-XaAES & MagiC); A single binary runs on ALL environments. However, a somewhat 
-smaller binary compiled for Single-TOS only is included too, for the benefit 
-of users with machines having minimum RAM. Version 2.1 was mostly a bugfix 
-update which followed some time later.
-
-Version 2.3 was the first result of joined efforrts of H.Robbers and 
-Dj.Vukovic, comprising a number of new features.
-
-Version 3.0 is a significant further improvement of TeraDesk's functionality, 
-the program having undergone a extensive redesign.  Version 3.01 is a
-bug-fix and code-optimisation update.
-
-Future upgrades of Teradesk, IF they ever materialize, will be numbered as 
-follows: TeraDesk VX.YZ, where "X" will increment with major revisions, "Y" 
-will increment when new features are added, and "Z" will increment with bug 
-fixes and minor optimizations. (Thus, TeraDesk V3.02 will NOT be same as 
-TeraDesk V3.2; trailing zeros in version numbering might be omitted).
-
 
 Package manifest:
 =================
@@ -51,253 +21,181 @@ Tera Desktop binary distribution currently consists of the following files:
 
         COPYING         (A copy of the GPL license)
         DESKTOP.PRG	(All-environments Desktop)
-	DESKTOS.PRG	(Somewhat smaller Desktop compiled for Single-TOS only)
+	DESKTOS.PRG	(Somewhat smaller Desktop compiled for Single-TOS)
         DESKTOP.RSC  	(English resource file)
-	DESKTOP.RSD	(Resource definition file)
+	DESKTOP.RSD	(Resource object names definition file)
         ICONS.RSC    	(Essential Mono icons)
         CICONS.RSC   	(Essential Colour icons)
         README.TXT	(This file)
-        HIST_V3.TXT	(Log of changes)
+        HIST_V3.TXT	(Log of changes since Version 3.0)
         TERADESK.HYP	(English manual in ST-Guide hypertext)
-        TERADESK.REF    (Reference file for the hypertext)
+        TERADESK.REF    (Reference file for the hypertext manual)
         TERADESK.INF    (Sample configuration file)
         TERADESK.PAL    (Sample palette file)
-        TERADESK.BAT    (sample startup file)
 
-Generally, you only need DESKTOP.PRG, DESKTOP.RSC and at least ICONS.RSC
-put in the same folder in order to run TeraDesk. See the (hypertext) manual
-for installation  and usage details.
+There also exists a source distribution which contains the complete source 
+tree of TeraDesk, to be compiled and linked with Pure-C 1.1; source of the 
+AHCM memory-allocation system can be downloaded from:
+http://members.ams.chello.nl/h.robbers/ahcm.zip
 
-There also exists a source distribution which contains the complete
-source tree of TeraDesk, to be compiled and linked with Pure-C 1.1
 
-Usage of Icon files
-===================
+Hardware and Operating System Requirements
+==========================================
 
-The icon files supplied have a minimum set of icons only. Users can add icons 
-at will, or use other icon files (e.g. one can rename DESKICON.RSC used by 
-the built-in desktop of TOS 2/3/4 to ICONS.RSC and use it with TeraDesk).
+Tera Desktop can be used on any Atari ST series computer and their offspring,
+TT, Falcon,  Hades, Milan or emulators. It uses about 200-250 KB of memory 
+(depending on the complexity of configuration).  
 
-TeraDesk, since V2.0, handles icons by name, not by index. Icons with the 
+Although Tera Desktop can be used without the aid of a hard disk, the use  
+of one is strongly recommended.  
+
+Tera Desktop should work with all  existing versions of  TOS (i.e. starting
+with TOS 1.0) but it is much more useful with TOS versions 1.04 (also known 
+as TOS 1.4) and above.  
+
+Since Version 2.0  Tera Desktop runs on modern  multitasking  environments,  
+such as:  MagiC, TOS with Geneva,  TOS with Mint and N.Aes,  XaAES or Atari 
+AES 4.1, etc.  
+
+Some features of Tera Desktop may be nonfunctional, depending on the version
+of the OS and the AES used.
+
+Tera Desktop  makes  several  inquires  trying  to determine  TOS- and AES-  
+versions and their capabilities and limitations.  If some version of TOS or 
+AES is not able to answer these queries, Tera Desktop tries to make guesses
+which may not always be correct.  It is also possible that incorrect answer
+to a query is supplied by TOS/AES, in which case Tera Desktop may work with 
+unnecessary limitations or else try to activate features which may not work.  
+
+
+New Features in This Version
+============================
+
+Please, see HIST_V3.TXT for a list of new features and bug fixes since the
+last released version (V3.01). Also read the manual TERADESK.HYP (you will 
+need ST-Guide for this) for more detailed information.
+
+
+Installation
+============
+
+1. A folder named e.g. DESKTOP or TERADESK can be created anywhere on your  
+floppy or hard disk, or in a RAM disk,  to hold Tera Desktop files.  It is 
+also possible,  although a bit untidy,  to run Tera Desktop  from the root 
+directory of a disk volume. 
+
+2. The following files  should  be copied  to the location  specified  for 
+TeraDesk:  
+  
+       DESKTOP.PRG  (if  you  intend  to use multitasking)  OR   
+       DESKTOS.PRG  (if you  will  work  in  Single-TOS  only)    
+       DESKTOP.RSC    
+       ICONS.RSC    AND/OR  
+       CICONS.PRG   (if your AES can support colour icons)   
+ 
+Note that DESKTOP.PRG will work  in single-TOS as well;  DESKTOS.PRG just 
+saves a  few kilobytes  of memory  by not  containing code  which is only 
+relevant in  multitasking environment,  and by having a somewhat  limited
+support for the AV-protocol.
+
+If only DESKTOS.PRG is to be used, it may be renamed to DESKTOP.PRG after
+copying,  but this is not required  (the program will register  itself as
+"DESKTOP" anyway).  
+
+You can (but need not) also copy  into this folder the files  TERADESK.INF
+and  TERADESK.PAL  from the  \EXAMPLES folder.  Note, however,  that these 
+example configuration files are set for one particular configuration,  and 
+may not be appropriate  for your setup  (Tera Desktop will attempt to obey 
+everything specified in the configuration files, no matter what the actual 
+environment is).
+
+3. If you use ST-GUIDE,  copy TERADESK.HYP and TERADESK.REF from the  \DOC 
+folder to the folder where your other .HYP files are.  
+
+4. ONLY if you need to convert TeraDesk V2.* configuration files to the new 
+format of TeraDesk V3.*, you need to  get also the  Configuration convertor 
+CFG2INF.PRG;  This  utility  (not included  in the binary distribution  but 
+available  separately  on  TeraDesk 3  home page)  is basically  a  tweaked 
+compilation of the Tera Desktop version 3.01, with the  capability  to read
+only the old file format and to write only the new format. After converting
+the old configuration files,  CFG2INF.PRG is not needed anymore  and can be 
+removed.
+
+5. Cooperation  of  Tera Desktop   with  some other  applications  will  be 
+improved if  it is  announced  that certain  protocols  can be  handled. In 
+order to do so, the following environment variables can be defined:
+
+ AVSERVER=DESKTOP
+ FONTSELECT=DESKTOP
+ 
+These  declare  TeraDesk  as the  AV-Server and  as  the  font-selector. In 
+Single-TOS configuration  these protocols  can be used  by some accessories 
+(such as ST-Guide);  in multitasking  configurations  they  can be  used by 
+other concurrently running applications.
+
+The manner of declaration of environmental variables depend  on variants of 
+the OS and utilities used.
+
+6. It is convenient to set TeraDesk to start automatically at system boot. 
+
+If you use (Single) TOS version 1.04  (also known as  TOS 1.4)  or greater, 
+you can set it up by installing it as an application,  and then setting its 
+boot status to 'Auto' (remember to save the desktop configuration). 
+    
+If you have TOS version 1.0 or 1.02 you must use a program such as STARTGEM 
+to run DESKTOP from an AUTO folder.  
+  
+If you use Atari AES 4.1,  you can put something similar  to the  following 
+directive into your GEM.CNF file:  
+    
+     shell path\to\TeraDesk\desktop.prg  
+  
+Then, the built-in  desktop of AES 4.1  will not be  loaded  at startup and 
+TeraDesk will run as the desktop instead.
+
+If you use Geneva, N.AES or XaAES, you should in a similar way specify
+TeraDesk as the shell in the appropriate  places in the  configuration
+files  of these  AESses (i.e. in  GEM.CNF,  N_AES.CNF and XA_EXEC.SCL, 
+respectively). 
+    
+If you use MagiC, TeraDesk should be specified as a shell via the #_SHL
+directive in MAGX.INF:
+
+     #_SHL path\to\TeraDesk\desktop.prg 
+
+7. All text strings used by Tera Desktop are located in DESKTOP.RSC (except
+a warning that DESKTOP.RSC can not be found).  It is possible to completely
+adapt TeraDesk to other languages by a translated DESKTOP.RSC  (if someone
+is willing to supply it).
+
+8. The icon files supplied contain a basic set of icons only. Users can add 
+icons at will,  or use other icon files  (e.g. one can rename  DESKICON.RSC 
+and/or DESKCICN.RSC used by the built-in desktop of TOS 2/3/4  to ICONS.RSC  
+and CICONS.RSC respectively, and use them with TeraDesk).
+
+TeraDesk, since V2.0, handles icons by name,  not by index.  Icons with the 
 following names should always be present in the icons resource file:
 
 FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
 
-If a required icon name cannot be found in the icons resource file, icon name 
-FILE is tried. If that does not exist either, you loose an icon.
+If a required icon name  can not be found in the icons resource file,  icon 
+name FILE is tried. If that does not exist either, you loose an icon.
 
-When used in an environment which is supposed to support colour icons, 
-TeraDesk tries to load the colour icon file CICONS.RSC. If this file can not 
-be found, TeraDesk falls back to monochrome icons file.
+To facilitate adaptation of TeraDesk to other languages, names of the seven 
+essential icons are  not  hard-coded but are read from  DESKTOP.RSC.  It is 
+possible, by editing this file, to change the names by which the icons will
+be searched for in the icon resource file(s).
 
-To facilitate adaptation of TeraDesk to other languages, the seven essential 
-icon names are not hard-coded but are read from DESKTOP.RSC. It is possible, 
-by editing this file, to change the names by which the icons will be searched 
-for in the icon resource file(s).
+9. When used  in an environment  which  is  supposed  to  support   colour  
+icons, TeraDesk tries to load the colour  icon  file  CICONS.RSC.  If this 
+file can  not  be  found,  TeraDesk falls  back  to monochrome icons  file 
+ICONS.RSC.
 
-
-Some Version 3.* - specific issues:
-===================================
-
-An extensive log of changes made since V2.3 exists in the file HIST_V3.TXT; 
-here follow some highlights on the new or enhanced features:
-
-* TeraDesk now uses an ASCII (i.e. text) configuration file TERADESK.INF, and 
-a separate file TERADESK.PAL for the saved colour palette. The change was 
-made primarily to facilitate maintaining of compatibility between upgrades, 
-not for the purpose of manual editing. Editing of TeraDesk's configuration 
-files by hand is not encouraged.
-
-* A conversion program CFG2INF.PRG (not included in the binary distribution) 
-can be used to convert V2 *.CFG files to V3 *.INF files. This program is 
-basically a hacked compilation of the Desktop itself, with the capability to 
-read the old file format and to write the new format- hence a very large size 
-of this utility. Use it to convert your old *.CFG files, then promptly 
-dispatch it to the trash bin. Note that this utility uses the resource files 
-of TeraDesk V3, so do not attempt to put CFG2INF.PRG in a directory 
-containing an older version of DESKTOP.RSC. This utility will be supported by 
-the source code only in TeraDesk Version 3.00 and 3.01
-
-* The dialogs of TeraDesk underwent an extensive redesign, Beside being more 
-functional, they look much better now, especially in newer "3D" AESses. 
-Another result of the redesign is that now -all- dialogs work even in 320x200 
-ST-low resolution. There has also been some changes in the handling of 
-certain items in the dialogs, as will be seen below.
-
-* For some special object types in dialogs, such as circular radio buttons,
-checkbox buttons, titled frames, etc. the following approach is adopted:
-An inquiry is made to the AES whether WHITEBAK flag is supported; if it is,
-TeraDesk assumes that the AES can draw those objects, and lets the AES do
-that. In the opposite case, TeraDesk draws the objects. A positive side of
-this approach is that the appearance of those objects in TeraDesk is in
-style with objects drawn by the AES in other applications. A negative side
-is that some objects drawn by AES look uglier than they would be had
-TeraDesk drawn them. Another drawback is that Geneva marks relevant objects
-in a different way than e.g. Magic or N.AES, and so these capabilities
-of Geneva are left unused.
-
-* TeraDesk maintains lists of filetype masks, window icon types, executable 
-program types, installed applications and assigned filetypes. The same type 
-of dialog, containing a scrollable listbox and five edit buttons is used to 
-maintain all these lists.
-
-* Items can be added (or edited) in all of these lists, except in the lists 
-of document-types assigned to applications, in the same way: either you can 
-manually enter all data related to an item, or you can select an item in a 
-directory window or the desktop itself, and then open the desired dialog to 
-modify the settings which TeraDesk assigned to an item added to a list in 
-this way. Document-types asigned to appliactions can be edited only manually, 
-being in the second-level of dialog (i.e. they can not be selected in a ' 
-window).  Therefore, one is not limited anymore (as in V2.*) to selecting
-an application in a window in order to install or edit it, and also not 
-limited to manually entering all filemasks, program types and window icons.
-
-* Dialog fields referring to file names will have a 8+3 form if TeraDesk is 
-run in an environment which does not support long file names. In the opposite
-case (i.e. if Mint or MagiC are detected), filename forms will be longer and 
-scrollable, and permit entering of filenames up to 127 characters long.
-
-* Pressing the [Insert] key while the cursor is in a scrolled-text field
-opens the file-selector. Selected file or folder name is inserted into the 
-already-existing text in the editable field at cursor position.
-
-* If TeraDesk is to be used exclusively in high screen resolutions and 
-long-file-names-capable environment, length of the scrollable filename fields 
-can be increased in the dialogs. TeraDesk uses these fields in such a way 
-that it is safe to use a resource editor and increase the widths of the 
-relevant dialogs and scrollable fields, until they suit the user's esthetic 
-and other requirements. Note that lengths of other alphanumeric editable 
-fields (i.e. filetype masks and search strings) should -not- be changed.
-
-* If you want to edit DESKTOP.RSC, be aware that it contains a number of 
-objects which are initially set to be invisible (hidden). Those flags
-should not be reset. 
-
-* If [Shift][Help] keys are pressed, TeraDesk will attempt to call ST-Guide 
-if it is installed, to open TERADESK.HYP. (currently, the .HYP file has not 
-been completely updated to reflect all changes and new features og TeraDesk 3 
-in a satisfactory way). Pressing [Help] only invokes a Help dialog with brief 
-explanations of basic keyboard commands.
- 
-* Capability is added to search for files containing a specified string. Note 
-that each file being searched for strings is first completely read into 
-memory. Therefore, searching in large files may not be possible, depending on 
-the amount of free memory. If a search string is not specified, search will 
-involve only file and folder names, without actually reading any files.
-
-* Capability is added to compare contents of files. It is enabled only when a 
-selection of exactly one or two files is made in directory window(s). If only 
-one fle is selected, the file selector is invoked to point to the second 
-file. File comparison function tries to use some intelligence and 
-resynchronize further search in the files after a difference is found. Width 
-of the resynchronization window is currently fixed to 10 characters. This 
-should be enough to continue comparison of a pair of files after a difference 
-of only several bytes is encountered, e.g. a single different word, or a 
-single blank line in one of the files. Same as the search function, this 
-function completely reads both files into memory, and may be of limited use 
-on machines with minimum RAM.
-
-* Capability is added to limit memory available to an installed application 
-in a multitasking environment, and also to activate an application as 
-non-multitasking. This enables running of some older applications which 
-failed in earlier version(s). However, the implementation of these options is 
-currently only rudimentary and not nearly as good as desired. For the time 
-being, memory limit works only on applications which have not been marked as 
-no-multitasking.
-
-* Capability is added to "touch" files, i.e. to change the date/time stamp of 
-the file. A choice is possible of whether to (re)set date/time, (GEM)DOS file 
-attributes, or both. This functionality is currently only available for 
-files, i.e. it does not work on folders. However, TeraDesk is able to 
-correctly display (DOS) folder attributes if they are set (e.g. on a floppy 
-disk volume manipulated e.g. by BigDos, or by DOS/Windows). Touch function 
-is activated by clicking on the "All" button in the "Object Info" dialog. 
-The operation is recursive- it affects files in all the subfolders of a 
-selected folder. If date- or time field is cleared in "Object info", current
-date/time is set. If a file iw write-prottected, it must first be unprotected
-before other data is changed. An unwanted byproduct of this is currently that,
-if a write-protected file has an illegal date or time (as can sometime 
-happen), its attributes can not be changed in TeraDesk because date/tim
-check will not permit leaving  the dialog, and so it will not be possible 
-to remove protection.
-
-* Capability is added to reset date/time stamp and file attributes while 
-copying or moving files.
-
-* Functionality of the "Open" dialog is enhanced. TeraDesk tries to divine 
-the type of the item to be opened: a file, a folder, an application or a 
-document assigned to an application. If an application is specified, its name 
-can be followed by a command tail (after a blank character). Name of the last
-object opened and the trailing command are preserved in the dialog.
-
-* If the same  .TTP or a .GTP program is started several times consequtively,
-command line is preserved (i.e. until the name of the program changes). 
-
-* If [Alt] key is pressed while a file is opened, the assignment of that file 
-or filetype (i.e. as a program, or a documenttype assigned to an application) 
-will be overriden and Show/Edit/Cancel dialog will appear.
-
-* TeraDesk makes several inquires trying to determine TOS- and AES-versions
-and their capabilities and limitations. If some version of TOS or AES is not
-able to answer these queries, TeraDesk tries to make guesses which may not
-always be correct. It is also possible that incorrect answer to a query
-is supplied by TOS/AES, in which case TeraDesk may work with unnecessary 
-limitations or else try to activate features which may not work. A possible, 
-currently untested, such case may be the environment consisting of modern 
-Mint and AES over an old version of TOS.
-
-* Change of screen resolution is implemented through a call of the AES
-function shel_write() and works with various success in different AESses 
-(generally supported with AES 4 versions only), e.g. in TOS + Geneva or 
-TOS + Mint + AES4.1 it works perfectly;  in some other environments it 
-doesn't work so well, or doesn't work at all.
-
-* Shutdown is currently implemented only through a call of the AES function 
-shel_write(), followed, several seconds later (if TeraDesk is still
-alive by then), by a brute-force reset.
-
-TOS-versions Compatibility
-==========================
-
-* Although TeraDesk has been tested extensively, the program may still 
-contain bugs. It is possible as well, that the program does not work properly 
-on configurations other than the configurations it was tested on.
-
-Initially, early versions of TeraDesk were tested on:
-
-TOS 1.04 + NVDI 2.0 
-TOS 3.05 + NVDI 2.0 
-
-H. Robbers: also tested with:
-
-TOS 3.06 
-Milan TOS 4.09 + MiNT 1.15.12 + N.Aes 1.2, XaAES.
-MagiC 6.0 + NVDI 5.0 
-
-Dj. Vukovic: also tested with: 
-
-TOS 1.00 (RAM loaded)
-TOS 1.04 (RAM loaded)
-TOS 2.06
-TOS 2.06 + NVDI 4.11
-TOS 2.06 + NVDI 4.11 + Wdialog 2
-TOS 2.06 + Geneva 4 & 6 + NVDI 4.11
-TOS 2.06 + Mint 1.15.0  + NVDI 4.11 + AES 4.1, N.Aes 1.1
-MagiC 6.10, 6.20 + NVDI 4.11
-
-D.W. van der Burg: also tested with:
-
-TOS 1.02
-TOS 1.04
-TOS 4.04 
-TOS 1.02, 1.04, 2.06, 4.04 + Mint 1.15.12 + N.Aes 2.0, XaAES 0.963, AES 4.1 
-
-Odd Skancke: also tested with:
-
-Hades TOS 3.06 + oVDI 
-Hades TOS 3.06 + Mint 1.16 + oVDI + N.Aes 2.0, XaAES (0.970 ?)
-
-See the hypertext manual for details on some operating-system-specific issues.
+Some versions  of AES  (e.g. Geneva 4)  declare  themselves  as capable  of 
+handling colour icons, but that doesn't seem to work with TeraDesk. In such 
+cases, CICONS.RSC  file should be removed,  and TeraDesk will fall  back to  
+monochrome  icons.   Colour  icons  file  can  also  be  removed  in  other 
+environments if there is a need to preserve as much free memory as possible.
 
 
 Some Possible Future Developments 
@@ -305,43 +203,41 @@ Some Possible Future Developments
 
 - Optimization of code to reduce size and memory use;
  
-- Multiple column display of directory windows (with the capability to
-change directory font, it may be useful even on lower-resolution displays);
+- Multiple column display of directory windows 
 
-- Improvement of no-multitask program launch
+- Improvement on manipulation of file/folder attributes and access rights
 
-- Improvement on manipulation of file and folder attributes (depending on 
-filesystem, etc);
+- Complete compliance to AV-protocol and Drag & Drop protocol
 
-- Better handling of memory limit and no-multitask flags;
+- Improved handling of symbolic links
 
-- Integration of a windowed, long-names-capable fileselector (existing
-fileselectors with that capability are generally larger than complete
-Tera Desktop!) - as a number of routines already exising in TeraDesk
-might be reused, it is estimated that the feature might be implemented
-at the expense of not more than a few kilobytes;
+- Better handling of memory-limit and no-multitask options
+
+- Integration of a non-modal, windowed, long-names-capable fileselector
 
 
 Comments and Bug-Reports
 ========================
 
 It would be appreciated, if problems are reported with a complete description 
-of the problem and the configuration you are using (TOS-version, autoboot 
-programs, accessories etc.).  Please mention TeraDesk in the subject line of 
-your e-mail.
+of the problem  and the configuration  you are using  (machine,  TOS-version, 
+autoboot programs, accessories etc.).  Mention  TeraDesk  in the subject line 
+of your e-mail.
 
-The authors can not be held responsible for any form of damage caused by 
-this program, the usage of this program is at your own risk.
+THE AUTHORS CAN NOT BE HELD RESPONSIBLE  for  any form of damage  caused by 
+this program, the usage of all components of TeraDesk is at your own risk.
 
-Read the manual before you install the program, but note that it has not
-been completely updated (yet) to reflect all changes and new features in 
-TeraDesk V3.
+PLEASE read the manual before you use the program.  You will need ST-Guide
+(not supplied with TeraDesk) for this.
 
 
 For the time being, comments should be sent to vdjole@EUnet.yu
 
+If you intend to use TeraDesk, please send an e-mail to the above address, 
+I may at some time ask a question or two about TeraDesk's behaviour. 
+
 
                                             Djordje Vukovic
-                                            Beograd; January 7th 2004
+                                            Beograd; April 23rd 2004
 
 

@@ -58,11 +58,7 @@ void txt_default(void);
 
 int text_save(XFILE *file, WINDOW *w, int lvl);
 
-#if !TEXT_CFG_IN
-int txt_load_window(XFILE *file);
-#endif
-
-boolean txt_add_window(WINDOW *sw, int item, int kstate);
+boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
 void txt_closed(WINDOW *w);
 
 int txt_width(TXT_WINDOW *w); 
@@ -74,3 +70,4 @@ void txt_title(TXT_WINDOW *w);
 
 int read_txtfile(const char *name, char **buffer, long *flength, long *tlines, char ***lines); 
 void compare_files( WINDOW *w, int n, int *list );
+

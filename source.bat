@@ -1,9 +1,10 @@
-echo Backup of TeraDesk 3 source files to a floppy disk
+echo Backup of TeraDesk 3 source files to another directory
 echo (-n = overwrite without confirmation)
 
 mkdir e:\tera3s\include
 mkdir e:\tera3s\pure_c
 mkdir e:\tera3s\library
+mkdir e:\tera3s\library\ahcm
 mkdir e:\tera3s\library\mint
 mkdir e:\tera3s\library\multitos
 mkdir e:\tera3s\library\utility
@@ -17,8 +18,8 @@ copy -n copying      e:\tera3s\
 copy -n readme.txt   e:\tera3s\
 copy -n cfg2inf.txt  e:\tera3s\
 copy -n hist_v3.txt  e:\tera3s\
+copy -n ann*.txt     e:\tera3s\
 copy -n teradesk.stg e:\tera3s\
-copy -n backup.bat   e:\tera3s\
 
 copy -n *.c         e:\tera3s\
 copy -n *.h         e:\tera3s\
@@ -28,6 +29,12 @@ copy -n desktop.rs* e:\tera3s\
 copy -n *.bat       e:\tera3s\
 
 copy -n .\include\*.h e:\tera3s\include\*.h
+
+copy -n .\library\ahcm\*.c    e:\tera3s\library\ahcm\*.c
+copy -n .\library\ahcm\*.h    e:\tera3s\library\ahcm\*.h 
+copy -n .\library\ahcm\*.lib  e:\tera3s\library\ahcm\*.lib
+copy -n .\library\ahcm\*.prj  e:\tera3s\library\ahcm\*.prj
+
 
 copy -n .\library\mint\*.c    e:\tera3s\library\mint\*.c
 copy -n .\library\mint\*.h    e:\tera3s\library\mint\*.h 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -107,7 +107,7 @@ int txt_width(TXT_WINDOW *w)
 	 */
 
 	if ( w->hexmode == 1)
-		return HEXLEN;	/* fixed window width in hex mode (add MARGIN?) */
+		return HEXLEN + 1;	/* fixed window width in hex mode */
 	else
 	{
 		/* Length of last (and first, if there is only one) line in the text */
@@ -119,12 +119,16 @@ int txt_width(TXT_WINDOW *w)
 		for ( i = 1; i < w->tlines; i++ ) 
 			mw = lmax(mw, (long)(w->lines[i]) - (long)(w->lines[i - 1]));
 
+		/* Add the right margin */
+
+		mw += MARGIN;
+
 		/* 
 		 * Window width should be at least (arbitrary) 16 characters 
 		 * but not more than FWIDTH characters 
 		 */
 
-		mw = lmax(16L, lmin(mw, FWIDTH)); /* perhaps mw + MARGIN ? */
+		mw = lmax(16L, lmin(mw, FWIDTH));
 		return (int)mw;
 	}
 }
@@ -142,7 +146,7 @@ void txt_draw_all(void)
 	{
 		if (xw_type(w) == TEXT_WIND)
 			wd_type_draw( (TYP_WINDOW *)w, TRUE );
-		w = xw_next();
+		w = w->xw_next;
 	}
 }
 
@@ -184,10 +188,26 @@ static char hexdigit(int x)
  * Resultaat: Lengte van de regel
  */
 
-static int txt_line(TXT_WINDOW *w, char *dest, long line)
+static int txt_line
+(
+	TXT_WINDOW *w,	/* pointer to window being processed */ 
+	char *dest,		/* pointer to destination (output) string */ 
+	long line		/* line index */
+)
 {
-	char *s, *d = dest;
-	int i; 
+	char 
+		*s,			/* pointer to the source string- the real line */ 
+		*d = dest;	/* pointer to a location in destination string */
+
+	int 
+		i,						/* counter */ 
+		wpxm = w->px - MARGIN,
+		m = w->columns,			/* rightmost column in the text */
+		cnt = 0,				/* input character count */
+		cntm = 0;				/* left margin visible character count */ 
+
+
+	/* Don't process invisible lines */
 
 	if (line >= w->nlines)
 	{
@@ -195,15 +215,24 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 		return 0;
 	}
 
+	/* Left margin in text window, if visible */
+
 	for ( i = w->px; i < MARGIN; i++ )
+	{
 		*d++ = ' ';	
+		cntm++;
+	}
+
+	m -= cntm;
 
 	if (w->hexmode == 0)
 	{
 		/* Create a line in text mode */
 
 		char ch;
-		int cnt = 0, m = w->px + w->columns, tabsize = w->tabsize;
+		int tabsize = w->tabsize;
+
+		m += w->px; /* rightmost column in text */ 
 
 		/* If this line does not exist at all, return NULL */
 
@@ -213,75 +242,49 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 			return 0;
 		}
 
-		/* While counted columns are off window's left edge... */
-
-		while (cnt < w->px)
-		{
-			if ((ch = *s++) == 0)
-				continue;
-			if (ch == '\n')
-			{
-				*d = 0;
-				return 0;
-			}
-			if (ch == '\r')
-				continue;
-			if (ch == '\t')
-			{
-				do
-				{
-					if (cnt >= w->px)
-						*d++ = ' ';
-					cnt++;
-				}
-				while (((cnt % tabsize) != 0) && (cnt < m));
-				continue;
-			}
-			cnt++;
-		}
-
-		/* While counted columns are within window width... */
+		/* The real line */
 
 		while (cnt < m)
 		{
 			if ((ch = *s++) == 0)
 				continue;
-			if (ch == '\n')
+			if (ch == '\n')	/* linefeed */
 				break;
-			if (ch == '\r')
+			if (ch == '\r')	/* carriage return */
 				continue;
-			if (ch == '\t')
+			if (ch == '\t')	/* tab (substitute) */
 			{
 				do
 				{
-					*d++ = ' ';
+					if (cnt >= wpxm )
+						*d++ = ' ';
 					cnt++;
 				}
-				while (((cnt % tabsize) != 0) && (cnt < m));
+				while ((( cnt % tabsize) != 0) && (cnt < m));
 				continue;
 			}
-			*d++ = ch;
+			if ( cnt  >= wpxm )
+				*d++ = ch;
+
 			cnt++;
 		}
-		*d = 0;
-
-		return (int) (d - dest);
 	}
 	else
 	{
 		/* Create a line in hex mode */
 
-		int 
-			cnt = 0, 
-			m = w->columns;
-
 		long 
 			a = 16L * line, 
+/*
 			i, 
+*/
 			h;
 
+		int 
+			j;
+
 		char 
-			tmp[80],	/* changed 128 to 80, should be enough */ 
+			tmp[HEXLEN + 2], 
 			*p = &w->buffer[a];
 
 		if (w->px >= HEXLEN)
@@ -292,6 +295,8 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 
 		h = a;
 
+		/* tmp[0] to tmp[6] display line offset from  file beginning */
+
 		for (i = 5; i >= 0; i--)
 		{
 			tmp[i] = hexdigit((int) h & 0x0F);
@@ -299,28 +304,32 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 		}
 		tmp[6] = ':';
 
+		/* Hexadecimal (in h) and ASCII (in 57+i) representation of 16 bytes */
+
 		for (i = 0; i < 16; i++)
 		{
-			h = 7 + i * 3;
-			tmp[h] = ' ';
-			if ((a + i) < w->size)
+			j = 7 + i * 3;
+			tmp[j] = ' ';
+			if ((a + (long)i) < w->size)
 			{
-				tmp[h + 1] = hexdigit((p[i] >> 4) & 0x0F);
-				tmp[h + 2] = hexdigit(p[i] & 0x0F);
+				tmp[j + 1] = hexdigit((p[i] >> 4) & 0x0F);
+				tmp[j + 2] = hexdigit(p[i] & 0x0F);
 				tmp[57 + i] = (p[i] == 0) ? '\020' : p[i];
 			}
 			else
 			{
-				tmp[h + 1] = ' ';
-				tmp[h + 2] = ' ';
+				tmp[j + 1] = ' ';
+				tmp[j + 2] = ' ';
 				tmp[57 + i] = ' ';
 			}
-			tmp[55] = ' ';
-			tmp[56] = ' ';
-			tmp[73] = 0;
 		}
 
-		s = &tmp[w->px];
+		tmp[55] = ' ';
+		tmp[56] = ' ';
+		tmp[73] = 0;
+
+		s = &tmp[wpxm + cntm]; /* same as &tmp[w->px - (MARGIN-cntm)] */
+
 		while (cnt < m)
 		{
 			if ((*d++ = *s++) == 0)
@@ -330,10 +339,10 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 			}
 			cnt++;
 		}
-		*d = 0;
-
-		return (int) (d - dest);
 	}
+
+	*d = 0;
+	return (int) (d - dest);
 }
 
 
@@ -381,6 +390,7 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *
 	c = column - w->px;
 
 	len = txt_line(w, s, line);
+
 	txt_comparea(w, line, len, &r, work);
 	r.x += c * txt_font.cw;
 	r.w = txt_font.cw;
@@ -561,15 +571,10 @@ static void txt_tabsize(TXT_WINDOW *w)
 
 static void txt_rem(TXT_WINDOW *w)
 {
-/* not needed
-	if (w->lines != NULL)
-*/
-		free(w->lines);	
+	/* in free() there is a test if address is NULL, no need to check here */
 
-/* not needed 
-	if (w->buffer != NULL)
-*/
-		free(w->buffer);
+	free(w->lines);	
+	free(w->buffer);
 
 	free(w->name);
 
@@ -677,7 +682,7 @@ static void set_lines(char *buffer, char **lines, long length)
 /*
  * Check if a character is printable
  * 
- * Acceptable range: ' ' to '~' (32 to 128), <tab>, <cr>, <lf> and 'ÿ'
+ * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf> and 'ÿ'
  */
 
 static boolean isascii(char c)
@@ -729,7 +734,7 @@ int read_txtfile
 		attr;		/* file attributes */
 
 
-	/* Get file attributes */
+	/* Get file attributes (follow the link in x_attr)  */
 
 	if ((error = (int)x_attr(0, name, &attr)) == 0)
 	{
@@ -1037,6 +1042,7 @@ void compare_files( WINDOW *w, int n, int *list )
 			name2 = locate( "*.*", L_FILE ); /* same for name2 */
 			wd_drawall();
 		}
+
 		if ( name2 )
 		{
 			/* Don't do anything if second file is the same as the first one */
@@ -1241,7 +1247,12 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 }
 
 
-boolean txt_add_window(WINDOW *w, int item, int kstate)
+/*
+ * Add a text window specified by item selected in a window
+ * or by a filename (if not NULL, filename has priority)
+ */
+
+boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 {
 	int j = 0, error;
 	const char *file;
@@ -1252,7 +1263,9 @@ boolean txt_add_window(WINDOW *w, int item, int kstate)
 	if (textwindows[j].used == TRUE)
 		return alert_iprint(MTMWIND), FALSE;
 
-	if ((file = itm_fullname(w, item)) == NULL)
+	if ( thefile != NULL )
+		file = thefile;
+	else if ((file = itm_fullname(w, item)) == NULL)
 		return FALSE;
 
 	if (txt_do_open(&textwindows[j], file, 0, 0, options.tabsize, FALSE, TRUE, &error) == NULL)
@@ -1288,6 +1301,7 @@ boolean txt_add_window(WINDOW *w, int item, int kstate)
 #endif
 
 	return TRUE;
+
 }
 
 
@@ -1336,14 +1350,20 @@ void txt_default(void)
 
 typedef struct
 {
-	int px, py, index,
-	    hexmode, tabsize;
-	LNAME name;
-	WINDOW *w;
+	long 
+		py;
+	int 
+		px, 
+		index,
+	    hexmode, 
+		tabsize;
+	LNAME 
+		name;
+	WINDOW 
+		*w;
 } SINFO2;
 
-static
-SINFO2 that;
+static SINFO2 that;
 
 
 /* 
@@ -1357,8 +1377,8 @@ static CfgEntry txtw_table[] =
 	{CFG_D,   0, "indx", &that.index	},
 	{CFG_S,   0, "name",  that.name	    },
 	{CFG_D,   0, "xrel", &that.px		},
-	{CFG_D,   0, "yrel", &that.py		},
-	{CFG_BD,   0, "hexm", &that.hexmode	},
+	{CFG_L,   0, "yrel", &that.py		},
+	{CFG_BD,  0, "hexm", &that.hexmode	},
 	{CFG_D,   0, "tabs", &that.tabsize	},
 	{CFG_END},
 	{CFG_LAST}
@@ -1369,9 +1389,6 @@ static CfgEntry txtw_table[] =
  * Save or load configuration for one open text window 
  */
 
-#if !TEXT_CFG_IN
-	extern boolean wclose;
-#endif
 
 CfgNest text_one
 {
@@ -1386,14 +1403,6 @@ CfgNest text_one
 		tw = (TXT_WINDOW *)textwindows[i].typ_window;
 		that.index = i;
 		that.px = tw->px;
-
-		/* 
-		 * Note: this is wrong; if tw->py is long, and it need be 
-		 * for long files, then that.py should be long as well.
-		 * This might produce a problem in the (very unlikely)
-		 * case of saving a window positioned at e.g. 32769th line
-		 * of a file.
-		 */
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
 		that.tabsize = tw->tabsize;
@@ -1402,9 +1411,6 @@ CfgNest text_one
 		*error = CfgSave(file, txtw_table, lvl + 1, CFGEMP);
 	}
 	else
-#if !TEXT_CFG_IN
-	if (wclose) /* temporary */
-#endif
 	{
 		memset(&that, 0, sizeof(that));
 
@@ -1412,13 +1418,13 @@ CfgNest text_one
 
 		if (*error == 0 )
 		{
-			if (   that.name[0] == 0
+			if 
+			(   that.name[0] == 0
 				|| that.index >= MAXWINDOWS
 				|| that.tabsize > 40
 				|| that.px > 1000
-				|| that.py > 1000
-				)
-					*error = EFRVAL;
+			)
+				*error = EFRVAL;
 		}
 
 		if (*error == 0)
@@ -1461,14 +1467,11 @@ int text_save(XFILE *file, WINDOW *w, int lvl)
 
 CfgNest view_config
 {
-
-#if TEXT_CFG_IN
 	if ( io == CFG_LOAD )
 	{
 		memset(&thisw, 0, sizeof(thisw));
 		memset(&that, 0, sizeof(that));
 	}
-#endif
 
 	cfg_font = &txt_font;
 	wtype_table[0].s = "views";
@@ -1476,12 +1479,5 @@ CfgNest view_config
 
 	*error = handle_cfg(file, wtype_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL );
 }
-
-
-#if !TEXT_CFG_IN
-
-#include "tw_load.h"
-
-#endif
 
 

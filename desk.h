@@ -33,18 +33,17 @@ char *ltoa(long value, char *string, int radix);
 
 #undef O_APPEND
 
-/* routines used instead
-#define min(x,y)		(((x) < (y)) ? (x) : (y))
-#define max(x,y)		(((x) > (y)) ? (x) : (y))
-*/
-
-#define MAGIC		0x87654321L
-
+#if _MORE_AV
+#define GLOBAL_MEM_SIZE 2048L
+#else
 #define GLOBAL_MEM_SIZE	1024L
+#endif
 
-/* Maximum number of Teradesk's windows */
+/* Maximum number of Teradesk's windows of one type */
 
 #define MAXWINDOWS 8 
+
+/* Maximum path length (in single-tos mode?) */
 
 #define PATH_MAX 128 /* from stdio.h */
 
@@ -71,13 +70,8 @@ typedef struct
 	int bufsize;				/* copy buffer size  */
 	unsigned char dsk_pattern;	/* desktop pattern   */
 	unsigned char dsk_color;	/* desktop colour    */
-#if TEXT_CFG_IN
 	unsigned int dial_mode;
 	unsigned int resvd1;
-#else
-	unsigned int dial_mode:2;	/* dialog mode       */
-	int resvd1:14;				/* unused            */
-#endif
 	int resvd2;					/* unused            */
 	struct V2_2_Opt				/* Put in a struct, so it is easier to handle older cfg versions. */
 	{
@@ -115,19 +109,21 @@ typedef struct
 	int fnt_h;
 } SCRINFO;
 
+
 /* Strings of specific lengths for icon labels, file types, etc. */
 
-typedef char INAME[14];	/* Icon name/label length */
-typedef char SNAME[18]; /* filetype mask; must be compatible with (longer than) dialog field width */
-typedef char LNAME[130];/* filename or path */
+typedef char INAME[14];	  /* Icon name/label length */
+typedef char SNAME[18];   /* filetype mask; must be compatible with (longer than) dialog field width */
+typedef char LNAME[132];  /* filename or path   */
+typedef char VLNAME[256]; /* a very long string */
 
 /* Diverse options */
 
-#define CF_COPY			0x0001	/* confirm copy      */
-#define CF_DEL			0x0002	/* confirm delete    */
-#define CF_OVERW		0x0004	/* confirm overwrite */
-#define CF_PRINT		0x0008 	/* confirm print     */
-#define CF_TOUCH		0x0010  /* confitm touch     */
+#define CF_COPY			0x0001	/* confirm copy             */
+#define CF_DEL			0x0002	/* confirm delete           */
+#define CF_OVERW		0x0004	/* confirm overwrite        */
+#define CF_PRINT		0x0008 	/* confirm print            */
+#define CF_TOUCH		0x0010  /* confitm touch (not used) */
 
 #define TOS_KEY			0x0020	/* 0 = continue, 1 = wait */
 #define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center  */
@@ -140,6 +136,7 @@ typedef char LNAME[130];/* filename or path */
 #define CF_SHOWD		0x1000 	/* always show dialog */
 
 #define P_HEADER		0x2000	/* print header and formfeed */
+#define CF_FOLL			0x4000	/* follow links */
 
 #define TEXTMODE		0	/* display directory as text */
 #define ICONMODE		1	/* display directory as icons */
@@ -164,9 +161,7 @@ typedef char LNAME[130];/* filename or path */
  * is defined below by MFIRST and MLAST. 
  * Index of the fist relevant menu title is likewise defined.
  * Beware of dimensioning options.kbshort[64]; it should be larger
- * than NITEM below; dimensioning to 64 is fixed in order to avoid 
- * incompatibility of cfg files if number of menu items is changed;
- * currently, about 58 out of 64 are used.
+ * than NITEM below; currently, about 58 out of 64 are used.
  */
 
 #define MFIRST MOPEN			/* first menu item for which a shortcut can be */
@@ -196,15 +191,7 @@ extern int colour_icons;
 long btst(long x, int bit);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 
 void get_opt(OBJECT *tree, int *flags, int opt, int button );
-void digit(char *s, int x);
 char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */
 int scansh ( int key, int kstate );
 int hndlmessage(int *message);
 
-/* 
- * Routines below can be considered temporary, for compatibility
- * with older cfg version
- */
-
-void bit_to_bool( int bitflags, int bit, boolean *boo );
-void bool_to_bit( int *bitflags, int bit, boolean boo );

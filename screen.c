@@ -362,12 +362,9 @@ static CfgNest pal_config
 		*error = ENSMEM;
 }
  
-#if TEXT_CFG_IN
-
-
 /* This is the newest version of load_colors() */
 
-int load_colors(XFILE *dummy)
+int load_colors(void)
 {
 	int error;
 
@@ -386,45 +383,8 @@ int load_colors(XFILE *dummy)
 	return error;
 }
 
-#endif
-#endif		/* PALETTES */
 
-
-#if !TEXT_CFG_IN
-
-/* This is the oldest version... */
-
-int load_colors(XFILE *file)
-{
-	int nc, *colors;
-	long n, h;
-
-	if ((n = x_fread(file, &nc, sizeof(int))) < 0)
-		 return (int) n;
-
-	h = (long) nc *3L * sizeof(int);
-
-	if ((colors = malloc(h)) == NULL)
-		return ENSMEM;
-
-	if ((n = x_fread(file, colors, h)) != h)
-		return (n < 0) ? (int) n : EEOF;
-
-	if (nc == ncolors)
-		set_colors(colors);
-	else
-		alert_iprint(MECOLORS);
-
-	free(colors);
-
-	return 0;
-}
-#endif
-
-
-#if PALETTES
-
-int save_colors( XFILE *dummy )
+int save_colors(void)
 {
 	int error;
 

@@ -58,6 +58,7 @@
 
 #define EX_FILE		1
 #define EX_DIR		2
+#define EX_LINK		4	/* don't follow the link */
 
 /* Modes voor x_open en x_fopen */
 
@@ -162,6 +163,9 @@ int x_setpath(const char *path);
 char *x_getpath(int drive, int *error);
 int x_mkdir(const char *path);
 int x_rmdir(const char *path);
+int x_mklink(const char *newname, const char *oldname);
+int x_rdlink( int tgtsize, char *tgt, const char *linkname );
+char *x_fllink( char *linkname );
 int x_dfree(DISKINFO *diskinfo, int drive);
 int x_getdrv(void);
 long x_setdrv(int drive);
@@ -197,12 +201,6 @@ long x_pathconf(const char *path, int which);
 /* Funkties voor het uitvoeren van programma's */
 
 long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3);
-
-/* Geheugen funkties */
-
-void *x_alloc(long amount);
-int x_free(void *block);
-int x_shrink(void *block, long newsize);
 
 /* GEM funkties */
 

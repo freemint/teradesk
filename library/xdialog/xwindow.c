@@ -1,4 +1,4 @@
-/*
+/* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
  *                                            2003  Dj. Vukovic
@@ -35,10 +35,11 @@
 
 extern int xd_vhandle;
 
+#define ACC_WIND	19 /* from window.h !!! */
 
-static WINDOW *windows;				/* lijst met windows. */
+static WINDOW *windows = NULL;		/* lijst met windows. */
 static WINDOW *desktop;				/* pointer to desktop window. */
-WINDOW *xd_deskwin; /* but global and avoid name conflict */
+WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 
 /*
  * Stuur een redraw boodschap naar een window.
@@ -182,8 +183,6 @@ int xw_exist( WINDOW *w )
 }
 
 
-static WINDOW *next_window;
-
 /*
  * Funktie die het eerste window uit de windowlijst teruggeeft.
  *
@@ -193,42 +192,9 @@ static WINDOW *next_window;
 
 WINDOW *xw_first(void)
 {
-	if (windows)
-	{
-		next_window = windows->xw_next;
-		return windows;
-	}
-	else
-	{
-		next_window = NULL;
-		return NULL;
-	}
+	return windows;
 }
 
-
-/*
- * Funktie die het volgende window uit de windowlijst teruggeeft.
- *
- * Resultaat: NULL als er geen window meer is in de windowlijst,
- *			  anders een pointer naar het volgende window uit de
- *			  windowlijst.
- */
-
-WINDOW *xw_next(void)
-{
-	if (next_window)
-	{
-		WINDOW *r = next_window;
-
-		next_window = r->xw_next;
-		return r;
-	}
-	else
-		return NULL;
-}
-
-
-static WINDOW *prev_window;
 
 /*
  * Funktie die het laatste window uit de windowlijst teruggeeft.
@@ -247,42 +213,18 @@ WINDOW *xw_last(void)
 
 		while (w->xw_next != NULL)
 			w = w->xw_next;
-		prev_window = w->xw_prev;
-
 		return w;
 	}
 	else
 	{
-		prev_window = NULL;
 		return NULL;
 	}
-}
-
-
-/*
- * Funktie die het vorige window uit de windowlijst teruggeeft.
- *
- * Resultaat: NULL als er geen window meer is in de windowlijst,
- *			  anders een pointer naar het vorige window uit de
- *			  windowlijst.
- */
-
-WINDOW *xw_prev(void)
-{
-	if (prev_window)
-	{
-		WINDOW *r = prev_window;
-
-		prev_window = r->xw_prev;
-		return r;
-	}
-	else
-		return NULL;
 }
 
 
 /*
  * Funktie die van een bepaald window het bovenste window maakt.
+ * Set a window to be the top window
  *
  * Parameters:
  *
@@ -316,7 +258,11 @@ static void xw_set_top(WINDOW *w)
 
 void xw_cycle(void)
 {
-	WINDOW *w = windows, *nt = NULL;
+	WINDOW 
+		*w = windows, 
+		*nt = NULL;
+
+	/* Find the last open window */
 
 	while (w != NULL)
 	{
@@ -324,6 +270,8 @@ void xw_cycle(void)
 			nt = w;
 		w = w->xw_next;
 	}
+
+	/* Set it as top window */
 
 	if ((nt != NULL) && (nt != windows))
 		xw_set_top(nt);
@@ -373,7 +321,7 @@ static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 	/* don't redraw in iconified window */
 
-	if ( menu != NULL && w->iflag == 0 )
+	if ( menu != NULL && w->xw_iflag == 0 )
 	{
 		xd_objrect(w->xw_menu, object, &r1);
 		if (object == w->xw_bar)
@@ -482,7 +430,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
-	if (menu == NULL || w->iflag != 0 )
+	if (menu == NULL || w->xw_iflag != 0 )
 		return FALSE;
 
 	xw_bar_rect(w, &r);
@@ -807,43 +755,43 @@ int xw_hndlkey(int scancode, int keystate)
 		return FALSE;
 }
 
-/* DjV 042 250303 100403 ---vvv--- */
 
 /*
- * Iconify/uniconify functions
+ * Iconify a window.
  */
 
 void xw_iconify(WINDOW *w, int width, int height)
 {
 	/* Remember size and position of window in normal state */
 
-	w->xw_nsize.x = w->xw_size.x; /* not really needed */
-	w->xw_nsize.y = w->xw_size.y; /* not really needed */
+	w->xw_nsize.x = w->xw_size.x; 
+	w->xw_nsize.y = w->xw_size.y; 
 	w->xw_nsize.w = w->xw_size.w;
 	w->xw_nsize.h = w->xw_size.h;
 
 	/* 
 	 * Set window to iconified state; note that this function
-	 * apparently does not change xw_size ??? 
+	 * apparently does not change xw_size. 
 	 */
 
 	wind_set(w->xw_handle, WF_ICONIFY, w->xw_size.x, w->xw_size.y, width, height);
 
-	w->iflag = 1;
+	w->xw_iflag = 1;
 }
 
+
+/*
+ * Uniconify a window; it will revert to the size and position
+ * it had before iconification (except that this is not saved in
+ * the config file).
+ */
 
 void xw_uniconify(WINDOW *w)
 {
-	wind_set(w->xw_handle,WF_UNICONIFY,w->xw_size.x,w->xw_size.y,w->xw_nsize.w,w->xw_nsize.h);
+	wind_set(w->xw_handle,WF_UNICONIFY,w->xw_nsize.x,w->xw_nsize.y,w->xw_nsize.w,w->xw_nsize.h);
 
-	w->xw_nsize.x = w->xw_size.x;
-	w->xw_nsize.y = w->xw_size.y;
-
-	w->iflag = 0;
+	w->xw_iflag = 0;
 }
-
-/* DjV 042 250303 100403 ---^^^--- */
 
 
 /*
@@ -903,7 +851,6 @@ int xw_hndlmessage(int *message)
 		if (func->wd_newtop != 0L)
 			func->wd_newtop(w);
 		break;
-	/* DjV 042 250303 ---vvv--- */
 	case WM_ICONIFY:
 		func->wd_iconify(w);
 		break;
@@ -911,8 +858,6 @@ int xw_hndlmessage(int *message)
 		func->wd_uniconify(w);
 		func->wd_sized( w, &(w->xw_nsize) );
 		break;
-	/* DjV 042 250303 ---^^^--- */
-
 	default :
 		return FALSE;
 	}
@@ -1146,7 +1091,8 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  * type				- type van het window,
  * functions		- pointer naar een structuur met pointers naar
  *					  event handlers van het window,
- * flags			- window flags van het window,
+ * flags			- window flags van het window;
+ *					  for an ACC_WIND pass an externally obtained handle here;
  * msize			- maximum grootte van het window,
  * wd_struct_size	- grootte van de window structuur,
  * menu				- pointer naar de object boom van de menubalk
@@ -1159,19 +1105,26 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 {
 	WINDOW *w;
 
+	/* Allocate memory for the window structure */
+
 	if ((w = xw_add(wd_struct_size, menu)) == NULL)
 	{
 		*error = XDNSMEM;
 		return NULL;
 	}
 
-	if ((w->xw_handle = wind_create(flags, msize->x, msize->y,
-									msize->w, msize->h)) < 0)
+	if ( type != ACC_WIND )
 	{
-		(*xd_free)(w);
-		*error = XDNMWINDOWS;
-		return NULL;
+		if ((w->xw_handle = wind_create(flags, msize->x, msize->y,
+									msize->w, msize->h)) < 0)
+		{
+			(*xd_free)(w); /* release memory */
+			*error = XDNMWINDOWS;
+			return NULL;
+		}
 	}
+	else
+		w->xw_handle = flags;
 
 	w->xw_type = type;
 	w->xw_opened = FALSE;
@@ -1236,7 +1189,9 @@ static void xw_rem(WINDOW *w)
 
 
 /*
- * Funktie voor het sluiten van een window.
+ * Close a window. If it is an accessory window, opened
+ * thorugh AV_PROTOCOL, send that application a message to
+ * close the window
  *
  * Parameters:
  *
@@ -1249,9 +1204,18 @@ void xw_close(WINDOW *w)
 
 	if (xw_exist(w))
 	{
-		wind_close(w->xw_handle);
+		if ( w->xw_type != ACC_WIND )
+			wind_close(w->xw_handle);
+		else
+		{
+			int message[8];
+			memset(message, 0, (size_t)16);
+			message[0] = WM_CLOSED;
+			appl_write(w->xw_ap_id, 16, message);
+		}
+
 		w->xw_opened = FALSE;
-		w->iflag = 0;
+		w->xw_iflag = 0;
 		if ((tw = xw_top()) != NULL)
 		{
 			if (tw->xw_func->wd_top != 0L)
@@ -1275,7 +1239,8 @@ void xw_delete(WINDOW *w)
 {
 	if (xw_exist(w))
 	{
-		wind_delete(w->xw_handle);
+		if ( w->xw_type != ACC_WIND )
+			wind_delete(w->xw_handle);
 		xw_rem(w);
 	}
 }

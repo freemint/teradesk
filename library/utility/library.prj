@@ -39,10 +39,11 @@ LIBRARY.LIB
 .L[-J -G]
 
 =
-MAKEPATH.C
-SPLITPTH.C
-COOKIE.C
-GETTOS.C
-XERROR.C
-STRSNCPY.C
-MINMAX.C
+
+pathutil.c
+cookie.c
+gettos.c
+xerror.c
+strsncpy.c
+minmax.c
+other.c

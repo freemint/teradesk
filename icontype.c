@@ -143,10 +143,11 @@ static void icnt_info
 
 
 /*  
- * Find icons in the icons resource file by name, not index  
+ * Find icons in the icons resource file by name, not index.
+ * Parameter "link" currently not used  
  */
 
-int icnt_geticon(const char *name, ITMTYPE type)
+int icnt_geticon(const char *name, ITMTYPE type, boolean link)
 {
 	int icon;
 
@@ -167,12 +168,7 @@ int icnt_geticon(const char *name, ITMTYPE type)
 		 */
 
 		if ((icon = find_icon(name, files)) < 0)
-		{
-			if (prg_isprogram(name) == FALSE)
-				icon = rsrc_icon_rscid ( FIINAME, iname ); 
-			else
-				icon = rsrc_icon_rscid ( APINAME, iname ); 
-		}
+			icon = rsrc_icon_rscid ( prg_isprogram(name) ? APINAME : FIINAME, iname ); 
 	}
 
 
@@ -218,7 +214,6 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 	/* Add that to list */
 
 	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), END, copy_icntype );
-
 }
 
 
@@ -232,8 +227,7 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
  * use = purpose of use of dialog (add/edit)
  */
 
-static
-boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
+static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 {
 	int button;
 	int title; 
@@ -316,7 +310,7 @@ boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 
 /*
- * Use these kind-specific functions to manipulate icon lists: 
+ * Use these iconlist-specific functions to manipulate icon lists: 
  */
 
 #pragma warn -sus
@@ -438,14 +432,6 @@ void icnt_default(void)
 }
 
 
-#if ! TEXT_CFG_IN
-
-#include "icntload.h"
-
-#endif
-
-
-
 static ICONTYPE 
 	*pthis,		/* pointer to current member of files or folders icon group */ 
 	**ppthis;	/* pointer to address of current member of files or folders icon group */
@@ -485,7 +471,6 @@ static CfgNest one_itype
 	}
 	else
 	{
-#if TEXT_CFG_IN
 		/* Clear work area, so that data not explicitelly set will be zero */
 
 		memset(&iwork, 0, sizeof(iwork));
@@ -522,7 +507,6 @@ static CfgNest one_itype
 				}
 			}
 		}
-#endif
 	}
 }
 

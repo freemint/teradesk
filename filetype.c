@@ -94,6 +94,7 @@ static FTYPE *ftadd_one(char *filetype)
 	return (FTYPE *)lsadd( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), END, copy_ftype); 
 }
 
+
 /*
  * Find (or create, if nonexistent!) information about an filetype in a list;
  * input: filename or a filename mask;
@@ -117,8 +118,7 @@ static void ftype_info
 
 
 /*
- * Remove complete list of filetypes;
- * Original routine was renamed to rem_all(...) and moved to lists.c 
+ * Remove the complete list of filetypes;
  */
 
 static void rem_all_filetypes(void)
@@ -148,11 +148,6 @@ static boolean filetype_dialog
 		title, 	/* rsc index of dialog title string */
 		button;	/* code of pressed button */
 
-/*
-	char
-		*ftxt;			/* point to editable field in dialog */
-*/
-
 	boolean
 		stat = FALSE,	/* changes accepted or not */
 		stop = FALSE;	/* true to exit from dialog */
@@ -160,20 +155,14 @@ static boolean filetype_dialog
 	XDINFO
 		info;			/* dialog info structure */
 
-/*
-	ftxt = ftydialog[FTYPE0].ob_spec.tedinfo->te_ptext;
-*/
 
 	/* Set dialog title (add/edit) */
 
 	if ( use & LS_EDIT )
-	{
 		title = (use & LS_FMSK) ? DTEDTMSK : DTEDTDT;
-	}
 	else
-	{
 		title = (use & LS_FMSK) ? DTADDMSK : DTADDDT;
-	}
+
 	rsc_title(ftydialog, FTYTITLE, title); 
 
 	cv_fntoform(ftydialog + FTYPE0, ft->filetype);
@@ -238,7 +227,7 @@ char *wd_filemask(const char *mask)
 
 
 /*
- * Use these kind-specific functions to manipulate filetype lists: 
+ * Use these filetype-list-specific functions to manipulate filetype lists: 
  */
 
 #pragma warn -sus
@@ -274,8 +263,7 @@ char *ft_dialog
 	int 
 		luse,		/* local value of use */
 		button,		/* code of pressed button */
-		ftb,		/* button, too   */
-		i;			/* local counter */
+		ftb;		/* button, too   */
 
 	SNAME 
 		newmask;	/* newly specified filemask */
@@ -323,11 +311,6 @@ char *ft_dialog
 			setmask[MSKATT].ob_flags &= ~HIDETREE; 
 			setmask[FILETYPE].ob_flags |= EDITABLE;
 
-			/* Scrolled fields must be touchexit for easier selection of mask */
-
-			for ( i = 0; i < NLINES; i++ )
-				setmask[FTYPE1 + i].ob_flags |= TOUCHEXIT;
-
 			/* Enter values of file attributes flags into dialog */
 
 			set_opt( setmask, options.attribs, FA_HIDDEN, MSKHID );
@@ -363,9 +346,6 @@ char *ft_dialog
 	setmask[MSKATT].ob_flags |= HIDETREE;
 	setmask[FILETYPE].ob_flags |= HIDETREE;
 	setmask[FTTEXT].ob_flags |= HIDETREE;
-
-	for ( i = 0; i < NLINES; i++ )
-		setmask[FTYPE1 + i].ob_flags &= ~TOUCHEXIT;
 
 	if ( button == FTOK )
 	{
@@ -445,13 +425,6 @@ void ft_default(void)
 }
 
 
-#if !TEXT_CFG_IN
-
-#include "ft_load.h"
-
-#endif
-
-
 /*
  * Configuration table for one filetype or doctype
  */
@@ -495,8 +468,6 @@ CfgNest one_ftype
 	}
 	else
 	{
-
-#if TEXT_CFG_IN
 		/* Load data; one filetype */
 
 		memset( &fwork, 0, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
@@ -519,8 +490,6 @@ CfgNest one_ftype
 						*error = ENOMSG; /* there was an allert in lsadd */
 			}
 		}
-#endif
-
 	}
 }
 

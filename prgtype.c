@@ -41,15 +41,6 @@
 #define END			32767
 
 
-typedef struct
-{
-	int appl_type:4;
-	unsigned int argv:1;
-	unsigned int path:1;
-	unsigned int single:1; 
-	int resvd:9;
-} OLDSINFO;	
-
 extern Options options;	/* need to know cfg file version */
 extern char *presets[];
 
@@ -67,9 +58,6 @@ void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
 {
 	strsncpy ( t->name, s->name, sizeof(SNAME) );
 	t->appl_type = s->appl_type;
-	t->argv = s->argv;
-	t->path = s->path;
-	t->single = s->single;
 	t->limmem = s->limmem; 
 	t->flags = s->flags;	/* redundant, for compatibility */
 }
@@ -96,9 +84,9 @@ void prg_info
 		/* If program type not defined or name not given: default */
 
 		pt->appl_type = PGEM;	/* GEM program */
-		pt->argv = FALSE;		/* Doesn't know of ARGV */
-		pt->path = TRUE;		/* Uses program directory as default */
-		pt->single = FALSE;		/* Can multitask */
+		pt->flags &= ~(PT_ARGV | PT_SING);
+		pt->flags |= PT_PDIR;
+
 		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
 	return;
@@ -135,9 +123,7 @@ static PRGTYPE *ptadd_one
 (
 	char *filetype,		/* pointer to filetype mask */
 	int type, 			/* program type */
-	boolean path,		/* true if program directory is default */
-	boolean argv,		/* true if understands argv */
-	boolean single,		/* true if must run in single mode in multitask ing */
+	int flags,
 	long limmem			/* memory limit for this program type */
 )
 {
@@ -149,9 +135,7 @@ static PRGTYPE *ptadd_one
 #endif
 
 	pwork.appl_type = type;
-	pwork.path = path;
-	pwork.argv = argv;
-	pwork.single = single;
+	pwork.flags = flags;
 	pwork.limmem = limmem;
 
 	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), END, copy_prgtype );
@@ -207,12 +191,10 @@ boolean prgtype_dialog
 
 	cv_fntoform(addprgtype + PRGNAME, pt->name);
 	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (int)(pt->appl_type) );
-	xd_set_rbutton(addprgtype, APTPAR1, (pt->path == TRUE) ? ATPRG : ATWINDOW);
 
-	if (pt->argv == TRUE)
-		addprgtype[ATARGV].ob_state |= SELECTED;
-	else
-		addprgtype[ATARGV].ob_state &= ~SELECTED;
+	xd_set_rbutton(addprgtype, APTPAR1, (pt->flags & PT_PDIR) ? ATPRG : ATWINDOW);
+
+	set_opt(addprgtype, pt->flags, PT_ARGV, ATARGV);
 
 #if _MINT_
 	/* 
@@ -220,10 +202,7 @@ boolean prgtype_dialog
 	 * so that the same config file can be edited in mutltitasking/single
 	 */
 
-	if (pt->single == TRUE)
-		addprgtype[ATSINGLE].ob_state |= SELECTED;
-	else
-		addprgtype[ATSINGLE].ob_state &= ~SELECTED;
+	set_opt(addprgtype, pt->flags, PT_SING, ATSINGLE);
 	ltoa(pt->limmem / 1024L, addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext, 10);
 
 #else
@@ -255,13 +234,11 @@ boolean prgtype_dialog
 
 					strcpy( pt->name, thename);
 					pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
-					pt->path = (xd_get_rbutton(addprgtype, APTPAR1) == ATPRG) ? TRUE : FALSE;
-
-					pt->argv = (addprgtype[ATARGV].ob_state & SELECTED) ? TRUE : FALSE;
+					get_opt(addprgtype, &pt->flags, PT_ARGV, ATARGV);
+					get_opt(addprgtype, &pt->flags, PT_PDIR, ATPRG);
+					get_opt(addprgtype, &pt->flags, PT_SING, ATSINGLE);
 				
 #if _MINT_
-					/* settings below have no effect in single-tos */
-					pt->single = (addprgtype[ATSINGLE].ob_state & SELECTED ) ? TRUE : FALSE; 
 					pt->limmem = 1024L * atol(addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext);
 #endif
 					stat = TRUE;
@@ -355,33 +332,23 @@ void prg_default(void)
 	 * if mint is active, there is conversion to lowercase in ptadd_one
 	 * If mint is active, accessory is defined as program type 
 	 */
+	ptadd_one(presets[2], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.PRG 	*/
+	ptadd_one(presets[3], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.APP	*/
+	ptadd_one(presets[4], PGTP, PT_PDIR | PT_ARGV, 0L);		/*	*.GTP	*/
+	ptadd_one(presets[5], PTOS, PT_PDIR, 0L);				/*	*.TOS	*/
+	ptadd_one(presets[6], PTTP, PT_PDIR, 0L);				/*	*.TTP	*/
 
-	ptadd_one(presets[2], PGEM, TRUE, TRUE, FALSE, 0L);		/*	*.PRG 	*/
-	ptadd_one(presets[3], PGEM, TRUE, TRUE, FALSE, 0L);		/*	*.APP	*/
-	ptadd_one(presets[4], PGTP, TRUE, TRUE, FALSE, 0L);		/*	*.GTP	*/
-	ptadd_one(presets[5], PTOS, TRUE, FALSE, FALSE, 0L);	/*	*.TOS	*/
-	ptadd_one(presets[6], PTTP, TRUE, FALSE, FALSE, 0L);	/*	*.TTP	*/
+
 
 #if _MINT_
 	if ( mint )
-		ptadd_one(presets[7], PACC, TRUE, TRUE, FALSE, 0L);	/*	*.ACC	*/
+		ptadd_one(presets[7], PACC, PT_PDIR, 0L);			/*	*.ACC	*/
 #endif
 }
 
 
-/* 
- * Load program types from config file 
- */
-
 #define PRG_PATH		8		/* 0 = window, 1 = program */
 #define TOS_PATH		16		/* 0 = window, 1 = program */
-
-#if ! TEXT_CFG_IN
-
-#include "prg_load.h"
-
-#endif
-
 
 /*
  * Configuration table for one program type
@@ -394,11 +361,6 @@ CfgEntry prg_table[] =
 	{CFG_S,   0, "name",  pwork.name	},
 	{CFG_L,   0, "limm",  &pwork.limmem	},
 	{CFG_D,   0, "appt",  &pwork.appl_type	},
-/* temporary, for consistency of style, represent as flags
-	{CFG_BD,  0, "argv",  &pwork.argv	},
-	{CFG_BD,  0, "pdir",  &pwork.path	},
-	{CFG_BD,  0, "sing",  &pwork.single	},
-*/
 	{CFG_X,   0, "flag",  &pwork.flags },
 	{CFG_END},
 	{CFG_LAST}
@@ -422,17 +384,7 @@ static CfgNest one_ptype
 			strcpy(pwork.name, p->name);
 			pwork.appl_type = (int) p->appl_type;
 			pwork.limmem = p->limmem;
-/*
-			pwork.argv = (unsigned int) p->argv;
-			pwork.path = (unsigned int) p->path;
-			pwork.single = (unsigned int) p->single;
-*/
-			/* bool to bit maybe temporary */
-
-			pwork.flags &= (PT_ARGV | PT_PDIR | PT_SING ); /* clear junk */
-			bool_to_bit( &pwork.flags, PT_ARGV, p->argv );
-			bool_to_bit( &pwork.flags, PT_PDIR, p->path );
-			bool_to_bit( &pwork.flags, PT_SING, p->single);
+			pwork.flags = p->flags;
 	
 			*error = CfgSave(file, prg_table, lvl + 1, CFGEMP); 
 	
@@ -441,19 +393,12 @@ static CfgNest one_ptype
 	}
 	else
 	{
-
-#if TEXT_CFG_IN
 		memset(&pwork, 0, sizeof(pwork));
 
 		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl + 1); 
 
 		if (*error == 0 )
 		{
-			/* bit to bool maybe temporary */
-
-			bit_to_bool( pwork.flags, PT_ARGV, &pwork.argv );
-			bit_to_bool( pwork.flags, PT_PDIR, &pwork.path );
-			bit_to_bool( pwork.flags, PT_SING, &pwork.single);
 
 			if ( pwork.appl_type > PTTP || pwork.name[0] == 0 )
 				*error = EFRVAL;		
@@ -470,8 +415,6 @@ static CfgNest one_ptype
 						*error = ENOMSG;
 			}
 		}
-#endif
-
 	}
 }
 

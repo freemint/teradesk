@@ -1,4 +1,4 @@
-/*
+/* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
  *                               2003, 2004  Dj. Vukovic
@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>	
 #include <vdi.h>
 #include <stdlib.h>
@@ -34,15 +35,16 @@
 #include "xfilesys.h"
 #include "lists.h"  /* must be before slider.h */
 #include "slider.h" 
-#include "icon.h"
 #include "file.h"
 #include "font.h"
 #include "config.h"
 #include "viewer.h"
 #include "window.h"
+#include "icon.h"
 #include "showinfo.h"
 #include "copy.h"
 #include "dir.h"
+#include "va.h"
 
 XDINFO dinfo; 	
 int dopen = FALSE;    			/* flag that dialog is open */ 
@@ -51,7 +53,10 @@ int dopen = FALSE;    			/* flag that dialog is open */
 extern boolean
 	can_touch;
 
-extern DOSTIME optime;	
+extern DOSTIME 
+		now,
+		optime;	
+
 extern int opattr;
 extern int tos_version;
 
@@ -59,11 +64,10 @@ unsigned int Tgettime(void);
 unsigned int Tgetdate(void);
 
 
-
 /*
  * Closeinfo closes the object info dialog if it was open.
- * now, closeinfo must come after object_info 
- * because that routine do not close the dialog after each item anymore.
+ * Now, closeinfo must come after object_info because
+ * object_info does not close the dialog after each item.
  */
 
 void closeinfo(void)
@@ -241,7 +245,6 @@ static int search_dialog(void)
 	*(searching[SHIDATE].ob_spec.tedinfo->te_ptext) = 0;
 	set_opt( searching, search_icase, 1, IGNCASE); 
 
-
 	/* Open the dialog */
 
 	xd_open(searching, &info);
@@ -278,11 +281,11 @@ static int search_dialog(void)
 
 			/* Check if parameters entered have sensible values */
 
-			if (  *search_pattern == 0 ||
-	              search_lodate == -1  || 
-	              search_hidate == -1  ||
-	              search_hidate < search_lodate ||
-	              search_hisize < search_losize 
+			if (  *search_pattern == 0 ||		/* must have a pattern */
+	              search_lodate == -1  ||		/* valid low date      */ 
+	              search_hidate == -1  ||		/* valid high date     */
+	              search_hidate < search_lodate || /* valid date range */
+	              search_hisize < search_losize /* valid size range    */ 
                )
 			{
 				alert_iprint(MINVSRCH);
@@ -469,10 +472,7 @@ boolean searched_found
 
 					} /* no error ? */
 
-/* not needed
-					if ( fpath != NULL )
-*/
-						free(fpath);
+					free(fpath);
   
 				} 	/* search string specified ? */
 			} 		/* size matched ? */
@@ -589,15 +589,30 @@ static void disp_smatch( int ism )
 
 
 /*
- * Show or set information about a drive, folder or file. Return result code
+ * Show or set information about a drive, folder or file or link. 
+ * Return result code
  */
 
-int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *attr)
+int object_info
+(
+	ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE< etc. */ 
+	const char *oldname,	/* object path + name */ 
+	const char *fname,		/* object name only (why the duplication?) */ 
+	XATTR *attr				/* Object's extended attributes */
+)
 {
 	char 
 		*time,		/* time string */ 
 		*date,		/* date string */ 
-		*newname;	
+		*newname = NULL;
+
+#if _MORE_AV
+	char
+		*avname;	/* name to be reported to an AV client */
+
+	LNAME
+		ltgtname;	/* link target name */
+#endif	
 
 	LNAME
 		nfname;	
@@ -625,16 +640,25 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 	SNAME 
 		dskl;				/* disk label */
 
+
 	/* Pointers to time and date fields */
 
 	time = fileinfo[FLTIME].ob_spec.tedinfo->te_ptext;
 	date = fileinfo[FLDATE].ob_spec.tedinfo->te_ptext;
 
-	/* Put object data into dialog forms */
+	/* Some fields are set to invisible */
 
+	fileinfo[FLLIBOX].ob_flags |= HIDETREE;
+	fileinfo[FLFOLBOX].ob_flags |= HIDETREE;
+
+	/* Put object data into dialog forms */
 
 	if ( type != ITM_DRIVE )
 		attrib = attr->attr; /* copy state of attributes to temp. storage */ 
+
+#if _MORE_AV
+	avname = (char *)oldname;
+#endif	
 
 	switch(type)
 	{
@@ -679,14 +703,25 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 
 			goto setmore;
 
+#if _MINT_
+		case ITM_LINK:
+			rsc_title(fileinfo, FLTITLE, DTLIINF);
+			fileinfo[FLLIBOX].ob_flags &= ~HIDETREE;
+			memset(ltgtname, 0, sizeof(ltgtname) );
+			error = x_rdlink( (int)sizeof(ltgtname), ltgtname, oldname);
+			cv_fntoform(fileinfo + FLTGNAME, ltgtname);	
+			goto evenmore;
+#endif
+
 		case ITM_FILE:
 		case ITM_PROGRAM:
 
 			rsc_title(fileinfo, FLTITLE, DTFIINF);
+
+			evenmore:;
+
 			rsc_title(fileinfo, TDTIME, TACCTIM);
 			rsc_ltoftext(fileinfo, FLBYTES, attr->size);
-
-			fileinfo[FLFOLBOX].ob_flags |= HIDETREE;
 
 			setmore:;
 
@@ -704,7 +739,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 			fileinfo[FLNAMBOX].ob_flags &= ~HIDETREE;
 			fileinfo[ATTRBOX].ob_flags  &= ~HIDETREE;
 
-			if ( can_touch && (search_nsm == 0) ) 
+			if ( can_touch && (search_nsm == 0) && !va_reply ) 
 				fileinfo[FLALL].ob_flags &= ~HIDETREE;
 			else
 				fileinfo[FLALL].ob_flags |= HIDETREE;
@@ -749,6 +784,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 				}
 				else
 					result = si_error(oldname, error);
+
 			}
 
 			/* Set states of other fields */
@@ -800,17 +836,22 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 		 * Check if date and time have sensible values; forbid exit otherwise 
 		 * Note: this may be a problem with a write-protected file set
 		 * to illegal date or time- it can't be unprotected!
+		 * Therefore, it is permitted to keep illegal date/time on
+		 * write protected files.
 		 */
 
 		optime.date = cv_formtod(fileinfo[FLDATE].ob_spec.tedinfo->te_ptext);
 		optime.time = cv_formtot(fileinfo[FLTIME].ob_spec.tedinfo->te_ptext);
-		if ( optime.date == 0 )
-			optime.date = Tgetdate();
-		if ( optime.time == 0 )
-			optime.time = Tgettime();
-		if ( optime.time == -1 || optime.date == -1 )
-			button = 0;
 
+		now.date = Tgetdate();
+		now.time = Tgettime();
+		
+		if ( optime.date == 0 )
+			optime.date = now.date;
+		if ( optime.time == 0 )
+			optime.time = now.time;
+		if ( ((attrib & FA_READONLY) == 0 ) && (optime.time == -1 || optime.date == -1) )
+			button = 0;
 
 		switch(button)
 		{
@@ -824,6 +865,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 					 */
 
 					int error = 0, new_attribs;
+					boolean link = (type == ITM_LINK);
 
 					graf_mouse(HOURGLASS, NULL);
 
@@ -841,26 +883,11 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 
 					if ((newname = fn_make_newname(oldname, nfname)) != NULL)
 					{
-
-/* why all of this again ?
-						/* Currently, setting of folder attributes is not supported */
-						if ( type != ITM_FOLDER )
-						{
-/*
-							if (((new_attribs & FA_READONLY) == 0) && (new_attribs != attrib))
-								error = fattrib(oldname, new_attribs);
-*/
-							if ( (new_attribs != attrib) || ( optime.time != attr->mtime) || (optime.date != attr->mdate) )
-							{
-								error = touch_file(oldname, &optime, new_attribs);								
-								changed = TRUE;
-							}
-						}
-*/
-
 						/* 
 						 * Rename the file only if needed.
 						 * If it was successful, try to change attributes.
+						 * If the item is write-protected,
+						 * error will be generated
 						 */
 
 						if ((strcmp(nfname, fname) != 0) && (error == 0))
@@ -869,10 +896,36 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 						if ( error == 0 )
 							changed = TRUE;
 
+#if _MINT_
+						if ( link && strcmp(tgname, ltgtname) != NULL )
+						{
+							/* It should be checked here whether the target exists */
+
+							if ( !(x_exist(tgname, EX_FILE) || x_exist(tgname, EX_DIR) ) )
+								alert_iprint(TNOTGT);
+
+							error = x_unlink( newname );
+							if ( !error )
+							{
+								error = x_mklink( newname, tgname );
+								changed = TRUE;
+							} 
+						}
+#endif
+
 						/* Currently, setting of folder attributes is not supported */
+
 						if ( type != ITM_FOLDER && error == 0)
 						{
-							if ( (new_attribs != attrib) || ( optime.time != attr->mtime) || (optime.date != attr->mdate) )
+							if 
+							( 
+								(new_attribs != attrib) || 
+								(optime.time != attr->mtime) || 
+								(optime.date != attr->mdate) 
+/*
+								|| ( link && changed )
+*/
+							)
 							{
 								/* 
 								 * If the file is set to readonly, it must first
@@ -884,7 +937,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 								else
 								{
 									changed = TRUE;
-									error = touch_file(oldname, &optime, new_attribs);								
+									error = touch_file(newname, &optime, new_attribs, link);								
 								}
 							}
 						}
@@ -898,7 +951,9 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 						if (result != XFATAL)
 							if (changed)
 								wd_set_update(WD_UPD_COPIED, oldname, NULL);
-
+#if _MORE_AV
+						avname = newname;
+#endif
 						free(newname);
 					}
 					graf_mouse(ARROW, NULL);
@@ -936,6 +991,12 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 			}
 		}
 
+#if _MORE_AV
+		if ( va_reply && avname )
+			va_add_name(type, avname);
+#endif
+		free(newname);
+
 		xd_change( &dinfo, button, NORMAL, TRUE );
 	}
 
@@ -955,9 +1016,15 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
  * Show information on drives, folders and files 
  */
 
-void item_showinfo(WINDOW *w, int n, int *list, boolean search ) 
+void item_showinfo
+(
+	WINDOW *w,		/* pointer to the window in which the objects are */ 
+	int n,			/* number of objects to show */ 
+	int *list,		/* list of selected object indices */ 
+	boolean search 	/* true if search results are displayed */
+) 
 {
-	int i, item, error, x, y, oldmode, result = 0;
+	int i, item, error = 0, x, y, oldmode, result = 0;
 	ITMTYPE type;
 	boolean curr_pos;
 	XATTR attrib;
@@ -997,7 +1064,7 @@ void item_showinfo(WINDOW *w, int n, int *list, boolean search )
 
 		type = itm_type(w, item);
 
-		if ((type == ITM_FOLDER) || (type == ITM_PROGRAM)|| (type == ITM_FILE) || (type == ITM_DRIVE))
+		if ((type == ITM_FILE) || (type == ITM_PROGRAM)|| (type == ITM_FOLDER) ||  (type == ITM_DRIVE) )
 		{
 			if ((path = itm_fullname(w, item)) == NULL)
 				result = XFATAL;
@@ -1010,13 +1077,19 @@ void item_showinfo(WINDOW *w, int n, int *list, boolean search )
 				}
 				else
 				{
+#if _MINT_
+					if ( itm_islink(w, item, FALSE) )
+						type = ITM_LINK;
+#endif
 					if (type == ITM_DRIVE)
 						result = object_info(ITM_DRIVE, path, NULL, NULL);
 					else
 					{
 						name = itm_name(w, item);
 						graf_mouse(HOURGLASS, NULL);
-						error = itm_attrib(w, item, 0, &attrib);
+
+						error = itm_attrib(w, item, (type == ITM_LINK ) ? 1 : 0 , &attrib);
+
 						graf_mouse(ARROW, NULL);
 
 						if (error != 0)

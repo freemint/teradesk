@@ -34,11 +34,12 @@
 #include "desk.h"
 #include "lists.h"  
 #include "slider.h" 
-#include "icon.h"
 #include "library.h"
 #include "font.h"
 #include "config.h"
 #include "window.h"
+#include "icon.h"
+#include "events.h"
 
 static XDINFO vidinfo;
 
@@ -62,7 +63,14 @@ long
 #if _OVSCAN
 	over,			/* identification of overscan type */
 #endif
-	vdo;			/* identification of video hardware- shifter type */
+	vdo;			/* id. of video hardware- shifter type- see below */
+
+#define ST_VIDEO 	0
+#define STE_VIDEO	1
+#define TT_VIDEO	2
+#define FALC_VIDEO	3
+#define MIL_VIDEO	4
+
 	
 /* 
  *  Routine get_set_video acquires data on current state of bliter (if any)
@@ -238,7 +246,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 			while (w != NULL)
 			{
 				wd_adapt(w);
-				w = xw_next();
+				w = w->xw_next;
 			}
 
 			dsk_draw(); 
@@ -251,15 +259,19 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		
 		if ( set > 1 )
 		{
-			/* This will actually (almost) reset the computer immediately */
+			int ignor;
 
-			shel_write( SHW_RESCHNG, currez + 2, 0, NULL, NULL );
+			/* 
+			 * This will actually (almost) reset the computer immediately.
+			 * This can be enhanced- include falcon modes, etc. 
+			 */
 
-/*
+			shel_write( SHW_RESCHNG, currez + 2, 0, (void *)&ignor, NULL );
+
 			/* If still alive, wait a bit... */
 
-			evnt_timer( 3000, 0 );
-
+			wait(3000);
+/*
 			/* this is no good, so disabled for the time being */
 
 			xbios(5, logb, phyb, currez); 	/* same as Setscreen (logb,phyb,currez); */ 
@@ -313,53 +325,78 @@ int voptions(void)
 	xd_set_rbutton(vidoptions, VREZOL, rmap[currez]);
 	
 	/* 
-	 * Which video options are not available? Disable unavailables 
+	 * Which video options are not available? Disable unavailables
+	 * (first disable all then enable only what is available) 
 	 * Or maybe better not- what about graphic cards and multisyncs? 
-	 * note: a TT was not available to test TT-related modes   
+	 * note: a TT was not available to test TT-related modes.   
 	 */
 	
-	if ( vdo < 2 )         /* this is a ST/STe-type shifter, disable TT res */
-	{	   
-		vidoptions[VTTLOW].ob_state  |= DISABLED;
-		vidoptions[VTTMED].ob_state  |= DISABLED;
-		vidoptions[VTTHIGH].ob_state |= DISABLED;
-	
-		if ( currez == 2 )   /* st-high? disable low and med res */
-		{
-			vidoptions[VSTLOW].ob_state  |=  DISABLED;
-			vidoptions[VSTMED].ob_state  |=  DISABLED;
-			vidoptions[VSTHIGH].ob_state &= ~DISABLED;
-		}
-		else               /* st-low/med? disable hi res */
-		{
-			vidoptions[VSTLOW].ob_state  &= ~DISABLED;
-			vidoptions[VSTMED].ob_state  &= ~DISABLED;
-			vidoptions[VSTHIGH].ob_state |=  DISABLED; 
-	  }
-	}
-	else if ( vdo == 2 )   /* this is a TT */
+	vidoptions[VSTLOW].ob_state  |=  DISABLED;
+	vidoptions[VSTMED].ob_state  |=  DISABLED;
+	vidoptions[VSTHIGH].ob_state |=  DISABLED;
+
+	vidoptions[VTTLOW].ob_state  |=  DISABLED;
+	vidoptions[VTTMED].ob_state  |=  DISABLED;
+	vidoptions[VTTHIGH].ob_state |=  DISABLED; 
+
+	switch( (int)vdo )
 	{
-		if ( currez == 6 ){   /* tt-high? disable low and med res */
-			vidoptions[VSTLOW].ob_state  |=  DISABLED;
-			vidoptions[VSTMED].ob_state  |=  DISABLED;
-			vidoptions[VSTHIGH].ob_state |=  DISABLED;
-			vidoptions[VTTLOW].ob_state  |=  DISABLED;
-			vidoptions[VTTMED].ob_state  |=  DISABLED;
-			vidoptions[VTTHIGH].ob_state &= ~DISABLED; 
-		}
-		else               /* tt-low/med? disable hi res */
-		{
+		case TT_VIDEO:
+	
+			if ( currez == 6 )   /* tt-high? disable low and med res */
+			{
+				vidoptions[VTTHIGH].ob_state &= ~DISABLED; 
+			}
+			else               /* tt-low/med? disable hi res */
+			{
+				vidoptions[VSTLOW].ob_state  &= ~DISABLED;
+				vidoptions[VSTMED].ob_state  &= ~DISABLED;
+		    	vidoptions[VSTHIGH].ob_state &= ~DISABLED;
+
+				vidoptions[VTTLOW].ob_state  &= ~DISABLED;
+				vidoptions[VTTMED].ob_state  &= ~DISABLED;
+			}
+			break;
+
+		case ST_VIDEO:
+		case STE_VIDEO:
+	   
+			if ( currez == 2 )   /* st-high? disable low and med res */
+			{
+				vidoptions[VSTHIGH].ob_state &= ~DISABLED;
+			}
+			else               /* st-low/med? disable hi res */
+			{
+				vidoptions[VSTLOW].ob_state  &= ~DISABLED;
+				vidoptions[VSTMED].ob_state  &= ~DISABLED;
+			}
+			break;
+		case FALC_VIDEO:
+
 			vidoptions[VSTLOW].ob_state  &= ~DISABLED;
 			vidoptions[VSTMED].ob_state  &= ~DISABLED;
 	    	vidoptions[VSTHIGH].ob_state &= ~DISABLED;
-			vidoptions[VTTLOW].ob_state  &= ~DISABLED;
+
 			vidoptions[VTTMED].ob_state  &= ~DISABLED;
+
+			break;
+		case MIL_VIDEO:
+
+			/* ??? Proceed */
+
+		default:
+
+			/* For the time being, just enable all */
+
+			vidoptions[VSTLOW].ob_state  |=  DISABLED;
+			vidoptions[VSTMED].ob_state  |=  DISABLED;
+			vidoptions[VSTHIGH].ob_state |=  DISABLED;
+
+			vidoptions[VTTLOW].ob_state  |=  DISABLED;
+			vidoptions[VTTMED].ob_state  |=  DISABLED;
 			vidoptions[VTTHIGH].ob_state |=  DISABLED; 
-	  }
-	}
-	else /* other video types- unsupported ??? */
-	{	  
-	 /* nothing yet */ 
+
+			break;
 	}
 
 	/* Set button for blitter */

@@ -24,11 +24,11 @@
 
 
 /* 
- * Safe string copy- always terminate with a nul char.
- * Nul char is included in length "len"
+ * Safe string copy- never more than len-1 characters, and
+ * always terminated with a nul char. Nul char is included in length "len"
  */
 
-char *strsncpy(char *dst, const char *src, size_t len)	/* secure cpy (0 --> len-1) */
+char *strsncpy(char *dst, const char *src, size_t len)	
 {
 	strncpy(dst, src, len - 1);		/* len is typical: sizeof(achararray) */
 	*(dst + len - 1) = 0;

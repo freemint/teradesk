@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 #include <np_aes.h>
 
@@ -57,9 +58,11 @@ int aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
 	xd_act_col = LWHITE,		/* colour of activator object */
 	xd_sel_col = BLACK;			/* colour of selected object */
 
-#define XD_WDFLAGS	(NAME | MOVER)
 
-int xd_dialmode = XD_NORMAL,	/* Dialog mode */
+#define XD_WDFLAGS ( NAME | MOVER | CLOSER )
+
+int 
+	xd_dialmode = XD_BUFFERED,
 	xd_posmode = XD_CENTERED,	/* Position mode */
 	xd_vhandle,					/* Vdi handle for library functions */
 	xd_nplanes,					/* Number of planes the current resolution */
@@ -90,7 +93,7 @@ XDOBJDATA
 
 XDINFO 
 	*xd_dialogs = NULL,		/* Chained list of modal dialog boxes. */
-	*xd_nmdialogs;			/* List with non modal dialog boxes. */
+	*xd_nmdialogs = NULL;	/* List with non modal dialog boxes. */
 
 RECT 
 	xd_desk;				/* Dimensions of desktop background. */
@@ -99,29 +102,60 @@ XD_FONT
 	xd_regular_font,		/* system font definition */ 
 	xd_small_font;			/* small font definition */
 
-void __xd_redraw(WINDOW *w, RECT *area);
-void __xd_moved(WINDOW *w, RECT *newpos);
+static void __xd_redraw(WINDOW *w, RECT *area);
+static void __xd_moved(WINDOW *w, RECT *newpos);
+
+extern int __xd_hndlkey(WINDOW *w, int key, int kstate);
+extern void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate);
+extern void __xd_hndlmenu(WINDOW *w, int title, int item);
+
+extern void __xd_topped(WINDOW *w);
+extern void __xd_closed(WINDOW *w);
+extern void __xd_top(WINDOW *w);
+
+
 int get_tosversion(void);
-void get_fsel( XDINFO *info, char *result, int mlen, int *pos );
+extern void get_fsel( XDINFO *info, char *result, int mlen, int *pos );
 
 static WD_FUNC xd_wdfuncs =
 {
+	0L,				/* hndlkey */
+	0L,				/* hndlbutton */
+	__xd_redraw,	/* redraw */
+	0L,				/* topped */
+	0L,				/* newtop */
+	0L,				/* closed */
+	0L,				/* fulled */
+	0L,				/* arrowed */
+	0L,				/* hslider */
+	0L,				/* vslider */
+	0L,				/* sized */
+	__xd_moved,		/* moved */
 	0L,
 	0L,
+	0L,  
+	0L
+};
+
+
+static WD_FUNC xd_nmwdfuncs =
+{
+	__xd_hndlkey,
+	__xd_hndlbutton,
 	__xd_redraw,
+	__xd_topped,
 	0L,
-	0L,
-	0L,
+	__xd_closed,
 	0L,
 	0L,
 	0L,
 	0L,
 	0L,
 	__xd_moved,
-	0L,
-	0L,
-	0L,  
-	0L
+	__xd_hndlmenu,
+	__xd_top,
+	0L, 
+	0L 
 };
 
 /********************************************************************
@@ -300,6 +334,12 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 		case XD_CENTERED:
 			info->drect.x = prev->drect.x + (prev->drect.w - info->drect.w) / 2;
 			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
+			if ( xd_desk.w > 400 && xd_desk.h > 300 )
+			{
+				/* stack dialogs a little to the right/down, for nicer look */
+				info->drect.x += 16;
+				info->drect.y += 16;
+			}
 			break;
 		case XD_MOUSE:
 			graf_mkstate(&info->drect.x, &info->drect.y, &dummy, &dummy);
@@ -349,7 +389,6 @@ static void xd_rbutton(XDINFO *info, int parent, int object)
 
 	if (info->dialmode == XD_WINDOW)
 		xd_cursor_on(info);
-
 }
 
 
@@ -579,8 +618,10 @@ XDINFO *xd_find_dialog(WINDOW *w, int flag)
  * Funktie voor het afhandelen van een redraw event. 
  */
 
-void __xd_redraw(WINDOW *w, RECT *area)
+static void __xd_redraw(WINDOW *w, RECT *area)
 {
+	/* "3" below means look both for dialogs and nonmodal dialogs */
+
 	XDINFO *info = xd_find_dialog(w, 3);
 
 	xd_wdupdate(BEG_UPDATE);
@@ -593,15 +634,18 @@ void __xd_redraw(WINDOW *w, RECT *area)
  * Funktie voor het afhandelen van een window moved event. 
  */
 
-void __xd_moved(WINDOW *w, RECT *newpos)
+static void __xd_moved(WINDOW *w, RECT *newpos)
 {
-	XDINFO *info = xd_find_dialog(w, 3);
+	XDINFO *info = xd_find_dialog(w, 3); /* 3 = modal or nonmodal */
 	RECT work;
 
 	xw_set(w, WF_CURRXYWH, newpos);
 	xw_get(w, WF_WORKXYWH, &work);
 	xd_set_position(info, work.x, work.y);
 }
+
+
+
 
 
 /********************************************************************
@@ -691,13 +735,19 @@ static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 {
 	int i, m;
 
-	if (pos < maxlen)
+	if ( curlen >= maxlen  )
 	{
-		m = curlen + ((curlen < maxlen) ? 1 : -1);
+		bell();
+	}
+	else if (pos < maxlen)
+	{
+		m = curlen + 1;
+
 		for (i = m; i > pos; i--)
 			s[i] = s[i - 1];
 		s[pos] = (char) ch;
 	}
+
 }
 
 
@@ -707,8 +757,12 @@ static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 
 static int xd_chk_key(char *valid, int pos, int key)
 {
-	char cvalid = valid[pos];
-	int ch = key & 0xFF, cch = key & 0xDF;
+	char 
+		cvalid = valid[pos];
+
+	int 
+		ch = key & 0xFF, 
+		cch = key & 0xDF;	/* uppercase */
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
 	{
@@ -832,6 +886,7 @@ static bool xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
 	}
 	return false;
 }
+
 
 /*
  * Edit a scrolling editable text 
@@ -964,10 +1019,10 @@ int xd_edit_char(XDINFO *info, int key)
 		/* These codes have no effect */
 		break;
 	case INSERT: 
-/* possibly disable call of get_fsel for cfg2inf.prg- or else use absolute calls  */
-
 		xd_cursor_off(info);
+
 		get_fsel(info, tedinfo->te_ptext, maxlen, &info->cursor_x);
+
 		xd_shift( blk, info->cursor_x, flen, (int)strlen(tedinfo->te_ptext) );
 		xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 		xd_cursor_on(info);
@@ -1126,6 +1181,11 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 }
 
 
+/*
+ * Button texts which are recognized as those for a "cancel" button
+ * for an appropriate default action
+ */
+
 static char cancel_buttons[][18] =
 {
 	"cancel",
@@ -1140,7 +1200,9 @@ static char cancel_buttons[][18] =
 };
 
 
-/*: courtesy XaAES */
+/*
+ * Find a cencel button in a dialog (courtesy XaAES)
+ */
 
 static int xd_find_cancel(OBJECT *ob)
 {
@@ -1198,8 +1260,7 @@ static int xd_find_cancel(OBJECT *ob)
 }
 
 
-int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
-					  int *knxtobject, int *knxtchar)
+int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *knxtchar)
 {
 	int i, mode = FMD_FORWARD;
 	OBJECT *tree = info->tree;
@@ -1258,6 +1319,7 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 	OBJECT *tree = info->tree;
 	int flags = tree[object].ob_flags, parent, oldstate, dummy;
 
+
 	if (   xd_selectable(tree, object)
 	    && ((flags & SELECTABLE) || (flags & TOUCHEXIT))
 	   )
@@ -1276,8 +1338,6 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 			XDEVENT events;
 			int evflags, newstate, state;
 
-
-/* DjV 074 ---vvv--- */
 /* there are currently no tristate objects in Teradesk
 
 			/* I_A changed to fit tristate-buttons! */
@@ -1304,7 +1364,6 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 */
 			newstate = (oldstate & SELECTED) ? oldstate & ~SELECTED : oldstate | SELECTED;
 
-/* DjV 074 ---^^^--- */
 			events.ev_mflags = MU_BUTTON | MU_TIMER;
 			events.ev_mbclicks = 1;
 			events.ev_mbmask = 1;
@@ -1374,6 +1433,7 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 /* 
  * Funktie voor het zoeken van de button waarmee de dialoogbox
  * verplaatst kan worden. 
+ * Find the "dragbox" object in a dialog.
  */
 
 int xd_movebutton(OBJECT *tree)
@@ -1400,14 +1460,15 @@ int xd_movebutton(OBJECT *tree)
  * Eigen form_do 
  */
 
+
 int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 {
 	int next_obj = 0, which, kr, db, nkeys, cmode = -1;
 	XDEVENT events;
 	int cont = TRUE;
 	OBJECT *tree = info->tree;
-	KINFO kinfo[MAXKEYS];
 
+	KINFO kinfo[MAXKEYS];
 
 	xd_wdupdate(BEG_UPDATE);
 
@@ -1416,12 +1477,9 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	nkeys = xd_set_keys(tree, kinfo);
 
 	if (info->dialmode != XD_WINDOW)
-	{
-		events.ev_mflags = MU_KEYBD | MU_BUTTON;
 		xd_wdupdate(BEG_MCTRL);
-	}
-	else
-		events.ev_mflags = MU_KEYBD | MU_BUTTON | MU_MESAG;
+		
+	events.ev_mflags = MU_KEYBD | MU_BUTTON | MU_MESAG;
 
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
@@ -1431,22 +1489,51 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	events.ev_mtlocount = 0;
 	events.ev_mthicount = 0;
 
+
+	events.ev_mmgpbuf[0] = 0; 
 	next_obj = 0;
-	start = (start == 0) ? xd_find_obj(tree, 0, FMD_FORWARD) : start;
+
+	if ( start == 0 )
+		start = xd_find_obj(tree, 0, FMD_FORWARD);
 
 	xd_edit_init(info, start, cmode);
 
 	while (cont == TRUE)
 	{
+
 		xd_wdupdate(END_UPDATE);
 
 		which = xe_xmulti(&events);
+
+/* DJV 000
 
 		if ((which & MU_MESAG) && (xd_usermessage != 0L))
 		{
 			if (xd_usermessage(events.ev_mmgpbuf) != 0)
 			{
 				next_obj = -1;
+				cont = FALSE;
+			}
+		}
+*/
+		if ( (which & MU_MESAG) != 0 ) /* DjV 000 */
+		{
+
+			if (xd_usermessage != 0L && xd_usermessage(events.ev_mmgpbuf) != 0)
+			{
+				next_obj = -1;
+				cont = FALSE;
+			}
+			else if 
+			( 
+				(events.ev_mmgpbuf[0] == WM_CLOSED) &&
+				(info->dialmode == XD_WINDOW)  && 
+				(events.ev_mmgpbuf[3] == info->window->xw_handle ) 
+			)
+			{
+				/* if "Close" then act as if a cancel button was pressed */
+
+				next_obj = xd_find_cancel(tree);
 				cont = FALSE;
 			}
 		}
@@ -1478,7 +1565,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		{
 			if ((next_obj = objc_find(tree, ROOT, MAX_DEPTH, events.ev_mmox, events.ev_mmoy)) == -1)
 			{
-				Bconout(2, 7);
+				bell();
 				next_obj = 0;
 			}
 			else
@@ -1486,7 +1573,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 				if ((cont = xd_form_button(info, next_obj, events.ev_mbreturn, &next_obj)) != FALSE)
 					cmode = events.ev_mmox;
 
-				if ((next_obj & 0x7FFF) == db)
+				if ((next_obj & 0x7FFF) == db) /* move by dragbox */
 				{
 					int nx, ny;
 
@@ -1538,49 +1625,77 @@ int xd_form_do(XDINFO *info, int start)
  *																	*
  ********************************************************************/
 
-/* 
- * initialisatie voor dialoog. Berekent de positie van de box en redt
- * het scherm.
+
+/*
+ * Open a dialog with or without zoom effects.
+ * Note: it is asumed that  the dragbox "ear" always exists in a dialog!!!
+ * 
+ * Parameters:
  *
- * tree		- objectboom,
- * info		- bevat informatie over buffer voor scherm en de positie
- *   			  van de dialoogbox.
+ * tree		- Object tree of the dialogbox
+ * info		- Pointer to a XDINFO structure
+ * funcs	- Pointer to a XD_NMFUNCS structure (nonmodal only).
+ *       	  if this is not NULL it is assumed that the dialog is nonmodal.
+ * start	- First edit object (as in form_do) (nonmodal only)
+ * x		- x position where dialogbox should appear. If -1 the
+ *			  library will calculate the position itself. (nonmodal only)
+ * y		- y position where dialogbox should appear. If -1 the (nonmodal only)
+ *			  library will calculate the position itself.
+ * menu		- Optional pointer to a object tree, which should be used
+ *			  as menu bar in the window. If NULL no menu bar will
+ *			  appear in top of the window. (nonmodal only)
+ * xywh		- Optional pointer to a RECT structure. If this pointer
+ *			  is not NULL and zoom is not 0, the library will draw
+ *			  a zoombox from the rectangle in xywh to the window.
+ * zoom		- see xywh
+ * title	- Optional title. If not NULL this string is used as the
+ *			  title of the window. Otherwise the program name is used (nonmodal only)
  */
 
+static int xd_open_wzoom
+(
+	OBJECT *tree, 
+	XDINFO *info,
 
+	XD_NMFUNC *funcs,
+	int start, 
 
-void xd_open(OBJECT *tree, XDINFO *info)
-{
+/* currently not used anywhere
+	int x, 
+	int y, 
+*/
+
+	OBJECT *menu,
+
 #ifdef _DOZOOM
-	RECT xywh;
-	xd_open_wzoom(tree, info, &xywh, TRUE);
-#else
-	/* xd_open_wzoom(tree, info, NULL, FALSE); */
-	xd_open_wzoom(tree, info);
+	RECT *xywh, 
+	int zoom
 #endif
-}
 
-
-void xd_open_wzoom(OBJECT *tree, XDINFO *info
-#ifdef _DOZOOM
-/* DjV 060 260603 conditional */ 
-,RECT *xywh, int zoom
-#endif
+	const char *title
 )
 {
-	int dialmode = xd_dialmode;
-	int db;
-	XDINFO *prev = xd_dialogs;
+	int 
+		dialmode = (funcs) ? XD_WINDOW : xd_dialmode,
+		db = xd_movebutton(tree),
+		error = 0;
+
+	XDINFO 
+		*prev = (funcs) ? NULL: xd_dialogs;
+
+
+	xd_wdupdate(BEG_UPDATE);
 
 	info->tree = tree;
 	info->prev = prev;
-	xd_dialogs = info;
+
+	if (!funcs)
+		xd_dialogs = info;
+
 	info->edit_object = -1;
 	info->cursor_x = 0;
 	info->curs_cnt = 1;
-	info->func = NULL;
-
-	xd_wdupdate(BEG_UPDATE);
+	info->func = funcs;
 
 	xd_calcpos(info, prev, xd_posmode);
 
@@ -1590,13 +1705,57 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info
 		{
 			WINDOW *w;
 			RECT wsize;
-			int error;
 
-			xw_calc(WC_BORDER, XD_WDFLAGS, &info->drect, &wsize, NULL);
+			WD_FUNC *thefuncs;
+			size_t thesize;
+			OBJECT *themenu;
+			int thetype;
+
+			tree[db].ob_flags |= HIDETREE; /* hide dragbox */
+
+			if ( funcs )
+			{
+				thetype = XW_NMDIALOG;
+				themenu = menu;
+				thefuncs = &xd_nmwdfuncs;
+				thesize = sizeof(XD_NMWINDOW);
+			}
+			else
+			{
+				thetype = XW_DIALOG;
+				themenu = NULL;
+				thefuncs = &xd_wdfuncs;
+				thesize = sizeof(WINDOW);
+			}
+
+			xw_calc(WC_BORDER, XD_WDFLAGS, &info->drect, &wsize, themenu );
+
+			/* Nicer looking window border */
 
 			tree->ob_x -= 1; 
 			wsize.w -= 2;
 			wsize.h -= 1;
+
+/* Currently this is not used anywhere in TeraDesk (See font.c only)
+
+			if ( funcs && (x != -1) && (y != -1) )
+			{ 
+				int dx, dy;
+
+				dx = x - wsize.x;
+
+				info->drect.x += dx;
+				tree->ob_x += dx;
+				wsize.x = x;
+
+				dy = y - wsize.y;
+
+				info->drect.y += dy;
+				tree->ob_y += dy;
+				wsize.y = y;
+			}
+*/
+			/* Fit to screen */
 
 			if (wsize.x < xd_desk.x)
 			{
@@ -1617,7 +1776,6 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info
 			}
 
 #ifdef _DOZOOM 
-			/* DjV 060 260603 conditional */
 			if (zoom && xywh)
 			{
 				graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
@@ -1625,29 +1783,57 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info
 				zoom = FALSE;
 			}
 #endif
-
-			if ((w = xw_create(XW_DIALOG, &xd_wdfuncs, XD_WDFLAGS,
-							   &wsize, sizeof(WINDOW), NULL, &error)) != NULL)
+			if ((w = xw_create( thetype, thefuncs, XD_WDFLAGS,
+							   &wsize, thesize, themenu, &error)) != NULL)
 			{
-				xw_set(w, WF_NAME, xd_prgname);
-				xw_open(w, &wsize);
+				xw_set(w, WF_NAME, (title) ? title : xd_prgname);
 
+/* not here also for normal dial. ?
+				xw_open(w, &wsize);
+*/
 				info->window = w;
 
-				if (prev == NULL)
-					xd_disable_menu();
+				if ( funcs )
+				{
+					info->prev = xd_nmdialogs;
+					xd_nmdialogs = info;
+
+					((XD_NMWINDOW *)w)->xd_info = info;
+					((XD_NMWINDOW *)w)->nkeys = xd_set_keys(tree, ((XD_NMWINDOW *)w)->kinfo);
+
+					if ( start == 0 )
+						start = xd_find_obj(tree, 0, FMD_FORWARD);
+
+					xd_edit_init(info, start, -1);
+
+				}
+				else 
+					if (prev == NULL)
+						xd_disable_menu();
+
+				xw_open(w, &wsize);
+
+#if _DOZOOM
+				if (zoom && xywh)
+				{
+					graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
+								 wsize.x, wsize.y, wsize.w, wsize.h);
+					zoom = FALSE;
+				}
+#endif
 
 				xd_wdupdate(END_UPDATE);
 			}
 			else
-				dialmode = XD_BUFFERED;
+				if (!funcs)
+					dialmode = XD_BUFFERED; /* has no effect in nonmodal */
 		}
 		else
 			dialmode = XD_BUFFERED;
 	}
 
+
 #ifdef _DOZOOM
-	/* DjV 060 260603 conditional */
 	if (zoom && xywh)
 	{
 		graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
@@ -1656,47 +1842,165 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info
 	}
 #endif
 
-	/* if (dialmode == XD_BUFFERED) DjV 061 290603 */
-	if (dialmode == XD_BUFFERED || (dialmode == XD_NORMAL && prev != NULL) ) /* DjV 061 290603 */
+	info->dialmode = dialmode;
+
+	if (dialmode == XD_BUFFERED)
 	{
 		long scr_size;
 
 		scr_size = xd_initmfdb(&info->drect, &info->mfdb);
 
+/* DjV 000 Beware: no more checking below!!!
+Btw. can this be xd_malloc ???
+
 		if ((info->mfdb.fd_addr = (void *) Malloc(scr_size)) == NULL)
 			dialmode = XD_NORMAL;
+*/
+
+		info->mfdb.fd_addr = (void *)Malloc(scr_size);
+		if ( info->mfdb.fd_addr == NULL )
+			return XDNSMEM;
+
+		tree[db].ob_flags &= ~HIDETREE; 
+		xd_save(info);
+		xd_draw(info,	ROOT,	MAX_DEPTH);
 	}
 
-	info->dialmode = dialmode;
+	return error;
+}
 
-	/* Hide or show the "ear" for moving flying dialog around */
 
-	if ((db = xd_movebutton(tree)) >= 0)
+/* 
+ * initialisatie voor dialoog. Berekent de positie van de box en redt
+ * het scherm.
+ *
+ * tree		- objectboom,
+ * info		- bevat informatie over buffer voor scherm en de positie
+ *   			  van de dialoogbox.
+ */
+
+
+void xd_open(OBJECT *tree, XDINFO *info)
+{
+#ifdef _DOZOOM
+	RECT xywh;
+	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL,   &xywh, TRUE,  NULL);
+#else
+	/* xd_open_wzoom(tree, info, NULL, FALSE); */
+	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL, NULL);
+#endif
+}
+
+
+int xd_nmopen
+(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, int start, 
+/* int x, int y, not used */ 
+OBJECT *menu, 
+#if _DOZOOM
+RECT *xywh, int zoom, 
+#endif
+const char *title
+)
+{
+#if _DOZOOM
+	return xd_open_wzoom(tree, info, funcs, 0, /* -1, -1, not used */ NULL, NULL, FALSE, wtitle);
+#else
+ 	return xd_open_wzoom(tree, info, funcs, 0, /* -1, -1, not used */ NULL, title);
+#endif
+}
+
+
+static void xd_close_wzoom
+(
+	XDINFO *info,
+
+#ifdef _DOZOOM
+RECT *xywh, int zoom,
+#endif
+
+	int nmd
+)
+{
+	XDINFO 
+		*h = xd_nmdialogs,
+		*prev;
+
+	if ( nmd )
 	{
-		if (dialmode != XD_BUFFERED)
-			tree[db].ob_flags |= HIDETREE;
-		else
-			tree[db].ob_flags &= ~HIDETREE;
-	}
+		prev = NULL;
 
-	if (dialmode != XD_WINDOW)
-	{
-		if (dialmode == XD_NORMAL)
+		while (h && (h != info))
 		{
+			prev = h;
+			h = h->prev;	/* eigenlijk h->next. */
+		}
 
-			if (prev != NULL)
-			{							/* DjV 061 290603 */
-				xd_save(info);  		/* DjV 061 290603 */
-				xd_calcpos(info, prev, XD_CENTERED);
-			} 							/* DjV 061 290603 */
-			if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
-				form_dial(FMD_START, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
+		if (h != info)
+			return;
+	}
+	else
+	{
+		if (xd_dialogs != info)
+			return;
+
+		prev = info->prev;
+	}
+
+	if (info->dialmode == XD_WINDOW)
+	{
+		WINDOW *w = info->window;
+
+
+		xd_wdupdate(BEG_UPDATE);
+
+		if (!(nmd || prev) )
+			xd_enable_menu();
+
+		xw_close(w);
+		xw_delete(w);
+
+		if ( nmd )
+		{
+			if ( prev )
+				prev->prev = info->prev;
+			else
+				xd_nmdialogs = info->prev;
 		}
 		else
-			xd_save(info);
-
-		xd_draw(info,ROOT,MAX_DEPTH);
+			if (prev)
+				xw_set(prev->window, WF_TOP);
 	}
+
+	if (info->dialmode == XD_BUFFERED)
+	{
+		xd_restore(info);
+
+/* Can this be xd_free ? */
+
+		Mfree(info->mfdb.fd_addr);
+/*
+		xd_free(info->mfdb.fd_addr);
+*/
+
+	}
+
+#ifdef _DOZOOM
+	if (zoom && xywh)
+	{
+		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
+		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
+	}
+#endif
+
+	xd_wdupdate(END_UPDATE);
+
+	if (!nmd)
+		xd_dialogs = prev;
+
+/*!!! why ?	
+	if ((prev != NULL) && (prev->dialmode == XD_WINDOW))
+		xd_scan_messages(XD_EVREDRAW, NULL);
+*/
 }
 
 
@@ -1710,76 +2014,25 @@ void xd_close(XDINFO *info)
 {
 #ifdef _DOZOOM
 	RECT xywh;
-	xd_close_wzoom(info, &xywh, TRUE);
+	xd_close_wzoom(info, &xywh, TRUE, FALSE);
 #else
-	/* xd_close_wzoom(info, NULL, FALSE); */
-	xd_close_wzoom(info);
+	xd_close_wzoom(info, FALSE);
 #endif
 }
 
 
-void xd_close_wzoom(XDINFO *info
-#ifdef _DOZOOM
-/* DjV 060 260603 conditional */
-, RECT *xywh, int zoom
-#endif
-)
+/*
+ * Close a nonmodal dialog
+ */
+
+void xd_nmclose(XDINFO *info)
 {
-	XDINFO *prev;
-
-	if (xd_dialogs != info)
-		return;
-
-	prev = info->prev;
-
-	if (info->dialmode == XD_WINDOW)
-	{
-		WINDOW *w = info->window;
-
-		xd_wdupdate(BEG_UPDATE);
-
-		if (prev == NULL)
-			xd_enable_menu();
-
-		xw_close(w);
-		xw_delete(w);
-
-		if (prev != NULL)
-			xw_set(prev->window, WF_TOP);
-	}
-
-	/* if (info->dialmode == XD_BUFFERED)  DjV 061 290603 */
-	if (info->dialmode == XD_BUFFERED || ( info->dialmode == XD_NORMAL && prev != NULL) ) /* DjV 061 290603 */
-	{
-		xd_restore(info);
-		Mfree(info->mfdb.fd_addr);
-	}
-
-	if (info->dialmode == XD_NORMAL)
-	{
-		if ((prev != NULL) && (prev->dialmode != XD_WINDOW))
-			objc_draw(prev->tree, ROOT, MAX_DEPTH, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
-		else
-			form_dial(FMD_FINISH, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
-	}
-
 #ifdef _DOZOOM
-	/* DjV 060 260603 conditional */
-	if (zoom && xywh)
-	{
-		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
-		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
-	}
+	RECT xywh;
+	xd_close_wzoom(info, &xywh, TRUE, TRUE);
+#else
+	xd_close_wzoom(info, TRUE);
 #endif
-
-	xd_wdupdate(END_UPDATE);
-
-	xd_dialogs = prev;
-
-/*!!!	
-	if ((prev != NULL) && (prev->dialmode == XD_WINDOW))
-		xd_scan_messages(XD_EVREDRAW, NULL);
-*/
 }
 
 
@@ -1825,27 +2078,29 @@ int xd_setdialmode(int new, int (*hndl_message) (int *message),
 
 	old = xd_dialmode;
 
-	if ((new >= XD_NORMAL) && (new <= XD_WINDOW))
-	{
-		xd_dialmode = new;
-		xd_usermessage = hndl_message;
-		xd_menu = menu;
-		xd_nmnitems = nmnitems;
-		xd_mnitems = mnitems;
-	}
+	/* Note: it is assumed that a correct dial mode is always given */
+
+	xd_dialmode = new;
+	xd_usermessage = hndl_message;
+	xd_menu = menu;
+	xd_nmnitems = nmnitems;
+	xd_mnitems = mnitems;
 
 	return old;
 }
 
+
+/*
+ * Set dialog position mode. 
+ * It is assumed that a valid mode is always given; there are no checks!
+ */
 
 int xd_setposmode(int new)
 {
 	int old;
 
 	old = xd_posmode;
-
-	if ((new >= XD_CENTERED) && (new <= XD_CURRPOS))
-		xd_posmode = new;
+	xd_posmode = new;
 
 	return old;
 }
@@ -1923,8 +2178,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 		/* proper appl_getinfo protocol, works also with MagiC */
 
-		/* DjV 063 030703 ---vvv--- */
-
 		/* 
 		 * Some AESses (at least Geneva 4, AES 4.1, NAES 1.1...) 
 		 * do not react to "?AGI" but in fact support appl_getinfo;
@@ -1940,8 +2193,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 		if ( xd_aes4_0 || (appl_find("?AGI") == 0) )
 			aes_flags |= GAI_INFO;
-
-		/* DjV 063 030703 ---^^^--- */
 
 		/* If appl_getinfo is supported, then get diverse information: */
 
@@ -2084,7 +2335,6 @@ void exit_xdialog(void)
 
 	while (xd_nmdialogs)
 #ifdef _DOZOOM
-/* DjV 060 290603 conditional */
 		xd_nmclose(xd_nmdialogs, NULL, FALSE);
 #else
 		xd_nmclose(xd_nmdialogs);

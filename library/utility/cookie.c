@@ -80,8 +80,6 @@ long find_cookie( long name )
 /* All the following routines are currently not used in Teradesk */
 
 
-/* 
-
 static void cookie_reset( void )
 {
 	p_cookie = NULL;
@@ -171,5 +169,3 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 
 	return r;
 }
-
-*/

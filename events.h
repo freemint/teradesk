@@ -23,5 +23,6 @@
 int key_state(int *key, boolean hndl_msg);
 void clr_key_buf(void);
 void wait_button(void);
+void wait(int dt);
 int clr_msg_buf(void);
 boolean escape_abort( boolean hndl_msg );

@@ -20,29 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define CFG_VERSION		0x0300		/* current version id. of cfg/inf file */ 
+#define CFG_VERSION		0x0330		/* current version id. of cfg/inf file */ 
 
-#if TEXT_CFG_IN 
 #define MIN_VERSION		0x0300		/* min.acceptabe version id. of inf file */	 
-#else
-#define MIN_VERSION		0x0200		/* min.acceptabe version id. of cfg file */	 
-#endif
 
-#define INFO_VERSION	"Tera Desktop V3.01  07-01-2004"
+#define INFO_VERSION	"Tera Desktop V3.30  23-04-2004"
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"
 #define INFO_OTHER "1991-2004"
 
-#if _MINT_
-
-#if TEXT_CFG_IN
-  #define INFO_SYSTEMS 	  "for TOS, MiNT, MagiC and Geneva"
-#else 
-  #define INFO_SYSTEMS     "Config.file Conversion Utility" 
-#endif
-
-#else
-  #define INFO_SYSTEMS	"for single TOS only"
-#endif
 
 
 

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>
 #include <stddef.h>
 #include <vdi.h>
@@ -111,7 +112,7 @@ static void do_arrows(int button, OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 		if ((first == TRUE) && mstate)
 		{
-			evnt_timer(250, 0);
+			wait(250);
 			first = FALSE;
 		}
 	}

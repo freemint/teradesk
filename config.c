@@ -74,7 +74,7 @@ int
 /* 
  * End of line: either <cr> <lf> or <lf> only.
  * Using <cr><lf> is more in line with TOS standard, but can produce
- * significantly larger inf file. Using <lf> only produces smaller
+ * significantly larger inf file. Using only <lf> produces smaller
  * files, is in line with mint standards, but can create problems 
  * when read with some programs -including Pure-C editor!!!
  */
@@ -144,6 +144,7 @@ static void append_fmt
 				strcpy(dest, "end");
 				strcat(dest, eol);
 				break;
+
 /* currently not used in Teradesk- but may be used later 
 			case CFG_B:
 			case CFG_C:
@@ -675,7 +676,6 @@ int handle_cfg
 
 	if ( io == CFG_SAVE )
 		return CfgSave( fp, cfgtab, level, emp );
-#if TEXT_CFG_IN
 	else
 	{
 		if ( ini != NULL )
@@ -692,9 +692,6 @@ int handle_cfg
 		}
 		return error;
 	}
-#else
-return 0;
-#endif
 }
 
 

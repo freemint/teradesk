@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
+ *                                                     2002, 2003 H. Robbers,
+ *                                                           2003 Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,26 +20,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* Load configuration of directory windows, text windows and open windows */
 
-int wd_load(XFILE *file)
+#include <stdlib.h>
+#include <tos.h>
+
+/*
+ * Convert a number (range 0:99 only!!!) into string
+ * (leading zeros shown)
+ */
+
+void digit(char *s, int x)
 {
-	int error;
+	x = x % 100;
+	s[0] = x / 10 + '0';
+	s[1] = x % 10 + '0';
+}
 
-	/* Positions of all dir windows and text windows */
 
-	if ((error = wd_type_load(file, DIR_WIND)) < 0)		/* DjV 041 210303 */
-		return error;
-	if ((error = wd_type_load(file, TEXT_WIND)) < 0)	/* DjV 041 210303 */
-		return error;
+/* 
+ * Ring a bell
+ */
 
-	if ((error = edit_load(file)) < 0)
-		return error;
-
-	/* Configuration of open windows */
-
-	if ((error = load_windows(file)) < 0)
-		return error;
-
-	return 0;
+void bell(void)
+{
+	Bconout(2, 7);
 }

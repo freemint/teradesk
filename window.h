@@ -26,15 +26,13 @@
 #define DESK_WIND		16
 #define DIR_WIND		17
 #define TEXT_WIND		18
+#define ACC_WIND		19 
+#define CON_WIND		20 /* currently not used */
+
 
 #define TFLAGS			(NAME|CLOSER|FULLER|MOVER|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE|ICONIFY)
 #define DFLAGS			(NAME|CLOSER|FULLER|MOVER|INFO|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE|ICONIFY)
 
-/* definities voor itm_info */
-
-#define ITM_PATHSIZE	1		/* lengte pad */
-#define ITM_NAMESIZE	2		/* lengte naam */
-#define ITM_FNAMESIZE	3		/* lengte van volledige naam */
 
 /* Interne variabelen item windows. */
 
@@ -52,7 +50,8 @@ typedef enum
 	ITM_FOLDER,
 	ITM_PROGRAM,
 	ITM_FILE,
-	ITM_PREVDIR
+	ITM_PREVDIR,
+	ITM_LINK		/* only for showing object info !!!! */
 } ITMTYPE;
 
 /* Update type */
@@ -70,12 +69,12 @@ typedef struct
 	int (*itm_find) (WINDOW *w, int x, int y);
 	boolean (*itm_state) (WINDOW *w, int item);
 	ITMTYPE (*itm_type) (WINDOW *w, int item);
+	ITMTYPE (*itm_tgttype) (WINDOW *w, int item);
 	int (*itm_icon) (WINDOW *w, int item);
 	const char *(*itm_name) (WINDOW *w, int item);
 	char *(*itm_fullname) (WINDOW *w, int item);
 	int (*itm_attrib) (WINDOW *w, int item, int mode, XATTR *attr);
-	long (*itm_info) (WINDOW *w, int item, int which);
-
+	boolean (*itm_islink) (WINDOW *w, int item);
 	boolean (*itm_open) (WINDOW *w, int item, int kstate);
 	boolean (*itm_copy) (WINDOW *dw, int dobject, WINDOW *sw,
 	        int n, int *list, ICND *icns, int x, int y, int kstate);
@@ -120,7 +119,7 @@ typedef struct
 /*
  * note: information on iconified is duplicated here for purpose
  * of saving/reloading; otherwise it is known to xdialog via
- * iflag in WINDOW structure
+ * xw_iflag in WINDOW structure
  */
 
 typedef struct
@@ -204,11 +203,13 @@ CfgNest wd_config;
 int itm_find(WINDOW *w, int x, int y);
 boolean itm_state(WINDOW *w, int item);
 ITMTYPE itm_type(WINDOW *w, int item);
+ITMTYPE itm_tgttype(WINDOW *w, int item);
 int itm_icon(WINDOW *w, int item);
 const char *itm_name(WINDOW *w, int item);
 char *itm_fullname(WINDOW *w, int item);
+char *itm_tgtname(WINDOW *w, int item);
 int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib);
-long itm_info(WINDOW *w, int item, int which);
+boolean itm_islink(WINDOW *w, int item, boolean cond);
 boolean itm_open(WINDOW *w, int item, int kstate);
 
 void itm_select(WINDOW *w, int selected, int mode, boolean draw);
@@ -291,5 +292,7 @@ void calc_icwsize(void);
 void icw_draw (WINDOW *w);
 void wd_in_screen ( WINFO *info );
 void wd_drawall(void);
+int wd_wcount(void);
+boolean itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y, int avkstate);
 
 

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +33,6 @@
 #include <xdialog.h>
 #include <xscncode.h>
 
-#include "batch.h"
 #include "desk.h"
 #include "environm.h"
 #include "error.h"
@@ -54,7 +54,6 @@
 #include "screen.h"
 #include "icontype.h"
 #include "applik.h"
-#include "edit.h"
 #include "va.h"
 #include "video.h"
 
@@ -64,8 +63,6 @@
 
 Options options;
 V3_options v3_options;
-
-
 
 CfgNest opt_config, short_config, dsk_config;
 
@@ -81,14 +78,11 @@ CfgEntry Config_table[] =
 	{CFG_NEST, 0, "apptypes",    prg_config	 },
 	{CFG_NEST, 0, "applications",app_config	 },
 	{CFG_NEST, 0, "windows",	 wd_config	 },
+	{CFG_NEST, 0, "avstats",	 va_config   },
 	{CFG_FINAL}, /* file completness check */
 	{CFG_LAST}
 };
 
-#if !TEXT_CFG_IN
-static int dial_mode;
-
-#endif
 
 /*
  * Configuration table for desktop options
@@ -116,11 +110,7 @@ CfgEntry Options_table[] =
 	{CFG_D, 0, "buff", &options.bufsize	    }, 		/* copy buffer size */
 	{CFG_L, 0, "maxd",&v3_options.max_dir	}, 		/* initial dir size */
 	/* desktop preferences */
-#if TEXT_CFG_IN
 	{CFG_D, 0, "dial", &options.dial_mode	},
-#else
-	{CFG_D, 0, "dial", &dial_mode			},		/* Cant take the address of a bitfield */
-#endif
 	/* video options */
 	{CFG_X, 0, "vidp", &options.V2_2.vprefs	}, 		/* Bit flags ! */
 	{CFG_D, 0, "vres", &options.V2_2.vrez		},	/* video resolution */
@@ -155,6 +145,7 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, 0, "prin", &options.V2_2.kbshort[MPRINT		- MFIRST]	},
 	{CFG_X, 0, "dele", &options.V2_2.kbshort[MDELETE	- MFIRST]	},
 	{CFG_X, 0, "clos", &options.V2_2.kbshort[MCLOSE		- MFIRST]	},
+	{CFG_X, 0, "wdup", &options.V2_2.kbshort[MDUPLIC	- MFIRST]	},
 	{CFG_X, 0, "wclo", &options.V2_2.kbshort[MCLOSEW	- MFIRST]	},
 	{CFG_X, 0, "cycl", &options.V2_2.kbshort[MCYCLE		- MFIRST]	},
 	{CFG_X, 0, "sela", &options.V2_2.kbshort[MSELALL	- MFIRST]	},
@@ -256,11 +247,16 @@ int
 	aes_version;	/* detected version of AES; interpret in hex format */
 
 int hndlmessage(int *message);
+void Shutdown(long mode);
 
 
 
 /*
- * Execute teradesk.bat file, if there is any
+ * Initialize the names of the configuration file(s) 
+ * teradesk.inf = main configuration file
+ * teradesk.pal = colour palette file
+ * Note: in teradesk.inf it is specified whether teradesk.pal
+ * will be used at all.
  *
  * Result : FALSE if there is no error,
  * TRUE if there is an error (a very intuitive concept!).
@@ -268,46 +264,19 @@ int hndlmessage(int *message);
 
 static boolean exec_deskbat(void)
 {
-	char *batname;
 	int error;
 
 	/* Remove the ARGV variable from the environment. */
 
 	clr_argv();
 
-	/* 
-	 * Initialize the names of the configuration file(s) 
-	 * teradesk.inf = main configuration file
-	 * teradesk.pal = colour palette file
-	 * Note: in teradesk.inf it is specified whether teradesk.pal
-	 * will be used at all.
-	 */
+	/* Initialize the names of the configuration file(s) */
 
 	if ((palname = strdup("teradesk.pal")) == NULL)
 		error = ENSMEM;
 	else
 		if ((infname = strdup("teradesk.inf")) == NULL)
 			error = ENSMEM;
-		else
-#if !TEXT_CFG_IN
-			if ((optname = strdup("desktop.cfg")) == NULL)
-				error = ENSMEM;
-			else
-#endif
-			{
-				/* Find teradesk.bat file. */
-
-#if _BATFILE
-				if ((batname = xshel_find("teradesk.bat", &error)) != NULL)
-				{
-					/* Execute it. */
-
-					exec_bat(batname);
-					free(batname);
-				}
-#endif
-			}
-
 
 	if ((error != 0) && (error != EFILNF))
 	{
@@ -363,7 +332,7 @@ static void info(void)
 
 
 /*
- * Display two consecutive help dialogs on HELP key
+ * Display three consecutive help dialogs on HELP key
  * or, if <Shift><Help> is pressed, try to call ST-Guide.
  * Note: currently, there is no notification if call to
  * st-guide is not successful.  
@@ -371,37 +340,21 @@ static void info(void)
 
 static void showhelp (unsigned int key) 		
 {
-	int button;
-
 	if ( key & XD_SHIFT )
-		button = va_start_prg("\\ST-GUIDE", "*:\\TERADESK.HYP");
+		va_start_prg("\\ST-GUIDE", PACC,  "*:\\TERADESK.HYP");
 	else
 	{
-		button = xd_dialog( helpno1, 0 );
-		if ( button == HELP1OK ) 
-			xd_dialog( helpno2, 0 );
+		if ( xd_dialog( helpno1, 0 ) == HELP1OK )
+			if ( xd_dialog( helpno2, 0 ) == HELP2OK )
+				xd_dialog( helpno3, 0 );
 	}
 }
 
 
-/*
- * Convert a number (range 0:99 only) into string
- * (leading zeros shown)
- */
-
-void digit(char *s, int x)
-{
-	x = x % 100;
-	s[0] = x / 10 + '0';
-	s[1] = x % 10 + '0';
-}
-
-
 /* 
- * Generalized set_opt to change display of any options button from bit flags, 
- * not only those related to cprefs.
+ * Generalized set_opt to change display of any options button from bitflags
  * In fact it can set option buttons from boolean variables as well
- * (then set "opt" to 1)
+ * (then set "opt" to 1, and "button" is a boolean variable)
  */
 
 void set_opt( OBJECT *tree, int flags, int opt, int button)
@@ -557,8 +510,8 @@ static boolean check_key(int button, int i, int *tmp)
 			/* XD_ALT below in order to skip items related to menu boxes */
 			if (   ( (tmp[i] & XD_SCANCODE) != 0 )
 		    	|| (   (tmp[i] & ~XD_ALT) != 0 && (i != j) && tmp[i] == tmp[j] ) /* duplicate */
-				|| tmp[i] == (XD_CTRL | BACKSPC) /* ^BS illegal */
-				|| tmp[i] == (XD_CTRL | TAB)	 /* ^TAB illegal */
+				|| tmp[i] == (XD_CTRL | BACKSPC) /* ^BS illegal, can't differentiate */
+				|| tmp[i] == (XD_CTRL | TAB)	 /* ^TAB illegal, can't differentiate */
 				|| tmp[i] == SPACE				 /* illegal, because used to scroll viewer window */
 				|| tmp[i] == XD_CTRL			 /* ^ only, illegal */
 		       )
@@ -591,7 +544,8 @@ int arrow_form_do
 
 	if ( *oldbutton > 0 )
 	{
-		evnt_timer(100, 0); /* delay can be adjusted for comfortable feel */		
+		wait(100); /* 100ms delay can be adjusted for comfortable feel */		
+
 		if ( (xe_button_state() & 1) == 0 )
 		{
 			tree[*oldbutton].ob_state &= ~SELECTED; 
@@ -634,16 +588,16 @@ static void setpreferences(void)
 	char aux[5];			/* temp. buffer for string manipulation */
 	char *tabsize = setprefs[TABSIZE].ob_spec.tedinfo->te_ptext;
 
-	/* Set state of dialog mode radio buttons */
+	/*  Set state of dialog mode radio buttons */
 
 	xd_set_rbutton(setprefs, OPTPAR2, (options.cprefs & DIALPOS_MODE) ? DMOUSE : DCENTER);
-	xd_set_rbutton(setprefs, OPTPAR1, DNORMAL + options.dial_mode);
+	xd_set_rbutton(setprefs, OPTPAR1, DBUFFERD + options.dial_mode - 1);
 
 	itoa(options.tabsize, tabsize, 10);	
 
 	lf = (int)strlen(setprefs[OPTMTEXT].ob_spec.free_string); /* get length of space for displaying menu items */
 
-	/* Copy shortcuts to temporry storage */
+	/* Copy shortcuts to temporary storage */
 
 	memcpy( &tmp[0], &options.V2_2.kbshort[0], (NITEM + 1) * sizeof(int) );
 
@@ -796,7 +750,7 @@ static void setpreferences(void)
 		else
 			options.cprefs &= ~DIALPOS_MODE;
 
-		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DNORMAL;
+		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DBUFFERD + 1;
  
 		if ((options.tabsize = atoi(tabsize)) < 1)
 			options.tabsize = 1;
@@ -816,18 +770,16 @@ static void setpreferences(void)
 
 static void copyprefs(void)
 {
-	int button;
+	int i, button;
+	int bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_FOLL, CF_SHOWD, P_HEADER};
+ 
+
 	char *copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
 
 	/* Set states of appropriate options buttons and copy buffer field */
 
-	set_opt(copyoptions, options.cprefs, CF_COPY, CCOPY);
-	set_opt(copyoptions, options.cprefs, CF_DEL, CDEL);
-	set_opt(copyoptions, options.cprefs, CF_OVERW, COVERW);
-	set_opt(copyoptions, options.cprefs, CF_PRINT, CPRINT); 
-
-	set_opt(copyoptions, options.cprefs, CF_SHOWD, CSHOWD); 
-	set_opt(copyoptions, options.cprefs, P_HEADER, CPPHEAD);
+	for ( i = CCOPY; i <= CPPHEAD; i++ )
+		set_opt(copyoptions, options.cprefs, bitflags[i - CCOPY], i);
 
 	itoa(options.bufsize, copybuffer, 10);
 	itoa(options.V2_2.plinelen, copyoptions[CPPLINE].ob_spec.tedinfo->te_ptext, 10 ); 
@@ -842,12 +794,8 @@ static void copyprefs(void)
 	{	  
 		/* Get new states of options buttons and new copy buffer size */
 
-		get_opt( copyoptions, &options.cprefs, CF_COPY, CCOPY );
-		get_opt( copyoptions, &options.cprefs, CF_DEL, CDEL );
-		get_opt( copyoptions, &options.cprefs, CF_OVERW, COVERW );
-		get_opt( copyoptions, &options.cprefs, CF_PRINT, CPRINT ); 
-		get_opt( copyoptions, &options.cprefs, CF_SHOWD, CSHOWD );
-		get_opt( copyoptions, &options.cprefs, P_HEADER, CPPHEAD );
+		for ( i = CCOPY; i <= CPPHEAD; i++ )
+			get_opt( copyoptions, &options.cprefs, bitflags[i - CCOPY], i);
 
 		if ((options.bufsize = atoi(copybuffer)) < 1)
 			options.bufsize = 1;
@@ -866,7 +814,6 @@ static void copyprefs(void)
 static void opt_default(void)
 {
 	options.version = CFG_VERSION;
-	options.magic = MAGIC;
 	options.sort = WD_SORT_NAME;							
 #if _PREDEF
 	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
@@ -877,7 +824,7 @@ static void opt_default(void)
 	options.bufsize = 512;
 #endif
 	options.mode = TEXTMODE;										    
-	options.dial_mode = XD_NORMAL;
+	options.dial_mode = XD_BUFFERED;
 	options.resvd1 = 0;
 	options.resvd2 = 0;
 	get_set_video(0);			/* get current video mode for default */
@@ -918,31 +865,17 @@ static void short_default(void)
 
 static void load_options(void)
 {
-#if !TEXT_CFG_IN
-	XFILE *file;
-	Options tmp;
-	long n, opt_n;
-#endif
 	int error = 0;
-
 
 	get_set_video(0);				/* get current video mode */
 	v3_options.max_dir = 256;		/* start amount for the dir pointer array */
 
-#if TEXT_CFG_IN
 	error = handle_cfgfile(infname, Config_table, infide, 0); 
-
-#else
-  #include "opt_load.h"
-#endif
 
 	/* If there was an error when loading options, set default values */
 
 	if (error != 0)
 	{
-#if !TEXT_CFG_IN
-		alert_printf(1, ALOADCFG, fn_get_name(optname), get_message(error));
-#endif
 		opt_default();
 		short_default();
 		dsk_default();
@@ -951,6 +884,7 @@ static void load_options(void)
 		prg_default();
 		app_default();
 		wd_default();
+		vastat_default();
 	}
 
 	/* Set dialogs mode */
@@ -961,23 +895,7 @@ static void load_options(void)
 
 
 /*
- * A (possibly temporary) utility functions used to load or save
- * some boolean flags as bitflags 
- */
-
-void bit_to_bool( int bitflags, int bit, boolean *boo )
-{
-	*boo = ( bitflags & bit ) ? TRUE : false;
-}  
-
-void bool_to_bit( int *bitflags, int bit, boolean boo )
-{
-	*bitflags = ( boo ) ? ( (*bitflags) | bit ) : ( (*bitflags) & ~bit ); 
-}
-
-
-/*
- * Configuration routine for basic destop options
+ * Configuration routine for basic desktop options
  */
 
 static CfgNest opt_config
@@ -986,9 +904,7 @@ static CfgNest opt_config
 	{
 		/* Save options */
 
-	#if ! TEXT_CFG_IN
-		dial_mode = options.dial_mode;
-	#endif
+		options.version = CFG_VERSION;
 
 		*error = CfgSave(file, Options_table, lvl + 1, CFGEMP); 
 	}
@@ -999,6 +915,10 @@ static CfgNest opt_config
 		memset ( &options, 0, sizeof(options) );
 
 		*error = CfgLoad(file, Options_table, MAX_KEYLEN, lvl + 1); 
+
+		/* "Normal" dialog mode is cancelled; this is for compatibility */
+
+		options.dial_mode = max(options.dial_mode, 1);
 
 		/* 
 		 * Check some critical values against limits; if not checked and
@@ -1043,7 +963,7 @@ static CfgNest opt_config
 		/* Load palette. Ignore errors */
 
 		if (options.cprefs & SAVE_COLORS)
-			load_colors(0L);
+			load_colors();
 #endif
 		/* Set video state but do not change resolution */
 
@@ -1080,7 +1000,7 @@ static void save_options(void)
 	/* First save the palette (ignore errors) */
 #if PALETTES
 	if (options.cprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
-		save_colors(0L);
+		save_colors();
 #endif
 
 	/* Then save the configuration */
@@ -1121,19 +1041,11 @@ static void load_settings(void)
 {
 	char *newinfname;
 
-#if TEXT_CFG_IN
 	if ((newinfname = locate(infname, L_LOADCFG)) != NULL)
 	{
 		free(infname);
 		infname = newinfname;
 	}
-#else
-	if ((newinfname = locate(optname, L_LOADCFG)) != NULL)
-	{
-		free(optname);
-		optname = newinfname;
-	}
-#endif
 
 	load_options();
 
@@ -1181,13 +1093,6 @@ static boolean init(void)
 {
 	xw_get(NULL, WF_WORKXYWH, &screen_info.dsk);
 
-#if !TEXT_CFG_IN
-
-	if ( !find_cfgfiles(&optname, TRUE) )
-		return TRUE;
-
-#endif 
-
 	find_cfgfiles(&infname, FALSE); 
 	find_cfgfiles(&palname, FALSE);
 
@@ -1196,12 +1101,12 @@ static boolean init(void)
 
 	/* Clear all definable items */
 
-	ft_init();
-	icnt_init();
-	prg_init();
-	app_init();
-	edit_init();
-	wd_init();
+	ft_init();				/* filetype masks */
+	icnt_init();			/* filetype icons */
+	prg_init();				/* program types  */
+	app_init();				/* installed apps */
+	va_init();				/* AV-protocol    */
+	wd_init();				/* windows        */
 
 	menu_bar(menu, 1);
 
@@ -1213,7 +1118,7 @@ static boolean init(void)
 
 	/* Start applications which have been defined as autostart */
 
-	app_specstart(AT_AUTO);
+	app_specstart(AT_AUTO, NULL, NULL, 0, 0);
 
 	return FALSE;
 }
@@ -1299,15 +1204,22 @@ static void hndlmenu(int title, int item, int kstate)
 			break;
 		case MQUIT:	
 		{
-			int qbutton = alert_printf(3, ALRTQUIT);
+			int qbutton;
+
+			bell();
+			wait(150);
+			bell();
+			qbutton = alert_printf(3, ALRTQUIT);
 			switch (qbutton)
 			{
-				case 3:
+				case 3:		/* cancel */
 					break;
-				case 2:
-					shutdown=TRUE;
-				case 1:      
-					menu_tnormal(menu, title, 1);
+				case 2:		/* shutdown */
+					if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
+						break;
+					else
+						shutdown=TRUE;
+				case 1:		/* quit */      
 					quit = TRUE;
 					break;
 			}
@@ -1347,9 +1259,12 @@ static void hndlmenu(int title, int item, int kstate)
 			dsk_options();
 			break;	
 		case MVOPTS:
-			chrez = voptions();
-			if ( chrez ) 
-				quit = TRUE;
+			if ( !app_specstart(AT_VIDE, NULL, NULL, 0, 0) )
+			{
+				chrez = voptions();
+				if ( chrez ) 
+					quit = TRUE;
+			}
 			break;
 		default:
 			wd_hndlmenu(item, kstate);	/* handle all the rest in window.c */
@@ -1415,7 +1330,7 @@ static void hndlkey(int key, int kstate)
 		/* Exec application assigned to a F-key */
 
 		if ((appl = find_fkey(k)) != NULL)
-			app_exec(NULL, appl, NULL, NULL, 0, kstate, FALSE);
+			app_exec(NULL, appl, NULL, NULL, 0, kstate);
 	}
 	else
 	{
@@ -1450,7 +1365,7 @@ static void hndlkey(int key, int kstate)
 					if ((path = strdup("A:\\")) != NULL)
 					{
 						path[0] = (char) i + 'A';
-						dir_add_window(path, NULL);
+						dir_add_window(path, NULL, NULL);
 						itm_set_menu(xw_top());
 					}
 					else
@@ -1478,22 +1393,25 @@ int _hndlmessage(int *message, boolean allow_exit)
 		handle_av_protocol(message);
 	else
 	{
+		/* Perhaps it would make sense to support SH_M_SPECIAL as well? */
+
 		switch (message[0])
 		{
-		case AP_TERM:
-			if (allow_exit)
-				quit = TRUE;
-			else
-			{
-				static int ap_tfail[8] = { AP_TFAIL, 0 };
+			case AP_TERM:
+				if (allow_exit)
+				{
+					quit = TRUE;
+				}
+				else
+				{
+					int ap_tfail[8] = { AP_TFAIL, 0 };
+					shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
+				}
+				break;
 
-				shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
-			}
-			break;
-
-		case SH_WDRAW:
-			wd_update_drv(message[3]);
-			break;
+			case SH_WDRAW:
+				wd_update_drv(message[3]);
+				break;
 		}
 	}
  
@@ -1538,8 +1456,14 @@ static void evntloop(void)
 	{
 		event = xe_xmulti(&events);
 
-		clr_key_buf();		/*	HR 151102: This imposed a unsolved problem with N.Aes 1.2 (lockup of teradesk after live moving) */
-							/* It is not a essential function. */
+		/*	
+		 * HR 151102: This imposed a unsolved problem with N.Aes 1.2 
+		 * (lockup of teradesk after live moving) 
+		 * It is not a essential function. 
+		 */
+
+		clr_key_buf();		
+
 		if (event & MU_MESAG)
 		{
 			if (events.ev_mmgpbuf[0] == MN_SELECTED)
@@ -1590,7 +1514,7 @@ int main(void)
 
 	x_init();
 
-	/* Register this app with GEM; get its id */
+	/* Register this app with GEM; get its application id */
 
 	if ((ap_id = appl_init()) < 0)
 		return -1;
@@ -1607,11 +1531,13 @@ int main(void)
 
 	if  (aes_version >= 0x400)
 	{
-		shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); /* Inform AES  */
+		/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
+
+		shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); 
 		menu_register(ap_id, "  Tera Desktop");
 	}
 
-	/* Load resource file */
+	/* Load the resource file */
 
 	if (rsrc_load(RSRCNAME) == 0)
 		form_alert(1, msg_resnfnd);
@@ -1638,23 +1564,22 @@ int main(void)
 				alert_printf(1, ARESTLOW);
 			else
 			{
-				/* Allocate global memory */
+				/* Proceed if global memory is allocated OK */
 
 				if ((error = alloc_global_memory()) == 0)
 				{
-					/* Execute startup batch file */
 
-					if (exec_deskbat() == FALSE)
+					if ( exec_deskbat() == FALSE )
 					{
-						/* Load icons from icons resource file */
+						/* Proceed if icons loaded from icons resource file */
 
 						if (load_icons() == FALSE)
 						{
-							/* Set defaults, read configuration, etc. */
+							/* Proceed if deafults set, configuration loaded, etc. */
 
 							if (init() == FALSE)
 							{
-								graf_mouse(ARROW, NULL);
+								graf_mouse(ARROW, NULL);	
 
 								/* 
 								 * Main event loop of this Desktop 
@@ -1666,15 +1591,17 @@ int main(void)
 
 								/* Start quitting / shutting down */
 
-								wd_del_all();		/* remove windows       */
+								va_delall();		/* remove pseudowindows  */
+								wd_del_all();		/* remove windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
 								xw_close_desk();	/* remove desktop window */
 							}
 							free_icons();
-
 							regen_desktop(NULL);
 						}
 					}
+
+					/* Release global memory buffer */
 
 					Mfree(global_memory); 
 				}
@@ -1696,46 +1623,56 @@ int main(void)
 	 * The following segment handles final system shutdown and resolution change
 	 * If a resolution change is required, shutdown is performed first
 	 * If only shutdown is required, system will reset at the end.
+	 * Note: But this doesn't work in Magic and XaAES! See further below...
 	 */ 
 
-	if ( chrez || shutdown )						/* If change resolution or shutdown ... */
+	if ( chrez || shutdown )	/* If change resolution or shutdown ... */
 	{
+
 		/* 
-		 * Note: if an alternate shutdown program is to be used some day,
-		 * it probably should be activeded here
+		 * Tell all GEM applications which would understand it to end.
+		 * This was supposed to be done also before resolution change,
+		 * but it was found out that Magic and XaAES do not react to
+		 * it properly: magic just restarts the desktop and XaAES goes
+		 * to shutdown.
 		 */
 
-		/* Tell all applications which would understand it to end */
-
-		quit = shel_write ( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
-		evnt_timer( 3000, 0 );						/* Wait a bit? */
+		if (!chrez)
+		{
+			int ignor;
+			quit = shel_write ( SHW_SHUTDOWN, 2, 0, (void *)&ignor, NULL ); 	/* complete shutdown */
+			wait(5000);						/* Wait a bit? */
+		}
 
 #if 0
 		/* 
-		 * In Mint, must tell all proceseses to terminate nicely ?
-		 * but this is only in this group ? What to do?
+		 * In Mint/Magic, must tell all proceseses to terminate nicely ?
+		 * Probably not needed in a GEM environment anyway, so disabled
 		 */
 
 		Pkill(0, SIGTERM); 
-		evnt_timer(3000, 0); /* Wait a bit? */
+		wait(3000); /* Wait a bit? */
 #endif
 		/* 
 		 * After all applications have hopefully been closed,
 		 * change the screen resolution if needed;
-		 * else- reset the computer
+		 * else- reset the computer.
+		 * It seems that a call to shel-write to change resolution
+		 * in get_set_video also closes all applications?
 		 */
 
 		if ( chrez )
 			get_set_video(2);
 
-#if 1
 		else
-/* But it won't really shutdown in Magic without a reset, just restarts the desktop ?
+/* DjV: But it won't really shutdown in Magic without a reset, just restarts the desktop ?
+
 	#if _MINT_
 		if (!mint)			/* HR 230203: Dont reset under MiNT or MagiC !!!!! */
 	#endif
 */
 		{
+
 			/*
 			 * Perform a reset here 
 			 * Note: maybe use Ssystem here as well when appropriate?
@@ -1743,15 +1680,19 @@ int main(void)
 
 			long (*rv)();				/* reset vector */
 
+#if _MINT_
+			if ( mint && !magx ) /* has no effect in Magic?? */
+				Shutdown(2L);	/* restart */ 
+#endif
 			Super ( 0L );				/* Supervisor; old stack won't be needed again */
 			memval = 0L; 				
 			memval2 = 0L;
+			resvector = 0L;
 			resvalid = 0L;
 			(long)rv = *((long *)os_start + 4);	/* routine that handles the reset */
 			Supexec(rv);				/* execute it */
 
 		}
-#endif
 	}
 	else	/* Just Quit the desktop */		
 		appl_exit();

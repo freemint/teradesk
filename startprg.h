@@ -22,4 +22,4 @@
 
 void start_prg(const char *fname, const char *cl, const char *path,
 			   ApplType prg, boolean argv, 
-			   boolean single, long limmem,int kstate);
+			   boolean single, long limmem, char *localenv, int kstate);

@@ -22,11 +22,8 @@
 
 CfgNest icnt_config;
 
-int icnt_geticon(const char *name, ITMTYPE type);
+int icnt_geticon(const char *name, ITMTYPE type, boolean link);
 void icnt_settypes(void);
 void icnt_init(void);
 void icnt_default(void);
 
-#if !TEXT_CFG_IN
-int icnt_load(XFILE *file);
-#endif
