@@ -41,3 +41,4 @@ int copy_error(int error, const char *name, int function);
 
 boolean itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
 int touch_file( const char *fullname, DOSTIME *time, int attr );
+int frename(const char *oldfname, const char *newfname);

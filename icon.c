@@ -1481,10 +1481,11 @@ static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 				item = list[0];
 				type = itm_type(sw, item);
 				/* icon = itm_icon(sw, item); DjV 070 */
+
 				if ((fname = itm_fullname(sw, item)) != NULL)
 				{
 					nameonly = fn_get_name(fname);
-					cramped_name( nameonly, tolabel, sizeof(INAME) );
+					cramped_name( nameonly, tolabel, (int)sizeof(INAME) );
 
 					icon = icnt_geticon( nameonly, type );
 					comp_icnxy(x, y, &ix, &iy);
@@ -1754,9 +1755,10 @@ boolean load_icons(void)
 	 * Geneva 4 returns information that it supports
 	 * colour icons, but that doesn't seem to work; thence a fix below:
 	 * if there is no colour icons file, or if number of colours is
-	 * less than 16, fall back to black/white.
+	 * less than 16, fall back to black/white (assuming that a change
+	 * of the reaolution or palette will always mean a restart of TeraDesk)
 	 * Therefore, in Geneva 4 (and other similar cases, if any), remove 
-	 * cicons.rsc from teradesk folder. Geneva 6 seems to work ok.
+	 * cicons.rsc from TeraDesk folder. Geneva 6 seems to work ok.
 	 */
 
 	if ( xshel_find(colour_irsc, &error) == NULL || ncolors < 16)

@@ -179,7 +179,8 @@ static int fnt_find_selected(void)
 
 
 /*
- * The really working part of the routines the set the listbox in fontselector(s)
+ * The really working part of the routines that set 
+ * the listbox in fontselector(s)
  */
 
 static void set_theselector
@@ -378,6 +379,9 @@ static void do_fd_button
 		newfont,			/* aux local font index */ 
 		state = NORMAL;		/* state to set current button to */
 
+	boolean
+		drawbutt = TRUE;
+
 	switch (button)
 	{
 		case WDFONT1:
@@ -393,6 +397,11 @@ static void do_fd_button
 				fbl->cursize = get_size(fbl);
 				state = SELECTED;
 			}
+
+			/* This is needed only in XaAES */
+
+			drawbutt = FALSE;
+			xd_draw(info, WDPARENT, MAX_DEPTH);
 			break;
 		case WDFSUP:
 			if (fbl->cursize < fbl->nfsizes - 1)
@@ -408,7 +417,8 @@ static void do_fd_button
 	itoa(fbl->fsize, wdfont[WDFSIZE].ob_spec.free_string, 10);
 	xd_draw(info, WDFTEXT, 0);
 	xd_draw(info, WDFSIZE, 0);
-	xd_change(info, button, state, 1);
+	if (drawbutt)				/* "if (drawbutt)" needed only in XaAES */
+		xd_change(info, button, state, 1);
 }
 
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -60,6 +60,7 @@ extern Options options;		/* need to know cfg file version */
 
 extern char *editor;	
 
+void wd_drawall(void);
 
 /* 
  * Find an application specified by its name among installed ones; 
@@ -80,7 +81,7 @@ APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos)
 		while (h != NULL)
 		{
 			if (pos)
-				(*pos)++;		/* HR 120803 */
+				(*pos)++;	
 			if ( (strcmp(program, h->name) == 0) )
 				return h;
 			h = h->next;
@@ -126,7 +127,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 			prev->next = f->next;
 
 		free_item( f->name ); 	/* deallocate app name */
-		free_item( f->cmdline);	/* and command line */
+		free_item( f->cmdline);	/* and command line    */
 		rem_all((LSTYPE **)(&(f->filetypes)), rem); /* deallocate documenttyoe list */
 		free_item(f);
 	}
@@ -155,7 +156,7 @@ static void copy_app( APPLINFO *t, APPLINFO *s )
 		t->name = strdup(s->name);
 	if ( s->cmdline != NULL )
 		t->cmdline = strdup(s->cmdline);
-	copy_all ( &(t->filetypes), &(s->filetypes), sizeof(FTYPE), copy_ftype);
+	copy_all ( (LSTYPE **)(&(t->filetypes)), (LSTYPE **)(&(s->filetypes)), sizeof(FTYPE), copy_ftype);
 }
 
 
@@ -1120,7 +1121,7 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		def_path = (appl->path == TRUE) ? NULL : wd_toppath();
 
 		/* 
-		 * If the application does not exist, ask the user to
+		 * If the application file does not exist, ask the user to
 		 * locate it or to remove it. 
 		 */
 
@@ -1136,17 +1137,21 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 				return FALSE;
 			}
 			/* DjV: note: instead of "fullname" there was "newname" here, but 
-			 * that seems wrong, as newname (global) should always have pointed to an
-			 * editable field in nameconflict dialog
+			 * that seems wrong, as newname (global) should always have pointed
+			 * to an editable field in nameconflict dialog
 			 */
 			else if ((fullname = locate(name, L_PROGRAM)) == NULL)
 				return FALSE;
 			else 
 			{
-				free(name);
-				appl->name = name = fullname;
+				free(name); /* this is appl->name; is not worth anything anymore */
+				appl->name = fullname;
+				name = fullname;
 
-				/* Create a short name here, or applications list in the dialog will look wrong  */
+				/* 
+				 * Create a short name here, or applications list 
+				 * in the dialog will look wrong  
+				 */
 
 				log_shortname( appl->shname, appl->name );
 			}
@@ -1163,14 +1168,14 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 
 		if ((appl_type == PTTP) || (appl_type == PGTP))
 		{
-			int i, j;
+			int j;
 
 			/* 
 			 * Remember the command line if the same ttp program
 			 * is started again (remember name of the program as well)
 			 */
 
-			log_shortname( thiscall, name );
+			log_shortname( (char *)thiscall, (char *)name );
 
 			if ( strcmp( thiscall, prevcall ) != 0 )
 			{
@@ -1511,25 +1516,49 @@ CfgNest app_config
 }
 
 
-/* 
- * Start applications which have been marked as autostart
+
+/*
+ * Start applications with a special use.
+ * It can be: an editor, an autostart or a shutdown app.
+ * There can be only one editor, but several startup or
+ * shutdown applications. 
+ * There is a delay of 0.5 seconds between autostart apps
+ * but a delay of 10 seconds between shutdown apps.
+ * 
+ * Note: this routine can be improved, to better handle
+ * simultaneous or sequential launch of applications.
  */
 
-void app_autostart(void)
+void app_specstart(int flags)
 {
 	APPLINFO *app = applikations;
+	int cnt = 0, delayt;
+
+	if ( flags & AT_SHUT )
+		delayt = 10000;
+	else
+		delayt = 500;
 
 	while (app != NULL)
 	{
-		if ( app->autostart )
+		if ( ( app->flags & flags) != NULL )
 		{
+			/* Maybe wait a little bit until next one ?? */
+
+			if ( cnt )
+			{
+				evnt_timer(delayt, 0); 
+				wd_drawall();
+			}
+		
+			cnt++;
+
 			/* Start a marked application */
 
 			app_exec(NULL, app, NULL, NULL, 0, 0, FALSE);
 
-			/* Maybe wait a little bit until next one ?? */
-
-			evnt_timer(500, 0); 		
+			if ( (flags & AT_EDIT) != NULL )
+				break;
 		}
 		app = app->next;
 	}

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -59,4 +59,5 @@ APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
 APPLINFO *find_fkey(int fkey);
 boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate, boolean dragged);
 void app_update(wd_upd_type type, const char *fname1, const char *fname2);
-void app_autostart(void);
+/* void app_autostart(void); */
+void app_specstart(int flags);

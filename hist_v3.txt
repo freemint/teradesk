@@ -1,6 +1,28 @@
-Tera Desktop V2, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
-                           2002, 2003                   H. Robbers.
-                           2002, 2003                   Dj. Vukovic.
+Tera Desktop V2, Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
+                                             2002, 2003  H. Robbers.
+                                       2002, 2003, 2004  Dj. Vukovic.
+
+
+Version 3.01
+
+Dj. Vukovic:
+
+- Restored full functionality of the nameconflict dialogue.
+- Repaired a bug in cookie finding routine (inherited from V2.*) which 
+    could sometimes make TeraDesk practically unusable if the cookie jar 
+    did not exist.
+- Better handled a consequence of a TOS 2.06 bug related to mouse clicks
+    on desktop icons if no windows were open.
+- Fixed a bug which disabled seting of configuration file name in the 
+    startup .BAT file (btw. should startup file feature be considered
+    obsolete- does not seem to be of much use anymore?)
+- Fixed bad window redraw in icon mode with XaAES.
+- Fixed bad redraw in font-selector listbox with XaAES.
+    (these two were probably faults of XaAES (V0.963), not TeraDesk)
+- Set exit with "OK" from "Video options..." to always redraw complete
+    desktop, as a help to recover after screen corruption.
+- Some code size optimizations.
+- Some improvements and additions in TERADESK.HYP
 
 Version 3.0
 
@@ -39,18 +61,18 @@ Dj. Vukovic:
 - Fixed a bug of not immediately refreshing a changed background 
     pattern/colour in text windows;
 - Fixed a bug of not correctly setting and so corrupting type of desktop 
-  icon in desktop icons dialog;
+  icon in desktop icons dialogue;
 - Fixed some bugs which disabled printing of more than one file at a time;
 - Fixed some bugs in scrolling text fields (cursor placement, padding...)
 - Fixed a bug which swallowed the first char of command lines for .TTPs
 - Corrected enabling/disabling of some menu items depending on context;
 - Fixed two cases of not releasing allocated memory after use;
 - Fixed bad redraw of animated colour icons; 
-- Fixed a bug of cv_fntoform() overrunning available dialog buffer;
+- Fixed a bug of cv_fntoform() overrunning available dialogue buffer;
 - Removed some overlooked fixed keyboard shortcuts from previous version;
-- Adjusted length of "filetype" dialog fields vs. allocated string length
-    (dialog field was longer than permitted string length);
-- Some fixes which (hopefully) will correct improper window and dialog 
+- Adjusted length of "filetype" dialogue fields vs. allocated string length
+    (dialogue field was longer than permitted string length);
+- Some fixes which (hopefully) will correct improper window and dialogue 
     redrawing with XaAES only (V0.963).
 - A lot of source code cleaned up; also removed some commented-out code from 
     previous versions;
@@ -59,19 +81,19 @@ Dj. Vukovic:
 - Significant reduction of code size by reorganizing routines and data structures
     related to text and directory windows, so that same code is used for both
     window types;
-- Integrated dialogs, routines and data structures regarding filetype-selectors,
-    so that there is only one filetype-selector dialog in desktop.rsc; significant
+- Integrated dialogues, routines and data structures regarding filetype-selectors,
+    so that there is only one filetype-selector dialogue in desktop.rsc; significant
     reduction in executable code size because a lot of routines are made to
     work on all file/filetype lists.  New files: lists.c and lists.h
-- Reorganization of "Install Application" function, so that a dialog is
+- Reorganization of "Install Application" function, so that a dialogue is
     shown displaying a list of installed applications. Reduction in 
     code size because of modifications in several routines.
 - Same concept is used for entering/editing all lists: filetype masks,
     program types, window icon filetypes and applications. It is possible to
-    select an item from the list and manually edit it (i.e. two dialog levels),
+    select an item from the list and manually edit it (i.e. two dialogue levels),
     or to select an item in a window and then immediately open a second-level
-    dialog to edit the entry.
-- ALL dialogs now fit ST-low resolution. Some are reduced in size even more
+    dialogue to edit the entry.
+- ALL dialogues now fit ST-low resolution. Some are reduced in size even more
     for faster redraws on low-end machines
 - Several small fixes and improvements in floppy formatting routines;
 - Target floppy drive is locked during formatting/copying in Mint & MagiC;
@@ -94,8 +116,8 @@ Dj. Vukovic:
 - Added capability to mark an installed application as "autostart";
 - Added capability of "Search" to find text in files as well;
 - Added "touch" ((re)set date and/or attributes) functionality; user interface
-    implemented through additional button in the "Object info" dialog. 
-    Considerable reorganisation of that dialog(s). TeraDesk is now able to 
+    implemented through additional button in the "Object info" dialogue. 
+    Considerable reorganisation of that dialogue(s). TeraDesk is now able to 
     display DOS/Windows folder attributes though not able to change them.
 - While copying files it is possible to change date/time and attributes.
 - Added "Compare files" functionality;  a nice knack is that it 
@@ -104,11 +126,11 @@ Dj. Vukovic:
     should be opened: a program, a folder/drive, a file assigned as a document
     to application, or an unassigned file. In case of a program/application,
     it is possible to enter a comand tail after path+name;
-- Command line dialog for .TTP programs remembers last command if program
+- Command line dialogue for .TTP programs remembers last command if program
     name has not changed.
-- Filename/filetype entry forms in dialogs appear in 8+3 length if there is
+- Filename/filetype entry forms in dialogues appear in 8+3 length if there is
     no long-filename-capable OS present (i.e. without Mint or Magic);
-- Much improved appearance of dialog elements, especially in 3D AESses; 
+- Much improved appearance of dialogue elements, especially in 3D AESses; 
     3D effects are properly drawn when needed. Significant reorganization
     and simplification of routines for progdefined objects in xddraw.c;
 - <Shift><Help> calls ST-Guide (if available) to display TERADESK.HYP;
@@ -118,7 +140,7 @@ Dj. Vukovic:
 - Added capability to call a file selector in scrolled text fields;
     upon pressing the [Insert] key
 - As "Print" option now exists in the menu, that option has been removed
-    from the Show/Edit/Cancel dialog and an alertbox is used instead.
+    from the Show/Edit/Cancel dialogue and an alertbox is used instead.
 - Updated the .HYP documentation (not quite finished yet) 
   
 Version 2.3
@@ -165,22 +187,22 @@ H. Robbers:
 Dj. Vukovic:
 
 - Some small fixes to enable compilation in a more general PureC setup.
-- Modification of Set Filemask dialog: moved "Show System Files"
+- Modification of Set Filemask dialogue: moved "Show System Files"
     and "Show Hidden Files" here from menu; added "Show Subfolders" and
     "Show Parent" as well.
-- Added support for floppy-disk formatting and copying; dialog and executive
+- Added support for floppy-disk formatting and copying; dialogue and executive
     code. Disk are copied "raw", but must have proper information in the
     boot block. Two new files: FLOPPY.C and FLOPPY.H.
-- Added "Video Options" dialog and executive code: support for resolution
+- Added "Video Options" dialogue and executive code: support for resolution
     change (when possible via shel_write(), i.e. with AES V4), blitter and
     overscan. Two new files: VIDEO.C and VIDEO.H; overscan support is for
     ST-series machines (tested with U.R.Andersson's Lacescan, but should be
     more-less compatible with other variants, which are switched by the
     keyboard-ACIA chip).
-- Added two HELP dialogs, activated by HELP keyboard key, containing
+- Added two HELP dialogues, activated by HELP keyboard key, containing
     short information on basic (keyboard) desktop functions.
 - Added File/Folder search, menu entry and executive code; file/folder
-    info dialog opened for each found item, and window opened on final
+    info dialogue opened for each found item, and window opened on final
     selection. Modified file_info() and folder_info() functions; Modified
     and re-used cnt_items function from COPY.C for this purpose
 - If nothing else is selected, "Open" menu entry can now start explicietly
@@ -192,20 +214,20 @@ Dj. Vukovic:
 - "Show Info" function now shows info on the drive of the top window if
     nothing else is selected.
 - Added display of path in "File Information" and "Folder Information"
-    dialogs (uses cramped_name() to fit a long path into available width)
-- Made "Show Info" function work prettier- and faster: Info dialogs
+    dialogues (uses cramped_name() to fit a long path into available width)
+- Made "Show Info" function work prettier- and faster: Info dialogues
     are not reopened anew for each item.
-- Modified Info dialog to fit low-res screen and to show additional
+- Modified Info dialogue to fit low-res screen and to show additional
     information on free memory and OS version.
-- Split "Set Preferences" dialog into two: "Preferences" and "Copy Options",
-    in order to better group logically similar actions, and to fit dialogs
+- Split "Set Preferences" dialogue into two: "Preferences" and "Copy Options",
+    in order to better group logically similar actions, and to fit dialogues
     into low-res screen.
 - Added support for user-definable keyboard shortcuts for menu items.
     Removed old code related to shortcuts from MAIN.C; Handling of this in
-    "Preferences" dialog. Additional routines handling keyboard shortcuts
+    "Preferences" dialogue. Additional routines handling keyboard shortcuts
     in MAIN.C.
 - Added support for configuring window background colour and pattern
-    in "Window Options" dialog; removed a bug related to assumed number
+    in "Window Options" dialogue; removed a bug related to assumed number
     of colours here.
 - Added menu entries for selection of directory fields to display in
     text mode: Show size, Show time, Show date, Show attributes.
@@ -227,17 +249,17 @@ Dj. Vukovic:
 - Names of essential icons are taken from DESKTOP.RSC, for easier support
     of other languages; there should be no texts left in the code now
     (except a warning that there is no DESKTOP.RSC).
-- Reduced field lengths for file types in all dialogs to 16 characters,
+- Reduced field lengths for file types in all dialogues to 16 characters,
     to enable fitting into low-res screens. This affects -display- of
     filetypes, not actual mask lengths.
 - Created "pressed button" 3d effects for vertical sliders; added an
     arrow_form_do() routine to handle this.
-- Removed a bug in open_cfdialog() which caused improper drawing of the
-    dialog at start of copying/printing.
+- Removed a bug in open_cfdialogue() which caused improper drawing of the
+    dialogue at start of copying/printing.
 - Removed a bug which disabled "Add Window Icon" in previous version.
-- Rearranged most dialogs in DESKTOP.RSC in order to fit low-res screens
+- Rearranged most dialogues in DESKTOP.RSC in order to fit low-res screens
   (just two of them still don't fit ST-Low resolution).
-- Reduction of DESKTOP.RSC size by removing some dialogs (ADDITYPE, PRINT)
+- Reduction of DESKTOP.RSC size by removing some dialogues (ADDITYPE, PRINT)
     and by reusing some other for different functions when appropriate.
 - Removed several alerts from DESKTOP.RSC, as those texts already existed
     as free-strings; used those strings with one general-purpose alert.
@@ -283,7 +305,7 @@ Version 2.00
 - Arrogant MiNT's Dreaddir spoils case of DOS 8.3 names.
     Change DOS 8.3 names back to upper case.
 - Resource to modern AES 4 3D flags and MagiC object types.
-    Had to change dialogie titles to G_STRING's
+    Had to change dialogue titles to G_STRING's
 - Fix rsrc_title() to be able to use G_STRING titles in stead of
     G_USERDEF or G_BUTTON.
 - Dialogue title userdefs written transparent.
@@ -315,7 +337,8 @@ To do (maybe):
 use NKCC
 find the console bug
 multiple column display of directory windows
-improve manipulation of file attributes
+improve no-multitask program launch
+improve manipulation of file and folder attributes
 integrate a windowed, long-filename-capable fileselector
 update doc's
 

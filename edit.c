@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -43,9 +43,11 @@
 #include "file.h"
 #include "prgtype.h"
 
-/* Onder MultiTOS eerst kijken of een applikatie draait (met
-   appl_find) Als dit het geval is boodschap sturen anders
-   programma starten. */
+/* 
+ * Onder MultiTOS eerst kijken of een applikatie draait (met
+ * appl_find) Als dit het geval is boodschap sturen anders
+ * programma starten. 
+ */
 
 char *editor;
 
@@ -138,7 +140,7 @@ void unset_edit(APPLINFO **list)
 	}
 }
 
-#if ! TEXT_CFG_IN
+#if !TEXT_CFG_IN
 /* 
  * Load name of editor program 
  */
@@ -178,7 +180,9 @@ int edit_load(XFILE *file)
 #endif
 	return 0;
 }
+
 #endif
+
 
 /* 
  * Initialize name of editor program (i.e. there is none) 

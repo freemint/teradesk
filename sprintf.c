@@ -53,9 +53,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 		radix,
 		maxl, 
 		i;
-/*
-	long value;
-*/
+
 	s = (char *) format;
 	d = buffer;
 
@@ -76,7 +74,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 
 					i = 0;
 					if (maxl == 0 || maxl > 255)
-						maxl = 256 - (d - buffer);	
+						maxl = 256 - (int)(d - buffer);	
 
 					while ((h[i]) && (i < maxl))
 						*d++ = h[i++];
@@ -108,7 +106,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 						itoa(va_arg(argpoint, int), tmp, radix);
 
 					h = tmp;
-					i = strlen(tmp);
+					i = (int)strlen(tmp);
 					if (maxl && i < maxl) /* use maxl for d as well */
 					{
 						i = maxl - i;
@@ -138,6 +136,10 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 	return (int) (d - buffer);
 }
 
+/*
+ * Write into a string- substitute function
+ */
+
 int sprintf(char *buffer, const char *format,...)
 {
 	int r;
@@ -149,6 +151,7 @@ int sprintf(char *buffer, const char *format,...)
 
 	return r;
 }
+
 
 int vaprintf( int def,const char *string,va_list argpoint )
 {

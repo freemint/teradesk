@@ -118,7 +118,7 @@ static long xd_strlen(char *s)
 static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
 {
 	char 
-		tmp[80], /* <- buffer is enlarged! */
+		tmp[80], /* <- buffer is enlarged! (DjV: why so much?) */
 		*h, 
 		*p = NULL,
 		uc; /* underlined character */
@@ -128,7 +128,7 @@ static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
 
 	vst_effects(xd_vhandle, attrib);
 
-	h = strcpy(tmp, s);
+	h = strcpy(tmp, s); /* h is not needed but tmp is */
 
 	/* uses AES 4 WHITEBAK */
 
@@ -278,7 +278,7 @@ static void set_textdef(void)
 
 /*
  * Clear an object by drawing a borderless filled rectangle 
- * of desired colour and pattern (except pattern 0)
+ * of desired colour and pattern (except pattern 0, then draw solid)
  */
 
 void clr_object(RECT *r, int color, int pattern)
@@ -306,7 +306,7 @@ void clr_object(RECT *r, int color, int pattern)
  * - there must be a 3D enlargement, or else at least 16 colours 
  *   (this should in most (but not all) cases detect whether Magic is in 3d mode)
  * Note: this doesn't handle the cases of Magic or Geneva being capable of
- * drawing in 3d but that option being disabled by the user.
+ * drawing in 3d but that option being disabled by the user!
  */
 
 static bool xd_is3dobj(int flags) 
@@ -326,7 +326,7 @@ static bool xd_is3dobj(int flags)
 
 
 /*
- * Draw a box. Most progdefined objects in Teradesk in fact require
+ * Draw a box. Most progdefined objects in TeraDesk in fact require
  * that a rectangular box be drawn, possibly with 3d effects.
  *
  * "r" defines size of the basic box; routine may change the size 
@@ -412,7 +412,7 @@ static void xd_drawbox
 	 * types the frame will be created later by drawing 3d effect only.
 	 * On the other hand, if there is not a sufficient number of colours, 
 	 * or if there is not a 3D AES, always draw the frame.
-	 * Also draw the frame if the object is flagged as an activator
+	 * Also draw the frame if the object is flagged as an activator.
 	 */
 
 	if ( 
@@ -446,7 +446,7 @@ static void xd_drawbox
 	 * Note1: this could be done by XORing as well, but probably not worth the trouble;
 	 * Note2: AESses are not consistent in treating progdef objects if they are
 	 * flagged as "indicator" or "activator"; some seem to draw 3d effect anyway
-	 * (AES4.1, NAES), and some do not (Geneva)? Therefore, those flags are
+	 * (AES4.1, NAES), and some do not (Geneva?). Therefore, those flags are
 	 * elsewhere saved for the sake of this routine and then disabled. 
 	 * Btw. as the AES can't have the faintest idea what an userdef type 
 	 * of object should look like, better not to let it draw the 3d effect.
@@ -489,7 +489,7 @@ static void xd_drawbox
 
 
 /*
- * Code for drawing progdefined dialog "dragbox" ear
+ * Code for drawing progdefined "dragbox" ear for dialogs
  */
 
 static int cdecl ub_drag(PARMBLK *pb)
@@ -530,7 +530,7 @@ static int cdecl ub_drag(PARMBLK *pb)
 		size.w = pb->pb_w;
 		size.x = pb->pb_x;
 	}
-	else	/* ST-low res */
+	else	/* ST-low res; must change aspect ratio */
 	{
 		size.w = pb->pb_w / 2;
 		size.x = pb->pb_x + size.w;
@@ -602,7 +602,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	/*
 	 * Bitmasks for round radio buttons.
 	 * There are bitmasks for low res, med res (i.e. different aspect ratio)
-	 * and one for all other (high) res.
+	 * and one common for all other (high) res.
 	 * For each resolution the bitmasks are in three parts, to enable
 	 * creation of 3d effects: upper left arc with centre circle, 
 	 * lower right arc and centre circle. Button is drawn in three
@@ -961,7 +961,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 
 	xd_drawbox(&size, flags, pb->pb_currstate, XD_RECTBUT );
 
-	/* Draw additional graphic elements - "X" lines if selected */
+	/* Draw additional graphic elements - "X" diagonal lines if selected */
 
 	if ( pb->pb_currstate & SELECTED )
 	{
@@ -1002,7 +1002,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 
 /* 
 
-some earlier defined object types are never used in teradesk;
+some object types defined inprevious versions are never used in TeraDesk;
 so, they are here extracted into a separate file
 
 #include "xdunused.h"
@@ -1024,7 +1024,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	char 
 		s[132],
 		*text = s,
-	    *save = ted->te_ptext;	/* pointer to editable text field */
+	    *save = ted->te_ptext;			/* pointer to editable text field */
 
 	int 
 		i,								/* counter for padding with "_"s */
@@ -1035,7 +1035,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	    w = pb->pb_w,
 	    h = pb->pb_h,
 		xl, xr,							/* positions of < > markers */
-	    tw = strlen(save),				/* length of text in the field */
+	    tw = (int)strlen(save),			/* length of text in the field */
 	    ow = strlen(ted->te_pvalid);	/* length of validation field */
 
 	RECT 
@@ -1210,7 +1210,7 @@ static int cdecl ub_button(PARMBLK *pb)
 
 /*
  * Code for drawing a progdefined frame with a title on the contour.
- * Basically, a box is drawn, a part of the contour is cleared with the 
+ * Basically, a 3D box is drawn, a part of the contour is cleared with the 
  * background colour, and then the text is placed there.
  */
 
@@ -1226,7 +1226,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 		*string;	/* text to be written */
 
 	RECT 
-		size;							/* object frame to be drawn */
+		size;		/* object frame to be drawn */
 
 
 	/* Define clipping area */
@@ -1285,6 +1285,10 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
  * With few colours available, or if there is no 3D AES present,
  * just draw the text wit a line beneath. Else, draw a box with
  * 3D effects and put the text inside it.
+ * Note: tis should be improved a bit. The box always displays
+ * a little wider then other box objects in the dialog. 
+ * What should be done is to move the text a little to the right
+ * (but only if a box is drawn), and not increase object width.
  */
 
 static int cdecl ub_title(PARMBLK *pb)
@@ -1315,7 +1319,7 @@ static int cdecl ub_title(PARMBLK *pb)
 	{
 		size.x = pb->pb_x - 2;
 		size.y = pb->pb_y - 1;
-		size.w = pb->pb_w + 4;
+		size.w = pb->pb_w + 4; /* this is too wide! */
 		size.h = pb->pb_h;
 		xd_drawbox( &size, flags, pb->pb_currstate, XD_TITLE );
 	}
@@ -1609,6 +1613,10 @@ void xd_draw(XDINFO *info, int start, int depth)
  *																	*
  ********************************************************************/
 
+/*
+ * Do what is necessary to change state of an object on the screen
+ */
+
 void xd_change(XDINFO *info, int object, int newstate, int draw)
 {
 	OBJECT *tree = info->tree;
@@ -1636,6 +1644,7 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 /* 
  * Funktie voor het verschuiven van de kinderen van een object.
  * Vertically move all child objects inside the parent. 
+ * Offset is positive downwards.
  */
 
 static void xd_translate(OBJECT *tree, int parent, int offset)
@@ -1657,9 +1666,11 @@ static void xd_translate(OBJECT *tree, int parent, int offset)
  * Note: this detects only magic-style capabilities, but -not- those
  * of e.g. Geneva.
  * If own_userdef = 1, all objects will be drawn by teradesk.
+ * Unfortunately, there is currenlty no easy way to put it somewhere
+ * in the configuration file.
  */
 
-int own_userdef = 0; /* true if Teradesk will always draw all userdef objects */
+int own_userdef = 0; /* =1 if Teradesk will always draw all userdef objects */
 
 static int must_userdef(OBJECT *ob)
 {
@@ -1677,7 +1688,10 @@ static int must_userdef(OBJECT *ob)
 /*
  * Specify that xdialog will always draw all extended object types on itself,
  * whether an AES can support them or not. sometimes they may look nicer that way.
- * 1= force xdialog to draw all; 0= let AES do it.
+ * 1= force xdialog to draw all; 0= let AES do it. This could be
+ * used elsewhere in TeraDesk to set how the dialogs should be drawn-
+ * but currently there is no way to store that information, because
+ * the resource is initialized before the configuration file is read.
  */
  
 void xd_own_xobjects( int setit )
@@ -1722,7 +1736,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 			{
 			case XD_DRAGBOX:
 			case XD_SCRLEDIT:
-				(*nx)++;		/* always userdef, ignore AESses which may support this */
+				(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
 				break;
 			case XD_RECTBUT:
 			case XD_ROUNDRB:
@@ -1809,7 +1823,7 @@ void xd_set_userobjects(OBJECT *tree)
 			/*
 			 * It looks like AESses are not consistent in treating progdef objects 
 			 * if they are flagged as "indicator" or "activator"; some seem to 
-			 * draw 3d effect anyway (AES4.1, NAES), and some do not (Geneva)? 
+			 * draw 3d effect anyway (AES4.1, NAES), and some do not (Geneva?). 
 			 * Therefore, those flags are here saved in the extended userblock  
 			 * and then disabled so that only user code will draw 3d effects.
 			 */ 
@@ -1952,7 +1966,8 @@ int xd_gaddr(int type, int index, void *addr)
 
 
 /* 
- * Specify text buffer for scolled-text objects. Clear the buffer
+ * Specify text buffer for scolled-text objects. 
+ * Clear the text in the buffer (zero first character only)
  */
 
 char *xd_set_srcl_text(OBJECT *tree, int item, char *txt)

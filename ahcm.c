@@ -480,8 +480,6 @@ void XA_free(XA_memory *base, void *area)
 {
 	XA_block *blk;
 
-char *cp = area; /* for a test */
-
 	if (!area)
 		return;
 
@@ -496,8 +494,6 @@ char *cp = area; /* for a test */
 			{
 				DBG(("blk free cur %ld %ld:: %ld\n",blk, blk->used.cur, blk->used.cur->size);)
 				free_area(base, blk, blk->used.cur);
-
-*cp=0; /* for a test */
 
 				return;
 			}
@@ -523,8 +519,6 @@ char *cp = area; /* for a test */
 					DBG(("free cur %ld %ld:: %ld\n",blk, blk->used.cur, blk->used.cur->size);)
 					free_area(base, blk, blk->used.cur);
 
-*cp=0; /* for a test */
-
 					return;
 				}
 
@@ -534,9 +528,6 @@ char *cp = area; /* for a test */
 				if (at->area eq area)
 				{
 					free_area(base, blk, at);
-
-*cp=0; /* for a test */
-
 					return;
 				}
 				at = at->next;
@@ -568,7 +559,7 @@ void XA_free_all(XA_memory *base, XA_key key, XA_key type)
 		base = &XA_default_base;
 	blk = base->first;
 
-/* So I can detect leaking */
+	/* So I can detect leaking */
 
 #if !GENERATE_DIAGS
 	if (key eq -1 and type eq -1)
@@ -637,7 +628,7 @@ void XA_follow(XA_memory *base, XA_block *blk, XA_list *list, XA_report *report)
 {
 	/* Go up and down the list, finish at the same address. */
 
-	XA_unit *un = list->first, *n = un  /*, *p  never used ? */  ;
+	XA_unit *un = list->first, *n = un;
 	while (un)
 	{
 		n = un;
@@ -728,6 +719,8 @@ void XA_set_base(XA_memory *base, size_t chunk, short head, short flags)
 	base->mode = flags;
 }
 
+
+
 #if !XAAES
 #if XA_lib_replace
 
@@ -745,7 +738,8 @@ void *calloc(size_t items, size_t chunk)
 
 
 /*
- * Free a memory block (If addr=NULL, nothing happens)
+ * Free a memory block 
+ * (note: in XA_free: if !addr, return)
  */
 
 void free(void *addr)
@@ -759,9 +753,10 @@ void *realloc(void *buffer, size_t size)
 	XA_free(nil,buffer);
 	return XA_alloc(nil,size,0,0);
 }
-#endif
+
+#endif /* XA_lib_replace ? */
 
 
 void _FreeAll(void) {/*XA_free_all(nil,-1,-1);*/}
 
-#endif
+#endif /* XAAES */

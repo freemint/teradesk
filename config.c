@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -82,7 +82,6 @@ int
 char 
 /*
 	eol[3] = {'\r','\n', 0};
-
 */
 	eol[3] = {'\n', 0, 0};
 
@@ -176,7 +175,9 @@ static void append_fmt
 
 
 /*
- * Write something with a number of preceding tabs (lvl= number of tabs)
+ * Write something with a number of preceding tabs 
+ * (lvl= number of tabs). Return error code or else
+ * if everything is OK, return number of bytes written.
  */
 
 static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
@@ -188,7 +189,7 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 
 	/* Print a number of tab characters */
 
-	while ( (error >= 0) && (lvl-- > 0) )
+	while ( (lvl-- > 0) && (error >= 0) )
 		error = (int)x_fwrite( fp, "\t", sizeof(char) );
 
 	/* Print whatever else is specified */
@@ -196,7 +197,10 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 	if ( error >= 0 )
 	{
 		va_start(argpoint, string);
-		error = vsprintf(s, string, argpoint); /* if positive, error is string length */
+
+		/* Note: if positive, error contains string length */
+
+		error = vsprintf(s, string, argpoint); 
 		va_end(argpoint);
 
 		if ( error > 0 )
@@ -217,7 +221,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level, bool emp)
 	int error = 0;
 	char fmt[2*MAX_KEYLEN]; /* 2* because of "end..." */
 
-	while( (error >= 0) && (tab->type) )
+	while( (tab->type) && (error >= 0) )
 	{
 		int lvl = level;
 
@@ -231,7 +235,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level, bool emp)
 		{
 			case CFG_NEST:
 				/* Go deeper, it is a nest, and all is specified */
-				if ( tab->a != NULL && tab->s != NULL )
+				if ( (tab->a != NULL) && (tab->s != NULL) )
 				{
 					error = 0;
 					(*(CfgNest *)tab->a)(fp, tab->s, level, 1, &error); 
@@ -345,7 +349,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level, bool emp)
 
 char *nonwhite(char *s)
 {
-	while( (*s != 0) && ( (*s == ' ') || (*s == '\t') ) ) 
+	while( ( (*s == '\t') || (*s == ' ') ) && (*s != 0) ) 
 		s++;
 
 	return s;
@@ -394,10 +398,10 @@ static void cfgcpy(char *d, char *s, int x)
 {
 	while ( 				/* loop until: */     
 			x > 0			/* character count */
-			&& *s != 0		/* end of string */
-			&& *s != ';'	/* comment */
 			&& *s != ' '	/* blank */
 			&& *s != '\t'	/* tab */
+			&& *s != ';'	/* comment */
+			&& *s != 0		/* end of string */
 		  )
 	{
 		if (*s == '@') 
@@ -493,14 +497,14 @@ int CfgLoad
 
 		/* Loop through the table until finding the tab or the end */
 
-		while( (error >= 0) && (tab->type != CFG_LAST) )
+		while( (tab->type != CFG_LAST) && (error >= 0) )
 		{
 			/* 
-			 * How long is the keyword? 
+			 * How long is the keyword? Search until "=" found 
 			 * It is assumed that it starts with a nonblank.
 			 * Note 1: no need to look for some entry types 
 			 * (CFG_LAST, _HDR, _BEG, _END, _ENDG, _FINAL)
-			 * assuming they are the first ones in the list
+			 * ASSUMING they are the first ones in the list
 			 * Note 2: those types do not have defined tab->s
 			 * so further code will crash if attempted for those types
 			 */
@@ -614,7 +618,6 @@ int CfgLoad
 			alert_printf( 1, AUNKRTYP, s, lastnest );
 		}
 
-
 		/* If enough errors found, skip to the end of this level */
 
 		if (tel > 3)	/* Permit a maximum of three errors in the group */
@@ -649,7 +652,7 @@ int CfgLoad
 
 /* 
  * Load or save a part of Teradesk configuration defined by one table.
- * In case o an error when loading, make default setup 
+ * In case of an error when loading, make default setup instead 
  */
 
 int handle_cfg

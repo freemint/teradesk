@@ -34,7 +34,7 @@ typedef struct
 AESPB aes_parm_blk =
 {
 	_GemParBlk.contrl,
-	&_GemParBlk.glob,
+/*	&_GemParBlk.glob, why so? */ (int *)(&_GemParBlk.glob), 
 	_GemParBlk.intin,
 	_GemParBlk.intout,
 	_GemParBlk.addrin,

@@ -46,8 +46,8 @@ typedef struct
 
 #define resvalid	( * (long *) 0x426L )
 #define memval		( * (long *) 0x420L ) 
-#define memval2		( * (long *) 0x43aL )
-#define os_start	( * (long *) 0x4f2L )
+#define memval2		( * (long *) 0x43AL )
+#define os_start	( * (long *) 0x4F2L )
 #define phystop		( * (void **) 0x42EL )
 #define resvector   ( * ( void (**)( void ) ) 0x42AL )
 

@@ -327,7 +327,7 @@ void formatfloppy
 					intleave = 1;
 					fatsize = 9;
 					dirsize = 448;  /* is it so? never seen an ED disk */
-					fat0 = 0xf0;    /* is it so ? */
+					fat0 = 0xf0;    
 					break;
 				default:				/* no change */
           			break;       
@@ -505,7 +505,7 @@ void formatfloppy
 				sect0[0x13] = (unsigned char)(sectors & 0xFF);   /* total sectors */
 				sect0[0x14] = (unsigned char)(sectors >> 8); 
 		        
-				sect0[0x15] = 0xf9;            /* media id. */
+				sect0[0x15] = fat0;            /* media id. */
 				sect0[0x16] = (char)fatsize;   /* sectors per fat: 3 ... 9 */
 				
 				sect0[0x18] = (unsigned char)tspt;      /* sectors per track */

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -340,6 +340,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 		shel_write(SHW_NOEXEC, 1, 0, "", "\0\0");
 
 		/* Draw the desktop and menu bar, then reopen all windows */
+
 		regen_desktop(desktop);
 		menu_bar(menu, 1);
 		wd_reopen();
@@ -509,6 +510,8 @@ void start_prg(const char *fname, const char *cmdline,
 		const char *envp;
 		int error = 0; 
 
+		/* Mint background program is activated if [Alt] (?) is pressed */
+
 #if _MINT_
 		boolean background = (kstate & 4) ? TRUE : FALSE;
 #endif
@@ -549,7 +552,7 @@ void start_prg(const char *fname, const char *cmdline,
 		/* 
 		 * Do something only if filename of program is specified;
 		 * (fn_get_path extracts path from full filename and
-		 * allocates a string for this path
+		 * allocates a string for this path)
 		 */
 
 		if ((prgpath = fn_get_path(fname)) != NULL)
@@ -573,7 +576,6 @@ void start_prg(const char *fname, const char *cmdline,
 
 				if (error == 0)
 				{
-
 					/*
 					 * All is well so far; now start a background program
 					 * in mint, or else start a single-task program	
@@ -603,7 +605,8 @@ void start_prg(const char *fname, const char *cmdline,
 		 * There seems to be a problem with TOS 2.06 swallowing the 
 		 * first mouse click after executing a program by clicking on
 		 * a desktop icon, and there are no windows open.
-		 * This below seems to cure that, at least temporarily
+		 * This below seems to cure that, at least temporarily:
+		 * a mouse click is simulated by appl_tplay
 		 */
  
 		if ( (tos_version == 0x206)  
@@ -612,10 +615,20 @@ void start_prg(const char *fname, const char *cmdline,
 #endif
 		   ) 
 		{
-			int p[8] = {0,1, 1,1, 0,1, 0,0};
+			WINDOW *tw;
+			int twt;
 
-			appl_tplay( (void *)(&p), 1, 4 );
-			appl_tplay( (void *)(&p[4]), 1, 4 );
+			tw = xw_top();
+
+			if ( tw )
+				twt  = xw_type(tw);
+
+			if ( twt != DIR_WIND && twt != TEXT_WIND )
+			{
+				int p[8] = {0,1, 1,1, 0,1, 0,0};
+				appl_tplay( (void *)(&p), 1, 4 );
+				appl_tplay( (void *)(&p[4]), 1, 4 );
+			}
 		}
 
 		/* Deallocate environment created for this program */

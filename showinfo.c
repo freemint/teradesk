@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -483,24 +483,13 @@ boolean searched_found
 }
 
 
+/*
+ * Display alert: Can't read/set info for...
+ */
+
 static int si_error(const char *name, int error)
 {
 	return xhndl_error(MESHOWIF, error, name);
-}
-
-
-static int frename(const char *oldfname, const char *newfname)
-{
-	int error;
-
-	graf_mouse(HOURGLASS, NULL);
-	error = x_rename(oldfname, newfname);
-	graf_mouse(ARROW, NULL);
-
-	if (!error)
-		wd_set_update(WD_UPD_MOVED, oldfname, newfname);
-
-	return error;
 }
 
 
@@ -534,24 +523,6 @@ static int get_file_attribs(int old_attribs)
 
 	return attribs;
 }
-
-
-/* not used anymore
-/*
- * Set attributes of a file
- */
-
-static int fattrib(const char *name, int attribs)
-{
-	int error;
-
-	graf_mouse(HOURGLASS, NULL);
-	error = x_fattrib(name, 1, attribs); /* calls Fattrib() */
-	graf_mouse(ARROW, NULL);
-
-	return (error >= 0) ? 0 : error;
-}
-*/
 
 
 /*
@@ -592,7 +563,7 @@ static void disp_smatch( int ism )
 	if ( s1 < search_buf )
 		s1 = search_buf;				
 
-	nc1 = search_finds[ism] - s1; /* number of characters to display */
+	nc1 = (int)(search_finds[ism] - s1); /* number of characters to display */
 
 	/* 
 	 * Display the text just after the found string. This will be terminated 
@@ -654,13 +625,13 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 	SNAME 
 		dskl;				/* disk label */
 
-
 	/* Pointers to time and date fields */
 
 	time = fileinfo[FLTIME].ob_spec.tedinfo->te_ptext;
 	date = fileinfo[FLDATE].ob_spec.tedinfo->te_ptext;
 
 	/* Put object data into dialog forms */
+
 
 	if ( type != ITM_DRIVE )
 		attrib = attr->attr; /* copy state of attributes to temp. storage */ 
@@ -854,6 +825,8 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 
 					int error = 0, new_attribs;
 
+					graf_mouse(HOURGLASS, NULL);
+
 					quit = TRUE;
 					if ( search_nsm > 0 )
 						find_offset = search_finds[ism] - search_buf;
@@ -869,7 +842,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 					if ((newname = fn_make_newname(oldname, nfname)) != NULL)
 					{
 
-/* why this?
+/* why all of this again ?
 						/* Currently, setting of folder attributes is not supported */
 						if ( type != ITM_FOLDER )
 						{
@@ -884,6 +857,7 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 							}
 						}
 */
+
 						/* 
 						 * Rename the file only if needed.
 						 * If it was successful, try to change attributes.
@@ -898,10 +872,6 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 						/* Currently, setting of folder attributes is not supported */
 						if ( type != ITM_FOLDER && error == 0)
 						{
-/*
-							if (((new_attribs & FA_READONLY) != 0) && (error == 0) && (new_attribs != attrib))
-								error = fattrib(newname, new_attribs);
-*/
 							if ( (new_attribs != attrib) || ( optime.time != attr->mtime) || (optime.date != attr->mdate) )
 							{
 								/* 
@@ -919,19 +889,19 @@ int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *att
 							}
 						}
 						if (error != 0)
+						{
+							graf_mouse(ARROW, NULL);
 							result = si_error(fname, error);
+							graf_mouse(HOURGLASS, NULL);
+						}
 
 						if (result != XFATAL)
-						{
-/*
-							if ((new_attribs != attrib) && (strcmp(nfname, fname) == 0))
-*/
 							if (changed)
 								wd_set_update(WD_UPD_COPIED, oldname, NULL);
-						}
 
 						free(newname);
 					}
+					graf_mouse(ARROW, NULL);
 				}
 				else /* for the disk volume */
 				{
@@ -1045,7 +1015,6 @@ void item_showinfo(WINDOW *w, int n, int *list, boolean search )
 					else
 					{
 						name = itm_name(w, item);
-
 						graf_mouse(HOURGLASS, NULL);
 						error = itm_attrib(w, item, 0, &attrib);
 						graf_mouse(ARROW, NULL);
@@ -1069,10 +1038,9 @@ void item_showinfo(WINDOW *w, int n, int *list, boolean search )
 			break;
 	}
 
-	/* Close the Show info dialog, if it was open */
+	/* Close the Show info dialog, if it was open (tested inside) */
 
-	if ( dopen )
-		closeinfo();
+	closeinfo();
 
 	/* Touch files, if so said */
 

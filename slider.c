@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -35,9 +35,6 @@
 #include "slider.h"
 #include "file.h"
 
-/*
-#define min(x,y)		(((x) < (y)) ? (x) : (y))
-*/
 
 OBJECT *dialog;
 
@@ -174,7 +171,6 @@ static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 }
 
 
-/* static DjV 073 020803 */
 int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 {
 	boolean redraw = FALSE;
@@ -329,14 +325,14 @@ void ls_sl_init ( int n, void *set_sel, SLIDER *sl, LSTYPE **list )
 	sl->type = 1;
 	sl->up_arrow = FTUP;
 	sl->down_arrow = FTDOWN;
-	sl->slider = FTSLIDER;
-	sl->sparent = FTSPAR;
-	sl->lines = NLINES;	/* number of visible lines in the box   */
-	sl->n = n;			/* number of items in the list          */
-	sl->line = 0;		/* index of first item shown in the box */
-	sl->list = list;	/* pointer to list of items to be shown */
+	sl->slider = FTSLIDER;	/* slider object                        */
+	sl->sparent = FTSPAR;	/* slider parent (background) object    */
+	sl->lines = NLINES;		/* number of visible lines in the box   */
+	sl->n = n;				/* number of items in the list          */
+	sl->line = 0;			/* index of first item shown in the box */
+	sl->list = list;		/* pointer to list of items to be shown */
 	sl->set_selector = set_sel;
-	sl->first = FTYPE1;
+	sl->first = FTYPE1;		/* first object in the scrolled box     */
 	sl->findsel = find_selected;
 
 	xd_set_rbutton(setmask, FTPARENT, FTYPE1 );

@@ -1023,7 +1023,7 @@ void compare_files( WINDOW *w, int n, int *list )
 	{
 		/* Prepare a short name form for display purposes */
 
-		cramped_name(itm_name(w, list[0]), fname, sizeof(fname) );
+		cramped_name(itm_name(w, list[0]), fname, (int)sizeof(fname) );
 
 		/* 
 		 * If exactly two files are selected, take the name of the second one; 
@@ -1309,6 +1309,11 @@ void txt_init(void)
 }
 
 
+/*
+ * Calculate default positions and sizes of text windows;
+ * windows get stacked rightwards and downwards
+ */
+ 
 void txt_default(void)
 {
 	int i;
@@ -1381,6 +1386,14 @@ CfgNest text_one
 		tw = (TXT_WINDOW *)textwindows[i].typ_window;
 		that.index = i;
 		that.px = tw->px;
+
+		/* 
+		 * Note: this is wrong; if tw->py is long, and it need be 
+		 * for long files, then that.py should be long as well.
+		 * This might produce a problem in the (very unlikely)
+		 * case of saving a window positioned at e.g. 32769th line
+		 * of a file.
+		 */
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
 		that.tabsize = tw->tabsize;

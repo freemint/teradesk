@@ -44,9 +44,6 @@
 #include "internal.h"
 
 int aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
-/*
-	MagX_version = 0,
-*/
 	colour_icons = 0,   		/* result of appl_getinfo(2,,,) */
 	aes_hor3d    = 0,			/* 3d enlargement value */
 	aes_ver3d    = 0,			/* 3d enlargement value */
@@ -1048,7 +1045,7 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 		TEDINFO *ted = xd_get_obspec(tree + object).tedinfo;
 		int x, dummy, maxlen;
 
-		maxlen = strlen(ted->te_ptext);
+		maxlen = (int)strlen(ted->te_ptext);
 
 		if (curx >= 0)
 		{
@@ -1078,7 +1075,7 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 			xd_cursor_on(info);
 		}
 
-		xd_shift(blk, info->cursor_x, strlen(ted->te_pvalid), maxlen);
+		xd_shift(blk, info->cursor_x, (int)strlen(ted->te_pvalid), maxlen);
 	}
 }
 
@@ -1171,9 +1168,10 @@ static int xd_find_cancel(OBJECT *ob)
 			 */
 
 			int l;
-			char t[32]; char *s = t,*e;
+			char t[32]; char *s = t, *e;
+
 			e = xd_get_obspec(ob+f).free_string;
-			l = strlen(e);
+			l = (int)strlen(e);
 			if (l < 32)
 			{
 				strcpy(t,e);
@@ -1182,7 +1180,7 @@ static int xd_find_cancel(OBJECT *ob)
 				while (*s == ' ') s++;
 				while (*--e == ' ')  ;
 				*++e = 0;
-				if (e-s < 16)	/* No use comparing longer strings */
+				if (e - s < 16)	/* No use comparing longer strings */
 				{
 					int i = 0;
 					while (cancel_buttons[i][0])
@@ -1863,7 +1861,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 				 void (*free) (void *block), const char *prgname,
 				 int load_fonts, int *nfonts)
 {
-	int dummy, i, work_in[11], work_out[57];
+	int dummy, i, work_in[11], work_out[58];
 
 #ifndef __PUREC__
 	extern short _global[];
@@ -1877,7 +1875,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	
 	/* 
 	 * Note: Magic (V6.20 at least) returns AES version 3.99.
-	 * IN that case, after an inquiry ?AGI has been made,
+	 * In that case, after an inquiry ?AGI has been made,
 	 * xd_aes4_0 is set to true.
 	 * On the other hand, TOS 4.0 returns AES version 3.40
 	 * but still is a "3D" AES
@@ -1889,8 +1887,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_aes4_0 = (_global[0] >= 0x330);
 
 #endif
-
-
 
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+ *                               2002, 2003  H. Robbers,
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -176,7 +178,7 @@ extern Options options;
 extern V3_options v3_options;
 extern SCRINFO screen_info;
 extern int vdi_handle, ncolors, npatterns, max_w, max_h, ap_id, nfonts;
-extern boolean quit;
+extern char *global_memory;
 
 /* Flags to show a specific OS or AES type (detected from cookies) */
 
@@ -185,11 +187,11 @@ extern boolean
 	mint,			/* mint or magic present */
 	magx,			/* magic present  */
 	geneva;			/* geneva present */
+
+extern int have_ssystem;
 #endif
 
-extern int colour_icons;
-
-extern char *global_memory;
+extern int colour_icons; 
 
 long btst(long x, int bit);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 

@@ -114,7 +114,7 @@ ddcreate(
 	}
 
 /* read the 1 byte response */
-	i = Fread(fd, 1L, &c);
+	i = (int)Fread(fd, 1L, &c);
 	if (i ne 1 or c ne DD_OK)
 	{
 	/*	if (i ne 1)
@@ -163,7 +163,7 @@ ddstry(int fd, char *ext, char *name, long size)
  * trailing 0
  */
 	hdrlen = 9 + strlen(name);
-	i = Fwrite(fd, 2L, &hdrlen);
+	i = (int)Fwrite(fd, 2L, &hdrlen);
 
 /* now send the header */
 	if (i ne 2) return DD_NAK;

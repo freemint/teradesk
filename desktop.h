@@ -538,152 +538,150 @@
 
 #define MESHOWIF         82  /* Free String */
 
-#define MERENAME         83  /* Free String */
+#define MINVSRCH         83  /* Free String */
 
-#define MINVSRCH         84  /* Free String */
+#define MDIFERR          84  /* Free String */
 
-#define MDIFERR          85  /* Free String */
+#define MFPARERR         85  /* Free String */
 
-#define MFPARERR         86  /* Free String */
+#define MCANTACC         86  /* Free String */
 
-#define MCANTACC         87  /* Free String */
+#define MECOLORS         87  /* Free String */
 
-#define MECOLORS         88  /* Free String */
+#define MFSELERR         88  /* Free String */
 
-#define MFSELERR         89  /* Free String */
+#define MGEMBACK         89  /* Free String */
 
-#define MGEMBACK         90  /* Free String */
+#define MICNOPEN         90  /* Free String */
 
-#define MICNOPEN         91  /* Free String */
+#define MMULITEM         91  /* Free String */
 
-#define MMULITEM         92  /* Free String */
+#define MTMICONS         92  /* Free String */
 
-#define MTMICONS         93  /* Free String */
+#define APPNOEXT         93  /* Free String */
 
-#define APPNOEXT         94  /* Free String */
+#define APPNODD          94  /* Free String */
 
-#define APPNODD          95  /* Free String */
+#define MDRVEXIS         95  /* Free String */
 
-#define MDRVEXIS         96  /* Free String */
+#define MNOROOT          96  /* Free String */
 
-#define MNOROOT          97  /* Free String */
+#define MNEDITOR         97  /* Free String */
 
-#define MNEDITOR         98  /* Free String */
+#define MDIRTBIG         98  /* Free String */
 
-#define MDIRTBIG         99  /* Free String */
+#define MDEXISTS         99  /* Free String */
 
-#define MDEXISTS         100 /* Free String */
+#define MTMWIND          100 /* Free String */
 
-#define MTMWIND          101 /* Free String */
+#define MFNEMPTY         101 /* Free String */
 
-#define MFNEMPTY         102 /* Free String */
+#define MCOPYSLF         102 /* Free String */
 
-#define MCOPYSLF         103 /* Free String */
+#define MVALIDCF         103 /* Free String */
 
-#define MVALIDCF         104 /* Free String */
+#define MEPAL            104 /* Free String */
 
-#define MEPAL            105 /* Free String */
+#define BADCFG           105 /* Free String */
 
-#define BADCFG           106 /* Free String */
+#define TFRVAL           106 /* Free String */
 
-#define TFRVAL           107 /* Free String */
+#define MCOMPOK          107 /* Free String */
 
-#define MCOMPOK          108 /* Free String */
+#define MNOCOMP          108 /* Free String */
 
-#define MNOCOMP          109 /* Free String */
+#define DTFONSEL         109 /* Free String */
 
-#define DTFONSEL         110 /* Free String */
+#define DTNEWDIR         110 /* Free String */
 
-#define DTNEWDIR         111 /* Free String */
+#define DTOPENIT         111 /* Free String */
 
-#define DTOPENIT         112 /* Free String */
+#define MNOITEM          112 /* Free String */
 
-#define MNOITEM          113 /* Free String */
+#define TDONTEDI         113 /* Free String */
 
-#define TDONTEDI         114 /* Free String */
+#define TNOLOCK          114 /* Free String */
 
-#define TNOLOCK          115 /* Free String */
+#define DTFIINF          115 /* Free String */
 
-#define DTFIINF          116 /* Free String */
+#define DTFOINF          116 /* Free String */
 
-#define DTFOINF          117 /* Free String */
+#define DTDRINF          117 /* Free String */
 
-#define DTDRINF          118 /* Free String */
+#define TCRETIM          118 /* Free String */
 
-#define TCRETIM          119 /* Free String */
+#define TACCTIM          119 /* Free String */
 
-#define TACCTIM          120 /* Free String */
+#define TNOEDIT          120 /* Free String */
 
-#define TNOEDIT          121 /* Free String */
+#define ARESTLOW         121 /* Alert-string */
 
-#define ARESTLOW         122 /* Alert-string */
+#define AVDIERR          122 /* Alert-string */
 
-#define AVDIERR          123 /* Alert-string */
+#define ALOADCFG         123 /* Alert-string */
 
-#define ALOADCFG         124 /* Alert-string */
+#define ASAVECFG         124 /* Alert-string */
 
-#define ASAVECFG         125 /* Alert-string */
+#define AEBATCH          125 /* Alert-string */
 
-#define AEBATCH          126 /* Alert-string */
+#define ABSYNTAX         126 /* Alert-string */
 
-#define ABSYNTAX         127 /* Alert-string */
+#define AAPPLPM          127 /* Alert-string */
 
-#define AAPPLPM          128 /* Alert-string */
+#define APRGNFND         128 /* Alert-string */
 
-#define APRGNFND         129 /* Alert-string */
+#define AAPPNFND         129 /* Alert-string */
 
-#define AAPPNFND         130 /* Alert-string */
+#define AILLCOPY         130 /* Alert-string */
 
-#define AILLCOPY         131 /* Alert-string */
+#define AILLDEST         131 /* Alert-string */
 
-#define AILLDEST         132 /* Alert-string */
+#define ANOCOPY          132 /* Alert-string */
 
-#define ANOCOPY          133 /* Alert-string */
+#define ANODRAGP         133 /* Alert-string */
 
-#define ANODRAGP         134 /* Alert-string */
+#define ANOPRINT         134 /* Alert-string */
 
-#define ANOPRINT         135 /* Alert-string */
+#define AFNEXIST         135 /* Alert-string */
 
-#define AFNEXIST         136 /* Alert-string */
+#define AFNPRG           136 /* Alert-string */
 
-#define AFNPRG           137 /* Alert-string */
+#define AICNPMEM         137 /* Alert-string */
 
-#define AICNPMEM         138 /* Alert-string */
+#define AICNNFND         138 /* Alert-string */
 
-#define AICNNFND         139 /* Alert-string */
+#define AICNFNF          139 /* Alert-string */
 
-#define AICNFNF          140 /* Alert-string */
+#define AICNFRD          140 /* Alert-string */
 
-#define AICNFRD          141 /* Alert-string */
+#define AREMICNS         141 /* Alert-string */
 
-#define AREMICNS         142 /* Alert-string */
+#define APRNRESP         142 /* Alert-string */
 
-#define APRNRESP         143 /* Alert-string */
+#define AERADISK         143 /* Alert-string */
 
-#define AERADISK         144 /* Alert-string */
+#define AFMTERR          144 /* Alert-string */
 
-#define AFMTERR          145 /* Alert-string */
+#define AERRACC          145 /* Alert-string */
 
-#define AERRACC          146 /* Alert-string */
+#define ALRTQUIT         146 /* Alert-string */
 
-#define ALRTQUIT         147 /* Alert-string */
+#define ADUPKEY          147 /* Alert-string */
 
-#define ADUPKEY          148 /* Alert-string */
+#define AABOOP           148 /* Alert-string */
 
-#define AABOOP           149 /* Alert-string */
+#define AGENALRT         149 /* Alert-string */
 
-#define AGENALRT         150 /* Alert-string */
+#define AFILEDEF         150 /* Alert-string */
 
-#define AFILEDEF         151 /* Alert-string */
+#define AGFALERT         151 /* Alert-string */
 
-#define AGFALERT         152 /* Alert-string */
+#define AUNKRTYP         152 /* Alert-string */
 
-#define AUNKRTYP         153 /* Alert-string */
+#define ACOMPDIF         153 /* Alert-string */
 
-#define ACOMPDIF         154 /* Alert-string */
+#define AVALIDCF         154 /* Alert-string */
 
-#define AVALIDCF         155 /* Alert-string */
+#define ADUPFLG          155 /* Alert-string */
 
-#define ADUPFLG          156 /* Alert-string */
-
-#define AOPENFIL         157 /* Alert-string */
+#define AOPENFIL         156 /* Alert-string */

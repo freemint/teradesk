@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren. 
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -66,6 +66,7 @@ Options options;
 V3_options v3_options;
 
 
+
 CfgNest opt_config, short_config, dsk_config;
 
 /* Root level of configuration data */
@@ -83,8 +84,6 @@ CfgEntry Config_table[] =
 	{CFG_FINAL}, /* file completness check */
 	{CFG_LAST}
 };
-
-
 
 #if !TEXT_CFG_IN
 static int dial_mode;
@@ -137,8 +136,9 @@ CfgEntry Options_table[] =
 
 
 /*
- * Configuration table for menu shortcuts. If menu is changed, 
- * this table should always be updated to match actual menu items.
+ * Configuration table for menu shortcuts. If the main menu of 
+ * TeraDesk is changed,  this table should always be updated to 
+ * match the actual state.
  */
 
 CfgEntry Shortcut_table[] =
@@ -202,31 +202,34 @@ CfgEntry Shortcut_table[] =
 
 
 int 
-	ap_id,		/* application id. */
-	vdi_handle, /* current VDI station handle */
-	ncolors,	/* number of available colours */ 
+	ap_id,		/* application id. of this program (TeraDesk) */
+	vdi_handle, /* current VDI station handle   */
+	ncolors,	/* number of available colours  */ 
 	npatterns,	/* number of available patterns */ 
 	max_w,		/* screen width */ 
 	max_h,		/* scree height */ 
-	nfonts;		/* number of available fonts */
+	nfonts;		/* number of available fonts    */
 
 SCRINFO screen_info;
 FONT def_font;
 
 static int 
-	menu_items[] = {MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
+	menu_items[5] = {MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
 
 #if _MINT_
 boolean
-	mint = FALSE, 
-	magx = FALSE,	
-	geneva = FALSE;
+	mint = FALSE, 		/* true if Mint  is present  */
+	magx = FALSE,		/* True if MagiC is present  */	
+	geneva = FALSE;		/* True if Geneva is present */
+
+int 
+	have_ssystem = 0;
 #endif
 
 boolean
-	chrez = FALSE, 
-	quit = FALSE, 
-	shutdown = FALSE;
+	chrez = FALSE, 		/* true if resolution sould be changed */
+	quit = FALSE,		/* true if teradesk should finish      */ 
+	shutdown = FALSE;	/* true if system shutdown is required */
 
 char 
 	*optname,	/* name of old configuration file (teradesk.cfg) */ 
@@ -238,7 +241,8 @@ char
 
 /*
  * Below is supposed to be the only text embedded in the code:
- * information (in several languages) that a resource file can not be found
+ * information (in several languages) that a resource file 
+ * can not be found. It is shown in an alert box.
  */
 
 char msg_resnfnd[] = "[1][Unable to find resource file.|"
@@ -246,11 +250,14 @@ char msg_resnfnd[] = "[1][Unable to find resource file.|"
 					 "Impossible de trouver le|fichier resource.|"
 					 "Resource Datei nicht gefunden.][ OK ]";
 
-int hndlmessage(int *message);
 
 int 
-	tos_version,
-	aes_version;
+	tos_version,	/* detected version of TOS; interpret in hex format */
+	aes_version;	/* detected version of AES; interpret in hex format */
+
+int hndlmessage(int *message);
+
+
 
 /*
  * Execute teradesk.bat file, if there is any
@@ -394,7 +401,7 @@ void digit(char *s, int x)
  * Generalized set_opt to change display of any options button from bit flags, 
  * not only those related to cprefs.
  * In fact it can set option buttons from boolean variables as well
- * (then set opt to 1)
+ * (then set "opt" to 1)
  */
 
 void set_opt( OBJECT *tree, int flags, int opt, int button)
@@ -458,12 +465,12 @@ static void disp_short
 			string[i--] = 'S';
 			string[i--] = 'B';
 			break;
-		case 0x09: 				/* Tab */
+		case 0x09: 				/* Tab    */
 			string[i--] = 'B';
 			string[i--] = 'A';
 			string[i--] = 'T';
 			break;
-		case 0x20: 				/* Space */
+		case 0x20: 				/* Space  */
 			string[i--] = 'P';
 			string[i--] = 'S';
 			break;
@@ -472,7 +479,7 @@ static void disp_short
 			string[i--] = 'E';
 			string[i--] = 'D';
 			break;
-		default:				/* Other */
+		default:				/* Other  */
 			if ( kbshort ) 
 				string[i--] =  (char)(kbshort & 0xFF);
 			break; 	
@@ -489,7 +496,6 @@ static void disp_short
 		string[4] = 0;
 		strip_name( string, string );
 	}
-
 }
 
 
@@ -585,7 +591,7 @@ int arrow_form_do
 
 	if ( *oldbutton > 0 )
 	{
-		evnt_timer(120, 0); /* delay can be adjusted for comfortable feel */		
+		evnt_timer(100, 0); /* delay can be adjusted for comfortable feel */		
 		if ( (xe_button_state() & 1) == 0 )
 		{
 			tree[*oldbutton].ob_state &= ~SELECTED; 
@@ -611,7 +617,6 @@ int arrow_form_do
  * Handle the "Preferences" dialog for setting some 
  * TeraDesk configuration aspects 
  */
-
 
 static void setpreferences(void)
 {
@@ -758,12 +763,7 @@ static void setpreferences(void)
 				redraw = TRUE;
 				break;
 			case OPTKCLR:
-/*
-				for ( i = 0; i <= NITEM; i++ )
-					tmp[i] = 0;
-*/
 				memset( &tmp[0], 0, (NITEM + 2) * sizeof(int) );
-
 				redraw = TRUE;
 				break;
 			default:
@@ -976,6 +976,10 @@ void bool_to_bit( int *bitflags, int bit, boolean boo )
 }
 
 
+/*
+ * Configuration routine for basic destop options
+ */
+
 static CfgNest opt_config
 {
 	if (io == CFG_SAVE)
@@ -990,13 +994,17 @@ static CfgNest opt_config
 	}
 	else
 	{
-		/* Initialize to zero then load options */
+		/* Initialize options structure to zero then load options */
 
 		memset ( &options, 0, sizeof(options) );
 
 		*error = CfgLoad(file, Options_table, MAX_KEYLEN, lvl + 1); 
 
-		/* Check some critical values against limits */
+		/* 
+		 * Check some critical values against limits; if not checked and
+		 * some illegal value happens to be in the file, these variables
+		 * may crash the program or have other ugly consequences
+		 */
 
 		if ( options.V2_2.plinelen < 32 ) options.V2_2.plinelen = 80; 
 
@@ -1018,7 +1026,7 @@ static CfgNest opt_config
 		options.V2_2.win_pattern &= 0x0007;
 
 		/* 
-		 * Currently it makes no sense not to confirm touch;
+		 * Currently it makes no sense NOT to confirm touch;
 		 */
 
 		options.cprefs |= CF_TOUCH;
@@ -1118,16 +1126,17 @@ static void load_settings(void)
 	{
 		free(infname);
 		infname = newinfname;
-		load_options();
 	}
 #else
 	if ((newinfname = locate(optname, L_LOADCFG)) != NULL)
 	{
 		free(optname);
 		optname = newinfname;
-		load_options();
 	}
 #endif
+
+	load_options();
+
 }
 
 
@@ -1204,7 +1213,7 @@ static boolean init(void)
 
 	/* Start applications which have been defined as autostart */
 
-	app_autostart();
+	app_specstart(AT_AUTO);
 
 	return FALSE;
 }
@@ -1499,7 +1508,7 @@ int hndlmessage(int *message)
 
 
 /* 
- * Main  event loop in the program 
+ * Main event loop in the program 
  */
 
 static void evntloop(void)
@@ -1546,11 +1555,6 @@ static void evntloop(void)
 
 
 
-#if _MINT_
-int have_ssystem;
-#endif
-
-
 /* 
  * Main TeraDesk routine- the program itself 
  */
@@ -1559,14 +1563,16 @@ int main(void)
 {
 	int error;
 
+
 #if _MINT_
 
 	/* 
 	 * Find out some details on the type of OS 
-	 * This is relevant only for the multitasking version
+	 * This is relevant only for the multitasking version.
+	 * Ssystem() is available only since Mint 1.15.
 	 */
 
-	have_ssystem = Ssystem(-1, 0, 0) == 0;		/* use Ssystem where possible */
+	have_ssystem = (Ssystem(-1, 0L, 0L) == 0);		/* use Ssystem where possible */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
@@ -1584,12 +1590,12 @@ int main(void)
 
 	x_init();
 
-	/* Get id of this application */
+	/* Register this app with GEM; get its id */
 
 	if ((ap_id = appl_init()) < 0)
 		return -1;
 
-	/* aes_version can not be determined earlier */
+	/* aes_version can not be determined earlier than appl_init() */
 
 	tos_version = get_tosversion();
 	aes_version = _GemParBlk.glob.version;
@@ -1636,7 +1642,7 @@ int main(void)
 
 				if ((error = alloc_global_memory()) == 0)
 				{
-					/* Execute teradesk startup batch file */
+					/* Execute startup batch file */
 
 					if (exec_deskbat() == FALSE)
 					{
@@ -1651,7 +1657,7 @@ int main(void)
 								graf_mouse(ARROW, NULL);
 
 								/* 
-								 * Main event loop 
+								 * Main event loop of this Desktop 
 								 * All of the work in TeraDesk
 								 * happens in here
 								 */
@@ -1660,9 +1666,9 @@ int main(void)
 
 								/* Start quitting / shutting down */
 
-								wd_del_all();
-								menu_bar(menu, 0);
-								xw_close_desk();
+								wd_del_all();		/* remove windows       */
+								menu_bar(menu, 0);	/* remove menu bar       */
+								xw_close_desk();	/* remove desktop window */
 							}
 							free_icons();
 
@@ -1730,7 +1736,10 @@ int main(void)
 	#endif
 */
 		{
-			/* Perform a reset here */
+			/*
+			 * Perform a reset here 
+			 * Note: maybe use Ssystem here as well when appropriate?
+			 */
 
 			long (*rv)();				/* reset vector */
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,6 +28,7 @@
 #include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
+#include <library.h>
 
 #include "desk.h"
 #include "error.h"
@@ -56,10 +57,11 @@
 #include "dragdrop.h"
 #include "screen.h"
 #include "xscncode.h"
-#include "library.h"
 
 
-extern boolean in_window(WINDOW *w, int x, int y);
+boolean in_window(WINDOW *w, int x, int y);
+void wd_printtext(WINDOW *w);
+
 extern boolean wd_sel_enable;
 
 char floppy;
@@ -93,8 +95,6 @@ extern int aes_wfunc;
 boolean 
 	can_touch,
 	can_iconify; 
-
-
 
 NEWSINFO1 thisw;
 FONT *cfg_font;
@@ -159,7 +159,7 @@ CfgNest cfg_wdfont
 /* 
  * Ensure that a loaded window is in the screen in case of a resolution change 
  * (or if these data were loaded from a human-edited configuration file)
- * and tht it has a certain minimum size.
+ * and that it has a certain minimum size.
  * Note: windows can't go off the left and upper edges.
  */
 
@@ -253,18 +253,32 @@ CfgEntry wtype_table[] =
  *																	*
  ********************************************************************/
 
+
+/*
+ * Check (mark) only one of several menu items which are in sequence;
+ * n=number of items, obj = menu item, i= item which is to be checked
+ */
+
+static void menu_checkone(int n, int obj, int i)
+{
+	int j;
+	
+	for ( j = 0; j < n; j++ )
+		menu_icheck(menu, j + obj, (i == j) ? 1 : 0);
+}
+
+
+/* 
+ * Set sorting order.
+ * Note: it is tacitly assumed here that "sorting" 
+ * menu items follow in a fixed sequence after "sort by name" and
+ * that there are exactly five sorting options. 
+ */
+
+
 static void wd_set_sort(int type)
 {
-	int i;
-
-	/* 
-	 * Note: it is tacitly assumed here that "sorting" 
-	 * menu items follow in a fixed sequence after "sort by name" and
-	 * that there are exactly five sorting options. 
-	 */
-
-	for (i = 0; i < 5; i++)
-		menu_icheck(menu, i + MSNAME, (i == type) ? 1 : 0);
+	menu_checkone( 5, MSNAME, type );
 }
 
 
@@ -285,15 +299,14 @@ static void wd_set_fields( int fields )
 
 
 /* 
- * Check/mark menu item for text/icon directory display mode 
+ * Check/mark menu item for text/icon directory display mode.
+ * It is assumed that MSHOWTXT and MSHOWICN are in sequence
+ * (mode: 0=text, 1=icon) 
  */
 
 static void wd_set_mode(int mode)
 {
-	int i;
-
-	for (i = 0; i < 2; i++)
-		menu_icheck(menu, MSHOWTXT + i, (i == mode) ? 1 : 0);
+	menu_checkone( 2, MSHOWTXT, mode );
 }
 
 
@@ -332,13 +345,14 @@ void itm_set_menu(WINDOW *w)
 		drive[8];
 
 	ITMTYPE 
-		type;			/* type of an item in the list */
+		type,					/* type of an item in the list */
+		type2 = ITM_FILE;		/* same */
 
 	/*
 	 * Does this window exist at all, and is there a list of items? 
 	 * Beware: it seems to be possible that n and list do -not be
 	 * initialized here at all! (if the condition becomes false sooner)
-	*/
+	 */
 
 	if (   w == NULL
 	    || xw_exist(w) == FALSE
@@ -351,12 +365,12 @@ void itm_set_menu(WINDOW *w)
 
 	/* Find out the types of this window and the top window */
 
-	if ( w != NULL )
+	if (w)
 		wtype = xw_type(w);
 
 	wtop = xw_top();
 
-	if ( wtop != NULL )
+	if ( wtop )
 		wtoptype = xw_type(wtop);
 
 	/*
@@ -365,7 +379,8 @@ void itm_set_menu(WINDOW *w)
 	 * In fact this enables change icon always?
 	 */
 
-	while ( (i < n) && ( (showinfo == FALSE) || (ch_icon  == FALSE) ))
+	while ( (i < n) &&  !( showinfo || ch_icon ) )
+
 	{
 		type = itm_type(w, list[i++]);
 		if ((type != ITM_PRINTER) && (type != ITM_TRASH) && (type != ITM_PREVDIR))
@@ -380,16 +395,11 @@ void itm_set_menu(WINDOW *w)
 
 	can_touch = showinfo;
 
-	if ( n == 0 && wtop != NULL &&  wtoptype == DIR_WIND )
+	if ( !n && wtop && wtoptype == DIR_WIND )
 	{
 		can_touch = FALSE;
 		showinfo = TRUE;
 	}
-
-	/* Item type is the type of the first item in the list of selected ones */
-
-	if (n == 1)
-		type = itm_type(w, list[0]);
 
 	menu_ienable(menu, MSHOWINF, (showinfo == TRUE) ? 1 : 0);
 	menu_ienable(menu, MSEARCH, (showinfo == TRUE && n > 0 ) ? 1 : 0);
@@ -433,26 +443,29 @@ void itm_set_menu(WINDOW *w)
  	    )
 		enab2 = 1; 				
 
-
 	/*
-	 * Enable delete and touch only if there are only files, programs and 
+	 * Enable delete only if there are only files, programs and 
 	 * folders among selected items;
-	 * Criteria for enabling "touch" are the same as for delete 
 	 * Enable print only if there are only files among selected items
 	 * or a window is open (to print directory or text)
 	 */
 
 	menu_ienable(menu, MDELETE, enab);
-
 	menu_ienable(menu, MPRINT, enab2);
 
-	/* 
-	 * Compare will be enabled only if there are only one or two files selected
-	 */
+	/* Item type is the type of the first item in the list of selected ones */
 
-	if ( ( n == 1 && type == ITM_FILE )
-	||   ( n == 2 && itm_type(w, list[0]) == ITM_FILE && itm_type(w, list[1]) == ITM_FILE)
-		)
+	if (n >= 1)
+		type = itm_type(w, list[0]);
+	if (n >= 2)
+		type2 = itm_type(w, list[1]);
+
+	/* Compare will be enabled only if there are only one or two files selected */
+
+	if ( (n == 1 || n == 2) &&
+	     (type == ITM_FILE || type == ITM_PROGRAM) &&
+	     (type2 == ITM_FILE || type2 == ITM_PROGRAM) 
+	   ) 
 		enab = TRUE;
 	else
 		enab = FALSE;
@@ -463,7 +476,7 @@ void itm_set_menu(WINDOW *w)
 	 * enable disk formatting and disk copying
 	 * only if single drive is selected and it is A or B;
 	 * use the opportunity to say which drive is to be used 
-	 * (is it always A or B even in other filesystems ?)
+	 * (is it always uppercase A or B, even in other filesystems ?)
 	 */
 
 	enab=FALSE;
@@ -514,7 +527,7 @@ void wd_deselect_all(void)
 {
 	WINDOW *w = xw_first();
 
-	while (w != NULL)
+	while (w)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->itm_select(w, -1, 0, FALSE);
@@ -597,7 +610,7 @@ void wd_set_update(wd_upd_type type, const char *fname1, const char *fname2)
 {
 	WINDOW *w = xw_first();
 
-	while (w != NULL)
+	while (w)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->wd_set_update(w, type, fname1, fname2);
@@ -614,7 +627,7 @@ void wd_do_update(void)
 {
 	WINDOW *w = xw_first();
 
-	while (w != NULL)
+	while (w)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->wd_do_update(w);
@@ -629,7 +642,7 @@ void wd_update_drv(int drive)
 {
 	WINDOW *w = xw_first();
 
-	while (w != NULL)
+	while (w)
 	{
 		if (xw_type(w) == DIR_WIND)
 		{
@@ -671,6 +684,10 @@ void wd_update_drv(int drive)
 	wd_do_update();
 }
 
+
+/*
+ * Close a directory or a text wndow
+ */
 
 static void wd_type_close( WINDOW *w, int mode)
 {
@@ -768,7 +785,7 @@ static void wd_sort(int sort)
 {
 	WINDOW *w = xw_first();
 
-	options.sort = sort;
+	options.sort = sort; /* save this in options */
 
 	while (w)
 	{
@@ -777,7 +794,7 @@ static void wd_sort(int sort)
 		w = xw_next();
 	}
 
-	wd_set_sort(sort);
+	wd_set_sort(sort);	/* mark a menu item */
 }
 
 
@@ -812,7 +829,6 @@ void wd_seticons(void)
 }
 
 
-void wd_printtext(WINDOW *w);
 
 /*
  * Print contents of fhe file which is in the topped text window "w". 
@@ -903,7 +919,7 @@ void wd_hndlmenu(int item, int keystate)
 	w = selection.w;
 
 	wtop = xw_top();
-	if ( wtop != NULL )
+	if ( wtop )
 		wtoptype = xw_type(wtop);
 
 	switch (item)
@@ -1554,7 +1570,7 @@ void wd_drawall(void)
 	
 	WINDOW *w = xw_first();
 
-	while (w != NULL)
+	while (w)
 	{
 		wtype = xw_type(w);
 		if (wtype == DIR_WIND || wtype == TEXT_WIND)
@@ -1618,10 +1634,6 @@ void wd_type_top(WINDOW *w)
 
 	menu_ienable(menu, MCLOSE, 1);
 	menu_ienable(menu, MCLOSEW, 1);
-/*
-	menu_ienable(menu, MNEWDIR, s );
-	menu_ienable(menu, MSHOWINF, s);
-*/
 	menu_ienable(menu, MSELALL, s);
 	menu_ienable(menu, MSETMASK, s);
 	menu_ienable(menu, MCYCLE, (n > 1) ? 1 : 0);
@@ -1779,7 +1791,10 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 	}
 	else
 	{
+/* this was not good enough for XaAES  
 		if ((area.w < old_w || area.h < old_h) && options.mode != TEXTMODE)
+*/
+		if ((area.w != old_w || area.h != old_h) && options.mode != TEXTMODE)
 			wd_type_draw((TYP_WINDOW *) w, TRUE);
 		dir_title((DIR_WINDOW *) w);
 	}
@@ -1847,7 +1862,7 @@ void set_hslsize_pos(TYP_WINDOW *w)
 
 		wpx = (long)w->px;
 		calc_wslider( (long)w->ncolumns, (long)wd_width(w), &wpx, &p, &pos );
-		w->px = wpx;
+		w->px = (int)wpx;
 	}
 	else
 	{
@@ -2270,29 +2285,39 @@ void wd_adapt(WINDOW *w)
 
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 {
-	char *newpath;
-	long lines;
-	int i, key, result = 1;
+	char 
+		*newpath;
+
+	long 
+		lines;
+
+	int 
+		i, 
+		key,
+		wt,
+		result = 1;
+
+	wt = xw_type(w);
 
 	switch (scancode)
 	{
 	case RETURN:
-		if ( xw_type(w) != TEXT_WIND )
+		if ( wt != TEXT_WIND )
 			break;
 	case CURDOWN:
-		w_scroll((TYP_WINDOW *) w, WA_DNLINE);
+		w_scroll( (TYP_WINDOW *)w, WA_DNLINE);
 		break;
 	case CURUP:
-		w_scroll((TYP_WINDOW *) w, WA_UPLINE);
+		w_scroll( (TYP_WINDOW *)w, WA_UPLINE);
 		break;
 	case CURLEFT:
-		w_scroll((TYP_WINDOW *) w, WA_LFLINE);
+		w_scroll( (TYP_WINDOW *)w, WA_LFLINE);
 		break;
 	case CURRIGHT:
-		w_scroll((TYP_WINDOW *) w, WA_RTLINE);
+		w_scroll( (TYP_WINDOW *)w, WA_RTLINE);
 		break;
 	case SPACE:
-		if ( xw_type(w) != TEXT_WIND )
+		if ( wt != TEXT_WIND )
 			break;
 	case PAGE_DOWN:				/* PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURDOWN:
@@ -2300,7 +2325,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		break;
 	case PAGE_UP:				/* PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURUP:
-		w_pageup((TYP_WINDOW *) w);
+		w_pageup((TYP_WINDOW *)w);
 		break;
 	case SHFT_CURLEFT:
 		w_pageleft((TYP_WINDOW *)w);
@@ -2323,7 +2348,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		}
 		break;
 	case ESCAPE:
-		if ( xw_type(w) != TEXT_WIND )
+		if ( wt != TEXT_WIND )
 		{
 			force_mediach(((DIR_WINDOW *) w)->path);
 			dir_refresh_wd((DIR_WINDOW *) w);
@@ -2335,7 +2360,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 			wd_type_close(w, 1);
 		else
 		{
-			if ( xw_type(w) == TEXT_WIND )
+			if ( wt == TEXT_WIND )
 				result = 0;
 			else
 			{
@@ -2459,6 +2484,7 @@ CfgEntry reopen_table[]=
  * The construction is needed to preserve window stack order:
  * all windows must be saved intermingled on stack order,
  * hence the single loop.
+ * during saving, windows may be closed, depending on "wclose"
  * Loading is straightforward on keyword occurrence.
  */
 
@@ -2467,7 +2493,6 @@ boolean wclose = FALSE;
 CfgNest open_config
 {
 	WINDOW *w;
-
 
 	if (io == CFG_SAVE)
 	{
@@ -2479,17 +2504,17 @@ CfgNest open_config
 		{
 			switch(xw_type(w))
 			{
-			case DIR_WIND :
-				*error = dir_save(file, w, lvl);
-				if (wclose)
-					dir_close(w, 1);
-				break;
+				case DIR_WIND :
+					*error = dir_save(file, w, lvl);
+					if (wclose)
+						dir_close(w, 1);
+					break;
 
-			case TEXT_WIND :
-				*error = text_save(file, w, lvl);
-				if (wclose)
-					txt_closed(w);
-				break;
+				case TEXT_WIND :
+					*error = text_save(file, w, lvl);
+					if (wclose)
+						txt_closed(w);
+					break;
 			}
 	
 			w = xw_prev();
@@ -2549,7 +2574,8 @@ static XFILE *mem_file;
 
 /*
  * Save current positions of the open windows into a (file-like) buffer 
- * and close the windows. This routine also opens this "file".
+ * (a "memory file") and close the windows. This routine also opens 
+ * this "file".
  */
 
 boolean wd_tmpcls(void)
@@ -2570,11 +2596,13 @@ boolean wd_tmpcls(void)
 	 * open for later rereading
 	 */
 
-	if (error != 0)
+	if (error != 0) 
 	{
 		if (mem_file != NULL)
 			x_fclose(mem_file);
+/* why ?
 		if (error != 1)
+*/
 			xform_error(error);
 		return FALSE;
 	}
@@ -2584,8 +2612,9 @@ boolean wd_tmpcls(void)
 
 
 /*
- * Load the positions of windows from a (file-like) buffer and open them.
- * This routine closes the "file"
+ * Load the positions of windows from a (file-like) memory buffer 
+ * ("the memory file") and open them.  * This routine closes the "file"
+ * after reading
  */
 
 extern int chklevel;
@@ -2596,6 +2625,8 @@ void wd_reopen(void)
 	long offset;
 
 	chklevel = 0;
+
+	/* Rewind the "file", then read from it */
 
 	if ((offset = x_fseek(mem_file, 0L, 0)) >= 0)
 	{
@@ -3092,8 +3123,11 @@ boolean in_window(WINDOW *w, int x, int y)
 }
 
 
-void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate,
-				   int kstate)
+/* 
+ * Note: bstate never used in this routine ? 
+ */
+
+void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 {
 	int item, m_state;
 
@@ -3226,7 +3260,7 @@ void icw_draw (WINDOW *w)
 		return;
 	}
 
-	/* Set background object */
+	/* Set background object. It is needed for background colour / pattern */
 
 	icwsize.x = w->xw_size.x;
 	icwsize.y = w->xw_size.y;
@@ -3279,8 +3313,9 @@ void icw_draw (WINDOW *w)
  * into work area? Iconified window has only the title bar (i.e. NAME flag);
  * remember iconified size in icwsize- it is same for all windows.
  * Use this routine just once to determine the dimensions.
- * Note: this works perfectly with some AESses, but with some other
- * it seems that size is not calculated exactly as it should be.
+ * Note: this works perfectly with most AESses, but with some (NAES 1.1 ?)
+ * it seems that size is not calculated exactly as it should be 
+ * (by a couple of pixels)
  */
 
 static void calc_icwsize(void)
@@ -3351,15 +3386,14 @@ void wd_type_uniconify(WINDOW *w)
 
 	/*
 	 * XaAES (V0.963 at least) does not redraw uniconifed window properly. 
+	 * The area occupied by the iconified window does not get redrawn.
 	 * Below is a fix for that. This line of code is not needed
 	 * with other AESses (as: AES4.1, Geneva4. Geneva6, Magic, N_AES1.1)
 	 */
 
 	wd_type_draw ((TYP_WINDOW *)w, TRUE );
 
-	/*
-	 * Enable/disable appropriate menu options for this window
-	 */
+	/* Enable/disable appropriate menu options for this window */
 
 	wd_type_top(w);
 	itm_set_menu(w);

@@ -1,7 +1,7 @@
 /*
  * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
  *                                           2002, 2003  H. Robbers,
- *                                                 2003  Dj. Vukovic
+ *                                           2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,36 +28,33 @@
 #undef p_cookie
 #define p_cookie	( * (COOKIE **) 0x5A0L )
 
-void cookie_reset( void );
+
+#if _MINT_
+extern int have_ssystem;
+#endif
 
 long o_resvalid;
 void (*o_resvector)( void );
 
 void jmpa6( void ) 0x4ED6;
 
-static void cookie_reset( void )
-{
-	p_cookie = NULL;
-	resvector = o_resvector;
-	resvalid = o_resvalid;
-	jmpa6();
-}
-
-#if _MINT_
-extern int have_ssystem;
-#endif
-
 
 /*
- * return cookie value or -1
+ * return cookie value or return -1 if cookie not found.
+ * If ssystem function is available (i.e. in Mint 1.15 or more)
+ * then use that function.
+ * Note: earlier version of this routine erronelosly returned
+ * input value of "name" instead of -1 if there was no cookie jar
  */
 
 long find_cookie( long name )		
 {
 	COOKIE *cookie;
+	long cvalue = -1L;
+
 #if _MINT_
 	if (have_ssystem)
-		Ssystem(S_GETCOOKIE, name, (long) &name);
+		Ssystem(S_GETCOOKIE, name, (long)&cvalue );
 	else
 #endif
 	{
@@ -69,22 +66,37 @@ long find_cookie( long name )
 		{
 			while ((cookie->name != 0) && (cookie->name != name))
 				cookie++;
-			if (cookie->name == 0L)
-				name = -1;
-			else
-				name = cookie->value;
+
+			if (cookie->name != 0L)
+				cvalue = cookie->value;
 		}
 	
 		Super(old_stack);
 	}
-	return name;
+	return cvalue;
 }
 
-/* install_cookie is not used by Teradesk */
-/* r = -1 : fout,
-   r =  0 : geen fout,
-   r =  1 : nieuw cookie geinstalleerd, reset vast,
-   r =  2 : nieuw cookie geinstalleerd, niet reset vast. */
+
+/* All the following routines are currently not used in Teradesk */
+
+
+/* 
+
+static void cookie_reset( void )
+{
+	p_cookie = NULL;
+	resvector = o_resvector;
+	resvalid = o_resvalid;
+	jmpa6();
+}
+
+
+/* 
+ * r = -1 : fout,
+ * r =  0 : geen fout,
+ * r =  1 : nieuw cookie geinstalleerd, reset vast,
+ * r =  2 : nieuw cookie geinstalleerd, niet reset vast. 
+ */
 
 int install_cookie( long name,long value,COOKIE *buffer,long l )
 {
@@ -115,7 +127,7 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 				r = -1;
 			else
 			{
-				int e;		/* reserve 'end' for lamgiage */
+				int e;		/* reserve 'end' for language */
 
 				e = (int)cookie[i].value - 1;
 
@@ -159,3 +171,5 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 
 	return r;
 }
+
+*/

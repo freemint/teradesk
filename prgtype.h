@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -36,11 +36,13 @@ typedef struct prgtype
 
 /* For consistency with other flags which are saved as bits... */
 
-#define PT_ARGV 0x0001
-#define PT_PDIR 0x0002
-#define PT_SING 0x0004
-#define AT_EDIT 0x0008
-#define AT_AUTO 0x0010
+#define PT_ARGV 0x0001 	/* understands ARGV */
+#define PT_PDIR 0x0002	/* program directory is the default */ 
+#define PT_SING 0x0004	/* do not multitask */
+#define AT_EDIT 0x0008	/* set as editor */
+#define AT_AUTO 0x0010	/* set as startup/autostart */
+#define AT_SHUT 0x0020	/* set as shutdown */
+#define AT_VIDE 0x0040	/* set video */
 
 extern CfgEntry prg_table[];
 extern PRGTYPE pwork;

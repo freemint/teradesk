@@ -704,7 +704,7 @@ void xw_menu_tnormal(WINDOW *w, int item, int normal)
 	xw_redraw_menu(w, item, &r);
 }
 
-
+#if !__USE_MACROS
 /*
  * Bepaal het type van een window.
  */
@@ -723,6 +723,23 @@ int xw_handle(WINDOW *w)
 {
 	return w->xw_handle;
 }
+
+#endif
+
+
+/* no, don't use this 
+/*
+ * Sometimes (but rarely) a check of window existence is needed ?
+ */
+
+int xw_anytype(WINDOW *w)
+{
+	if ( w )
+		return w->xw_type;
+	else
+		return 0;
+}
+*/
 
 
 /*

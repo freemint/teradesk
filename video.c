@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -51,8 +51,8 @@ void dir_init(void);
 
 int 
 #if _OVSCAN
-	oldstat = -1,   /* previous state of overscan DjV 007 210703 */
-	ovrstat = -1,	/* state of overscan 	DjV 007 210303 set -1  */
+	oldstat = -1,   /* previous state of overscan */
+	ovrstat = -1,	/* state of overscan          */
 #endif
 	vprefsold,		/* previous state of voptions */
 	bltstat,		/* presence of blitter        */
@@ -73,7 +73,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 {
 	long
 #if _OVSCAN
-		s,						/* sup.stack p.        */
+		s,						/* superv.stack pointer */
 #endif
 		logb,       			/* logical screen base  */
 		phyb;       			/* physical screen base */
@@ -178,7 +178,7 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		{
 			oldstat = ovrstat;
 
-			menu_bar ( menu, 0 ); 
+			/* Note: perhaps use Ssystem here when appropriate */
 
 			s = Super (0L);
 			(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
@@ -215,17 +215,20 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 			xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
 
 			Super ( (void *) s );
+		}	
+			
+#endif
+		/* 
+		 * Exit with "OK" from the Video options dialog will always cause
+		 * the desktop to be completely regenerated. 
+		 * Can be convenient to recover from screen corruption
+		 */
+
+		if ( set == 1 )
+		{
 			wind_set(0, WF_NEWDESK, desktop, 0);
 
-			/* 
-			 * For some reason desktop doesn't get redrawn correctly here
-			 * after overstat switch unless menu_bar is called TWICE
-			 * (possibly at first call it is too long and corrupts
-			 * part of the screen?)
-			 */
-			menu_bar(menu, 1); 
-
-			/* Any window which is too large must be reduced  in size */
+			menu_bar(menu, 0); 
 
 			txt_init();
 			dir_init();
@@ -238,30 +241,29 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 				w = xw_next();
 			}
 
-			if ( oldstat != ovrstat )
-			{
-				dsk_draw(); 
-				menu_bar(menu, 1); 
-			}
+			dsk_draw(); 
+			menu_bar(menu, 1); 
            	wd_fields();
-		}	
-			
-#endif
+		}
 
 		/* Change resolution */
 		/* xbios(...) produces slightly smaller code */
 		
 		if ( set > 1 )
 		{
-			/*
-			 * This will actually (almost) reset the computer
-			 */
+			/* This will actually (almost) reset the computer immediately */
 
 			shel_write( SHW_RESCHNG, currez + 2, 0, NULL, NULL );
 
-			/* DjV 007 290103: is no good, so disabled for the time being */
+/*
+			/* If still alive, wait a bit... */
 
-			/* xbios(5, logb, phyb, currez); DjV 007 210303 */ 	/* same as Setscreen (logb,phyb,currez); */ 
+			evnt_timer( 3000, 0 );
+
+			/* this is no good, so disabled for the time being */
+
+			xbios(5, logb, phyb, currez); 	/* same as Setscreen (logb,phyb,currez); */ 
+*/
 
 		}
 	}
@@ -389,9 +391,10 @@ int voptions(void)
   
 	/* If selected OK ... */
   
-	if ( button == VIDOK ){
+	if ( button == VIDOK )
+	{
 	  
-		/* Save palette */
+		/* Set save palette flag */
     
 		get_opt( vidoptions, &options.cprefs, SAVE_COLORS, SVCOLORS );
      

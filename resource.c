@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -163,9 +163,7 @@ void rsc_yfix
 
 /* 
  * Funktie voor het verwijderen van een menupunt uit een menu 
- * Note: this routine can delete items ONLY from "Options" menu.
- * This may possibly be inadequate after changes in menus in recent
- * versions of Teradesk.
+ * Delete a menu item
  */
 
 #if _MENUDEL
@@ -537,6 +535,7 @@ void rsc_init(void)
 /* 
  * Modify a R_STRING-type text in a dialog (i.e. a dialog title) 
  * by pointing to another string in the resource tree
+ * Note: is something wrong here: Structure passed by value?
  */
 
 void rsc_title(OBJECT *tree, int object, int title)
@@ -565,15 +564,15 @@ void rsc_title(OBJECT *tree, int object, int title)
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
 {
-	int l1, l2, i;
+	long l1, l2, i;
 	char s[16], *p;
 	TEDINFO *ti;
 
 	ti = xd_get_obspec(tree + object).tedinfo;
 	p = ti->te_ptext;
-	l1 = (int) strlen(ti->te_pvalid);	/* Length of text field. */
-	ltoa(value, s, 10);					/* Convert value to ASCII. */
-	l2 = (int) strlen(s);				/* Length of number. */
+	l1 = strlen(ti->te_pvalid);	/* Length of the text field.        */
+	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
+	l2 = strlen(s);				/* Length of the number as string.  */
 
 	i = 0;
 
@@ -583,7 +582,7 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 		i++;
 	}
 
-	strcpy(p, s);						/* Copy number. */
+	strsncpy(p, s, l2 + 1);						/* Copy number. */
 }
 
 

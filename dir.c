@@ -80,7 +80,7 @@
 
 #define TOSITEMLEN			51				/* Length of a line. */
 
-#define SIZELEN 8 /* length of field for file size, i.e. max 9999999 ~10MB */
+#define SIZELEN 8 /* length of field for file size, i.e. max 99999999 ~100 MB */
 
 
 #define bold 1
@@ -1620,7 +1620,22 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item, boolean clip)
 			{
 				int l;
 
+				/* 
+				 * Note: SIZELEN, if set to "8", permits maximum
+				 * size of about 100 MB (99999999 bytes) to be displayed
+				 */
+
 				ltoa(h->attrib.size, t, 10); /* File size to string      */
+
+
+				/* Explicitely limit displayed size to 8 characters
+				 * display larger files as "12345678*" 
+				 */
+
+				t[SIZELEN] = 0;      /* so that it doesn't become too long */
+				if ( h->attrib.size >= 99999999L )
+					t[SIZELEN-1] = '*';
+
 				l = (int) strlen(t);         /* how long is this string? */
 				p = t;
 				i = 0;
@@ -2101,7 +2116,7 @@ static void dir_prtlines(DIR_WINDOW *dw, RECT *area, RECT *work)
 	set_txt_default(dir_font.id, dir_font.size);
 
 	for (i = 0; i < dw->rows; i++)
-		dir_prtline(dw, dw->py + i, area, work);
+		dir_prtline(dw, (int)dw->py + i, area, work);
 }
 
 
@@ -2134,7 +2149,7 @@ void dir_prtcolumn(DIR_WINDOW *dw, int column, RECT *area, RECT *work)
 	int i;
 
 	for (i = 0; i < dw->rows; i++)
-		dir_prtchar(dw, column, dw->py + i, area, work);
+		dir_prtchar(dw, column, (int)dw->py + i, area, work);
 }
 
 
@@ -2171,7 +2186,7 @@ void dir_close(WINDOW *w, int mode)
 	{
 		/* 
 		 * Either this is a root window, or it should be closed entirely;
-		 * In any case, close completely.
+		 * In any case, close it.
 		 */
 
 		xw_close(w);
@@ -2236,7 +2251,7 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 	RECT size;
 	int errcode;
 
-	wd_in_screen( info );
+	wd_in_screen( info ); /* modify position to come into screen */
 
 	if ((w = (DIR_WINDOW *) xw_create(DIR_WIND, &dir_functions, DFLAGS, &dmax,
 									  sizeof(DIR_WINDOW), NULL, &errcode)) == NULL)
@@ -2367,6 +2382,7 @@ boolean dir_add_window
 					nv = ((DIR_WINDOW *)(dirwindows[j].typ_window))->nvisible; 
 
 					/* Find the item which matches the name */
+
 					for ( i = 0; i < nv; i++ )
 					{
 #if OLD_DIR
@@ -2430,10 +2446,16 @@ void dir_init(void)
 	dmax.x = screen_info.dsk.x;
 	dmax.y = screen_info.dsk.y;
 	dmax.w = work.w - (work.w % screen_info.fnt_w);
-	dmax.h = work.h + DELTA - (work.h % (screen_info.fnt_h +DELTA));
+	dmax.h = work.h + DELTA - (work.h % (screen_info.fnt_h + DELTA));
 }
 
 
+/*
+ * Calculate default positions and sizes of directory windows.
+ * Windows get stacked rightwards and downwards, starting 
+ * from (100,30); they are all of the same size
+ */
+ 
 void dir_default(void)
 {
 	int i;
@@ -2513,7 +2535,7 @@ CfgNest dir_one
 		dw = (DIR_WINDOW *)(dirwindows[i].typ_window);
 		that.index = i;
 		that.px = dw->px;
-		that.py = dw->py;
+		that.py = (int)dw->py;
 		strcpy(that.path, dw->path);
 		strcpy(that.spec, dw->fspec);
 		
@@ -2771,6 +2793,7 @@ static int itm_attrib(WINDOW *w, int item, int mode, XATTR *attr)
 #else
 	NDTA *itm = (*((DIR_WINDOW *) w)->buffer)[(long) item];
 #endif
+
 	char *name;
 	int error;
 
@@ -2937,7 +2960,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 			/* Count how many icons have to be redrawn */
 
-			ncre = (int)count_ic(w, w->py, w->rows);
+			ncre = (int)count_ic(w, (int)w->py, w->rows);
 
 			for ( j = 0; j < ncre; j++ )
 			{
@@ -3117,7 +3140,7 @@ static void calc_vitems(DIR_WINDOW *dw, int *s, int *n)
 
 	if (options.mode == TEXTMODE)
 	{
-		*s = dw->py;
+		*s = (int)dw->py;
 		h = dw->rows;
 	}
 	else
@@ -3373,7 +3396,7 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 		RECT ir, tr;
 
 		columns = wd->columns;
-		s = obj - columns * wd->py;
+		s = obj - (int)(wd->py * columns);
 
 		icn_comparea(wd, obj, &ir, &tr, work);
 

@@ -134,9 +134,10 @@ static int _fullname(char *buffer)
 	return error;
 }
 
+
 char *x_fullname(const char *file, int *error)
 {
-	char *buffer, *h;
+	char *buffer;
 
 	if ((buffer = malloc(sizeof(LNAME))) == NULL)
 	{
@@ -151,21 +152,22 @@ char *x_fullname(const char *file, int *error)
 		free(buffer);
 		return NULL;
 	}
-/*		HR 120803 not really a point anymore
-	h = realloc(buffer, strlen(buffer) + 1);
 
-	return (h == NULL) ? buffer : h;
-*/
 	return buffer;
 }
 
+
 /* Funkties voor directories */
 
-/* Set a directory path */
+/* 
+ * Set a directory path 
+ */
+
 int x_setpath(const char *path)
 {
 	return xerror(Dsetpath(path));
 }
+
 
 /* 
  * Get current default path, return pointer to this new-allocated string 
@@ -173,7 +175,9 @@ int x_setpath(const char *path)
 
 char *x_getpath(int drive, int *error)
 {
-	char *buffer, *h;
+	char *buffer;
+
+	/* Allocate a buffer */
 
 	if ((buffer = malloc(sizeof(LNAME))) == NULL)
 	{
@@ -181,8 +185,12 @@ char *x_getpath(int drive, int *error)
 		return NULL;
 	}
 
+	/* Put drive id at the beginning of the buffer */
+
 	buffer[0] = (char) (((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
 	buffer[1] = ':';
+
+	/* Append the rest */
 
 	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
 	{
@@ -190,11 +198,6 @@ char *x_getpath(int drive, int *error)
 		return NULL;
 	}
 	
-/*		HR 120803 not really a point anymore
-	h = realloc(buffer, strlen(buffer) + 1);
-
-	return (h == NULL) ? buffer : h;
-*/
 	return buffer;
 }
 
@@ -228,7 +231,11 @@ int x_dfree(DISKINFO *diskinfo, int drive)
 	return xerror(Dfree(diskinfo, drive));
 }
 
-/* Get information about current default drive */
+
+/* 
+ * Get the id of the current default drive 
+ */
+
 int x_getdrv(void)
 {
 	return Dgetdrv();
@@ -278,7 +285,7 @@ int x_getlabel(int drive, char *label)
 
 /* 
  * Rename a file from "oldname" to "newname"; 
- * note unusual (for C) order of arguments: (src, dest) 
+ * note unusual (for C) order of arguments: (source, destination) 
  */
 
 int x_rename(const char *oldname, const char *newname)
@@ -749,7 +756,7 @@ int x_shrink(void *block, long newsize)
 
 char *xshel_find(const char *file, int *error)
 {
-	char *buffer, *h;
+	char *buffer;
 
 	if ((buffer = calloc(sizeof(LNAME), 1)) == NULL)
 	{
@@ -765,14 +772,7 @@ char *xshel_find(const char *file, int *error)
 		else
 		{
 			if ((*error = _fullname(buffer)) == 0)
-			{
-			/*		HR 120803 not really a point anymore
-				if ((h = realloc(buffer, strlen(buffer) + 1)) == NULL)
-					h = buffer;
-				return h;
-			*/
 				return buffer;
-			}
 		}
 		free(buffer);
 		return NULL;
@@ -786,7 +786,7 @@ char *xshel_find(const char *file, int *error)
 
 char *xfileselector(const char *path, char *name, const char *label)
 {
-	char *buffer, *h;
+	char *buffer;
 	int error, button;
 
 	if ((buffer = malloc(sizeof(LNAME))) == NULL)
@@ -811,15 +811,8 @@ char *xfileselector(const char *path, char *name, const char *label)
 	else
 	{
 		if ((error = _fullname(buffer)) == 0)
-		{
-			/*		HR 120803 not really a point anymore
-			if ((h = realloc(buffer, strlen(buffer) + 1)) == NULL)
-				h = buffer;
-			return h;
-			*/
-
 			return buffer;
-		}
+
 		xform_error(error);
 	}
 	free(buffer);
@@ -878,7 +871,7 @@ static int write_buffer(XFILE *file)
 
 
 /* 
- * Open a file 
+ * Open a real file 
  */
 
 XFILE *x_fopen(const char *file, int mode, int *error)
@@ -925,32 +918,44 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 
 
 /* 
- * Open a memory area sa a file 
+ * Open a memory area as a file 
+ * (in fact, mode is always 0x01 | 0x02 )
+ * If allocation is unsuccessful, return ENSMEM (-39)
+ * If not read/write mode it returned EINVFN (-32) 
+ * (why bother?, this routine is used only once, so this check
+ * is disabled but use carefully then!)
+ * If OK, return 0
  */
 
 XFILE *x_fmemopen(int mode, int *error)
 {
-	int result = 0, rwmode = mode & O_RWMODE;
-	XFILE *xfile;
+	int 
+		result = 0, 
+		rwmode = mode & O_RWMODE; /* mode & 0x03 */
+
+	XFILE 
+		*xfile;
 
 	if ((xfile = malloc(sizeof(XFILE))) == NULL)
 		result = ENSMEM;
 	else
 	{
 		xfile->mode = mode;
-		xfile->buffer = NULL;
-		xfile->bufsize = 0;
-		xfile->read = 0;
-		xfile->write = 0;
-		xfile->eof = FALSE;
-		xfile->memfile = TRUE;
+		xfile->buffer = NULL;	/* buffer location         */
+		xfile->bufsize = 0;		/* buffer size             */
+		xfile->read = 0;		/* read position (offset)  */
+		xfile->write = 0;		/* write position (offset) */
+		xfile->eof = FALSE;		/* end of file not reached */
+		xfile->memfile = TRUE;	/* this is a memory file   */
 
-		if (rwmode != O_RDWR)
+/* no need to bother, routine is used only once in a controlled way 
+		if (rwmode != O_RDWR) /* 0x02 */
 		{
-			result = EINVFN;
+			result = EINVFN; /* unknown function ? */
 			free(xfile);
 			xfile = NULL;
 		}
+*/
 	}
 
 	*error = result;
@@ -970,7 +975,9 @@ int x_fclose(XFILE *file)
 	if (file->memfile)
 	{
 		error = 0;
+/*	not needed, already tested in free()
 		if (file->buffer)
+*/
 			free(file->buffer);
 	}
 	else
@@ -1072,17 +1079,30 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
-	long rem = length, n, size;
-	char *dest, *src = (char *) ptr;
-	int write, error;
+	long 
+		rem = length, /* number of bytes remaining to be transferred */ 
+		n, 
+		size;
+
+	char 
+		*dest, 					/* location of the output buffer */
+		*src = (char *) ptr; 	/* position being read from */
+
+	int 
+		write,			 		/* position currently written to */
+		error;					/* error code */
 
 	if ((file->mode & O_RWMODE) == O_RDONLY)
 		return EINVFN;
 
 	if (file->memfile)
 	{
+		/* this is a "memory file" */
+
 		write = file->write;
 		dest = file->buffer;
+
+		/* Go through all the data, until nothing remains */
 
 		while (rem > 0)
 		{
@@ -1090,21 +1110,39 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 			{
 				char *new;
 
+				/* 
+				 * Existing buffer has been filled (or this is the first record)
+				 * If this is the first "record" then allocate 128 bytes;
+				 * otherwise, try to increase the allocated amount;
+				 * if it is not possible at the same location,
+				 * allocate a new one and then copy old contents
+				 */
+
 				if (file->buffer)
 				{
-					new = realloc(file->buffer, file->bufsize + 128);
-/* HR 120803: the official realloc doesnt initialize the new buffer */
+					new = realloc(file->buffer, file->bufsize + 128L);
+
+					/* 
+					 * HR 120803: the official realloc doesn't initialize 
+					 * the new buffer, must be copied explicitely.
+					 */
+
 					if (new != file->buffer)
 						memcpy(new, file->buffer, file->bufsize);
 				}
 				else
-					new = malloc(128);
+					new = malloc(128L);
+
+				/* Memory allocation has failed ? */
 
 				if (new == NULL)
 					return ENSMEM;
+
 				dest = file->buffer = new;
 				file->bufsize += 128;
 			}
+
+			/* Now write till the end of input */
 
 			dest[write++] = *src++;
 			rem--;
@@ -1155,6 +1193,10 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 }
 
 
+/*
+ * Position file pointer to location "offset" from the start of file
+ */
+
 long x_fseek(XFILE *file, long offset, int mode)
 {
 	if (!file->memfile || (mode != 0) || (offset != 0))
@@ -1166,6 +1208,9 @@ long x_fseek(XFILE *file, long offset, int mode)
 	}
 }
 
+
+
+#if !TEXT_CFG_IN
 
 /* 
  * It is imparative that this function has a maximum
@@ -1215,28 +1260,7 @@ char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
 
 	return s;
 }
-
-
-/* 
- * Write a string to a file 
- */
-
-int x_fwritestr(XFILE *file, const char *string)
-{
-	int l;
-
-	long n;
-
-	l = (int) strlen(string);
-
-	if ((n = x_fwrite(file, &l, sizeof(int))) < 0)
-		 return (int) n;
-
-	if ((n = x_fwrite(file, string, (size_t)(l + 1) )) < 0)
-		return (int) n;
-
-	return 0;
-}
+#endif
 
 
 /* 
@@ -1256,7 +1280,7 @@ int x_fgets(XFILE *file, char *string, int n)
 
 */
 
-/* DjV 076: why ? Just a safety precaution maybe?
+/* DjV 076: why ? Just a safety precaution against careless use maybe?
 
 	if ((file->mode & O_RWMODE) != O_RDONLY)
 	{
@@ -1279,6 +1303,13 @@ int x_fgets(XFILE *file, char *string, int n)
 	{
 		if (read == write)
 		{
+			/* 
+			 * end of buffer reached; read a new one, or this is end of file
+			 * Note: if used carefully, read_buffer() should never happen
+			 * with the memory file, because never should be more read
+			 * than had been written
+			 */
+
 			if (file->eof == TRUE)
 				ready = TRUE;
 			else
@@ -1291,6 +1322,8 @@ int x_fgets(XFILE *file, char *string, int n)
 		}
 		else
 		{
+			/* Note: this branch also handles the memory file */
+
 			if (nl != 0)
 			{
 				ready = TRUE;
@@ -1310,7 +1343,7 @@ int x_fgets(XFILE *file, char *string, int n)
 		}
 	}
 
-	file->read = read;
+	file->read = read; 
 
 	*dest = 0;
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -457,7 +457,7 @@ void get_fsel
 			free(cc);
 		} 
 
-		*pos = *pos + tl;
+		*pos = *pos + (int)tl;
 	}
 }
 
@@ -875,7 +875,10 @@ void cramped_name(const char *s, char *t, int ww)
 	else			/* (new) source is longer than the target, must cramp */
 	{
 		if (w < 12)				/* 8.3: destination is very short  */
+		{
 			strcpy(t, q + d);  	/* so copy only the last ch's */
+			t[0] = '<';			/* cosmetic, to show truncated name */
+		}
 		else					/* else replace middle of the string with "..." */
 		{
 			h = (w - 3) / 2;	/* half of dest. length minus "..." */ 
@@ -885,12 +888,11 @@ void cramped_name(const char *s, char *t, int ww)
 			*p++ = '.';
 			*p++ = '.';
 
-/* this may leave a space unused at the end, depending on odd/even length
- * of the source, so maybe a little better below:
+/* 
+ * this may leave a space unused at the end, depending on odd/even length
+ * of the source, so maybe a little better as changed below:
+ *		strcpy(p, q + l - h);
  */
-/*
-			strcpy(p, q + l - h);	/* concatenate the end of the source */
-*/
 			strcpy(p, q + l - (w - h - 4) );
 		}
 	}
@@ -984,7 +986,7 @@ void cv_fntoform(OBJECT *ob, const char *src)
 		{	
 			if (( (ob->ob_type >> 8) & 0xff) == XD_SCRLEDIT)
 			{
-				l = sizeof(LNAME);
+				l = (int)sizeof(LNAME);
 				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(src) > sizeof(LNAME) */
 			}
 			strsncpy(dst, src, l); /* term. byte included in l */

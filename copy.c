@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -205,14 +205,7 @@ void upd_copyinfo(long folders, long files, long bytes)
 	rsc_ltoftext(copyinfo, NBYTES, bytes);
 
 	if (cfdial_open == TRUE)
-	{
-/* can't do so because of problems with ttransparency
-		xd_draw(&cfdial, NFOLDERS, 0);
-		xd_draw(&cfdial, NFILES, 0);
-		xd_draw(&cfdial, NBYTES, 0);
-*/
 		xd_draw(&cfdial, CINFBOX, 1);
-	}
 }
 
 
@@ -312,7 +305,8 @@ static boolean pull(COPYDATA **stack, int *result)
 
 
 /* 
- * Read directory entry on the stack
+ * Read directory entry on the stack. 
+ * Beware "*name" should be at least 256 characters long
  */
 
 static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
@@ -360,13 +354,13 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 	XATTR attr;
 
 	int result = XSKIP;
-	unsigned int type = 0, oldtype = 0; /* item type */
-	char *fpath;				 		/* item path */
-	bool found;							/* match found */
+	unsigned int type = 0;	/* item type */
+	char *fpath;			/* item path */
+	bool found;				/* match found */
 
-	*folders = 0;
-	*files = 0;
-	*bytes = 0;
+	*folders = 0;			/* folder count */
+	*files = 0;				/* files count  */
+	*bytes = 0;				/* bytes count  */
 	fpath = NULL;
 	found = FALSE;
 
@@ -382,21 +376,19 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-				/*
-				 * code below closes prev. dialog if prev. displayed item
-				 * was a file and next is a folder- or v.v.
-				 */
 				type = attr.mode & S_IFMT;
 				if ( search )
 				{
 					if ( (found = searched_found( stack->spath, name, &attr)) == TRUE )
 						fpath = x_makepath(stack->spath, name, &error);
 
+/* not needed anymore
 					if ( found && (type != oldtype) && (type == S_IFDIR || type == S_IFREG) )
 					{
 						closeinfo();
 						oldtype = type;
 					}
+*/
 				}
 				else
 					found = FALSE;
@@ -416,9 +408,6 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 
 								/* Beware of recursion below; folder_info contains cnt_items  */
 
-/*
-								if ( (result = folder_info( fpath, name, &attr )) != 0)
-*/
 								if ( (result = object_info( ITM_FOLDER, fpath, name, &attr )) != 0)
 									free(fpath);
 					}
@@ -445,11 +434,8 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 						*bytes += attr.size;
 
 						if ( search && found )	
-/*
-							if ( (result = file_info(fpath, name, &attr ) ) != 0 )
-*/
 							if ( (result = object_info(ITM_FILE, fpath, name, &attr ) ) != 0 )
-/* this is probably an error!
+/* this was most probably an error; should be fpath!
 								free(path);
 */
 								free(fpath);
@@ -614,6 +600,11 @@ static boolean count_items
  *																	*
  ********************************************************************/
 
+
+/*
+ * Copy one file and set date/time and attributes
+ */
+
 static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIME *time)
 {
 	int fh1, fh2, error = 0;
@@ -624,6 +615,12 @@ static int filecopy(const char *sname, const char *dname, int src_attrib, DOSTIM
 
 	if ((size = (long) x_alloc(-1L) - 8192L) > mbsize)
 		size = mbsize;
+
+	/* 
+	 * Note: If size < 1024L and comparison continues, 
+	 * buffer will be left allocated even though the opertion failed.
+	 * (In Pure-C this is not supposed to happen)
+	 */
 
 	if ((size >= 1024L) && (buffer = malloc(size)) != NULL)	
 	{
@@ -692,13 +689,8 @@ int copy_error(int error, const char *name, int function)
 	int msg;
 	SNAME shortname;
 
-/* this can be simpler, there is the same check in cramped_name
-	if ( strlen(name) >= sizeof(shortname) )
-		cramped_name( name, shortname, sizeof(SNAME) );
-	else
-		strsncpy( shortname, name, sizeof(SNAME) );
-*/
-	cramped_name( name, shortname, sizeof(SNAME) );
+
+	cramped_name( name, shortname, (int)sizeof(SNAME) );
 
 	switch(function)	
 	{
@@ -784,15 +776,15 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 
 			switch (type)
 			{
-			case ITM_TRASH:
-				rsrc_gaddr(R_STRING, MTRASHCN, &mes);
-				break;
-			case ITM_PRINTER:
-				rsrc_gaddr(R_STRING, MPRINTER, &mes);
-				break;
-			default:
-				mes = NULL;
-				break;
+				case ITM_TRASH:
+					rsrc_gaddr(R_STRING, MTRASHCN, &mes);
+					break;
+				case ITM_PRINTER:
+					rsrc_gaddr(R_STRING, MPRINTER, &mes);
+					break;
+				default:
+					mes = NULL;
+					break;
 			}
 
 			if (mes != NULL)
@@ -813,11 +805,31 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
  *																	*
  ********************************************************************/
 
+/*
+ * Just rename a file and update windows if needed
+ */  
+
+int frename(const char *oldfname, const char *newfname)
+{
+	int error;
+
+	error = x_rename(oldfname, newfname);
+	if (!error)
+		wd_set_update(WD_UPD_MOVED, oldfname, newfname);
+
+	return error;
+}
+
+
+/*
+ * Take a new name from the name conflict dialog and rename "old" file
+ */
+
 static int _rename(char *old, int function)
 {
 	int 
 		error, 
-		result;
+		result = 0;
 
 	char 
 		*new, 
@@ -826,7 +838,7 @@ static int _rename(char *old, int function)
 
 	/* Get new name from the dialog */
 
-	cv_formtofn(newfname, &nameconflict[NEWNAME]);
+	cv_formtofn(newfname, &nameconflict[OLDNAME]);
 
 	/* Extract old name only without path */
 
@@ -840,24 +852,16 @@ static int _rename(char *old, int function)
 	{
 		/* If name has been successfully created, try to rename item */
 
-		if ((error = x_rename(old, new)) == 0)
+		if ( (error = frename(old, new)) !=  0 ) /* this updates windows as well */
 		{
-			/* It was succesful; update window */
-			wd_set_update(WD_UPD_MOVED, old, new);
-			result = 0;
-		}
-		else
-		{
-			/* something went wrong */
-			if (error == EACCDN)
-			{
-				/* access denied! */
-				alert_printf(1, MERENAME, name);
-				result = XERROR;
-			}
-			else
-				/* something lse */
+/*
+ "function" propagates from the actual file operation, and it can be
+ "move", "copy", etc. but this dialog always handles renames. Therefore,
+ force error to move/rename error
 				result = copy_error(error, name, function);
+*/
+				result = copy_error(error, name, CMD_MOVE);
+
 		}
 		free(new);
 	}
@@ -887,9 +891,15 @@ static int exist(const char *sname, int smode, const char *dname,
 
 /*
  * Handle the name conflict dialog
- */
+ */ 
 
-static int hndl_nameconflict(char **dname, int smode, const char *sname, int function)
+static int hndl_nameconflict
+(
+	char **dname, 
+	int smode, 
+	const char *sname, 
+	int function
+)
 {
 	boolean 
 		again, 
@@ -934,6 +944,8 @@ static int hndl_nameconflict(char **dname, int smode, const char *sname, int fun
 		 * so then set the newname field to noneditable.
 		 * Note: it is assumed that if mint is present, folders
 		 * CAN always be renamed. Is this true?
+		 * All this applies to existing (old) file or folder;
+		 * new one can always be renamed, since it doesn't exist yet.
 		 */
 
 		if ((strcmp(sname, *dname) == 0) || ((dmode == S_IFDIR) && 
@@ -943,18 +955,19 @@ static int hndl_nameconflict(char **dname, int smode, const char *sname, int fun
 tos_version < 0x104
 #endif
 		))
-			nameconflict[NEWNAME].ob_flags &= ~EDITABLE;
+			nameconflict[OLDNAME].ob_flags &= ~EDITABLE;
 		else
-			nameconflict[NEWNAME].ob_flags |= EDITABLE;
+			nameconflict[OLDNAME].ob_flags |= EDITABLE;
 
 		/* Put old name into dialog field */
 
 		cv_fntoform(nameconflict + OLDNAME, fn_get_name(*dname));
 
-		/* Put old name into dialog field as well */
+		/* Put old name into dialog field as well as new */
 
 		cv_fntoform(nameconflict + NEWNAME, dnameonly);
-		strcpy(dupl, oldname);
+
+		strcpy(dupl, oldname); /* copy from the dialog field */
 
 		stop = FALSE;
 
@@ -995,6 +1008,8 @@ tos_version < 0x104
 				{
 					if (strcmp(dupl, oldname))
 					{
+						/* old name has been changed; try to rename existing */
+
 						if ((result = _rename(*dname, function)) != XERROR)
 						{
 							stop = TRUE;
@@ -1080,8 +1095,9 @@ static int hndl_rename(char *name)
 
 	rsc_title(nameconflict, RNMTITLE, DTRENAME);
 
-	/* Set editable fields */
+	/* Set editable and enabled fields */
 
+	nameconflict[OLDNAME].ob_flags &= ~EDITABLE;
 	nameconflict[NCALL].ob_state |= DISABLED;
 
 	graf_mouse(ARROW, NULL);
@@ -1131,7 +1147,6 @@ int touch_file
 {
 	int error = 0;
 
-	graf_mouse(HOURGLASS, NULL);
 	if ( (error  = x_fattrib( fullname, 1, (attr & ~FA_SUBDIR) )) >= 0 )
 	{
 		if ( (error = x_open(fullname, 0)) >= 0 )
@@ -1140,8 +1155,6 @@ int touch_file
 			x_close( error );
 		}
 	}
-
-	graf_mouse(ARROW, NULL);
 
 	return (error >=0) ? 0 : error;
 }

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                               2003, 2004  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -30,12 +30,20 @@
 #include "error.h"
 #include "xfilesys.h"
 #include "batch.h"
+#include "config.h"
 #include "file.h"
 
 #if _BATFILE
 
-extern char *optname;
+extern char
+	*infname, 
+	*optname;
 
+
+/*
+ * Check if this character is a part of a non-blank string.
+ * return TRUE if it is -not-
+ */
 
 static boolean eos(char c)
 {
@@ -45,15 +53,6 @@ static boolean eos(char c)
 		return TRUE;
 }
 
-static char *skipspace(char *p)
-{
-	char *i = p;
-
-	while ((*i == ' ') || (*i == '\t'))
-		i++;
-
-	return i;
-}
 
 static char *skipchar(char *p)
 {
@@ -64,6 +63,12 @@ static char *skipchar(char *p)
 
 	return i;
 }
+
+
+/*
+ * Read a decimal integer from a string.
+ * Return pointer to a place after the string
+ */
 
 static char *getint(char *p, int *result)
 {
@@ -79,6 +84,10 @@ static char *getint(char *p, int *result)
 }
 
 
+/*
+ * Execute the startup batch file
+ */
+
 void exec_bat(char *name)
 {
 	char line[256], *p, *s, *com, *tail;
@@ -86,42 +95,51 @@ void exec_bat(char *name)
 	XFILE *bf;
 	int x, y, cnt = 0, error;
 	COMMAND comline;
+	boolean syntx;
 
 	if ((olddir = getdir(&error)) != NULL)
 	{
-		if ((bf = x_fopen(name, O_DENYW | O_RDONLY, &error)) != NULL)
+		if ((bf = x_fopen(name, O_DENYW | O_RDONLY, &error)) != NULL) 
 		{
+			/* Read startup file */
+
 			while ((error = x_fgets(bf, line, 256)) == 0)
 			{
 				cnt++;
 
-				p = skipspace(line);
+				/* move to first nonblank character */
+
+				p = nonwhite(line);
+
+				syntx = FALSE;
 
 				switch (*p)
 				{
 				case 0:
 				case '*':
+					/* comment ? */
 					break;
 				case '#':
-					p = skipspace(p + 1);
+					/* Specify inf file for a screen resolution */
+					p = nonwhite(++p);
 					if ((p = getint(p, &x)) == NULL)
 					{
-						alert_printf(1, ABSYNTAX, cnt);
+						syntx = TRUE;
 						break;
 					}
-					p = skipspace(p);
+					p = nonwhite(p);
 					if (*p != ',')
 					{
-						alert_printf(1, ABSYNTAX, cnt);
+						syntx = TRUE;
 						break;
 					}
-					p = skipspace(p + 1);
+					p = nonwhite(++p);
 					if ((p = getint(p, &y)) == NULL)
 					{
-						alert_printf(1, ABSYNTAX, cnt);
+						syntx = TRUE;
 						break;
 					}
-					p = skipspace(p);
+					p = nonwhite(p);
 
 					if ((x == max_w) && (y == max_h))
 					{
@@ -134,8 +152,13 @@ void exec_bat(char *name)
 						{
 							if ((s = malloc(l + 1)) != NULL)
 							{
+#if TEXT_CFG_IN
+								free(infname);
+								infname = s;
+#else
 								free(optname);
 								optname = s;
+#endif
 								strsncpy(s, p, l + 1);
 								p += l;
 							}
@@ -150,11 +173,13 @@ void exec_bat(char *name)
 					if (*p != 0)
 					{
 						*p++ = 0;
-						p = skipspace(p);
+						p = nonwhite(p);
 						tail = p;
 					}
 					else
 						tail = "";
+
+					/* Check if this is a command to change directory */
 
 					if (strcmp(com, "cd") != 0)
 					{
@@ -192,6 +217,9 @@ void exec_bat(char *name)
 						hndl_error(AEBATCH, error);
 					break;
 				}
+				if (syntx)
+					alert_printf(1, ABSYNTAX, cnt);
+
 			}
 			x_fclose(bf);
 		}

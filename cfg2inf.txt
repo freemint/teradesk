@@ -2,6 +2,7 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V2.1   15-11-02, Copyright 2002  H. Robbers.
              V2.3           , Copyright 2003  H. Robbers, Dj. Vukovic
              V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic
+             V3.1   07-01-04, Copyright 2004  H. Robbers, Dj. Vukovic
              
                      
 
@@ -17,8 +18,8 @@ purposes, as some other functions may not work or may work only
 partially. When you are finished converting files, you'd best
 dump CFG2INF.PRG to the trash bin.
 
-CFG2INF.PRG uses DESKTOP.RSC of TeraDesk V3.00; do not attempt to
-put it in a directory containing any other version of Teradesk, 
+CFG2INF.PRG uses DESKTOP.RSC of TeraDesk V3.01; do not attempt to
+put it in a directory containing any other version of TeraDesk, 
 one of them would surely not work correctly because of different
 resource files.
 
@@ -26,5 +27,5 @@ Icon files (ICONS.RSC and/or CICONS.RSC) used by TeraDesk must be
 present in the directory where CFG2INF.PRG is. 
 
                                       Djordje Vukovic
-                                      Beograd; December 23rd 2003
+                                      Beograd; January 8th 2004
 

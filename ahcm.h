@@ -28,7 +28,9 @@
                             */
 #include <stdlib.h>		/* size_t */
 
-#define XA_lib_replace 1
+
+#define XA_lib_replace 1 /* replace some calls like free() etc. */
+
 
 typedef short XA_key;
 
@@ -77,18 +79,23 @@ void	XA_sanity	(XA_memory *base, XA_report *report);
 
 
 #if XA_lib_replace
+
 /* The below are wrapper functions and do the same
    as the macros further below.
    You can find them in ahcm.c */
+
 void *calloc(size_t n, size_t sz);
 void *malloc(size_t size);
 void free(void *);
 void _FreeAll(void);
+
 #else
+
 #define calloc(n,l) XA_calloc(&XA_default_base, (n), (l), 0, 0)
 #define malloc(l)   XA_alloc (&XA_default_base, (l), 0, 0)
 #define free(a)     XA_free  (&XA_default_base, (a))
 #define _freeAll()	XA_free_all(&XA_default_base, -1, -1)
+
 #endif
 
 #define unitprefix sizeof(XA_unit)
