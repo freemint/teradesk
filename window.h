@@ -71,8 +71,9 @@ typedef struct
 	long (*itm_info) (WINDOW *w, int item, int which);
 
 	boolean (*itm_open) (WINDOW *w, int item, int kstate);
-	boolean (*itm_copy) (WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
-	void (*itm_showinfo) (WINDOW *w, int n, int *list);
+	boolean (*itm_copy) (WINDOW *dw, int dobject, WINDOW *sw,
+	        int n, int *list, ICND *icns, int x, int y, int kstate);
+	void (*itm_showinfo) (WINDOW *w, int n, int *list, int search);	/* DjV 017 150103 */
 
 	void (*itm_select) (WINDOW *w, int selected, int mode, boolean draw);
 	void (*itm_rselect) (WINDOW *w, int x, int y);
@@ -92,9 +93,19 @@ typedef struct
 	void (*wd_newfolder) (WINDOW *w);
 	void (*wd_disp_mode) (WINDOW *w, int mode);	/* 0 = text, 1 = icons */
 	void (*wd_sort) (WINDOW *w, int sort);		/* 0 = name, 1 = extension, 2 = date, 3 = size, 4 = unsorted */
-	void (*wd_attrib) (WINDOW *w, int attribs);	/* bit 1 - hidden, bit 2 - system */
+/*	void (*wd_attrib) (WINDOW *w, int attribs);	   bit 1 - hidden, bit 2 - system */
+	void (*wd_fields) (WINDOW *w, int fields);	/* DjV 010 261202 bits 0:3=show size,date,time,attr. */
 	void (*wd_seticons) (WINDOW *w);
 } ITMFUNC;
+
+/* DjV 017 280103 ---vvv--- */
+typedef struct
+{
+	WINDOW *w;
+	int selected;
+	int n;
+} SEL_INFO;
+/* DJV 017 280103 ---^^^--- */
 
 int itm_find(WINDOW *w, int x, int y);
 boolean itm_state(WINDOW *w, int item);
@@ -110,6 +121,7 @@ void itm_select(WINDOW *w, int selected, int mode, boolean draw);
 void itm_rselect(WINDOW *w, int x, int y);
 boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
 boolean itm_list(WINDOW *w, int *n, int **list);
+void itm_set_menu ( WINDOW *w ); /* DjV 017 290103 */
 
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
@@ -128,7 +140,8 @@ int wd_nselected(void);
 int wd_selected(void);
 void wd_reset(WINDOW *w);
 void wd_deselect_all(void);
-
+/* void wd_attrib(void);			 HR 230103, HR 050303 */
+void wd_fields(void);				/* HR 050303 */
 void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
 

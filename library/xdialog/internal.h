@@ -32,7 +32,7 @@
 
 #define XD_RDIALOG	0x1
 #define XD_RCURSOR	0x2
-#define XD_MAX_SCRLED 128		/* HR 021202: maximum size of scrolling editable texts. */
+#define XD_MAX_SCRLED 130		/* HR 021202: maximum size of scrolling editable texts. */ /* HR 240203 */
 
 /* Vlaggen voor xd_form_button() */
 
@@ -99,16 +99,21 @@ typedef struct
 } XD_FONT;
 
 extern
-int xd_vhandle, xd_nplanes, xd_ncolors,
-    xd_posmode,
-    xd_min_timer,
-/*    xd_draw_3d,
-*/  xd_aes4_0,
-    aes_flags,			/* HR 151102 */
-    colour_icons,
-    xresources,
-    xd_fdo_flag,
-    ckeytab[];
+int
+	xd_vhandle,
+	xd_nplanes,
+	xd_ncolors,
+	xd_posmode,
+	xd_min_timer,
+/*	xd_draw_3d,
+*/	xd_aes4_0,
+	aes_flags,			/* HR 151102 */
+	aes_ver3d,
+	aes_ver3d,			/* HR 120203: 3d enlargement values */
+	colour_icons,
+	xresources,
+	xd_fdo_flag,
+	ckeytab[];
 
 extern const char *xd_prgname;
 extern void *(*xd_malloc) (size_t size);
@@ -117,7 +122,7 @@ extern XDOBJDATA *xd_objdata;
 extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
-extern GRECT xd_desk;
+extern RECT xd_desk;
 extern XD_FONT xd_regular_font, xd_small_font;
 
 extern int xd_movebutton(OBJECT *tree);
@@ -126,7 +131,7 @@ extern void xd_cursor_on(XDINFO *info);
 extern void xd_cursor_off(XDINFO *info);
 extern int xd_hndlmessage(int *message, int flag);
 extern int xd_scan_messages(int flag, int *mes);
-extern void xd_redraw(XDINFO *info, int start, int depth, GRECT *area, int flags);
+extern void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags);
 extern XDINFO *xd_find_dialog(WINDOW *w, int flag);
 extern int xd_form_button(XDINFO *info, int object, int clicks, int *result);
 extern int xd_find_obj(OBJECT *tree, int start, int which);

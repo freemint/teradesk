@@ -22,9 +22,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <stdio.h>
-
 #include <tos.h>
 #include <boolean.h>
 #include <library.h>
@@ -36,9 +33,9 @@
 #include "xfilesys.h"
 
 #define XBUFSIZE	2048L
-#define USE_gemdos 0
+#define USE_gemdos 1
 
-long maxpath = 128;
+/* long maxpath = 128; */ /* HR 240203 */
 static boolean flock;
 
 int x_checkname(const char *path, const char *name)
@@ -134,7 +131,7 @@ char *x_fullname(const char *file, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = malloc(maxpath)) == NULL)
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -168,7 +165,7 @@ char *x_getpath(int drive, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = malloc(maxpath)) == NULL)
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -260,7 +257,8 @@ int x_getlabel(int drive, char *label)
 	error = Fsfirst(path, 0x3F);
 #endif
 
-	if ((error == 0) && (dta.d_attrib & 8))
+	/* if ((error == 0) && (dta.d_attrib & 8)) DjV 004 300103 */
+	if ((error == 0) && (dta.d_attrib & FA_VOLUME)) /* DjV 004 300103 same but more readable */
 		strcpy(label, dta.d_fname);
 	else
 		*label = 0;
@@ -397,6 +395,11 @@ long x_seek(long offset, int handle, int seekmode)
 
 static void dta_to_xattr(DTA *dta, XATTR *attrib)
 {
+	/* DjV 004 300103 ---vvv--- */
+	/* Add pseudo attribute "parent dir" */
+	if ( (dta->d_fname[0] == '.') && (dta->d_fname[1] == '.') )
+		dta->d_attrib |= FA_PARDIR;
+	/* DjV 004 300103 ---^^^--- */
 	attrib->mode = 0777;
 	if (dta->d_attrib & FA_SUBDIR)
 		attrib->mode |= S_IFDIR;
@@ -412,25 +415,48 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 	attrib->attr = (int) dta->d_attrib & 0xFF;
 }
 
+/* HR 050203 */
+static
+bool is_uni(char *s)
+{
+	return *(s+1) == ':' && ((*s) == 'u' || *s == 'U');
+}
+
+
+/* HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC */
+
+boolean x_inq_xfs(const char *path, boolean *casesens)
+{
+	long c, t, csens; char p[256];
+
+	strcpy(p, path);
+	if (*(p + strlen(p) - 1) != '\\')
+		strcat(p, "\\");
+
+	c = Dpathconf(p, DP_CASE);
+	t = Dpathconf(p, DP_TRUNC);
+
+	csens = !(c == DP_NOSENSITIVE && t == DP_DOSTRUNC);
+
+	if (casesens)
+		*casesens = csens;
+
+	return (c >= 0 && csens);
+}
+
 XDIR *x_opendir(const char *path, int *error)
 {
 #if _MINT_
 	if (mint)			/* HR 151102 */
 	{
 		XDIR *dir;
-	
+
 		if ((dir = malloc(sizeof(XDIR))) == NULL)
 			*error = ENSMEM;
 		else
 		{
-			long c, t;
 			dir->path = (char *) path;
-
-/* HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC */
-			c = Dpathconf(path, DP_CASE);
-			t = Dpathconf(path, DP_TRUNC);
-
-			dir->type = (c >= 0 && !(c == DP_NOSENSITIVE && t == DP_DOSTRUNC)) ? 0 : 1;
+			dir->type = x_inq_xfs(path, nil) ? 0 : 1;	/* HR 151102 */
 
 			if (dir->type)
 			{
@@ -544,39 +570,19 @@ long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 		{
 			/*
 			 * File system with long filenames.
+			 * HR 130203: Use Dxreaddir in stead of Dreaddir,
+			 *            handle links correctly.
 			 */
 	
 			int h;
-			char *str;
-			long error;
+			char str[260];
+			long error, rep;
 	
-			if ((str = malloc(len + 4)) != NULL)
-			{
-#if USE_gemdos
-				if ((error = gemdos(0x129, len, dir->data.handle, str)) == 0)
-#else
-				if ((error = Dreaddir(len, dir->data.handle, str)) == 0)
-#endif
-					strcpy(buffer, &str[4]);
-				free(str);
-		
-				if (error == 0)
-				{
-					char *name;
-		
-					if ((name = x_makepath(dir->path, buffer, &h)) != NULL)
-					{
-						error = x_attr(0, name, attrib);
-						free(name);
-					}
-					else
-						error = (long) h;
-		
-					return error;
-				}
-			}
-			else
-				error = ENSMEM;
+			if ((error = Dxreaddir(len, dir->data.handle, str, (long)attrib, &rep)) == 0)
+				strcpy(buffer, &str[4]);
+
+			if (error == 0)
+				return error;
 		
 			return (long) xerror((int) error);
 		}
@@ -713,11 +719,11 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 {
 #if _MINT_
 	if (mint)				/* HR 151102 */
-#if USE_gemdos
+	#if USE_gemdos
 		return xerror((int) gemdos(0x12C, flag, name, xattr));
-#else
+	#else
 		return xerror(Fxattr(flag, name, xattr));
-#endif
+	#endif
 	else
 #endif
 	{
@@ -825,7 +831,7 @@ char *xshel_find(const char *file, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = calloc(maxpath, 1)) == NULL)
+	if ((buffer = calloc(sizeof(LNAME), 1)) == NULL)			/* HR 240203 */
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -855,7 +861,7 @@ char *xfileselector(const char *path, char *name, const char *label)
 	char *buffer, *h;
 	int error, button;
 
-	if ((buffer = malloc(maxpath)) == NULL)
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
 	{
 		xform_error(ENSMEM);
 		return NULL;
@@ -937,7 +943,6 @@ static int write_buffer(XFILE *file)
 		return 0;
 }
 
-int alert_msg(int def, const char *string, ...);
 
 XFILE *x_fopen(const char *file, int mode, int *error)
 {
@@ -1197,7 +1202,9 @@ long x_fseek(XFILE *file, long offset, int mode)
 	}
 }
 
-char *x_freadstr(XFILE *file, char *string, int *error)
+/* HR 240103: It is imparative that this function has a maximum
+              be it only to protect the stack in certain calling functions. */
+char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
 {
 	int l;
 	long n;
@@ -1205,6 +1212,9 @@ char *x_freadstr(XFILE *file, char *string, int *error)
 
 	if ((n = x_fread(file, &l, sizeof(int))) == sizeof(int))
 	{
+		if (l > max - 1)		/* max is basically the size of an array that leaves place for a null character. */
+			l = max - 1;
+
 		if (string == NULL)
 		{
 			if ((s = malloc(l + 1)) == NULL)

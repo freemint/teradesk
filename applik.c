@@ -37,7 +37,7 @@
 #include "prgtype.h"
 #include "window.h"
 #include "applik.h"
-#include "vaproto.h"
+#include "va.h"		/* HR 060203 */
 
 typedef struct
 {
@@ -150,7 +150,7 @@ static boolean add_filetype(FTYPE **list, FTYPE *current, char *filetype)
 		return FALSE;
 	else
 	{
-		strncpy(p->filetype, filetype, 14);
+		strncpy(p->filetype, filetype, sizeof(SNAME));		/* HR 240203 */
 		if (current != NULL)
 		{
 			p->prev = current;
@@ -287,7 +287,7 @@ static boolean copy_list(FTYPE **dest, FTYPE *src)
 static boolean do_add(FTYPE **list, FTYPE *current)
 {
 	int button;
-	char type[14];
+	SNAME type;			/* HR 240203 */
 	boolean ret;
 
 	rsc_title(newfolder, NDTITLE, DTADDFT);
@@ -320,7 +320,7 @@ void app_install(void)
 	FTYPE *list, *current;
 	XDINFO info;
 
-	if (applikation->ob_width > max_w)
+	if (applikation->r.w > max_w)
 	{
 		alert_printf(1, MDIALTBG);
 		return;
@@ -334,7 +334,7 @@ void app_install(void)
 		return;
 	appl = find_appl(pname);
 
-	cv_fntoform(applname, name, 32);		/* HR 271102 */
+	cv_fntoform(applikation + APNAME, name);		/* HR 240103 */
 
 	if (appl == NULL)
 	{
@@ -378,7 +378,8 @@ void app_install(void)
 		if (current == NULL)
 			current = list;
 
-		cv_fntoform(appltype, (current != NULL) ? current->filetype : "", 26);		/* HR 271102 */
+		cv_fntoform(applikation + APTYPE, (current != NULL) ? current->filetype : "");		/* HR 240103 */
+
 		xd_draw(&info, APTYPE, MAX_DEPTH);
 
 		button = xd_form_do(&info, APCMLINE) & 0x7FFF;
@@ -500,9 +501,15 @@ APPLINFO *find_fkey(int fkey)
 /*
  * Determine the length of the command line.
  */
-
-static long app_get_arglen(const char *format, WINDOW *w,
-						   int *sellist, int n)
+static
+long app_get_arglen
+(
+	const char *format,
+	WINDOW *w,
+	int *sellist,
+	int n,
+	const char *fname			 /* DjV 028 160203 */
+)
 {
 	const char *c = format;
 	char h, *mes;
@@ -512,7 +519,8 @@ static long app_get_arglen(const char *format, WINDOW *w,
 
 	while (*c)
 	{
-		if ((*c++ == '%') && (n > 0))
+		/* if ((*c++ == '%') && (n > 0)) DJV 028 160203 */
+		if ((*c++ == '%') && ( (n > 0) || (n == -1) ) ) /* DjV 028 160203 */
 		{
 			h = tolower(*c++);
 			if ((h == 'n') || (h == 'f'))
@@ -548,6 +556,15 @@ static long app_get_arglen(const char *format, WINDOW *w,
 							l += itm_info(w, item, ITM_NAMESIZE);
 					}
 				}
+				/* DjV 028 160203 ---vvv--- */
+				if ( n == -1 )
+				{
+					if ( h == 'f' )
+						l += strlen (fname);
+					else if ( h == 'n' )
+						l += strlen(fn_get_path(fname)); 
+				}
+				/* DjV 028 160203 ---^^^--- */
 			}
 			else
 				l++;
@@ -564,8 +581,10 @@ static long app_get_arglen(const char *format, WINDOW *w,
  * selected objects.
  */
 
+/* static boolean app_set_cml(const char *format, WINDOW *w,
+						   int *sellist, int n, char *dest) DjV 028 160203 */
 static boolean app_set_cml(const char *format, WINDOW *w,
-						   int *sellist, int n, char *dest)
+						   int *sellist, int n, const char *fname, char *dest) /* DjV 028 160203 */
 {
 	const char *c = format, *s;
 	char h, *d = dest, *tmp;
@@ -577,7 +596,8 @@ static boolean app_set_cml(const char *format, WINDOW *w,
 
 	while ((h = *c++) != 0)
 	{
-		if ((h == '%') && (n > 0))
+		/* if ((h == '%') && (n > 0)) DjV 028 160203 */
+		if ((h == '%') && ( (n > 0) || (n == -1)) ) /* DJV 028 160203 */
 		{
 			h = *c++;
 			if ((tolower(h) == 'f') || (tolower(h) == 'n'))
@@ -612,6 +632,17 @@ static boolean app_set_cml(const char *format, WINDOW *w,
 						free(tmp);
 					}
 				}
+				/* DjV 028 160203 ---vvv--- */
+				if ( n == -1 )
+				{
+					if ( tolower(h) == 'f' )
+						s = fname;
+					else if ( tolower(h) == 'n' )
+						s = fn_get_name(fname);
+					while (*s)
+						*d++ = (isupper(h)) ? tolower(*s++) : *s++ ;
+				}
+				/* DjV 028 160203 ---^^^--- */
 			}
 			else
 				*d++ = h;
@@ -630,20 +661,24 @@ static boolean app_set_cml(const char *format, WINDOW *w,
  * the selected objects.
  */
 
+/* static char *app_build_cml(const char *format, WINDOW *w,
+						   int *list, int n) DjV 028 160203 */
 static char *app_build_cml(const char *format, WINDOW *w,
-						   int *list, int n)
+						   int *list, int n, const char *fname) /* DjV 028 160203 */
 {
 	long l;
 	char *cmdline;
 
-	if ((l = app_get_arglen(format, w, list, n)) < 0)
+	/* if ((l = app_get_arglen(format, w, list, n)) < 0) DjV 028 160203 */
+	if ((l = app_get_arglen(format, w, list, n, fname)) < 0) /* DjV 028 160203 */
 		return NULL;
 
 	l += 2;		/* Length byte and terminating 0. */
 
 	if ((cmdline = malloc(l)) != NULL)
 	{
-		if (app_set_cml(format, w, list, n, cmdline + 1) == FALSE)
+		/* if (app_set_cml(format, w, list, n, cmdline + 1) == FALSE) DjV 028 160203 */
+		if (app_set_cml(format, w, list, n, fname, cmdline + 1) == FALSE) /* DjV 028 160203 */
 		{
 			free(cmdline);
 			return NULL;
@@ -680,12 +715,16 @@ static char *app_build_cml(const char *format, WINDOW *w,
  * Result: TRUE if succesfull, FALSE if not.
  */
 
+/* DjV 028 160203 
+ * modified to use *program to pass explicit 
+ * path and name of file to open in case of n=-1 && app != NULL
+ */
 boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 				 int *sellist, int n, int kstate, boolean dragged)
 {
 	APPLINFO *appl;				/* Application info of program. */
 	const char *cl_format;		/* Format of commandline. */
-	char *cmdline;				/* Command line. */
+	char *cmdline = cmdlinetxt;	/* Command line. */ /* HR 240203 */
 	const char *name;			/* Program name. */
 	const char *def_path;		/* Default path of program. */
 	boolean argv;				/* Use ARGV protocol flag. */
@@ -758,56 +797,45 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		/* If there are no files passed to the program (n is 0) and
 		   the program is a TTP or GTP program, then ask the user to
 		   enter a command line. */
+		/* HR 240203: considerable code reduction because the commandline dialogue
+		              has now a single scrollable editable text field. */
 
 		if ((appl_type == PTTP) || (appl_type == PGTP))
 		{
-			char *h;
-
-			if (xd_dialog(getcml, CMDLINE1) != CMLOK)
+			if (xd_dialog(getcml, CMDLINE) != CMLOK)
 				return FALSE;
 
-			h = cmdline1;
-
-			while (*h == ' ')
-				h++;
-
-			if ((cmdline = malloc(strlen(h) + strlen(cmdline2)
-			    + 2)) == NULL)
-			{
-				xform_error(ENSMEM);
-				return FALSE;
-			}
-
-			strcpy(cmdline + 1, h);
-			strcat(cmdline + 1, cmdline2);
-			cmdline[0] = (char) strlen(cmdline + 1);
+			cmdline[0] = strlen(cmdline + 1);
 		}
 		else
 		{
-			if ((cmdline = malloc(2)) == NULL)
-			{
-				xform_error(ENSMEM);
-				return FALSE;
-			}
-
 			cmdline[0] = 0;
 			cmdline[1] = 0;
 		}
 	}
-	else
+	/* else DjV 028 160203 */
+	else if ( n > 0 )	/* DjV 028 160203 */
 	{
 		/* There are files passed to the program, build the command
 		   line. */
 
-		if ((cmdline = app_build_cml(cl_format, w, sellist, n)) == NULL)
+		/* if ((cmdline = app_build_cml(cl_format, w, sellist, n)) == NULL) DjV 028 160203 */
+		if ((cmdline = app_build_cml(cl_format, w, sellist, n, NULL)) == NULL) /* DjV 028 160203 */
 			return FALSE;
 	}
+	/* DjV 028 160203 ---vvv--- */
+	/* File to open is passed by explicit path or name */
+	else if ( n == -1 )
+		if ((cmdline = app_build_cml(cl_format, w, sellist, n, program)) == NULL) /* DjV 028 160203 */
+			return FALSE;
+	/* DjV 028 160203 ---^^^--- */
 
 	if ((argv == FALSE) && (strlen(cmdline + 1) > 125))
 	{
 		/* Check if the commandline is too long. */
 
-		alert_printf(1, MCMDTLNG);
+		/* alert_printf(1, MCMDTLNG); DjV 035 050203 */
+		xform_error ( ECOMTL ); /* DjV 035 050203 */
 
 		result = FALSE;
 	}
@@ -820,8 +848,8 @@ boolean app_exec(const char *program, APPLINFO *app, WINDOW *w,
 		result = TRUE;
 	}
 
-	free(cmdline);
-
+/*	free(cmdline);			/* HR 240203 */
+*/
 	return result;
 }
 
@@ -851,7 +879,8 @@ int app_load(XFILE *file)
 {
 	SINFO appl;
 	APPLINFO *h;
-	char *name, *cmdline, filetype[14];
+	char *name, *cmdline;
+	SNAME filetype;			/* HR 240203 */
 	long n;
 	int error;
 
@@ -864,10 +893,10 @@ int app_load(XFILE *file)
 
 		if (appl.appltype != -1)
 		{
-			if ((name = x_freadstr(file, NULL, &error)) == NULL)
+			if ((name = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 				return error;
 
-			if ((cmdline = x_freadstr(file, NULL, &error)) == NULL)
+			if ((cmdline = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 			{
 				free(name);
 				return error;
@@ -884,7 +913,7 @@ int app_load(XFILE *file)
 
 			do
 			{
-				if (x_freadstr(file, filetype, &error) == NULL)
+				if (x_freadstr(file, filetype, sizeof(filetype), &error) == NULL)		/* HR 240103: max l */
 					return error;
 
 				if ((filetype[0] != 0) && (add_filetype(&(h->filetypes), NULL, filetype) == FALSE))

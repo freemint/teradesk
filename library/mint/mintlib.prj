@@ -23,5 +23,5 @@ mint.lib
 .S[-Y -S]
 .L[-J -G -Y]
 =
-mintlib.s
+mintbind.s			; HR 130203: same as used by XaAES
 sleep.c

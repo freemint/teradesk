@@ -41,8 +41,7 @@ void split_path( char *path,char *fname,const char *name )
 		{
 			long l = (backsl - (char *)name);
 
-			strncpy(path,name,l);
-			path[l] = 0;
+			strsncpy(path,name,l + 1);		/* HR 120203: secure cpy */
 			if ((l == 2) && (path[1] == ':'))
 				strcat(path,"\\");
 		}

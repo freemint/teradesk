@@ -42,8 +42,8 @@ typedef struct
 	KINFO kinfo[MAXKEYS];
 } XD_NMWINDOW;
 
-extern void __xd_redraw(WINDOW *w, GRECT *area);
-extern void __xd_moved(WINDOW *w, GRECT *newpos);
+extern void __xd_redraw(WINDOW *w, RECT *area);
+extern void __xd_moved(WINDOW *w, RECT *newpos);
 
 static int __xd_hndlkey(WINDOW *w, int key, int kstate);
 static void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate);
@@ -215,7 +215,7 @@ static void __xd_top(WINDOW *w)
  * menu		- Optional pointer to a object tree, which should be used
  *			  as menu bar in the window. If NULL no menu bar will
  *			  appear in top of the window.
- * xywh		- Optional pointer to a GRECT structure. If this pointer
+ * xywh		- Optional pointer to a RECT structure. If this pointer
  *			  is not NULL and zoom is not 0, the library will draw
  *			  a zoombox from the rectangle in xywh to the window.
  * zoom		- see xywh
@@ -226,11 +226,11 @@ static void __xd_top(WINDOW *w)
  */
 
 int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-			  int start, int x, int y, OBJECT *menu, GRECT *xywh,
+			  int start, int x, int y, OBJECT *menu, RECT *xywh,
 			  int zoom, const char *title)
 {
 	int error;
-	GRECT wsize;
+	RECT wsize;
 	WINDOW *w;
 
 	xd_wdupdate(BEG_UPDATE);
@@ -249,35 +249,35 @@ int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
 	{
 		int dx, dy;
 
-		dx = x - wsize.g_x;
+		dx = x - wsize.x;
 
-		info->drect.g_x += dx;
+		info->drect.x += dx;
 		tree->ob_x += dx;
-		wsize.g_x = x;
+		wsize.x = x;
 
-		dy = y - wsize.g_y;
+		dy = y - wsize.y;
 
-		info->drect.g_y += dy;
+		info->drect.y += dy;
 		tree->ob_y += dy;
-		wsize.g_y = y;
+		wsize.y = y;
 	}
 
-	if (wsize.g_x < xd_desk.g_x)
+	if (wsize.x < xd_desk.x)
 	{
-		int d = xd_desk.g_x - wsize.g_x;
+		int d = xd_desk.x - wsize.x;
 
-		info->drect.g_x += d;
+		info->drect.x += d;
 		tree->ob_x += d;
-		wsize.g_x = xd_desk.g_x;
+		wsize.x = xd_desk.x;
 	}
 
-	if (wsize.g_y < xd_desk.g_y)
+	if (wsize.y < xd_desk.y)
 	{
-		int d = xd_desk.g_y - wsize.g_y;
+		int d = xd_desk.y - wsize.y;
 
-		info->drect.g_y += d;
+		info->drect.y += d;
 		tree->ob_y += d;
-		wsize.g_y = xd_desk.g_y;
+		wsize.y = xd_desk.y;
 	}
 
 	if ((w = xw_create(XW_NMDIALOG, &xd_wdfuncs, XD_NMWDFLAGS,
@@ -299,8 +299,8 @@ int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
 
 		if (zoom && xywh)
 		{
-			graf_growbox(xywh->g_x, xywh->g_y, xywh->g_w, xywh->g_h,
-						 wsize.g_x, wsize.g_y, wsize.g_w, wsize.g_h);
+			graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
+						 wsize.x, wsize.y, wsize.w, wsize.h);
 			zoom = FALSE;
 		}
 	}
@@ -310,7 +310,7 @@ int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
 	return error;
 }
 
-void xd_nmclose(XDINFO *info, GRECT *xywh, int zoom)
+void xd_nmclose(XDINFO *info, RECT *xywh, int zoom)
 {
 	XDINFO *h = xd_nmdialogs, *prev = NULL;
 	WINDOW *w = info->window;
@@ -331,8 +331,8 @@ void xd_nmclose(XDINFO *info, GRECT *xywh, int zoom)
 
 	if (zoom && xywh)
 	{
-		graf_shrinkbox(xywh->g_x, xywh->g_y, xywh->g_w, xywh->g_h,
-		info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
+		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
 
 	if (prev == NULL)

@@ -38,7 +38,7 @@
 
 typedef struct filetype
 {
-	char name[14];
+	SNAME name;
 	struct filetype *next;
 } FTYPE;
 
@@ -159,7 +159,7 @@ static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((f = get_item(i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, f->name, 24);		/* HR 271102 */
+			cv_fntoform(o, f->name);				/* HR 240103 */
 	}
 
 	if (draw == TRUE)
@@ -179,7 +179,8 @@ static boolean filetype_dialog(char *name)
 
 	rsc_title(newfolder, NDTITLE, DTADDMSK);
 
-	cv_fntoform(dirname, name, 64);		/* HR 271102 */
+	cv_fntoform(newfolder + DIRNAME, name);		/* HR 240103 */
+
 	button = xd_dialog(newfolder, DIRNAME);
 
 	if ((button == NEWDIROK) && (strlen(dirname) != 0))
@@ -209,7 +210,8 @@ char *wd_filemask(const char *mask)
 	XDINFO info;
 	boolean stop = FALSE, redraw, dc, ok;
 	FTYPE *f;
-	char name[14], newmask[14], *result;
+	SNAME name, newmask;			/* HR 240203 */
+	char *result;
 	SLIDER sl;
 
 	sl.type = 1;
@@ -224,7 +226,24 @@ char *wd_filemask(const char *mask)
 	sl.first = FTYPE1;
 	sl.findsel = find_selected;
 
-	cv_fntoform(filetype, mask, 24);		/* HR 271102 */
+	/* DjV 004 290103 ---vvv--- */
+	if ( mask == NULL )
+	{
+		setmask[FILETYPE].ob_state |= DISABLED;
+		*setmask[FILETYPE].ob_spec.tedinfo->te_ptext = 0;
+	}		
+	else
+	{
+	/* DjV 004 290103 ---^^^--- */
+		cv_fntoform(setmask + FILETYPE, mask);			/* HR 240103 */
+		setmask[FILETYPE].ob_state &= ~DISABLED;	/* DjV 004 290103 */
+	}												/* DjV 004 290103 */
+
+	/* DjV 004 020103 Put file attributes buttons into right state */
+	set_opt( setmask, options.attribs, FA_HIDDEN, MSKHID );
+	set_opt( setmask, options.attribs, FA_SYSTEM, MSKSYS );
+	set_opt( setmask, options.attribs, FA_SUBDIR, MSKDIR );
+	set_opt( setmask, options.attribs, FA_PARDIR, MSKPAR );
 
 	sl_init(setmask, &sl);
 
@@ -270,6 +289,10 @@ char *wd_filemask(const char *mask)
 			}
 			xd_change(&info, button, NORMAL, (stop == FALSE) ? 1 : 0);
 		}
+		else if ( button >= MSKHID && button <= MSKPAR )
+		{
+			/* DjV 004 020103 do nothing until exit */	
+		}		
 		else
 		{
 			strcpy(filetype, setmask[button].ob_spec.tedinfo->te_ptext);
@@ -289,12 +312,24 @@ char *wd_filemask(const char *mask)
 
 	if (ok == TRUE)
 	{
-		cv_formtofn(newmask, filetype);
-		if ((result = malloc(strlen(newmask) + 1)) != NULL)
-			strcpy(result, newmask);
-		else
-			xform_error(ENSMEM);
-		return result;
+		/* DjV 004 030103 ---vvv--- */
+		get_opt( setmask, &options.attribs, FA_HIDDEN, MSKHID );
+		get_opt( setmask, &options.attribs, FA_SYSTEM, MSKSYS );
+		get_opt( setmask, &options.attribs, FA_SUBDIR, MSKDIR ); /* DjV 004 280103 wrongly was MSKHID */ 
+		get_opt( setmask, &options.attribs, FA_PARDIR, MSKPAR );
+		/* DjV 004 020103 ---^^^--- */
+
+		if ( mask == NULL )		/* DjV 004 290103 */
+			return NULL;		/* DjV 004 290103 */
+		else					/* DjV 004 290103 */
+		{						/* DjV 004 290103 */
+			cv_formtofn(newmask, filetype);
+			if ((result = malloc(strlen(newmask) + 1)) != NULL)
+				strcpy(result, newmask);
+			else
+				xform_error(ENSMEM);
+			return result;
+		}						/* DjV 004 290103 */
 	}
 	else
 		return NULL;
@@ -327,14 +362,14 @@ void ft_default(void)
 
 int ft_load(XFILE *file)
 {
-	char name[14];
+	SNAME name;			/* HR 240203 */
 	int error;
 
 	rem_all_filetypes();
 
 	do
 	{
-		if (x_freadstr(file, name, &error) == NULL)
+		if (x_freadstr(file, name, sizeof(name), &error) == NULL)		/* HR 240103: max l */
 			return error;
 
 		if ((strlen(name) != 0) && (add(name) == NULL))

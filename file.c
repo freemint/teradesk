@@ -74,8 +74,7 @@ char *fn_get_path(const char *path)
 		return NULL;
 	}
 
-	strncpy(backsl, path, l);
-	backsl[l] = 0;
+	strsncpy(backsl, path, l + 1);		/* HR 120203: secure cpy */
 
 	return backsl;
 }

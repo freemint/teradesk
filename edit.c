@@ -175,7 +175,7 @@ int edit_load(XFILE *file)
 
 	edit_default();
 
-	if ((editor = x_freadstr(file, NULL, &error)) == NULL)
+	if ((editor = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 		return error;
 
 	if (strlen(editor) == 0)

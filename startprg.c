@@ -40,29 +40,17 @@
 #include "window.h"
 
 #define MAXTPATH	128
-#define PATHSIZE	132
+/* #define PATHSIZE	132 */ /* HR 240203 */
 
 typedef struct
 {
 	const char *name;
-	char path[PATHSIZE];
+	LNAME path;				/* HR 240203 */
 	COMMAND cml;
 	const char *envp;
 	int appl_type;
 	boolean new;
 } PRG_INFO;
-
-/*
-typedef struct
-{
-	int *contrl;
-	int *global;
-	int *intin;
-	int *intout;
-	void **addrin;
-	void **addrout;
-} AESPB;
-*/
 
 int cdecl(*old_critic) (int error);
 PRG_INFO pinfo;
@@ -84,7 +72,8 @@ static boolean _make_path(char *fname, char *path, char *name)
 
 static boolean findenv(char *file, char *npath)
 {
-	char path[PATHSIZE], *env, *fname;
+	LNAME path;				/* HR 240203 */
+	char *env, *fname;
 	int i;
 
 	if (strlen(file) > MAXTPATH)
@@ -180,19 +169,18 @@ static void set_title(char *title)
 	dsktitle.ob_flags = LASTOB;
 	dsktitle.ob_state = 0;
 	dsktitle.ob_spec.tedinfo = &ttd;
-	dsktitle.ob_x = 0;
-	dsktitle.ob_y = 0;
-	dsktitle.ob_width = screen_info.dsk_w;
-	dsktitle.ob_height = screen_info.fnt_h + 2;
+	dsktitle.r.x = 0;
+	dsktitle.r.y = 0;
+	dsktitle.r.w = screen_info.dsk.w;
+	dsktitle.r.h = screen_info.fnt_h + 2;
 
 	ttd.te_ptext = title;
 	ttd.te_font = 3;
 	ttd.te_just = 2;
 	ttd.te_color = 0x1F0;
 	ttd.te_thickness = 0;
-	ttd.te_txtlen = screen_info.dsk_w / screen_info.fnt_w;
-	objc_draw(&dsktitle, ROOT, MAX_DEPTH, dsktitle.ob_x, dsktitle.ob_y,
-			  dsktitle.ob_width, dsktitle.ob_height);
+	ttd.te_txtlen = screen_info.dsk.w / screen_info.fnt_w;
+	objc_draw(&dsktitle, ROOT, MAX_DEPTH, dsktitle.r.x, dsktitle.r.y, dsktitle.r.w, dsktitle.r.h);
 }
 
 /*
@@ -316,7 +304,7 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 			wind_set(0, WF_NEWDESK, NULL, 0);
 
 			{
-				char pname[PATHSIZE];
+				LNAME pname;		/* HR 240203 */
 
 				split_path(pinfo.path, pname, pinfo.name);
 				set_title(pname);
@@ -364,13 +352,14 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 				close_windows();
 
 			{
-				char cmd[PATHSIZE], tail[128];
+				LNAME cmd;				/* HR 240203 */
+				char tail[128];
 
 				shel_read(cmd, tail);
 
 				if (strcmp(cmd, pinfo.name) && cmd[0])
 				{
-					static char name[PATHSIZE];
+					static LNAME name;		/* HR 240203 */
 
 					pinfo.new = TRUE;
 					strcpy(name, cmd);
@@ -550,7 +539,7 @@ void start_prg(const char *fname, const char *cmdline,
 		/* Make a copy of cmdline. */
 
 		memset(cl.command_tail, 0, sizeof(cl.command_tail));
-		strncpy(cl.command_tail, cmdline + 1, 125);
+		strsncpy(cl.command_tail, cmdline + 1, 126);		/* HR 120203: secure cpy */
 		cl.length = *cmdline;
 
 		if (prg == PACC)				/* HR 101202: Dont start acc in single tos */

@@ -522,6 +522,7 @@ long    Fmidipipe( int pid, int in, int out );
 int     Prenice( int pid, int delta );
 long    Dopendir(const char *name, int flag );
 long    Dreaddir( int buflen, long dir, char *buf );
+long	Dxreaddir( short len, long handle, char * buf, long xattr, long *xret );	/* GEMDOS 0x142 */
 long    Drewinddir( long dir );
 long    Dclosedir( long dir );
 long    Fxattr( int flag, const char *name, XATTR *buf );

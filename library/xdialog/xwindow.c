@@ -18,14 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
-
+#include <np_aes.h>
+#include <vdi.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -52,7 +46,7 @@ static WINDOW *desktop;				/* pointer to desktop window. */
  *			   applikatie id van het programma staat.
  */
 
-void xw_send_redraw(WINDOW *w, GRECT *area)
+void xw_send_redraw(WINDOW *w, RECT *area)
 {
 	int message[8];
 #ifdef __PUREC__
@@ -67,10 +61,10 @@ void xw_send_redraw(WINDOW *w, GRECT *area)
 #endif
 	message[2] = 0;
 	message[3] = w->xw_handle;
-	message[4] = area->g_x;
-	message[5] = area->g_y;
-	message[6] = area->g_w;
-	message[7] = area->g_h;
+	message[4] = area->x;
+	message[5] = area->y;
+	message[6] = area->w;
+	message[7] = area->h;
 
 #ifdef __PUREC__
 	appl_write(ap_id, 16, message);
@@ -327,10 +321,10 @@ void xw_cycle(void)
  * van een window.
  */
 
-static void xw_bar_rect(WINDOW *w, GRECT *r)
+static void xw_bar_rect(WINDOW *w, RECT *r)
 {
 	xd_objrect(w->xw_menu, w->xw_bar, r);
-	r->g_h += 1;
+	r->h += 1;
 }
 
 /*
@@ -344,9 +338,9 @@ static void xw_set_barpos(WINDOW *w)
 
 	if (menu != NULL)
 	{
-		menu->ob_x = w->xw_work.g_x;
-		menu->ob_y = w->xw_work.g_y;
-		menu[w->xw_bar].ob_width = w->xw_work.g_w;
+		menu->ob_x = w->xw_work.x;
+		menu->ob_y = w->xw_work.y;
+		menu[w->xw_bar].ob_width = w->xw_work.w;
 	}
 }
 
@@ -355,9 +349,9 @@ static void xw_set_barpos(WINDOW *w)
  * bijvoorbeeld na een redraw event.
  */
 
-static void xw_redraw_menu(WINDOW *w, int object, GRECT *r)
+static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 {
-	GRECT r1, r2, in;
+	RECT r1, r2, in;
 	OBJECT *menu = w->xw_menu;
 	int pxy[4];
 
@@ -367,13 +361,13 @@ static void xw_redraw_menu(WINDOW *w, int object, GRECT *r)
 
 		xd_objrect(w->xw_menu, object, &r1);
 		if (object == w->xw_bar)
-			r1.g_h += 1;
+			r1.h += 1;
 
 		/* Begin en eind coordinaten van lijn onder de menubalk. */
 
-		pxy[0] = w->xw_work.g_x;
-		pxy[1] = pxy[3] = w->xw_work.g_y + r1.g_h - 1;
-		pxy[2] = w->xw_work.g_x + w->xw_work.g_w - 1;
+		pxy[0] = w->xw_work.x;
+		pxy[1] = pxy[3] = w->xw_work.y + r1.h - 1;
+		pxy[2] = w->xw_work.x + w->xw_work.w - 1;
 
 		if (xd_rcintersect(r, &r1, &r1) == TRUE)
 		{
@@ -389,11 +383,11 @@ static void xw_redraw_menu(WINDOW *w, int object, GRECT *r)
 
 			xw_get(w, WF_FIRSTXYWH, &r2);
 
-			while ((r2.g_w != 0) && (r2.g_h != 0))
+			while ((r2.w != 0) && (r2.h != 0))
 			{
 				if (xd_rcintersect(&r1, &r2, &in) == TRUE)
 				{
-					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.g_x, in.g_y, in.g_w, in.g_h);
+					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.x, in.y, in.w, in.h);
 					xd_clip_on(&in);
 					v_pline(xd_vhandle, 2, pxy);
 					xd_clip_off();
@@ -421,9 +415,9 @@ static void xw_find_objects(OBJECT *menu, int *bar, int *boxes)
  * Funktie voor het tekenen van een pulldown menu.
  */
 
-static void xw_menu_draw(OBJECT *menu, int item, GRECT *box)
+static void xw_menu_draw(OBJECT *menu, int item, RECT *box)
 {
-	objc_draw(menu, item, MAX_DEPTH, box->g_x, box->g_y, box->g_w, box->g_h);
+	objc_draw(menu, item, MAX_DEPTH, box->x, box->y, box->w, box->h);
 }
 
 /*
@@ -431,12 +425,12 @@ static void xw_menu_draw(OBJECT *menu, int item, GRECT *box)
  * in een pulldown menu.
  */
 
-static void xw_menu_change(OBJECT *menu, int item, int select, GRECT *box)
+static void xw_menu_change(OBJECT *menu, int item, int select, RECT *box)
 {
 	int newstate = menu[item].ob_state;
 
 	newstate = (select == TRUE) ? newstate | SELECTED : newstate & ~SELECTED;
-	objc_change(menu, item, 0, box->g_x, box->g_y, box->g_w, box->g_h, newstate, 1);
+	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
 }
 
 /*
@@ -463,7 +457,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int pxy[8];
 	long mem;
 	OBJECT *menu = w->xw_menu;
-	GRECT r, box;
+	RECT r, box;
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
@@ -515,10 +509,10 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 			xd_objrect(menu, i, &box);
 
-			box.g_x -= 1;
-			box.g_y -= 1;
-			box.g_w += 2;
-			box.g_h += 2;
+			box.x -= 1;
+			box.y -= 1;
+			box.w += 2;
+			box.h += 2;
 
 			mem = xd_initmfdb(&box, &bmfdb);
 
@@ -533,8 +527,8 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 					xd_rect2pxy(&box, pxy);
 					pxy[4] = 0;
 					pxy[5] = 0;
-					pxy[6] = box.g_w - 1;
-					pxy[7] = box.g_h - 1;
+					pxy[6] = box.w - 1;
+					pxy[7] = box.h - 1;
 					smfdb.fd_addr = NULL;
 
 					xw_copy_screen(&bmfdb, &smfdb, pxy);
@@ -580,8 +574,8 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 				{
 					pxy[0] = 0;
 					pxy[1] = 0;
-					pxy[2] = box.g_w - 1;
-					pxy[3] = box.g_h - 1;
+					pxy[2] = box.w - 1;
+					pxy[3] = box.h - 1;
 					xd_rect2pxy(&box, &pxy[4]);
 					smfdb.fd_addr = NULL;
 					xw_copy_screen(&smfdb, &bmfdb, pxy);
@@ -674,7 +668,7 @@ void xw_menu_text(WINDOW *w, int item, const char *text)
 
 void xw_menu_tnormal(WINDOW *w, int item, int normal)
 {
-	GRECT r;
+	RECT r;
 
 	if (normal == 0)
 		w->xw_menu[item].ob_state |= SELECTED;
@@ -791,8 +785,8 @@ int xw_hndlmessage(int *message)
 	switch (message[0])
 	{
 	case WM_REDRAW:
-		xw_redraw_menu(w, w->xw_bar, (GRECT *) &message[4]);
-		func->wd_redraw(w, (GRECT *) &message[4]);
+		xw_redraw_menu(w, w->xw_bar, (RECT *) &message[4]);
+		func->wd_redraw(w, (RECT *) &message[4]);
 		break;
 	case WM_TOPPED:
 		func->wd_topped(w);
@@ -813,10 +807,10 @@ int xw_hndlmessage(int *message)
 		func->wd_vslider(w, message[4]);
 		break;
 	case WM_SIZED:
-		func->wd_sized(w, (GRECT *) & message[4]);
+		func->wd_sized(w, (RECT *) & message[4]);
 		break;
 	case WM_MOVED:
-		func->wd_moved(w, (GRECT *) & message[4]);
+		func->wd_moved(w, (RECT *) & message[4]);
 		break;
 	case WM_NEWTOP:
 		if (func->wd_newtop != 0L)
@@ -832,14 +826,14 @@ int xw_hndlmessage(int *message)
 /*
  * Vervanger van wind_set(). De funktie corrigeert de grootte van
  * het werkgebied voor een eventueel aanwezige menubalk. Voor
- * WF_CURRXYWH moet als parameter een pointer naar GRECT structuur
+ * WF_CURRXYWH moet als parameter een pointer naar RECT structuur
  * worden opgegeven, in plaats van vier integers.
  */
 
 void xw_set(WINDOW *w, int field,...)
 {
 	int p1, p2, p3, p4;
-	GRECT *r;
+	RECT *r;
 	va_list p;
 
 	va_start(p, field);
@@ -847,17 +841,17 @@ void xw_set(WINDOW *w, int field,...)
 	switch (field)
 	{
 	case WF_CURRXYWH:
-		r = va_arg(p, GRECT *);
+		r = va_arg(p, RECT *);
 
-		w->xw_size.g_x = r->g_x;
-		w->xw_size.g_y = r->g_y;
-		w->xw_size.g_w = r->g_w;
-		w->xw_size.g_h = r->g_h;
+		w->xw_size.x = r->x;
+		w->xw_size.y = r->y;
+		w->xw_size.w = r->w;
+		w->xw_size.h = r->h;
 
-		wind_set(w->xw_handle, WF_CURRXYWH, w->xw_size.g_x,
-				 w->xw_size.g_y, w->xw_size.g_w, w->xw_size.g_h);
-		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x,
-				 &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
+		wind_set(w->xw_handle, WF_CURRXYWH, w->xw_size.x,
+				 w->xw_size.y, w->xw_size.w, w->xw_size.h);
+		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
+				 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
 		xw_set_barpos(w);
 		break;
 	case WF_TOP:
@@ -888,13 +882,13 @@ static unsigned char xw_get_argtab[] =
  * voor 'w'. De funktie corrigeert de grootte van het werkgebied
  * voor een eventueel aanwezige menubalk. Voor WF_FIRSTXYWH,
  * WF_NEXTXYWH, WF_FULLXYWH, WF_PREVXYWH, WF_WORKXYWH en WF_CURRXYWH
- * moet als parameter een pointer naar GRECT structuur worden
+ * moet als parameter een pointer naar RECT structuur worden
  * opgegeven, in plaats van vier pointers naar integers.
  */
 
 void xw_get(WINDOW *w, int field,...)
 {
-	GRECT *r;
+	RECT *r;
 	int *parm[4], dummy;
 	register int i, parms, handle;
 	va_list p;
@@ -910,13 +904,13 @@ void xw_get(WINDOW *w, int field,...)
 	case WF_FULLXYWH:
 	case WF_PREVXYWH:
 	  getrect:
-		r = va_arg(p, GRECT *);
-		wind_get(handle, field, &r->g_x, &r->g_y, &r->g_w, &r->g_h);
+		r = va_arg(p, RECT *);
+		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 		break;
 	case WF_WORKXYWH:
 		if (handle == 0)
 			goto getrect;
-		r = va_arg(p, GRECT *);
+		r = va_arg(p, RECT *);
 
 		*r = w->xw_work;
 
@@ -926,20 +920,20 @@ void xw_get(WINDOW *w, int field,...)
 
 			height = w->xw_menu[w->xw_bar].ob_height + 1;
 
-			r->g_y += height;
-			r->g_h -= height;
+			r->y += height;
+			r->h -= height;
 		}
 		break;
 	case WF_CURRXYWH:
 		if (handle == 0)
 			goto getrect;
 
-		r = va_arg(p, GRECT *);
+		r = va_arg(p, RECT *);
 
-		r->g_x = w->xw_size.g_x;
-		r->g_y = w->xw_size.g_y;
-		r->g_w = w->xw_size.g_w;
-		r->g_h = w->xw_size.g_h;
+		r->x = w->xw_size.x;
+		r->y = w->xw_size.y;
+		r->w = w->xw_size.w;
+		r->h = w->xw_size.h;
 		break;
 	default:
 		if ((field >= 1) && (field <= sizeof(xw_get_argtab)))
@@ -963,13 +957,13 @@ void xw_get(WINDOW *w, int field,...)
  * menubalk.
  */
  
-void xw_calc(int w_ctype, int w_flags, GRECT *input, GRECT *output,
+void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output,
 			 OBJECT *menu)
 {
 	int bar, boxes, height;
 
-	wind_calc(w_ctype, w_flags, input->g_x, input->g_y, input->g_w, input->g_h,
-			  &output->g_x, &output->g_y, &output->g_w, &output->g_h);
+	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h,
+			  &output->x, &output->y, &output->w, &output->h);
 
 	if (menu != NULL)
 	{
@@ -979,13 +973,13 @@ void xw_calc(int w_ctype, int w_flags, GRECT *input, GRECT *output,
 
 		if (w_ctype == WC_WORK)
 		{
-			output->g_y += height;
-			output->g_h -= height;
+			output->y += height;
+			output->h -= height;
 		}
 		else
 		{
-			output->g_y -= height;
-			output->g_h += height;
+			output->y -= height;
+			output->h += height;
 		}
 	}
 }
@@ -1056,7 +1050,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  */
 
 WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
-				  GRECT *msize, size_t wd_struct_size, OBJECT *menu,
+				  RECT *msize, size_t wd_struct_size, OBJECT *menu,
 				  int *error)
 {
 	WINDOW *w;
@@ -1067,8 +1061,8 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 		return NULL;
 	}
 
-	if ((w->xw_handle = wind_create(flags, msize->g_x, msize->g_y,
-									msize->g_w, msize->g_h)) < 0)
+	if ((w->xw_handle = wind_create(flags, msize->x, msize->y,
+									msize->w, msize->h)) < 0)
 	{
 		(*xd_free)(w);
 		*error = XDNMWINDOWS;
@@ -1100,13 +1094,13 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
  * size	- initiele grootte van het window.
  */
 
-void xw_open(WINDOW *w, GRECT *size)
+void xw_open(WINDOW *w, RECT *size)
 {
-	wind_open(w->xw_handle, size->g_x, size->g_y, size->g_w,
-			  size->g_h);
+	wind_open(w->xw_handle, size->x, size->y, size->w,
+			  size->h);
 	w->xw_size = *size;
-	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x,
-			 &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
+	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
+			 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
 
 	xw_set_barpos(w);
 

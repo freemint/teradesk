@@ -19,10 +19,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define CFG_VERSION		0x0200
+
+/* DjV 009 251202 120103 */
+
+#define CFG_VERSION		0x0202
+#define MIN_VERSION		0x0200	 
+#define INFO_VERSION	"Tera Desktop V2.3  26.02.2003"
+#define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"
+#define INFO_OTHER "1991-2003"
+
 #if _MINT_
-#define INFO_VERSION	"Tera Desktop V2.01 for TOS, MiNT & MagiC"
+  #define INFO_SYSTEMS	"for TOS, MiNT, MagiC & Geneva"
 #else
-#define INFO_VERSION	"Tera Desktop V2.01 for single TOS only"
+  #define INFO_SYSTEMS	"for single TOS only"
 #endif
-#define INFO_COPYRIGHT	"\xBD W. Klaren & H. Robbers, 1991-2003"
+

@@ -130,8 +130,7 @@ void exec_bat(char *name)
 							{
 								free(optname);
 								optname = s;
-								strncpy(s, p, l);
-								s[l] = 0;
+								strsncpy(s, p, l + 1);		/* HR 120203: secure cpy */
 								p += l;
 							}
 							else

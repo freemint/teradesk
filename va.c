@@ -25,7 +25,7 @@
 
 #include "desk.h"
 #include "font.h"
-#include "vaproto.h"
+#include "va.h"				/* HR 060203 */
 
 extern FONT dir_font;
 

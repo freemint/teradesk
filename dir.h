@@ -26,7 +26,11 @@ int dir_save(XFILE *file);
 int dir_load_window(XFILE *file);
 int dir_save_window(XFILE *file, WINDOW *w);
 
-boolean dir_add_window(const char *path);
+/* boolean dir_add_window(const char *path); DjV 017 280103 */
+boolean dir_add_window(const char *path, const char *name); /* DjV 017 280103 */
 void dir_close(WINDOW *w, int mode);
 
 void dir_setfont(void);
+const char *dir_path(WINDOW *w);		/* DjV 031 070203 */
+void get_dir_line(WINDOW *dw, char *s, int item); /* DjV 029 120203 */
+void dir_always_update (WINDOW *w); /* DjV 029 160203 */

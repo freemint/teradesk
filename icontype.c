@@ -31,9 +31,9 @@
 #include "slider.h"
 #include "xfilesys.h"
 #include "file.h"
-#include "icon.h"
 #include "prgtype.h"
 #include "window.h"
+#include "icon.h"
 #include "icontype.h"
 
 #define NLINES		4
@@ -41,9 +41,9 @@
 
 typedef struct icontype
 {
-	char type[14];
+	SNAME type;				/* HR 240203 */
 	int icon;
-	char icon_name[14];
+	SNAME icon_name;		/* HR 240203 */
 	struct icontype *next;
 } ICONTYPE;
 
@@ -76,16 +76,16 @@ int icnt_geticon(const char *name, ITMTYPE type)
 	if ((type == ITM_PREVDIR) || (type == ITM_FOLDER))
 	{
 		if ((icon = find_icon(name, folders)) < 0)
-			icon = rsrc_icon("FOLDER");		/* HR 151102 */
+			icon = rsrc_icon_rscid ( FOINAME, iname ); /* HR 151102 DjV 024 140103 */
 	}
 	else
 	{
 		if ((icon = find_icon(name, files)) < 0)
 		{
 			if (prg_isprogram(name) == FALSE)
-				icon = rsrc_icon("FILE");		/* HR 151102 */
+				icon = rsrc_icon_rscid ( FIINAME, iname ); /* HR 151102 DjV 024 140103 */
 			else
-				icon = rsrc_icon("APP");		/* HR 151102 */
+				icon = rsrc_icon_rscid ( APINAME, iname ); /* HR 151102 DjV 024 140103 */
 		}
 	}
 
@@ -129,10 +129,9 @@ static ICONTYPE *add(ICONTYPE **list, char *name, int icon, int pos)
 	else
 	{
 		strcpy(n->type, name);
-		strncpy(n->icon_name,
+		strsncpy(n->icon_name,					/* HR 120203: secure cpy */
 		        icons[icon].ob_spec.ciconblk->monoblk.ib_ptext,
-		        12);							/* HR 151102: maintain rsrc icon name */
-		n->icon_name [12] = 0;
+		        sizeof(n->icon_name));							/* HR 151102: maintain rsrc icon name */
 		n->icon = icon;
 		n->next = p;
 
@@ -230,7 +229,7 @@ static void pset_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((p = get_item(*curlist, i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->type, 12);		/* HR 271102 */
+			cv_fntoform(o, p->type);			/* HR 240103 */
 	}
 
 	if (draw == TRUE)
@@ -244,53 +243,47 @@ static int pfind_selected(void)
 	return ((object = xd_get_rbutton(seticntype, IPARENT)) < 0) ? 0 : object - ITYPE1;
 }
 
-static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
-{
-#if NEWICON
-	OBJECT *h1, *ic;				/* HR 151102 */
+/* DJV 040 160203 ---vvv--- */
+/* This routine is exactly the same as in icon.c !!! */
 
-	ic = icons + slider->line;
-	h1 = addicntype + AITDATA;
+static void set_selector(SLIDER *slider, boolean draw, XDINFO *info);
 
-	h1->ob_type = ic->ob_type;
-	h1->ob_spec = ic->ob_spec;
-
-	h1->ob_x = (addicntype[AITBACK].ob_width  - ic->ob_width ) / 2;
-	h1->ob_y = (addicntype[AITBACK].ob_height - ic->ob_height) / 2;
-
-#else
-	BITBLK *h1;
-	CICONBLK *h2;		/* HR 151102: ciconblk (the largest) */
-
-	h1 = addicntype[AITDATA].ob_spec.bitblk;
-	h2 = icons[(long) slider->line].ob_spec.ciconblk;		/* HR 151102 */
-
-	h1->bi_pdata = h2->monoblk.ib_pdata;
-	h1->bi_wb = h2->monoblk.ib_wicon / 8;
-	h1->bi_hl = h2->monoblk.ib_hicon;
-
-	addicntype[AITDATA].ob_x = (addicntype[AITBACK].ob_width  - h2->monoblk.ib_wicon) / 2;
-	addicntype[AITDATA].ob_y = (addicntype[AITBACK].ob_height - h2->monoblk.ib_hicon) / 2;
-#endif
-
-	if (draw == TRUE)
-		xd_draw(info, AITBACK, 1);
-}
 
 static boolean icntype_dialog(char *name, int *icon, boolean edit)
 {
 	int button;
 	SLIDER sl_info;
 
-	rsc_title(addicntype, AITTITLE, (edit == TRUE) ? DTEDTICT : DTADDICT);
+	/* rsc_title(addicntype, AITTITLE, (edit == TRUE) ? DTEDTICT : DTADDICT); DjV 034 050203 */
+	rsc_title(addicon, AITITLE, (edit == TRUE) ? DTEDTICT : DTADDICT);
 
-	cv_fntoform(icnname, name, 12);		/* HR 271102 */
+	/* cv_fntoform(addicntype + AITTYPE, name); DJV 034 050203 */			/* HR 240103 */
+	cv_fntoform(addicon + ICNTYPE, name);  /* DjV 034 050203 */
+
+
+	/* DjV 034 050203 ---vvv--- */
+	addicon[CHNBUTT].ob_flags |= HIDETREE;
+	addicon[ADDBUTT].ob_flags &= ~HIDETREE;
+	addicon[ICBTNS].ob_flags |= HIDETREE;
+	/* addicon[ICSHFIL].ob_flags &= ~HIDETREE; DjV 034 090203 */
+	/* addicon[ICSHFLD].ob_flags &= ~HIDETREE; DjV 034 090203 */
+	addicon[DRIVEID].ob_flags |= HIDETREE;
+	addicon[ICNLABEL].ob_flags |= HIDETREE; /* DjV 034 090203 */
+	/* DJV 034 050203 ---^^^--- */
 
 	sl_info.type = 0;
+	/* DJV 034 050203 ---vvv--- */
+	/*
 	sl_info.up_arrow = ITUP;
 	sl_info.down_arrow = ITDOWN;
 	sl_info.slider = ITSLIDER;
 	sl_info.sparent = ITPARENT;
+	*/
+	sl_info.up_arrow = ICNUP;
+	sl_info.down_arrow = ICNDWN;
+	sl_info.slider = ICSLIDER;
+	sl_info.sparent = ICPARENT;
+	/* DJV 034 050203 ---^^^--- */
 	sl_info.lines = 1;
 	sl_info.n = n_icons;
 	sl_info.line = *icon;
@@ -298,9 +291,22 @@ static boolean icntype_dialog(char *name, int *icon, boolean edit)
 	sl_info.first = 0;
 	sl_info.findsel = 0;
 
-	button = sl_dialog(addicntype, AITTYPE, &sl_info);
+	/* button = sl_dialog(addicntype, AITTYPE, &sl_info); DjV 034 050203 */
+	button = sl_dialog(addicon, ICNTYPE, &sl_info); /* DJV 034 050203 */
 
-	if ((button == AITOK) && (strlen(dirname) != 0))
+	/* DjV 015 020103 ---vvv--- */
+	
+	/*
+	 * Found out that assignment of window icons doesn't work in V2.01;
+	 * removing testing for length of dirname appears to fix it
+	 * but probaly is not the right thing to do...
+	 */
+	 
+  	/*	if ((button == AITOK) && (strlen(dirname) != 0)) */
+	/* if ( button == AITOK ) DjV 034 050203 */
+	if ( button == ADDICNOK ) /* DjV 034 050203 */
+	
+	/* DjV 015 020103 ---^^^--- */
 	{
 		cv_formtofn(name, icnname);
 		*icon = sl_info.line;
@@ -317,7 +323,7 @@ void icnt_settypes(void)
 	XDINFO info;
 	boolean stop = FALSE, redraw;
 	ICONTYPE *cfiles, *cfolders, *p, **newlist;
-	char name[14];
+	SNAME name;			/* HR 240203 */
 	SLIDER sl;
 
 	curlist = (seticntype[ITFOLDER].ob_state & SELECTED) ? &cfolders : &cfiles;
@@ -355,6 +361,19 @@ void icnt_settypes(void)
 
 		if ((button != ITFOLDER) && (button != ITFILES))
 		{
+			/* DjV 034 090203 ---vvv--- */
+			if ( curlist == &cfolders )	
+			{
+				addicon[ICSHFLD].ob_flags &= ~HIDETREE; 
+				addicon[ICSHFIL].ob_flags |=  HIDETREE;
+			}
+			else if ( curlist == &cfiles )	
+			{
+				addicon[ICSHFLD].ob_flags |=  HIDETREE;
+				addicon[ICSHFIL].ob_flags &= ~HIDETREE;
+			}
+			/* DjV 034 090203 ---^^^--- */
+
 			switch (button)
 			{
 			case ITADD:
@@ -442,7 +461,8 @@ void icnt_default(void)
 static int load_list(XFILE *file, ICONTYPE **list)
 {
 	ITYPE it;
-	char name[14], icon_name[14];
+	SNAME name,
+	      icon_name;			/* HR 240203 */
 	long n;
 	int error;
 
@@ -456,9 +476,9 @@ static int load_list(XFILE *file, ICONTYPE **list)
 		if (it.icon != -1)
 		{
 			int icon;
-			if (x_freadstr(file, name, &error) == NULL)
+			if (x_freadstr(file, name, sizeof(name), &error) == NULL)		/* HR 240103: max l */
 				return error;
-			if (x_freadstr(file, icon_name, &error) == NULL)
+			if (x_freadstr(file, icon_name, sizeof(icon_name), &error) == NULL)		/* HR 240103: max l */
 				return error;
 
 			icon = rsrc_icon(icon_name);		/* HR 151102: find icons by name, not index */

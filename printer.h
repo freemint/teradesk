@@ -20,3 +20,4 @@
 
 boolean prt_file(WINDOW *w, int item);
 boolean item_print(WINDOW *w, int n, int *sel_list);
+void dir_print(WINDOW *w, int n, int *list); /*DjV 029 140203 */

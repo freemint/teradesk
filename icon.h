@@ -26,6 +26,7 @@ extern int n_icons;
 extern OBJECT *desktop;
 extern WD_FUNC icn_functions;
 extern WINDOW *desk_window;
+extern SNAME iname; /* DjV 024 140103 HR 240203 */
 
 boolean dsk_init(void);
 int dsk_load(XFILE *file);
@@ -47,3 +48,5 @@ void free_icons(void);
 void remove_icon(int object, boolean draw);
 
 int rsrc_icon(const char *name);		/* HR 151102 */
+
+int rsrc_icon_rscid(int id, char *name );	/* DjV 024 140103 */

@@ -20,6 +20,7 @@
 
 #include <np_aes.h>			/* HR 151102: modern */
 #include <vdi.h>
+#include <tos.h>			/* HR 060203 */
 #include <stdlib.h>
 #include <string.h>
 #include <boolean.h>
@@ -36,10 +37,16 @@
 #include "file.h"
 #include "filetype.h"
 #include "icon.h"
+#include "copy.h"		/* HR 240203 */
 #include "prgtype.h"
 #include "viewer.h"
 #include "window.h"
 #include "applik.h"
+#include "floppy.h"   	/* DjV 006 150103 */
+#include "showinfo.h" 	/* DjV 020 150103 */
+#include "printer.h"	/* DjV 029 030103 */
+#include "open.h"		/* DjV 028 050203 */
+#include "dragdrop.h"	/* HR 060203 */
 
 typedef struct
 {
@@ -49,6 +56,9 @@ typedef struct
 extern boolean in_window(WINDOW *w, int x, int y);
 extern boolean wd_sel_enable;
 
+char floppy; /* DjV 006 291202 */
+/* DjV 017 280103 ---vvv--- */
+/* moved to window.h
 typedef struct
 {
 	WINDOW *w;
@@ -57,6 +67,9 @@ typedef struct
 } SEL_INFO;
 
 static SEL_INFO selection;
+*/
+SEL_INFO selection;
+/* DjV 017 280103 ---^^^--- */
 
 static void desel_old(void);
 
@@ -66,18 +79,30 @@ static void desel_old(void);
  *																	*
  ********************************************************************/
 
-static void wd_set_attrib(int attrib)
-{
-	menu_icheck(menu, MHIDDEN, ((attrib & FA_HIDDEN) ? 1 : 0));
-	menu_icheck(menu, MSYSTEM, ((attrib & FA_SYSTEM) ? 1 : 0));
-}
-
 static void wd_set_sort(int type)
 {
 	int i;
 
+	/* 
+	 * DjV 010 261202 Note: it is tacitly assumed here that "sorting" 
+	 * menu items follow in a fixed sequence after "sort by name"
+	 * which, generally, may not be the case. Perhaps this should
+	 * be generalized... 
+	*/
+
 	for (i = 0; i < 5; i++)
 		menu_icheck(menu, i + MSNAME, (i == type) ? 1 : 0);
+}
+
+/* DjV 010 261202
+  Check (or otherwise) menu items for showing directory info fields */
+
+static void wd_set_fields( int fields )
+{
+	menu_icheck(menu, MSHSIZ, ((fields & WD_SHSIZ) ? 1 : 0));
+	menu_icheck(menu, MSHDAT, ((fields & WD_SHDAT) ? 1 : 0));
+	menu_icheck(menu, MSHTIM, ((fields & WD_SHTIM) ? 1 : 0));
+	menu_icheck(menu, MSHATT, ((fields & WD_SHATT) ? 1 : 0));
 }
 
 static void wd_set_mode(int mode)
@@ -97,10 +122,13 @@ static void wd_set_mode(int mode)
 /* Funktie die menupunten enabled en disabled, die met objecten te
    maken hebben. */
 
-static void itm_set_menu(WINDOW *w)
+/* static  DjV 017 290103 */
+void itm_set_menu(WINDOW *w)
 {
 	int n, *list, i = 0;
-	boolean showinfo = FALSE, ch_icon = FALSE, enab = FALSE;
+	boolean showinfo = FALSE, ch_icon = FALSE, enab = FALSE, enab2 = FALSE; /* DjV 029 030103 added enab2 */
+	char drive[8]; /* DjV 006 291202 */
+
 	ITMTYPE type;
 
 	if ((w == NULL) || (xw_exist(w) == FALSE) || (itm_list(w, &n, &list) == FALSE))
@@ -117,14 +145,75 @@ static void itm_set_menu(WINDOW *w)
 		ch_icon = TRUE;
 	}
 
+	/* DjV 020 120103 ---vvv--- */
+	if ( ( n == 0 ) && ( w=xw_top() ) != NULL && xw_type(w) == DIR_WIND  )
+		 showinfo = TRUE;
+	/* DjV 020 120103 ---^^^--- */
+
 	if (n == 1)
 		type = itm_type(w, list[0]);
 
 	enab = ((n == 1) && (type != ITM_TRASH) && (type != ITM_PRINTER)) ? 1 : 0;
-	menu_ienable(menu, MOPEN, enab);
-	menu_ienable(menu, MDELETE, enab);
+	/* menu_ienable(menu, MOPEN, enab); DjV 028 280103 */
 	menu_ienable(menu, MSHOWINF, (showinfo == TRUE) ? 1 : 0);
+	menu_ienable(menu, MSEARCH, (showinfo == TRUE && n > 0 ) ? 1 : 0); /* DjV 017 150103 DjV 017 280103 added n > 0 */
 	menu_ienable(menu, MAPPLIK, ((n == 1) && (type == ITM_PROGRAM)) ? 1 : 0);
+
+	/* DjV 025 140103  DjV 029 030103 ---vvv--- */
+	/* 
+	 * Enable delete only if there are only files, programs and folders among selected items
+	 * Enable print only if there are only files among selected or
+	 * a dir window is open (to print directory)
+	 */
+	enab = n > 0; 
+	enab2 = enab; /* DjV 029 030103 will always sooner then enab become false */
+	i = 0;
+	while ( (i < n) && enab )
+	{
+		type = itm_type(w, list[i++]);
+		enab =    type == ITM_FILE
+		       || type == ITM_FOLDER
+		       || type == ITM_PROGRAM			/* HR 240203 */
+		       ;  
+		enab2 = type == ITM_FILE;  
+	}	
+
+	if ( ( n == 0 ) && ( ( w = xw_top() ) != NULL )  ) 	/* DjV 029 150203 */
+		if ( xw_type(w) == DIR_WIND )					/* DjV 031 150203 */
+				enab2 = 1; 								/* DjV 029 150203 */
+
+	menu_ienable(menu, MDELETE, enab);
+	menu_ienable(menu, MPRINT, enab2);
+	/* DjV 025 140103 DjV 029 030103 ---^^^--- */
+
+	/* DjV 006 291202 ---vvv--- */
+  	/* 
+	 * enable disk formatting and disk copying
+	 * only if single drive is selected and it is A or B;
+	 * use the opportunity to say which drive is to be used 
+	 * (is it always A or B even in other filesystems ?)
+	 */
+	enab=FALSE;
+	if ( (n == 1) && (type == ITM_DRIVE) )
+	{
+		strsncpy ( drive, itm_fullname ( w, list[0] ) , sizeof(drive) );		/* HR 120203: secure cpy */
+		drive[0] &= 0xDF; /* to uppercase */
+		if (   ( drive[0] >= 'A' )
+		    && ( drive[0] <= 'B' )
+		    && ( drive[1] == ':' )
+		   )
+		{  
+			floppy = drive[0];      /* i.e. floppy=65dec or 66dec */
+			enab = TRUE;
+		}  
+	}
+
+#if MFFORMAT				/* HR 050303 */
+	menu_ienable(menu, MFCOPY, enab );
+	menu_ienable(menu, MFFORMAT, enab );
+#endif
+	
+	/* DjV 006 291202 ---^^^--- */
 
 	if ((ch_icon == TRUE) && (xw_type(w) == DESK_WIND))
 	{
@@ -358,7 +447,8 @@ static void wd_sort(int sort)
 	wd_set_sort(sort);
 }
 
-static void wd_attrib(void)
+#if 0			/* DjV 004 020103 not needed anymore */
+void wd_attrib(void)            /* DjV 010 271202: global function */
 {
 	WINDOW *w = xw_first();
 
@@ -368,7 +458,23 @@ static void wd_attrib(void)
 			((ITM_WINDOW *) w)->itm_func->wd_attrib(w, options.attribs);
 		w = xw_next();
 	}
-	wd_set_attrib(options.attribs);
+ 	wd_set_attrib(options.attribs); 
+}
+#endif
+
+void wd_fields(void)		/* DjV 010 261202 */
+{
+	WINDOW *w = xw_first();
+
+	while (w)
+	{
+		if (xw_type(w) == DIR_WIND)
+			((ITM_WINDOW *) w)->itm_func->wd_fields(w, options.V2_2.fields);
+		w = xw_next();
+	}
+	wd_set_fields(options.V2_2.fields);
+	
+/*	wd_attrib(); used this as an ugly quick fix to trigger refresh */
 }
 
 void wd_seticons(void)
@@ -387,6 +493,9 @@ void wd_hndlmenu(int item, int keystate)
 {
 	WINDOW *w;
 	int object;
+	char path[4]; 			/* DjV 020 120103 drive path only */
+	int ii,jj; 	 			/* DjV 020 120103 do nothing */
+	int n, *list;			/* DjV 029 160203 moved here from several places below */
 
 	switch (item)
 	{
@@ -399,15 +508,40 @@ void wd_hndlmenu(int item, int keystate)
 				itm_select(w, object, 2, TRUE);
 			itm_set_menu(selection.w);
 		}
+		/* DjV 028 280103 ---vvv--- */
+		/* If nothing else is selected, open form to enter item specification */
+		else
+			item_open( NULL,  0, 0 );
+		/* DjV 028 280103 ---^^^--- */
 		break;
 	case MSHOWINF:
 		if ((w = selection.w) != NULL)
 		{
-			int n, *list;
-
 			if ((itm_list(w, &n, &list) == TRUE) && (n > 0))
 			{
-				((ITM_WINDOW *) w)->itm_func->itm_showinfo(w, n, list);
+				((ITM_WINDOW *) w)->itm_func->itm_showinfo(w, n, list, FALSE);	/* DjV 017 150103 (FALSE) */
+				free(list);
+			}
+		}
+		/* DjV 020 120103
+		 * Show info on drive for top window if nothing else selected;
+		 * TOS >=2.06 does it this way; info on current folder would
+		 * have been better but somewhat more complicated; even more so
+		 * info on file open in a text window?
+		 */
+		else if ( ( w=xw_top() ) != NULL && xw_type(w) == DIR_WIND )
+		{
+			strsncpy (path, wd_toppath(), sizeof(path));		/* HR 120203: secure cpy */
+			si_drive( path, &ii, &jj );
+			closeinfo(); /* DjV 022 120103 */
+		}
+		break;
+	case MSEARCH:		/* DjV 016 050103 */
+		if ((w = selection.w) != NULL)
+		{
+			if ((itm_list(w, &n, &list) == TRUE) && (n > 0))
+			{
+				((ITM_WINDOW *) w)->itm_func->itm_showinfo(w, n, list, TRUE); 
 				free(list);
 			}
 		}
@@ -416,14 +550,42 @@ void wd_hndlmenu(int item, int keystate)
 		if (((w = xw_top()) != NULL) && (xw_type(w) == DIR_WIND))
 			((ITM_WINDOW *) w)->itm_func->wd_newfolder(w);
 		break;
+	/* DjV 029 030103 150203 160203 ---vvv--- */
+	case MPRINT:
+		if ((w = selection.w) != NULL)
+		{
+			if ((itm_list(w, &n, &list) == TRUE) && (n > 0))
+			{
+				boolean item_print(WINDOW *w, int n, int *list);
+				item_print(w, n, list);
+				free(list);
+			}
+		}
+		else if ( ( w=xw_top() ) != NULL )
+		{
+			if ( xw_type(w) == DIR_WIND )
+			{
+				itm_select(w, 0, 4, TRUE);
+				if ( itm_list(w, &n, &list) )
+				{
+					dir_print(w, n, list); 
+					free(list);
+				}
+				wd_deselect_all();
+				dir_always_update(w);
+			}
+			else if ( xw_type(w) == TEXT_WIND )
+			{
+				/* Perhaps here print the file currently in a text window ? */
+			}
+		}
+		break;
+	/* DJV 029 030103 150203 160203 ---^^^--- */
 	case MDELETE:			/* HR 151102 */
 		if ((w = selection.w) != NULL)
 		{
-			int n, *list;
-
 			if ((itm_list(w, &n, &list) == TRUE) && (n > 0))
 			{
-				boolean itm_delete(WINDOW *w, int n, int *list);
 				itm_delete(w, n, list);
 				free(list);
 			}
@@ -456,9 +618,19 @@ void wd_hndlmenu(int item, int keystate)
 	case MCYCLE:
 		xw_cycle();
 		break;
+#if MFFORMAT				/* HR 050303 */
+	case MFCOPY:			/* DjV 006 291202 */
+		formatfloppy(floppy, FALSE);
+		break;
+	case MFFORMAT:			/* DjV 006 291202 */
+		formatfloppy(floppy,TRUE);
+		break;
+#endif
 	case MSETMASK:
 		if (((w = xw_top()) != NULL) && (xw_type(w) == DIR_WIND))
 			wd_set_filemask(w);
+		else					/* DjV 004 290103 */
+			wd_filemask(NULL);  /* DjV 004 290103 */
 		break;
 	case MSHOWTXT:
 	case MSHOWICN:
@@ -471,6 +643,25 @@ void wd_hndlmenu(int item, int keystate)
 	case MSUNSORT:
 		wd_sort(item - MSNAME);
 		break;
+	/* DjV 010 261202 ---vvv--- */
+	case MSHSIZ:
+		options.V2_2.fields ^= WD_SHSIZ;
+		wd_fields();
+		break;
+	case MSHDAT:
+		options.V2_2.fields ^= WD_SHDAT;
+		wd_fields();
+		break;
+	case MSHTIM:
+		options.V2_2.fields ^= WD_SHTIM;
+		wd_fields();
+		break;
+	case MSHATT:
+		options.V2_2.fields ^= WD_SHATT;
+		wd_fields();	  
+		break;	          
+/* DjV 010 261202 ---^^^--- */
+/* DjV 004 020103 ---vvv---   
 	case MHIDDEN:
 		options.attribs ^= FA_HIDDEN;
 		wd_attrib();
@@ -479,6 +670,8 @@ void wd_hndlmenu(int item, int keystate)
 		options.attribs ^= FA_SYSTEM;
 		wd_attrib();
 		break;
+   DjV 004 020103 ---^^^--- */
+
 	}
 }
 
@@ -491,6 +684,8 @@ void wd_hndlmenu(int item, int keystate)
 
 void wd_init(void)
 {
+	/* DjV 027 280103 ---vvv--- */
+	/*
 	menu[MOPEN].ob_state = DISABLED;
 	menu[MDELETE].ob_state = DISABLED;		/* HR 151102 */
 	menu[MSHOWINF].ob_state = DISABLED;
@@ -503,6 +698,12 @@ void wd_init(void)
 	menu[MSELALL].ob_state = DISABLED;
 	menu[MSETMASK].ob_state = DISABLED;
 	menu[MCYCLE].ob_state = DISABLED;
+#if MFFORMAT				/* HR 050303 */
+	menu[MFCOPY].ob_state= DISABLED;     /* DjV 006 291202 */
+	menu[MFFORMAT].ob_state= DISABLED;   /* DjV 006 291202 */
+#endif
+	*/
+	/* DjV 027 280103 ---^^^--- */
 
 	selection.w = NULL;
 	selection.selected = -1;
@@ -519,7 +720,7 @@ void wd_default(void)
 
 	wd_set_mode(options.mode);
 	wd_set_sort(options.sort);
-	wd_set_attrib(options.attribs);
+	wd_set_fields(options.V2_2.fields); /* DjV 010 261202 */
 
 	dir_default();
 	txt_default();
@@ -543,6 +744,11 @@ static int load_windows(XFILE *file)
 			break;
 		case DIR_WIND :
 			error = dir_load_window(file);
+			if ( !error )
+			{
+				menu_ienable(menu, MSHOWINF, TRUE); /* DjV 020 190103 */
+				menu_ienable(menu, MPRINT, TRUE);	/* DjV 031 150203 */
+			}
 			break;
 		case TEXT_WIND :
 			error = txt_load_window(file);
@@ -791,6 +997,74 @@ static void itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 		alert_printf(1, MILLDEST);
 }
 
+#if _MINT_
+#pragma warn -par
+
+/* HR 050203: drag & drop */
+static
+boolean itm_drop(WINDOW *w, int n, int *list, int kstate, ICND *icnlist, int x, int y)
+{
+	int i, item, apid = -1, hdl = wind_find(x, y);
+	long fd;
+/*	ITMTYPE type;
+*/	const char *path;
+
+	if (hdl > 0)
+		wind_get(hdl, WF_OWNER, &apid);
+
+	if (apid > 0)
+	{
+		char ddsexts[32];
+
+		fd = ddcreate(apid, ap_id, hdl, x, y, kstate, ddsexts);
+		if (fd > 0)
+		{
+			if (ddstry(fd, "ARGS", "", sizeof(LNAME)) != DD_NAK)
+			{
+				for (i = 0; i < n; i++)
+				{
+					if ((item = list[i]) == -1)
+						continue;
+			
+					path = itm_fullname(w, item);
+
+					if (path)
+					{
+					/*	type = itm_type(w, item);
+						alert_msg("type %d | %s | '%s'", type, name, path);
+					*/
+						Fwrite(fd, 1, "'");
+						Fwrite(fd, strlen(path), path);
+						Fwrite(fd, 1, "'");	
+					}
+					if (i < n - 1)
+						Fwrite(fd, 1, " ");
+				}
+				ddclose(fd);
+
+				itm_select(w, -1, 0, TRUE);
+				return TRUE;
+			}
+			else
+				alert_printf(1, APPNOEXT);
+
+			ddclose(fd);
+		}
+		else
+		{
+			alert_printf(1, APPNODD);
+			return FALSE;
+		}
+	}
+
+	alert_printf(1, MILLDEST);
+	return FALSE;
+}
+
+#pragma warn .par
+
+#endif
+
 /* Routines voor het tekenen van de omhullende van een icoon. */
 
 static void get_minmax(ICND *icns, int n, int *clip)
@@ -822,19 +1096,19 @@ static void clip_coords(int *clip, int x, int y, int *nx, int *ny)
 	*nx = x;
 	*ny = y;
 
-	h = screen_info.dsk_x - clip[0];
+	h = screen_info.dsk.x - clip[0];
 	if (x < h)
 		*nx = h;
 
-	h = screen_info.dsk_y - clip[1];
+	h = screen_info.dsk.y - clip[1];
 	if (y < h)
 		*ny = h;
 
-	h = screen_info.dsk_x + screen_info.dsk_w - 1 - clip[2];
+	h = screen_info.dsk.x + screen_info.dsk.w - 1 - clip[2];
 	if (x > h)
 		*nx = h;
 
-	h = screen_info.dsk_y + screen_info.dsk_h - 1 - clip[3];
+	h = screen_info.dsk.y + screen_info.dsk.h - 1 - clip[3];
 	if (y > h)
 		*ny = h;
 }
@@ -1018,6 +1292,11 @@ static void itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y)
 				alert_printf(1, MILLCOPY);
 		}
 		else
+#if _MINT_
+		if (mint)
+			itm_drop(src_wd, n, list, kstate, icnlist, x, y);		/* HR 050203 drag & drop */
+		else
+#endif
 			alert_printf(1, MILLCOPY);
 	}
 
@@ -1027,12 +1306,13 @@ static void itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y)
 
 boolean in_window(WINDOW *w, int x, int y)
 {
-	GRECT work;
+	RECT work;
 
 	xw_get(w, WF_WORKXYWH, &work);
 
-	if ((x >= work.g_x) && (x < (work.g_x + work.g_w)) &&
-		(y >= work.g_y) && (y < (work.g_y + work.g_h)))
+	if (   (x >= work.x) && (x < (work.x + work.w))
+	    && (y >= work.y) && (y < (work.y + work.h))
+	   )
 		return TRUE;
 	else
 		return FALSE;

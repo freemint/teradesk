@@ -29,6 +29,7 @@
 #define FA_VOLUME       0x08
 #define FA_SUBDIR       0x10
 #define FA_ARCHIVE      0x20
+#define FA_PARDIR       0x40 /* DjV 004 300103 */
 
 /* Unix file attributen */
 
@@ -212,9 +213,10 @@ int x_fclose(XFILE *file);
 long x_fread(XFILE *file, void *ptr, long length);
 long x_fwrite(XFILE *file, void *ptr, long length);
 long x_fseek(XFILE *file, long offset, int mode);
-char *x_freadstr(XFILE *file, char *string, int *error);
+char *x_freadstr(XFILE *file, char *string, size_t max, int *error);
 int x_fwritestr(XFILE *file, const char *string);
 int x_fgets(XFILE *file, char *string, int n);
 boolean x_feof(XFILE *file);
+boolean x_inq_xfs(const char *path, boolean *casesens);		/* HR 151102 */
 
 void x_init(void);

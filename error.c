@@ -20,26 +20,22 @@
 
 #include <np_aes.h>			/* HR 151102: modern */
 #include <stdarg.h>
-#include <stdio.h>
+#include <sprintf.h>		/* HR 240203: get rid of stream io */
+#include <stddef.h>
+#include <vdi.h>	/* DjV 035 50203 */
+#include <xdialog.h> /* DjV 035 050203 */
 
 #include "desktop.h"			/* HR 151102: only 1 rsc */
 #include "error.h"
 
-int vaprintf(int def, const char *string, va_list argpoint)
+int alert_msg(const char *string, ...)
 {
-	char s[256];
-
-	vsprintf(s, string, argpoint);
-	return form_alert(def, s);
-}
-
-int alert_msg(int def, const char *string, ...)
-{
+	char alert[256];
 	va_list argpoint;
 	int button;
-
+	sprintf(alert, "[1][ %s ][ Ok ]", string);
 	va_start(argpoint, string);
-	button = vaprintf(def, string, argpoint);
+	button = vaprintf(1, alert, argpoint);
 	va_end(argpoint);
 
 	return button;
@@ -60,6 +56,21 @@ int alert_printf(int def, int message,...)
 	return button;
 }
 
+/* DjV 035 120203 ---vvv--- */
+/* 
+ * get_freestring routine gets pointer to a free-string in the resource;
+ * handy for composing various texts.
+ */
+
+char *get_freestring( int stringid )
+{
+	OBSPEC s;
+	xd_gaddr(R_STRING, stringid, &s);
+	return s.free_string;
+}
+
+/* DjV 035 120203 ---^^^--- */
+
 void xform_error(int error)
 {
 	int message;
@@ -67,35 +78,37 @@ void xform_error(int error)
 	switch (error)
 	{
 	case EFILNF:
-		message = MEFILENF;
+		message = TFILNF; /* DjV 035 050203 was MEFILENF; */
 		break;
 	case EPTHNF:
-		message = MEPATHNF;
+		message = TPATHNF; /* DjV 035 050203 was MEPATHNF; */
 		break;
 	case ENSMEM:
-		message = MENSMEM;
+		message = TENSMEM; /* DjV 035 050203 was MENSMEM; */
 		break;
 	case ELOCKED:
-		message = MELOCKED;
+		message = TLOCKED; /* DjV 035 050203 was MELOCKED; */
 		break;
 	case EPLFMT:
-		message = MEPLFMT;
+		message = TPLFMT; /* DjV 035 050203 was MEPLFMT; */
 		break;
 	case ECOMTL:
-		message = MCMDTLNG;
+		message = TCMDTLNG; /* DjV 035 050203 was MCMDTLNG; */
 		break;
 	case EREAD:
-		message = MEREAD;
+		message = TREAD; /* DjV 035 050203 was MEREAD; */
 		break;
 	case EFNTL:
-		message = MEFNTLNG;
+		message = TFILNF; /* DJV 035 050203 was MEFNTLNG; */
 		break;
 	case EPTHTL:
-		message = MEPTHTLN;
+		message = TPTHTLNG; /* DJV 035 050203 was MEPTHTLN; */
 		break;
 	case _XDVDI:
-		message = MVDIERR;
-		break;
+		/* message = MVDIERR; DjV 035 050203 */
+		alert_printf( 1, MVDIERR );	/* DjV 035 050203 because of another icon here*/
+		return;	/* DjV 035 050203 */
+		/* break; DjV 035 050203 */
 	default:
 		message = -1;
 		break;
@@ -107,7 +120,16 @@ void xform_error(int error)
 			alert_printf(1, MERROR, error);
 	}
 	else
-		alert_printf(1, message);
+		/* alert_printf(1, message); DJV 035 050203 */
+	/* DjV 035 120203 ---vvv--- */
+    /*
+	{
+		OBSPEC s;
+		xd_gaddr(R_STRING, message, &s); 
+		alert_printf (1,GENALERT, s.free_string );
+	}
+	*/
+		alert_printf( 1, GENALERT, get_freestring(message) ); /* DjV 035 120203 */
 }
 
 static char *get_message(int error)

@@ -36,7 +36,7 @@ boolean isroot(const char *path);
 char *getdir(int *error);
 int chdir(const char *path);
 
-int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib);
+int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, int search, char *pattern);	/* DjV 017 150103 */
 
 long drvmap(void);
 boolean check_drive(int drv);

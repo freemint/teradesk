@@ -20,7 +20,6 @@
 
 #include <np_aes.h>			/* HR 151102: modern */
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>

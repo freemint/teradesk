@@ -32,8 +32,9 @@
 #define XOVERWRITE	-1028		/* Overwrite file */
 #define XEXIST		-1029		/* File exists */
 
-int alert_msg(int def, const char *string, ...);		/* HR 151102 */
+int alert_msg(const char *string, ...);		/* HR 151102 */
 int alert_printf(int def, int message,...);
 void xform_error(int error);
 void hndl_error(int msg, int error);
 int xhndl_error(int msg, int error, const char *file);
+char *get_freestring( int stringid ); /* DjV 035 120203 */

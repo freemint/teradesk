@@ -18,4 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-void item_showinfo(WINDOW *w, int n, int *list);
+/* DjV 017 150103 280103 ---vvv--- */
+void item_showinfo(WINDOW *w, int n, int *list, int search);
+void closeinfo (void);
+int si_drive(const char *path, int *x, int *y);
+int folder_info(const char *oldname, const char *fname, XATTR *attr);
+int file_info(const char *oldname, const char *fname, XATTR *attr);
+void path_to_disp(char *path);
+/* DjV 017 150103 ---^^^--- */

@@ -32,7 +32,7 @@
 #include "slider.h"
 #include "error.h"
 #include "font.h"
-#include "vaproto.h"
+#include "va.h"		/* HR 060203 */
 
 #define NLINES	6
 
@@ -69,23 +69,23 @@ void fnt_setfont(int font, int height, FONT *data)
 static int cdecl draw_text(PARMBLK *pb)
 {
 	int x, y, extent[8];
-	GRECT r;
+	RECT r;
 
-	xd_clip_on((GRECT *) &pb->pb_xc);
+	xd_clip_on(&pb->c);
 
 	set_txt_default(fd[font].id, fsize);
 	fnt_point(fsize, &chw, &chh);
 
-	clear((GRECT *) &pb->pb_x);
+	clear(&pb->r);
 
-	xd_rcintersect((GRECT *) &pb->pb_x, (GRECT *) &pb->pb_xc, &r);
+	xd_rcintersect(&pb->r, &pb->c, &r);
 
 	xd_clip_on(&r);
 
 	vqt_extent(vdi_handle, (char *) pb->pb_parm, extent);
 
-	x = pb->pb_x + (pb->pb_w - extent[2] + extent[0] - 1) / 2;
-	y = pb->pb_y + (pb->pb_h - extent[7] + extent[1] - 1) / 2;
+	x = pb->r.x + (pb->r.w - extent[2] + extent[0] - 1) / 2;
+	y = pb->r.y + (pb->r.h - extent[7] + extent[1] - 1) / 2;
 
 	v_gtext(vdi_handle, x, y, (char *) pb->pb_parm);
 
@@ -214,8 +214,7 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 
 		if ((prop != FALSE) || (iw == mw))
 		{
-			strncpy(s, name, 16);
-			s[16] = 0;
+			strsncpy(s, name, sizeof(h->name));			/* HR 120203: secure cpy */
 			j = (int) strlen(h->name);
 			while (j < 16)
 				s[j++] = ' ';
@@ -353,25 +352,25 @@ typedef struct fnt_dialog
 static int cdecl mdraw_text(PARMBLK *pb)
 {
 	int x, y, extent[8];
-	GRECT r;
+	RECT r;
 	FNT_DIALOG *fnt_dial = ((FNT_USERBLK *) pb->pb_parm)->fnt_dial;
 	char *text = ((FNT_USERBLK *) pb->pb_parm)->text;
 
-	xd_clip_on((GRECT *) &pb->pb_xc);
+	xd_clip_on(&pb->c);
 
 	set_txt_default(fnt_dial->fd[fnt_dial->font].id, fnt_dial->fsize);
 	fnt_point(fnt_dial->fsize, &fnt_dial->chw, &fnt_dial->chh);
 
-	clear((GRECT *) &pb->pb_x);
+	clear(&pb->r);
 
-	xd_rcintersect((GRECT *) &pb->pb_x, (GRECT *) &pb->pb_xc, &r);
+	xd_rcintersect(&pb->r, &pb->c, &r);
 
 	xd_clip_on(&r);
 
 	vqt_extent(vdi_handle, text, extent);
 
-	x = pb->pb_x + (pb->pb_w - extent[2] + extent[0] - 1) / 2;
-	y = pb->pb_y + (pb->pb_h - extent[7] + extent[1] - 1) / 2;
+	x = pb->r.x + (pb->r.w - extent[2] + extent[0] - 1) / 2;
+	y = pb->r.y + (pb->r.h - extent[7] + extent[1] - 1) / 2;
 
 	v_gtext(vdi_handle, x, y, text);
 
@@ -565,8 +564,7 @@ void fnt_mdialog(int ap_id, int win, int id, int size, int color,
 
 		if ((prop != FALSE) || (iw == mw))
 		{
-			strncpy(s, name, 16);
-			s[16] = 0;
+			strsncpy(s, name, sizeof(h->name));			/* HR 120203: secure cpy */
 			j = (int) strlen(h->name);
 			while (j < 16)
 				s[j++] = ' ';

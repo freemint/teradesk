@@ -20,5 +20,8 @@
 
 void aes(void);
 
-int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2,
+int appl_getinfo(int ap_gtype,
+				 int *ap_gout1, int *ap_gout2,
 				 int *ap_gout3, int *ap_gout4);
+int objc_sysvar(int mo, int which, int ivall, int ival2,
+                 int *pival1, int *pval2);

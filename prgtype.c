@@ -39,7 +39,7 @@
 
 typedef struct prgtype
 {
-	char name[14];
+	SNAME name;					/* HR 240203 */
 	ApplType appl_type;
 	boolean argv;
 	boolean path;
@@ -250,7 +250,7 @@ static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((p = get_item(i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->name, 24);		/* HR 271102 */
+			cv_fntoform(o, p->name);		/* HR 240103 */
 	}
 
 	if (draw == TRUE)
@@ -283,7 +283,7 @@ static boolean prgtype_dialog(char *name, ApplType *type, boolean *argv, boolean
 
 	rsc_title(addprgtype, APTITLE, (edit == TRUE) ? DTEDTPRG : DTADDPRG);
 
-	cv_fntoform(prgname, name, 24);		/* HR 271102 */
+	cv_fntoform(addprgtype + PRGNAME, name);			/* HR 240103 */
 	set_prgtype(*type);
 	set_prgpath(*path);
 
@@ -314,12 +314,12 @@ void prg_setprefs(void)
 	XDINFO info;
 	boolean stop = FALSE, redraw, argv, path;
 	PRGTYPE *copy, *p;
-	char name[14];
+	SNAME name;			/* HR 240203 */
 	ApplType type;
 	SLIDER sl_info;
 
-	set_opt(setprgprefs, TOS_KEY, PKEY);
-	set_opt(setprgprefs, TOS_STDERR, PSTDERR);
+	set_opt(setprgprefs, options.cprefs, TOS_KEY, PKEY);	/* DjV 014 020103 */
+	set_opt(setprgprefs, options.cprefs, TOS_STDERR, PSTDERR);	/* DjV 014 020103 */
 
 	copy_all(&copy);
 
@@ -445,7 +445,7 @@ void prg_default(void)
 int prg_load(XFILE *file)
 {
 	SINFO pt;
-	char name[14];
+	SNAME name;				/* HR 240203 */
 	boolean path;
 	ApplType type;
 	long n;
@@ -460,7 +460,7 @@ int prg_load(XFILE *file)
 
 		if (pt.appl_type != -1)
 		{
-			if (x_freadstr(file, name, &error) == NULL)
+			if (x_freadstr(file, name, sizeof(name), &error) == NULL)		/* HR 240103: max l */
 				return error;
 
 			type = (ApplType) pt.appl_type;

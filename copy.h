@@ -20,3 +20,23 @@
 
 boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 				  int *list, int kstate);
+
+/* DjV 031 070203 ---vvv--- */
+#define CMD_COPY	 0
+#define CMD_MOVE	 1
+#define CMD_DELETE	 2
+#define CMD_PRINT    3
+#define CMD_PRINTDIR 4 /* for future development */
+
+extern boolean cfdial_open;
+
+int open_cfdialog(int mask, long folders, long files, long bytes, int function);
+void close_cfdialog(int button);
+void upd_copyinfo(long folders, long files, long bytes);
+void upd_name(const char *name, int item);
+boolean count_items(WINDOW *w, int n, int *list, long *folders,
+						   long *files, long *bytes);
+int copy_error(int error, const char *name, int function);
+/* DjV 031 070203 ---^^^--- */
+
+boolean itm_delete(WINDOW *w, int n, int *list);

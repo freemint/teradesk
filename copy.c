@@ -37,10 +37,16 @@
 #include "file.h"
 #include "window.h"
 #include "applik.h"
+#include "showinfo.h" 	/* DjV 017 150103 */
+#include "dir.h" 		/* DjV 017 170103 */
 
-#define CMD_COPY	0
-#define CMD_MOVE	1
-#define CMD_DELETE	2
+/* DjV 031 070203 ---vvv--- */
+/* moved to COPY.H
+#define CMD_COPY	 0
+#define CMD_MOVE	 1
+#define CMD_DELETE	 2
+*/
+/* DjV 031 070203 ---^^^--- */
 
 typedef struct copydata
 {
@@ -54,7 +60,10 @@ typedef struct copydata
 	struct copydata *prev;
 } COPYDATA;
 
-static boolean cfdial_open, set_oldpos, overwrite, rename_files;
+static boolean /* DjV 031 070203 cfdial_open, */ set_oldpos, overwrite, rename_files;
+
+boolean cfdial_open; /* DJV 031 070203 */
+
 static XDINFO cfdial;
 
 static int del_folder(const char *name, int function, int prev);
@@ -65,7 +74,8 @@ static int del_folder(const char *name, int function, int prev);
  *																	*
  ********************************************************************/
 
-static int open_cfdialog(int mask, long folders, long files,
+/* DjV 031 070203 static */
+int open_cfdialog(int mask, long folders, long files,
 						 long bytes, int function)
 {
 	int button, title;
@@ -83,14 +93,22 @@ static int open_cfdialog(int mask, long folders, long files,
 		case CMD_DELETE:
 			title = DTDELETE;
 			break;
+		/* DJV 031 070203 ---vvv--- */
+		case CMD_PRINT:
+			title = DTPRINT;
+			break;
+		case CMD_PRINTDIR: /* for future development */
+			title = DTPRINTD;
+			break;
+		/* DjV 031 070203 ---^^^--- */
 		}
 
 		rsc_ltoftext(copyinfo, NFOLDERS, folders);
 		rsc_ltoftext(copyinfo, NFILES, files);
 		rsc_ltoftext(copyinfo, NBYTES, bytes);
 
-		*cpfile = 0;
-		*cpfolder = 0;
+		/* *cpfile = 0; 	DjV 029 140203 */
+		/* *cpfolder = 0;	DjV 029 140203 */
 
 		rsc_title(copyinfo, CPTITLE, title);
 
@@ -100,7 +118,10 @@ static int open_cfdialog(int mask, long folders, long files,
 		if ((options.cprefs & mask) != 0)			/* HR 151102: If confirm call xd_form_do */
 			button = xd_form_do(&cfdial, 0);
 		else
+		{										  /* DJV 032 010203 */
+			xd_draw ( &cfdial, ROOT, MAX_DEPTH ); /* DjV 032 010203 */
 			button = COPYOK;
+		}										  /* DjV 032 010203 */
 	}
 /*	else
 	{
@@ -113,7 +134,7 @@ static int open_cfdialog(int mask, long folders, long files,
 	return button;
 }
 
-static void close_cfdialog(int button)
+/* DjV 031 070203 static */ void close_cfdialog(int button)
 {
 	if (cfdial_open == TRUE)
 	{
@@ -122,7 +143,7 @@ static void close_cfdialog(int button)
 	}
 }
 
-static void upd_copyinfo(long folders, long files, long bytes)
+void upd_copyinfo(long folders, long files, long bytes)	/* DjV 031 070203: global */
 {
 	if (cfdial_open == TRUE)
 	{
@@ -136,20 +157,15 @@ static void upd_copyinfo(long folders, long files, long bytes)
 	}
 }
 
-static void upd_name(const char *name, int item)
+void upd_name(const char *name, int item)	/* DjV 031 070203: global */
 {
-	char *fname, *s;
-	int i;
+	char *fname;	/* DjV 031 070203 */
 
 	if (cfdial_open == TRUE)
 	{
-		s = (item == CPFILE) ? cpfile : cpfolder;
 		fname = fn_get_name(name);
-		cramped_name(fname, s, 32);		/* HR 151102 */
-/*		strncpy(s, fname, 24);
-		for (i = (int) strlen(s); i < 24; i++)
-			s[i] = ' ';
-*/		xd_draw(&cfdial, item, 1);
+		cv_fntoform ( copyinfo + item, fname );		/* DjV 031 070203 */
+		xd_draw(&cfdial, item, 1);
 	}
 }
 
@@ -222,7 +238,7 @@ static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr,
  *																	*
  ********************************************************************/
 
-int cnt_items(const char *path, long *folders, long *files, long *bytes, int attribs)
+int cnt_items(const char *path, long *folders, long *files, long *bytes, int attribs, int search, char *pattern)	/* DjV 017 150103 */
 {
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
@@ -230,35 +246,100 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 	char name[256];
 	XATTR attr;
 
+	int result = XSKIP; 				/* DjV 017 160103 */
+	unsigned int type = 0, oldtype = 0; /* DjV 017 150103 item type */
+	char *fpath;				 		/* DjV 017 160103 item path; 280103 removed "nend" */
+	bool found;							/* DjV 017 170103 match found */
+
 	*folders = 0;
 	*files = 0;
 	*bytes = 0;
+	fpath = NULL;
+	found = FALSE;
 
 	if ((error = push(&stack, path, NULL, FALSE)) != 0)
 		return error;
 
 	do
 	{
+		if ( search )						/* DjV 017 190103 */
+			graf_mouse(HOURGLASS, NULL );	/* DjV 017 190103 */
+
 		if (error == 0)
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-				if ((attr.mode & S_IFMT) == S_IFDIR)
+				/* DjV 017 160103 ---vvv--- */
+				/*
+				 * code below closes prev. dialog if prev. displayed item
+				 * was a file and next is a folder- or v.v.
+				 */
+				type = attr.mode & S_IFMT;
+				if ( search )
 				{
-					*folders += 1;
+					if ( (found = cmp_wildcard ( name, pattern )) != 0 ) 
+						fpath = x_makepath(stack->spath, name, &error);
+
+					if ( found && (type != oldtype) && (type == S_IFDIR || type == S_IFREG) )
+					{
+						closeinfo();
+						oldtype = type;
+					}
+				}
+				else
+					found = FALSE;
+				/* DjV 017 160103 ---^^^--- */
+
+				/* if ((attr.mode & S_IFMT) == S_IFDIR)    DjV 017 280103 */
+				if (type == S_IFDIR) 					/* DjV 017 280103 */
+				{
+					if ( (attribs & FA_SUBDIR) != 0 ) /* DjV 017 290103 */
+						*folders += 1;
 					if ((stack->sname = x_makepath(stack->spath, name, &error)) != NULL)
+					{ 		/* DjV 017 160103 */
+
 						if ((error = push(&stack, stack->sname, NULL, FALSE)) != 0)
 							free(stack->sname);
+
+						/* DjV 017 150103 190103 280103 ---vvv--- */
+						/* BEWARE of recursion below; folder_info contains cnt_items  */
+						else if ( search && found && ( (attribs & FA_SUBDIR) != 0 ) )
+							if ( (result = folder_info( fpath, name, &attr )) != 0)
+								free(fpath);
+						/* DjV 017 150103 190103 280103 ---^^^--- */
+					} 	/* DjV 017 160103 */
 				}
-				if ((attr.mode & S_IFMT) == S_IFREG)
+				/* if ((attr.mode & S_IFMT) == S_IFREG) DjV 017 280103 */
+				if (type == S_IFREG)			/*  DjV 017 280103 */
 				{
-					if (((attribs & 2) || ((attr.attr & 2) == 0)) &&
-						((attribs & 4) || ((attr.attr & 4) == 0)))
+					/* DjV 017 160103 ---vvv--- */
+					/*
+					 * below: show hidden or file is not hidden, or
+					 * show system or file is not system
+					 */
+
+					if (   (   (attribs   & FA_HIDDEN) != 0
+					        || (attr.attr & FA_HIDDEN) == 0
+					       )
+					    && (   (attribs   & FA_SYSTEM) != 0
+						    || (attr.attr & FA_SYSTEM) == 0
+						   )
+					   )
+					/* DjV 017 160103 ---^^^--- */
 					{
 						*files += 1;
 						*bytes += attr.size;
+
+						/* DjV 017 150103  190103 280103 ---vvv--- */
+						/* BEWARE of recursion below; file_info contains cnt_items  */
+						if ( search && found )	
+							if ( (result = file_info(fpath, name, &attr ) ) != 0 )
+								free(path); 
+						/* DjV 017 150103  190103 280103 ---^^^--- */		
+
 					}
 				}
+				/* DjV 017 280103 removed some of my own code here */
 			}
 		}
 
@@ -267,10 +348,34 @@ int cnt_items(const char *path, long *folders, long *files, long *bytes, int att
 			if ((ready = pull(&stack, &dummy)) == FALSE)
 				free(stack->sname);
 		}
+		/* DjV 017 170103 ---vvv--- */
+		/*
+		 * result will be 0 only if selected OK in dialogs 
+		 */ 
+		if ( search && (result != XSKIP) )
+		{
+			closeinfo();
+			if ( fpath != NULL && result == 0 )
+			{
+	
+				/* DjV 017 280103 removed some commented-out code (my own) */
+
+				path_to_disp ( fpath );
+				menu_ienable(menu, MSEARCH, 0); /* DjV 017 280103 */
+				wd_deselect_all(); 				/* DjV 017 280103 */
+				dir_add_window ( fpath, name  ); /* DjV 017 280103 */
+			}
+
+			return result; 
+		}
+		/* DjV 017 170103 ---^^^--- */
 	}
 	while (ready == FALSE);
 
-	return error;
+	if ( search && !error )		/* DjV 017 190103 */
+		return XSKIP;			/* DjV 017 190103 */
+	else						/* DjV 017 190103 */
+		return error;
 }
 
 static int dir_error(int error, const char *file)
@@ -278,7 +383,8 @@ static int dir_error(int error, const char *file)
 	return xhndl_error(MEREADDR, error, file);
 }
 
-static boolean count_items(WINDOW *w, int n, int *list, long *folders,
+/* static DjV 031 080203 */
+boolean count_items(WINDOW *w, int n, int *list, long *folders,
 						   long *files, long *bytes)
 {
 	int i = 0, error = 0, item;
@@ -314,7 +420,7 @@ static boolean count_items(WINDOW *w, int n, int *list, long *folders,
 		{
 			if ((path = itm_fullname(w, item)) != NULL)
 			{
-				if ((error = cnt_items(path, &dfolders, &dfiles, &length, 0x37)) == 0)
+				if ((error = cnt_items(path, &dfolders, &dfiles, &length, 0x37, FALSE, NULL)) == 0) /* DjV 017 150103 */
 				{
 					*folders += dfolders + ((type == ITM_DRIVE) ? 0 : 1);
 					*files += dfiles;
@@ -421,7 +527,8 @@ static int filecopy(const char *sname, const char *dname,
  *																	*
  ********************************************************************/
 
-static int copy_error(int error, const char *name, int function)
+/* static DjV 031 080203 */
+int copy_error(int error, const char *name, int function)
 {
 	int msg;
 
@@ -579,7 +686,7 @@ static int hndl_nameconflict(char **dname, int smode,
 		else
 			nameconflict[OLDNAME].ob_flags |= EDITABLE;
 
-		cv_fntoform(oldname, fn_get_name(*dname), 64);		/* HR 271102 */
+		cv_fntoform(nameconflict + OLDNAME, fn_get_name(*dname));	/* HR 240103 */
 		strcpy(newname, oldname);
 		strcpy(dupl, oldname);
 
@@ -689,8 +796,8 @@ static int hndl_rename(char *name)
 {
 	int button,oldmode;
 
-	cv_fntoform(oldname, name, 64);		/* HR 271102 */
-	cv_fntoform(newname, name, 64);		/* HR 271102 */
+	cv_fntoform(nameconflict + OLDNAME, name);		/* HR 240103 */
+	cv_fntoform(nameconflict + NEWNAME, name);		/* HR 240103 */
 
 	rsc_title(nameconflict, RNMTITLE, DTRENAME);
 
@@ -835,7 +942,7 @@ static int create_folder(const char *sname, const char *dpath,
 				{
 					if (result == XSKIP)
 					{
-						if ((error = cnt_items(sname, &nfolders, &nfiles, &nbytes, 0x37)) == 0)
+						if ((error = cnt_items(sname, &nfolders, &nfiles, &nbytes, 0x37, FALSE, NULL)) == 0) /* DjV 017 150103 */
 						{
 							*files -= nfiles;
 							*folders -= nfolders;
@@ -863,7 +970,7 @@ static int copy_path(const char *spath, const char *dpath,
 {
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
-	int error, result, key;
+	int error, result /* , key DjV 031 070203 */;
 	char name[256];
 	XATTR attr;
 
@@ -934,6 +1041,8 @@ static int copy_path(const char *spath, const char *dpath,
 
 		if (stack->result != XFATAL)
 		{
+			/* DjV 033 010203 ---vvv--- */
+			/*
 			int result;
 
 			if ((result = key_state(&key, cfdial_open)) > 0)
@@ -943,6 +1052,12 @@ static int copy_path(const char *spath, const char *dpath,
 			}
 			else if (result < 0)
 				stack->result = XABORT;
+			*/
+
+			if ( escape_abort( cfdial_open ) )
+				stack->result = XABORT;
+
+			/* DjV 033 010203 ---^^^--- */
 		}
 
 		if ((stack->result == XFATAL) || (stack->result == XABORT) || (eod == TRUE))
@@ -979,7 +1094,7 @@ static int copy_path(const char *spath, const char *dpath,
 static boolean copylist(WINDOW *w, int n, int *list, const char *dest,
 					  long *folders, long *files, long *bytes, int function)
 {
-	int i, error, key, item, result, tmpres;
+	int i, error, /* key, DjV 031 070203 */ item, result, tmpres;
 	XATTR attr;
 	const char *path, *name;
 	char *dpath;
@@ -1056,6 +1171,8 @@ static boolean copylist(WINDOW *w, int n, int *list, const char *dest,
 
 		if (result != XFATAL)
 		{
+			/* DjV 033 010203 ---vvv--- */
+			/*
 			int r;
 
 			if ((r = key_state(&key, cfdial_open)) > 0)
@@ -1064,6 +1181,10 @@ static boolean copylist(WINDOW *w, int n, int *list, const char *dest,
 					result = XABORT;
 			}
 			else if (r < 0)
+				result = XABORT;
+			*/
+			
+			if ( escape_abort(cfdial_open) )
 				result = XABORT;
 		}
 
@@ -1120,6 +1241,13 @@ static boolean itm_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 
 		if (cont == TRUE)
 		{
+			/* DjV 031 140203 ---vvv--- */
+			cv_fntoform ( copyinfo + CPFOLDER, dest );	
+			if ( itm_type(sw, list[0]) == ITM_FILE || itm_type(sw, list[0]) == ITM_PROGRAM )
+				cv_fntoform( copyinfo + CPFILE, itm_name( sw,list[0] ) );
+			else
+				*cpfile = 0;
+			/* DjV 031 140203 ---^^^--- */
 			button = open_cfdialog(CF_COPY, folders, files, bytes, function);
 
 			if (button == COPYOK)
@@ -1175,7 +1303,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 {
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
-	int error, result, key;
+	int error, result /* , key DjV 031 070203 */ ;
 	char name[256];
 	XATTR attr;
 
@@ -1228,6 +1356,8 @@ static int del_path(const char *path, const char *fname, long *folders,
 
 		if (stack->result != XFATAL)
 		{
+			/* DjV 033 010203 ---vvv--- */
+			/*
 			int result;
 
 			if ((result = key_state(&key, cfdial_open)) > 0)
@@ -1237,6 +1367,12 @@ static int del_path(const char *path, const char *fname, long *folders,
 			}
 			else if (result < 0)
 				stack->result = XABORT;
+			*/
+
+			if ( escape_abort(cfdial_open) ) 
+				stack->result = XABORT;
+
+			/* DJV 033 010203 ---^^^--- */
 		}
 
 		if ((stack->result == XFATAL) || (stack->result == XABORT) || (eod == TRUE))
@@ -1264,7 +1400,7 @@ static int del_path(const char *path, const char *fname, long *folders,
 
 static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files, long *bytes)
 {
-	int i, key, item, error, result;
+	int i, /* key, DjV 031 070203 */ item, error, result;
 	ITMTYPE type;
 	const char *path, *name;
 	XATTR attr;
@@ -1319,6 +1455,9 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 		if (result != XFATAL)
 		{
+
+			/* DjV 033 010203 ---vvv--- */
+			/*
 			int r;
 
 			if ((r = key_state(&key, cfdial_open)) > 0)
@@ -1328,6 +1467,13 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 			}
 			else if (r < 0)
 				result = XABORT;
+			*/
+
+			if ( escape_abort(cfdial_open) )
+				result = XABORT;
+
+			/* DjV 033 010203 ---^^^--- */
+
 		}
 
 		if ((result == XABORT) || (result == XFATAL))
@@ -1350,6 +1496,17 @@ boolean itm_delete(WINDOW *w, int n, int *list)
 	cont = count_items(w, n, list, &folders, &files, &bytes);		/* HR 151102: always display */
 	if (cont == TRUE)
 	{
+		/* DjV 031 140203 ---vvv--- */
+		if ( itm_type(w, list[0]) == ITM_FOLDER )
+			cv_fntoform ( copyinfo + CPFOLDER, itm_name(w,list[0]) );	
+		else
+			*cpfolder = 0;
+		if ( itm_type(w, list[0]) == ITM_FILE || itm_type(w, list[0]) == ITM_PROGRAM )
+			cv_fntoform( copyinfo + CPFILE, itm_name( w,list[0] ) );
+		else
+			*cpfile = 0;
+		/*  DjV 031 140203 ---^^^--- */
+		
 		button = open_cfdialog(CF_DEL, folders, files, bytes, CMD_DELETE);
 
 		if (button == COPYOK)

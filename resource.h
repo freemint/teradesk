@@ -35,16 +35,21 @@ OBJECT *menu,
 	   *getcml,
 	   *nameconflict,
 	   *copyinfo,
-	   *print,
+	   /* *print, DjV 031 080203 */
 	   *setmask,
 	   *applikation,
 	   *seticntype,
-	   *addicntype,
+	   /* *addicntype, DjV 034 050203 */
 	   *loadmods,
 	   *viewmenu,
 	   *stabsize,
 	   *wdoptions,
-	   *wdfont;
+	   *wdfont,
+	   *helpno1,     /* DjV 008 251202 */
+	   *helpno2,     /* DjV 008 251202 */
+	   *fmtfloppy,   /* DjV 006 251202 */ 
+	   *vidoptions,  /* DjV 007 251202 */
+	   *copyoptions; /* DjV 016 050103 */
 
 extern
 char *dirname,
@@ -52,6 +57,7 @@ char *dirname,
 	 *newname,
 	 *finame,
 	 *flname,
+	 *cmdline,		/* HR 240203 */
 	 *disklabel,
 	 *drvid,
 	 *iconlabel,
@@ -71,11 +77,14 @@ char *dirname,
 	 *vtabsize;
 
 extern
-char dirnametxt[],		/* HR 021202: The 5 scrolling editable texts. */
+char dirnametxt[],		/* HR 021202: The 7 scrolling editable texts. */
      finametxt[],
      flnametxt[],
      oldnametxt[],
-     newnametxt[];
+     newnametxt[],
+     cmdlinetxt[],		/* HR 240203 */
+     applcmlntxt[]		/* HR 070303 */
+     ;
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);

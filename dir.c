@@ -20,7 +20,6 @@
 
 #include <np_aes.h>			/* HR 151102: modern */
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
@@ -31,6 +30,7 @@
 #include <xscncode.h>
 
 #include "desk.h"
+#include "sprintf.h"		/* HR 240203: get rid of stream io */
 #include "xfilesys.h"
 #include "dir.h"
 #include "error.h"
@@ -46,6 +46,7 @@
 #include "copy.h"
 #include "icontype.h"
 #include "open.h"
+#include "desktop.h" /* DjV 019 110103 */
 
 #define DFLAGS			(NAME|CLOSER|FULLER|MOVER|INFO|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE)
 #define MAXWINDOWS		8				/* Maximum number of directory windows. */
@@ -66,6 +67,8 @@
 #define TOSDEFAULT_EXT		"*"
 #define TOSITEMLEN			51				/* Length of a line. */
 
+#define SIZELEN 8 /* DjV 010 261202 length of field for file size, i.e. max 9999999 ~10MB */
+
 typedef struct
 {
 	unsigned int fulled : 1;
@@ -82,15 +85,16 @@ typedef struct
 
 typedef struct
 {
-	boolean selected;
-	boolean newstate;
-	boolean visible;
+	boolean selected,
+	        newstate,
+	        visible,
+	        link;
 	int index;
 	FATTR attrib;
 	ITMTYPE item_type;
 	int icon;
-	const char *icname;
-	const char *name;
+	const char *icname,
+	           *name;
 } NDTA;
 
 typedef struct
@@ -113,12 +117,12 @@ typedef struct
 	char info[60];
 
 	int fs_type;				/* HR 151102: We need to know the filesystem type for formatting purposes. */
-	int nfiles;					/* aantal files in directory */
-	int nvisible;				/* aantal zichtbare files in directory */
+	int nfiles;					/* number of files in directory */
+	int nvisible;				/* number of visible files in directory */
 	int nlines;
 	int nselected;
 	long usedbytes;
-	int namelength;				/* lengte van de langste naam in de directory */
+	int namelength;				/* length of longest name in the directory */
 	NDTA *buffer;
 	boolean refresh;
 
@@ -161,26 +165,37 @@ typedef struct
 	int resvd2;
 } FDATA;
 
+#define bold 1
+#define light 2
+#define italic 4
+#define ulined 8
+#define white 16
+
 static WINFO dirwindows[MAXWINDOWS];
-static GRECT dmax;
+static RECT dmax;
 static char prevdir[] = "..";
 FONT dir_font;
 
+extern int scansh ( int key, int kstate );  /* DjV 019 110103 */
+
+extern SEL_INFO selection; 					/* DjV 017 280103 */
+
 static void dir_draw(DIR_WINDOW *w, boolean message);
-static void do_redraw(DIR_WINDOW *w, GRECT *r1, boolean clear);
+static void do_redraw(DIR_WINDOW *w, RECT *r1, boolean clear);
 
 static int dir_hndlkey(WINDOW *w, int scancode, int keystate);
 static void dir_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
-static void dir_redraw(WINDOW *w, GRECT *area);
+static void dir_redraw(WINDOW *w, RECT *area);
 static void dir_topped(WINDOW *w);
 static void dir_closed(WINDOW *w);
 static void dir_fulled(WINDOW *w);
 static void dir_arrowed(WINDOW *w, int arrows);
 static void dir_hslider(WINDOW *w, int newpos);
 static void dir_vslider(WINDOW *w, int newpos);
-static void dir_sized(WINDOW *w, GRECT *newsize);
-static void dir_moved(WINDOW *w, GRECT *newpos);
+static void dir_sized(WINDOW *w, RECT *newsize);
+static void dir_moved(WINDOW *w, RECT *newpos);
 static void dir_top(WINDOW *w);
+static int linelength(DIR_WINDOW *w); /* DjV 012 271202 needed before defined */
 
 static WD_FUNC dir_functions =
 {
@@ -200,29 +215,31 @@ static WD_FUNC dir_functions =
 	dir_top
 };
 
-static int itm_find(WINDOW *w, int x, int y);
-static boolean itm_state(WINDOW *w, int item);
-static ITMTYPE itm_type(WINDOW *w, int item);
-static int itm_icon(WINDOW *w, int item);
-static const char *itm_name(WINDOW *w, int item);
-static char *itm_fullname(WINDOW *w, int item);
-static int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib);
-static long itm_info(WINDOW *w, int item, int which);
-static boolean dir_open(WINDOW *w, int item, int kstate);
-static boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
-static void itm_select(WINDOW *w, int selected, int mode, boolean draw);
-static void itm_rselect(WINDOW *w, int x, int y);
-static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible, int **sel_list, ICND **icns, int mx, int my);
-static boolean itm_list(WINDOW *w, int *n, int **list);
-static const char *dir_path(WINDOW *w);
-static void dir_set_update(WINDOW *w, wd_upd_type type, const char *fname1, const char *fname2);
-static void dir_do_update(WINDOW *w);
-static void dir_filemask(WINDOW *w);
-static void dir_newfolder(WINDOW *w);
-static void dir_disp_mode(WINDOW *w, int mode);
-static void dir_sort(WINDOW *w, int sort);
-static void dir_attrib(WINDOW *w, int attrib);
-static void dir_seticons(WINDOW *w);
+static int		itm_find	(WINDOW *w, int x, int y);
+static boolean	itm_state	(WINDOW *w, int item);
+static ITMTYPE	itm_type	(WINDOW *w, int item);
+static int		itm_icon	(WINDOW *w, int item);
+static const
+       char *	itm_name	(WINDOW *w, int item);
+static char *	itm_fullname(WINDOW *w, int item);
+static int		itm_attrib	(WINDOW *w, int item, int mode, XATTR *attrib);
+static long		itm_info	(WINDOW *w, int item, int which);
+static boolean	dir_open	(WINDOW *w, int item, int kstate);
+static boolean	dir_copy	(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
+static void		itm_select	(WINDOW *w, int selected, int mode, boolean draw);
+static void		itm_rselect	(WINDOW *w, int x, int y);
+static boolean	itm_xlist	(WINDOW *w, int *nselected, int *nvisible, int **sel_list, ICND **icns, int mx, int my);
+static boolean	itm_list	(WINDOW *w, int *n, int **list);
+/* static const char *dir_path	(WINDOW *w);		Djv 031 070203 --> dir.h  */
+static void		dir_set_update	(WINDOW *w, wd_upd_type type, const char *fname1, const char *fname2);
+static void		dir_do_update	(WINDOW *w);
+static void		dir_filemask	(WINDOW *w);
+static void		dir_newfolder	(WINDOW *w);
+static void		dir_disp_mode	(WINDOW *w, int mode);
+static void		dir_sort		(WINDOW *w, int sort);
+/* static void	dir_attrib		(WINDOW *w, int attrib);  HR 050303 */
+static void		dir_fields		(WINDOW *w, int attrib);  /* HR 050303 */
+static void		dir_seticons	(WINDOW *w);
 
 static ITMFUNC itm_func =
 {
@@ -251,13 +268,14 @@ static ITMFUNC itm_func =
 	dir_newfolder,				/* wd_newfolder */
 	dir_disp_mode,				/* wd_disp_mode */
 	dir_sort,					/* wd_sort */
-	dir_attrib,					/* wd_attrib */
+/*	dir_attrib,			*/		/* wd_attrib */ 
+	dir_fields,					/* wd_fields  HR 240203  */
 	dir_seticons				/* wd_seticons */
 };
 
 static void calc_nlines(DIR_WINDOW *w);
 static void set_sliders(DIR_WINDOW *w);
-static void calc_rc(DIR_WINDOW *w, GRECT *work);
+static void calc_rc(DIR_WINDOW *w, RECT *work);
 
 /********************************************************************
  *																	*
@@ -499,9 +517,28 @@ static void set_visible(DIR_WINDOW *w)
 		b->selected = FALSE;
 		b->newstate = FALSE;
 
-		if (((options.attribs & 2) || ((b->attrib.attrib & 2) == 0)) &&
-			((options.attribs & 4) || ((b->attrib.attrib & 4) == 0)) &&
-			(((b->attrib.mode & S_IFMT) == S_IFDIR) || (cmp_wildcard(b->name, w->fspec) == TRUE)))
+		/* DjV 004 261202 ---vvv--- */
+		
+		/* substituted "2" and "4" with FA_HIDDEN and FA_SYSTEM */
+		/* added bit4 =16= directory:  FA_SUBDIR */
+
+		if (   (   (options.attribs  & FA_HIDDEN) != 0
+		        || (b->attrib.attrib & FA_HIDDEN) == 0
+		       )
+		    && (   (options.attribs  & FA_SYSTEM) != 0
+		        || (b->attrib.attrib & FA_SYSTEM) == 0
+		       )
+		    && (   (options.attribs  & FA_SUBDIR) != 0
+		        || (b->attrib.attrib & FA_SUBDIR) == 0
+		       )
+		    && (   (options.attribs  & FA_PARDIR) != 0  /* DjV 004 300103 */
+		        || (b->attrib.attrib & FA_PARDIR) == 0	/* DjV 004 300103 */ 
+		       )
+		    && (   (b->attrib.mode & S_IFMT)       == S_IFDIR
+			    || cmp_wildcard(b->name, w->fspec) == TRUE
+			   )
+		   )
+							/* DjV 004 261202 ---^^^--- */
 		{
 			b->visible = TRUE;
 			n++;
@@ -526,12 +563,13 @@ void xattr_to_fattr(XATTR *xattr, FATTR *fattr)
 /* Funktie voor het copieren van een dta naar de buffer van een
    window. */
 
-static int copy_DTA(NDTA *dest, char *name, XATTR *src, int index)
+static int copy_DTA(NDTA *dest, char *name, XATTR *src, int index, bool link)	/* HR 130203: link */
 {
 	long l;
 	char *h;
 
 	dest->index = index;
+	dest->link  = link;				/* HR 130203: handle links */
 
 	if ((src->mode & S_IFMT) == S_IFDIR)
 		dest->item_type = (strcmp(name, prevdir) == 0) ? ITM_PREVDIR : ITM_FOLDER;
@@ -560,7 +598,7 @@ static int read_dir(DIR_WINDOW *w)
 	NDTA *b;
 	int error = 0, bufsiz, maxl = 0;
 	long size, free_mem, length, n;
-	XATTR attr;
+	XATTR attr = {0};					/* HR 050203 */
 	char name[256];
 	XDIR *dir;
 
@@ -580,21 +618,46 @@ static int read_dir(DIR_WINDOW *w)
 		b = w->buffer;
 		bufsiz = (int) (size / sizeof(NDTA));
 
-		if ((dir = x_opendir(w->path, &error)) != NULL)
+		dir = x_opendir(w->path, &error);
+
+		if (dir)
 		{
 #if _MINT_
-			w->fs_type = dir->type;		/* HR 151102: Needs to know the filesystem type elsewhere. */
+			w->fs_type = dir->type;		/* HR 151102: Need to know the filesystem type elsewhere. */
 #endif
 			while (error == 0)
 			{
-				if ((error = (int) x_xreaddir(dir, name, 256, &attr)) == 0)
+				error = x_xreaddir(dir, name, 256, &attr);
+
+				if (error == 0)
 				{
+					bool link = false;
+
 					if (n == bufsiz)
 					{
 						alert_printf(1, MDIRTBIG);
 						break;
 					}
-					if ((strcmp(".", name)) && ((error = copy_DTA(&b[n], name, &attr, (int) n)) >= 0))
+
+/* HR 130203: Handle links.  vvvvvvvvvvv  */
+
+					if ((attr.mode & S_IFMT) == (unsigned int)S_IFLNK)
+					{
+/*						boolean x_inq_xfs(const char *path);
+*/						char fulln[256];
+						strcpy(fulln, dir->path);
+						strcat(fulln, name);
+				/*		alert_msg(" %s ", fulln); */
+						x_attr(0, fulln, &attr);
+						
+						link = true;
+					}
+
+/* HR 130203: Handle links.  ^^^^^^^^^^^  */
+
+					if (   (strcmp(".", name) != 0)
+					    && ((error = copy_DTA(&b[n], name, &attr, n, link)) >= 0)
+					   )
 					{
 						length += attr.size;
 						if (error > maxl)
@@ -726,6 +789,14 @@ static void dir_do_update(WINDOW *w)
 		dir_refresh_wd((DIR_WINDOW *) w);
 }
 
+/* DJV 029 160203 ---vvv--- */
+/* for unconditional refresh */
+void dir_always_update(WINDOW *w)
+{
+	dir_refresh_wd( (DIR_WINDOW *)w );
+}
+/* DjV 029 160203 ---^^^--- */
+
 /********************************************************************
  *																	*
  * Funktie voor het zetten van de mode van een window.				*
@@ -736,7 +807,7 @@ static void dir_do_update(WINDOW *w)
 
 static void dir_disp_mode(WINDOW *w, int mode)
 {
-	GRECT work;
+	RECT work;
 
 	xw_get(w, WF_WORKXYWH, &work);
 
@@ -789,6 +860,12 @@ static void dir_attrib(WINDOW *w, int attrib)
 	dir_newdir((DIR_WINDOW *) w);
 }
 
+static void dir_fields(WINDOW *w, int attrib)
+{
+	set_visible((DIR_WINDOW *) w);
+	dir_newdir((DIR_WINDOW *) w);
+}
+
 #pragma warn .par
 
 /********************************************************************
@@ -822,7 +899,8 @@ static void dir_seticons(WINDOW *w)
 static void dir_newfolder(WINDOW *w)
 {
 	int button, error;
-	char *nsubdir, name[14];
+	char *nsubdir;
+	LNAME name;			/* HR 240203: hopefully the last too short name repaired. */
 	DIR_WINDOW *dw;
 
 	dw = (DIR_WINDOW *) w;
@@ -871,7 +949,7 @@ static void dir_newfolder(WINDOW *w)
 
 static void dir_draw(DIR_WINDOW *w, boolean message)
 {
-	GRECT area;
+	RECT area;
 
 	xw_get((WINDOW *) w, WF_CURRXYWH, &area);
 
@@ -884,24 +962,24 @@ static void dir_draw(DIR_WINDOW *w, boolean message)
 /* Funktie voor het berekenen van het aantal rijen en kolommen in
    een window. */
 
-static void calc_rc(DIR_WINDOW *w, GRECT *work)
+static void calc_rc(DIR_WINDOW *w, RECT *work)
 {
 	if (options.mode == TEXTMODE)
 	{
-		w->rows = (work->g_h + dir_font.ch - 1) / (dir_font.ch + DELTA);
-		w->columns = (work->g_w + dir_font.cw - 1) / dir_font.cw;
-		w->nrows = work->g_h / (dir_font.ch + DELTA);
-		w->ncolumns = work->g_w / dir_font.cw;
+		w->rows     = (work->h +  dir_font.ch - 1) / (dir_font.ch + DELTA);
+		w->columns  = (work->w +  dir_font.cw - 1) / dir_font.cw;
+		w->nrows    =  work->h / (dir_font.ch + DELTA);
+		w->ncolumns =  work->w /  dir_font.cw;
 	}
 	else
 	{
-		w->rows = (work->g_h + ICON_H - 1 /* - YOFFSET*/ ) / ICON_H;
-		w->columns = work->g_w / ICON_W;
-		w->nrows = (work->g_h - YOFFSET) / ICON_H;
-		w->ncolumns = w->columns;
+		w->rows     = (work->h + ICON_H - 1 /* - YOFFSET*/ ) / ICON_H;
+		w->columns  =  work->w / ICON_W;
+		w->nrows    = (work->h - YOFFSET) / ICON_H;
+		w->ncolumns =  w->columns;
 	}
 
-	w->scolumns = work->g_w / screen_info.fnt_w;
+	w->scolumns = work->w / screen_info.fnt_w;
 }
 
 /* Funktie voor het berekenen van het totale aantal regels in een
@@ -923,23 +1001,23 @@ static void calc_nlines(DIR_WINDOW *w)
 
 static void dir_set_defsize(WINFO *w)
 {
-	GRECT border, work;
+	RECT border, work;
 
 	xw_get((WINDOW *) w->dir_window, WF_CURRXYWH, &border);
 	xw_get((WINDOW *) w->dir_window, WF_WORKXYWH, &work);
 
-	w->x = border.g_x - screen_info.dsk_x;
-	w->y = border.g_y - screen_info.dsk_y;
-	w->w = work.g_w / screen_info.fnt_w;
-	w->h = work.g_h / (screen_info.fnt_h + DELTA);
+	w->x = border.x - screen_info.dsk.x;
+	w->y = border.y - screen_info.dsk.y;
+	w->w = work.w / screen_info.fnt_w;
+	w->h = work.h / (screen_info.fnt_h + DELTA);
 }
 
 /* Funktie die uit opgegeven grootte de werkelijke grootte van het
    window berekent. */
 
-static void dir_wsize(DIR_WINDOW *w, GRECT *input, GRECT *output)
+static void dir_wsize(DIR_WINDOW *w, RECT *input, RECT *output)
 {
-	GRECT work;
+	RECT work;
 	int fw, fh;
 
 	fw = screen_info.fnt_w;
@@ -947,16 +1025,16 @@ static void dir_wsize(DIR_WINDOW *w, GRECT *input, GRECT *output)
 
 	xw_calc(WC_WORK, DFLAGS, input, &work, NULL);
 
-	work.g_x += fw / 2;
-	work.g_w += fw / 2;
-	work.g_h += fh / 2 - DELTA;
+	work.x += fw / 2;
+	work.w += fw / 2;
+	work.h += fh / 2 - DELTA;
 
-	work.g_x -= (work.g_x % fw);
-	work.g_w -= (work.g_w % fw);
-	work.g_h -= (work.g_h % fh) - DELTA;
+	work.x -= (work.x % fw);
+	work.w -= (work.w % fw);
+	work.h -= (work.h % fh) - DELTA;
 
-	work.g_w = min(work.g_w, dmax.g_w);
-	work.g_h = min(work.g_h, dmax.g_h);
+	work.w = min(work.w, dmax.w);
+	work.h = min(work.h, dmax.h);
 
 	xw_calc(WC_BORDER, DFLAGS, &work, output, NULL);
 
@@ -967,33 +1045,60 @@ static void dir_wsize(DIR_WINDOW *w, GRECT *input, GRECT *output)
 /* Funktie voor het bereken van de grootte van een window uit de in
    w opgeslagen grootte. */
 
-static void dir_calcsize(WINFO *w, GRECT *size)
+static void dir_calcsize(WINFO *w, RECT *size)
 {
-
 	if (w->flags.fulled == 1)
 	{
-		GRECT high = *(GRECT *)&screen_info.dsk_x;
+		RECT high = screen_info.dsk;
 		if (options.mode == TEXTMODE)
 		{
-			high.g_x = w->x + screen_info.dsk_x;
-			high.g_w = w->w * screen_info.fnt_w;
+			high.x = w->x + screen_info.dsk.x;
+			/* high.w = w->w * screen_info.fnt_w;  DjV 012 261202 */
+
+			/* DjV 012 271202 050103 ---vvv---  */
+
+			/*
+			 * Calculate length of directory line 
+			 * taking into account directory font size;
+			 * calculate width of "fulled" window so as to display all fields
+			 * (seems that left BORDERS=2*2 is -not- in directory font units but
+			 * in default system font units)
+			 * For some unclear reason it looks better if 
+			 * two char width more are added (vert.slider width?)
+			 */
+     	
+			high.w = linelength(w->dir_window) * dir_font.cw + (BORDERS + 2) * screen_info.fnt_w; 
+
+			/*
+			 * Calculate vertical size of the fulled directory window;
+			 * if there are not many items, add two empty lines at the end;
+			 * otherwise, clipping will be performed elsewhere;
+			 * below: 5= 2 empty lines + 3 lines for win.header and slider?
+			 */
+
+			/* DjV 012 170103 removed vertical operation- doesn't seem useful 
+			high.h = (w->dir_window->nlines + 5 ) * ( dir_font.ch + DELTA );
+			*/
+
+			/* DjV 012 271202 050103 ---^^^--- */
+
 		}
-		dir_wsize(w->dir_window, (GRECT *) & high, size);
+		dir_wsize(w->dir_window, &high, size);
 	}
 	else
 	{
-		GRECT def, border;
+		RECT def, border;
 
-		def.g_x = w->x + screen_info.dsk_x;
-		def.g_y = w->y + screen_info.dsk_y;
-		def.g_w = w->w * screen_info.fnt_w;	/* hoogte en breedte van het werkgebied. */
-		def.g_h = w->h * (screen_info.fnt_h + DELTA) + DELTA;
+		def.x = w->x + screen_info.dsk.x;
+		def.y = w->y + screen_info.dsk.y;
+		def.w = w->w * screen_info.fnt_w;	/* hoogte en breedte van het werkgebied. */
+		def.h = w->h * (screen_info.fnt_h + DELTA) + DELTA;
 
 		/* Bereken hoogte en breedte van het window */
 		xw_calc(WC_BORDER, DFLAGS, &def, &border, NULL);
 
-		border.g_x = def.g_x;
-		border.g_y = def.g_y;
+		border.x = def.x;
+		border.y = def.y;
 
 		dir_wsize(w->dir_window, &border, size);
 	}
@@ -1009,15 +1114,23 @@ static void dir_calcsize(WINFO *w, GRECT *size)
    returns a constant, in the MiNT version it returns a value
    depending on the length of the longest filename. */
 
+/* DjV 010 261202 Length of line depends on which fields are shown */
+
 #pragma warn -par
 
 static int linelength(DIR_WINDOW *w)
 {
+
+	int l; /* DjV 010 261202: l=length of filename             */
+	int f; /* DjV 010 261202: f=length of other visible fields */
+  
 	if (w->fs_type)				/* HR 151102, 021202 */
-		return TOSITEMLEN;
+
+	/*	return TOSITEMLEN; DjV 010 261202 */
+		l = 12; /* DjV 010 261202 TOS: length of filename */
 	else
 	{
-		int l;
+	/* 	int l; DjV 010 261202 */
 	
 		if (w->namelength < MINLENGTH)
 			l = MINLENGTH;
@@ -1026,8 +1139,40 @@ static int linelength(DIR_WINDOW *w)
 		else
 			l = w->namelength;
 	
-		return ITEMLEN + l;
+	/*	return ITEMLEN + l; DjV 010 261202 */
 	}
+	
+	/* DjV 010 261202 ---vvv--- Calculate length of fields */
+
+	/* 
+	 * Beside filename there will always be:
+	 * 3 spaces for the char marking directory
+	 * 2 spaces separating filename from the rest
+	 * additional 2 spaces separator after each field
+	 * below should be: f = 5 = 3+2, but for some unclear reason
+	 * hor.slider works better if one char less is specified here
+	 * left and right border are -not- included in calculation
+	 */
+	  
+	f = 4;
+	
+	if ( options.V2_2.fields & WD_SHSIZ ) f = f + SIZELEN + 2;	/* size: 8 char + 2 sep */
+	if ( options.V2_2.fields & WD_SHDAT ) f = f + 10; 			/* date: 8 char + 2 sep. */
+	if ( options.V2_2.fields & WD_SHTIM ) f = f + 10; 			/* time: 8 char + 2 sep. */
+	if ( options.V2_2.fields & WD_SHATT )             			/* attributes: depending on fs */
+	{
+#if _MINT_
+		if ( mint  && ( w->fs_type == 0 )  )
+			f = f + 12;		/* other (i.e.mint) filesystem: attributes 10 char + 2 sep. */
+		else
+#endif
+			f = f + 7;			/* TOS/FAT filesystem: attributes 5 char + 2 sep. */
+	} 
+	
+	return f + l;
+	
+	/* DjV 010 261202 ---^^^--- */
+	
 }
 
 #pragma warn .par
@@ -1132,29 +1277,29 @@ static void set_sliders(DIR_WINDOW *w)
  * tw		- pointer naar window
  * item		- regelnummer
  * r		- resultaat
- * work		- GRECT structuur met de grootte van het werkgebied van het
+ * work		- RECT structuur met de grootte van het werkgebied van het
  *			  window.
  */
 
-static void dir_comparea(DIR_WINDOW *dw, int item, GRECT *r, GRECT *work)
+static void dir_comparea(DIR_WINDOW *dw, int item, RECT *r, RECT *work)
 {
 	int offset, delta;
 
 	if (dw->px > TOFFSET)
 	{
 		offset = dw->px - TOFFSET;
-		r->g_x = work->g_x;
+		r->x = work->x;
 	}
 	else
 	{
 		offset = 0;
-		r->g_x = work->g_x + (TOFFSET - dw->px) * dir_font.cw;
+		r->x = work->x + (TOFFSET - dw->px) * dir_font.cw;
 	}
-	r->g_y = DELTA + work->g_y + (int) (item - dw->py) * (dir_font.ch + DELTA);
-	r->g_w = dir_font.cw * (linelength(dw) - offset);
-	if ((delta = r->g_x + r->g_w - work->g_x - work->g_w) > 0)
-		r->g_w -= delta;
-	r->g_h = dir_font.ch;
+	r->y = DELTA + work->y + (int) (item - dw->py) * (dir_font.ch + DELTA);
+	r->w = dir_font.cw * (linelength(dw) - offset);
+	if ((delta = r->x + r->w - work->x - work->w) > 0)
+		r->w -= delta;
+	r->h = dir_font.ch;
 }
 
 /*
@@ -1164,6 +1309,8 @@ static void dir_comparea(DIR_WINDOW *dw, int item, GRECT *r, GRECT *work)
  *
  * tstr		- destination string
  * time		- current time in GEMDOS format
+ *
+ * this string is 8 characters long 
  *
  * Result: Pointer to the end of tstr.
  */
@@ -1192,6 +1339,8 @@ static char *timestr(char *tstr, unsigned int time)
  *
  * tstr		- destination string
  * date		- current date in GEMDOS format
+ *
+ * this string is 8 characters long 
  *
  * Result: Pointer to the end of tstr.
  */
@@ -1228,22 +1377,25 @@ static char *datestr(char *tstr, unsigned int date)
  * Make a string with the contents of a line in a directory window.
  */
 
-static void dir_line(DIR_WINDOW *dw, char *s, int item)
+/* static void dir_line(DIR_WINDOW *dw, char *s, int item) DjV 031 150203 */
+static void dir_line(DIR_WINDOW *dw, char *s, int item, boolean clip) /* DJV 031 150203 */
 {
 	NDTA *h;
 	char *d, t[16];
 	const char *p;
 	int i, lwidth;
+	int parent;    /* DjV 010 261202 flag that this is a .. (parent) dir */
 
 	lwidth = linelength(dw);
+	parent= FALSE;  /* DjV 010 261202 */
 
 	if (item < dw->nvisible)
 	{
 		h = &dw->buffer[(long) item];
-		d = s;
+		d = s; /* beginning of a directory line */
 
 		*d++ = ' ';
-		*d++ = ((h->attrib.mode & S_IFMT) == S_IFDIR) ? '\007' : ' ';
+		*d++ = (h->attrib.mode & S_IFMT) == S_IFDIR ? '\007' : ' '; /* dir mark */
 		*d++ = ' ';
 
 		p = h->name;
@@ -1258,11 +1410,11 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 				i++;
 			}
 
-			FILL_UNTIL(d, i, lwidth - ITEMLEN);
+	        FILL_UNTIL(d, i, dw->namelength)		/* HR 050203: use correct value. */
 		}
 		else
 #endif
-		{
+		{	/* not mint fs */
 			/* Copy the filename. Handle '..' as a special case. */
 	
 			if (strcmp(h->name, prevdir))
@@ -1293,6 +1445,8 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 			{
 				/* '..'. Just copy. */
 	
+				parent= TRUE; /* DjV 010 261202 */
+
 				while (*p)
 				{
 					*d++ = *p++;
@@ -1301,94 +1455,137 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 			}
 	
 			FILL_UNTIL(d, i, 12);
-		}
 
-		if ((h->attrib.mode & S_IFMT) != S_IFDIR)
-		{
-			int l;
+		}  /* mint fs? */
 
-			ltoa(h->attrib.size, t, 10);
-			l = (int) strlen(t);
-			p = t;
-			i = 0;
-			FILL_UNTIL(d, i, 8 - l);
-			while (*p)
-				*d++ = *p++;
-		}
-		else
-		{
-			i = 0;
-			FILL_UNTIL(d, i, 8);
-		}
+		*d++ = ' '; /* DjV 010 261202 always separate filename from other fields */
+		*d++ = ' '; /* DjV 010 261202 */
 
-		*d++ = ' ';
-		*d++ = ' ';
-
-		d = datestr(d, h->attrib.mdate);	/* HR 151102: date first */
-
-		*d++ = ' ';
-		*d++ = ' ';
-
-		d = timestr(d, h->attrib.mtime);
-
-		*d++ = ' ';
-		*d++ = ' ';
-
-#if _MINT_
-		if (mint && dw->fs_type == 0)		/* HR 151102 */
-		{
-			switch(h->attrib.mode & S_IFMT)
+		if ( options.V2_2.fields & WD_SHSIZ )	/* DjV 010 261202 - show file size? */
+		{									/* DjV 010 261202 */
+    
+			if ((h->attrib.mode & S_IFMT) != S_IFDIR) /* this is not a subdirectory */
 			{
-			case S_IFDIR :
-				*d++ = 'd';
-				break;
-			case S_IFREG :
-				*d++ = '-';
-				break;
-			case S_IFCHR :
-				*d++ = 'c';
-				break;
-			case S_IFIFO :
-				*d++ = 'p';
-				break;
-			case S_IFLNK :
-				*d++ = 'l';
-				break;
-			case S_IMEM :
-				*d++ = 'm';
-				break;
-			default : 
-				*d++ = '?';
-				break;
-			}
-	
-			*d++ = (h->attrib.mode & S_IRUSR) ? 'r' : '-';
-			*d++ = (h->attrib.mode & S_IWUSR) ? 'w' : '-';
-			*d++ = (h->attrib.mode & S_IXUSR) ? 'x' : '-';
-			*d++ = (h->attrib.mode & S_IRGRP) ? 'r' : '-';
-			*d++ = (h->attrib.mode & S_IWGRP) ? 'w' : '-';
-			*d++ = (h->attrib.mode & S_IXGRP) ? 'x' : '-';
-			*d++ = (h->attrib.mode & S_IROTH) ? 'r' : '-';
-			*d++ = (h->attrib.mode & S_IWOTH) ? 'w' : '-';
-			*d++ = (h->attrib.mode & S_IXOTH) ? 'x' : '-';
-		}
-		else
-#endif
-		{
-			*d++ = ((h->attrib.mode & S_IFMT) == S_IFDIR) ? 'd' : '-';
-			*d++ = (h->attrib.attrib & 0x04) ? 's' : '-';
-			*d++ = (h->attrib.attrib & 0x02) ? 'h' : '-';
-			*d++ = (h->attrib.attrib & 0x01) ? '-' : 'w';
-			*d++ = (h->attrib.attrib & 0x20) ? 'a' : '-';
-		}
+				int l;
 
-		*d++ = ' ';
-		*d++ = ' ';
+				ltoa(h->attrib.size, t, 10); /* File size to string      */
+				l = (int) strlen(t);         /* how long is this string? */
+				p = t;
+				i = 0;
+				/* FILL_UNTIL(d, i, 8 - l);         DjV 010 261202 */
+				FILL_UNTIL(d, i, SIZELEN - l);   /* DjV 010 261202 */
+				while (*p)
+					*d++ = *p++;
+			}
+			else
+			{
+				i = 0;
+				/*	FILL_UNTIL(d, i, 8);      DjV 010 261202 */
+				FILL_UNTIL(d, i, SIZELEN); /* DjV 010 261202 */
+
+			}
+
+			*d++ = ' '; /* separate size from the next fields */
+			*d++ = ' ';
+		  
+		} /* DjV 010 261202 */
+
+		if ( options.V2_2.fields & WD_SHDAT )  	/* DjV 010 261202 */
+		{									/* DjV 010 261202 */
+			if ( !parent ) 	/* DjV 010 261202 don't show meaningless date for parent folder */
+			{				/* DjV 010 261202 */
+				d = datestr(d, h->attrib.mdate);	/* HR 151102: date first */
+				*d++ = ' ';
+				*d++ = ' ';
+			/* DjV 010 261202 ---vvv--- */
+			}
+			else
+			{                         
+				i=0;                       
+				FILL_UNTIL ( d, i, 10 );     
+			}
+			/* DjV 010 261202 ---^^^--- */
+      
+		} /* DjV 010 261202 */  
+
+		if ( options.V2_2.fields & WD_SHTIM )	/* DjV 010 261202 */
+		{									/* DjV 010 261202 */
+			if ( !parent ) 	/* DjV 010 261202 don't show meaningless time for parent folder */
+			{				/* DjV 010 261202 */
+				d = timestr(d, h->attrib.mtime);
+				*d++ = ' ';
+				*d++ = ' ';
+			/* DjV 010 261202 ---vvv--- */
+			}
+			else
+			{                         
+				i=0;                        
+				FILL_UNTIL ( d, i, 10 );     
+			}								
+			/* DjV 010 261202 ---^^^--- */
+
+		} /* DjV 010 261202 */
+
+		if ( options.V2_2.fields & WD_SHATT ) 	/* DjV 010 261202 */
+		{									/* DjV 010 261202 */
+#if _MINT_
+			if (mint && dw->fs_type == 0)		/* HR 151102 */
+			{
+				switch(h->attrib.mode & S_IFMT)
+				{
+					case S_IFDIR :
+						*d++ = 'd';
+						break;
+					case S_IFREG :
+						*d++ = '-';
+						break;
+					case S_IFCHR :
+						*d++ = 'c';
+						break;
+					case S_IFIFO :
+						*d++ = 'p';
+						break;
+					case S_IFLNK :
+						*d++ = 'l';
+						break;
+					case S_IMEM :
+						*d++ = 'm';
+						break;
+					default : 
+						*d++ = '?';
+						break;
+				}
+	
+				*d++ = (h->attrib.mode & S_IRUSR) ? 'r' : '-';
+				*d++ = (h->attrib.mode & S_IWUSR) ? 'w' : '-';
+				*d++ = (h->attrib.mode & S_IXUSR) ? 'x' : '-';
+				*d++ = (h->attrib.mode & S_IRGRP) ? 'r' : '-';
+				*d++ = (h->attrib.mode & S_IWGRP) ? 'w' : '-';
+				*d++ = (h->attrib.mode & S_IXGRP) ? 'x' : '-';
+				*d++ = (h->attrib.mode & S_IROTH) ? 'r' : '-';
+				*d++ = (h->attrib.mode & S_IWOTH) ? 'w' : '-';
+				*d++ = (h->attrib.mode & S_IXOTH) ? 'x' : '-';
+			} /* mint ? */
+			else
+#endif
+			{
+				*d++ = ((h->attrib.mode & S_IFMT) == S_IFDIR) ? 'd' : '-';
+				*d++ = (h->attrib.attrib & 0x04) ? 's' : '-';
+				*d++ = (h->attrib.attrib & 0x02) ? 'h' : '-';
+				*d++ = (h->attrib.attrib & 0x01) ? '-' : 'w';
+				*d++ = (h->attrib.attrib & 0x20) ? 'a' : '-';
+			}
+
+			*d++ = ' ';
+			*d++ = ' ';
+		
+		} /* DjV 010 261202 */
+		
 		*d = 0;
 	}
 	else
 	{
-		/* This shoould never happen. Line is not visible. Return
+		/* This should never happen. Line is not visible. Return
 		   a string filled with spaces. */
 
 		for (i = 0; i < lwidth; i++)
@@ -1398,33 +1595,76 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 
 	/* Clip the string on the rigth border of the window. */
 
-	s[min(dw->columns + dw->px - 2, lwidth)] = 0;
+	if ( clip )	/* DjV 031 150203 */
+		s[min(dw->columns + dw->px - 2, lwidth)] = 0;
 }
 
-static void dir_prtchar(DIR_WINDOW *dw, int column, int item, GRECT *area, GRECT *work)
+/* DjV 029 120203 ---vvv--- */
+/* 
+ * routine get_dir_line conveniently obtains some information 
+ * needed for hardcopy directory printout. Needed because
+ * DIR_WINDOW is not known outside DIR.C, and so that it does 
+ * have to be defined in header file
+ *
+ * item >= 0 : get directory line #item;
+ * item = -1 : get window title
+ * item = -2 : get window info line
+ * note: routine actually copies the string to destination
+ */
+ 
+void get_dir_line
+(
+	WINDOW *dw,	/* pointer to window structure */ 
+	char *str,	/* output string */ 
+	int item	/* item number */
+)
 {
-	GRECT r, in;
+	if ( item >= 0 )				/* get directory line */
+		dir_line ( (DIR_WINDOW *)dw, str, item, FALSE );
+	else if ( item == -1 )			/* get window title */
+		strcpy(str, ((DIR_WINDOW *)dw)->title);
+	else if ( item == -2 )			/* get window info line */
+		strcpy(str, ((DIR_WINDOW *)dw)->info);
+}
+/* DjV 029 120203 ---^^^--- */
+
+static void dir_prtchar(DIR_WINDOW *dw, int column, int item, RECT *area, RECT *work)
+{
+	RECT r, in;
 	char s[256];
 	int c = column - dw->px;
 
-	dir_line(dw, s, item);
+	/* dir_line(dw, s, item); DjV 031 150203 */
+	dir_line(dw, s, item, TRUE); /* DjV 031 150203 */
 
-	r.g_x = work->g_x + c * dir_font.cw;
-	r.g_y = work->g_y + DELTA + (int) (item - dw->py) * (dir_font.ch + DELTA);
-	r.g_w = dir_font.cw;
-	r.g_h = dir_font.ch;
+	r.x = work->x + c * dir_font.cw;
+	r.y = work->y + DELTA + (int) (item - dw->py) * (dir_font.ch + DELTA);
+	r.w = dir_font.cw;
+	r.h = dir_font.ch;
 
 	if (xd_rcintersect(area, &r, &in) == TRUE)
 	{
 		if ((column >= 2) && (column < linelength(dw) + 2))
 		{
+			bool link = dw->buffer[(long)item].link;		/* HR 130203 */
+
 			s[column - 1] = 0;
-			v_gtext(vdi_handle, r.g_x, r.g_y, &s[column - 2]);
+			pclear(&r); 						/* DJV 011 030203 */
+			vswr_mode( vdi_handle, MD_TRANS); 	/* DjV 011 030203 */
+
+			if (link)
+				vst_effects(vdi_handle, ulined|italic);		/* HR 130203 */
+
+			v_gtext(vdi_handle, r.x, r.y, &s[column - 2]);
+
+			if (link)
+				vst_effects(vdi_handle, 0);		/* HR 130203 */
+
 			if ((item < dw->nlines) && (dw->buffer[(long) item].selected == TRUE))
 				invert(&in);
 		}
 		else
-			clear(&in);
+			pclear(&in);  /* DjV 011 030203 */
 	}
 }
 
@@ -1435,7 +1675,7 @@ static void dir_prtchar(DIR_WINDOW *dw, int column, int item, GRECT *area, GRECT
  ********************************************************************/
 
 static OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode,
-						 GRECT *work)
+						 RECT *work)
 {
 	int columns, yoffset, row;
 	long n, start, i;
@@ -1469,13 +1709,21 @@ static OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode,
 	obj[0].ob_flags = NORMAL;
 	obj[0].ob_state = NORMAL;
 	obj[0].ob_spec.obspec.framesize = 0;
+	
+	/* DjV 011 251202 ---vvv--- 
 	obj[0].ob_spec.obspec.interiorcol = 0;
 	obj[0].ob_spec.obspec.fillpattern = 7;
+	*/
+	/* this works only for icon mode? */
+	obj[0].ob_spec.obspec.interiorcol = options.V2_2.win_color;
+	obj[0].ob_spec.obspec.fillpattern = options.V2_2.win_pattern;
+	/* DjV 011 251202 ---^^^--- */
+	
 	obj[0].ob_spec.obspec.textmode = 1;
-	obj[0].ob_x = work->g_x;
-	obj[0].ob_y = row + work->g_y + YOFFSET - yoffset;
-	obj[0].ob_width = work->g_w;
-	obj[0].ob_height = lines * ICON_H;
+	obj[0].r.x = work->x;
+	obj[0].r.y = row + work->y + YOFFSET - yoffset;
+	obj[0].r.w = work->w;
+	obj[0].r.h = lines * ICON_H;
 
 	for (i = 0; i < n; i++)
 	{
@@ -1500,10 +1748,10 @@ static OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode,
 		obj[i + 1].ob_flags = NONE;
 		obj[i + 1].ob_state = (selected == FALSE) ? NORMAL : SELECTED;
 		obj[i + 1].ob_spec.ciconblk = &cicnblk[i];		/* HR 151102 */
-		obj[i + 1].ob_x = ((int) i % columns) * ICON_W + XOFFSET;
-		obj[i + 1].ob_y = ((int) i / columns) * ICON_H + yoffset;
-		obj[i + 1].ob_width = ICON_W;
-		obj[i + 1].ob_height = ICON_H;
+		obj[i + 1].r.x = ((int) i % columns) * ICON_W + XOFFSET;
+		obj[i + 1].r.y = ((int) i / columns) * ICON_H + yoffset;
+		obj[i + 1].r.w = ICON_W;
+		obj[i + 1].r.h = ICON_H;
 
 		cicnblk[i] = *icons[icon_no].ob_spec.ciconblk;
 
@@ -1517,13 +1765,13 @@ static OBJECT *make_tree(DIR_WINDOW *dw, int sl, int lines, boolean smode,
 	return obj;
 }
 
-static void draw_tree(OBJECT *tree, GRECT *clip)
+static void draw_tree(OBJECT *tree, RECT *clip)
 {
-	objc_draw(tree, ROOT, MAX_DEPTH, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
+	objc_draw(tree, ROOT, MAX_DEPTH, clip->x, clip->y, clip->w, clip->h);
 }
 
-static void draw_icons(DIR_WINDOW *dw, int sl, int lines, GRECT *area,
-					   boolean smode, GRECT *work)
+static void draw_icons(DIR_WINDOW *dw, int sl, int lines, RECT *area,
+					   boolean smode, RECT *work)
 {
 	OBJECT *obj;
 
@@ -1535,7 +1783,7 @@ static void draw_icons(DIR_WINDOW *dw, int sl, int lines, GRECT *area,
 	free(obj);
 }
 
-static void icn_comparea(DIR_WINDOW *dw, int item, GRECT *r1, GRECT *r2, GRECT *work)
+static void icn_comparea(DIR_WINDOW *dw, int item, RECT *r1, RECT *r2, RECT *work)
 {
 	int s, columns, x, y;
 	CICONBLK *h;			/* HR 151102: ciconblk (the largest) */
@@ -1552,53 +1800,67 @@ static void icn_comparea(DIR_WINDOW *dw, int item, GRECT *r1, GRECT *r2, GRECT *
 		x = columns + x;
 	}
 
-	x = work->g_x + x * ICON_W + XOFFSET;
-	y = work->g_y + y * ICON_H + YOFFSET;
+	x = work->x + x * ICON_W + XOFFSET;
+	y = work->y + y * ICON_H + YOFFSET;
 
 	h = icons[dw->buffer[(long) item].icon].ob_spec.ciconblk;	/* HR 151102 */
 
-	r1->g_x = x + h->monoblk.ib_xicon;
-	r1->g_y = y + h->monoblk.ib_yicon;
-	r1->g_w = h->monoblk.ib_wicon;
-	r1->g_h = h->monoblk.ib_hicon;
+	*r1 = h->monoblk.ic;
+	r1->x += x;
+	r1->y += y;
 
-	r2->g_x = x + h->monoblk.ib_xtext;
-	r2->g_y = y + h->monoblk.ib_ytext;
-	r2->g_w = h->monoblk.ib_wtext;
-	r2->g_h = h->monoblk.ib_htext;
+	*r2 = h->monoblk.tx;
+	r2->x += x;
+	r2->y += y;
 }
 
-static void dir_prtline(DIR_WINDOW *dw, int line, GRECT *area, GRECT *work)
+static void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 {
 	if (options.mode == TEXTMODE)
 	{
-		GRECT r, in, r2;
+		RECT r, in, r2;
 		char s[256];
 		int i;
 
-		dir_line(dw, s, line);
+		/* dir_line(dw, s, line); DjV 031 150203 */
+		dir_line(dw, s, line, TRUE); /* DJV 031 150203 */
 		dir_comparea(dw, line, &r, work);
 
 		if (xd_rcintersect(area, &r, &in) == TRUE)
 		{
+			bool link = false;
+			if (line < dw->nvisible)
+				link = dw->buffer[(long)line].link;		/* HR 130203 */
+
 			i = (dw->px < 2) ? 0 : (dw->px - 2);
-			v_gtext(vdi_handle, r.g_x, r.g_y, &s[i]);
-			if ((line < dw->nvisible) && (dw->buffer[line].selected == TRUE))
+
+			pclear( &r );							/* DjV 011 030203 */
+			vswr_mode( vdi_handle, MD_TRANS ); 		/* DjV 011 030203 */
+
+			if (link)
+				vst_effects(vdi_handle, ulined|italic);		/* HR 130203 */
+
+			v_gtext(vdi_handle, r.x, r.y, &s[i]);
+			
+			if (link)
+				vst_effects(vdi_handle, 0);		/* HR 130203 */
+
+			if ((line < dw->nvisible) && (dw->buffer[(long)line].selected == TRUE))
 				invert(&in);
 		}
-		r2.g_y = r.g_y;
-		r2.g_h = dir_font.ch;
+		r2.y = r.y;
+		r2.h = dir_font.ch;
 		if (dw->px < 2)
 		{
-			r2.g_x = work->g_x;
-			r2.g_w = (2 - dw->px) * dir_font.cw;
+			r2.x = work->x;
+			r2.w = (2 - dw->px) * dir_font.cw;
 			if (xd_rcintersect(area, &r2, &in) == TRUE)
-				clear(&r2);
+				pclear(&r2);  /* DjV 011 030203 */
 		}
-		r2.g_x = r.g_x + r.g_w;
-		r2.g_w = work->g_x + work->g_w - r2.g_x;
+		r2.x = r.x + r.w;
+		r2.w = work->x + work->w - r2.x;
 		if (xd_rcintersect(area, &r2, &in) == TRUE)
-			clear(&r2);
+			pclear(&r2);  /* DjV 011 030203 */
 	}
 	else
 		draw_icons(dw, line, 1, area, FALSE, work);
@@ -1607,7 +1869,7 @@ static void dir_prtline(DIR_WINDOW *dw, int line, GRECT *area, GRECT *work)
 /* Funktie voor het opnieuw tekenen van alle regels in een window.
    Alleen voor tekst windows. */
 
-static void dir_prtlines(DIR_WINDOW *dw, GRECT *area, GRECT *work)
+static void dir_prtlines(DIR_WINDOW *dw, RECT *area, RECT *work)
 {
 	int i;
 
@@ -1617,22 +1879,23 @@ static void dir_prtlines(DIR_WINDOW *dw, GRECT *area, GRECT *work)
 		dir_prtline(dw, dw->py + i, area, work);
 }
 
-static void do_draw(DIR_WINDOW *dw, GRECT *r, OBJECT *tree, boolean clr,
-					boolean text, GRECT *work)
+static void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean clr,
+					boolean text, RECT *work)
 {
 	if (text)
 	{
 		if (clr == TRUE)
-			clear(r);
+			/* clear(r);    DjV 011 030203 */
+			pclear(r);   /* DjV 011 030203 */
 		dir_prtlines(dw, r, work);
 	}
 	else
 		draw_tree(tree, r);
 }
 
-static void do_redraw(DIR_WINDOW *w, GRECT *r1, boolean clear)
+static void do_redraw(DIR_WINDOW *w, RECT *r1, boolean clear)
 {
-	GRECT r2, in, work;
+	RECT r2, in, work;
 	boolean text;
 	OBJECT *obj;
 
@@ -1654,7 +1917,7 @@ static void do_redraw(DIR_WINDOW *w, GRECT *r1, boolean clear)
 	graf_mouse(M_OFF, NULL);
 	xw_get((WINDOW *) w, WF_FIRSTXYWH, &r2);
 
-	while ((r2.g_w != 0) && (r2.g_h != 0))
+	while ((r2.w != 0) && (r2.h != 0))
 	{
 		if (xd_rcintersect(r1, &r2, &in) == TRUE)
 		{
@@ -1763,49 +2026,49 @@ static void w_pageright(DIR_WINDOW *w)
 	}
 }
 
-static int find_firstline(int wy, GRECT *area, boolean *prev)
+static int find_firstline(int wy, RECT *area, boolean *prev)
 {
 	int line, lh;
 
 	lh = (options.mode == TEXTMODE) ? DELTA + dir_font.ch : ICON_H;
-	line = (area->g_y - wy);
+	line = (area->y - wy);
 	*prev = ((line % lh) == 0) ? FALSE : TRUE;
 
 	return (line / lh);
 }
 
-static int find_lastline(int wy, GRECT *area, boolean *prev)
+static int find_lastline(int wy, RECT *area, boolean *prev)
 {
 	int line, lh;
 
 	lh = (options.mode == TEXTMODE) ? DELTA + dir_font.ch : ICON_H;
-	line = (area->g_y + area->g_h - wy);
+	line = (area->y + area->h - wy);
 	*prev = ((line % lh) == 0) ? FALSE : TRUE;
 
 	return ((line - 1) / lh);
 }
 
-static int find_leftcolumn(int wx, GRECT *area, boolean *prev)
+static int find_leftcolumn(int wx, RECT *area, boolean *prev)
 {
 	int column;
 
-	column = (area->g_x - wx);
+	column = (area->x - wx);
 	*prev = ((column % dir_font.cw) == 0) ? FALSE : TRUE;
 
 	return (column / dir_font.cw);
 }
 
-static int find_rightcolumn(int wx, GRECT *area, boolean *prev)
+static int find_rightcolumn(int wx, RECT *area, boolean *prev)
 {
 	int column;
 
-	column = (area->g_x + area->g_w - wx);
+	column = (area->x + area->w - wx);
 	*prev = ((column % dir_font.cw) == 0) ? FALSE : TRUE;
 
 	return ((column - 1) / dir_font.cw);
 }
 
-static void dir_prtcolumn(DIR_WINDOW *dw, int column, GRECT *area, GRECT *work)
+static void dir_prtcolumn(DIR_WINDOW *dw, int column, RECT *area, RECT *work)
 {
 	int i;
 
@@ -1815,7 +2078,7 @@ static void dir_prtcolumn(DIR_WINDOW *dw, int column, GRECT *area, GRECT *work)
 
 static void w_scroll(DIR_WINDOW *w, int type)
 {
-	GRECT work, area, r, in, src, dest;
+	RECT work, area, r, in, src, dest;
 	int column, wx, wy, lh, line;
 	boolean prev;
 
@@ -1847,16 +2110,16 @@ static void w_scroll(DIR_WINDOW *w, int type)
 
 	xw_get((WINDOW *) w, WF_WORKXYWH, &work);
 
-	wx = work.g_x;
-	wy = work.g_y;
+	wx = work.x;
+	wy = work.y;
 	area = work;
 
 	if (options.mode != TEXTMODE)
 	{
-		area.g_x += XOFFSET;
-		area.g_w -= XOFFSET;
-		area.g_y += YOFFSET;
-		area.g_h -= YOFFSET;
+		area.x += XOFFSET;
+		area.w -= XOFFSET;
+		area.y += YOFFSET;
+		area.h -= YOFFSET;
 	}
 
 	if (clip_desk(&area) == FALSE)
@@ -1874,7 +2137,7 @@ static void w_scroll(DIR_WINDOW *w, int type)
 
 	set_txt_default(dir_font.id, dir_font.size);
 
-	while ((r.g_w != 0) && (r.g_h != 0))
+	while ((r.w != 0) && (r.h != 0))
 	{
 		if (xd_rcintersect(&r, &area, &in) == TRUE)
 		{
@@ -1889,36 +2152,36 @@ static void w_scroll(DIR_WINDOW *w, int type)
 
 				if (type == WA_UPLINE)
 				{
-					dest.g_y += lh;
+					dest.y += lh;
 					line = find_firstline(wy, &in, &prev);
 				}
 				else
 				{
-					src.g_y += lh;
+					src.y += lh;
 					line = find_lastline(wy, &in, &prev);
 				}
 				line += w->py;
-				dest.g_h -= lh;
-				src.g_h -= lh;
+				dest.h -= lh;
+				src.h -= lh;
 			}
 			else
 			{
 				if (type == WA_LFLINE)
 				{
-					dest.g_x += dir_font.cw;
+					dest.x += dir_font.cw;
 					column = find_leftcolumn(wx, &in, &prev);
 				}
 				else
 				{
-					src.g_x += dir_font.cw;
+					src.x += dir_font.cw;
 					column = find_rightcolumn(wx, &in, &prev);
 				}
 				column += w->px;
-				dest.g_w -= dir_font.cw;
-				src.g_w -= dir_font.cw;
+				dest.w -= dir_font.cw;
+				src.w -= dir_font.cw;
 			}
 
-			if ((src.g_h > 0) && (src.g_w > 0))
+			if ((src.h > 0) && (src.w > 0))
 				move_screen(&dest, &src);
 
 			if ((type == WA_UPLINE) || (type == WA_DNLINE))
@@ -1972,9 +2235,9 @@ void dir_close(WINDOW *w, int mode)
 	if ((isroot(((DIR_WINDOW *) w)->path) == TRUE) || mode)
 	{
 		xw_close(w);
-		xw_delete(w);
 		dir_rem((DIR_WINDOW *) w);
 		wd_reset(NULL);
+		xw_delete(w);			/* HR 131202: after dir_rem (MP) */
 	}
 	else
 	{
@@ -2014,9 +2277,11 @@ static int dir_hndlkey(WINDOW *w, int scancode, int keystate)
 	case CURRIGHT:
 		w_scroll((DIR_WINDOW *) w, WA_RTLINE);
 		break;
+	case PAGE_DOWN:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURDOWN:
 		w_pagedown((DIR_WINDOW *) w);
 		break;
+	case PAGE_UP:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURUP:
 		w_pageup((DIR_WINDOW *) w);
 		break;
@@ -2047,7 +2312,7 @@ static int dir_hndlkey(WINDOW *w, int scancode, int keystate)
 		dir_refresh_wd((DIR_WINDOW *) w);
 		break;
 	default:
-		if ((scancode & (XD_SCANCODE | XD_ALT | 0xDF)) == 'C')
+		if ( scansh( scancode, keystate ) == options.V2_2.kbshort[MCLOSEW-MFIRST] )	/* DjV 019 110103 */
 			dir_close(w, 1);
 		else
 		{
@@ -2102,9 +2367,9 @@ static void dir_hndlbutton(WINDOW *w, int x, int y, int n,
 
 #pragma warn .par
 
-static void dir_redraw(WINDOW *w, GRECT *area)
+static void dir_redraw(WINDOW *w, RECT *area)
 {
-	GRECT r;
+	RECT r;
 
 	r = *area;
 	do_redraw((DIR_WINDOW *) w, &r, TRUE);
@@ -2122,10 +2387,10 @@ static void dir_closed(WINDOW *w)
 
 static void dir_fulled(WINDOW *w)
 {
-	GRECT size;
+	RECT size;
 	WINFO *winfo = ((DIR_WINDOW *) w)->winfo;
 
-	winfo->flags.fulled = (winfo->flags.fulled == 1) ? 0 : 1;
+	winfo->flags.fulled = (winfo->flags.fulled == 1) ? 0 : 1; /* toggle */
 	dir_calcsize(winfo, &size);
 	xw_set(w, WF_CURRXYWH, &size);
 	set_sliders((DIR_WINDOW *) w);
@@ -2185,31 +2450,31 @@ static void dir_vslider(WINDOW *w, int newpos)
 	}
 }
 
-static void dir_sized(WINDOW *w, GRECT *newsize)
+static void dir_sized(WINDOW *w, RECT *newsize)
 {
-	GRECT area;
+	RECT area;
 	int old_w, old_h;
 
 	xw_get(w, WF_WORKXYWH, &area);
 
-	old_w = area.g_w;
-	old_h = area.g_h;
+	old_w = area.w;
+	old_h = area.h;
 
 	dir_moved(w, newsize);
 
 	xw_get(w, WF_WORKXYWH, &area);
 
-	if (((area.g_w < old_w) || (area.g_h < old_h)) && (options.mode != TEXTMODE))
+	if (((area.w < old_w) || (area.h < old_h)) && (options.mode != TEXTMODE))
 		dir_draw((DIR_WINDOW *) w, TRUE);
 
 	dir_title((DIR_WINDOW *) w);
 	set_sliders((DIR_WINDOW *) w);
 }
 
-static void dir_moved(WINDOW *w, GRECT *newpos)
+static void dir_moved(WINDOW *w, RECT *newpos)
 {
 	WINFO *wd = ((DIR_WINDOW *) w)->winfo;
-	GRECT size;
+	RECT size;
 	dir_wsize((DIR_WINDOW *) w, newpos, &size);
 	wd->flags.fulled = 0;
 	xw_set(w, WF_CURRXYWH, &size);
@@ -2254,7 +2519,7 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 						   int *error)
 {
 	DIR_WINDOW *w;
-	GRECT size;
+	RECT size;
 	int errcode;
 
 	if ((w = (DIR_WINDOW *) xw_create(DIR_WIND, &dir_functions, DFLAGS, &dmax,
@@ -2295,8 +2560,8 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 
 	if (*error != 0)
 	{
-		xw_delete((WINDOW *) w);
 		dir_rem(w);
+		xw_delete((WINDOW *) w);		/* HR 131202: after dir_rem (MP) */
 		return NULL;
 	}
 	else
@@ -2309,10 +2574,14 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 
 #pragma warn -par
 
-boolean dir_add_window(const char *path)
+/* boolean dir_add_window(const char *path) DjV 017 280103 */
+boolean dir_add_window(const char *path, const char *name ) /* DjV 017 280103 */
 {
 	int j = 0, error;
 	char *fspec;
+
+	WINDOW
+		*dw;	/* DjV 017 280103 */
 
 	while ((j < MAXWINDOWS - 1) && (dirwindows[j].used != FALSE))
 		j++;
@@ -2333,12 +2602,66 @@ boolean dir_add_window(const char *path)
 		}
 		else
 		{
-			if (dir_do_open(&dirwindows[j], path, fspec, 0, 0, &error) == NULL)
+			/* if (dir_do_open(&dirwindows[j], path, fspec, 0, 0, &error) == NULL)  DjV 017 280103 */
+			if ( (dw = dir_do_open(&dirwindows[j], path, fspec, 0, 0, &error)) == NULL) /* DjV 017 280103 */
 			{
 				xform_error(error);
 				return FALSE;
 			}
 			else
+				/* DjV 017 280103 ---vvv--- */
+				/* use this to show search result */
+				if ( name != NULL )
+				{ 
+					int
+						nv,    /* number of visible items in the directory */
+						i,     /* item counter */
+						hp,vp; /* calculated slider positions */
+
+					NDTA
+						*h;
+
+					nv = dirwindows[j].dir_window->nvisible;
+
+					for ( i = 0; i < nv; i++ )
+					{
+						h = &dirwindows[j].dir_window->buffer[i];
+						if ( strcmp( h->name, name ) == 0 )
+						{
+							/* 
+							 * Calculate positions of sliders;
+							 * horizontal slider is here in case
+							 * of future development of multicolumn
+							 * display, when it might be needed.
+							 * Therefore, if-then-else below is more complicated
+							 * than it need currently be 
+							 */
+							if ( options.mode == TEXTMODE )
+							{
+								hp = 0; /* until multicolumn */
+								vp = min( 1000, (int)( (long)(i + 1) * 1000 / nv ) );
+							}
+							else
+							{
+								hp = 0; /* always ? */ 
+								vp = min( 1000, (int)( (long)(i + 1) * 1000 / nv ) );
+
+							}
+							dir_hslider ( dw, hp ); /* in fact, currently not needed */ 
+							dir_vslider ( dw, vp );
+
+							selection.w = dw;
+							selection.selected = i;
+							selection.n = 1; 					
+							itm_select( dw, i, 3, TRUE );
+							itm_set_menu( dw );
+							
+							break;
+						}
+					}
+				}
+				/* DjV 017 280103 ---^^^--- */
+
 				return TRUE;
 		}
 	}
@@ -2355,7 +2678,7 @@ boolean dir_add_window(const char *path)
 void dir_setfont(void)
 {
 	int i;
-	GRECT work;
+	RECT work;
 	WINFO *wd;
 
 	if (fnt_dialog(DTDFONT, &dir_font, FALSE) == TRUE)
@@ -2369,6 +2692,11 @@ void dir_setfont(void)
 				calc_rc(wd->dir_window, &work);
 				set_sliders(wd->dir_window);
 				dir_draw(wd->dir_window, TRUE);
+
+				/* 
+				 * DjV 012 261202 note: change of directory font 
+				 * should perhaps affect size of a fulled window 
+				 */
 			}
 		}
 	}
@@ -2382,13 +2710,13 @@ void dir_setfont(void)
 
 void dir_init(void)
 {
-	GRECT work;
+	RECT work;
 
-	xw_calc(WC_WORK, DFLAGS, (GRECT *) &screen_info.dsk_x, &work, NULL);
-	dmax.g_x = screen_info.dsk_x;
-	dmax.g_y = screen_info.dsk_y;
-	dmax.g_w = work.g_w - (work.g_w % screen_info.fnt_w);
-	dmax.g_h = work.g_h + DELTA - (work.g_h % (screen_info.fnt_h +DELTA));
+	xw_calc(WC_WORK, DFLAGS, &screen_info.dsk, &work, NULL);
+	dmax.x = screen_info.dsk.x;
+	dmax.y = screen_info.dsk.y;
+	dmax.w = work.w - (work.w % screen_info.fnt_w);
+	dmax.h = work.h + DELTA - (work.h % (screen_info.fnt_h +DELTA));
 }
 
 void dir_default(void)
@@ -2399,10 +2727,10 @@ void dir_default(void)
 
 	for (i = 0; i < MAXWINDOWS; i++)
 	{
-		dirwindows[i].x = 100 + i * screen_info.fnt_w * 2 - screen_info.dsk_x;
-		dirwindows[i].y = 30 + i * screen_info.fnt_h - screen_info.dsk_y;
-		dirwindows[i].w = screen_info.dsk_w / (2 * screen_info.fnt_w);
-		dirwindows[i].h = (screen_info.dsk_h * 11) / (20 * screen_info.fnt_h + 20 * DELTA);
+		dirwindows[i].x = 100 + i * screen_info.fnt_w * 2 - screen_info.dsk.x;
+		dirwindows[i].y = 30 + i * screen_info.fnt_h - screen_info.dsk.y;
+		dirwindows[i].w = screen_info.dsk.w / (2 * screen_info.fnt_w);
+		dirwindows[i].h = (screen_info.dsk.h * 11) / (20 * screen_info.fnt_h + 20 * DELTA);
 		dirwindows[i].flags.fulled = 0;
 		dirwindows[i].used = FALSE;
 	}
@@ -2494,10 +2822,10 @@ int dir_load_window(XFILE *file)
 	if ((n = x_fread(file, &sinfo, sizeof(SINFO2))) != sizeof(SINFO2))
 		return (n < 0) ? (int) n : EEOF;
 
-	if ((path = x_freadstr(file, NULL, &error)) == NULL)
+	if ((path = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 		return error;
 
-	if ((fspec = x_freadstr(file, NULL, &error)) == NULL)
+	if ((fspec = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 	{
 		free(path);
 		return error;
@@ -2554,7 +2882,7 @@ int dir_save_window(XFILE *file, WINDOW *w)
 static int itm_find(WINDOW *w, int x, int y)
 {
 	int hy, item;
-	GRECT r1, r2, work;
+	RECT r1, r2, work;
 	DIR_WINDOW *dw;
 
 	dw = (DIR_WINDOW *) w;
@@ -2563,7 +2891,7 @@ static int itm_find(WINDOW *w, int x, int y)
 
 	if (options.mode == TEXTMODE)
 	{
-		hy = (y - work.g_y - DELTA);
+		hy = (y - work.y - DELTA);
 		if (hy < 0)
 			return -1;
 		hy /= (dir_font.ch + DELTA);
@@ -2584,8 +2912,8 @@ static int itm_find(WINDOW *w, int x, int y)
 
 		columns = dw->columns;
 
-		hx = (x - work.g_x) / ICON_W;
-		hy = (y - work.g_y) / ICON_H;
+		hx = (x - work.x) / ICON_W;
+		hy = (y - work.y) / ICON_H;
 
 		if ((hx < 0) || (hy < 0) || (hx >= columns))
 			return -1;
@@ -2627,7 +2955,8 @@ static int itm_icon(WINDOW *w, int item)
 
 /* Funktie die de directory van een window teruggeeft. */
 
-static const char *dir_path(WINDOW *w)
+/* static DjV 031 070203 */
+const char *dir_path(WINDOW *w)
 {
 	return ((DIR_WINDOW *) w)->path;
 }
@@ -2717,7 +3046,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 {
 	long i, h;
 	NDTA *b;
-	GRECT r1, r2, d, work;
+	RECT r1, r2, d, work;
 
 	xw_get((WINDOW *) w, WF_WORKXYWH, &work);
 
@@ -2730,7 +3059,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 		graf_mouse(M_OFF, NULL);
 		xw_get((WINDOW *) w, WF_FIRSTXYWH, &r2);
-		while ((r2.g_w != 0) && (r2.g_h != 0))
+		while ((r2.w != 0) && (r2.h != 0))
 		{
 			xd_clip_on(&r2);
 			for (i = w->py; i < h; i++)
@@ -2760,7 +3089,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 		wind_update(BEG_UPDATE);
 
 		xw_get((WINDOW *) w, WF_FIRSTXYWH, &r2);
-		while ((r2.g_w != 0) && (r2.g_h != 0))
+		while ((r2.w != 0) && (r2.h != 0))
 		{
 			draw_tree(tree, &r2);
 			xw_get((WINDOW *) w, WF_NEXTXYWH, &r2);
@@ -2848,7 +3177,7 @@ static void calc_vitems(DIR_WINDOW *dw, int *s, int *n)
 
 /* Rubberbox funktie met scrolling */
 
-static void rubber_box(DIR_WINDOW *w, GRECT *work, int x, int y, GRECT *r)
+static void rubber_box(DIR_WINDOW *w, RECT *work, int x, int y, RECT *r)
 {
 	int x1 = x, y1 = y, x2 = x, y2 = y, ox = x, oy = y, hy = y;
 	int kstate, h, scroll, delta, absdelta;
@@ -2869,17 +3198,17 @@ static void rubber_box(DIR_WINDOW *w, GRECT *work, int x, int y, GRECT *r)
 
 		released = xe_mouse_event(0, &x2, &y2, &kstate);
 
-		if (y2 < screen_info.dsk_y)
-			y2 = screen_info.dsk_y;
+		if (y2 < screen_info.dsk.y)
+			y2 = screen_info.dsk.y;
 
-		if ((y2 < work->g_y) && (w->py > 0) && (y1 < INT_MAX - absdelta))
+		if ((y2 < work->y) && (w->py > 0) && (y1 < INT_MAX - absdelta))
 		{
 			redraw = TRUE;
 			scroll = WA_UPLINE;
 			delta = absdelta;
 		}
 
-		if ((y2 >= work->g_y + work->g_h) && ((w->py + w->nrows) < w->nlines) && (y1 > -INT_MAX + absdelta))
+		if ((y2 >= work->y + work->h) && ((w->py + w->nrows) < w->nlines) && (y1 > -INT_MAX + absdelta))
 		{
 			redraw = TRUE;
 			scroll = WA_DNLINE;
@@ -2897,9 +3226,9 @@ static void rubber_box(DIR_WINDOW *w, GRECT *work, int x, int y, GRECT *r)
 			if (scroll >= 0)
 			{
 				y1 += delta;
-				if (y1 < (h = work->g_y))
+				if (y1 < (h = work->y))
 					hy = h - 1;
-				else if (y1 > (h = work->g_y + work->g_h))
+				else if (y1 > (h = work->y + work->h))
 					hy = h;
 				else
 					hy = y1;
@@ -2922,24 +3251,24 @@ static void rubber_box(DIR_WINDOW *w, GRECT *work, int x, int y, GRECT *r)
 
 	if ((h = x2 - x1) < 0)
 	{
-		r->g_x = x2;
-		r->g_w = -h + 1;
+		r->x = x2;
+		r->w = -h + 1;
 	}
 	else
 	{
-		r->g_x = x1;
-		r->g_w = h + 1;
+		r->x = x1;
+		r->w = h + 1;
 	}
 
 	if ((h = y2 - y1) < 0)
 	{
-		r->g_y = y2;
-		r->g_h = -h + 1;
+		r->y = y2;
+		r->h = -h + 1;
 	}
 	else
 	{
-		r->g_y = y1;
-		r->g_h = h + 1;
+		r->y = y1;
+		r->h = h + 1;
 	}
 }
 
@@ -2950,7 +3279,7 @@ static void itm_rselect(WINDOW *w, int x, int y)
 {
 	long i, h;
 	int s, n;
-	GRECT r1, r2, r3, work;
+	RECT r1, r2, r3, work;
 	NDTA *b, *ndta;
 
 	xw_get(w, WF_WORKXYWH, &work);
@@ -2994,7 +3323,7 @@ static void itm_rselect(WINDOW *w, int x, int y)
 	dir_setnws((DIR_WINDOW *) w);
 }
 
-static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, GRECT *work)
+static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *work)
 {
 	if (options.mode == TEXTMODE)
 	{
@@ -3002,8 +3331,8 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, GRECT 
 
 		icnd->item = obj;
 		icnd->np = 5;
-		x = work->g_x + (2 - wd->px) * dir_font.cw - mx;
-		y = work->g_y + DELTA + (obj - (int) wd->py) * (dir_font.ch + DELTA) - my;
+		x = work->x + (2 - wd->px) * dir_font.cw - mx;
+		y = work->y + DELTA + (obj - (int) wd->py) * (dir_font.ch + DELTA) - my;
 		w = 12 * dir_font.cw - 1;
 		h = dir_font.ch - 1;
 		icnd->coords[0] = x;
@@ -3020,44 +3349,44 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, GRECT 
 	else
 	{
 		int columns, s;
-		GRECT ir, tr;
+		RECT ir, tr;
 
 		columns = wd->columns;
 		s = obj - columns * wd->py;
 
 		icn_comparea(wd, obj, &ir, &tr, work);
 
-		ir.g_x -= mx;
-		ir.g_y -= my;
-		ir.g_w -= 1;
-		tr.g_x -= mx;
-		tr.g_y -= my;
-		tr.g_w -= 1;
-		tr.g_h -= 1;
+		ir.x -= mx;
+		ir.y -= my;
+		ir.w -= 1;
+		tr.x -= mx;
+		tr.y -= my;
+		tr.w -= 1;
+		tr.h -= 1;
 
 		icnd->item = obj;
 		icnd->np = 9;
-		icnd->m_x = work->g_x + (s % columns) * ICON_W + ICON_W / 2 - mx;
-		icnd->m_y = work->g_y + (s / columns) * ICON_H + ICON_H / 2 - my;
+		icnd->m_x = work->x + (s % columns) * ICON_W + ICON_W / 2 - mx;
+		icnd->m_y = work->y + (s / columns) * ICON_H + ICON_H / 2 - my;
 
-		icnd->coords[0] = tr.g_x;
-		icnd->coords[1] = tr.g_y;
-		icnd->coords[2] = ir.g_x;
-		icnd->coords[3] = tr.g_y;
-		icnd->coords[4] = ir.g_x;
-		icnd->coords[5] = ir.g_y;
-		icnd->coords[6] = ir.g_x + ir.g_w;
-		icnd->coords[7] = ir.g_y;
-		icnd->coords[8] = ir.g_x + ir.g_w;
-		icnd->coords[9] = tr.g_y;
-		icnd->coords[10] = tr.g_x + tr.g_w;
-		icnd->coords[11] = tr.g_y;
-		icnd->coords[12] = tr.g_x + tr.g_w;
-		icnd->coords[13] = tr.g_y + tr.g_h;
-		icnd->coords[14] = tr.g_x;
-		icnd->coords[15] = tr.g_y + tr.g_h;
-		icnd->coords[16] = tr.g_x;
-		icnd->coords[17] = tr.g_y + 1;
+		icnd->coords[0] = tr.x;
+		icnd->coords[1] = tr.y;
+		icnd->coords[2] = ir.x;
+		icnd->coords[3] = tr.y;
+		icnd->coords[4] = ir.x;
+		icnd->coords[5] = ir.y;
+		icnd->coords[6] = ir.x + ir.w;
+		icnd->coords[7] = ir.y;
+		icnd->coords[8] = ir.x + ir.w;
+		icnd->coords[9] = tr.y;
+		icnd->coords[10] = tr.x + tr.w;
+		icnd->coords[11] = tr.y;
+		icnd->coords[12] = tr.x + tr.w;
+		icnd->coords[13] = tr.y + tr.h;
+		icnd->coords[14] = tr.x;
+		icnd->coords[15] = tr.y + tr.h;
+		icnd->coords[16] = tr.x;
+		icnd->coords[17] = tr.y + 1;
 	}
 }
 
@@ -3119,7 +3448,7 @@ static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible,
 	long i;
 	ICND *icnlist;
 	NDTA *d;
-	GRECT work;
+	RECT work;
 
 	xw_get(w, WF_WORKXYWH, &work);
 

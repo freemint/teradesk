@@ -35,6 +35,64 @@
 #include "file.h"
 #include "window.h"
 
+/* DjV 022 120103 170103 ---vvv--- */
+XDINFO dinfo; 	
+int dopen;    	/* flag that dialog is open */ 
+int oldtype;	/* previous item type       */
+
+/* 
+ * Openinfo either opens or redraws a dialog.
+ * now, closeinfo must come after si_drive, folder_info and file_info 
+ * because those routines do not close the dialog after each item anymore
+ */
+
+void closeinfo(void)
+{
+	if ( dopen )
+	{
+		xd_close (&dinfo);
+		dopen = FALSE;
+	}
+}
+
+void openinfo
+( 
+	OBJECT *tree /* pointer to drive/file/folder dialog to be opened */ 
+)
+{
+	graf_mouse( ARROW, NULL );
+	if ( !dopen )
+	{
+		xd_open( tree, &dinfo );
+		dopen = TRUE;
+	}
+	else
+		xd_draw ( &dinfo, ROOT, MAX_DEPTH );
+}
+
+/* DjV 022 120103 170103 ---^^^--- */
+
+/* DjV 017 190103 ---vvv--- */
+/*
+ * trim path to be displayed in order to remove 
+ * item name, so that more of the path can fit into field;
+ * does not trim if it is only disk drive name.
+ */
+/* there is already a similar routine but it doesn't do quite the same */
+
+void path_to_disp ( char *fpath )
+{
+	char *nend;
+		
+	nend = strrchr ( fpath, '\\' );
+	if ( nend != NULL )
+	{
+		if ( *(nend -1L) == ':' ) nend++;
+		*nend = 0;
+	}
+}
+/* DjV 017 190103 ---^^^--- */
+
 static void cv_ttoform(char *tstr, unsigned int time)
 {
 	unsigned int sec, min, hour, h;
@@ -66,26 +124,10 @@ static int si_error(const char *name, int error)
 	return xhndl_error(MESHOWIF, error, name);
 }
 
-static int si_dialog(OBJECT *tree, int start, int *x, int *y)
-{
-	int exit, w = tree->ob_width / 2, h = tree->ob_height / 2;
-
-	tree->ob_x = *x - w;
-	tree->ob_y = *y - h;
-
-	exit = xd_dialog(tree, start);
-
-	*x = tree->ob_x + w;
-	*y = tree->ob_y + h;
-
-	return exit;
-}
-
 #pragma warn -par
-static int si_drive(const char *path, int *x, int *y)
+int si_drive(const char *path, int *x, int *y) /* DjV 006 010103 */
 {
-	char *disklabel;
-	char dskl[14];
+	SNAME dskl;				/* HR 240203 */
 	long nfolders, nfiles, bytes;
 	int drive, error = 0, result = 0;
 	DISKINFO diskinfo;
@@ -95,11 +137,10 @@ static int si_drive(const char *path, int *x, int *y)
 		drive = path[0];
 
 		driveinfo[DIDRIVE].ob_spec.obspec.character = drive;
-		disklabel = driveinfo[DILABEL].ob_spec.tedinfo->te_ptext;
 
 		graf_mouse(HOURGLASS, NULL);
 
-		if ((error = cnt_items(path, &nfolders, &nfiles, &bytes, 0x11 | options.attribs)) == 0)
+		if ((error = cnt_items(path, &nfolders, &nfiles, &bytes, 0x11 | options.attribs, FALSE, NULL)) == 0) /* DjV 017 150103 */
 			if ((error = x_getlabel(drive - 'A', dskl)) == 0)
 				x_dfree(&diskinfo, drive - 'A' + 1);
 
@@ -107,18 +148,24 @@ static int si_drive(const char *path, int *x, int *y)
 
 		if (error == 0)
 		{
-			long clsize;
+			long clsize  = diskinfo.b_secsiz * diskinfo.b_clsiz;
 
-			clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
-
-			cv_fntoform(disklabel, dskl, 12);		/* HR 271102 */
+			cv_fntoform(driveinfo + DILABEL, dskl);		/* HR 240103 */
 			rsc_ltoftext(driveinfo, DIFOLDER, nfolders);
 			rsc_ltoftext(driveinfo, DIFILES, nfiles);
 			rsc_ltoftext(driveinfo, DIBYTES, bytes);
 			rsc_ltoftext(driveinfo, DIFREE, diskinfo.b_free * clsize);
 			rsc_ltoftext(driveinfo, DISPACE, diskinfo.b_total * clsize);
-			if (si_dialog(driveinfo, 0, x, y) == DIABORT)
+			/* DjV 022 120103 ---vvv--- */
+			openinfo ( driveinfo );
+			if( xd_form_do( &dinfo, ROOT ) == DIABORT )
+			{
+				xd_change( &dinfo, DIABORT, NORMAL, TRUE ); 
 				result = XABORT;
+			}
+			else
+				xd_change( &dinfo, DIOK, NORMAL, TRUE ); 
+			/* DjV 022 120103 ---^^^--- */
 		}
 		else
 			result = si_error(path, error);
@@ -143,24 +190,33 @@ static int frename(const char *oldname, const char *newname)
 	return error;
 }
 
-static int folder_info(const char *oldname, const char *fname, XATTR *attr, int *x, int *y)
+int folder_info(const char *oldname, const char *fname, XATTR *attr)	/* DjV 017 150103 global function */
 {
 	char *name, *time, *date;
 	char nfname[256], *newname;
 	long nfolders, nfiles, bytes;
-	int error, start, button, result = 0;
+	int error, /* start, */ button, result = 0;
 
 	name = xd_get_obspec(folderinfo + FINAME).tedinfo->te_ptext;	/* HR 021202 */
 	time = folderinfo[FITIME].ob_spec.tedinfo->te_ptext;
 	date = folderinfo[FIDATE].ob_spec.tedinfo->te_ptext;
 
 	graf_mouse(HOURGLASS, NULL);
-	error = cnt_items(oldname, &nfolders, &nfiles, &bytes, 0x11 | options.attribs);
+	error = cnt_items(oldname, &nfolders, &nfiles, &bytes, 0x11 | options.attribs, FALSE, NULL); /* DjV 017 150103 */
 	graf_mouse(ARROW, NULL);
 
 	if (error == 0)
 	{
-		cv_fntoform(name, fname, 64);		/* HR 271102 */
+		/* DjV 021 120103
+		 * trim path to be displayed in order to remove 
+		 * item name, so that more of the path can fit into field;
+		 * does not trim if it is only disk drive name.
+		 */
+		strcpy ( nfname, oldname ); /* conveninent to use nfname */
+		path_to_disp ( nfname );
+		cv_fntoform(folderinfo + FIPATH, nfname);			/* HR 240103 */
+		cv_fntoform(folderinfo + FINAME, fname);			/* HR 240103 */
+
 		cv_ttoform(time, attr->mtime);
 		cv_dtoform(date, attr->mdate);
 		rsc_ltoftext(folderinfo, FIFOLDER, nfolders);
@@ -168,17 +224,29 @@ static int folder_info(const char *oldname, const char *fname, XATTR *attr, int 
 		rsc_ltoftext(folderinfo, FIBYTES, bytes);
 		if (tos1_4())
 		{
-			start = FINAME;
-			folderinfo[FINAME].ob_flags |= EDITABLE;
+/*			start = FINAME;
+*/			folderinfo[FINAME].ob_flags |= EDITABLE;
 		}
 		else
 		{
-			start = 0;
-			folderinfo[FINAME].ob_flags &= ~EDITABLE;
+/*			start = 0;
+*/			folderinfo[FINAME].ob_flags &= ~EDITABLE;
 		}
-		button = si_dialog(folderinfo, start, x, y);
+
+		/* DjV 022 120103 ---vvv--- */
+		/* 
+		 * Will there be a problem in TOS < 1.4 (can't test, don't have)
+		 * because "start" is not used anymore?
+		 */
+		/* button = si_dialog(folderinfo, start, x, y); */
+		openinfo ( folderinfo );
+		button = xd_form_do( &dinfo, ROOT );
+		/* DjV 022 120103 ---^^^--- */
+
 		if (button == FIOK)
 		{
+			xd_change( &dinfo, FIOK, NORMAL, TRUE ); /* DjV 022 120103 */
+
 			cv_formtofn(nfname, name);
 
 			if (strcmp(nfname, fname) != 0)
@@ -192,7 +260,15 @@ static int folder_info(const char *oldname, const char *fname, XATTR *attr, int 
 			}
 		}
 		else if (button == FIABORT)
+		{												/* DjV 022 120103 */
+			xd_change( &dinfo, FIABORT, NORMAL, TRUE ); /* DjV 022 120103 */
 			result = XABORT;
+		}												/* DjV 022 120103 */
+		else if ( button == FISKIP )					/* DjV 022 120103 */
+		{												/* DjV 017 190103 */
+			xd_change( &dinfo, FISKIP, NORMAL, TRUE );	/* DjV 022 120103 */
+			result = XSKIP;								/* DjV 017 190103 */
+		}												/* DjV 017 190103 */
 	}
 	else
 		result = si_error(fname, error);
@@ -202,29 +278,20 @@ static int folder_info(const char *oldname, const char *fname, XATTR *attr, int 
 
 static void set_file_attribs(int attribs)		/* HR 151102: preserve extended bits */
 {
-	if (attribs & FA_READONLY)
-		fileinfo[ISWP].ob_state |= SELECTED;
-	else
-		fileinfo[ISWP].ob_state &= ~SELECTED;
-
-	if (attribs & FA_HIDDEN)
-		fileinfo[ISHIDDEN].ob_state |= SELECTED;
-	else
-		fileinfo[ISHIDDEN].ob_state &= ~SELECTED;
-
-	if (attribs & FA_SYSTEM)
-		fileinfo[ISSYSTEM].ob_state |= SELECTED;
-	else
-		fileinfo[ISSYSTEM].ob_state &= ~SELECTED;
+	/* DjV 014 030103 */
+	set_opt( fileinfo, attribs, FA_READONLY, ISWP );
+	set_opt( fileinfo, attribs, FA_HIDDEN, ISHIDDEN );
+	set_opt( fileinfo, attribs, FA_SYSTEM, ISSYSTEM );
 }
 
 static int get_file_attribs(int old_attribs)
 {
 	int attribs = (old_attribs & 0xFFF8);
 
-	attribs |= (fileinfo[ISWP].ob_state & SELECTED) ? FA_READONLY : 0;			/* HR 151102 */
-	attribs |= (fileinfo[ISHIDDEN].ob_state & SELECTED) ? FA_HIDDEN : 0;
-	attribs |= (fileinfo[ISSYSTEM].ob_state & SELECTED) ? FA_SYSTEM : 0;
+	/* DjV 014 030103 */
+	get_opt ( fileinfo, &attribs, FA_READONLY, ISWP );
+	get_opt ( fileinfo, &attribs, FA_HIDDEN, ISHIDDEN );
+	get_opt ( fileinfo, &attribs, FA_SYSTEM, ISSYSTEM );
 
 	return attribs;
 }
@@ -240,7 +307,7 @@ static int fattrib(const char *name, int attribs)
 	return (error >= 0) ? 0 : error;
 }
 
-static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x, int *y)
+int file_info(const char *oldname, const char *fname, XATTR *attr)	/* DjV 017 160103 global function */
 {
 	char *name, *time, *date, nfname[256], *newname;
 	int button, attrib = attr->attr, result = 0;
@@ -249,7 +316,14 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 	time = fileinfo[FLTIME].ob_spec.tedinfo->te_ptext;
 	date = fileinfo[FLDATE].ob_spec.tedinfo->te_ptext;
 
-	cv_fntoform(name, fname, 64);		/* HR 271102 */
+	/* DjV 021 150103 ---vvv--- */
+	strcpy ( nfname, oldname );
+	path_to_disp ( nfname );
+	/* DjV 021 120103 ---^^^--- */
+
+	cv_fntoform(fileinfo + FLPATH, nfname);			/* HR 240103 */
+	cv_fntoform(fileinfo + FLNAME, fname);			/* HR 240103 */
+
 	cv_ttoform(time, attr->mtime);
 	cv_dtoform(date, attr->mdate);
 	rsc_ltoftext(fileinfo, FLBYTES, attr->size);
@@ -258,11 +332,19 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 #endif
 		set_file_attribs(attrib);
 
-	button = si_dialog(fileinfo, FLNAME, x, y);
+	/* DjV 022 120103 ---vvv--- */
+
+	/* button = si_dialog(fileinfo, FLNAME, x, y); */
+	openinfo ( fileinfo );
+	button = xd_form_do( &dinfo, ROOT );
+
+	/* DjV 022 120103 ---^^^--- */
 
 	if (button == FLOK)
 	{
 		int error = 0, new_attribs;
+
+		xd_change( &dinfo, FLOK, NORMAL, TRUE );
 
 #if _MINT_				/* HR 151102 */
 		if (mint)
@@ -307,12 +389,20 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 		}
 	}
 	else if (button == FLABORT)
+	{												/* DJV 022 120103 */
+		xd_change( &dinfo, FLABORT, NORMAL, TRUE ); /* DjV 022 120103 */
 		result = XABORT;
+	} 												/* DjV 022 120103 */
+	else if (button == FLSKIP )						/* DjV 022 120103 */
+	{												/* DjV 017 190103 */
+		xd_change( &dinfo, FLSKIP, NORMAL, TRUE ); 	/* DjV 022 120103 */
+		result = XSKIP;								/* DjV 017 190103 */
+	}												/* DjV 017 190103 */
 
 	return result;
 }
 
-void item_showinfo(WINDOW *w, int n, int *list)
+void item_showinfo(WINDOW *w, int n, int *list, int search )  /* DjV 017 150103 */
 {
 	int i, item, error, x, y, oldmode, result = 0;
 	ITMTYPE type;
@@ -320,9 +410,35 @@ void item_showinfo(WINDOW *w, int n, int *list)
 	XATTR attrib;
 	const char *path, *name;
 
+	long nd, nf, nb; /* DjV 017 150103 */
+	LNAME pattern; /* DjV 017 170103 */ /* HR 240203 */
+	int button; /* DjV 017 170103 */
+
 	x = -1;
 	y = -1;
 	curr_pos = FALSE;
+
+
+	/* DjV 020 150103 ---vvv--- */
+
+	if ( search )
+	{
+
+		/* open a dialog to input search pattern */
+
+		rsc_title(newfolder, NDTITLE, FOFINAME );
+		*dirname = 0;
+		button = xd_dialog(newfolder, DIRNAME);
+
+		if ((button == NEWDIROK) && (strlen(dirname) != 0))
+			cv_formtofn(pattern, dirname);
+		else
+			return;
+	}
+	/* DjV 020 150103 ---^^^--- */
+
+	oldtype = itm_type(w, list[0]); /* DjV 022 120103 */
+	dopen = FALSE; 					/* DJV 022 120103 */
 
 	for (i = 0; i < n; i++)
 	{
@@ -336,30 +452,49 @@ void item_showinfo(WINDOW *w, int n, int *list)
 
 		type = itm_type(w, item);
 
+		/* DJV 022 120103 ---vvv--- */
+		if ( (type != oldtype) && dopen )
+		{
+			closeinfo();
+			oldtype = type;
+		}
+		/* DJV 022 120103 ---^^^--- */
+
 		if ((type == ITM_FOLDER) || (type == ITM_FILE) || (type == ITM_PROGRAM) || (type == ITM_DRIVE))
 		{
 			if ((path = itm_fullname(w, item)) == NULL)
 				result = XFATAL;
 			else
 			{
-				if (type == ITM_DRIVE)
-					result = si_drive(path, &x, &y);
+				/* DJV 017 150103 290103 ---vvv--- */
+				if ( search ) 
+				{
+					if ( (nd = cnt_items ( path, &nd, &nf, &nb, 0x1 | options.attribs, TRUE, pattern ) ) != XSKIP )
+						break;
+				}
 				else
 				{
-					name = itm_name(w, item);
+					/* DjV 017 150103 ---^^^--- */
 
-					graf_mouse(HOURGLASS, NULL);
-					error = itm_attrib(w, item, 0, &attrib);
-					graf_mouse(ARROW, NULL);
-
-					if (error != 0)
-						result = si_error(name, error);
+					if (type == ITM_DRIVE)
+						result = si_drive(path, &x, &y);
 					else
 					{
-						if (type == ITM_FOLDER)
-							result = folder_info(path, name, &attrib, &x, &y);
+						name = itm_name(w, item);
+
+						graf_mouse(HOURGLASS, NULL);
+						error = itm_attrib(w, item, 0, &attrib);
+						graf_mouse(ARROW, NULL);
+
+						if (error != 0)
+							result = si_error(name, error);
 						else
-							result = file_info(path, name, &attrib, &x, &y);
+						{
+							if (type == ITM_FOLDER)
+								result = folder_info(path, name, &attrib /* , &x, &y */);
+							else
+								result = file_info(path, name, &attrib /* , &x, &y */);
+						}
 					}
 				}
 				free(path);
@@ -373,5 +508,9 @@ void item_showinfo(WINDOW *w, int n, int *list)
 			break;
 	}
 
+	if ( dopen )		/* DjV 022 120103 */
+		closeinfo();
+
 	wd_do_update();
+	graf_mouse ( ARROW, NULL ); /* DjV 017 190103 */
 }

@@ -113,7 +113,7 @@ typedef struct xdinfo
 {
 	OBJECT *tree;			/* pointer naar object boom. */
 	int dialmode;			/* dialoog mode. */
-	GRECT drect;			/* Maten van de dialoogbox. */
+	RECT drect;				/* Maten van de dialoogbox. */
 	WINDOW *window;			/* Indien in window mode pointer naar window structuur. */
 	int edit_object;		/* Object waarop de cursor staat. */
 	int cursor_x;			/* x positie in edit_object. */
@@ -136,9 +136,9 @@ typedef struct
 	int ev_mflags;
 	int ev_mbclicks, ev_mbmask, ev_mbstate;
 	int ev_mm1flags;
-	GRECT ev_mm1;
+	RECT ev_mm1;
 	int ev_mm2flags;
-	GRECT ev_mm2;
+	RECT ev_mm2;
 	unsigned int ev_mtlocount, ev_mthicount;
 
 	int ev_mwhich;
@@ -158,10 +158,10 @@ typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 /* Funkties voor het openen en sluiten van een dialoog */
 
 void xd_open(OBJECT *tree, XDINFO *info);
-void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
+void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 						  int zoom);
 void xd_close(XDINFO *info);
-void xd_close_wzoom(XDINFO *info, GRECT *xywh, int zoom);
+void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom);
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
@@ -200,17 +200,17 @@ void exit_xdialog(void);
 
 /* Hulpfunkties */
 
-int xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *intersection);
-int xd_inrect(int x, int y, GRECT *r);
+int xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
+int xd_inrect(int x, int y, RECT *r);
 
-long xd_initmfdb(GRECT *r, MFDB *mfdb);
+long xd_initmfdb(RECT *r, MFDB *mfdb);
 
-void xd_objrect(OBJECT *tree, int object, GRECT *r);
+void xd_objrect(OBJECT *tree, int object, RECT *r);
 
 void xd_userdef(OBJECT *object, USERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
 
-void xd_rect2pxy(GRECT *r, int *pxy);
+void xd_rect2pxy(RECT *r, int *pxy);
 
 int xd_obj_parent(OBJECT *tree, int object);
 
@@ -222,14 +222,14 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent);
 void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 
 OBSPEC xd_get_obspec(OBJECT *object);
-void xd_set_obspec(OBJECT *object, OBSPEC obspec);		/* HR 021202 */
+void xd_set_obspec(OBJECT *object, OBSPEC obspec);
 void *xd_get_scrled(OBJECT *tree, int edit_obj);	/* HR 021202 */
 
 int xd_set_tristate(int ob_state, int state);
 int xd_get_tristate(int ob_state);
 int xd_is_tristate(OBJECT *tree);
 
-void xd_clip_on(GRECT *r);
+void xd_clip_on(RECT *r);
 void xd_clip_off(void);
 
 /* Event funkties */
@@ -242,8 +242,8 @@ int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
 /* Funkties voor niet modale dialoogboxen. */
 
 int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-			  int start, int x, int y, OBJECT *menu, GRECT *xywh,
+			  int start, int x, int y, OBJECT *menu, RECT *xywh,
 			  int zoom, const char *title);
-void xd_nmclose(XDINFO *info, GRECT *xywh, int zoom);
+void xd_nmclose(XDINFO *info, RECT *xywh, int zoom);
 
 #endif

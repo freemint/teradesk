@@ -27,3 +27,4 @@ void prg_init(void);
 void prg_default(void);
 int prg_load(XFILE *file);
 int prg_save(XFILE *file);
+boolean prg_isprogram(const char *name); /* DjV 028 160203 */

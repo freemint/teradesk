@@ -18,13 +18,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-boolean clip_desk(GRECT *r);
+boolean clip_desk(RECT *r);
 void clipdesk_on(void);
-void clear(GRECT *r);
-void invert(GRECT *r);
-boolean rc_intersect2(GRECT *r1, GRECT *r2);
-boolean inrect(int x, int y, GRECT *r);
-void move_screen(GRECT *dest, GRECT *src);
+void clear(RECT *r);
+void pclear(RECT *r); /* DjV 011 030203 */
+void invert(RECT *r);
+boolean rc_intersect2(RECT *r1, RECT *r2);
+boolean inrect(int x, int y, RECT *r);
+void move_screen(RECT *dest, RECT *src);
 void set_txt_default(int font, int height);
 int *get_colors(void);
 void set_colors(int *colors);

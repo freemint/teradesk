@@ -44,9 +44,11 @@ typedef struct
 #define etv_term	( *( void (**)( void ) ) 0x408L )
 
 #define resvalid	( * (long *) 0x426L )
-#define resvector   ( * ( void (**)( void ) ) 0x42AL )
-
+#define memctrl		( * (long *) 0x420L )			/* HR 230203 */
+#define memval2		( * (long *) 0x43aL )			/* HR 230203 */
+#define os_start	( * (long *) 0x4f2L )			/* HR 230203 */
 #define phystop		( * (void **) 0x42EL )
+#define resvector   ( * ( void (**)( void ) ) 0x42AL )
 
 #define _timer_ms	( * (int *) 0x442L )
 #define _fverify	( * (int *) 0x444L )

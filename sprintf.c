@@ -18,8 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <np_aes.h>			/* HR 240203 */
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdarg.h>			/* HR 240203 */
 #include <boolean.h>
 #include <ctype.h>
 
@@ -97,4 +98,24 @@ int sprintf(char *buffer, const char *format,...)
 	va_end(argpoint);
 
 	return r;
+}
+
+int vaprintf( int def,const char *string,va_list argpoint )
+{
+	char s[256];
+
+	vsprintf(s,string,argpoint);
+	return form_alert(def,s);
+}
+
+int aprintf( int def,const char *string, ... )
+{
+	va_list argpoint;
+	int button;
+
+	va_start(argpoint,string);
+	button = vaprintf(def,string,argpoint);
+	va_end(argpoint);
+
+	return button;
 }

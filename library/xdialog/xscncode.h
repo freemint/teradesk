@@ -98,3 +98,5 @@
 #define CTL_CURDOWN		0x8250
 #define CTL_CURLEFT		0x8273
 #define CTL_CURRIGHT	0x8274
+#define PAGE_DOWN		0x8051			/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
+#define PAGE_UP			0x8049

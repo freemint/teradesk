@@ -47,17 +47,17 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 	if (sl->n > sl->lines)
 	{
-		sh = (int) (((long) sl->lines * (long) tree[sl->sparent].ob_height) / (long) sl->n);
+		sh = (int) (((long) sl->lines * (long) tree[sl->sparent].r.h) / (long) sl->n);
 		if (sh < screen_info.fnt_h)
 			sh = screen_info.fnt_h;
 	}
 	else
-		sh = tree[sl->sparent].ob_height;
+		sh = tree[sl->sparent].r.h;
 
-	tree[sl->slider].ob_height = sh;
+	tree[sl->slider].r.h = sh;
 
 	s = sl->n - sl->lines;
-	tree[sl->slider].ob_y = (s > 0) ? (int) (((long) (tree[sl->sparent].ob_height - sh) * (long) sl->line) / (long) s) : 0;
+	tree[sl->slider].r.y = (s > 0) ? (int) (((long) (tree[sl->sparent].r.h - sh) * (long) sl->line) / (long) s) : 0;
 
 	if (info != NULL)
 		xd_draw(info, sl->sparent, MAX_DEPTH);

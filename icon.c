@@ -19,7 +19,6 @@
  */
 
 #include <np_aes.h>			/* HR 151102: modern */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
@@ -27,6 +26,7 @@
 #include <mint.h>
 #include <xdialog.h>
 
+#include "sprintf.h"		/* HR 240203: get rid of stream io */
 #include "copy.h"
 #include "desk.h"
 #include "error.h"
@@ -41,10 +41,9 @@
 #include "icon.h"
 #include "screen.h"
 #include "viewer.h"
+#include "video.h"
 #include "window.h"
 #include "applik.h"
-
-int alert_msg(int def, const char *string, ...);
 
 typedef enum
 {
@@ -61,16 +60,14 @@ typedef struct
 	int icon_index;
 	boolean selected;
 	boolean newstate;
-	char label[14];		/* label of assigned icon */
+	SNAME label;		/* label of assigned icon */ /* HR 240203 */
 	union
 	{
 		int drv;
 		const char *name;
 	} icon_dat;
 	icn_upd_type update;
-#if NEWICON
-	char icon_name[14];	/* HR 151102: name of icon in resource */
-#endif
+	SNAME icon_name;	/* HR 151102: name of icon in resource */ /* HR 240203 */
 } ICON;
 
 typedef struct
@@ -82,10 +79,8 @@ typedef struct
 	unsigned char x;
 	unsigned char y;
 	int resvd2;
-	char label[14];		/* label of assigned icon */
-#if NEWICON
-	char icon_name[14];	/* HR 151102: name of icon in resource */
-#endif
+	SNAME label;		/* label of assigned icon */ /* HR 240203 */
+	SNAME icon_name;	/* HR 151102: name of icon in resource */ /* HR 240203 */
 } ICONINFO;
 
 typedef struct
@@ -175,6 +170,8 @@ OBJECT *icons;			/* HR 151202: use rsrc_load for icons. */
 int *icon_data, n_icons;
 WINDOW *desk_window;
 
+SNAME iname; 			/* DjV 024 140103 */ /* HR 240203 */
+
 MFORM icnm =
 {8, 8, 1, 1, 0,
  0x1FF8,
@@ -210,6 +207,7 @@ MFORM icnm =
  0x7FFE,
  0x0000};
 
+
 /********************************************************************
  *																	*
  * Funktie voor het opnieuw tekenen van de desktop.					*
@@ -218,10 +216,10 @@ MFORM icnm =
 
 void dsk_draw(void)
 {
-	form_dial(FMD_START, 0, 0, 0, 0, screen_info.dsk_x, screen_info.dsk_y,
-			  screen_info.dsk_w, screen_info.dsk_h);
-	form_dial(FMD_FINISH, 0, 0, 0, 0, screen_info.dsk_x, screen_info.dsk_y,
-			  screen_info.dsk_w, screen_info.dsk_h);
+	form_dial(FMD_START, 0, 0, 0, 0, screen_info.dsk.x, screen_info.dsk.y,
+			  screen_info.dsk.w, screen_info.dsk.h);
+	form_dial(FMD_FINISH, 0, 0, 0, 0, screen_info.dsk.x, screen_info.dsk.y,
+			  screen_info.dsk.w, screen_info.dsk.h);
 }
 
 /********************************************************************
@@ -240,9 +238,9 @@ static boolean isfile(ITMTYPE type)
 
 #define WF_OWNER	20
 
-static void redraw_desk(GRECT *r1)
+static void redraw_desk(RECT *r1)
 {
-	GRECT r2, d;
+	RECT r2, d;
 	int owner;
 	boolean redraw;
 
@@ -261,10 +259,10 @@ static void redraw_desk(GRECT *r1)
 	{
 		xw_get(NULL, WF_FIRSTXYWH, &r2);
 
-		while ((r2.g_w != 0) && (r2.g_h != 0))
+		while ((r2.w != 0) && (r2.h != 0))
 		{
 			if (xd_rcintersect(r1, &r2, &d) == TRUE)
-				objc_draw(desktop, ROOT, MAX_DEPTH, d.g_x, d.g_y, d.g_w, d.g_h);
+				objc_draw(desktop, ROOT, MAX_DEPTH, d.x, d.y, d.w, d.h);
 			xw_get(NULL, WF_NEXTXYWH, &r2);
 		}
 	}
@@ -278,7 +276,7 @@ static void redraw_desk(GRECT *r1)
 
 static void erase_icon(int object)
 {
-	GRECT r;
+	RECT r;
 
 	xd_objrect(desktop, object + 1, &r);
 
@@ -289,7 +287,7 @@ static void erase_icon(int object)
 
 static void draw_icon(int i)
 {
-	GRECT r;
+	RECT r;
 
 	xd_objrect(desktop, i + 1, &r);
 	redraw_desk(&r);
@@ -313,7 +311,7 @@ static void dsk_setnws(void)
 static void dsk_drawsel(void)
 {
 	int i, x, y;
-	GRECT r = {-1, -1, -1, -1};
+	RECT r = {-1, -1, -1, -1};
 
 	desktop[0].ob_type = G_IBOX;
 
@@ -327,24 +325,24 @@ static void dsk_drawsel(void)
 			{
 				desktop[i + 1].ob_state = (desk_icons[i].newstate) ? SELECTED : NORMAL;
 				objc_offset(desktop, i + 1, &x, &y);
-				if ((x < r.g_x) || (r.g_x < 0))
-					r.g_x = x;
-				if ((y < r.g_y) || (r.g_y < 0))
-					r.g_y = y;
-				x += desktop[i + 1].ob_width - 1;
-				y += desktop[i + 1].ob_height - 1;
-				if (x > r.g_w)
-					r.g_w = x;
-				if (y > r.g_h)
-					r.g_h = y;
+				if ((x < r.x) || (r.x < 0))
+					r.x = x;
+				if ((y < r.y) || (r.y < 0))
+					r.y = y;
+				x += desktop[i + 1].r.w - 1;
+				y += desktop[i + 1].r.h - 1;
+				if (x > r.w)
+					r.w = x;
+				if (y > r.h)
+					r.h = y;
 			}
 		}
 	}
 
-	if (r.g_x >= 0)
+	if (r.x >= 0)
 	{
-		r.g_w -= r.g_x + 1;
-		r.g_h -= r.g_y + 1;
+		r.w -= r.x + 1;
+		r.h -= r.y + 1;
 		redraw_desk(&r);
 	}
 
@@ -362,7 +360,7 @@ static void dsk_drawsel(void)
  *																	*
  ********************************************************************/
 
-static void rubber_box(int x, int y, GRECT *r)
+static void rubber_box(int x, int y, RECT *r)
 {
 	int x1 = x, y1 = y, x2 = x, y2 = y, ox = x, oy = y, kstate, h;
 	boolean released;
@@ -378,8 +376,8 @@ static void rubber_box(int x, int y, GRECT *r)
 	{
 		released = xe_mouse_event(0, &x2, &y2, &kstate);
 
-		if (y2 < screen_info.dsk_y)
-			y2 = screen_info.dsk_y;
+		if (y2 < screen_info.dsk.y)
+			y2 = screen_info.dsk.y;
 
 		if ((released != FALSE) || (x2 != ox) || (y2 != oy))
 		{
@@ -399,24 +397,24 @@ static void rubber_box(int x, int y, GRECT *r)
 
 	if ((h = x2 - x1) < 0)
 	{
-		r->g_x = x2;
-		r->g_w = -h + 1;
+		r->x = x2;
+		r->w = -h + 1;
 	}
 	else
 	{
-		r->g_x = x1;
-		r->g_w = h + 1;
+		r->x = x1;
+		r->w = h + 1;
 	}
 
 	if ((h = y2 - y1) < 0)
 	{
-		r->g_y = y2;
-		r->g_h = -h + 1;
+		r->y = y2;
+		r->h = -h + 1;
 	}
 	else
 	{
-		r->g_y = y1;
-		r->g_h = h + 1;
+		r->y = y1;
+		r->h = h + 1;
 	}
 }
 
@@ -464,7 +462,7 @@ static void icn_select(WINDOW *w, int selected, int mode, boolean draw)
 static void icn_rselect(WINDOW *w, int x, int y)
 {
 	int i;
-	GRECT r1, r2;
+	RECT r1, r2;
 	CICONBLK *h;		/* HR 151102: ciconblk (the largest) */
 
 	rubber_box(x, y, &r1);
@@ -474,19 +472,19 @@ static void icn_rselect(WINDOW *w, int x, int y)
 		if (desk_icons[i].item_type != ITM_NOTUSED)
 		{
 			h = desktop[i + 1].ob_spec.ciconblk;
-			r2.g_x = desktop[0].ob_x + desktop[i + 1].ob_x + h->monoblk.ib_xicon;
-			r2.g_y = desktop[0].ob_y + desktop[i + 1].ob_y + h->monoblk.ib_yicon;
-			r2.g_w = h->monoblk.ib_wicon;
-			r2.g_h = h->monoblk.ib_hicon;
+			r2.x = desktop[0].r.x + desktop[i + 1].r.x + h->monoblk.ic.x;
+			r2.y = desktop[0].r.y + desktop[i + 1].r.y + h->monoblk.ic.y;
+			r2.w = h->monoblk.ic.w;
+			r2.h = h->monoblk.ic.h;
 
 			if (rc_intersect2(&r1, &r2))
 				desk_icons[i].newstate = (desk_icons[i].selected) ? FALSE : TRUE;
 			else
 			{
-				r2.g_x = desktop[0].ob_x + desktop[i + 1].ob_x + h->monoblk.ib_xtext;
-				r2.g_y = desktop[0].ob_y + desktop[i + 1].ob_y + h->monoblk.ib_ytext;
-				r2.g_w = h->monoblk.ib_wtext;
-				r2.g_h = h->monoblk.ib_htext;
+				r2.x = desktop[0].r.x + desktop[i + 1].r.x + h->monoblk.tx.x;
+				r2.y = desktop[0].r.y + desktop[i + 1].r.y + h->monoblk.tx.y;
+				r2.w = h->monoblk.tx.w;
+				r2.h = h->monoblk.tx.h;
 				if (rc_intersect2(&r1, &r2))
 					desk_icons[i].newstate = (desk_icons[i].selected) ? FALSE : TRUE;
 				else
@@ -636,16 +634,16 @@ static void get_icnd(int object, ICND *icnd, int mx, int my)
 
 	icnd->item = object;
 	icnd->np = 9;
-	icnd->m_x = desktop[obj].ob_x + desktop[obj].ob_width / 2 - mx + screen_info.dsk_x;
-	icnd->m_y = desktop[obj].ob_y + desktop[obj].ob_height / 2 - my + screen_info.dsk_y;
+	icnd->m_x = desktop[obj].r.x + desktop[obj].r.w / 2 - mx + screen_info.dsk.x;
+	icnd->m_y = desktop[obj].r.y + desktop[obj].r.h / 2 - my + screen_info.dsk.y;
 	h = desktop[obj].ob_spec.ciconblk;
-	tx = desktop[obj].ob_x + h->monoblk.ib_xtext - mx + screen_info.dsk_x;
-	ty = desktop[obj].ob_y + h->monoblk.ib_ytext - my + screen_info.dsk_y;
-	tw = h->monoblk.ib_wtext - 1;
-	th = h->monoblk.ib_htext - 1;
-	ix = desktop[obj].ob_x + h->monoblk.ib_xicon - mx + screen_info.dsk_x;
-	iy = desktop[obj].ob_y + h->monoblk.ib_yicon - my + screen_info.dsk_y;
-	iw = h->monoblk.ib_wicon - 1;
+	tx = desktop[obj].r.x + h->monoblk.tx.x - mx + screen_info.dsk.x;
+	ty = desktop[obj].r.y + h->monoblk.tx.y - my + screen_info.dsk.y;
+	tw = h->monoblk.tx.w - 1;
+	th = h->monoblk.tx.h - 1;
+	ix = desktop[obj].r.x + h->monoblk.ic.x - mx + screen_info.dsk.x;
+	iy = desktop[obj].r.y + h->monoblk.ic.y - my + screen_info.dsk.y;
+	iw = h->monoblk.ic.w - 1;
 
 	icnd->coords[0] = tx;
 	icnd->coords[1] = ty;
@@ -755,25 +753,25 @@ static int icn_find(WINDOW *w, int x, int y)
 		    || desktop[i].ob_type == G_CICON		/* HR 151102 */
 		   )
 		{
-			GRECT h;
+			RECT h;
 
-			ox2 = ox + desktop[i].ob_x;
-			oy2 = oy + desktop[i].ob_y;
+			ox2 = ox + desktop[i].r.x;
+			oy2 = oy + desktop[i].r.y;
 			p = desktop[i].ob_spec.ciconblk;
 
-			h.g_x = ox2 + p->monoblk.ib_xicon;
-			h.g_y = oy2 + p->monoblk.ib_yicon;
-			h.g_w = p->monoblk.ib_wicon;
-			h.g_h = p->monoblk.ib_hicon;
+			h.x = ox2 + p->monoblk.ic.x;
+			h.y = oy2 + p->monoblk.ic.y;
+			h.w = p->monoblk.ic.w;
+			h.h = p->monoblk.ic.h;
 
 			if (inrect(x, y, &h) == TRUE)
 				object = i - 1;
 			else
 			{
-				h.g_x = ox2 + p->monoblk.ib_xtext;
-				h.g_y = oy2 + p->monoblk.ib_ytext;
-				h.g_w = p->monoblk.ib_wtext;
-				h.g_h = p->monoblk.ib_htext;
+				h.x = ox2 + p->monoblk.tx.x;
+				h.y = oy2 + p->monoblk.tx.y;
+				h.w = p->monoblk.tx.w;
+				h.h = p->monoblk.tx.h;
 
 				if (inrect(x, y, &h) == TRUE)
 					object = i - 1;
@@ -810,7 +808,7 @@ void remove_icon(int object, boolean draw)
 static void icn_set_name(ICON *icn, char *newname)
 {
 	if (strncmp(icn->label, fn_get_name(icn->icon_dat.name), 12) == 0)
-		strncpy(icn->label, fn_get_name(newname), 12);
+		strsncpy(icn->label, fn_get_name(newname), sizeof(icn->label));		/* HR 120203: secure cpy */
 	free(icn->icon_dat.name);
 	icn->icon_dat.name = newname;
 }
@@ -942,6 +940,17 @@ int rsrc_icon(const char *name)
 	return -1;
 }
 
+/* DjV 024 140103 ---vvv--- */
+/* This routine gets icon id from name defined in desktop.rsc */
+int rsrc_icon_rscid ( int id, char *name )
+{
+	char *nnn;
+	xd_gaddr( R_STRING, id, &nnn );
+	strcpy ( name, nnn );
+	return rsrc_icon( name );
+}
+/* DjV 024 140103 ---^^^--- */
+
 static int add_icon(ITMTYPE type, int icon, const char *text, int ch,
 					int x, int y, boolean draw, const char *fname)
 {
@@ -978,10 +987,10 @@ static int add_icon(ITMTYPE type, int icon, const char *text, int ch,
 	desktop[i + 1].ob_type = icons[icon_no].ob_type;	/* HR 151102 */
 	desktop[i + 1].ob_flags = NONE;
 	desktop[i + 1].ob_state = NORMAL;
-	desktop[i + 1].ob_x = ix * icon_width;
-	desktop[i + 1].ob_y = iy * icon_height;
-	desktop[i + 1].ob_width = ICON_W;
-	desktop[i + 1].ob_height = ICON_H;
+	desktop[i + 1].r.x = ix * icon_width;
+	desktop[i + 1].r.y = iy * icon_height;
+	desktop[i + 1].r.w = ICON_W;
+	desktop[i + 1].r.h = ICON_H;
 
 	if ((h = malloc(sizeof(CICONBLK))) == NULL)		/* HR 151102: ciconblk (the largest) */
 	{
@@ -995,12 +1004,10 @@ static int add_icon(ITMTYPE type, int icon, const char *text, int ch,
 	desktop[i + 1].ob_spec.ciconblk = h;		/* HR 151102 */
 	*h = *icons[icon_no].ob_spec.ciconblk;
 
-	strncpy(desk_icons[i].label, text, 12);
-	desk_icons[i].label[12] = 0;
-	strncpy(desk_icons[i].icon_name,
+	strsncpy(desk_icons[i].label, text, sizeof(SNAME));	/* HR 120203: secure cpy */
+	strsncpy(desk_icons[i].icon_name,
 	        icons[icon_no].ob_spec.ciconblk->monoblk.ib_ptext,
-	        12);							/* HR 151102: maintain rsrc icon name */
-	desk_icons[i].icon_name [12] = 0;
+	        sizeof(SNAME));							/* HR 151102: maintain rsrc icon name, 120203: secure cpy */
 
 	h->monoblk.ib_char &= 0xFF00;
 
@@ -1035,9 +1042,9 @@ static int add_icon(ITMTYPE type, int icon, const char *text, int ch,
 
 static void comp_icnxy(int mx, int my, int *x, int *y)
 {
-	*x = (mx - screen_info.dsk_x) / icon_width;
+	*x = (mx - screen_info.dsk.x) / icon_width;
 	*x = min(*x, m_icnx);
-	*y = (my - screen_info.dsk_y) / icon_height;
+	*y = (my - screen_info.dsk.y) / icon_height;
 	*y = min(*y, m_icny);
 }
 
@@ -1108,9 +1115,9 @@ static void enable_icntype(void)
 	addicon[DRIVEID].ob_flags |= EDITABLE;
 }
 
-static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
+/* static DjV 040 160203 */
+void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 {
-#if NEWICON
 	OBJECT *h1, *ic;				/* HR 151102 */
 
 	ic = icons + slider->line;
@@ -1119,22 +1126,11 @@ static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 	h1->ob_type = ic->ob_type;
 	h1->ob_spec = ic->ob_spec;
 
-	h1->ob_x = (addicon[ICONBACK].ob_width  - ic->ob_width ) / 2;
-	h1->ob_y = (addicon[ICONBACK].ob_height - ic->ob_height) / 2;
-#else
-	BITBLK *h1;
-	CICONBLK *h2;		/* HR 151102: ciconblk (the largest) */
+	h1->r.x = (addicon[ICONBACK].r.w - ic->r.w) / 2;
+	h1->r.y = (addicon[ICONBACK].r.h - ic->r.h) / 2;
 
-	h1 = addicon[ICONDATA].ob_spec.bitblk;
-	h2 = icons[(long) slider->line].ob_spec.ciconblk;		/* HR 151102 */
-
-	h1->bi_pdata = h2->monoblk.ib_pdata;
-	h1->bi_wb = h2->monoblk.ib_wicon / 8;
-	h1->bi_hl = h2->monoblk.ib_hicon;
-
-	addicon[ICONDATA].ob_x = (addicon[ICONBACK].ob_width  - h2->monoblk.ib_wicon) / 2;
-	addicon[ICONDATA].ob_y = (addicon[ICONBACK].ob_height - h2->monoblk.ib_hicon) / 2;
-#endif
+	if ( currez < 2 ) 			/* DjV 014 160203 */
+		h1->r.y = h1->r.y / 2;	/* DjV 034 160203 */
 
 	if (draw == TRUE)
 		xd_draw(info, ICONBACK, 1);
@@ -1164,6 +1160,9 @@ static int icn_dialog(int *icon_no, int startobj)
 	return button;
 }
 
+/* DjV 034 050203 ---vvv--- */
+/* Not needed anymore  */
+/*
 static void hide_children(OBJECT *tree, int parent)
 {
 	int i;
@@ -1195,6 +1194,8 @@ static void unhide_children(OBJECT *tree, int parent)
 		i = tree[i].ob_next;
 	}
 }
+*/
+/* DjV 034 050203 ---^^^--- */
 
 void dsk_insticon(void)
 {
@@ -1204,8 +1205,17 @@ void dsk_insticon(void)
 	get_iconpos(&x, &y);
 
 	rsc_title(addicon, AITITLE, DTADDICN);
-	hide_children(addicon, CHNBUTT);
-	unhide_children(addicon, ADDBUTT);
+	/* hide_children(addicon, CHNBUTT);   DjV 034 050203 */
+	/* unhide_children(addicon, ADDBUTT); DjV 034 050203 */
+
+	addicon[CHNBUTT].ob_flags |= HIDETREE;	/* DjV 034 050203 */
+	addicon[ADDBUTT].ob_flags &= ~HIDETREE;	/* DjV 034 050203 */
+	addicon[ICBTNS ].ob_flags &= ~HIDETREE;	/* DjV 034 050203 */
+	addicon[ICNTYPE].ob_flags |= HIDETREE; 	/* DjV 034 050203 */
+	addicon[DRIVEID].ob_flags &= ~HIDETREE;	/* DjV 034 050203 */
+	addicon[ICSHFIL].ob_flags |= HIDETREE;	/* DJV 034 050203 */
+	addicon[ICSHFLD].ob_flags |= HIDETREE;	/* DjV 034 050203 */
+	addicon[ICNLABEL].ob_flags &= ~HIDETREE;/* DjV 034 090203 */
 
 	button = icn_dialog(&icon_no, DRIVEID);
 
@@ -1226,8 +1236,10 @@ static boolean chng_icon(int object)
 	type = desk_icons[object].item_type;
 
 	rsc_title(addicon, AITITLE, DTCHNICN);
-	hide_children(addicon, ADDBUTT);
-	unhide_children(addicon, CHNBUTT);
+	/* hide_children(addicon, ADDBUTT); DjV 034 050203 */
+	/* unhide_children(addicon, CHNBUTT); DjV 034 050203 */
+	addicon[ADDBUTT].ob_flags |= HIDETREE;	/* DJV 034 050203 */
+	addicon[CHNBUTT].ob_flags &= ~HIDETREE;	/* DJV 034 050203 */
 
 	if ((type == ITM_DRIVE) || (type == ITM_TRASH) || (type == ITM_PRINTER))
 	{
@@ -1248,11 +1260,10 @@ static boolean chng_icon(int object)
 
 			desktop[object + 1].ob_type = icons[icon_no].ob_type;		/* HR 151102: icons may change colours ;-) */
 			desk_icons[object].icon_index = icon_no;
-			strcpy(desk_icons[object].label, iconlabel);
-			strncpy(desk_icons[object].icon_name,
+			strsncpy(desk_icons[object].label, iconlabel, sizeof(SNAME));		/* HR 120203: secure cpy */
+			strsncpy(desk_icons[object].icon_name,
 			        icons[icon_no].ob_spec.ciconblk->monoblk.ib_ptext,
-			        12);							/* HR 151102: maintain rsrc icon name */
-			desk_icons[object].icon_name [12] = 0;
+			        sizeof(SNAME));							/* HR 151102: maintain rsrc icon name, HR 120203: secure cpy */
 
 			desk_icons[object].icon_dat.drv = *drvid & 0xDF;
 			*h = *icons[icon_no].ob_spec.ciconblk;
@@ -1276,11 +1287,10 @@ static boolean chng_icon(int object)
 
 			desktop[object + 1].ob_type = icons[icon_no].ob_type;		/* HR 151102: icons may change colours ;-) */
 			desk_icons[object].icon_index = icon_no;
-			strcpy(desk_icons[object].label, iconlabel);
-			strncpy(desk_icons[object].icon_name,
+			strsncpy(desk_icons[object].label, iconlabel, sizeof(SNAME));		/* HR 120203: secure cpy */
+			strsncpy(desk_icons[object].icon_name,
 			        icons[icon_no].ob_spec.ciconblk->monoblk.ib_ptext,
-			        12);							/* HR 151102: maintain rsrc icon name */
-			desk_icons[object].icon_name [12] = 0;
+			        sizeof(SNAME));							/* HR 151102: maintain rsrc icon name, HR 120203: secure cpy */
 
 			*h = *icons[icon_no].ob_spec.ciconblk;
 			h->monoblk.ib_ptext = desk_icons[object].label;
@@ -1301,14 +1311,14 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 	{
 		obj = icns[i].item;
 		erase_icon(obj);
-		x = (mx + icns[i].m_x - screen_info.dsk_x) / icon_width;
-		y = (my + icns[i].m_y - screen_info.dsk_y) / icon_height;
+		x = (mx + icns[i].m_x - screen_info.dsk.x) / icon_width;
+		y = (my + icns[i].m_y - screen_info.dsk.y) / icon_height;
 		x = min(x, m_icnx);
 		y = min(y, m_icny);
 		desk_icons[obj].x = x;
 		desk_icons[obj].y = y;
-		desktop[obj + 1].ob_x = x * icon_width;
-		desktop[obj + 1].ob_y = y * icon_height;
+		desktop[obj + 1].r.x = x * icon_width;
+		desktop[obj + 1].r.y = y * icon_height;
 		draw_icon(obj);
 	}
 }
@@ -1410,7 +1420,7 @@ static void dsk_top(WINDOW *w)
 	menu_ienable(menu, MCLOSEW, 0);
 	menu_ienable(menu, MNEWDIR, 0);
 	menu_ienable(menu, MSELALL, 0);
-	menu_ienable(menu, MSETMASK, 0);
+	/* menu_ienable(menu, MSETMASK, 0); DjV 004 290103 */
 	menu_ienable(menu, MCYCLE, 0);
 }
 
@@ -1437,8 +1447,8 @@ int dsk_save(XFILE *file)
 		iconinfo.x = desk_icons[i].x;
 		iconinfo.y = desk_icons[i].y;
 
-		strncpy(iconinfo.label, desk_icons[i].label, 14);
-		strncpy(iconinfo.icon_name, desk_icons[i].icon_name, 14);	/* HR 151102 */
+		strsncpy(iconinfo.label, desk_icons[i].label, sizeof(SNAME));		/* HR 120203: secure cpy */
+		strsncpy(iconinfo.icon_name, desk_icons[i].icon_name, sizeof(SNAME));	/* HR 151102, HR 120203: secure cpy */
 
 		if (desk_icons[i].item_type == ITM_DRIVE)
 			iconinfo.drv = desk_icons[i].icon_dat.drv - 'A';
@@ -1491,7 +1501,7 @@ int dsk_load(XFILE *file)
 	
 			if (isfile(iconinfo.type))
 			{
-				if ((fname = x_freadstr(file, NULL, &error)) == NULL)
+				if ((fname = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 					return error;
 			}
 			else
@@ -1499,7 +1509,7 @@ int dsk_load(XFILE *file)
 			
 			icon = rsrc_icon(iconinfo.icon_name);			/* HR 151102: find by name */
 			if (icon < 0)
-				icon = rsrc_icon("FILE");
+				icon = rsrc_icon_rscid ( FIINAME, iname ); /* DjV 024 140103 */ 
 			if (icon >= 0)
 				if (add_icon((ITMTYPE) iconinfo.type, icon,			/* HR 151102 */
 							 iconinfo.label, iconinfo.drv + 'A', iconinfo.x,
@@ -1526,14 +1536,15 @@ int dsk_load(XFILE *file)
 /* HR 151102: Use standard functions of the AES */
 
 static
-void **svicntree, *svicnpmem;
+void **svicntree, *svicnrshdr;
 
 boolean load_icons(void)
 {
 	void **svtree = _GemParBlk.glob.ptree;
-	void *svpmem = _GemParBlk.glob.pmem;
+	void *svrshdr = _GemParBlk.glob.rshdr;
 
-	if (rsrc_load(colour_icons ? "cicons.rsc" : "icons.rsc") == 0)
+	/* if (rsrc_load(colour_icons ? "cicons.rsc" : "icons.rsc") == 0) DjV 030 010203 */
+	if (rsrc_load( ( colour_icons && (ncolors > 2) ) ? "cicons.rsc" : "icons.rsc") == 0) /* DjV 030 010203 */
 		return alert_printf(1, MICNFNF), TRUE;
 	else
 	{
@@ -1541,7 +1552,7 @@ boolean load_icons(void)
 
 		rsrc_gaddr(R_TREE, 0, &icons);		/* That's all you need. */
 		svicntree = _GemParBlk.glob.ptree;
-		svicnpmem = _GemParBlk.glob.pmem;
+		svicnrshdr = _GemParBlk.glob.rshdr;
 
 		n_icons = 0;
 		icons++;
@@ -1550,7 +1561,7 @@ boolean load_icons(void)
 	}
 
 	_GemParBlk.glob.ptree = svtree;
-	_GemParBlk.glob.pmem = svpmem;
+	_GemParBlk.glob.rshdr = svrshdr;
 
 	return FALSE;
 }
@@ -1558,15 +1569,15 @@ boolean load_icons(void)
 void free_icons(void)
 {
 	void **svtree = _GemParBlk.glob.ptree;
-	void *svpmem = _GemParBlk.glob.pmem;
+	void *svrshdr = _GemParBlk.glob.rshdr;
 
 	_GemParBlk.glob.ptree = svicntree;
-	_GemParBlk.glob.pmem = svicnpmem;
+	_GemParBlk.glob.rshdr = svicnrshdr;
 
 	rsrc_free();
 
 	_GemParBlk.glob.ptree = svtree;
-	_GemParBlk.glob.pmem = svpmem;
+	_GemParBlk.glob.rshdr = svrshdr;
 }
 
 /* Routine voor het initialiseren van de desktop. */
@@ -1586,8 +1597,8 @@ boolean dsk_init(void)
 
 	((DSK_WINDOW *) desk_window)->itm_func = &itm_func;
 
-	m_icnx = screen_info.dsk_w / ICON_W - 1;
-	m_icny = screen_info.dsk_h / ICON_H - 1;
+	m_icnx = screen_info.dsk.w / ICON_W - 1;
+	m_icny = screen_info.dsk.h / ICON_H - 1;
 
 	if ((max_icons = (m_icnx + 1) * (m_icny + 1)) < 64)
 		max_icons = 64;
@@ -1600,8 +1611,24 @@ boolean dsk_init(void)
 		return TRUE;
 	}
 
-	icon_width = screen_info.dsk_w / (m_icnx + 1);
-	icon_height = screen_info.dsk_h / (m_icny + 1);
+	/* DjV 002 241202 ---vvv--- */
+
+	/*   
+	 *  When using nonstandard resolutions (i.e. like with overscan)
+	 *  unpleasant effects occur- icon positions shift;
+	 *  as a brute-force fix: always replace calculated icon width and height
+	 *  with initial values- in standard resolutions the result should probably
+	 *  be the same anyway. Perhaps overscan software should be looked into,
+	 *  as it does not properly inform GEM of the change (can it?)
+	 */
+
+	/* 
+	icon_width = screen_info.dsk.w / (m_icnx + 1);
+	icon_height = screen_info.dsk.h / (m_icny + 1);
+	*/ 
+	icon_width  = ICON_W; 
+	icon_height = ICON_H; 
+	/* DjV 002 241202 ---^^^--- */
 
 	desktop[0].ob_next = -1;
 	desktop[0].ob_head = -1;
@@ -1611,10 +1638,7 @@ boolean dsk_init(void)
 	desktop[0].ob_state = NORMAL;
 	desktop[0].ob_spec.obspec.framesize = 0;
 	desktop[0].ob_spec.obspec.textmode = 1;
-	desktop[0].ob_x = screen_info.dsk_x;
-	desktop[0].ob_y = screen_info.dsk_y;
-	desktop[0].ob_width = screen_info.dsk_w;
-	desktop[0].ob_height = screen_info.dsk_h;
+	desktop[0].r = screen_info.dsk;
 
 	for (i = 0; i < max_icons; i++)
 		desk_icons[i].item_type = ITM_NOTUSED;
@@ -1641,33 +1665,35 @@ static void incr_pos(int *x, int *y)
 
 void dsk_default(void)
 {
-	int i, x = 2, y = 0, flop, hd;
+	int i, x = 2, y = 0, ic;	 /* DjV 024 140103 */
 	long drives = drvmap();
 
 	rem_all_icons();
 
-	flop = rsrc_icon("FLOPPY");			/* HR 151102: use icon name, not index */
-	hd   = rsrc_icon("HARD DISC");
-
 	set_dsk_background((ncolors > 2) ? 7 : 4, 3);
 
-/* HR 151102: icons by name, not index */
+/* HR 151102: icons by name, not index DjV 024 140103 use names from rsc file. */
 
-	add_icon(ITM_DRIVE, flop, "FLOPPY DISC", 'A', 0, 0, FALSE, NULL);
-	add_icon(ITM_DRIVE, flop, "FLOPPY DISC", 'B', 1, 0, FALSE, NULL);
+	ic = rsrc_icon_rscid( FLINAME, iname );
+	add_icon(ITM_DRIVE, ic, iname, 'A', 0, 0, FALSE, NULL);
+	add_icon(ITM_DRIVE, ic, iname, 'B', 1, 0, FALSE, NULL);
+	
+	ic = rsrc_icon_rscid ( HDINAME, iname );
 
 	for (i = 2; i < 32; i++)
 	{
 		if (btst(drives, i) == TRUE)
 		{
-			add_icon(ITM_DRIVE, hd, "HARD DISC", i < 26 ? 'A' + i : '0' + i - 26, x, y, FALSE, NULL);
+			add_icon(ITM_DRIVE, ic, iname, i < 26 ? 'A' + i : '0' + i - 26, x, y, FALSE, NULL); /* DjV 024 140103 */
 			incr_pos(&x, &y);
 		}
 	}
 
-	add_icon(ITM_TRASH, rsrc_icon("TRASH"), "TRASH", 0, x, y, FALSE, NULL);	/* HR 151102 */
+	ic = rsrc_icon_rscid ( TRINAME, iname );
+	add_icon(ITM_TRASH, ic, iname, 0, x, y, FALSE, NULL);	/* HR 151102 DjV 024 140103 */
 	incr_pos(&x, &y);
-	add_icon(ITM_PRINTER, rsrc_icon("PRINTER"), "PRINTER", 0, x, y, FALSE, NULL);	/* HR 151102 */
+	ic = rsrc_icon_rscid ( PRINAME, iname );
+	add_icon(ITM_PRINTER, ic, iname, 0, x, y, FALSE, NULL);	/* HR 151102 DjV 024 140103 */
 
 	wind_set(0, WF_NEWDESK, desktop, 0);
 	dsk_draw();
@@ -1721,20 +1747,45 @@ void dsk_chngicon(void)
 	}
 }
 
+int arrow_form_do ( XDINFO *info, int *oldbutton ); /* DjV 039 090203 */
+
 void dsk_options(void)
 {
 	int button, oldmode, color, pattern;
+	int wcolor, wpattern;    /* DjV 011 251202 */
+	int oldbutton = -1; 	/* DjV 039 090203 aux for arrow_form_do */
 	XDINFO info;
 	boolean stop = FALSE, draw = FALSE;
 
 	wdoptions[DSKPAT].ob_spec.obspec.fillpattern = desktop[0].ob_spec.obspec.fillpattern;
 	wdoptions[DSKCOLOR].ob_spec.obspec.interiorcol = desktop[0].ob_spec.obspec.interiorcol;
 
+	/* DjV 011 251202 ---vvv--- */
+	wdoptions[WINPAT].ob_spec.obspec.fillpattern = options.V2_2.win_pattern;
+	wdoptions[WINCOLOR].ob_spec.obspec.interiorcol = options.V2_2.win_color;
+
+	/*
+	 * Note: only the first 8 patterns (#0:7) are taken into account for fill
+	 */
+
+	/* DjV 011 251202 ---^^^--- */
+
 	xd_open(wdoptions, &info);
+
+	button = 0;		/* DjV 039 090203 */
 
 	while (stop == FALSE)
 	{
-		button = xd_form_do(&info, 0) & 0x7FFF;
+		/* DjV 039 090203 ---vvv--- */
+		/*
+		 * the only way to return here with oldbutton !=0 is to
+		 * press an arrow; therefore any button pressed is
+		 * assumed to be arrow and action is taken
+		 */
+		/* button = xd_form_do(&info, 0) & 0x7FFF; */
+		button = arrow_form_do ( &info, &oldbutton );
+
+		/* DJV 039 090203 ---^^^--- */
 
 		switch (button)
 		{
@@ -1752,7 +1803,7 @@ void dsk_options(void)
 			xd_setposmode(oldmode);
 			break;
 		case DSKCUP:
-			if (wdoptions[DSKCOLOR].ob_spec.obspec.interiorcol < 15)
+			if (wdoptions[DSKCOLOR].ob_spec.obspec.interiorcol < (ncolors - 1)) /* DjV 011 180103 */
 			{
 				wdoptions[DSKCOLOR].ob_spec.obspec.interiorcol++;
 				xd_draw(&info, DSKCOLOR, 1);
@@ -1766,19 +1817,53 @@ void dsk_options(void)
 			}
 			break;
 		case DSKPUP:
-			if (wdoptions[DSKPAT].ob_spec.obspec.fillpattern < 7)
+			if (wdoptions[DSKPAT].ob_spec.obspec.fillpattern < min(7,(npatterns - 1))) /* DjV 011 180103 */
 			{
 				wdoptions[DSKPAT].ob_spec.obspec.fillpattern++;
 				xd_draw(&info, DSKPAT, 1);
 			}
 			break;
 		case DSKPDOWN:
-			if (wdoptions[DSKPAT].ob_spec.obspec.fillpattern > 1)
+			if (wdoptions[DSKPAT].ob_spec.obspec.fillpattern > 0) /* DjV 011 180103 */
 			{
 				wdoptions[DSKPAT].ob_spec.obspec.fillpattern--;
 				xd_draw(&info, DSKPAT, 1);
 			}
 			break;
+			
+		/* DjV 011 251202 180103 ---vvv--- */	
+			
+		case WINCUP:
+			if (wdoptions[WINCOLOR].ob_spec.obspec.interiorcol < (ncolors - 1))
+			{
+				wdoptions[WINCOLOR].ob_spec.obspec.interiorcol++;
+				xd_draw(&info, WINCOLOR, 1);
+			}
+			break;
+		case WINCDOWN:
+			if (wdoptions[WINCOLOR].ob_spec.obspec.interiorcol > 0)
+			{
+				wdoptions[WINCOLOR].ob_spec.obspec.interiorcol--;
+				xd_draw(&info, WINCOLOR, 1);
+			}
+			break;
+		case WINPUP:
+			if (wdoptions[WINPAT].ob_spec.obspec.fillpattern < min(7,(npatterns - 1)))
+			{
+				wdoptions[WINPAT].ob_spec.obspec.fillpattern++;
+				xd_draw(&info, WINPAT, 1);
+			}
+			break;
+		case WINPDOWN:
+			if (wdoptions[WINPAT].ob_spec.obspec.fillpattern > 0)
+			{
+				wdoptions[WINPAT].ob_spec.obspec.fillpattern--;
+				xd_draw(&info, WINPAT, 1);
+			}
+			break;
+			
+    /* DjV 011 251202 180103 ---^^^--- */			
+						
 		case WOPTOK:
 			color = wdoptions[DSKCOLOR].ob_spec.obspec.interiorcol;
 			pattern = wdoptions[DSKPAT].ob_spec.obspec.fillpattern;
@@ -1789,16 +1874,34 @@ void dsk_options(void)
 				set_dsk_background(pattern, color);
 				draw = TRUE;
 			}
+			/* DjV 011 251202 ---vvv--- */
+      
+			wcolor = wdoptions[WINCOLOR].ob_spec.obspec.interiorcol; 
+			wpattern = wdoptions[WINPAT].ob_spec.obspec.fillpattern;
+
+			if ((options.V2_2.win_pattern != (unsigned char) wpattern) ||
+				(options.V2_2.win_color != (unsigned char) wcolor))
+			{
+				options.V2_2.win_pattern= (unsigned char) wpattern;
+				options.V2_2.win_color= (unsigned char) wcolor; 
+
+				/* update all windows... */
+
+				wd_fields(); /* HR 050303 */
+			}
+
+			/* DjV 011 251202 ---^^^--- */
+						
 		default:
 			stop = TRUE;
 			break;
 		}
-		xd_change(&info, button, NORMAL, 1);
+		/* xd_change(&info, button, NORMAL, 1); DjV 039 090203 */
 	}
 
 	xd_change(&info, button, NORMAL, 0);
 	xd_close(&info);
 
 	if (draw != FALSE)
-		redraw_desk((GRECT *) & screen_info.dsk_x);
+		redraw_desk(&screen_info.dsk);
 }

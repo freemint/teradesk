@@ -27,6 +27,9 @@
 
 #include "desk.h"
 #include "events.h"
+#include <xscncode.h> /* DjV 033 010203 */
+#include "error.h"    /* DjV 033 010203 */
+#include "desktop.h"  /* DjV 033 010203 */
 
 
 static int event(int evflags, int mstate, int *key)
@@ -117,3 +120,28 @@ int clr_msg_buf(void)
 	else
 		return 0;
 }
+
+/* DjV 033 010203 ---vvv--- */
+/*
+ * This is a routine for confirmation of an abort caused
+ * by pressing [ESC] during multiple copy, delete, print, etc.
+ * An alert is posted with a text "Abort current operation? 
+ */
+
+boolean escape_abort( boolean hndl_msg )
+{
+	int key, r;
+
+	if ((r = key_state(&key, hndl_msg)) > 0)
+	{
+		if (key == ESCAPE)
+			if ( alert_printf(2, ABOOP) == 1 )
+				return TRUE;
+	}
+	else if (r < 0)
+		return TRUE;
+	
+	return FALSE;
+
+} 
+/* DjV 033 010203 ---^^^--- */

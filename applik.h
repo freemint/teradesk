@@ -20,7 +20,7 @@
 
 typedef struct ftype
 {
-	char filetype[14];
+	SNAME filetype;				/* HR 240203 */
 	struct ftype *prev;
 	struct ftype *next;
 } FTYPE;

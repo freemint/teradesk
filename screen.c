@@ -34,21 +34,21 @@
    Als de rechthoek geheel buiten de desktop ligt, wordt
    als resultaat FALSE teruggegeven. */
 
-boolean clip_desk(GRECT *r)
+boolean clip_desk(RECT *r)
 {
-	return xd_rcintersect(r, (GRECT *) & screen_info.dsk_x, r);
+	return xd_rcintersect(r, &screen_info.dsk, r);
 }
 
 void clipdesk_on(void)
 {
 	int clip_rect[4];
 
-	xd_rect2pxy((GRECT *) & screen_info.dsk_x, clip_rect);
+	xd_rect2pxy(&screen_info.dsk, clip_rect);
 	vs_clip(vdi_handle, 1, clip_rect);
 }
 
 #if 0
-void clear(GRECT *r)
+void clear(RECT *r)
 {
 	int pxy[8];
 	MFDB mfdb;
@@ -59,9 +59,10 @@ void clear(GRECT *r)
 	vro_cpyfm(vdi_handle, ALL_WHITE, pxy, &mfdb, &mfdb);
 }
 #else
-void clear(GRECT *r)		/* HR 021202: use v_bar for a white rectangle (for true colour) */
+void clear(RECT *r)		/* HR 021202: use v_bar for a white rectangle (for true colour) */
 {
 	int pxy[4];
+
 	vsf_color(vdi_handle, WHITE);
 	vsf_interior(vdi_handle, FIS_SOLID);
 	vsf_perimeter(vdi_handle, 0);
@@ -71,22 +72,49 @@ void clear(GRECT *r)		/* HR 021202: use v_bar for a white rectangle (for true co
 }
 #endif
 
-boolean rc_intersect2(GRECT *r1, GRECT *r2)
+/* DjV 011 030203 ---vvv--- */
+/* Similar to clear() above but clears with pattern and colour */
+void pclear(RECT *r)
 {
-	GRECT r;
+	int pxy[4];
+
+	vsf_color(vdi_handle, options.V2_2.win_color);
+
+	if ( options.V2_2.win_pattern != 0 )
+	{
+		vsf_interior(vdi_handle, FIS_PATTERN);
+		vsf_style(vdi_handle, options.V2_2.win_pattern);
+	}
+	else
+		vsf_interior(vdi_handle, FIS_SOLID); /* maybe a little faster so? */
+
+	vsf_perimeter(vdi_handle, 0);
+	vswr_mode(vdi_handle, MD_REPLACE);
+	xd_rect2pxy(r, pxy);
+	v_bar(vdi_handle, pxy);
+}
+/* DjV 011 030203 ---^^^--- */
+
+boolean rc_intersect2(RECT *r1, RECT *r2)
+{
+	RECT r;
 
 	return xd_rcintersect(r1, r2, &r);
 }
 
-boolean inrect(int x, int y, GRECT *r)
+boolean inrect(int x, int y, RECT *r)
 {
-	if ((x >= r->g_x) && (x < (r->g_x + r->g_w)) && (y >= r->g_y) && (y < (r->g_y + r->g_h)))
+	if (   x >= r->x
+	    && x < (r->x + r->w)
+	    && y >= r->y
+	    && y < (r->y + r->h)
+	   )
 		return TRUE;
 	else
 		return FALSE;
 }
 
-void invert(GRECT *r)
+void invert(RECT *r)
 {
 	int pxy[8];
 	MFDB mfdb;
@@ -99,7 +127,7 @@ void invert(GRECT *r)
 
 /* Funktie vooor het verschuiven van een deel van het scherm. */
 
-void move_screen(GRECT *dest, GRECT *src)
+void move_screen(RECT *dest, RECT *src)
 {
 	MFDB mfdb;
 	int pxy[8];
@@ -217,7 +245,7 @@ void draw_rect(int x1, int y1, int x2, int y2)
 	int p[10];
 
 	graf_mouse(M_OFF, NULL);
-	xd_clip_on((GRECT *) &screen_info.dsk_x);
+	xd_clip_on(&screen_info.dsk);
 
 	p[0] = p[6] = p[8] = x1;
 	p[1] = p[3] = p[9] = y1;

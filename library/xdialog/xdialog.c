@@ -40,10 +40,12 @@
 
 #include "internal.h"
 
-int aes_flags = 0,				/* HR 151102: proper appl_info protocol (works with ALL Tos */
+int aes_flags    = 0,				/* HR 151102: proper appl_info protocol (works with ALL Tos */
 	MagX_version = 0,
 	colour_icons = 0,
-	xresources = 0;
+	aes_hor3d    = 0,
+	aes_ver3d    = 0,				/* HR 120203: 3d enlargement values */
+	xresources   = 0;
 
 #define XD_WDFLAGS	(NAME | MOVER)
 
@@ -71,16 +73,17 @@ static int xd_nmnitems = 0,		/* Number of menu titles that have to be disabled *
 		   xd_msoff_cnt = 0;	/* Counter for xd_mouse_on/xd_mouse_off */
 int xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
 	xd_aes4_0,					/* AES 4.0 flag */
+	
 /*	xd_draw_3d,					/* Draw objects in 3D if 3D flag of object is set. */
 */	xd_fdo_flag = FALSE;		/* Flag voor form_do */
 XDOBJDATA *xd_objdata = NULL;	/* Arrays with USERBLKs */
 XDINFO *xd_dialogs = NULL;		/* Chained list of modal dialog boxes. */
 XDINFO *xd_nmdialogs;			/* List with non modal dialog boxes. */
-GRECT xd_desk;					/* Dimensions of desktop background. */
+RECT xd_desk;					/* Dimensions of desktop background. */
 XD_FONT xd_regular_font, xd_small_font;
 
-void __xd_redraw(WINDOW *w, GRECT *area);
-void __xd_moved(WINDOW *w, GRECT *newpos);
+void __xd_redraw(WINDOW *w, RECT *area);
+void __xd_moved(WINDOW *w, RECT *newpos);
 
 static WD_FUNC xd_wdfuncs =
 {
@@ -119,8 +122,8 @@ static void xd_save(XDINFO *info)
 
 	pxy[4] = 0;
 	pxy[5] = 0;
-	pxy[6] = info->drect.g_w - 1;
-	pxy[7] = info->drect.g_h - 1;
+	pxy[6] = info->drect.w - 1;
+	pxy[7] = info->drect.h - 1;
 
 	xd_mouse_off();
 	vro_cpyfm(xd_vhandle, S_ONLY, pxy, &source, &info->mfdb);
@@ -138,8 +141,8 @@ static void xd_restore(XDINFO *info)
 
 	pxy[0] = 0;
 	pxy[1] = 0;
-	pxy[2] = info->drect.g_w - 1;
-	pxy[3] = info->drect.g_h - 1;
+	pxy[2] = info->drect.w - 1;
+	pxy[3] = info->drect.h - 1;
 
 	xd_rect2pxy(&info->drect, &pxy[4]);
 
@@ -177,16 +180,16 @@ static void xd_enable_menu(void)
 /* Funktie die ervoor zorgt dat een dialoogbox binnen het scherm
    valt. */
 
-static void xd_clip(XDINFO *info, GRECT *clip)
+static void xd_clip(XDINFO *info, RECT *clip)
 {
-	if (info->drect.g_x < clip->g_x)
-		info->drect.g_x = clip->g_x;
-	if (info->drect.g_y < clip->g_y)
-		info->drect.g_y = clip->g_y;
-	if ((info->drect.g_x + info->drect.g_w) > (clip->g_x + clip->g_w))
-		info->drect.g_x = clip->g_x + clip->g_w - info->drect.g_w;
-	if ((info->drect.g_y + info->drect.g_h) > (clip->g_y + clip->g_h))
-		info->drect.g_y = clip->g_y + clip->g_h - info->drect.g_h;
+	if (info->drect.x < clip->x)
+		info->drect.x = clip->x;
+	if (info->drect.y < clip->y)
+		info->drect.y = clip->y;
+	if ((info->drect.x + info->drect.w) > (clip->x + clip->w))
+		info->drect.x = clip->x + clip->w - info->drect.w;
+	if ((info->drect.y + info->drect.h) > (clip->y + clip->h))
+		info->drect.y = clip->y + clip->h - info->drect.h;
 }
 
 /* Funktie voor het verplaatsen van een dialoog naar een nieuwe
@@ -197,14 +200,14 @@ static void xd_set_position(XDINFO *info, int x, int y)
 	int dx, dy;
 	OBJECT *tree = info->tree;
 
-	dx = x - info->drect.g_x;
-	dy = y - info->drect.g_y;
+	dx = x - info->drect.x;
+	dy = y - info->drect.y;
 
 	tree->ob_x += dx;
 	tree->ob_y += dy;
 
-	info->drect.g_x = x;
-	info->drect.g_y = y;
+	info->drect.x = x;
+	info->drect.y = y;
 }
 
 /* Funktie voor het berekenen van de rand om een dialoogbox. */
@@ -236,35 +239,35 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 	OBJECT *tree = info->tree;
 
 	if ((pmode == XD_CENTERED) && (prev == NULL))
-		form_center(tree, &info->drect.g_x, &info->drect.g_y, &info->drect.g_w, &info->drect.g_h);
+		form_center(tree, &info->drect.x, &info->drect.y, &info->drect.w, &info->drect.h);
 	else
 	{
 		xd_border(tree, &xl, &xr, &yu, &yl);
 
-		info->drect.g_w = tree->ob_width + xl + xr;
-		info->drect.g_h = tree->ob_height + yu + yl;
+		info->drect.w = tree->ob_width + xl + xr;
+		info->drect.h = tree->ob_height + yu + yl;
 
 		switch (pmode)
 		{
 		case XD_CENTERED:
-			info->drect.g_x = prev->drect.g_x + (prev->drect.g_w - info->drect.g_w) / 2;
-			info->drect.g_y = prev->drect.g_y + (prev->drect.g_h - info->drect.g_h) / 2;
+			info->drect.x = prev->drect.x + (prev->drect.w - info->drect.w) / 2;
+			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
 			break;
 		case XD_MOUSE:
-			graf_mkstate(&info->drect.g_x, &info->drect.g_y, &dummy, &dummy);
-			info->drect.g_x -= info->drect.g_w / 2;
-			info->drect.g_y -= info->drect.g_h / 2;
+			graf_mkstate(&info->drect.x, &info->drect.y, &dummy, &dummy);
+			info->drect.x -= info->drect.w / 2;
+			info->drect.y -= info->drect.h / 2;
 			break;
 		case XD_CURRPOS:
-			info->drect.g_x = tree->ob_x - xl;
-			info->drect.g_y = tree->ob_y - yu;
+			info->drect.x = tree->ob_x - xl;
+			info->drect.y = tree->ob_y - yu;
 			break;
 		}
 
 		xd_clip(info, &xd_desk);
 
-		tree->ob_x = info->drect.g_x + xl;
-		tree->ob_y = info->drect.g_y + yu;
+		tree->ob_x = info->drect.x + xl;
+		tree->ob_y = info->drect.y + yu;
 	}
 }
 
@@ -516,7 +519,7 @@ XDINFO *xd_find_dialog(WINDOW *w, int flag)
  * Funktie voor het afhandelen van een redraw event.
  */
 
-void __xd_redraw(WINDOW *w, GRECT *area)
+void __xd_redraw(WINDOW *w, RECT *area)
 {
 	XDINFO *info = xd_find_dialog(w, 3);
 
@@ -529,14 +532,14 @@ void __xd_redraw(WINDOW *w, GRECT *area)
  * Funktie voor het afhandelen van een window moved event.
  */
 
-void __xd_moved(WINDOW *w, GRECT *newpos)
+void __xd_moved(WINDOW *w, RECT *newpos)
 {
 	XDINFO *info = xd_find_dialog(w, 3);
-	GRECT work;
+	RECT work;
 
 	xw_set(w, WF_CURRXYWH, newpos);
 	xw_get(w, WF_WORKXYWH, &work);
-	xd_set_position(info, work.g_x, work.g_y);
+	xd_set_position(info, work.x, work.y);
 }
 
 /********************************************************************
@@ -636,6 +639,15 @@ static int xd_chk_key(char *valid, int pos, int key)
 	{
 		if (cvalid == 'X')
 			return ch;
+		/* DjV 026 220103 ---vvv--- */
+		else if ( cvalid == 'x' )
+		{
+			if ((cch >= 'A') && (cch <= 'Z'))
+				return cch;
+			else
+				return ch;
+		}
+		/* DjV 026 220103 ---^^^--- */
 
 		if (ch < 0x80)
 		{
@@ -723,7 +735,7 @@ int xd_edit_char(XDINFO *info, int key)
 	int edit_obj, oldpos, newpos, curlen, maxlen, flen, pos, ch;
 	OBJECT *tree;
 	TEDINFO *tedinfo;
-	GRECT clip;
+	RECT clip;
 	XUSERBLK *blk;
 	int result = TRUE;
 
@@ -741,14 +753,14 @@ int xd_edit_char(XDINFO *info, int key)
 	flen = (int) strlen(tedinfo->te_pvalid);
 	maxlen = blk ? XD_MAX_SCRLED : flen;		/* HR 021202 */
 
-	objc_offset(tree, edit_obj, &clip.g_x, &clip.g_y);
-	clip.g_h = xd_regular_font.fnt_chh;
-	clip.g_w = xd_regular_font.fnt_chw * tedinfo->te_tmplen;		/* HR 021202 */
+	objc_offset(tree, edit_obj, &clip.x, &clip.y);
+	clip.h = xd_regular_font.fnt_chh;
+	clip.w = xd_regular_font.fnt_chw * tedinfo->te_tmplen;		/* HR 021202 */
 
 	if (blk)
 	{
-		clip.g_x -= 2*xd_regular_font.fnt_chw;		/* HR: This temporary until ub_scrledit() handles templates properly. */
-		clip.g_w += 4*xd_regular_font.fnt_chw;
+		clip.x -= 2*xd_regular_font.fnt_chw;		/* HR: This temporary until ub_scrledit() handles templates properly. */
+		clip.w += 4*xd_regular_font.fnt_chw;
 	}
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
@@ -1297,8 +1309,8 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 				{
 					int nx, ny;
 
-					graf_dragbox(info->drect.g_w, info->drect.g_h, info->drect.g_x, info->drect.g_y,
-								 xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h, &nx, &ny);
+					graf_dragbox(info->drect.w, info->drect.h, info->drect.x, info->drect.y,
+								 xd_desk.x, xd_desk.y, xd_desk.w, xd_desk.h, &nx, &ny);
 
 					xd_restore(info);
 
@@ -1356,7 +1368,7 @@ void xd_open(OBJECT *tree, XDINFO *info)
 	xd_open_wzoom(tree, info, NULL, FALSE);
 }
 
-void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
+void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 				   int zoom)
 {
 	int dialmode = xd_dialmode;
@@ -1380,33 +1392,33 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
 		if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
 		{
 			WINDOW *w;
-			GRECT wsize;
+			RECT wsize;
 			int error;
 
 			xw_calc(WC_BORDER, XD_WDFLAGS, &info->drect, &wsize, NULL);
 
-			if (wsize.g_x < xd_desk.g_x)
+			if (wsize.x < xd_desk.x)
 			{
-				int d = xd_desk.g_x - wsize.g_x;
+				int d = xd_desk.x - wsize.x;
 
-				info->drect.g_x += d;
+				info->drect.x += d;
 				tree->ob_x += d;
-				wsize.g_x = xd_desk.g_x;
+				wsize.x = xd_desk.x;
 			}
 
-			if (wsize.g_y < xd_desk.g_y)
+			if (wsize.y < xd_desk.y)
 			{
-				int d = xd_desk.g_y - wsize.g_y;
+				int d = xd_desk.y - wsize.y;
 
-				info->drect.g_y += d;
+				info->drect.y += d;
 				tree->ob_y += d;
-				wsize.g_y = xd_desk.g_y;
+				wsize.y = xd_desk.y;
 			}
 
 			if (zoom && xywh)
 			{
-				graf_growbox(xywh->g_x, xywh->g_y, xywh->g_w, xywh->g_h,
-							 wsize.g_x, wsize.g_y, wsize.g_w, wsize.g_h);
+				graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
+							 wsize.x, wsize.y, wsize.w, wsize.h);
 				zoom = FALSE;
 			}
 
@@ -1432,8 +1444,8 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
 
 	if (zoom && xywh)
 	{
-		graf_growbox(xywh->g_x, xywh->g_y, xywh->g_w, xywh->g_h,
-		info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+		graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
+		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 		zoom = FALSE;
 	}
 
@@ -1465,7 +1477,7 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
 				xd_calcpos(info, prev, XD_CENTERED);
 
 			if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
-				form_dial(FMD_START, 0, 0, 0, 0, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+				form_dial(FMD_START, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 		}
 		else
 			xd_save(info);
@@ -1484,7 +1496,7 @@ void xd_close(XDINFO *info)
 }
 
 
-void xd_close_wzoom(XDINFO *info, GRECT *xywh, int zoom)
+void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom)
 {
 	XDINFO *prev;
 
@@ -1518,15 +1530,15 @@ void xd_close_wzoom(XDINFO *info, GRECT *xywh, int zoom)
 	if (info->dialmode == XD_NORMAL)
 	{
 		if ((prev != NULL) && (prev->dialmode != XD_WINDOW))
-			objc_draw(prev->tree, ROOT, MAX_DEPTH, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+			objc_draw(prev->tree, ROOT, MAX_DEPTH, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 		else
-			form_dial(FMD_FINISH, 0, 0, 0, 0, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+			form_dial(FMD_FINISH, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
 
 	if (zoom && xywh)
 	{
-		graf_shrinkbox(xywh->g_x, xywh->g_y, xywh->g_w, xywh->g_h,
-		info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h);
+		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
+		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
 
 	xd_wdupdate(END_UPDATE);
@@ -1631,7 +1643,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 #endif
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 
-	wind_get(0, WF_WORKXYWH, &xd_desk.g_x, &xd_desk.g_y, &xd_desk.g_w, &xd_desk.g_h);
+	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
 	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);
 
 	for (i = 0; i < 10; i++)
@@ -1645,7 +1657,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	else
 	{
 	/*	int pix_height; */
-int alert_msg(int def, const char *string, ...);
 
 		xd_ncolors = work_out[13];
 	/*	pix_height = work_out[4]; */
@@ -1670,6 +1681,8 @@ int alert_msg(int def, const char *string, ...);
 		{
 			int ag1, ag2, ag3, ag4;
 			xd_aes4_0 |= TRUE;
+			aes_hor3d = 2;			/* HR 120203 */
+			aes_ver3d = 2;
 
 			appl_getinfo(0, &xd_regular_font.fnt_height, &xd_regular_font.fnt_id,
 						 &xd_regular_font.fnt_type, &dummy);
@@ -1683,6 +1696,9 @@ int alert_msg(int def, const char *string, ...);
 					aes_flags |= GAI_GSHORTCUT;
 				if ( ag4 & 0x04 )				/* MagiC (WHITEBAK) objects */
 					aes_flags |= GAI_WHITEBAK;
+/* HR 120203: get 3D enlargement value */
+				if ( ag1 && ag2 )					/* 3D-Objekte und objc_sysvar() vorhanden? */
+					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-Look eingeschaltet? */
 			}
 			if (xd_small_font.fnt_id > 0)		/* HR 051202: for some AES's (Milan) */
 				xd_small_font.fnt_id = vst_font(xd_vhandle, xd_small_font.fnt_id);

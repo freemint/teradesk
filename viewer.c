@@ -121,22 +121,22 @@ typedef struct
 } FDATA;
 
 static WINFO textwindows[MAXWINDOWS];
-static GRECT tmax;
+static RECT tmax;
 static FONT txt_font;
 
 static void set_menu(TXT_WINDOW *w);
 
 static int txt_hndlkey(WINDOW *w, int scancode, int keystate);
 static void txt_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
-static void txt_redraw(WINDOW *w, GRECT *area);
+static void txt_redraw(WINDOW *w, RECT *area);
 static void txt_topped(WINDOW *w);
 static void txt_closed(WINDOW *w);
 static void txt_fulled(WINDOW *w);
 static void txt_arrowed(WINDOW *w, int arrows);
 static void txt_hslider(WINDOW *w, int newpos);
 static void txt_vslider(WINDOW *w, int newpos);
-static void txt_sized(WINDOW *w, GRECT *newsize);
-static void txt_moved(WINDOW *w, GRECT *newpos);
+static void txt_sized(WINDOW *w, RECT *newsize);
+static void txt_moved(WINDOW *w, RECT *newpos);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
 static void txt_top(WINDOW *w);
 
@@ -171,7 +171,7 @@ static int txt_width(TXT_WINDOW *w)
 
 static void txt_draw(TXT_WINDOW *w, boolean message)
 {
-	GRECT area;
+	RECT area;
 
 	xw_get((WINDOW *) w, WF_CURRXYWH, &area);
 
@@ -185,32 +185,32 @@ static void txt_draw(TXT_WINDOW *w, boolean message)
 
 static void txt_set_defsize(WINFO *w)
 {
-	GRECT border, work;
+	RECT border, work;
 
 	xw_get((WINDOW *) w->txt_window, WF_CURRXYWH, &border);
 	xw_get((WINDOW *) w->txt_window, WF_WORKXYWH, &work);
 
-	w->x = border.g_x - screen_info.dsk_x;
-	w->y = border.g_y - screen_info.dsk_y;
-	w->w = work.g_w / screen_info.fnt_w;
-	w->h = work.g_h / screen_info.fnt_h;
+	w->x = border.x - screen_info.dsk.x;
+	w->y = border.y - screen_info.dsk.y;
+	w->w = work.w / screen_info.fnt_w;
+	w->h = work.h / screen_info.fnt_h;
 }
 
-static void txt_calc_rc(TXT_WINDOW *w, GRECT *work)
+static void txt_calc_rc(TXT_WINDOW *w, RECT *work)
 {
-	w->rows = (work->g_h + txt_font.ch - 1) / txt_font.ch;
-	w->columns = (work->g_w + txt_font.cw - 1) / txt_font.cw;
+	w->rows = (work->h + txt_font.ch - 1) / txt_font.ch;
+	w->columns = (work->w + txt_font.cw - 1) / txt_font.cw;
 
-	w->nrows = work->g_h / txt_font.ch;
-	w->ncolumns = work->g_w / txt_font.cw;
+	w->nrows = work->h / txt_font.ch;
+	w->ncolumns = work->w / txt_font.cw;
 }
 
 /* Funktie die uit opgegeven grootte de werkelijke grootte van het
    window berekent. */
 
-static void txt_wsize(TXT_WINDOW *w, GRECT *input, GRECT *output)
+static void txt_wsize(TXT_WINDOW *w, RECT *input, RECT *output)
 {
-	GRECT work;
+	RECT work;
 	int fw, fh;
 
 	fw = screen_info.fnt_w;
@@ -218,16 +218,16 @@ static void txt_wsize(TXT_WINDOW *w, GRECT *input, GRECT *output)
 
 	xw_calc(WC_WORK, TFLAGS, input, &work, viewmenu);
 
-	work.g_x += fw / 2;
-	work.g_w += fw / 2;
-	work.g_h += fh / 2;
+	work.x += fw / 2;
+	work.w += fw / 2;
+	work.h += fh / 2;
 
-	work.g_x -= (work.g_x % fw);
-	work.g_w -= (work.g_w % fw);
-	work.g_h -= (work.g_h % fh);
+	work.x -= (work.x % fw);
+	work.w -= (work.w % fw);
+	work.h -= (work.h % fh);
 
-	work.g_w = min(work.g_w, tmax.g_w);
-	work.g_h = min(work.g_h, tmax.g_h);
+	work.w = min(work.w, tmax.w);
+	work.h = min(work.h, tmax.h);
 
 	xw_calc(WC_BORDER, TFLAGS, &work, output, viewmenu);
 
@@ -237,24 +237,24 @@ static void txt_wsize(TXT_WINDOW *w, GRECT *input, GRECT *output)
 /* Funktie voor het bereken van de grootte van een window uit de in
    w opgeslagen grootte. */
 
-static void txt_calcsize(WINFO *w, GRECT *size)
+static void txt_calcsize(WINFO *w, RECT *size)
 {
 	if (w->flags.fulled == 1)
-		txt_wsize(w->txt_window, (GRECT *) & screen_info.dsk_x, size);
+		txt_wsize(w->txt_window, &screen_info.dsk, size);
 	else
 	{
-		GRECT def, border;
+		RECT def, border;
 
-		def.g_x = w->x + screen_info.dsk_x;
-		def.g_y = w->y + screen_info.dsk_y;
-		def.g_w = w->w * screen_info.fnt_w;	/* hoogte en breedte van het */
-		def.g_h = w->h * screen_info.fnt_h;	/* werkgebied. */
+		def.x = w->x + screen_info.dsk.x;
+		def.y = w->y + screen_info.dsk.y;
+		def.w = w->w * screen_info.fnt_w;	/* hoogte en breedte van het */
+		def.h = w->h * screen_info.fnt_h;	/* werkgebied. */
 
 		/* Bereken hoogte en breedte van het window */
 		xw_calc(WC_BORDER, TFLAGS, &def, &border, viewmenu);
 
-		border.g_x = def.g_x;
-		border.g_y = def.g_y;
+		border.x = def.x;
+		border.y = def.y;
 
 		txt_wsize(w->txt_window, &border, size);
 	}
@@ -512,16 +512,16 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
  * tw		- Pointer naar window
  * line		- Regelnummer
  * strlen	- lengte van de string
- * work		- GRECT structuur met de grootte van het werkgebied van het
+ * work		- RECT structuur met de grootte van het werkgebied van het
  *			  window.
  */
 
-static void txt_comparea(TXT_WINDOW *w, long line, int strlen, GRECT *r, GRECT *work)
+static void txt_comparea(TXT_WINDOW *w, long line, int strlen, RECT *r, RECT *work)
 {
-	r->g_x = work->g_x;
-	r->g_y = work->g_y + (int) (line - w->py) * txt_font.ch;
-	r->g_w = strlen * txt_font.cw;
-	r->g_h = txt_font.ch;
+	r->x = work->x;
+	r->y = work->y + (int) (line - w->py) * txt_font.ch;
+	r->w = strlen * txt_font.cw;
+	r->h = txt_font.ch;
 }
 
 /*
@@ -538,9 +538,9 @@ static void txt_comparea(TXT_WINDOW *w, long line, int strlen, GRECT *r, GRECT *
  * work		- Werkgebied van het window
  */
 
-static void txt_prtchar(TXT_WINDOW *w, int column, long line, GRECT *area, GRECT *work)
+static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *work)
 {
-	GRECT r, in;
+	RECT r, in;
 	int len, c;
 	char s[FWIDTH];
 
@@ -548,18 +548,21 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, GRECT *area, GRECT
 
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
-	r.g_x += c * txt_font.cw;
-	r.g_w = txt_font.cw;
+	r.x += c * txt_font.cw;
+	r.w = txt_font.cw;
 
 	if (xd_rcintersect(area, &r, &in) == TRUE)
 	{
 		if (c < len)
 		{
 			s[c + 1] = 0;
-			v_gtext(vdi_handle, r.g_x, r.g_y, &s[c]);
+			pclear ( & r );							/* DjV 011 030203 */
+			vswr_mode( vdi_handle, MD_TRANS );		/* DjV 011 030203 */
+			v_gtext(vdi_handle, r.x, r.y, &s[c]);
 		}
 		else
-			clear(&in);
+			/* clear(&in);    DjV 011 030203 */
+			pclear(&in);   /* DjV 011 030203 */
 	}
 }
 
@@ -574,20 +577,25 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, GRECT *area, GRECT
  * work		- Werkgebied van het window
  */
 
-static void txt_prtline(TXT_WINDOW *w, long line, GRECT *area, GRECT *work)
+static void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 {
-	GRECT r, in;
+	RECT r, in;
 	int len;
 	char s[FWIDTH];
 
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
 	if (rc_intersect2(area, &r) == TRUE)
-		v_gtext(vdi_handle, r.g_x, r.g_y, s);
-	r.g_x += r.g_w;
-	r.g_w = work->g_w - r.g_w;
+	{										/* DjV 011 030203 */
+		pclear(&r);							/* DjV 011 030203 */
+		vswr_mode( vdi_handle, MD_TRANS );	/* DjV 011 030203 */
+		v_gtext(vdi_handle, r.x, r.y, s);
+	}										/* DjV 011 030203 */
+	r.x += r.w;
+	r.w = work->w - r.w;
 	if (xd_rcintersect(&r, area, &in) == TRUE)
-		clear(&in);
+		/* clear(&in);    DjV 011 030203 */
+		pclear(&in);   /* DjV 011 030203 */
 }
 
 /*
@@ -600,10 +608,10 @@ static void txt_prtline(TXT_WINDOW *w, long line, GRECT *area, GRECT *work)
  * area		- Clipping rechthoek
  */
 
-static void txt_prtlines(TXT_WINDOW *w, GRECT *area)
+static void txt_prtlines(TXT_WINDOW *w, RECT *area)
 {
 	long i;
-	GRECT work;
+	RECT work;
 
 	set_txt_default(txt_font.id, txt_font.size);
 
@@ -735,11 +743,11 @@ static void w_pageright(TXT_WINDOW *w)
  * Resultaat: Eerste regel
  */
 
-static long find_firstline(int wy, GRECT *area, boolean *prev)
+static long find_firstline(int wy, RECT *area, boolean *prev)
 {
 	long line;
 
-	line = (area->g_y - wy);
+	line = (area->y - wy);
 	*prev = ((line % txt_font.ch) == 0) ? FALSE : TRUE;
 
 	return (line / txt_font.ch);
@@ -759,11 +767,11 @@ static long find_firstline(int wy, GRECT *area, boolean *prev)
  * Resultaat: Laatste regel
  */
 
-static long find_lastline(int wy, GRECT *area, boolean *prev)
+static long find_lastline(int wy, RECT *area, boolean *prev)
 {
 	long line;
 
-	line = (area->g_y + area->g_h - wy);
+	line = (area->y + area->h - wy);
 	*prev = ((line % txt_font.ch) == 0) ? FALSE : TRUE;
 
 	return ((line - 1) / txt_font.ch);
@@ -783,11 +791,11 @@ static long find_lastline(int wy, GRECT *area, boolean *prev)
  * Resultaat: Eerste regel
  */
 
-static int find_firstcolumn(int wx, GRECT *area, boolean *prev)
+static int find_firstcolumn(int wx, RECT *area, boolean *prev)
 {
 	int column;
 
-	column = (area->g_x - wx);
+	column = (area->x - wx);
 	*prev = ((column % txt_font.cw) == 0) ? FALSE : TRUE;
 
 	return (column / txt_font.cw);
@@ -807,11 +815,11 @@ static int find_firstcolumn(int wx, GRECT *area, boolean *prev)
  * Resultaat: Eerste regel
  */
 
-static int find_lastcolumn(int wx, GRECT *area, boolean *prev)
+static int find_lastcolumn(int wx, RECT *area, boolean *prev)
 {
 	int column;
 
-	column = (area->g_x + area->g_w - wx);
+	column = (area->x + area->w - wx);
 	*prev = ((column % txt_font.cw) == 0) ? FALSE : TRUE;
 
 	return ((column - 1) / txt_font.cw);
@@ -828,7 +836,7 @@ static int find_lastcolumn(int wx, GRECT *area, boolean *prev)
  * work		- werkgebied window
  */
 
-static void txt_prtcolumn(TXT_WINDOW *w, int column, GRECT *area, GRECT *work)
+static void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work)
 {
 	int i;
 
@@ -847,7 +855,7 @@ static void txt_prtcolumn(TXT_WINDOW *w, int column, GRECT *area, GRECT *work)
 
 static void w_scroll(TXT_WINDOW *w, int type)
 {
-	GRECT work, r, in, src, dest;
+	RECT work, r, in, src, dest;
 	long line;
 	int column, wx, wy;
 	boolean prev;
@@ -880,8 +888,8 @@ static void w_scroll(TXT_WINDOW *w, int type)
 
 	xw_get((WINDOW *) w, WF_WORKXYWH, &work);
 
-	wx = work.g_x;
-	wy = work.g_y;
+	wx = work.x;
+	wy = work.y;
 
 	if (clip_desk(&work) == FALSE)
 		return;
@@ -898,7 +906,7 @@ static void w_scroll(TXT_WINDOW *w, int type)
 
 	set_txt_default(txt_font.id, txt_font.size);
 
-	while ((r.g_w != 0) && (r.g_h != 0))
+	while ((r.w != 0) && (r.h != 0))
 	{
 		if (xd_rcintersect(&r, &work, &in) == TRUE)
 		{
@@ -911,36 +919,36 @@ static void w_scroll(TXT_WINDOW *w, int type)
 			{
 				if (type == WA_UPLINE)
 				{
-					dest.g_y += txt_font.ch;
+					dest.y += txt_font.ch;
 					line = find_firstline(wy, &in, &prev);
 				}
 				else
 				{
-					src.g_y += txt_font.ch;
+					src.y += txt_font.ch;
 					line = find_lastline(wy, &in, &prev);
 				}
 				line += w->py;
-				dest.g_h -= txt_font.ch;
-				src.g_h -= txt_font.ch;
+				dest.h -= txt_font.ch;
+				src.h -= txt_font.ch;
 			}
 			else
 			{
 				if (type == WA_LFLINE)
 				{
-					dest.g_x += txt_font.cw;
+					dest.x += txt_font.cw;
 					column = find_firstcolumn(wx, &in, &prev);
 				}
 				else
 				{
-					src.g_x += txt_font.cw;
+					src.x += txt_font.cw;
 					column = find_lastcolumn(wx, &in, &prev);
 				}
 				column += w->px;
-				dest.g_w -= txt_font.cw;
-				src.g_w -= txt_font.cw;
+				dest.w -= txt_font.cw;
+				src.w -= txt_font.cw;
 			}
 
-			if ((src.g_h > 0) && (src.g_w > 0))
+			if ((src.h > 0) && (src.w > 0))
 				move_screen(&dest, &src);
 
 			if ((type == WA_UPLINE) || (type == WA_DNLINE))
@@ -1093,10 +1101,12 @@ static int txt_hndlkey(WINDOW *w, int scancode, int keystate)
 	case CURRIGHT:
 		w_scroll((TXT_WINDOW *) w, WA_RTLINE);
 		break;
+	case PAGE_DOWN:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURDOWN:
 	case SPACE:
 		w_pagedown((TXT_WINDOW *) w);
 		break;
+	case PAGE_UP:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURUP:
 		w_pageup((TXT_WINDOW *) w);
 		break;
@@ -1170,9 +1180,9 @@ static void txt_hndlbutton(WINDOW *w, int x, int y, int n,
  *				  worden
  */
 
-static void txt_redraw(WINDOW *w, GRECT *area)
+static void txt_redraw(WINDOW *w, RECT *area)
 {
-	GRECT r1, r2, in;
+	RECT r1, r2, in;
 
 	r1 = *area;
 
@@ -1183,7 +1193,7 @@ static void txt_redraw(WINDOW *w, GRECT *area)
 	graf_mouse(M_OFF, NULL);
 	xw_get(w, WF_FIRSTXYWH, &r2);
 
-	while ((r2.g_w != 0) && (r2.g_h != 0))
+	while ((r2.w != 0) && (r2.h != 0))
 	{
 		if (xd_rcintersect(&r1, &r2, &in) == TRUE)
 		{
@@ -1242,7 +1252,7 @@ void txt_closed(WINDOW *w)
 static void txt_fulled(WINDOW *w)
 {
 	WINFO *wd = ((TXT_WINDOW *) w)->winfo;
-	GRECT size;
+	RECT size;
 
 	wd->flags.fulled = (wd->flags.fulled == 1) ? 0 : 1;
 	txt_calcsize(((TXT_WINDOW *) w)->winfo, &size);
@@ -1336,21 +1346,21 @@ static void txt_vslider(WINDOW *w, int newpos)
  * w			- Pointer naar window
  */
 
-static void txt_sized(WINDOW *w, GRECT *newsize)
+static void txt_sized(WINDOW *w, RECT *newsize)
 {
-	GRECT area;
+	RECT area;
 	int old_w, old_h;
 
 	xw_get(w, WF_WORKXYWH, &area);
 
-	old_w = area.g_w;
-	old_h = area.g_h;
+	old_w = area.w;
+	old_h = area.h;
 
 	txt_moved(w, newsize);
 
 	xw_get(w, WF_WORKXYWH, &area);
 
-	if ((area.g_w > old_w) || (area.g_h > old_h))
+	if ((area.w > old_w) || (area.h > old_h))
 		txt_draw((TXT_WINDOW *) w, TRUE);
 
 	set_sliders((TXT_WINDOW *) w);
@@ -1364,10 +1374,10 @@ static void txt_sized(WINDOW *w, GRECT *newsize)
  * w			- Pointer naar window
  */
 
-static void txt_moved(WINDOW *w, GRECT *newpos)
+static void txt_moved(WINDOW *w, RECT *newpos)
 {
 	WINFO *wd = ((TXT_WINDOW *) w)->winfo;
-	GRECT size;
+	RECT size;
 
 	txt_wsize((TXT_WINDOW *) w, newpos, &size);
 	wd->flags.fulled = 0;
@@ -1608,7 +1618,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 						   boolean setmode, int *error)
 {
 	TXT_WINDOW *w;
-	GRECT size;
+	RECT size;
 	int errcode;
 
 	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &txt_functions, TFLAGS, &tmax,
@@ -1648,8 +1658,8 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 
 	if (*error != 0)
 	{
-		xw_delete((WINDOW *) w);
 		txt_rem(w);
+		xw_delete((WINDOW *) w);		/* HR 131202: after txt_rem (MP) */
 		return NULL;
 	}
 	else
@@ -1700,7 +1710,7 @@ void txt_setfont(void)
 {
 	int i;
 	WINFO *wd;
-	GRECT work;
+	RECT work;
 
 	if (fnt_dialog(DTVFONT, &txt_font, FALSE) == TRUE)
 	{
@@ -1726,13 +1736,13 @@ void txt_setfont(void)
 
 void txt_init(void)
 {
-	GRECT work;
+	RECT work;
 
-	xw_calc(WC_WORK, TFLAGS, (GRECT *) &screen_info.dsk_x, &work, viewmenu);
-	tmax.g_x = screen_info.dsk_x;
-	tmax.g_y = screen_info.dsk_y;
-	tmax.g_w = work.g_w - (work.g_w % screen_info.fnt_w);
-	tmax.g_h = work.g_h - (work.g_h % screen_info.fnt_h);
+	xw_calc(WC_WORK, TFLAGS, &screen_info.dsk, &work, viewmenu);
+	tmax.x = screen_info.dsk.x;
+	tmax.y = screen_info.dsk.y;
+	tmax.w = work.w - (work.w % screen_info.fnt_w);
+	tmax.h = work.h - (work.h % screen_info.fnt_h);
 }
 
 void txt_default(void)
@@ -1743,10 +1753,10 @@ void txt_default(void)
 
 	for (i = 0; i < MAXWINDOWS; i++)
 	{
-		textwindows[i].x = (i + 1) * screen_info.fnt_w - screen_info.dsk_x;
-		textwindows[i].y = screen_info.dsk_y + i * screen_info.fnt_h - screen_info.dsk_y;
-		textwindows[i].w = (screen_info.dsk_w * 9) / (10 * screen_info.fnt_w);
-		textwindows[i].h = (screen_info.dsk_h * 8) / (10 * screen_info.fnt_h);
+		textwindows[i].x = (i + 1) * screen_info.fnt_w - screen_info.dsk.x;
+		textwindows[i].y = screen_info.dsk.y + i * screen_info.fnt_h - screen_info.dsk.y;
+		textwindows[i].w = (screen_info.dsk.w * 9) / (10 * screen_info.fnt_w);
+		textwindows[i].h = (screen_info.dsk.h * 8) / (10 * screen_info.fnt_h);
 		textwindows[i].flags.fulled = 0;
 		textwindows[i].used = FALSE;
 	}
@@ -1837,7 +1847,7 @@ int txt_load_window(XFILE *file)
 	if ((n = x_fread(file, &sinfo, sizeof(SINFO2))) != sizeof(SINFO2))
 		return (n < 0) ? (int) n : EEOF;
 
-	if ((name = x_freadstr(file, NULL, &error)) == NULL)
+	if ((name = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
 		return error;
 
 	if (txt_do_open(&textwindows[sinfo.index], name, sinfo.px, sinfo.py, sinfo.tabsize, sinfo.hexmode, FALSE, &error) == NULL)

@@ -18,10 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <aes.h>
+#include <np_aes.h>			/* DjV 001 241202 */
 #include <multitos.h>
 
-int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2,
+int appl_getinfo(int ap_gtype,
+				 int *ap_gout1, int *ap_gout2,
 				 int *ap_gout3, int *ap_gout4)
 {
 	_GemParBlk.contrl[0] = 130;
@@ -38,6 +39,29 @@ int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2,
 	*ap_gout2 = _GemParBlk.intout[2];
 	*ap_gout3 = _GemParBlk.intout[3];
 	*ap_gout4 = _GemParBlk.intout[4];
+
+	return _GemParBlk.intout[0];
+}
+
+int objc_sysvar(int mo, int which,
+				int  ivall, int  ival2,
+                int *oval1, int *oval2)
+{
+	_GemParBlk.contrl[0] = 48;
+	_GemParBlk.contrl[1] = 4;
+	_GemParBlk.contrl[2] = 3;
+	_GemParBlk.contrl[3] = 0;
+	_GemParBlk.contrl[4] = 0;
+
+	_GemParBlk.intin[0] = mo;
+	_GemParBlk.intin[1] = which;
+	_GemParBlk.intin[2] = ivall;
+	_GemParBlk.intin[3] = ival2;
+
+	aes();
+
+	*oval1 = _GemParBlk.intout[1];
+	*oval2 = _GemParBlk.intout[2];
 
 	return _GemParBlk.intout[0];
 }

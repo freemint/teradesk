@@ -37,8 +37,8 @@
 						OBJECT *xw_menu;		\
 						int xw_bar;				\
 						int xw_mparent;			\
-						GRECT xw_size;			\
-						GRECT xw_work
+						RECT xw_size;			\
+						RECT xw_work
 
 /*
  * Default window structuur, bevat alleen de door de window
@@ -77,7 +77,7 @@ typedef struct wd_func
 	int (*wd_hndlkey) (WINDOW *w, int scancode, int keystate);
 	void (*wd_hndlbutton) (WINDOW *w, int x, int y, int n, int bstate, int kstate);
 
-	void (*wd_redraw) (WINDOW *w, GRECT *area);
+	void (*wd_redraw) (WINDOW *w, RECT *area);
 	void (*wd_topped) (WINDOW *w);
 	void (*wd_newtop) (WINDOW *w);
 	void (*wd_closed) (WINDOW *w);
@@ -85,8 +85,8 @@ typedef struct wd_func
 	void (*wd_arrowed) (WINDOW *w, int arrows);
 	void (*wd_hslider) (WINDOW *w, int newpos);
 	void (*wd_vslider) (WINDOW *w, int newpos);
-	void (*wd_sized) (WINDOW *w, GRECT *newsize);
-	void (*wd_moved) (WINDOW *w, GRECT *newpos);
+	void (*wd_sized) (WINDOW *w, RECT *newsize);
+	void (*wd_moved) (WINDOW *w, RECT *newpos);
 	void (*wd_hndlmenu) (WINDOW *w, int title, int item);
 
 	void (*wd_top) (WINDOW *w);
@@ -112,16 +112,16 @@ typedef struct wd_func
  */
 
 extern WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
-						 GRECT *msize, size_t wd_struct_size,
+						 RECT *msize, size_t wd_struct_size,
 						 OBJECT *menu, int *error);
-extern void xw_open(WINDOW *wd, GRECT *size);
+extern void xw_open(WINDOW *wd, RECT *size);
 extern void xw_close(WINDOW *w);
 extern void xw_delete(WINDOW *w);
 
 extern void xw_set(WINDOW *w, int field,...);
 extern void xw_get(WINDOW *w, int field,...);
-extern void xw_calc(int w_ctype, int w_flags, GRECT *input,
-					GRECT *output, OBJECT *menu);
+extern void xw_calc(int w_ctype, int w_flags, RECT *input,
+					RECT *output, OBJECT *menu);
 
 extern WINDOW *xw_find(int x, int y);
 extern WINDOW *xw_hfind(int handle);
@@ -142,7 +142,7 @@ extern int xw_handle(WINDOW *w);
 
 extern void xw_cycle(void);
 
-extern void xw_send_redraw(WINDOW *w, GRECT *area);
+extern void xw_send_redraw(WINDOW *w, RECT *area);
 
 extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);

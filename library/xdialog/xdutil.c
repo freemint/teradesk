@@ -31,40 +31,40 @@
 #include "xdialog.h"
 #include "internal.h"
 
-/* Funktie voor het omzetten van een GRECT structuur naar een pxy
+/* Funktie voor het omzetten van een RECT structuur naar een pxy
    array. */
 
-void xd_rect2pxy(GRECT *r, int *pxy)
+void xd_rect2pxy(RECT *r, int *pxy)
 {
-	pxy[0] = r->g_x;
-	pxy[1] = r->g_y;
-	pxy[2] = r->g_x + r->g_w - 1;
-	pxy[3] = r->g_y + r->g_h - 1;
+	pxy[0] = r->x;
+	pxy[1] = r->y;
+	pxy[2] = r->x + r->w - 1;
+	pxy[3] = r->y + r->h - 1;
 }
 
 /* Funktie voor het berekenen van de doorsnede van twee rechthoeken. */
 
-int xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *dest)
+int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 {
 	int xmin, xmax, ymin, ymax, h1, h2;
 
-	xmin = max(r1->g_x, r2->g_x);
-	ymin = max(r1->g_y, r2->g_y);
+	xmin = max(r1->x, r2->x);
+	ymin = max(r1->y, r2->y);
 
-	h1 = r1->g_x + r1->g_w - 1;
-	h2 = r2->g_x + r2->g_w - 1;
+	h1 = r1->x + r1->w - 1;
+	h2 = r2->x + r2->w - 1;
 	xmax = min(h1, h2);
 
-	h1 = r1->g_y + r1->g_h - 1;
-	h2 = r2->g_y + r2->g_h - 1;
+	h1 = r1->y + r1->h - 1;
+	h2 = r2->y + r2->h - 1;
 	ymax = min(h1, h2);
 
-	dest->g_x = xmin;
-	dest->g_y = ymin;
-	dest->g_w = xmax - xmin + 1;
-	dest->g_h = ymax - ymin + 1;
+	dest->x = xmin;
+	dest->y = ymin;
+	dest->w = xmax - xmin + 1;
+	dest->h = ymax - ymin + 1;
 
-	if ((dest->g_w <= 0) || (dest->g_h <= 0))
+	if ((dest->w <= 0) || (dest->h <= 0))
 		return FALSE;
 
 	return TRUE;
@@ -84,9 +84,9 @@ int xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *dest)
  *			   als dit niet het geval is.
  */
 
-int xd_inrect(int x, int y, GRECT *r)
+int xd_inrect(int x, int y, RECT *r)
 {
-	if ((x >= r->g_x) && (x < (r->g_x + r->g_w)) && (y >= r->g_y) && (y < (r->g_y + r->g_h)))
+	if ((x >= r->x) && (x < (r->x + r->w)) && (y >= r->y) && (y < (r->y + r->h)))
 		return TRUE;
 	else
 		return FALSE;
@@ -94,17 +94,17 @@ int xd_inrect(int x, int y, GRECT *r)
 
 /* Funktie voor het berekenen van de grootte van de schermbuffer. */
 
-long xd_initmfdb(GRECT *r, MFDB *mfdb)
+long xd_initmfdb(RECT *r, MFDB *mfdb)
 {
 	long size;
 
-	mfdb->fd_w = (r->g_w + 16) & 0xFFF0;
-	mfdb->fd_h = r->g_h;
+	mfdb->fd_w = (r->w + 16) & 0xFFF0;
+	mfdb->fd_h = r->h;
 	mfdb->fd_wdwidth = mfdb->fd_w / 16;
 	mfdb->fd_stand = 0;
 	mfdb->fd_nplanes = xd_nplanes;
 
-	size = ((long) (mfdb->fd_w) * (long) r->g_h * (long) xd_nplanes) / 8L;
+	size = ((long) (mfdb->fd_w) * (long) r->h * (long) xd_nplanes) / 8L;
 
 	return size;
 }
@@ -137,13 +137,13 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *p
 
 /* Funktie die rechthoek om object bepaalt */
 
-void xd_objrect(OBJECT *tree, int object, GRECT *r)
+void xd_objrect(OBJECT *tree, int object, RECT *r)
 {
 	OBJECT *obj = &tree[object];
 
-	objc_offset(tree, object, &r->g_x, &r->g_y);
-	r->g_w = obj->ob_width;
-	r->g_h = obj->ob_height;
+	objc_offset(tree, object, &r->x, &r->y);
+	r->w = obj->ob_width;
+	r->h = obj->ob_height;
 }
 
 /* Funktie voor het bepalen van de parent van een object. */
@@ -280,7 +280,7 @@ int xd_is_tristate(OBJECT *object)
  * r	- clipping rechthoek.
  */
 
-void xd_clip_on(GRECT *r)
+void xd_clip_on(RECT *r)
 {
 	int pxy[4];
 

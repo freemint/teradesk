@@ -196,7 +196,7 @@ static void draw_rect(int x, int y, int w, int h)
 	v_pline(xd_vhandle, 5, pxy);
 }
 
-static void draw_frame(GRECT *frame, int start, int eind)		/* HR 151102: reserve 'end' for lamguage */
+static void draw_frame(RECT *frame, int start, int eind)		/* HR 151102: reserve 'end' for lamguage */
 {
 	int i, s, e;
 
@@ -212,8 +212,8 @@ static void draw_frame(GRECT *frame, int start, int eind)		/* HR 151102: reserve
 	}
 
 	for (i = s; i <= e; i++)
-		draw_rect(frame->g_x + i, frame->g_y + i, frame->g_w - 2 * i,
-				  frame->g_h - 2 * i);
+		draw_rect(frame->x + i, frame->y + i, frame->w - 2 * i,
+				  frame->h - 2 * i);
 }
 
 static void set_linedef(int color)
@@ -242,7 +242,7 @@ static void set_filldef(int color)
 	vsf_perimeter(xd_vhandle, 0);
 }
 
-static void clr_object(GRECT *r, int color)
+static void clr_object(RECT *r, int color)
 {
 	int pxy[4];
 
@@ -254,19 +254,19 @@ static void clr_object(GRECT *r, int color)
 static int cdecl ub_drag(PARMBLK *pb)
 {
 	int object = pb->pb_obj, pxy[4], border;
-	GRECT frame, clip;
+	RECT frame, clip;
 	OBJECT *tree = pb->pb_tree;
 	union { bfobspec obspec; long index; } obspec;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
-	frame.g_x = pb->pb_x;
-	frame.g_y = pb->pb_y;
-	frame.g_w = pb->pb_w;
-	frame.g_h = pb->pb_h;
+	frame.x = pb->pb_x;
+	frame.y = pb->pb_y;
+	frame.w = pb->pb_w;
+	frame.h = pb->pb_h;
 
 	vswr_mode(xd_vhandle, MD_REPLACE);
 
@@ -281,18 +281,18 @@ static int cdecl ub_drag(PARMBLK *pb)
 /*
 	if(xd_draw_3d)
 	{	
-		pxy[0] = frame.g_x - 1;
-		pxy[1] = frame.g_y + obspec.obspec.framesize;
-		pxy[2] = frame.g_x - 1;
-		pxy[3] = frame.g_y + frame.g_h;
+		pxy[0] = frame.x - 1;
+		pxy[1] = frame.y + obspec.obspec.framesize;
+		pxy[2] = frame.x - 1;
+		pxy[3] = frame.y + frame.h;
 
 		vsl_color(xd_vhandle, 0);
 		v_pline(xd_vhandle, 2, pxy);
 
-		pxy[0] = frame.g_x - 1;
-		pxy[1] = frame.g_y + frame.g_h;
-		pxy[2] = frame.g_x + frame.g_w - obspec.obspec.framesize - 1;
-		pxy[3] = frame.g_y + frame.g_h;
+		pxy[0] = frame.x - 1;
+		pxy[1] = frame.y + frame.h;
+		pxy[2] = frame.x + frame.w - obspec.obspec.framesize - 1;
+		pxy[3] = frame.y + frame.h;
 
 		vsl_color(xd_vhandle, 9);
 		v_pline(xd_vhandle, 2, pxy);
@@ -315,10 +315,10 @@ static int cdecl ub_drag(PARMBLK *pb)
 
 	vsl_color(xd_vhandle, 1);
 
-	pxy[0] = frame.g_x - border;
-	pxy[1] = frame.g_y - border;
-	pxy[2] = frame.g_x + frame.g_w - 1 + border;
-	pxy[3] = frame.g_y + frame.g_h - 1 + border;
+	pxy[0] = frame.x - border;
+	pxy[1] = frame.y - border;
+	pxy[2] = frame.x + frame.w - 1 + border;
+	pxy[3] = frame.y + frame.h - 1 + border;
 
 	v_pline(xd_vhandle, 2, pxy);
 
@@ -333,12 +333,12 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	static int ci[2] = {1, 0};
 	void *data;
 	MFDB smfdb, dmfdb;
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -390,12 +390,12 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 static int cdecl ub_rectbut(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, pxy[4];
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -437,12 +437,12 @@ static int cdecl ub_rectbuttri(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, pxy[4];
 	int state;
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -497,12 +497,12 @@ static int cdecl ub_rectbuttri(PARMBLK *pb)
 static int cdecl ub_cyclebut(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, w = pb->pb_w, h = pb->pb_h;
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -530,13 +530,13 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	    h = pb->pb_h,
 	    tw = strlen(save),
 	    ow = strlen(ted->te_pvalid);
-	GRECT clip;
+	RECT clip;
 
 	ted->te_ptext = s;
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -545,8 +545,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	y += (h - xd_regular_font.fnt_chh - 1) / 2;
 	if (tw > ow)
 	{
-		strncpy(s, save + blk->ob_shift, ow);
-		*(s + ow) = 0;
+		strsncpy(s, save + blk->ob_shift, ow + 1);		/* HR 120203: secure cpy */
 		prt_text("< ", x - 2*xd_regular_font.fnt_chw, y, 0);
 		prt_text(s, x, y, pb->pb_currstate);
 		prt_text(" >", x + w, y, 0);
@@ -576,13 +575,13 @@ static int cdecl ub_button(PARMBLK *pb)
 	int x, y;
 /*	int button_3d, act_ind_sel = FALSE;
 */	char *string;
-	GRECT frame, clip;
+	RECT frame, clip;
 	OBJECT *tree = pb->pb_tree;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -599,10 +598,10 @@ static int cdecl ub_button(PARMBLK *pb)
 		string = (char *)pb->pb_parm;
 	}
 
-	frame.g_x = pb->pb_x + border;
-	frame.g_y = pb->pb_y + border;
-	frame.g_w = pb->pb_w - 2 * border;
-	frame.g_h = pb->pb_h - 2 * border;
+	frame.x = pb->pb_x + border;
+	frame.y = pb->pb_y + border;
+	frame.w = pb->pb_w - 2 * border;
+	frame.h = pb->pb_h - 2 * border;
 
 /*	button_3d = ( (IS_ACT(flags) || IS_IND(flags)) && xd_draw_3d );
 */
@@ -622,22 +621,22 @@ static int cdecl ub_button(PARMBLK *pb)
 			clr_object(&frame, (IS_IND(flags) && act_ind_sel) 
 								? 9 : xd_get_3d_color(flags));
 
-			pxy[0] = frame.g_x;
-			pxy[1] = frame.g_y + frame.g_h - 2;
-			pxy[2] = frame.g_x;
-			pxy[3] = frame.g_y;
-			pxy[4] = frame.g_x + frame.g_w - 2;
-			pxy[5] = frame.g_y;
+			pxy[0] = frame.x;
+			pxy[1] = frame.y + frame.h - 2;
+			pxy[2] = frame.x;
+			pxy[3] = frame.y;
+			pxy[4] = frame.x + frame.w - 2;
+			pxy[5] = frame.y;
 
 			vsl_color(xd_vhandle, (act_ind_sel) ? 1 : 0);
 			v_pline(xd_vhandle, 3, pxy);
 
-			pxy[0] = frame.g_x + 1;
-			pxy[1] = frame.g_y + frame.g_h - 1;
-			pxy[2] = frame.g_x + frame.g_w - 1;
-			pxy[3] = frame.g_y + frame.g_h - 1;
-			pxy[4] = frame.g_x + frame.g_w - 1;
-			pxy[5] = frame.g_y + 1;
+			pxy[0] = frame.x + 1;
+			pxy[1] = frame.y + frame.h - 1;
+			pxy[2] = frame.x + frame.w - 1;
+			pxy[3] = frame.y + frame.h - 1;
+			pxy[4] = frame.x + frame.w - 1;
+			pxy[5] = frame.y + 1;
 
 			if (act_ind_sel && IS_IND(flags))
 				vsl_color(xd_vhandle, (xd_nplanes < 4) ? 0 : 8);
@@ -681,17 +680,17 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, w = pb->pb_w, h = pb->pb_h;
 	int d = xd_regular_font.fnt_chh / 2, pxy[12], ext[8];
-	GRECT clip, frame;
+	RECT clip, frame;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
-	frame.g_x = pb->pb_x;
-	frame.g_y = pb->pb_y;
-	frame.g_w = pb->pb_w;
-	frame.g_h = pb->pb_h;
+	frame.x = pb->pb_x;
+	frame.y = pb->pb_y;
+	frame.w = pb->pb_w;
+	frame.h = pb->pb_h;
 
 	xd_clip_on(&clip);
 
@@ -731,12 +730,12 @@ static int cdecl ub_title(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, w = pb->pb_w, h = pb->pb_h;
 	int pxy[4];
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
@@ -765,17 +764,17 @@ static int cdecl ub_title(PARMBLK *pb)
 static int cdecl ub_unknown(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, w = pb->pb_w, h = pb->pb_h;
-	GRECT clip;
+	RECT clip;
 
-	clip.g_x = pb->pb_xc;
-	clip.g_y = pb->pb_yc;
-	clip.g_w = pb->pb_wc;
-	clip.g_h = pb->pb_hc;
+	clip.x = pb->pb_xc;
+	clip.y = pb->pb_yc;
+	clip.w = pb->pb_wc;
+	clip.h = pb->pb_hc;
 
 	xd_clip_on(&clip);
 
 	vswr_mode(xd_vhandle, MD_REPLACE);
-	clr_object((GRECT *) & pb->pb_x, 0);
+	clr_object((RECT *) & pb->pb_x, 0);
 	set_linedef(1);
 	draw_rect(x, y, w, h);
 
@@ -795,21 +794,21 @@ static int cdecl ub_unknown(PARMBLK *pb)
  * cursor.
  */
 
-static void xd_calc_cursor(XDINFO *info, GRECT *cursor)
+static void xd_calc_cursor(XDINFO *info, RECT *cursor)
 {
-	objc_offset(info->tree, info->edit_object, &cursor->g_x, &cursor->g_y);
+	objc_offset(info->tree, info->edit_object, &cursor->x, &cursor->y);
 
-	cursor->g_x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.fnt_chw;
-	cursor->g_y -= 2;
-	cursor->g_w = 1;
-	cursor->g_h = xd_regular_font.fnt_chh + 4;
+	cursor->x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.fnt_chw;
+	cursor->y -= 2;
+	cursor->w = 1;
+	cursor->h = xd_regular_font.fnt_chh + 4;
 }
 
 /*
  * Funktie voor het tekenen van de tekst cursor
  */
 
-static void xd_credraw(XDINFO *info, GRECT *area)
+static void xd_credraw(XDINFO *info, RECT *area)
 {
 	if (cursor_mfdb.fd_addr == NULL)
 	{
@@ -822,7 +821,7 @@ static void xd_credraw(XDINFO *info, GRECT *area)
 
 	if (cursor_mfdb.fd_addr != NULL)
 	{
-		GRECT cursor, r;
+		RECT cursor, r;
 		MFDB smfdb;
 		int pxy[8];
 
@@ -833,14 +832,14 @@ static void xd_credraw(XDINFO *info, GRECT *area)
 		{
 			/* Save area below cursor. */
 			
-			pxy[0] = r.g_x;
-			pxy[1] = r.g_y;
-			pxy[2] = r.g_x + r.g_w - 1;
-			pxy[3] = r.g_y + r.g_h - 1;
-			pxy[4] = r.g_x - cursor.g_x;
-			pxy[5] = r.g_y - cursor.g_y;
-			pxy[6] = pxy[4] + r.g_w - 1;
-			pxy[7] = pxy[5] + r.g_h - 1;
+			pxy[0] = r.x;
+			pxy[1] = r.y;
+			pxy[2] = r.x + r.w - 1;
+			pxy[3] = r.y + r.h - 1;
+			pxy[4] = r.x - cursor.x;
+			pxy[5] = r.y - cursor.y;
+			pxy[6] = pxy[4] + r.w - 1;
+			pxy[7] = pxy[5] + r.h - 1;
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb,
 					  &cursor_mfdb);
@@ -852,9 +851,9 @@ static void xd_credraw(XDINFO *info, GRECT *area)
 			vswr_mode(xd_vhandle, MD_REPLACE);
 			set_linedef(1);
 
-			pxy[0] = pxy[2] = cursor.g_x;
-			pxy[1] = cursor.g_y;
-			pxy[3] = cursor.g_y + cursor.g_h - 1;
+			pxy[0] = pxy[2] = cursor.x;
+			pxy[1] = cursor.y;
+			pxy[3] = cursor.y + cursor.h - 1;
 
 			v_pline(xd_vhandle, 2, pxy);
 
@@ -871,7 +870,7 @@ static void xd_cur_remove(XDINFO *info)
 {
 	if (cursor_mfdb.fd_addr != NULL)
 	{
-		GRECT cursor, r1, r2;
+		RECT cursor, r1, r2;
 		MFDB dmfdb;
 		int pxy[8];
 
@@ -885,12 +884,12 @@ static void xd_cur_remove(XDINFO *info)
 
 			pxy[0] = 0;
 			pxy[1] = 0;
-			pxy[2] = cursor.g_w - 1;
-			pxy[3] = cursor.g_h - 1;
-			pxy[4] = cursor.g_x;
-			pxy[5] = cursor.g_y;
-			pxy[6] = cursor.g_x + cursor.g_w - 1;
-			pxy[7] = cursor.g_y + cursor.g_h - 1;
+			pxy[2] = cursor.w - 1;
+			pxy[3] = cursor.h - 1;
+			pxy[4] = cursor.x;
+			pxy[5] = cursor.y;
+			pxy[6] = cursor.x + cursor.w - 1;
+			pxy[7] = cursor.y + cursor.h - 1;
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb,
 					  &dmfdb);
@@ -901,20 +900,20 @@ static void xd_cur_remove(XDINFO *info)
 		{
 			xw_get(info->window, WF_FIRSTXYWH, &r1);
 
-			while ((r1.g_w != 0) && (r1.g_h != 0))
+			while ((r1.w != 0) && (r1.h != 0))
 			{
 				if (xd_rcintersect(&r1, &cursor, &r2))
 				{
 					xd_clip_on(&cursor);
 
-					pxy[0] = r2.g_x - cursor.g_x;
-					pxy[1] = r2.g_y - cursor.g_y;
-					pxy[2] = pxy[0] + r2.g_w - 1;
-					pxy[3] = pxy[1] + r2.g_h - 1;
-					pxy[4] = r2.g_x;
-					pxy[5] = r2.g_y;
-					pxy[6] = r2.g_x + r2.g_w - 1;
-					pxy[7] = r2.g_y + r2.g_h - 1;
+					pxy[0] = r2.x - cursor.x;
+					pxy[1] = r2.y - cursor.y;
+					pxy[2] = pxy[0] + r2.w - 1;
+					pxy[3] = pxy[1] + r2.h - 1;
+					pxy[4] = r2.x;
+					pxy[5] = r2.y;
+					pxy[6] = r2.x + r2.w - 1;
+					pxy[7] = r2.y + r2.h - 1;
 
 					vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb,
 							  &dmfdb);
@@ -932,9 +931,9 @@ static void xd_cur_remove(XDINFO *info)
 
 /* Funktie voor het tekenen van een dialoogbox in een window */
 
-void xd_redraw(XDINFO *info, int start, int depth, GRECT *area, int flags)
+void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
 {
-	GRECT r1, r2, cursor;
+	RECT r1, r2, cursor;
 	int draw_cur;
 	OBJECT *tree = info->tree;
 
@@ -951,7 +950,7 @@ void xd_redraw(XDINFO *info, int start, int depth, GRECT *area, int flags)
 	if (info->dialmode != XD_WINDOW)
 	{
 		if (flags & XD_RDIALOG)
-			objc_draw(tree, start, depth, area->g_x, area->g_y, area->g_w, area->g_h);
+			objc_draw(tree, start, depth, area->x, area->y, area->w, area->h);
 		if (draw_cur)
 			xd_credraw(info, &cursor);
 	}
@@ -959,10 +958,10 @@ void xd_redraw(XDINFO *info, int start, int depth, GRECT *area, int flags)
 	{
 		xw_get(info->window, WF_FIRSTXYWH, &r1);
 
-		while ((r1.g_w != 0) && (r1.g_h != 0))
+		while ((r1.w != 0) && (r1.h != 0))
 		{
 			if ((flags & XD_RDIALOG) && xd_rcintersect(&r1, area, &r2))
-				objc_draw(tree, start, depth, r2.g_x, r2.g_y, r2.g_w, r2.g_h);
+				objc_draw(tree, start, depth, r2.x, r2.y, r2.w, r2.h);
 
 			if (draw_cur && xd_rcintersect(&r1, &cursor, &r2))
 				xd_credraw(info, &r2);
@@ -1018,7 +1017,7 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 	int twostates = (newstate&0xff) | (tree[object].ob_state&(0xff00|WHITEBAK));	/* HR 151102: preserve extended states */
 
 	if (info->dialmode != XD_WINDOW)
-		objc_change(tree, object, 0, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h,
+		objc_change(tree, object, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h,
 					twostates, (int) draw);
 	else
 	{

@@ -18,13 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define AV_PROTOKOLL	0x4700		/* Send supported features. */
-#define VA_PROTOSTATUS	0x4701		/* Return supported features. */
-#define	AV_SENDKEY		0x4710		/* Send key. */
-#define VA_START		0x4711		/* Pass command line to program. */
-#define AV_ASKFILEFONT	0x4712		/* Ask the currently selected font for files. */
-#define VA_FILEFONT		0x4713		/* Return the currently selected font for files. */
-#define AV_LAST			0x4736		/* Last AV message. */
+#include <vaproto.h>
 
 #define FONT_CHANGED	0x7A18
 #define FONT_SELECT		0x7A19		/* Call to font selector. */
