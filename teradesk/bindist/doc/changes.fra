@@ -1,0 +1,119 @@
+Tera Desktop V1.38, 11-12-93, Copyright 1991, 1992, 1993 W. Klaren.
+Traduit par Jean-Jacques Cortes,le 28 Janvier 1994.
+
+Version 1.38
+
+- L'appui de la touche escape dans une fenˆtre r‚pertoire force
+  maintenant un media change,les changements de disques seront
+  ainsi toujours d‚tect‚s.
+- La barre de menu a maintenant la bonne dimension en haute
+  r‚solution (1280x960).
+- Il y a une traduction en fran‡ais du fichier ressource et de
+  la documentation.
+
+Version 1.37
+
+- Le nombre maximum d'ic“nes sur le bureau d‚pend maintenant de
+  la r‚solution de l'‚cran.
+
+Version 1.36
+
+- Un bug dans la boŒte de dialoge 'montrer information' a ‚t‚
+  corrig‚.
+- Le bureau ne peut ˆtre tu‚ si celui-ci tourne sous MiNT.
+
+Version 1.35
+
+- Un bug dans la boŒte de dialogue de la ligne de commande a ‚t‚
+  coorig‚.
+- Le handle standard 2 peut ˆtre redirig‚ vers standard out. 
+
+Version 1.34
+
+- La boŒte de dialogue pour le traitement des conflits de nom a
+  deux boutons avec le mˆme raccourci clavier.
+- Un nouveau bug dans le tirer d'ic“nes sur le bureau a ‚t‚ r‚gl‚.
+
+Version 1.33
+
+- L'attente d'un clic souris aprŠs un programme TOS fonctionne
+  mieux maintenant.
+- La boŒte de dialogue pour renommer reste maintenant … la mˆme
+  place aprŠs qu'elle soit apparue la premiŠre fois. 
+- Dans le champ de la ligne de commande de la boŒte de dialogue 
+  'Installer une application' deux nouvelles options peuvent ˆtre
+  entr‚es: %N et %F. Ces options fonctionnent ‚xactement comme %n
+  et %f respectivement, except‚ que les noms de fichiers seront
+  convertis en minuscules.
+
+Version 1.32
+
+- Un r‚pertoire dans une fenˆtre peut ˆtre remplac‚e par le r‚pertoire
+  d'un autre lecteur en appuyant sur SHIFT ALTERNATE et la touche
+  correspondant au lecteur.
+- L'attente d'une touche aprŠs un programme TOS fonctionne aussi
+  avec un clic souris.
+
+Version 1.30
+
+- Un bug qui faisait que la ligne de commande des programmes TTP
+  n'‚tait pas vide lorsqu'elle apparaissait pour la premiŠre fois
+  (uniquement en basse r‚solution ST),a ‚t‚ enlev‚.
+- La palette de couleurs peut ˆtre sauvegard‚e dans le fichier de
+  configuration. Si cette option est utilis‚e,la palette de couleurs
+  sera restor‚e aprŠs chaque fin de programme.Cette fonction utilise
+  seulement des appels GEM et devrait marcher aussi avec des cartes
+  graphique.Malheureusement,je ne suis pas capable de le v‚rifier.
+- Si une boŒte ‚lastique est utilis‚e pour s‚lectionner des objets
+  dans une fenˆtre,le contenu de celle-ci sera automatiquement d‚roul‚
+  si la boŒte ‚lastique est d‚plac‚e en dehors de la fenˆtre. 
+- Les fontes du visualiseur et des fenˆtres r‚pertoire peuvent ˆtre
+  modifi‚es.
+- Reconnaissance de fichiers v‚rouill‚s,… l'aide du cookie _FLK .
+- Les fonctions des boŒtes de dialogue ont ‚t‚ am‚lior‚es.Les
+  fonctions suivantes sont nouvelles: 
+  - Les boŒtes de dialogues sont fenˆtrables.
+  - Avec SHIFT + curseur gauche et SHIFT + curseur droite, le
+    curseur peut ˆtre d‚plac‚ au d‚but et … la fin d'un champ
+    ‚ditable. 
+  - Le curseur dans un champ ‚ditable peut ˆtre d‚plac‚ … la souris.
+  - La couleur et le motif du fond du bureau peuvent ˆtre chang‚s. 
+  - Quelques bugs,qui n'apparaissaient qu'avec le TOS version 1.4
+    et ant‚rieurs,ont ‚t‚ corrig‚s.Ils ‚taient caus‚s par des bugs
+    dans ces versions du TOS. 
+
+Version 1.24
+
+- Quelques bugs ont ‚t‚ corrig‚s.
+
+Version 1.23
+
+- Quelques bugs ont ‚t‚ corrig‚s.
+
+Version 1.22
+
+_ Des ascenseurs ont ‚t‚ ajout‚s dans les boŒtes de dialogue o— des
+  ic“nes peuvent ˆtre s‚lectionn‚es,afin de faciliter la s‚lection
+  de celles-ci. 
+- Si un fichier de configuration d‚fectueux est charg‚,la configuration
+  actuelle n'est pas effac‚e.
+- Tous les boutons flŠche sont dor‚navent activ‚s avec CONTROL +
+  la touche curseur correspondante.Dans le futur,la combinaison
+  avec SHIFT sera utilis‚e pour d'autres fonctions.
+- Les boutons flŠches sont en vid‚o inverse quand ils sont s‚lectionn‚s.
+- Le programme fonctionne maintenant en basse ST et basse TT avec
+  quelques contraintes.
+- Le bureau peut maintenant se brancher lui-mˆme … travers le
+  trap 2 avec le protocole XBRA.
+- La routine clavier est am‚lior‚e,et devrait aussi fonctionner
+  avec d'autres claviers que le clavier anglais. 
+- Les routines de copie sont maintenant capables of handling infinitly nested 
+  r‚pertoires.
+- Durant la copie de fichiers,le nombre d'octets des fichiers,
+  le nom du dossier et le nom du fichier sont affich‚s. 
+- Si des fichiers dans une fenˆtre sont s‚lectionn‚s,le nombre
+  d'octets s‚lectionn‚s s'affiche correctement.
+- La boŒte ‚lastique pour la s‚lection d'objets peut maintenant ˆtre
+  d‚plac‚e dans toutes les directions. 
+- Les routines de copie ont ‚t‚ ‚tendues avec une fonction renommer.
+

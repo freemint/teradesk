@@ -1,0 +1,5 @@
+- The image viewer can display Degas files only on standard ST and TT
+  resolutions.
+
+- The MiNT version is not finished. Especially copying and moving files
+  and starting programs do not work as it should.

@@ -1,0 +1,79 @@
+;*
+;* Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+;*
+;* This file is part of Teradesk.
+;*
+;* Teradesk is free software; you can redistribute it and/or modify
+;* it under the terms of the GNU General Public License as published by
+;* the Free Software Foundation; either version 2 of the License, or
+;* (at your option) any later version.
+;*
+;* Teradesk is distributed in the hope that it will be useful,
+;* but WITHOUT ANY WARRANTY; without even the implied warranty of
+;* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;* GNU General Public License for more details.
+;*
+;* You should have received a copy of the GNU General Public License
+;* along with Teradesk; if not, write to the Free Software
+;* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+;*
+
+bindist\desktop.prg
+.C[-P -I..\library\xdialog -I..\include]
+.S[-S]
+=
+PCSTART.O
+
+;GEM gedeelte en hoofdprogramma
+
+MAIN.C		(desk.h,desktop.h,resource.h,window.h,events.h,error.h,batch.h,environm.h,file.h,prgtype.h,icontype.h,applik.h,filetype.h,icon.h,dir.h,open.h,edit.h,version.h,xfilesys.h,screen.h,font.h,vaproto.h)
+RESOURCE.C	(desk.h,desktop.h,resource.h,version.h)
+WINDOW.C	(desk.h,desktop.h,resource.h,window.h,events.h,applik.h,copy.h,file.h,error.h,filetype.h,icon.h,screen.h,xfilesys.h)
+ICON.C		(desk.h,desktop.h,resource.h,window.h,icon.h,error.h,file.h,applik.h,screen.h,showinfo.h,open.h,copy.h,slider.h,xfilesys.h,events.h,viewer.h,dir.h)
+COPY.C		(desk.h,desktop.h,resource.h,window.h,copy.h,file.h,events.h,error.h,printer.h,applik.h,xfilesys.h)
+PRINTER.C	(desk.h,desktop.h,resource.h,window.h,printer.h,file.h,error.h,events.h,xfilesys.h)
+APPLIK.C	(desk.h,desktop.h,resource.h,window.h,applik.h,file.h,error.h,startprg.h,prgtype.h,vaproto.h,xfilesys.h)
+PRGTYPE.C	(desk.h,desktop.h,resource.h,window.h,prgtype.h,file.h,slider.h,error.h,xfilesys.h)
+ICONTYPE.C	(desk.h,desktop.h,resource.h,window.h,icontype.h,file.h,prgtype.h,error.h,slider.h,icon.h,xfilesys.h)
+FILETYPE.C	(desk.h,desktop.h,resource.h,window.h,filetype.h,slider.h,error.h,file.h,xfilesys.h)
+SCREEN.C	(desk.h,desktop.h,screen.h,xfilesys.h,error.h)
+SHOWINFO.C	(desk.h,desktop.h,resource.h,showinfo.h,window.h,icon.h,file.h,error.h,xfilesys.h)
+FONT.C		(desk.h,desktop.h,resource.h,xfilesys.h,screen.h,slider.h,error.h,font.h,vaproto.h)
+vaproto.c	(desk.h, font.h, vaproto.h)
+
+;TOS gedeelte
+
+BATCH.C		(desk.h,desktop.h,batch.h,file.h,error.h,xfilesys.h)
+ENVIRONM.C	(environm.h)
+STARTPRG.C	(desk.h,desktop.h,window.h,startprg.h,file.h,error.h,environm.h,events.h,icon.h,xfilesys.h,screen.h)
+FILE.C		(desk.h,desktop.h,file.h,prgtype.h,error.h,xfilesys.h)
+
+;Ingebouwde modules
+
+DIR.C		(desk.h,desktop.h,resource.h,window.h,dir.h,error.h,file.h,screen.h,icontype.h,icon.h,showinfo.h,open.h,copy.h,filetype.h,xfilesys.h,events.h,font.h)
+OPEN.C		(desk.h,desktop.h,resource.h,window.h,open.h,dir.h,applik.h,printer.h,file.h,edit.h,viewer.h,xfilesys.h,error.h)
+VIEWER.C	(desk.h,desktop.h,error.h,font.h,resource.h,xfilesys.h,screen.h,viewer.h,window.h)
+EDIT.C		(desk.h,desktop.h,window.h,edit.h,file.h,applik.h,xfilesys.h,error.h,prgtype.h)
+
+;Vervangingen en aanvullingen van bibliotheekfuncties
+
+events.c	(desk.h,events.h)
+slider.c	(desk.h,events.h,slider.h)
+sprintf.c
+malloc.c	(malloc.h)
+
+XFILESYS.C	(xfilesys.h,desktop.h,error.h)
+ERROR.C		(desktop.h,error.h)
+
+btst.s
+;windvget.s
+
+;Libraries
+
+..\library\xdialog\xdialog.prj
+..\library\multitos\multitos.prj
+..\library\mint\mintlib.prj
+..\library\utility\library.prj
+PCSTDLIB.LIB
+PCTOSLIB.LIB
+PCGEMLIB.LIB

@@ -1,0 +1,128 @@
+Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
+
+Version 1.41
+
+- The infobox kan now display more than 10Mb free memory.
+- Now there is also a german resource file.
+
+Version 1.40a
+
+- The correct font height is selected in ST medium resolution.
+
+Version 1.40
+
+- Programs can be started parallel on MultiTOS and Geneva.
+- Default tabsize can be changed again.
+- No message "Program not found" after some GEM applications
+
+Version 1.39
+
+- Starting programs has been improved. Therefore some programs
+  (Timeworks 3), which caused problems now work fine.
+
+Version 1.38
+
+- Pressing Escape in a directory window will now force a media change,
+  therefore disk changes will now always be detected.
+- The menu bar has now the right length in high resolutions (1280x960)
+  as well.
+- There is a French translation of the resource file.
+- A program for viewing .IMG and Degas files has been added.
+
+Version 1.37
+
+- The maximum number of icons on the desktop is now dependent of the
+  resolution of the screen.
+
+Version 1.36
+
+- A bug in the show info dialog box has been fixed.
+- The desktop can not be killed if it is run under MiNT.
+
+Version 1.35
+
+- A bug in the commandline dialog has been fixed.
+- Standard handle 2 can be redirected to standard out. 
+
+Versiom 1.34
+
+- The dialogbox for handling nameconflicts had two buttons with the
+  same keyboard short-cut.
+- A new bug in dragging icons on the desktop has been fixed.
+
+Version 1.33
+
+- Waiting for a mouse click after a TOS program, works now
+  (hopefully) better.
+- The rename dialogbox now stays at the same position, after it 
+  appeared for the first time.
+- In the commandline field of the Install application dialog two new
+  options can be entered: %N and %F. These options function the same
+  as %n and %f respectively, except that filenames will be converted
+  to lowercase.
+
+Version 1.32
+
+- A directory in a window can be replaced by the directory of another
+  drive by pressing SHIFT ALTERNATE and the key corresponding to the
+  drive.
+- The wait for key after TOS programs option now also waits for mouse
+  clicks.
+
+Version 1.30
+
+- A bug has been removed, which caused the commandline for TTP 
+  programs to be non-empty when it appeared for the first time (only
+  in ST low resolution).
+- The color palette can be saved in the configuration file. If this 
+  option is used the color palette will be restored after a program 
+  finished. This function only uses GEM calls and should therefore 
+  also work on graphics cards. Unfortunatly I was not able to test 
+  this.
+- If a rubberbox is used to select items in a window, the contents of 
+  the window will be automatically scrolled if the rubberbox is moved 
+  outside the window.
+- The fonts of the viewer and directory windows can be changed.
+- Support of file locking, using the _FLK cookie.
+- The functions for dialogboxes have been improved. The next features 
+  are new:
+  - Dialogboxes in windows
+  - With Shift cursor left and Shift cursor right, the cursor can be 
+    moved to the start and the end of an editable field.
+  - The cursor in an editable field can be moved with the mouse.
+- The color and the fillpattern of the desktop background can be 
+  changed.
+- A few bugs, which only occur on TOS version 1.4 and older have been 
+  removed. They were caused by bugs in these TOS versions.
+
+Version 1.24
+
+- A few bugs were removed.
+
+Version 1.23
+
+- A few bugs were removed.
+
+Version 1.22
+
+_ Sliders were added in the dialogboxes, in which icons can be 
+  selected, to simplify the selection of icons.
+- If an illegal configuration file is loaded, then the current 
+  configuration will not be erased.
+- All arrow buttons are from now on operated with CONTROL + the 
+  corresponding cursorkey. In the future the combinations with SHIFT 
+  will be used for other functions.
+- Arrow buttons are inverted when the are selected.
+- The program now works in ST-low and TT-low with some limitations.
+- The desktop now hooks itself into trap 2 with the XBRA protocol.
+- The keyboard routine is improved, it should now also work properly 
+  on other than keyboards than an english keyboards.
+- The copy routines are now capable of handling infinitly nested 
+  directories.
+- During the copying of files the number of bytes, the name of the 
+  folder and the name of the file are displayed as well. 
+- If files in a window are selected the number of selected bytes will 
+  be displayed as well.
+- The rubberbox for selecting objects can now be moved in every 
+  direction.
+- The copy routines are extended with a rename function.

@@ -1,0 +1,7 @@
+*.c text eol=crlf
+*.h text eol=crlf
+*.s text eol=crlf
+*.prj text eol=crlf
+*.txt text eol=crlf
+*.bat text eol=crlf
+*.stg text eol=crlf
