@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,16 +23,14 @@
 #define ICON_W		80
 #define ICON_H		46
 
-extern OBJECT *icons;	/* HR 151202: use rsrc_load for icons. */
+extern OBJECT *icons;
 extern int n_icons;
 extern OBJECT *desktop;
-extern WD_FUNC icn_functions;
 extern WINDOW *desk_window;
-extern SNAME iname; /* DjV 024 140103 HR 240203 */
+extern INAME iname;
 
 boolean dsk_init(void);
 int dsk_load(XFILE *file);
-int dsk_save(XFILE *file);
 void dsk_default(void);
 void dsk_close(void);
 
@@ -46,7 +46,12 @@ boolean load_icons(void);
 void free_icons(void);
 
 void remove_icon(int object, boolean draw);
+void set_dsk_background(int pattern, int color);
 
-int rsrc_icon(const char *name);		/* HR 151102 */
+int rsrc_icon(const char *name);
 
-int rsrc_icon_rscid(int id, char *name );	/* DjV 024 140103 */
+int rsrc_icon_rscid(int id, char *name );
+void set_iselector(SLIDER *slider, boolean draw, XDINFO *info);
+void regen_desktop(OBJECT *desk_tree);
+void draw_icrects( WINDOW *w, OBJECT *tree, RECT *r1);
+

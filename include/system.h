@@ -1,5 +1,6 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers
  *
  * This file is part of Teradesk.
  *
@@ -44,9 +45,9 @@ typedef struct
 #define etv_term	( *( void (**)( void ) ) 0x408L )
 
 #define resvalid	( * (long *) 0x426L )
-#define memctrl		( * (long *) 0x420L )			/* HR 230203 */
-#define memval2		( * (long *) 0x43aL )			/* HR 230203 */
-#define os_start	( * (long *) 0x4f2L )			/* HR 230203 */
+#define memval		( * (long *) 0x420L ) 
+#define memval2		( * (long *) 0x43aL )
+#define os_start	( * (long *) 0x4f2L )
 #define phystop		( * (void **) 0x42EL )
 #define resvector   ( * ( void (**)( void ) ) 0x42AL )
 

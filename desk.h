@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #ifdef MEMDEBUG
+/* Note: a specific directory required below: */
 #include <d:\tmp\memdebug\memdebug.h>
 #endif
 
@@ -30,44 +31,69 @@ char *ltoa(long value, char *string, int radix);
 
 #undef O_APPEND
 
+/* routines used instead
 #define min(x,y)		(((x) < (y)) ? (x) : (y))
 #define max(x,y)		(((x) > (y)) ? (x) : (y))
+*/
 
 #define MAGIC		0x87654321L
 
 #define GLOBAL_MEM_SIZE	1024L
 
+/* Maximum number of Teradesk's windows */
+
+#define MAXWINDOWS 8 
+
+#define PATH_MAX 128 /* from stdio.h */
+
+
+/* Executable file (program) types */
+
 typedef enum
 {
-	PGEM = 0, PGTP, PACC, PTOS, PTTP			/* HR 101202: PACC */
+	PGEM = 0, PGTP, PACC, PTOS, PTTP
 } ApplType;
+
+
+/* Configuration options structure */
 
 typedef struct
 {
-	int version;				/* config. file version */
+	int version;				/* cfg. file version */
 	unsigned long magic;		/* fingerprint for identifying this file */
 	int cprefs;					/* copy and program preferences */
 	char mode;					/* text or icon mode */
-	char sort;					/* sorting rule */
+	char sort;					/* sorting rule      */
 	int attribs;				/* attributes of visible directory items */
-	int tabsize;				/* tab size */
-	int bufsize;				/* copy buffer size */
-	unsigned char dsk_pattern;	/* desktop pattern */
-	unsigned char dsk_color;	/* desktop colour */
-	unsigned int dial_mode:2;
-	int resvd1:14;
-	int resvd2;
-	struct V2_2_Opt				/* HR 230103: Put in a struct, so it is easier to handle older cfg versions. */
+	int tabsize;				/* tab size          */
+	int bufsize;				/* copy buffer size  */
+	unsigned char dsk_pattern;	/* desktop pattern   */
+	unsigned char dsk_color;	/* desktop colour    */
+#if TEXT_CFG_IN
+	unsigned int dial_mode;
+	unsigned int resvd1;
+#else
+	unsigned int dial_mode:2;	/* dialog mode       */
+	int resvd1:14;				/* unused            */
+#endif
+	int resvd2;					/* unused            */
+	struct V2_2_Opt				/* Put in a struct, so it is easier to handle older cfg versions. */
 	{
-		int vprefs;                 /* DjV 005 251202: video preferences  */
-		char fields;                /* DjV 005 251202: file data elements */
-		char place1[7];				/* DjV 005 251202: placeholder for any future add-on */
-		unsigned char win_pattern;  /* DjV 005 251202: window pattern   */
-		unsigned char win_color;    /* DjV 005 251202: window colour    */
-		int vrez;                   /* DjV 005 251202: video resolution */
-		int kbshort[64];			/* DjV 005 030103: for future keyboard shortcute */
+		int vprefs;                 /* video preferences  */
+		char fields;                /* file data elements */
+		char place1[5];				/* placeholder for any future add-on */
+		int plinelen;				/* printer line length              */
+		unsigned char win_pattern;  /* window pattern   */
+		unsigned char win_color;    /* window colour    */
+		int vrez;                   /* video resolution */
+		int kbshort[64];			/* keyboard shortcuts */
 	} V2_2;
 } Options;
+
+typedef struct
+{
+	long max_dir;				/* maximum no of entries for 1 hierarchic level */
+} V3_options;
 
 typedef struct
 {
@@ -87,47 +113,50 @@ typedef struct
 	int fnt_h;
 } SCRINFO;
 
-typedef char SNAME[14];			/* HR 240203 */
-typedef char LNAME[130];
+/* Strings of specific lengths for icon labels, file types, etc. */
 
-/* Opties */
+typedef char INAME[14];	/* Icon name/label length */
+typedef char SNAME[18]; /* filetype mask; must be compatible with (longer than) dialog field width */
+typedef char LNAME[130];/* filename or path */
 
-#define CF_COPY			0x0001
-#define CF_DEL			0x0002
-#define CF_OVERW		0x0004
-#define CF_PRINT		0x0008 /* DjV 031 010203 */
+/* Diverse options */
+
+#define CF_COPY			0x0001	/* confirm copy      */
+#define CF_DEL			0x0002	/* confirm delete    */
+#define CF_OVERW		0x0004	/* confirm overwrite */
+#define CF_PRINT		0x0008 	/* confirm print     */
+#define CF_TOUCH		0x0010  /* confitm touch     */
 
 #define TOS_KEY			0x0020	/* 0 = continue, 1 = wait */
-#define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center */
+#define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center  */
 
-#define SAVE_COLORS		0x0100
+#define SAVE_COLORS		0x0100	/* save palette */
 #define TOS_STDERR		0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
-#define CF_KEEP			0x0400	/* DjV 016 050103 */
+#define CF_CTIME		0x0400	/* change date & time */
 
-#define TEXTMODE		0
-#define ICONMODE		1
+#define CF_CATTR		0x0800  /* change file attributes */
+#define CF_SHOWD		0x1000 	/* always show dialog */
 
-#define WD_SORT_NAME	0
-#define WD_SORT_EXT		1
-#define WD_SORT_DATE	2
-#define WD_SORT_LENGTH	3
-#define WD_NOSORT		4
+#define P_HEADER		0x2000	/* print header and formfeed */
 
-/* DjV 010 251202 ---vvv--- */
-#define WD_SHSIZ 0x0001 /* show size */
-#define WD_SHDAT 0x0002 /* show date */
-#define WD_SHTIM 0x0004 /* show time */
+#define TEXTMODE		0	/* display directory as text */
+#define ICONMODE		1	/* display directory as icons */
+
+#define WD_SORT_NAME	0	/* sort directory by file name */
+#define WD_SORT_EXT		1	/* sort directory by file type */
+#define WD_SORT_DATE	2	/* sort directory by file date */
+#define WD_SORT_LENGTH	3	/* sort directory by file size */
+#define WD_NOSORT		4	/* don't sort directory        */
+
+#define WD_SHSIZ 0x0001 /* show file size  */
+#define WD_SHDAT 0x0002 /* show file date  */
+#define WD_SHTIM 0x0004 /* show file time  */
 #define WD_SHATT 0x0008 /* show attributes */
-/* DjV 010 251202 ---^^^--- */
 
-/* DjV 007 251202 ---vvv--- */
-#define VO_BLITTER 0x0001 /* video option blitter  */
-#define VO_OVSCAN  0x0002 /* video option overscan */
-/* DjV 007 251202 ---^^^ --- */
+#define VO_BLITTER 0x0001 /* video option blitter ON  */
+#define VO_OVSCAN  0x0002 /* video option overscan ON */
 
-/* DjV 019 080103 290103 ---vvv--- */
-
-/* 
+/*
  * It is assumed that the first menu item for which a keyboard shortcut
  * can be defined is MOPEN and the last is MSAVEAS; the interval
  * is defined below by MFIRST and MLAST. 
@@ -135,25 +164,27 @@ typedef char LNAME[130];
  * Beware of dimensioning options.kbshort[64]; it should be larger
  * than NITEM below; dimensioning to 64 is fixed in order to avoid 
  * incompatibility of cfg files if number of menu items is changed;
- * currently, 58 out of 64 are used.
+ * currently, about 58 out of 64 are used.
  */
 
-#define MFIRST MOPEN			/* first item for which a shortcut can be */
-#define MLAST  MSAVEAS			/* last */
+#define MFIRST MOPEN			/* first menu item for which a shortcut can be */
+#define MLAST  MSAVEAS			/* last menu item ... */
 #define TFIRST TLFILE			/* title under which the first item is */
 #define NITEM MLAST - MFIRST	/* number of, -1 */
 
-/* DjV 019 080103 290103 ---^^^--- */
-
 extern Options options;
+extern V3_options v3_options;
 extern SCRINFO screen_info;
 extern int vdi_handle, ncolors, npatterns, max_w, max_h, ap_id, nfonts;
 extern boolean quit;
 
+/* Flags to show a specific OS or AES type (detected from cookies) */
+
 #if _MINT_
-extern boolean mint,			/* HR 151102 */
-               geneva,			/* DjV 035 080203 */
-               magx;
+extern boolean 
+	mint,			/* mint or magic present */
+	magx,			/* magic present  */
+	geneva;			/* geneva present */
 #endif
 
 extern int colour_icons;
@@ -161,14 +192,17 @@ extern int colour_icons;
 extern char *global_memory;
 
 long btst(long x, int bit);
-void set_opt(OBJECT *tree, int flags, int opt, int button ); /* DjV 004 020103 */
-void get_opt(OBJECT *tree, int *flags, int opt, int button ); /* DjV 004 030103 */
-
+void set_opt(OBJECT *tree, int flags, int opt, int button ); 
+void get_opt(OBJECT *tree, int *flags, int opt, int button );
 void digit(char *s, int x);
-void cv_formtofn(char *dest, const char *source);
-void cv_fntoform(OBJECT *ob, const char *source);			/* HR 240103 */
-void cramped_name(const char *s, char *t, int w);
-void strip_name (char *dst, const char *src); 			/* HR 151102 */
-char *strsncpy(char *dst, const char *src, size_t len);	/* HR 120203: secure cpy (0 --> len-1) */
-
+char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */
+int scansh ( int key, int kstate );
 int hndlmessage(int *message);
+
+/* 
+ * Routines below can be considered temporary, for compatibility
+ * with older cfg version
+ */
+
+void bit_to_bool( int bitflags, int bit, boolean *boo );
+void bool_to_bit( int *bitflags, int bit, boolean boo );

@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -38,6 +40,8 @@
 						int xw_bar;				\
 						int xw_mparent;			\
 						RECT xw_size;			\
+						RECT xw_nsize;	/* size before iconify */ \
+						int iflag;      /* flag for iconify    */ \
 						RECT xw_work
 
 /*
@@ -88,8 +92,9 @@ typedef struct wd_func
 	void (*wd_sized) (WINDOW *w, RECT *newsize);
 	void (*wd_moved) (WINDOW *w, RECT *newpos);
 	void (*wd_hndlmenu) (WINDOW *w, int title, int item);
-
 	void (*wd_top) (WINDOW *w);
+	void (*wd_iconify)(WINDOW *w);
+	void (*wd_uniconify)(WINDOW *w);
 } WD_FUNC;
 
 /*
@@ -106,6 +111,7 @@ typedef struct wd_func
 								   maken. */
 #define XW_DIALOG		1		/* Gewone dialoogbox. */
 #define XW_NMDIALOG		2		/* Niet modale dialoogbox. */
+
 
 /*
  * Declaratie van de voor de gebruiker beschikbare funkties.
@@ -132,7 +138,7 @@ extern WINDOW *xw_next(void);
 WINDOW *xw_last(void);
 WINDOW *xw_prev(void);
 
-#ifdef __USE_MACROS
+#if __USE_MACROS
 #define xw_type(w)		((w)->xw_type)
 #define xw_handle(w)	((w)->xw_handle)
 #else
@@ -156,5 +162,8 @@ extern int xw_hndlmessage(int *message);
 extern WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 							size_t wd_struct_size, int *error);
 extern void xw_close_desk(void);
+
+extern void xw_iconify(WINDOW *w, int width, int height); 
+extern void xw_uniconify(WINDOW *w); 
 
 #endif

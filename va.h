@@ -1,5 +1,6 @@
 /*
- * Teradesk. Copyright (c) 1997, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1997, 2002  W. Klaren.
+ *                         2002, 2003  H. Robbers
  *
  * This file is part of Teradesk.
  *

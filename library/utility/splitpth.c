@@ -1,5 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren
+ *                                           2002, 2003  H. Robbers,
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -22,7 +24,11 @@
 #include <stddef.h>
 #include <library.h>
 
-void split_path( char *path,char *fname,const char *name )
+/*
+ * Split a full filename (path+filename) into "path" and "fname" parts
+ */
+
+void split_path( char *path, char *fname, const char *name )
 {
 	char *backsl;
 
@@ -30,20 +36,20 @@ void split_path( char *path,char *fname,const char *name )
 	if (backsl == NULL)
 	{
 		*path = 0;
-		strcpy(fname,name);
+		strcpy(fname, name); /* no path, there is just filename */
 	}
 	else
 	{
-		strcpy(fname,backsl + 1);
+		strcpy(fname, backsl + 1);
 		if (backsl == name)
-			strcpy(path,"\\");
+			strcpy(path, "\\");
 		else
 		{
 			long l = (backsl - (char *)name);
 
-			strsncpy(path,name,l + 1);		/* HR 120203: secure cpy */
+			strsncpy(path, name, l + 1);		/* secure cpy */
 			if ((l == 2) && (path[1] == ':'))
-				strcat(path,"\\");
+				strcat(path, "\\");
 		}
 	}
 }

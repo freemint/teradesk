@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,19 +20,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <string.h>
 #include <stdlib.h>
 #include <mint.h>
 
 #include "desk.h"
-#include "desktop.h"			/* HR 151102: only 1 rsc */
+#include "desktop.h"
 #include "error.h"
 #include "xfilesys.h"
 #include "batch.h"
 #include "file.h"
 
+#if _BATFILE
+
 extern char *optname;
+
 
 static boolean eos(char c)
 {
@@ -73,6 +78,7 @@ static char *getint(char *p, int *result)
 	return (i == p) ? NULL : i;
 }
 
+
 void exec_bat(char *name)
 {
 	char line[256], *p, *s, *com, *tail;
@@ -100,19 +106,19 @@ void exec_bat(char *name)
 					p = skipspace(p + 1);
 					if ((p = getint(p, &x)) == NULL)
 					{
-						alert_printf(1, MBSYNTAX, cnt);
+						alert_printf(1, ABSYNTAX, cnt);
 						break;
 					}
 					p = skipspace(p);
 					if (*p != ',')
 					{
-						alert_printf(1, MBSYNTAX, cnt);
+						alert_printf(1, ABSYNTAX, cnt);
 						break;
 					}
 					p = skipspace(p + 1);
 					if ((p = getint(p, &y)) == NULL)
 					{
-						alert_printf(1, MBSYNTAX, cnt);
+						alert_printf(1, ABSYNTAX, cnt);
 						break;
 					}
 					p = skipspace(p);
@@ -130,7 +136,7 @@ void exec_bat(char *name)
 							{
 								free(optname);
 								optname = s;
-								strsncpy(s, p, l + 1);		/* HR 120203: secure cpy */
+								strsncpy(s, p, l + 1);
 								p += l;
 							}
 							else
@@ -154,7 +160,7 @@ void exec_bat(char *name)
 					{
 #if _MINT_
 						boolean bg;
-						if (mint)				/* HR 151102 */
+						if (mint)
 						{
 							int i;
 	
@@ -173,7 +179,7 @@ void exec_bat(char *name)
 						strcpy(comline.command_tail, tail);
 						comline.length = (unsigned char) strlen(tail);
 #if _MINT_
-						if (mint)				/* HR 151102 */
+						if (mint)
 							error = (int) x_exec((bg == FALSE) ? 0 : 100, com, &comline, NULL);
 						else
 #endif
@@ -183,7 +189,7 @@ void exec_bat(char *name)
 						error = chdir(tail);
 
 					if (error != 0)
-						hndl_error(MEBATCH, error);
+						hndl_error(AEBATCH, error);
 					break;
 				}
 			}
@@ -195,5 +201,8 @@ void exec_bat(char *name)
 	}
 
 	if ((error != 0) && (error != EEOF) && (error != EFILNF))
-		hndl_error(MEBATCH, error);
+		hndl_error(AEBATCH, error);
+
 }
+
+#endif

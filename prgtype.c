@@ -18,75 +18,96 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stdlib.h>
 #include <string.h>
-#include <vdi.h>
+#include <vdi.h> 
 #include <xdialog.h>
 #include <mint.h>
 
 #include "desk.h"
 #include "error.h"
 #include "resource.h"
+#include "lists.h" 
 #include "slider.h"
 #include "xfilesys.h"
 #include "file.h"
+#include "config.h"
 #include "prgtype.h"
+#include "filetype.h" 
+#include "font.h"
 #include "window.h"
 
 #define END			32767
-#define NLINES		4
 
-typedef struct prgtype
-{
-	SNAME name;					/* HR 240203 */
-	ApplType appl_type;
-	boolean argv;
-	boolean path;
-	struct prgtype *next;
-} PRGTYPE;
 
 typedef struct
 {
 	int appl_type:4;
 	unsigned int argv:1;
 	unsigned int path:1;
-	int resvd:10;
-} SINFO;
+	unsigned int single:1; 
+	int resvd:9;
+} OLDSINFO;	
 
-PRGTYPE *prgtypes;
+extern Options options;	/* need to know cfg file version */
+extern char *presets[];
 
-void prg_info(const char *prgname, ApplType *type, boolean *argv,
-			  boolean *path)
+PRGTYPE
+	pwork,				/* work area for editing prgtypes */ 
+	*prgtypes; 			/* List of executable file types */
+
+
+/*
+ * Actually copy data for one program type to another location 
+ * (note: must not just copy *t = *s because t->next should be preserved)
+ */
+
+void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
 {
-	const char *name;
-	PRGTYPE *p;
+	strsncpy ( t->name, s->name, sizeof(SNAME) );
+	t->appl_type = s->appl_type;
+	t->argv = s->argv;
+	t->path = s->path;
+	t->single = s->single;
+	t->limmem = s->limmem; 
+	t->flags = s->flags;	/* redundant, for compatibility */
+}
 
-	if ((name = strrchr(prgname, '\\')) == NULL)
-		name = prgname;
-	else
-		name++;
+/*
+ * Find (or create!) information about an executable file or filetype;
+ * input: filename of an executable file or a filename mask;
+ * output: program type data
+ * if filetype has not been defined, default values are set.
+ * Because of many changes, old code was not commented out 
+ * but completely removed
+ */
 
-	p = prgtypes;
-
-	while (p != NULL)
+void prg_info
+( 
+	PRGTYPE **list, 		/* list of defined program types */
+	const char *prgname,	/* name or filetype to search for */ 
+	int dummy,				/* not used, for compatibility */
+	PRGTYPE *pt				/* output information */ 
+)
+{
+	if ( !find_wild( (LSTYPE **)list, (char *)prgname, (LSTYPE *)pt, copy_prgtype ) )
 	{
-		if (cmp_wildcard(name, p->name) == TRUE)
-		{
-			*type = p->appl_type;
-			*argv = p->argv;
-			*path = p->path;
-			return;
-		}
-		p = p->next;
+		/* If program type not defined or name not given: default */
+
+		pt->appl_type = PGEM;	/* GEM program */
+		pt->argv = FALSE;		/* Doesn't know of ARGV */
+		pt->path = TRUE;		/* Uses program directory as default */
+		pt->single = FALSE;		/* Can multitask */
+		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
-
-	*type = PGEM;
-	*argv = FALSE;
-	*path = TRUE;
-
 	return;
 }
+
+/*
+ * Check if filename is to be considered as that of a program;
+ * return true if executable (program);
+ */
 
 boolean prg_isprogram(const char *name)
 {
@@ -104,307 +125,215 @@ boolean prg_isprogram(const char *name)
 	return FALSE;
 }
 
-static PRGTYPE *add(char *name, ApplType appl_type, boolean argv, boolean path, int pos)
+
+/*
+ * Add one program filetype to end of list, explicitely specifying 
+ * each parameter; If mint is active, set name to lowercase
+ */
+
+static PRGTYPE *ptadd_one
+(
+	char *filetype,		/* pointer to filetype mask */
+	int type, 			/* program type */
+	boolean path,		/* true if program directory is default */
+	boolean argv,		/* true if understands argv */
+	boolean single,		/* true if must run in single mode in multitask ing */
+	long limmem			/* memory limit for this program type */
+)
 {
-	PRGTYPE *p, *prev, *n;
-	int i = 0;
+	strsncpy ( (char *)pwork.name, filetype, sizeof(pwork.name) );
 
-	p = prgtypes;
-	prev = NULL;
+#if _MINT_
+	if ( mint && !magx )
+		strlwr(pwork.name);
+#endif
 
-	while ((p != NULL) && (i != pos))
-	{
-		prev = p;
-		p = p->next;
-		i++;
-	}
+	pwork.appl_type = type;
+	pwork.path = path;
+	pwork.argv = argv;
+	pwork.single = single;
+	pwork.limmem = limmem;
 
-	if ((n = malloc(sizeof(PRGTYPE))) == NULL)
-		xform_error(ENSMEM);
-	else
-	{
-		strcpy(n->name, name);
-		n->appl_type = appl_type;
-		n->argv = argv;
-		n->path = path;
-		n->next = p;
-
-		if (prev == NULL)
-			prgtypes = n;
-		else
-			prev->next = n;
-	}
-
-	return n;
+	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), END, copy_prgtype );
 }
 
-static void rem(PRGTYPE *item)
-{
-	PRGTYPE *p, *prev;
-
-	p = prgtypes;
-	prev = NULL;
-
-	while ((p != NULL) && (p != item))
-	{
-		prev = p;
-		p = p->next;
-	}
-
-	if (p == item)
-	{
-		if (prev == NULL)
-			prgtypes = p->next;
-		else
-			prev->next = p->next;
-
-		free(p);
-	}
-}
-
-static void rem_all(PRGTYPE **list)
-{
-	PRGTYPE *p, *next;
-
-	p = *list;
-
-	while (p != NULL)
-	{
-		next = p->next;
-		free(p);
-		p = next;
-	}
-
-	*list = NULL;
-}
+/* Remove all defined program types */
 
 static void rem_all_prgtypes(void)
 {
-	rem_all(&prgtypes);
+	rem_all( (LSTYPE **)(&prgtypes), rem );
 }
 
-static void copy_all(PRGTYPE **copy)
+
+/*
+ * Handling of the dialog for setting characteristics 
+ * of one executable (program) filetype; return data in *pt;
+ * if operation is cancelled, entry values in *pt should be unchanged.
+ * Note: because of many rather drastic changes  
+ * old code was not commented out but completely removed
+ */
+
+boolean prgtype_dialog
+( 
+	PRGTYPE **list, 	/* list to check duplicate entries in */
+	int pos, 			/* position in the list where to enter data */
+	PRGTYPE *pt,		/* data to be edited */ 
+	int use				/* use of dialog (add or edit program type or app type) */
+)
 {
-	PRGTYPE *p;
+	XDINFO
+		info;			/* dialog info structure */
 
-	*copy = prgtypes;
-	p = prgtypes;
-	prgtypes = NULL;
+	boolean
+		stat,			/* accept or not */
+		stop = FALSE;	/* loop until true */
 
-	while (p != NULL)
+	int 
+		title,			/* resoruce index of title to be used for dialog */
+		button;			/* code of pressed button */
+
+	/* Determine which title to put on dialog, depending on use */
+
+	if ( !(use & LS_EDIT) )
 	{
-		add(p->name, p->appl_type, p->argv, p->path, END);
-		p = p->next;
+		title = DTADDPRG;
 	}
+	else
+		title = (use & LS_APPL) ? DTSETAPT : DTEDTPRG;
 
-	p = prgtypes;
-	prgtypes = *copy;
-	*copy = p;
-}
+ 	rsc_title(addprgtype, APTITLE, title);
 
-static int cnt_types(void)
-{
-	int n = 1;
-	PRGTYPE *p = prgtypes;
+	/* Copy all data to dialog */
 
-	while (p != NULL)
-	{
-		n++;
-		p = p->next;
-	}
+	cv_fntoform(addprgtype + PRGNAME, pt->name);
+	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (int)(pt->appl_type) );
+	xd_set_rbutton(addprgtype, APTPAR1, (pt->path == TRUE) ? ATPRG : ATWINDOW);
 
-	return n;
-}
-
-static PRGTYPE *get_item(int item)
-{
-	int i = 0;
-	PRGTYPE *p = prgtypes;
-
-	while ((p != NULL) && (i != item))
-	{
-		i++;
-		p = p->next;
-	}
-
-	return p;
-}
-
-static int find_selected(void)
-{
-	int object;
-
-	return ((object = xd_get_rbutton(setprgprefs, PTPARENT)) < 0) ? 0 : object - PTYPE1;
-}
-
-static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
-{
-	int i;
-	PRGTYPE *p;
-	OBJECT *o;
-
-	for (i = 0; i < NLINES; i++)
-	{
-		o = &setprgprefs[PTYPE1 + i];
-
-		if ((p = get_item(i + slider->line)) == NULL)
-			*o->ob_spec.tedinfo->te_ptext = 0;
-		else
-			cv_fntoform(o, p->name);		/* HR 240103 */
-	}
-
-	if (draw == TRUE)
-		xd_draw(info, PTPARENT, MAX_DEPTH);
-}
-
-static void set_prgtype(ApplType type)
-{
-	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (int) type);
-}
-
-static ApplType get_prgtype(void)
-{
-	return (ApplType) (xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
-}
-
-static void set_prgpath(boolean prgpath)
-{
-	xd_set_rbutton(addprgtype, APTPAR1, (prgpath == TRUE) ? ATPRG : ATWINDOW);
-}
-
-static boolean get_prgpath(void)
-{
-	return (xd_get_rbutton(addprgtype, APTPAR1) == ATPRG) ? TRUE : FALSE;
-}
-
-static boolean prgtype_dialog(char *name, ApplType *type, boolean *argv, boolean *path, boolean edit)
-{
-	int button;
-
-	rsc_title(addprgtype, APTITLE, (edit == TRUE) ? DTEDTPRG : DTADDPRG);
-
-	cv_fntoform(addprgtype + PRGNAME, name);			/* HR 240103 */
-	set_prgtype(*type);
-	set_prgpath(*path);
-
-	if (*argv == TRUE)
-		addprgtype[ATARGV].ob_state |= SELECTED;		/* HR 151102 */
+	if (pt->argv == TRUE)
+		addprgtype[ATARGV].ob_state |= SELECTED;
 	else
 		addprgtype[ATARGV].ob_state &= ~SELECTED;
 
-	button = xd_dialog(addprgtype, PRGNAME);
+#if _MINT_
+	/* 
+	 * these settings have no effect in single-tos but are left editable
+	 * so that the same config file can be edited in mutltitasking/single
+	 */
 
-	if ((button == APTOK) && (strlen(prgname) != 0))
-	{
-		cv_formtofn(name, prgname);
-		*type = get_prgtype();
-		*path = get_prgpath();
-		*argv = (addprgtype[ATARGV].ob_state & SELECTED) ? TRUE : FALSE;
-
-		return TRUE;
-	}
+	if (pt->single == TRUE)
+		addprgtype[ATSINGLE].ob_state |= SELECTED;
 	else
-		return FALSE;
+		addprgtype[ATSINGLE].ob_state &= ~SELECTED;
+	ltoa(pt->limmem / 1024L, addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext, 10);
+
+#else
+		addprgtype[MEMLIM].ob_state |= HIDETREE;
+		addprgtype[ATSINGLE].ob_state |= HIDETREE;
+#endif
+	
+	/* Open the dialog, then loop until exit button */
+
+	xd_open( addprgtype, &info );
+
+	while ( !stop )
+	{
+		button = xd_form_do( &info, ROOT );
+
+		/* If ok, and there is a filetype, and is not a duplicate entry */
+
+		if ( (button == APTOK) )
+		{	
+			SNAME thename;
+
+			cv_formtofn(thename, &addprgtype[PRGNAME]);
+ 
+			if ( strlen(thename) != 0 )
+			{
+				if (check_dup((LSTYPE **)list, thename, pos) ) 
+				{
+					/* Get all data back from the dialog */
+
+					strcpy( pt->name, thename);
+					pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
+					pt->path = (xd_get_rbutton(addprgtype, APTPAR1) == ATPRG) ? TRUE : FALSE;
+
+					pt->argv = (addprgtype[ATARGV].ob_state & SELECTED) ? TRUE : FALSE;
+				
+#if _MINT_
+					/* settings below have no effect in single-tos */
+					pt->single = (addprgtype[ATSINGLE].ob_state & SELECTED ) ? TRUE : FALSE; 
+					pt->limmem = 1024L * atol(addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext);
+#endif
+					stat = TRUE;
+					stop = TRUE;
+				}
+			}
+		}
+		else
+			stop = TRUE;
+
+		xd_change(&info, button, NORMAL, TRUE);
+	}
+	xd_close(&info);
+	return stat;
 }
+
+
+/* Use these kind-specific functions to manipulate program types list: */
+
+#pragma warn -sus
+static LS_FUNC ptlist_func =
+{
+	copy_prgtype,
+	rem,
+	prg_info,
+	find_lsitem,
+	prgtype_dialog
+};
+#pragma warn .sys
+
+
+/*
+ * Handling of the dialog for setting program (executable) file options;
+ * Note: because of many rather drastic changes  
+ * old code was not commented out but completely removed
+ */
 
 void prg_setprefs(void)
 {
-	int button, prefs = options.cprefs & 0xFDDF;
-	int i;
-	XDINFO info;
-	boolean stop = FALSE, redraw, argv, path;
-	PRGTYPE *copy, *p;
-	SNAME name;			/* HR 240203 */
-	ApplType type;
-	SLIDER sl_info;
+	int 
+		button,			/* code of pressed button */
+		prefs;			/* temporary program preferences */
 
-	set_opt(setprgprefs, options.cprefs, TOS_KEY, PKEY);	/* DjV 014 020103 */
-	set_opt(setprgprefs, options.cprefs, TOS_STDERR, PSTDERR);	/* DjV 014 020103 */
+			
+	prefs = options.cprefs & 0xFDDF;
 
-	copy_all(&copy);
+	set_opt(setmask, options.cprefs, TOS_KEY, PKEY);
+	set_opt(setmask, options.cprefs, TOS_STDERR, PSTDERR);
 
-	sl_info.type = 1;
-	sl_info.up_arrow = PUP;
-	sl_info.down_arrow = PDOWN;
-	sl_info.slider = PSLIDER;
-	sl_info.sparent = PSPARENT;
-	sl_info.lines = NLINES;
-	sl_info.n = cnt_types();
-	sl_info.line = 0;
-	sl_info.set_selector = set_selector;
-	sl_info.first = PTYPE1;
-	sl_info.findsel = find_selected;
+	rsc_title(setmask, DTSMASK, DTPTYPES);	
+	setmask[PGATT].ob_flags &= ~HIDETREE;
+	rsc_title(addprgtype, PTTEXT, TFTYPE);
 
-	sl_init(setprgprefs, &sl_info);
+	/*  Edit programtypes list: add/delete/change */
 
-	xd_open(setprgprefs, &info);
+	button = list_edit( &ptlist_func, (LSTYPE **)(&prgtypes), NULL, sizeof(PRGTYPE), (LSTYPE *)(&pwork), LS_PRGT); 
 
-	while (stop == FALSE)
+	setmask[PGATT].ob_flags |= HIDETREE;
+
+	if ( button == FTOK )
 	{
-		redraw = FALSE;
+		prefs |= ((setmask[PKEY].ob_state & SELECTED) != 0) ? TOS_KEY : 0;
+		prefs |= ((setmask[PSTDERR].ob_state & SELECTED) != 0) ? TOS_STDERR : 0;
 
-		button = sl_form_do(setprgprefs, 0, &sl_info, &info) & 0x7FFF;
-
-		switch (button)
-		{
-		case PTADD:
-			name[0] = 0;
-			type = PGEM;
-			argv = TRUE;
-			path = TRUE;
-
-			if (prgtype_dialog(name, &type, &argv, &path, FALSE) == TRUE)
-			{
-				i = find_selected() + sl_info.line;
-				add(name, type, argv, path, i);
-				sl_info.n = cnt_types();
-				redraw = TRUE;
-				sl_set_slider(setprgprefs, &sl_info, &info);
-			}
-			break;
-		case PTDELETE:
-			i = find_selected() + sl_info.line;
-			if ((p = get_item(i)) != NULL)
-			{
-				rem(p);
-				sl_info.n = cnt_types();
-				redraw = TRUE;
-				sl_set_slider(setprgprefs, &sl_info, &info);
-			}
-			break;
-		case PTEDIT:
-			i = find_selected() + sl_info.line;
-			if ((p = get_item(i)) != NULL)
-			{
-				redraw = TRUE;
-				prgtype_dialog(p->name, &p->appl_type, &p->argv, &p->path, TRUE);
-			}
-			break;
-		default:
-			stop = TRUE;
-			break;
-		}
-		if (redraw == TRUE)
-			set_selector(&sl_info, TRUE, &info);
-		xd_change(&info, button, NORMAL, (stop == FALSE) ? 1 : 0);
-	}
-
-	xd_close(&info);
-
-	if (button == POPTOK)
-	{
-		prefs |= ((setprgprefs[PKEY].ob_state & SELECTED) != 0) ? TOS_KEY : 0;
-		prefs |= ((setprgprefs[PSTDERR].ob_state & SELECTED) != 0) ? TOS_STDERR : 0;
 		options.cprefs = prefs;
-		rem_all(&copy);
 		wd_seticons();
 	}
-	else
-	{
-		rem_all_prgtypes();
-		prgtypes = copy;
-	}
 }
+
+/*
+ * Initiaite (empty) list of (executable) program filetypes
+ */
 
 void prg_init(void)
 {
@@ -414,94 +343,162 @@ void prg_init(void)
 #endif
 }
 
+
+/* Set some default predefined program file types */
+
 void prg_default(void)
 {
 	rem_all_prgtypes();
 
+	/*
+	 * removed separate definition of types for mint/single
+	 * if mint is active, there is conversion to lowercase in ptadd_one
+	 * If mint is active, accessory is defined as program type 
+	 */
+
+	ptadd_one(presets[2], PGEM, TRUE, TRUE, FALSE, 0L);		/*	*.PRG 	*/
+	ptadd_one(presets[3], PGEM, TRUE, TRUE, FALSE, 0L);		/*	*.APP	*/
+	ptadd_one(presets[4], PGTP, TRUE, TRUE, FALSE, 0L);		/*	*.GTP	*/
+	ptadd_one(presets[5], PTOS, TRUE, FALSE, FALSE, 0L);	/*	*.TOS	*/
+	ptadd_one(presets[6], PTTP, TRUE, FALSE, FALSE, 0L);	/*	*.TTP	*/
+
 #if _MINT_
-	if (mint)				/* HR 151102 */
-	{
-		add("*.prg", PGEM, TRUE, TRUE, END);
-		add("*.app", PGEM, TRUE, TRUE, END);
-		add("*.gtp", PGTP, TRUE, TRUE, END);
-		add("*.acc", PACC, TRUE, TRUE, END);
-		add("*.tos", PTOS, TRUE, FALSE, END);
-		add("*.ttp", PTTP, TRUE, FALSE, END);
-	}
-	else
+	if ( mint )
+		ptadd_one(presets[7], PACC, TRUE, TRUE, FALSE, 0L);	/*	*.ACC	*/
 #endif
-	{
-		add("*.PRG", PGEM, TRUE, TRUE, END);
-		add("*.APP", PGEM, TRUE, TRUE, END);
-		add("*.GTP", PGTP, TRUE, TRUE, END);
-		add("*.TOS", PTOS, TRUE, FALSE, END);
-		add("*.TTP", PTTP, TRUE, FALSE, END);
-	}
 }
 
-#define PRG_PATH		8		/* 0 = window, 1 = programma */
-#define TOS_PATH		16		/* 0 = window, 1 = programma */
 
-int prg_load(XFILE *file)
+/* 
+ * Load program types from config file 
+ */
+
+#define PRG_PATH		8		/* 0 = window, 1 = program */
+#define TOS_PATH		16		/* 0 = window, 1 = program */
+
+#if ! TEXT_CFG_IN
+
+#include "prg_load.h"
+
+#endif
+
+
+/*
+ * Configuration table for one program type
+ */
+
+CfgEntry prg_table[] =
 {
-	SINFO pt;
-	SNAME name;				/* HR 240203 */
-	boolean path;
-	ApplType type;
-	long n;
-	int error;
+	{CFG_HDR, 0, "*type" },
+	{CFG_BEG},
+	{CFG_S,   0, "name",  pwork.name	},
+	{CFG_L,   0, "limm",  &pwork.limmem	},
+	{CFG_D,   0, "appt",  &pwork.appl_type	},
+/* temporary, for consistency of style, represent as flags
+	{CFG_BD,  0, "argv",  &pwork.argv	},
+	{CFG_BD,  0, "pdir",  &pwork.path	},
+	{CFG_BD,  0, "sing",  &pwork.single	},
+*/
+	{CFG_X,   0, "flag",  &pwork.flags },
+	{CFG_END},
+	{CFG_LAST}
+};
 
-	rem_all_prgtypes();
 
-	do
+/*
+ * Save or load configuration for program type(s)
+ */
+
+static CfgNest one_ptype
+{
+	*error = 0;
+
+	if (io == CFG_SAVE)
 	{
-		if ((n = x_fread(file, &pt, sizeof(SINFO))) != sizeof(SINFO))
-			return (n < 0) ? (int) n : EEOF;
+		PRGTYPE *p = prgtypes;
 
-		if (pt.appl_type != -1)
+		while ( (*error == 0) && p)
 		{
-			if (x_freadstr(file, name, sizeof(name), &error) == NULL)		/* HR 240103: max l */
-				return error;
+			strcpy(pwork.name, p->name);
+			pwork.appl_type = (int) p->appl_type;
+			pwork.limmem = p->limmem;
+/*
+			pwork.argv = (unsigned int) p->argv;
+			pwork.path = (unsigned int) p->path;
+			pwork.single = (unsigned int) p->single;
+*/
+			/* bool to bit maybe temporary */
 
-			type = (ApplType) pt.appl_type;
-
-			path = (boolean) pt.path;
-
-			if (add(name, type, (boolean) pt.argv, path, END) == NULL)
-				return ERROR;
+			pwork.flags &= (PT_ARGV | PT_PDIR | PT_SING ); /* clear junk */
+			bool_to_bit( &pwork.flags, PT_ARGV, p->argv );
+			bool_to_bit( &pwork.flags, PT_PDIR, p->path );
+			bool_to_bit( &pwork.flags, PT_SING, p->single);
+	
+			*error = CfgSave(file, prg_table, lvl + 1, CFGEMP); 
+	
+			p = p->next;
 		}
 	}
-	while (pt.appl_type != -1);
-
-	return 0;
-}
-
-int prg_save(XFILE *file)
-{
-	SINFO pt;
-	PRGTYPE *p;
-	long n;
-	int error;
-
-	p = prgtypes;
-
-	while (p)
+	else
 	{
-		pt.appl_type = (int) p->appl_type;
-		pt.argv = (unsigned int) p->argv;
-		pt.path = (unsigned int) p->path;
-		pt.resvd = 0;
 
-		if ((n = x_fwrite(file, &pt, sizeof(SINFO))) < 0)
-			return (int) n;
+#if TEXT_CFG_IN
+		memset(&pwork, 0, sizeof(pwork));
 
-		if ((error = x_fwritestr(file, p->name)) < 0)
-			return error;
+		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl + 1); 
 
-		p = p->next;
+		if (*error == 0 )
+		{
+			/* bit to bool maybe temporary */
+
+			bit_to_bool( pwork.flags, PT_ARGV, &pwork.argv );
+			bit_to_bool( pwork.flags, PT_PDIR, &pwork.path );
+			bit_to_bool( pwork.flags, PT_SING, &pwork.single);
+
+			if ( pwork.appl_type > PTTP || pwork.name[0] == 0 )
+				*error = EFRVAL;		
+			else
+			{
+				if ( 
+					lsadd(  (LSTYPE **)&prgtypes, 
+		            		sizeof(pwork), 
+		            		(LSTYPE *)&pwork, 
+		            		END, 
+		            		copy_prgtype
+				  		) == NULL
+					)
+						*error = ENOMSG;
+			}
+		}
+#endif
+
 	}
-
-	pt.appl_type = -1;
-
-	return ((n = x_fwrite(file, &pt, sizeof(SINFO))) < 0) ? (int) n : 0;
 }
+
+
+/*
+ * Configuration table for program (executable file) types
+ */
+ 
+static CfgEntry prgty_table[] =
+{
+	{CFG_HDR, 0, "apptypes" },
+	{CFG_BEG},
+	{CFG_NEST,0, "ptype", one_ptype  },		/* Repeating group */
+	{CFG_ENDG},
+	{CFG_LAST}
+};
+
+
+/*
+ * Configure all programtypes 
+ */
+
+CfgNest prg_config
+{
+	prg_table[0].s[0] = 'p';
+	prg_table[2].flag = 0;
+
+	*error = handle_cfg(file, prgty_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_prgtypes, prg_default);
+}
+

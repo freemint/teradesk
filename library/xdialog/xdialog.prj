@@ -19,9 +19,25 @@
 ;*
 
 xdialog.lib
-.C[ -K -Y -G -I..\..\include]
-.S[ -Y -S ]
-.L[ -J -Y -L ]
+
+; -K: unsigned char; 
+; -Y: debug info 
+; -C: nested comments; 
+; -P: absolute calls; 
+; -G: size optimization;
+
+; With debug info:
+
+;.C[ -K -Y -G -I..\..\include]
+;.S[ -Y -S ]
+;.L[ -J -Y -L ]
+
+; Without debug info:
+
+.C[ -C -K -G -I..\..\include]
+.S[ -S ]
+.L[ -J -L ]
+
 =
 xdialog.c	(xdialog.h, xwindow.h, xscncode.h, internal.h)
 xdnmdial.c	(xdialog.h, xwindow.h, xscncode.h, internal.h)

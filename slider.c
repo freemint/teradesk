@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,32 +20,39 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>
 #include <stddef.h>
 #include <vdi.h>
 #include <boolean.h>
 #include <xdialog.h>
 #include <xscncode.h>
+#include <library.h>
 
 #include "desk.h"
 #include "events.h"
+#include "lists.h" 
+#include "resource.h"
 #include "slider.h"
+#include "file.h"
 
+/*
 #define min(x,y)		(((x) < (y)) ? (x) : (y))
+*/
 
 OBJECT *dialog;
 
-void sl_init(OBJECT *tree, SLIDER *slider)
-{
-	slider->set_selector(slider, FALSE, NULL);
-	sl_set_slider(tree, slider, NULL);
-}
+extern int aes_ver3d;
+
+
+/* Set slider size and position */
 
 void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
 	int sh, s;
 
 	sl->line = ((sl->n < sl->lines) || (sl->line < 0)) ? 0 : min(sl->line, sl->n - sl->lines);
+
+	/* Determine slider size. Minimum size is equal to font height */
 
 	if (sl->n > sl->lines)
 	{
@@ -54,14 +63,19 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	else
 		sh = tree[sl->sparent].r.h;
 
-	tree[sl->slider].r.h = sh;
+	tree[sl->slider].r.h = sh - 2 * aes_ver3d;
+
+	/* Determine slider position */
 
 	s = sl->n - sl->lines;
 	tree[sl->slider].r.y = (s > 0) ? (int) (((long) (tree[sl->sparent].r.h - sh) * (long) sl->line) / (long) s) : 0;
 
+	tree[sl->slider].r.y += aes_ver3d;
+
 	if (info != NULL)
 		xd_draw(info, sl->sparent, MAX_DEPTH);
 }
+
 
 static void do_arrows(int button, OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
@@ -109,6 +123,7 @@ static void do_arrows(int button, OBJECT *tree, SLIDER *sl, XDINFO *info)
 	xd_change(info, button, NORMAL, 1);
 }
 
+
 static void do_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
 	int newpos;
@@ -122,6 +137,7 @@ static void do_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	sl->line = (int) (((long) newpos * lines + 500L) / 1000L);
 	sl_set_slider(tree, sl, info);
 }
+
 
 static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
@@ -157,7 +173,9 @@ static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	while (xe_button_state() & 0x1);
 }
 
-static int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
+
+/* static DjV 073 020803 */
+int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 {
 	boolean redraw = FALSE;
 	int selected;
@@ -204,6 +222,7 @@ static int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 	return 1;
 }
 
+
 int sl_handle_button(int button, OBJECT *tree, SLIDER *sl, XDINFO *dialog)
 {
 	int button2 = button & 0x7FFF;
@@ -223,6 +242,7 @@ int sl_handle_button(int button, OBJECT *tree, SLIDER *sl, XDINFO *dialog)
 	return TRUE;
 }
 
+
 int sl_form_do(OBJECT *tree, int start, SLIDER *sl, XDINFO *info)
 {
 	int button;
@@ -238,6 +258,7 @@ int sl_form_do(OBJECT *tree, int start, SLIDER *sl, XDINFO *info)
 	return button;
 }
 
+
 int sl_dialog(OBJECT *tree, int start, SLIDER *slider)
 {
 	XDINFO info;
@@ -252,3 +273,73 @@ int sl_dialog(OBJECT *tree, int start, SLIDER *slider)
 
 	return button;
 }
+
+
+/* 
+ * Initialize sizes and positions of the slider and its listbox.
+ * Note: this routine does -NOT- draw the elements because XDINFO
+ * is missing!
+ */
+
+void sl_init(OBJECT *tree, SLIDER *slider)
+{
+	slider->set_selector(slider, FALSE, NULL);
+	sl_set_slider(tree, slider, NULL);
+}
+
+
+/*
+ * Fill-in and redraw contents of scrolled fields FTYPE1... FTYPEn 
+ */
+
+void set_selector(SLIDER *slider, boolean draw, XDINFO *info) 
+{
+	int i;
+	LSTYPE *f;
+	OBJECT *o;
+
+	for (i = 0; i < NLINES; i++)
+	{
+		o = &setmask[FTYPE1 + i];
+
+		if ((f = get_item( slider->list, i + slider->line)) == NULL)
+			*o->ob_spec.tedinfo->te_ptext = 0;
+		else
+			cv_fntoform(o, f->filetype );
+	}
+
+	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */
+
+	if (draw == TRUE && info != NULL )
+	{
+		xd_draw(info, FTPARENT, MAX_DEPTH);
+		xd_draw(info, FTSPAR, MAX_DEPTH);
+	}
+}
+
+
+
+
+/*
+ * Initiate a (FTYPE, PRGTYPE, ICONTYPE...) list-scroller slider
+ */
+
+void ls_sl_init ( int n, void *set_sel, SLIDER *sl, LSTYPE **list )
+{
+	sl->type = 1;
+	sl->up_arrow = FTUP;
+	sl->down_arrow = FTDOWN;
+	sl->slider = FTSLIDER;
+	sl->sparent = FTSPAR;
+	sl->lines = NLINES;	/* number of visible lines in the box   */
+	sl->n = n;			/* number of items in the list          */
+	sl->line = 0;		/* index of first item shown in the box */
+	sl->list = list;	/* pointer to list of items to be shown */
+	sl->set_selector = set_sel;
+	sl->first = FTYPE1;
+	sl->findsel = find_selected;
+
+	xd_set_rbutton(setmask, FTPARENT, FTYPE1 );
+	sl_init ( setmask, sl );
+}
+

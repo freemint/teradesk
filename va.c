@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1997, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1997, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,14 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stddef.h>
 #include <string.h>
 #include <boolean.h>
 
 #include "desk.h"
 #include "font.h"
-#include "va.h"				/* HR 060203 */
+#include "va.h"
 
 extern FONT dir_font;
 
@@ -66,8 +68,12 @@ int va_start_prg(const char *program, const char *cmdline)
 	ptr++;
 	i = 0;
 
+	/* Copy not more than first eight characters od program name */
+ 
 	while (*ptr && (*ptr != '.') && (i < 8))
 		prgname[i++] = *ptr++;
+
+	/* Fill with blanks up to eighth character */
 
 	while (i < 8)
 		prgname[i++] = ' ';
@@ -76,11 +82,23 @@ int va_start_prg(const char *program, const char *cmdline)
 
 	/*
 	 * Check if the application is already running.
+	 * Something seems to be wrong here!!!!!
+	 * If CAB is started, and then EVEREST from CAB
+	 * (i.e. to view html source) and then EVEREST and CAB exited;
+	 * next time CAB can not be started: check below
+	 * returns dest_ap_id = 0, as if it is already running.
+	 * Maybe avoid it so that a check is made if destination
+	 * is the same as the current- does it make sense to
+	 * send a message to oneself? If the desktop is always ap_id=0
+	 * should it work ? 
 	 */
 
 	if ((dest_ap_id = appl_find(prgname)) >= 0)
 	{
 		int message[8];
+
+		if ( ap_id == dest_ap_id ) /* should this fix it ? */
+			return FALSE;
 
 		strcpy(global_memory, cmdline);
 
@@ -126,7 +144,7 @@ void handle_av_protocol(const int *message)
 		 * Return the supported features.
 		 */
 
-		strcpy(global_memory, "DESKTOP");		/* HR 151102 */
+		strcpy(global_memory, "DESKTOP");
 
 		answer[0] = VA_PROTOSTATUS;
 		answer[1] = ap_id;

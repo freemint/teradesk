@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,6 +28,7 @@
 #define L_LOADCFG	3
 #define L_SAVECFG	4
 
+void path_to_disp(char *path);
 char *fn_get_name(const char *path);
 char *fn_get_path(const char *path);
 char *fn_make_path(const char *path, const char *name);
@@ -36,15 +39,21 @@ boolean isroot(const char *path);
 char *getdir(int *error);
 int chdir(const char *path);
 
-int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, int search, char *pattern);	/* DjV 017 150103 */
+
+int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, boolean search);
 
 long drvmap(void);
 boolean check_drive(int drv);
 
 boolean cmp_wildcard(const char *fname, const char *wildcard);
 boolean cmp_part(const char *name, const char *wildcard);
-bool match_pattern(const char *t, const char *pat);		/* HR 051202: courtesy XaAES */
+bool match_pattern(const char *t, const char *pat);	
 
 char *locate(const char *name, int type);
 
 void force_mediach(const char *path);
+
+void cv_formtofn(char *dest, OBJECT *ob);
+void cv_fntoform(OBJECT *ob, const char *source);
+void cramped_name(const char *s, char *t, int w);
+void strip_name (char *dst, const char *src);

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,29 +20,59 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+
+#include <np_aes.h>	
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>			/* HR 271102: for wildcards */
+#include <ctype.h>			/* for wildcards */
 #include <tos.h>
 #include <mint.h>
 #include <ctype.h>
+#include <vdi.h>
+#include <xdialog.h>
 
 #include "desk.h"
-#include "desktop.h"			/* HR 151102: only 1 rsc */
+#include "desktop.h"
 #include "error.h"
 #include "xfilesys.h"
+#include "config.h"
 #include "file.h"
 #include "prgtype.h"
 
-#if _MINT_
-#define CFG_EXT		"*.cfg"
-#else
-#define CFG_EXT		"*.CFG"
-#endif
 
-/* Geef een pointer terug die wijst naar het begin van de filenaam
-   in een padnaam. */
+#define CFG_EXT		"*.INF"
+
+
+void wd_drawall(void);
+
+
+/* 
+ * Trim path to be displayed in order to remove 
+ * item name and backslash, so that more of the path can fit into field
+ * (insert a null character at the appropriate location).
+ * Do not trim if it is a path to a root directory. 
+ * Note: there is already a similar routine but it doesn't do 
+ * quite the same thing
+ */
+
+void path_to_disp ( char *fpath )
+{
+	char *nend;
+		
+	nend = strrchr ( fpath, '\\' );
+	if ( nend )
+	{
+		if ( *(nend -1L) == ':' ) 
+			nend++;
+		*nend = 0;
+	}
+}
+
+
+/* 
+ * Geef een pointer terug die wijst naar het begin van de filenaam
+ * in een padnaam. 
+ */
 
 char *fn_get_name(const char *path)
 {
@@ -53,20 +85,29 @@ char *fn_get_name(const char *path)
 		return h + 1;
 }
 
-/* Geef een pointer terug op een met malloc gereserveerd stuk
-   geheugen, waarin het pad van de padnaam van een file wordt
-   gezet. */
+
+/* 
+ * Geef een pointer terug op een met malloc gereserveerd stuk
+ * geheugen, waarin het pad van de padnaam van een file wordt gezet. 
+ * Space is allocated for the new path here
+ */
 
 char *fn_get_path(const char *path)
 {
 	char *backsl;
 	long l;
 
+	/* If there is no backslash in the name, just take the whole path */
+
 	if ((backsl = strrchr(path, '\\')) == NULL)
 		backsl = (char *) path;
 
+	/* Compute path length. Treat special case for the root path */
+
 	if (((l = backsl - (char *) path) == 2) && (path[1] == ':'))
 		l++;
+
+	/* Allocate memory for the new path */
 
 	if ((backsl = malloc(l + 1)) == NULL)
 	{
@@ -74,10 +115,20 @@ char *fn_get_path(const char *path)
 		return NULL;
 	}
 
-	strsncpy(backsl, path, l + 1);		/* HR 120203: secure cpy */
+	/* Copy the relevant part of the path to the new location */
+
+	strsncpy(backsl, path, l + 1);
+
+	/* Return pointer o the new location */
 
 	return backsl;
 }
+
+
+/*
+ * Create a path+filename by concatenating two strings;
+ * memory is allocated for the resulting string; return pointer to it.
+ */
 
 char *fn_make_path(const char *path, const char *name)
 {
@@ -89,9 +140,12 @@ char *fn_make_path(const char *path, const char *name)
 	return result;
 }
 
-/* Geef een pointer terug op een met malloc gereserveerd stuk
-   geheugen, waarin het path van oldname is samengevoegd met
-   newnameen. */
+
+/* 
+ * Geef een pointer terug op een met malloc gereserveerd stuk
+ * geheugen, waarin het path van oldname is samengevoegd met
+ * newnameen. 
+ */
 
 char *fn_make_newname(const char *oldname, const char *newname)
 {
@@ -143,6 +197,12 @@ char *fn_make_newname(const char *oldname, const char *newname)
 	return path;
 }
 
+
+/* 
+ * Strip filename (or path+filename) "fname" 
+ * to get (path+)filename"name"  and extension "ext" 
+ */
+
 static void split_name(char *name, char *ext, const char *fname)
 {
 	char *s, *d, *e;
@@ -168,26 +228,71 @@ static void split_name(char *name, char *ext, const char *fname)
 	}
 }
 
+
+/* 
+ * Check if path is to a root directory on drive 
+ */
+
 boolean isroot(const char *path)
 {
-	long l = strlen(path);
+	char *d = nonwhite((char *)path);
 
-	if (path[l - 1] == '\\')
+	long l = strlen(d);
+
+	if ( l < 2 || l > 3 )
+		return FALSE;
+
+	l--;
+
+	if (d[l] == '\\')
 		l--;
-	if (path[l - 1] == ':')
+
+	if (d[l] == ':' && l == 1 )
 		return TRUE;
+
 	return FALSE;
 }
 
+
+/* 
+ * Locate a file using file-selector.
+ * Return pointer to a full path+name specification (allocated inside)
+ */
+
 char *locate(const char *name, int type)
 {
-	char fname[256], *newpath, *newname, *fspec, *title;
-	boolean result = FALSE;
-	int ex_flags;
+	/* DjV: can [256] below  be a LNAME ? */
+
+	char 
+		fname[256], 
+		*newpath, 
+		*newname, /* local */ 
+		*fspec, 
+		*title,
+		*cfgext,
+		*defext;
+
+	boolean 
+		result = FALSE;
+
+	int 
+		ex_flags;
+
+	cfgext = strdup(CFG_EXT);
+
+#if _MINT_
+	if (mint)
+	{
+		strlwr(cfgext);
+		defext = "*";
+	}
+	else
+#endif
+		defext = "*.*";
 
 	if (type == L_FOLDER)
 	{
-		if ((fspec = fn_make_path(name, "*")) == NULL)		/* HR 271102 */
+		if ((fspec = fn_make_path(name, defext)) == NULL)
 			return NULL;
 		fname[0] = 0;
 		ex_flags = EX_DIR;
@@ -197,9 +302,9 @@ char *locate(const char *name, int type)
 		if (   (fspec = fn_make_newname(
 		                        name, 
 		                        (  (type == L_LOADCFG) || (type == L_SAVECFG) )
-		                          ? CFG_EXT
-		                          : "*"					/* HR 271102 */
-		                               )
+		                          ? cfgext
+		                          : defext
+		                        )
 		       ) == NULL
 		   )
 			return NULL;
@@ -222,7 +327,7 @@ char *locate(const char *name, int type)
 		{
 			if (((newname = fn_get_path(newpath)) != NULL) && (isroot(newname) == TRUE))
 			{
-				alert_printf(1, MNOROOT);
+				alert_iprint(MNOROOT);
 				free(newname);
 			}
 			else
@@ -231,7 +336,7 @@ char *locate(const char *name, int type)
 		else
 		{
 			if ((type == L_PROGRAM) && (prg_isprogram(fname) == FALSE))
-				alert_printf(1, MFNPRG, fname);
+				alert_printf(1, AFNPRG, fname);
 			else
 			{
 				if (((newname = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG))
@@ -239,7 +344,7 @@ char *locate(const char *name, int type)
 					result = x_exist(newname, ex_flags);
 					if (result == FALSE)
 					{
-						alert_printf(1, MFNEXIST, fname);
+						alert_printf(1, AFNEXIST, fname);
 						free(newname);
 					}
 				}
@@ -256,6 +361,111 @@ char *locate(const char *name, int type)
 	return newname;
 }
 
+
+/*
+ * Get a path or a name using a fileselector and insert into string
+ */
+
+void get_fsel
+(
+	XDINFO *info,	/* dialog data */
+	char *result,	/* pointer to string being edited */
+	int len,		/* max. length of field          */
+	int *pos		/* cursor position in the string */
+)
+{
+	long
+		pl = 0,		/* path length   */
+		fl = 0,		/* name length   */
+		tl,			/* total length of inserted string */
+		sl;			/* string length */
+
+	char
+		*s,			/* pointer to last '\' in fileselector result */
+		*c,			/* pointer to aft part of the string */
+		*cc,		/* copy of the above */
+		*path,		/* path obtained */
+		*title,		/* Selector title */
+		*defext;	/* default file extension */
+
+	LNAME
+		name;		/* name obtained */
+
+#if _MINT_
+	if (mint)
+		defext = "*";
+	else
+#endif
+		defext = "*.*";
+	
+	rsrc_gaddr(R_STRING, FSTLFILE, &title);
+	name[0] = 0;
+
+	path = xfileselector( defext, name, title );
+
+	/* Some fileselectors do not redraw what was below them... */
+
+	wd_drawall();
+	xd_draw( info, ROOT, MAX_DEPTH );
+
+	/* If a path is specified, get rid of wildcards in it */
+
+	if ( path )
+	{
+		if ( ( s = strrchr(path, '\\') ) != NULL )
+		{
+			if ( name[0] || isroot(path)  )
+				*(++s) = 0;
+			else	
+				*s = 0;
+		}
+
+		fl = strlen(name);
+		pl = strlen(path);
+
+		tl = fl + pl;
+
+
+		sl = strlen(result);
+		if ( sl + tl >= len )
+		{
+			alert_iprint(TFNTLNG);
+			return;
+		}
+
+		cc = NULL;
+		c = result + (long)(*pos); /* part after the cursor */
+
+		if ( *pos < sl )
+		{
+			if ( (cc = strdup(c)) == NULL )
+			{
+				xform_error(ENSMEM);
+				return;
+			}
+		}
+
+		strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+		free(path);
+
+		if ( fl )
+			strcat( result, name );
+
+		if ( cc )
+		{
+			strcat( result, cc );
+			free(cc);
+		} 
+
+		*pos = *pos + tl;
+	}
+}
+
+
+/* 
+ * Get name of the root directory (i.e. drive name, in the form such as "A:" ) 
+ */
+
 void getroot(char *root)
 {
 	root[0] = x_getdrv() + 'A';
@@ -263,10 +473,20 @@ void getroot(char *root)
 	root[2] = 0;
 }
 
+
+/* 
+ * Get name (i.e. path + name) of the current directory 
+ */
+
 char *getdir(int *error)
 {
 	return x_getpath(0, error);
 }
+
+
+/* 
+ * Change current directory to "path" 
+ */
 
 int chdir(const char *path)
 {
@@ -286,72 +506,120 @@ int chdir(const char *path)
 	return error;
 }
 
+
+/* 
+ * Get bitflags for existing drives 
+ */
+
 long drvmap(void)
 {
 	return (x_setdrv(x_getdrv()));
 }
+
+
+/* 
+ * Check if drive "drv" exists.
+ * Note: 26 drives are supported (A to Z),
+ * but defined by numbers 0 to 25.
+ */
 
 boolean check_drive(int drv)
 {
 	if ((drv >= 0) && (drv < 26) && (btst(drvmap(), drv)))
 		return TRUE;
 
-	alert_printf(1, MDRVEXIS);
+	alert_iprint(MDRVEXIS);
 
 	return FALSE;
 }
 
-#if _MINT_
 
-bool match_pattern(const char *t, const char *pat)
+/* 
+ * There are (were) two alternative routines for matching wildcards,
+ * depending on whether the Desktop was multitasking-capable or not:
+ * match_pattern() and cmp_part() .The first one was used for 
+ * multitasking-capable desktop ad the other for single-tos only.
+ * This has been changed so that match_pattern() is always used.
+ */
+
+/*
+#if _MINT_
+*/
+
+/* 
+ * Compare string (.e.g. filename) against a wildcard pattern;
+ * valid wildcards: * ? ! [<char><char>...] 
+ * Return TRUE if matched. Comparison is NOT case-sensitive.
+ * Note: speed could be improved by always preparing all-uppercase wildcards
+ * (wildcards are stored in window icon lists, program type lists and 
+ * filemask/documenttype lists, i.e. it is easy to convert to uppercase there)
+ */
+
+boolean match_pattern(const char *t, const char *pat)
 {
 	bool valid = true;
-	
+
 	while(    valid
-	      and (   ( *t and *pat)
-	           or (!*t and *pat == '*')	/* HR: catch empty that should be OK */
+	      and (   ( *t && *pat)
+	           || (!*t && *pat == '*')	/* HR: catch empty that should be OK */
 	         )
 	      )
 	{
 		switch(*pat)
 		{
-		case '?':			/* Any character */
+		case '?':			/* ? means any single character */
 			t++;
 			pat++;
 			break;
-		case '*':			/* String of any character */
+		case '*':			/* * means a string of any character */
 			pat++;
-			while(*t and (toupper(*t) != toupper(*pat)))
+			while(*t && (toupper(*t) != toupper(*pat)))
 				t++;
 			break;
+#if _MINT_
 		case '!':			/* !X means any character but X */
-			if (toupper(*t) != toupper(pat[1]))
+			if (mint)
 			{
-				t++;
-				pat += 2;
-			} else
-				valid = false;
-			break;
+				if (toupper(*t) != toupper(pat[1]))
+				{
+					t++;
+					pat += 2;
+				} else
+					valid = false;
+				break;
+			}
 		case '[':			/* [<chars>] means any one of <chars> */
-			while((*(++pat) != ']') and (toupper(*t) != toupper(*pat)));
-			if (*pat == ']')
-				valid = false;
-			else
-				while(*++pat != ']');
-			pat++;
-			t++;			/* HR: yeah, this one was missing */
-			break;
-		default:
+			if (mint)
+			{
+				while((*(++pat) != ']') and (toupper(*t) != toupper(*pat)));
+				if (*pat == ']')
+					valid = false;
+				else
+					while(*++pat != ']');
+				pat++;
+				t++;
+				break;
+			}
+#endif
+		default:			/* exact match on anything else, case insensitive */
 			if (toupper(*t++) != toupper(*pat++))
 				valid = false;
 			break;
 		}
 	}
-	
-	return valid and toupper(*t) == toupper(*pat);
+
+	return valid && toupper(*t) == toupper(*pat);
 }
 
+/* let's not use it anymore
 #else
+
+
+/* 
+ * Compare part of a filename (i.e. extension or name itself)
+ * against a wildcard pattern. Comparison is case-insensitive.
+ * Used only in TOS-only (i.e. short name) version
+ */
 
 boolean cmp_part(const char *name, const char *wildcard)
 {
@@ -382,7 +650,7 @@ boolean cmp_part(const char *name, const char *wildcard)
 				return FALSE;
 			}
 		default:
-			if (tolower(name[j]) != tolower(wildcard[i]))		/* HR 271102: case insensitive */
+			if (tolower(name[j]) != tolower(wildcard[i])) /* case insensitive */
 				return FALSE;
 			break;
 		}
@@ -391,23 +659,60 @@ boolean cmp_part(const char *name, const char *wildcard)
 	return TRUE;
 }
 #endif
+*/
+
+/* 
+ * Compare a filename against a wildcard pattern 
+ */
 
 boolean cmp_wildcard(const char *fname, const char *wildcard)
 {
-#if _MINT_		/* HR 151102 */
-        return match_pattern(fname,wildcard);		/* HR 051202: courtesy XaAES */
+/* old
+
+#if _MINT_
+
+		/* For long filenames: use another routine */
+
+        return match_pattern(fname, wildcard);
 #else
-	{
+		/*
+		 * For TOS (short filename) only: split filename into
+		 * name+extension. Compare name against wildcard name,
+		 * compare extension against wildcard extension.
+		 */
+
 		char name[10], ext[4], wname[10], wext[4];
-	
-		split_name(name, ext, fname);
-		split_name(wname, wext, wildcard);
+
+		split_name(name, ext, fname);      /* name and extension */
+		split_name(wname, wext, wildcard); /* wildcard name and extension */
 		if (cmp_part(name, wname) == FALSE)
 			return FALSE;
 		return cmp_part(ext, wext);
-	}
 #endif
+*/
+#if _MINT_
+
+		if ( mint )
+        	return match_pattern(fname, wildcard);	
+		else
+#endif
+		{
+			/*
+			 * For TOS (short filename) only: split filename into
+			 * name+extension. Compare name against wildcard name,
+			 * compare extension against wildcard extension.
+			 */
+
+			char name[10], ext[4], wname[10], wext[4];
+
+			split_name(name, ext, fname);      /* name and extension */
+			split_name(wname, wext, wildcard); /* wildcard name and extension */
+			if (match_pattern(name, wname) == FALSE)
+				return FALSE;
+			return match_pattern(ext, wext);
+		}
 }
+
 
 typedef long cdecl (*Func)();
 
@@ -428,6 +733,7 @@ static long cdecl Newgetbpb(int d)
 	return (*Oldgetbpb)(d);
 }
 
+
 static long cdecl Newmediach(int d)
 {
 	if (d == chdrv)
@@ -435,6 +741,7 @@ static long cdecl Newmediach(int d)
 	else
 		return (*Oldmediach)(d);
 }
+
 
 static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 {
@@ -444,20 +751,25 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 		return (*Oldrwabs)(d, buf, a, b, c, l);
 }
 
+
+/* 
+ * Force media change on drive contained in path 
+ */
+
 void force_mediach(const char *path)
 {
 	int drive, p = *path;
 
 	if (   p == 0
-	    || !(isalnum(p) && path[1] == ':')		/* HR 271102: alnum */
+	    || !(isalnum(p) && path[1] == ':')	/* alnum */
 	   )
 		return;
 
 	drive =   isalpha(p)
-	        ? tolower(p) - 'a'			/* HR 271102 */
+	        ? tolower(p) - 'a'
 	        : p - '0' + 'z' - 'a'  + 2;
 
-#if _MINT_			/* HR 151102 */
+#if _MINT_
 	if (mint)
 	{
 		if (Dlock(1, drive) == 0)
@@ -496,3 +808,214 @@ void force_mediach(const char *path)
 		Super(stack);
 	}
 }
+
+
+/********************************************************************
+ *																	*
+ * Hulpfunkties voor dialoogboxen.									*
+ * HR 151102 strip_name, cramped_name courtesy XaAES				*
+ *																	*
+ ********************************************************************/
+
+/* 
+ * Strip leading and trailing spaces from a string. 
+ * Insert a zero byte at string end.
+ * This routine actualy copies the the characters to destination;
+ * the source is left unchanged. 
+ * Note1: only spaces are considered, not tabs, etc.
+ */
+
+void strip_name(char *to, const char *fro)
+{
+	const char *last = fro + strlen(fro) - 1;
+
+	while (*fro && *fro == ' ')  fro++;
+	if (*fro)
+	{
+		while (*last == ' ')
+			last--;
+		while (*fro && (fro != last + 1) )
+			*to++ = *fro++;
+	}
+	*to = 0;
+}
+
+
+/* 
+ * Fit a long filename or path into a shorter string
+ * should become c:\s...ng\foo.bar; 
+ * s = source, t=target, w= available target length
+ * Note 1: "ww" accomodates the termination byte as well
+ * Note 2: it is assumed that source string will never be longer
+ * than 255 bytes; there is no length checking.
+ */
+
+void cramped_name(const char *s, char *t, int ww)
+{
+	const char 
+		*q = s;		/* pointer to a location in source string */
+
+	char 
+		*p = t, 	/* pointer to a location in target string  */
+		tus[256];	/* temporary storage to form cramped name */
+
+	int
+		w = ww - 1,	/* width -1 for termination byte */ 
+		l,			/* input string length */ 
+		d,			/* difference between input and output lengths */ 
+		h;			/* length of the first part of the name (before "...") */
+
+	strip_name(tus, s);		/* remove leading and trailing blanks; insert term. byte */
+	q = tus;				/* location of the new (trimmed) source */
+	l = (int)strlen(tus);	/* new (trimmed) string length */
+	d = l - w;				/* new length difference */
+
+	if (d <= 0)		/* (new) source is shorter than target (or same), so just copy */
+		strcpy(t, s);
+	else			/* (new) source is longer than the target, must cramp */
+	{
+		if (w < 12)				/* 8.3: destination is very short  */
+			strcpy(t, q + d);  	/* so copy only the last ch's */
+		else					/* else replace middle of the string with "..." */
+		{
+			h = (w - 3) / 2;	/* half of dest. length minus "..." */ 
+			strncpy(p, q, h);	/* copy first half to  destination */
+			p += h;				/* add "..." */
+			*p++ = '.';
+			*p++ = '.';
+			*p++ = '.';
+
+/* this may leave a space unused at the end, depending on odd/even length
+ * of the source, so maybe a little better below:
+ */
+/*
+			strcpy(p, q + l - h);	/* concatenate the end of the source */
+*/
+			strcpy(p, q + l - (w - h - 4) );
+		}
+	}
+}
+
+
+/*
+ * Convert a TOS filename (8+3) into a string suitable for display
+ * (with left-justified file extension, e.g.: FFFF    XXX without ".")
+ */
+
+static void cv_tos_fn2form(char *dest, const char *source)
+{
+	int 
+		s = 0,	/* a location in the source string */ 
+		d = 0;	/* a location in the destination string */
+
+	while ((source[s] != 0) && (source[s] != '.'))
+		dest[d++] = source[s++];
+	if (source[s] == 0)
+		dest[d++] = 0;
+	else
+	{
+		while (d < 8)
+			dest[d++] = ' ';
+		s++;
+		while (source[s] != 0)
+			dest[d++] = source[s++];
+		dest[d++] = 0;
+	}
+}
+
+
+/* 
+ * Convert from a justified form string into TOS (8+3) filename.
+ * Insert "." between the name and the extension (after 8 characters)
+ */
+
+static void cv_tos_form2fn(char *dest, const char *source)
+{
+	int s = 0, d = 0;
+
+	while ((source[s] != 0) && (s < 8))
+		if (source[s] != ' ')
+			dest[d++] = source[s++];
+		else
+			s++;
+	if (source[s] == 0)
+		dest[d++] = 0;
+	else
+	{
+		dest[d++] = '.';
+		while (source[s] != 0)
+			if (source[s] != ' ')
+				dest[d++] = source[s++];
+			else
+				s++;
+		dest[d++] = 0;
+	}
+}
+
+
+/* 
+ * wrapper function for editable and possibly userdef fields. 
+ * Fit a (possibly long) filename or path into a form (dialog) field
+ * DjV note: now it is assumed that if the field is 12 characters long,
+ * then it will be for a 8+3 format (see also routine tos_fnform in resource.c)
+ */
+
+void cv_fntoform(OBJECT *ob, const char *src)
+{
+	/* 
+	 * Determine destination and what is the available length 
+	 * Beware: "l" is the complete allocated length, 
+	 * zero termination-byte must fit into it
+	 */
+
+	char *dst = xd_get_obspec(ob).tedinfo->te_ptext;
+	int  l    = xd_get_obspec(ob).tedinfo->te_txtlen;
+
+	/* 
+	 * The only 12-chars long fields in TeraDesk should be 
+	 * for 8+3 names, possibly even if mint is around 
+	 */
+
+	if ( /* !mint && */ l < 14 )
+		cv_tos_fn2form(dst, src);
+	else
+	{	
+		if (ob->ob_flags & EDITABLE )
+		{	
+			if (( (ob->ob_type >> 8) & 0xff) == XD_SCRLEDIT)
+			{
+				l = sizeof(LNAME);
+				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(src) > sizeof(LNAME) */
+			}
+			strsncpy(dst, src, l); /* term. byte included in l */
+		}
+		else
+			cramped_name(src, dst, l); /* term. byte included */
+	}	
+} 
+
+
+
+/* 
+ * Convert filename from the dialog form into a convenient string 
+ */
+
+void cv_formtofn(char *dest, OBJECT *ob)
+{
+	char *source = xd_get_obspec(ob).tedinfo->te_ptext;
+	int  l    = xd_get_obspec(ob).tedinfo->te_txtlen; /* this includes the term. byte */
+
+	/* 
+	 * The only 12-chars long fields in TeraDesk should be 
+	 * for 8+3 names, possibly even if mint is around 
+	 */
+
+	if ( /* !mint && */ l < 14 )
+		cv_tos_form2fn(dest, source);
+	else
+	{
+		strcpy(dest, source);
+		strip_name(dest, dest);
+	}
+}
+	

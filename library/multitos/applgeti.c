@@ -1,5 +1,6 @@
 /*
- * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
+ * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002  W. Klaren,
+ *                                                2002, 2003  H. Robbers
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* DjV 001 241202 */
+#include <np_aes.h>
 #include <multitos.h>
 
 int appl_getinfo(int ap_gtype,

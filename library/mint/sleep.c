@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,13 +22,9 @@
 
 #include <mint.h>
 
-#pragma warn -par
-
 static void cdecl _alarm(long signal)
 {
 }
-
-#pragma warn .par
 
 void sleep(unsigned short n)
 {

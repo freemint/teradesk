@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 /* Slider type: 0 - elementen in window kunnen niet geselekteerd
                     worden.
                 1 - elementen in window kunnen wel geselekteerd
@@ -27,6 +30,8 @@
 typedef struct sliderinfo
 {
 	int type;
+
+	LSTYPE **list;				/* pointer to the list scrolled by this slider */
 
 	int up_arrow;				/* object nummers van pijltjes en sliders */
 	int down_arrow;
@@ -48,3 +53,7 @@ void sl_set_slider(OBJECT *tree, SLIDER *slider, XDINFO *info);
 int sl_handle_button(int button, OBJECT *tree, SLIDER *sl, XDINFO *dialog);
 int sl_form_do(OBJECT *tree, int start, SLIDER *slider, XDINFO *info);
 int sl_dialog(OBJECT *tree, int start, SLIDER *slider);
+void set_selector(SLIDER *slider, boolean draw, XDINFO *info);
+void ls_sl_init (int n, void *set_sel, SLIDER *sl, LSTYPE **list);
+int keyfunc(XDINFO *info, SLIDER *sl, int scancode); 
+

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,4 +21,5 @@
  */
 
 void start_prg(const char *fname, const char *cl, const char *path,
-			   ApplType prg, boolean argv, int kstate);
+			   ApplType prg, boolean argv, 
+			   boolean single, long limmem,int kstate);

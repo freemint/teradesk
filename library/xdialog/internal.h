@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -25,14 +27,16 @@
 #define cdecl
 #endif
 
+/*
 #define min(x,y)		(((x) < (y)) ? (x) : (y))
 #define max(x,y)		(((x) > (y)) ? (x) : (y))
+*/
 
 /* Vlaggen voor xd_redraw() */
 
 #define XD_RDIALOG	0x1
 #define XD_RCURSOR	0x2
-#define XD_MAX_SCRLED 130		/* HR 021202: maximum size of scrolling editable texts. */ /* HR 240203 */
+#define XD_MAX_SCRLED 130		/* maximum size of scrolling editable texts. */ /* HR 240203 */
 
 /* Vlaggen voor xd_form_button() */
 
@@ -74,7 +78,7 @@ typedef struct xuserblk
 	struct xuserblk *ub_parm;		/* Pointer to itself. */
 	int ob_type;					/* Original object type. */
 	int ob_flags;					/* Original object flags. */
-	OBSPEC ob_spec;					/* Original object specifier. */ 	/* HR 021202 */
+	OBSPEC ob_spec;					/* Original object specifier. */ 
 	int ob_shift;					/* For scrledit: left position of letterbox. */
 } XUSERBLK;
 
@@ -105,11 +109,10 @@ int
 	xd_ncolors,
 	xd_posmode,
 	xd_min_timer,
-/*	xd_draw_3d,
-*/	xd_aes4_0,
-	aes_flags,			/* HR 151102 */
+	xd_aes4_0,
+	aes_flags,
 	aes_ver3d,
-	aes_ver3d,			/* HR 120203: 3d enlargement values */
+	aes_ver3d,		/* 3d enlargement values */
 	colour_icons,
 	xresources,
 	xd_fdo_flag,

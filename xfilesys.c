@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,14 +31,14 @@
 
 #include "desk.h"
 #include "error.h"
-#include "desktop.h"			/* HR 151102: only 1 rsc */
+#include "desktop.h"
 #include "xfilesys.h"
 
 #define XBUFSIZE	2048L
-#define USE_gemdos 1
 
-/* long maxpath = 128; */ /* HR 240203 */
 static boolean flock;
+extern int tos_version, aes_version;
+
 
 int x_checkname(const char *path, const char *name)
 {
@@ -48,6 +50,11 @@ int x_checkname(const char *path, const char *name)
 
 	return 0;
 }
+
+/* 
+ * Create a path+filename string from path "path" and filename "name".
+ * Return pointer to created string (being allocated in this routine)
+ */
 
 char *x_makepath(const char *path, const char *name, int *error)
 {
@@ -63,6 +70,10 @@ char *x_makepath(const char *path, const char *name, int *error)
 
 	return p;
 }
+
+/* 
+ * Check if a file or folder exists 
+ */
 
 boolean x_exist(const char *file, int flags)
 {
@@ -115,11 +126,7 @@ static int _fullname(char *buffer)
 		}
 		else
 		{
-#if USE_gemdos
-			if ((error = xerror((int) gemdos(71, d, (int) (buffer[0] - 'A' + 1)))) == 0)
-#else
 			if ((error = xerror(Dgetpath(d, buffer[0] - 'A' + 1))) == 0)
-#endif
 				make_path(buffer, buffer, h);
 		}
 		free(name);
@@ -131,7 +138,7 @@ char *x_fullname(const char *file, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -144,28 +151,31 @@ char *x_fullname(const char *file, int *error)
 		free(buffer);
 		return NULL;
 	}
-
+/*		HR 120803 not really a point anymore
 	h = realloc(buffer, strlen(buffer) + 1);
 
 	return (h == NULL) ? buffer : h;
+*/
+	return buffer;
 }
 
 /* Funkties voor directories */
 
+/* Set a directory path */
 int x_setpath(const char *path)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(59, path));
-#else
 	return xerror(Dsetpath(path));
-#endif
 }
+
+/* 
+ * Get current default path, return pointer to this new-allocated string 
+ */
 
 char *x_getpath(int drive, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -174,65 +184,71 @@ char *x_getpath(int drive, int *error)
 	buffer[0] = (char) (((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
 	buffer[1] = ':';
 
-#if USE_gemdos
-	if ((*error = xerror((int) gemdos(71, buffer + 2, drive))) < 0)
-#else
 	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
-#endif
 	{
 		free(buffer);
 		return NULL;
 	}
-
+	
+/*		HR 120803 not really a point anymore
 	h = realloc(buffer, strlen(buffer) + 1);
 
 	return (h == NULL) ? buffer : h;
+*/
+	return buffer;
 }
+
+
+/* 
+ * Create a directory 
+ */
 
 int x_mkdir(const char *path)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(57, path));
-#else
 	return xerror(Dcreate(path));
-#endif
 }
+
+
+/* 
+ * Remove a directory 
+ */
 
 int x_rmdir(const char *path)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(58, path));
-#else
 	return xerror(Ddelete(path));
-#endif
 }
+
+
+/* 
+ * Get information about free space on a disk volume 
+ */
 
 int x_dfree(DISKINFO *diskinfo, int drive)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(54, diskinfo, drive));
-#else
 	return xerror(Dfree(diskinfo, drive));
-#endif
 }
 
+/* Get information about current default drive */
 int x_getdrv(void)
 {
-#if USE_gemdos
-	return (int) gemdos(25);
-#else
 	return Dgetdrv();
-#endif
 }
+
+
+/* 
+ * Set new default drive 
+ */
 
 long x_setdrv(int drive)
 {
-#if USE_gemdos
-	return gemdos(14, drive);
-#else
 	return Dsetdrv(drive);
-#endif
 }
+
+
+/* 
+ * Get information about a disk-volume label 
+ * note: drive 0 = A:\, 1 = B:\, etc.
+ */
 
 int x_getlabel(int drive, char *label)
 {
@@ -240,166 +256,170 @@ int x_getlabel(int drive, char *label)
 	int error;
 	char path[10];
 
-#if USE_gemdos
-	olddta = (DTA *) gemdos(47);
-	gemdos(26, &dta);
-#else
 	olddta = Fgetdta();
 	Fsetdta(&dta);
-#endif
 
 	strcpy(path, "A:\\*.*");
 	path[0] += (char) drive;
 
-#if USE_gemdos
-	error = (int) gemdos(78, path, 0x3F);
-#else
 	error = Fsfirst(path, 0x3F);
-#endif
 
-	/* if ((error == 0) && (dta.d_attrib & 8)) DjV 004 300103 */
-	if ((error == 0) && (dta.d_attrib & FA_VOLUME)) /* DjV 004 300103 same but more readable */
+	if ((error == 0) && (dta.d_attrib & FA_VOLUME)) 
 		strcpy(label, dta.d_fname);
 	else
 		*label = 0;
 
-#if USE_gemdos
-	gemdos(26, olddta);
-#else
 	Fsetdta(olddta);
-#endif
 
 	return ((error == -49) || (error == -33)) ? 0 : error;
 }
 
 /* File funkties */
 
+/* 
+ * Rename a file from "oldname" to "newname"; 
+ * note unusual (for C) order of arguments: (src, dest) 
+ */
+
 int x_rename(const char *oldname, const char *newname)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(86, 0, oldname, newname));
-#else
 	return xerror(Frename(0, oldname, newname));
-#endif
 }
+
+
+/* 
+ * "Unlink" a file (i.e. delete) 
+ */
 
 int x_unlink(const char *file)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(65, file));
-#else
 	return xerror(Fdelete(file));
-#endif
 }
+
+
+/* 
+ * Get GEMDOS file attributes 
+ */
 
 int x_fattrib(const char *file, int wflag, int attrib)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(67, file, wflag, attrib));
-#else
 	return xerror(Fattrib(file, wflag, attrib));
-#endif
 }
+
+
+/* 
+ * Get or set file date & time. A handle to the file must exist first 
+ */
 
 int x_datime(DOSTIME *time, int handle, int wflag)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(87, time, handle, wflag));
-#else
 	return xerror(Fdatime(time, handle, wflag));
-#endif
 }
+
+
+/* 
+ * Open a file 
+ */
 
 int x_open(const char *file, int mode)
 {
-	long result;			/* HR 151102 */
+	long result;
 
 	if (!flock)
 		mode &= O_RWMODE;
 
-#if USE_gemdos
-	result = gemdos(61, file, mode);
-#else
 	result = Fopen(file, mode);
-#endif
 
-	return (result < 0) ? xerror(result) : result;
+	return (result < 0) ? xerror((int)result) : (int)result;
 }
+
+
+/* 
+ * Create a new file with specified attributes
+ */
 
 int x_create(const char *file, int attr)
 {
-	long result;				/* HR 101202 long */
+	long result;
 
-#if USE_gemdos
-	result = (int) gemdos(60, file, attr);
-#else
 	result = Fcreate(file, attr);
-#endif
 
-	return (result < 0) ? xerror(result) : result;
+	return (result < 0) ? xerror((int)result) : (int)result;
 }
+
+
+/* 
+ * Close a file 
+ */
 
 int x_close(int handle)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(62, handle));
-#else
 	return xerror(Fclose(handle));
-#endif
 }
+
+
+/* 
+ * Read from a file 
+ */
 
 long x_read(int handle, long count, char *buf)
 {
 	long result;
 
-#if USE_gemdos
-	result = gemdos(63, handle, count, buf);
-#else
 	result = Fread(handle, count, buf);
-#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
+
+
+/* 
+ * Write to a file 
+ */
 
 long x_write(int handle, long count, char *buf)
 {
 	long result;
 
-#if USE_gemdos
-	result = gemdos(64, handle, count, buf);
-#else
 	result = Fwrite(handle, count, buf);
-#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
+
 
 long x_seek(long offset, int handle, int seekmode)
 {
 	long result;
 
-#if USE_gemdos
-	result = gemdos(66, offset, handle, seekmode);
-#else
 	result = Fseek(offset, handle, seekmode);
-#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
 
+
 /* Funkties voor het lezen van een directory */
 
-/* Convert a DTA structure to a XATTR structure. The index, dev,
-   rdev, blksize and nblocks fields in attrib are not set. They
-   are not necessary anyway on TOS. */
+
+/* 
+ * Convert a DTA structure to a XATTR structure. The index, dev,
+ * rdev, blksize and nblocks fields in attrib are not set. They
+ * are not necessary anyway on TOS. 
+ */
 
 static void dta_to_xattr(DTA *dta, XATTR *attrib)
 {
-	/* DjV 004 300103 ---vvv--- */
-	/* Add pseudo attribute "parent dir" */
+
+/* handle this differently now in set_visible()
+	/* 
+	 * DjV 004 300103 Add pseudo attribute "parent dir" 
+	 * note: can this be a problem? A document on TOS functions
+	 * states that bits 6 and 7 (i.e. 0x40 and 0x80, and FA_PARDIR = 0x40 !)
+	 * of attribute field are "reserved"?
+	 */
+
 	if ( (dta->d_fname[0] == '.') && (dta->d_fname[1] == '.') )
 		dta->d_attrib |= FA_PARDIR;
-	/* DjV 004 300103 ---^^^--- */
+*/
+
 	attrib->mode = 0777;
 	if (dta->d_attrib & FA_SUBDIR)
 		attrib->mode |= S_IFDIR;
@@ -415,15 +435,11 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 	attrib->attr = (int) dta->d_attrib & 0xFF;
 }
 
-/* HR 050203 */
-static
-bool is_uni(char *s)
-{
-	return *(s+1) == ':' && ((*s) == 'u' || *s == 'U');
-}
 
-
-/* HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC */
+/* 
+ * Inquire about details of filesystem
+ * HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC 
+ */
 
 boolean x_inq_xfs(const char *path, boolean *casesens)
 {
@@ -444,324 +460,219 @@ boolean x_inq_xfs(const char *path, boolean *casesens)
 	return (c >= 0 && csens);
 }
 
+
+/* 
+ * Open a directory
+ * DjV 071 270703 code size reduction 
+ */
+
 XDIR *x_opendir(const char *path, int *error)
 {
-#if _MINT_
-	if (mint)			/* HR 151102 */
-	{
-		XDIR *dir;
+	XDIR *dir;
 
-		if ((dir = malloc(sizeof(XDIR))) == NULL)
-			*error = ENSMEM;
-		else
-		{
-			dir->path = (char *) path;
-			dir->type = x_inq_xfs(path, nil) ? 0 : 1;	/* HR 151102 */
-
-			if (dir->type)
-			{
-				/*
-				 * Dos file system.
-				 */
-
-				dir->data.gdata.first = 1;
-#if USE_gemdos
-				dir->data.gdata.old_dta = (DTA *) gemdos(47);
-				gemdos(26, &dir->data.gdata.dta);
-#else
-				dir->data.gdata.old_dta = Fgetdta();
-				Fsetdta(&dir->data.gdata.dta);
-#endif
-				*error = 0;
-			}
-			else
-			{
-				/*
-				 * File system with long filenames.
-				 */
-	
-#if USE_gemdos
-				if (((dir->data.handle = gemdos(0x128, path, 0)) & 0xFF000000L) == 0xFF000000L)
-#else
-				if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
-#endif
-				{
-					*error = xerror((int) dir->data.handle);
-					free(dir);
-					dir = NULL;
-				}
-			}
-		}
-		return dir;	
-	}
+	if ((dir = malloc(sizeof(XDIR))) == NULL)
+		*error = ENSMEM;
 	else
-#endif
 	{
-		XDIR *dir;
-	
-		if ((dir = malloc(sizeof(XDIR))) == NULL)
-			*error = ENSMEM;
-		else
-		{
-			dir->path = (char *) path;
-			dir->data.gdata.first = 1;
-#if USE_gemdos
-			dir->data.gdata.old_dta = (DTA *) gemdos(47);
-			gemdos(26, &dir->data.gdata.dta);
-#else
-			dir->data.gdata.old_dta = Fgetdta();
-			Fsetdta(&dir->data.gdata.dta);
-#endif
-			*error = 0;
-		}
-		return dir;
-	}
-}
-
-long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
-{
+		dir->path = (char *) path;
 #if _MINT_
-	if (mint)			/* HR 151102 */
-	{
+		dir->type = mint ? (x_inq_xfs(path, nil) ? 0 : 1) : 1;
+
 		if (dir->type)
 		{
-			/*
-			 * DOS file system.
-			 */
-	
-			int error;
-		
-			if (dir->data.gdata.first != 0)
-			{
-				char *fspec;
-		
-				if ((fspec = x_makepath(dir->path, "*.*", &error)) != NULL)
-				{
-#if USE_gemdos
-					error = xerror((int) gemdos(78, fspec, 0x37));
-#else
-					error = xerror(Fsfirst(fspec, 0x37));
 #endif
-					free(fspec);
-					dir->data.gdata.first = 0;
-				}
-			}
-			else
-#if USE_gemdos
-				error = xerror((int) gemdos(79));
-#else
-				error = xerror(Fsnext());
-#endif
+			/* Dos file system */
 
-			if (error == 0)
-			{
-				if (strlen(dir->data.gdata.dta.d_fname) + 1 > len)
-					error = EFNTL;
-				else
-				{
-					strupr(dir->data.gdata.dta.d_fname);		/* HR 151102: arrogant MiNT tampering with filenames. */
-					strncpy(buffer, dir->data.gdata.dta.d_fname, len);
-					dta_to_xattr(&dir->data.gdata.dta, attrib);
-				}
-			}
-			return (long) error;
+			dir->data.gdata.first = 1;
+			dir->data.gdata.old_dta = Fgetdta();
+			Fsetdta(&dir->data.gdata.dta);
+			*error = 0;
+
+#if _MINT_
 		}
 		else
 		{
-			/*
-			 * File system with long filenames.
-			 * HR 130203: Use Dxreaddir in stead of Dreaddir,
-			 *            handle links correctly.
-			 */
+			/* File system with long filenames */
 	
-			int h;
-			char str[260];
-			long error, rep;
-	
-			if ((error = Dxreaddir(len, dir->data.handle, str, (long)attrib, &rep)) == 0)
-				strcpy(buffer, &str[4]);
-
-			if (error == 0)
-				return error;
-		
-			return (long) xerror((int) error);
+			if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
+			{
+				*error = xerror((int) dir->data.handle);
+				free(dir);
+				dir = NULL;
+			}
 		}
+#endif
 	}
-	else
+
+	return dir;	
+}
+
+
+/* 
+ * Read a directory entry 
+ * Note: DjV 070: In order to increase speed, only the pointer is passed, 
+ * and the name is no more copied to output location (in all uses of this
+ * routine in TeraDesk, obtained name is immediately copied elsewhere).
+ * **buffer should probably be considered as readonly,
+ * not to be written to or used for permanent storage
+ * DjV 070 270703 code size reduction
+ */
+
+long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib) 
+{
+	static char fspec[260];
+
+	/* Prepare some pointer to return in case any error occurs later */
+
+	fspec[0] = 0;
+	*buffer = fspec;
+
+#if _MINT_
+	if (dir->type)
 #endif
 	{
+		/* Mint is not present or, if it is, it is a DOS-filesystem volume */	
+
 		int error;
-	
+
 		if (dir->data.gdata.first != 0)
 		{
-			char *fspec;
-	
-			if ((fspec = x_makepath(dir->path, "*.*", &error)) != NULL)
-			{
-#if USE_gemdos
-				error = xerror((int) gemdos(78, fspec, 0x37));
-#else
-				error = xerror(Fsfirst(fspec, 0x37));
-#endif
-				free(fspec);
-				dir->data.gdata.first = 0;
-			}
+			/* 0x37 = READONLY | HIDDEN | SYSTEM | SUBDIR | ARCHIVE */
+			make_path(fspec, dir->path, "*.*");	
+			error = xerror(Fsfirst(fspec, 0x37));
+			dir->data.gdata.first = 0;
 		}
 		else
-#if USE_gemdos
-			error = xerror((int) gemdos(79));
-#else
 			error = xerror(Fsnext());
-#endif
-	
+
 		if (error == 0)
 		{
 			if (strlen(dir->data.gdata.dta.d_fname) + 1 > len)
 				error = EFNTL;
 			else
 			{
-				strncpy(buffer, dir->data.gdata.dta.d_fname, len);
+#if _MINT_
+				if ( mint ) 				/* no need to waste time otherwise */
+					strupr(dir->data.gdata.dta.d_fname); /* arrogant MiNT tampering with filenames. */
+#endif
+				*buffer = dir->data.gdata.dta.d_fname; 
 				dta_to_xattr(&dir->data.gdata.dta, attrib);
 			}
 		}
 		return (long) error;
-	
 	}
+#if _MINT_
+	else
+	{
+		/*
+		 * File system with long filenames.
+		 * Use Dxreaddir in stead of Dreaddir, handle links correctly.
+		 */
+		long error, rep;
+
+		if ((error = Dxreaddir(len, dir->data.handle, fspec, (long)attrib, &rep)) == 0)
+			*buffer = fspec + 4L;
+
+		if (error == 0)
+			return error;
+		
+		return (long) xerror((int) error);
+	}
+#endif /* _MINT_ */
 }
+
 
 long x_rewinddir(XDIR *dir)
 {
+
 #if _MINT_
-	if (mint)			/* HR 151102 */
+	if (dir->type)
 	{
-		if (dir->type)
-		{
-			/*
-			 * DOS file system.
-			 */
-	
-			dir->data.gdata.first = 1;
-			return 0L;
-		}
-		else
-		{
-			/*
-			 * File system with long filenames.
-			 */
-	
-#if USE_gemdos
-			return xerror(gemdos(0x12A, dir->data.handle));
-#else
-			return xerror(Drewinddir(dir->data.handle));
 #endif
-		}
-	}
-	else
-#endif
-	{
+		/* DOS file system */
+	
 		dir->data.gdata.first = 1;
 		return 0L;
+#if _MINT_  
 	}
+	else
+	{
+		/* File system with long filenames */
+	
+		return (long)xerror(Drewinddir(dir->data.handle));
+	}
+#endif /* _MINT_ */
 }
+
+
+/* 
+ * Close an open directory
+ */
 
 long x_closedir(XDIR *dir)
 {
+	long error;
+
 #if _MINT_
-	if (mint)			/* HR 151102 */
+	if (dir->type)
 	{
-		if (dir->type)
-		{
-			/*
-			 * DOS file system.
-			 */
-	
-#if USE_gemdos
-			gemdos(26, dir->data.gdata.old_dta);
-#else
-			Fsetdta(dir->data.gdata.old_dta);
+
 #endif
-			free(dir);
-			return 0L;
-		}
-		else
-		{
-			/*
-			 * File system with long filenames.
-			 */
+		/* DOS file system */
 	
-			long error;
-	
-#if USE_gemdos
-			error = xerror(gemdos(0x12B, dir->data.handle));
-#else
-			error = xerror(Dclosedir(dir->data.handle));
-#endif
-			free(dir);
-			return error;
-		}
+		Fsetdta(dir->data.gdata.old_dta);
+
+		error = 0L;
+#if _MINT_
 	}
 	else
-#endif
 	{
-#if USE_gemdos
-		gemdos(26, dir->data.gdata.old_dta);
-#else
-		Fsetdta(dir->data.gdata.old_dta);
-#endif
-		free(dir);
-		return 0L;
+		/* File system with long filenames */
+	
+		error = (long)xerror(Dclosedir(dir->data.handle));
 	}
+#endif /* _MINT_ */
+
+	free(dir); 
+	return error; 
 }
 
-#pragma warn -par
+
+/* 
+ * Read file atttributes (in the extended sense) 
+ */
 
 long x_attr(int flag, const char *name, XATTR *xattr)
 {
 #if _MINT_
-	if (mint)				/* HR 151102 */
-	#if USE_gemdos
-		return xerror((int) gemdos(0x12C, flag, name, xattr));
-	#else
+	if (mint)
 		return xerror(Fxattr(flag, name, xattr));
-	#endif
 	else
 #endif
 	{
 		DTA *olddta, dta;
 		int result;
 	
-#if USE_gemdos
-		olddta = (DTA *) gemdos(47);
-		gemdos(26, &dta);
-	
-		if ((result = xerror((int) gemdos(78, name, 0x37))) == 0)
-			dta_to_xattr(&dta, xattr);
-	
-		gemdos(26, olddta);
-#else
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 	
-		if ((result = xerror(Fsfirst(name, 0x37))) == 0)
+		if ((result = xerror(Fsfirst(name, 0x37))) == 0) /* 0x37=anything but volume */
 			dta_to_xattr(&dta, xattr);
-	
-		Fsetdta(olddta);
-#endif
 
+		Fsetdta(olddta);
 		return result;
 	}
 }
 
-#pragma warn .par
 
-/* Configuratie funkties */
-
-#pragma warn -par
+/* 
+ * Configuratie funkties 
+ */
 
 long x_pathconf(const char *path, int which)
 {
 #if _MINT_
-	if (mint)				/* HR 151102 */
+	if (mint)
 	{
 		long result;
 	
@@ -780,9 +691,10 @@ long x_pathconf(const char *path, int which)
 	}
 }
 
-#pragma warn .par
 
-/* Funkties voor het uitvoeren van programma's */
+/* 
+ * Funkties voor het uitvoeren van programma's 
+ */
 
 long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
 {
@@ -796,42 +708,50 @@ long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
 	return result;
 }
 
+
 /* Geheugen funkties */
+
+
+/* 
+ * Allocate a memory block, return address of the block
+ * HR 120803 only used now for interrogation 
+ */
 
 void *x_alloc(long amount)
 {
-#if USE_gemdos
-	return (void *) gemdos(72, amount);
-#else
 	return Malloc(amount);
-#endif
 }
+
+
+/* 
+ * Deallocate a memory block 
+ */
 
 int x_free(void *block)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(73, block));
-#else
 	return xerror(Mfree(block));
-#endif
 }
+
+
+/* 
+ * Shrink a block of allocated memory 
+ */
 
 int x_shrink(void *block, long newsize)
 {
-#if USE_gemdos
-	return xerror((int) gemdos(74, (int) 0, block, newsize));
-#else
 	return xerror(Mshrink(0, block, newsize));
-#endif
 }
 
-/* GEM funkties */
+
+/* 
+ * GEM funkties 
+ */
 
 char *xshel_find(const char *file, int *error)
 {
 	char *buffer, *h;
 
-	if ((buffer = calloc(sizeof(LNAME), 1)) == NULL)			/* HR 240203 */
+	if ((buffer = calloc(sizeof(LNAME), 1)) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -846,9 +766,12 @@ char *xshel_find(const char *file, int *error)
 		{
 			if ((*error = _fullname(buffer)) == 0)
 			{
+			/*		HR 120803 not really a point anymore
 				if ((h = realloc(buffer, strlen(buffer) + 1)) == NULL)
 					h = buffer;
 				return h;
+			*/
+				return buffer;
 			}
 		}
 		free(buffer);
@@ -856,12 +779,17 @@ char *xshel_find(const char *file, int *error)
 	}
 }
 
+
+/* 
+ * Call a fileselector (make an extended call, if possible)
+ */
+
 char *xfileselector(const char *path, char *name, const char *label)
 {
 	char *buffer, *h;
 	int error, button;
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)			/* HR 240203 */
+	if ((buffer = malloc(sizeof(LNAME))) == NULL)
 	{
 		xform_error(ENSMEM);
 		return NULL;
@@ -869,7 +797,7 @@ char *xfileselector(const char *path, char *name, const char *label)
 	strcpy(buffer, path);
 
 	wind_update(BEG_UPDATE);
-	if (tos1_4() == TRUE)
+	if ( tos_version >= 0x104 )
 		error = fsel_exinput(buffer, name, &button, (char *) label);
 	else
 		error = fsel_input(buffer, name, &button);
@@ -884,15 +812,20 @@ char *xfileselector(const char *path, char *name, const char *label)
 	{
 		if ((error = _fullname(buffer)) == 0)
 		{
+			/*		HR 120803 not really a point anymore
 			if ((h = realloc(buffer, strlen(buffer) + 1)) == NULL)
 				h = buffer;
 			return h;
+			*/
+
+			return buffer;
 		}
 		xform_error(error);
 	}
 	free(buffer);
 	return NULL;
 }
+
 
 /********************************************************************
  *																	*
@@ -944,6 +877,10 @@ static int write_buffer(XFILE *file)
 }
 
 
+/* 
+ * Open a file 
+ */
+
 XFILE *x_fopen(const char *file, int mode, int *error)
 {
 	int result = 0, rwmode = mode & O_RWMODE;
@@ -986,6 +923,11 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 	return xfile;
 }
 
+
+/* 
+ * Open a memory area sa a file 
+ */
+
 XFILE *x_fmemopen(int mode, int *error)
 {
 	int result = 0, rwmode = mode & O_RWMODE;
@@ -1016,6 +958,11 @@ XFILE *x_fmemopen(int mode, int *error)
 	return xfile;
 }
 
+
+/* 
+ * Close a file 
+ */
+
 int x_fclose(XFILE *file)
 {
 	int error, rwmode = file->mode & O_RWMODE;
@@ -1039,6 +986,11 @@ int x_fclose(XFILE *file)
 
 	return error;
 }
+
+
+/* 
+ * Read file contents (not more than "lentgh" bytes)
+ */
 
 long x_fread(XFILE *file, void *ptr, long length)
 {
@@ -1112,6 +1064,12 @@ long x_fread(XFILE *file, void *ptr, long length)
 	}
 }
 
+
+/* 
+ * Write "length" bytes to a file;
+ * return (negative) error code (long!) or else number of bytes written 
+ */
+
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
 	long rem = length, n, size;
@@ -1133,7 +1091,12 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 				char *new;
 
 				if (file->buffer)
+				{
 					new = realloc(file->buffer, file->bufsize + 128);
+/* HR 120803: the official realloc doesnt initialize the new buffer */
+					if (new != file->buffer)
+						memcpy(new, file->buffer, file->bufsize);
+				}
 				else
 					new = malloc(128);
 
@@ -1191,6 +1154,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 	}
 }
 
+
 long x_fseek(XFILE *file, long offset, int mode)
 {
 	if (!file->memfile || (mode != 0) || (offset != 0))
@@ -1202,22 +1166,29 @@ long x_fseek(XFILE *file, long offset, int mode)
 	}
 }
 
-/* HR 240103: It is imparative that this function has a maximum
-              be it only to protect the stack in certain calling functions. */
+
+/* 
+ * It is imparative that this function has a maximum
+ * be it only to protect the stack in certain calling functions. 
+ */
+
 char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
 {
 	int l;
+	size_t ll;	/* a long is expected in some calls later */
+
 	long n;
 	char *s;
 
 	if ((n = x_fread(file, &l, sizeof(int))) == sizeof(int))
 	{
-		if (l > max - 1)		/* max is basically the size of an array that leaves place for a null character. */
-			l = max - 1;
+		ll = (size_t)l;
+		if (ll > max - 1)		/* max is basically the size of an array that leaves place for a null character. */
+			ll = max - 1;
 
 		if (string == NULL)
 		{
-			if ((s = malloc(l + 1)) == NULL)
+			if ((s = malloc(ll + 1L)) == NULL)
 			{
 				*error = ENSMEM;
 				return NULL;
@@ -1226,7 +1197,7 @@ char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
 		else
 			s = string;
 
-		if ((n = x_fread(file, s, l + 1)) != l + 1)
+		if ((n = x_fread(file, s, ll + 1L)) != ll + 1L) 
 		{
 			if (string == NULL)
 				free(s);
@@ -1245,9 +1216,15 @@ char *x_freadstr(XFILE *file, char *string, size_t max, int *error)
 	return s;
 }
 
+
+/* 
+ * Write a string to a file 
+ */
+
 int x_fwritestr(XFILE *file, const char *string)
 {
 	int l;
+
 	long n;
 
 	l = (int) strlen(string);
@@ -1255,11 +1232,16 @@ int x_fwritestr(XFILE *file, const char *string)
 	if ((n = x_fwrite(file, &l, sizeof(int))) < 0)
 		 return (int) n;
 
-	if ((n = x_fwrite(file, string, l + 1)) < 0)
+	if ((n = x_fwrite(file, string, (size_t)(l + 1) )) < 0)
 		return (int) n;
 
 	return 0;
 }
+
+
+/* 
+ * Read a string from a file, but not more than "n" characters 
+ */
 
 int x_fgets(XFILE *file, char *string, int n)
 {
@@ -1267,14 +1249,23 @@ int x_fgets(XFILE *file, char *string, int n)
 	int i = 1, read, write, error;
 	char *dest, *src, ch, nl = 0;
 
+/* DjV 076: why? Disabled to use these routines for the memory file
+
 	if (file->memfile)
 		return EINVFN;
+
+*/
+
+/* DjV 076: why ? Just a safety precaution maybe?
 
 	if ((file->mode & O_RWMODE) != O_RDONLY)
 	{
 		*string = 0;
 		return 0;
 	}
+*/
+
+	/* Has end-of-file been reached? */
 
 	if (x_feof(file) == TRUE)
 		return EEOF;
@@ -1326,15 +1317,26 @@ int x_fgets(XFILE *file, char *string, int n)
 	return 0;
 }
 
+
+/* 
+ * Return TRUE if end-of-file has been reached
+ */
+
 boolean x_feof(XFILE *file)
 {
 	return ((file->eof == TRUE) && (file->read == file->write)) ? TRUE : FALSE;
 }
 
+
+/* 
+ * Find whether files can be locked in this OS variant ? 
+ */
+
 void x_init(void)
 {
-	if (find_cookie('_FLK') != -1)		/* HR 151102 */
+	if (find_cookie('_FLK') != -1)
 		flock = TRUE;
 	else
 		flock = FALSE;
 }
+

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -39,20 +41,20 @@
 #define INSERT_DISK         -17
 
 #define EINVFN  -32     /* Onbekend funktienummer */
-#define EFILNF  -33     /* File niet gevonden */
-#define EPTHNF  -34     /* Pad niet gevonden */
+#define EFILNF  -33     /* File not found */
+#define EPTHNF  -34     /* Path not found */
 #define ENHNDL  -35     /* Geen file-handles meer */
-#define EACCDN  -36
+#define EACCDN  -36		/* Access denied (file readonly or already exists ) */ 
 #define EIHNDL  -37     /* Handle-nummer van file niet geldig */
 #define ENSMEM  -39     /* Niet genoeg geheugen */
 #define EIMBA   -40     /* Adres van geheugenblok niet geldig */
-#define EDRIVE  -46
+#define EDRIVE  -46		/* Invalid drive specification */
 #define ENSAME  -48     /* Files niet op hetzelfde logische loopwerk */
 #define ENMFIL  -49     /* Er kunnen geen files meer geopend worden */
-#define ELOCKED	-58		/* File is gelocked */
+#define ELOCKED	-58		/* File is locked */
 #define ENSLOCK	-59		/* Lock niet gevonden */
 #define GERANGE -64     /* Filepointer in ongeldig bereik */
-#define EINTRN  -65     /* Interne fout */
+#define EINTRN  -65     /* Internal error */
 #define EPLFMT  -66     /* Programma heeft niet het korrekte formaat om geladen te worden */
 #define EGSBF   -67     /* Fout bij Mshrink of Mfree */
 
@@ -64,6 +66,11 @@
 #define EREAD		-2049		/* Read error on file */
 #define EDSKFULL	-2050		/* Disk full */
 #define EEOF		-2051		/* End of file */
+
+/* Some other more-less file related errors */
+
+#define EFRVAL		-2053		/* Invalid value read from file */
+#define ENOMSG		-2054		/* Don't display message */
 
 /* -2064 t/m -2079 lengte fouten */
 

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,11 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+CfgNest icnt_config;
+
 int icnt_geticon(const char *name, ITMTYPE type);
-
 void icnt_settypes(void);
-
 void icnt_init(void);
 void icnt_default(void);
+
+#if !TEXT_CFG_IN
 int icnt_load(XFILE *file);
-int icnt_save(XFILE *file);
+#endif

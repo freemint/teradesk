@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -68,14 +70,14 @@ static WD_FUNC xd_wdfuncs =
 	__xd_moved,
 	__xd_hndlmenu,
 	__xd_top
+	,0L, 
+	0L 
 };
 
 /*
  * Funktie voor het afhandelen van een keyboard event in een
  * niet modale dialoogbox.
  */
-
-#pragma warn -par
 
 static int __xd_hndlkey(WINDOW *w, int key, int kstate)
 {
@@ -114,14 +116,10 @@ static int __xd_hndlkey(WINDOW *w, int key, int kstate)
 	return key_handled;
 }
 
-#pragma warn .par
-
 /*
  * Funktie voor het afhandelen van een button event in een
  * niet modale dialoogbox.
  */
-
-#pragma warn -par
 
 static void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 {
@@ -149,8 +147,6 @@ static void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int ksta
 		}
 	}
 }
-
-#pragma warn .par
 
 /*
  * Funktie voor het afhandelen van een window topped event in een
@@ -226,8 +222,12 @@ static void __xd_top(WINDOW *w)
  */
 
 int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-			  int start, int x, int y, OBJECT *menu, RECT *xywh,
-			  int zoom, const char *title)
+			  int start, int x, int y, OBJECT *menu, 
+#if _DOZOOM
+/* DjV 060 280603 conditional */
+                RECT *xywh, int zoom, 
+#endif
+              const char *title)
 {
 	int error;
 	RECT wsize;
@@ -297,12 +297,15 @@ int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
 
 		xw_open(w, &wsize);
 
+#if _DOZOOM
+/* DjV 060 280603 conditonal */
 		if (zoom && xywh)
 		{
 			graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
 						 wsize.x, wsize.y, wsize.w, wsize.h);
 			zoom = FALSE;
 		}
+#endif
 	}
 
 	xd_wdupdate(END_UPDATE);
@@ -310,7 +313,12 @@ int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
 	return error;
 }
 
-void xd_nmclose(XDINFO *info, RECT *xywh, int zoom)
+void xd_nmclose(XDINFO *info
+#if _DOZOOM 
+/* DjV 060 280603 conditional */
+, RECT *xywh, int zoom
+#endif
+)
 {
 	XDINFO *h = xd_nmdialogs, *prev = NULL;
 	WINDOW *w = info->window;
@@ -329,11 +337,14 @@ void xd_nmclose(XDINFO *info, RECT *xywh, int zoom)
 	xw_close(w);
 	xw_delete(w);
 
+#if _DOZOOM
+/* DjV 060 280603 conditional */
 	if (zoom && xywh)
 	{
 		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
 		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
+#endif
 
 	if (prev == NULL)
 		xd_nmdialogs = info->prev;

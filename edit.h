@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,9 +22,10 @@
 
 void edit_init(void);
 int edit_load(XFILE *file);
-int edit_save(XFILE *file);
 void edit_default(void);
 
 boolean edit_installed(void);
-void set_editor(void);
+void edit_set(const char *name);
 boolean call_editor(WINDOW *w, int selected, int kstate);
+void unset_edit(APPLINFO **list);
+boolean check_edit(APPLINFO **list, boolean edit, int pos);

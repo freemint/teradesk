@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,7 +23,7 @@
 boolean clip_desk(RECT *r);
 void clipdesk_on(void);
 void clear(RECT *r);
-void pclear(RECT *r); /* DjV 011 030203 */
+void pclear(RECT *r);
 void invert(RECT *r);
 boolean rc_intersect2(RECT *r1, RECT *r2);
 boolean inrect(int x, int y, RECT *r);
@@ -33,3 +35,4 @@ int load_colors(XFILE *file);
 int save_colors(XFILE *file);
 void set_rect_default(void);
 void draw_rect(int x1, int y1, int x2, int y2);
+

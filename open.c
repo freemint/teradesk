@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -12,50 +14,82 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stdlib.h>
-#include <string.h>
+#include <string.h> 
 #include <vdi.h>
 #include <mint.h>
 #include <xdialog.h>
+
 #include "desk.h"
 #include "error.h"
 #include "open.h"
 #include "printer.h"
 #include "resource.h"
 #include "xfilesys.h"
+#include "font.h"
+#include "config.h"
+#include "window.h" /* before dir.h and viewer.h */
 #include "dir.h"
-#include "edit.h"
 #include "file.h"
 #include "viewer.h"
-#include "window.h"
+#include "lists.h"
+#include "slider.h"
+#include "filetype.h"
 #include "applik.h"
-#include "library.h" /* DjV 028 150203 */
-#include "prgtype.h" /* DjV 028 160203 */
+#include "edit.h"
+#include "library.h"
+#include "prgtype.h"
 
-boolean item_open(WINDOW *w, int item, int kstate)
+
+boolean item_open(WINDOW *inw, int initem, int kstate)
 {
-	const char *path;
-	LNAME efpath;
-	char *ename;  /* DjV 028 150203 */ /* HR 240203 */
+	const char 
+		*path;			/* constructed path of the item to open */
 
-	int button;
-	ITMTYPE type;
-	APPLINFO *appl;
-	boolean alternate, deselect = FALSE;
+	LNAME 
+		epath,			/* Path of the item specified in "Open" */ 
+		ename;			/* name of the item specified in "Open" */
+
+	char
+		*blank,			/* pointer to a ' ' in the name */ 
+		*cmline = NULL;	/* Command passed to application from "Open" dialog" */
+
+	int 
+		button;			/* index of the button pressed */
+
+	ITMTYPE 
+		type;			/* item type (ffile, folder, program... ) */
+
+	APPLINFO 
+		*appl;			/* Pointer to information on the app to run */
+
+	boolean 
+		alternate, 
+		deselect = FALSE;
+
+	WINDOW
+		*w = inw;		/* "inw", locally (i.e. maybe changed) */
+
+	DIR_WINDOW 
+		dw;
+
+	int 
+		item = initem;	/* "item", locally (i.e. maybe changed) */
 
 	alternate = (kstate & 8) ? TRUE : FALSE;
 
-	if ( w != NULL )			/* DjV 028 050203 */
-	{							/* DjV 028 150203 */
+	if ( w != NULL )
+	{
 		type = itm_type(w, item);
-	/* DjV 028 050203 ---vvv---*/
+		if ( alternate && (type == ITM_PROGRAM ) )
+			type = ITM_FILE;
 	}
 	else
 	{
@@ -63,121 +97,148 @@ boolean item_open(WINDOW *w, int item, int kstate)
 		 * Open a form to explicitely enter item name
 		 */
 
-		rsc_title( newfolder, NDTITLE, OPENITEM );
-		*dirname = 0;
+		rsc_title( newfolder, NDTITLE, DTOPENIT );
+		newfolder[DIRNAME].ob_flags |= HIDETREE;
+		newfolder[OPENNAME].ob_flags &= ~HIDETREE;
 
 		button = xd_dialog( newfolder, ROOT );
 
 		if ( button == NEWDIROK )
 		{
-			/* Continue only if a name was entered */
+			/* Remove leading and trailing blanks from the line */
 
-			cv_formtofn( efpath, dirname );
-			strip_name ( efpath, efpath );
+			strip_name(openline, openline);
 
-			if ( strlen(efpath) == 0 )	
+			/* Continue only if something was entered */
+
+			if ( strlen(openline) == 0 )	
 				return FALSE;
-
-			ename = fn_get_name (efpath);
 
 			/* 
-			 * Try to determine item type
-			 * Currently, only executable files (programs)
-			 * and files assigned to applications
-			 * are recognized
+			 * Try to see if there is a command attached.
+			 * Separate comand from item name by inserting a '0'
+			 * instead of the (first) space between the two
 			 */
 
-			if ( prg_isprogram(ename) ) /* this is a program */	
-				type = ITM_PROGRAM;
-			else if ( (appl = app_find(ename)) != NULL )
-				type = ITM_FILE;
-			else
+			if ( (blank = strchr(openline,' ') ) != NULL )
+			{
+				*blank = 0;
+				cmline = blank;
+				cmline++;
+			}
+
+			/* Convert item name to uppercase */
+#if _MINT_
+			if (!mint)
+#endif
+				strupr(openline);
+
+			/* Separate "openline" into "ename" and "epath" */
+
+			split_path(epath, ename, openline);
+
+			/* Try to divine which type of item this is */
+
+			type = diritem_type( openline );
+
+			/* Restore full line (for the next opening) */
+
+			if ( blank != NULL )
+				*blank = ' ';
+
+			/* Can't do anything with unknown type of item */
+
+			if ( type == ITM_NOTUSED )
 				return FALSE;
+
+			/* 
+			 * Simulate some structures of a directory window so that
+			 * routines expecting an item selected in a window can be used
+			 */
+
+			dir_simw( &dw, epath, ename, type, (size_t)1, (int)0 );
+
+			w = (WINDOW *)(&dw);
+			item = 0;
 		}
 		else
 			return FALSE;
 	}
-	/* DjV 028 050203 ---^^^--- */						
+
+	/* Action according to type of the item */
 
 	switch (type)
 	{
 	case ITM_TRASH:
 	case ITM_PRINTER:
-		alert_printf(1, MICNOPEN);
+		alert_iprint(MICNOPEN); 
 		break;
 	case ITM_DRIVE:
-		if ((path = itm_fullname(w, item)) != NULL)
+		if ( ( path = itm_fullname(w, item) ) != NULL )
 		{
-			if (check_drive(path[0] - 'A') == FALSE)
+			if (check_drive( (path[0] & 0xDF) - 'A') == FALSE)
 			{
 				free(path);
 				return FALSE;
 			}
 			else
-				/* deselect = dir_add_window(path); DjV 017 280103 */
-				deselect = dir_add_window(path, NULL); /* DjV 017 280103 */
+				deselect = dir_add_window(path, NULL); 
 		}
 		else
 			return FALSE;
 		break;
 	case ITM_PREVDIR:
 		if ((path = fn_get_path(wd_path(w))) != NULL)
-			/* deselect = dir_add_window(path); DjV 017 280103 */
-			deselect = dir_add_window(path, NULL); /* DJV 017 280103 */
+			deselect = dir_add_window(path, NULL); 
 		else
 			return FALSE;
 		break;
 	case ITM_FOLDER:
 		if ((path = itm_fullname(w, item)) != NULL)
-			/* deselect = dir_add_window(path); DjV 017 280103 */
-			deselect = dir_add_window(path, NULL); /* DjV 017 280103 */
+			deselect = dir_add_window(path, NULL); 
 		else
 			return FALSE;
 		break;
 	case ITM_PROGRAM:
-		/* if ((path = itm_fullname(w, item)) != NULL) DjV 028 050203 */
-		if ( (path = ( (w != NULL) ? itm_fullname(w, item) : &efpath ) ) != NULL) /* DjV 028 050203 */
+		if (( path = itm_fullname(w, item) ) != NULL )
 		{
-			deselect = app_exec(path, NULL, NULL, NULL, 0, kstate, FALSE);
-			if ( w != NULL ) /* DjV 028 160203 */
-				free(path);
+			if ( cmline == NULL )
+				deselect = app_exec(path, NULL, NULL, NULL, 0, kstate, FALSE);
+			else
+				deselect = app_exec(path, NULL, NULL, (int *)cmline, -1, kstate, FALSE);		/* use efpath here to explicitely pass filename to application */
+			free(path);
 		}
+
 		break;
 	case ITM_FILE:
-		/* DjV 028 160203 ---vvv--- */
-		if ( w == NULL && appl != NULL )
-			/* use efpath here to explicitely pass filename to application */								
-			deselect = app_exec(efpath, appl, w, &item, -1, kstate, FALSE);
+		if ((alternate == FALSE) && (appl = app_find(itm_name(w, item))) != NULL)
+			deselect = app_exec(NULL, appl, w, &item, 1, kstate, FALSE);
 		else
 		{
-		/* DjV 028 160203 ---^^^--- */
-			if ((alternate == FALSE) && (appl = app_find(itm_name(w, item))) != NULL)
-				deselect = app_exec(NULL, appl, w, &item, 1, kstate, FALSE);
-			else
+			/* File type assignment has been bypassed: now show/edit/cancel */
+
+			button = alert_printf(1, AOPENFIL);
+
+			switch (button)
 			{
-				if (edit_installed() == FALSE)
-					openfile[EDITFILE].ob_state |= DISABLED;
-				else
-					openfile[EDITFILE].ob_state &= ~DISABLED;
-
-				button = xd_dialog(openfile, 0);
-
-				switch (button)
-				{
-				case SHOWFILE:
+				case 1:
+					/* Open a text window */
 					deselect = txt_add_window(w, item, kstate);
 					break;
-				case EDITFILE:
-					deselect = call_editor(w, item, kstate);
+				case 2:
+					/* Call the editor program */
+					if ( edit_installed() )
+						deselect = call_editor(w, item, kstate);
+					else
+						alert_iprint(TNOEDIT);
 					break;
-				case PRTFILE:
-					deselect = prt_file(w, item);
+				case 3:
 					break;
-				}
 			}
-		} /* DjV 028 160203 w == NULL ? */
+		}
 		break;
 	}
-
 	return deselect;
 }
+
+

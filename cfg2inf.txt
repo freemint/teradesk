@@ -1,0 +1,30 @@
+Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
+             V2.1   15-11-02, Copyright 2002  H. Robbers.
+             V2.3           , Copyright 2003  H. Robbers, Dj. Vukovic
+             V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic
+             
+                     
+
+CFG2INF is a utility which can convert binary configuration files
+of TeraDesk V2.* into text configuration files of TeraDesk 3.*;
+The program is basically a hacked compilation of TeraDesk itself, 
+containing both the old code which can read old binary configuration 
+files, and new code to write text configuration files.
+
+Use CFG2INF.PRG to read old configurations of TeraDesk, then Save
+settings, or Save settings as...; do not use CFG2INF for other
+purposes, as some other functions may not work or may work only
+partially. When you are finished converting files, you'd best
+dump CFG2INF.PRG to the trash bin.
+
+CFG2INF.PRG uses DESKTOP.RSC of TeraDesk V3.00; do not attempt to
+put it in a directory containing any other version of Teradesk, 
+one of them would surely not work correctly because of different
+resource files.
+
+Icon files (ICONS.RSC and/or CICONS.RSC) used by TeraDesk must be 
+present in the directory where CFG2INF.PRG is. 
+
+                                      Djordje Vukovic
+                                      Beograd; December 23rd 2003
+

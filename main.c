@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
@@ -40,42 +42,204 @@
 #include "resource.h"
 #include "version.h"
 #include "xfilesys.h"
+#include "config.h"
+#include "window.h"
 #include "dir.h"
-#include "edit.h"
 #include "file.h"
+#include "lists.h"
+#include "slider.h"
 #include "filetype.h"
 #include "icon.h"
 #include "prgtype.h"
 #include "screen.h"
-#include "window.h"
-#include "applik.h"
 #include "icontype.h"
-#include "va.h"		/* HR 060203 */
-#include "video.h" /* DjV 007 150103 */
+#include "applik.h"
+#include "edit.h"
+#include "va.h"
+#include "video.h"
 
 #define RSRCNAME	"desktop.rsc"
 
 #define EVNT_FLAGS	(MU_MESAG|MU_BUTTON|MU_KEYBD)
 
 Options options;
-int ap_id;
-char *optname;
-int vdi_handle, ncolors, npatterns, max_w, max_h, nfonts; /* DjV 011 180103 */
-SCRINFO screen_info;
-FONT def_font;
-static int menu_items[] =
-{MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
+V3_options v3_options;
 
-int chrez = FALSE; 	/* DjV 007 050103 */
 
-#if _MINT_
-boolean mint = FALSE, magx = FALSE,	geneva = FALSE;	/* HR 151102 */ /* DjV 035 080203 for geneva */
+CfgNest opt_config, short_config, dsk_config;
+
+/* Root level of configuration data */
+
+CfgEntry Config_table[] =
+{
+	{CFG_NEST, 0, "options",	 opt_config	 },
+	{CFG_NEST, 0, "shortcuts",	 short_config},
+	{CFG_NEST, 0, "deskicons",	 dsk_config	 },
+	{CFG_NEST, 0, "filetypes",	 ft_config	 },
+	{CFG_NEST, 0, "icontypes",	 icnt_config },
+	{CFG_NEST, 0, "apptypes",    prg_config	 },
+	{CFG_NEST, 0, "applications",app_config	 },
+	{CFG_NEST, 0, "windows",	 wd_config	 },
+	{CFG_FINAL}, /* file completness check */
+	{CFG_LAST}
+};
+
+
+
+#if !TEXT_CFG_IN
+static int dial_mode;
+
 #endif
 
-boolean quit = FALSE, shutdown = FALSE; /* DjV 013 291202 */;
+/*
+ * Configuration table for desktop options
+ * Take care to keep "infv" at the first place.
+ * Bit flags are written in hex format for easier 
+ * manipulation by humans.
+ */
 
-char *global_memory;
+CfgEntry Options_table[] =
+{
+	{CFG_HDR,0,"options" },
+	{CFG_BEG},
+	/* file version */
+	{CFG_X, 0, "infv", &options.version	    }, 		/* file version */
+	/* Copy preferences */
+	{CFG_X, 0, "pref", &options.cprefs		}, 		/* bit flags !!! copy prefs */
+	/* settings of the View menu */
+	{CFG_H, 0, "mode", &options.mode		}, 		/* text/icon mode */
+	{CFG_H, 0, "sort", &options.sort		}, 		/* sorting key */
+	{CFG_X, 0, "attr", &options.attribs	    }, 		/* Bit flags !!! global attributes to show */
+	{CFG_X, 0, "flds", &options.V2_2.fields	}, 		/* Bit flags !!! dir. fields to show  */
+	/* sizes of diverse items */
+	{CFG_D, 0, "plin", &options.V2_2.plinelen	},	/* printer line length */
+	{CFG_D, 0, "tabs", &options.tabsize	    }, 		/* tab size    */
+	{CFG_D, 0, "buff", &options.bufsize	    }, 		/* copy buffer size */
+	{CFG_L, 0, "maxd",&v3_options.max_dir	}, 		/* initial dir size */
+	/* desktop preferences */
+#if TEXT_CFG_IN
+	{CFG_D, 0, "dial", &options.dial_mode	},
+#else
+	{CFG_D, 0, "dial", &dial_mode			},		/* Cant take the address of a bitfield */
+#endif
+	/* video options */
+	{CFG_X, 0, "vidp", &options.V2_2.vprefs	}, 		/* Bit flags ! */
+	{CFG_D, 0, "vres", &options.V2_2.vrez		},	/* video resolution */
+	/* patterns and colours */
+	{CFG_H,0, "dpat", &options.dsk_pattern }, 		/* desk pattern */
+	{CFG_H,0, "dcol", &options.dsk_color	},		/* desk colour  */
+	{CFG_H,0, "wpat", &options.V2_2.win_pattern},	/* window pattern */
+	{CFG_H,0, "wcol", &options.V2_2.win_color	},	/* window colour  */
 
+	{CFG_ENDG},
+	{CFG_LAST}
+};
+
+
+/*
+ * Configuration table for menu shortcuts. If menu is changed, 
+ * this table should always be updated to match actual menu items.
+ */
+
+CfgEntry Shortcut_table[] =
+{
+	{CFG_HDR,0, "shortcuts" },
+	{CFG_BEG},
+
+	/* File menu */
+	{CFG_X, 0, "open", &options.V2_2.kbshort[MOPEN		- MFIRST]	},
+	{CFG_X, 0, "show", &options.V2_2.kbshort[MSHOWINF	- MFIRST]	},
+	{CFG_X, 0, "newd", &options.V2_2.kbshort[MNEWDIR	- MFIRST]	},
+	{CFG_X, 0, "comp", &options.V2_2.kbshort[MCOMPARE	- MFIRST]	},
+	{CFG_X, 0, "srch", &options.V2_2.kbshort[MSEARCH	- MFIRST]	},
+	{CFG_X, 0, "prin", &options.V2_2.kbshort[MPRINT		- MFIRST]	},
+	{CFG_X, 0, "dele", &options.V2_2.kbshort[MDELETE	- MFIRST]	},
+	{CFG_X, 0, "clos", &options.V2_2.kbshort[MCLOSE		- MFIRST]	},
+	{CFG_X, 0, "wclo", &options.V2_2.kbshort[MCLOSEW	- MFIRST]	},
+	{CFG_X, 0, "cycl", &options.V2_2.kbshort[MCYCLE		- MFIRST]	},
+	{CFG_X, 0, "sela", &options.V2_2.kbshort[MSELALL	- MFIRST]	},
+#if MFCOPY
+	{CFG_X, 0, "copy", &options.V2_2.kbshort[MFCOPY		- MFIRST]	},
+	{CFG_X, 0, "form", &options.V2_2.kbshort[MFFORMAT	- MFIRST]	},
+#else
+	{CFG_X, CFG_INHIB, "copy", &inhibit	},
+	{CFG_X, CFG_INHIB, "form", &inhibit	},
+#endif
+	{CFG_X, 0, "quit", &options.V2_2.kbshort[MQUIT		- MFIRST]	},
+
+	/* View menu */
+	{CFG_X, 0, "shtx", &options.V2_2.kbshort[MSHOWTXT	- MFIRST]	},
+	{CFG_X, 0, "shic", &options.V2_2.kbshort[MSHOWICN	- MFIRST]	},
+	{CFG_X, 0, "snam", &options.V2_2.kbshort[MSNAME		- MFIRST]	},
+	{CFG_X, 0, "sext", &options.V2_2.kbshort[MSEXT		- MFIRST]	},
+	{CFG_X, 0, "sdat", &options.V2_2.kbshort[MSDATE		- MFIRST]	},
+	{CFG_X, 0, "ssiz", &options.V2_2.kbshort[MSSIZE		- MFIRST]	},
+	{CFG_X, 0, "suns", &options.V2_2.kbshort[MSUNSORT	- MFIRST]	},
+	{CFG_X, 0, "asiz", &options.V2_2.kbshort[MSHSIZ		- MFIRST]	},
+	{CFG_X, 0, "adat", &options.V2_2.kbshort[MSHDAT		- MFIRST]	},
+	{CFG_X, 0, "atim", &options.V2_2.kbshort[MSHTIM		- MFIRST]	},
+	{CFG_X, 0, "aatt", &options.V2_2.kbshort[MSHATT		- MFIRST]	},
+	{CFG_X, 0, "smsk", &options.V2_2.kbshort[MSETMASK	- MFIRST]	},
+
+	/* Options menu */
+	{CFG_X, 0, "appl", &options.V2_2.kbshort[MAPPLIK	- MFIRST]	},
+	{CFG_X, 0, "ptyp", &options.V2_2.kbshort[MPRGOPT	- MFIRST]	},
+	{CFG_X, 0, "dski", &options.V2_2.kbshort[MIDSKICN	- MFIRST]	},
+	{CFG_X, 0, "wini", &options.V2_2.kbshort[MIWDICN	- MFIRST]	},
+	{CFG_X, 0, "remi", &options.V2_2.kbshort[MREMICON	- MFIRST]	},
+	{CFG_X, 0, "pref", &options.V2_2.kbshort[MOPTIONS	- MFIRST]	},
+	{CFG_X, 0, "copt", &options.V2_2.kbshort[MCOPTS		- MFIRST]	},
+	{CFG_X, 0, "wopt", &options.V2_2.kbshort[MWDOPT		- MFIRST]	},
+	{CFG_X, 0, "vopt", &options.V2_2.kbshort[MVOPTS		- MFIRST]	},
+	{CFG_X, 0, "ldop", &options.V2_2.kbshort[MLOADOPT	- MFIRST]	},
+	{CFG_X, 0, "svop", &options.V2_2.kbshort[MSAVESET	- MFIRST]	},
+	{CFG_X, 0, "svas", &options.V2_2.kbshort[MSAVEAS	- MFIRST]	},
+
+	{CFG_ENDG},
+	{CFG_LAST}
+};
+
+
+
+int 
+	ap_id,		/* application id. */
+	vdi_handle, /* current VDI station handle */
+	ncolors,	/* number of available colours */ 
+	npatterns,	/* number of available patterns */ 
+	max_w,		/* screen width */ 
+	max_h,		/* scree height */ 
+	nfonts;		/* number of available fonts */
+
+SCRINFO screen_info;
+FONT def_font;
+
+static int 
+	menu_items[] = {MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
+
+#if _MINT_
+boolean
+	mint = FALSE, 
+	magx = FALSE,	
+	geneva = FALSE;
+#endif
+
+boolean
+	chrez = FALSE, 
+	quit = FALSE, 
+	shutdown = FALSE;
+
+char 
+	*optname,	/* name of old configuration file (teradesk.cfg) */ 
+	*infname,	/* name of V3 configuration file (teradesk.inf)  */ 
+	*palname,	/* name of colour palette file (teradesk.pal)    */
+	*global_memory,
+	*infide = "TeraDesk-inf"; /* File identifier header */
+
+
+/*
+ * Below is supposed to be the only text embedded in the code:
+ * information (in several languages) that a resource file can not be found
+ */
 
 char msg_resnfnd[] = "[1][Unable to find resource file.|"
 					 "Resource file niet gevonden.|"
@@ -84,10 +248,15 @@ char msg_resnfnd[] = "[1][Unable to find resource file.|"
 
 int hndlmessage(int *message);
 
+int 
+	tos_version,
+	aes_version;
+
 /*
- * Execute the desktop.bat file.
+ * Execute teradesk.bat file, if there is any
  *
- * Result : FALSE if there is no error, TRUE if there is an error.
+ * Result : FALSE if there is no error,
+ * TRUE if there is an error (a very intuitive concept!).
  */
 
 static boolean exec_deskbat(void)
@@ -99,22 +268,39 @@ static boolean exec_deskbat(void)
 
 	clr_argv();
 
-	/* Initialize the name of the configuration file. */
+	/* 
+	 * Initialize the names of the configuration file(s) 
+	 * teradesk.inf = main configuration file
+	 * teradesk.pal = colour palette file
+	 * Note: in teradesk.inf it is specified whether teradesk.pal
+	 * will be used at all.
+	 */
 
-	if ((optname = strdup("desktop.cfg")) == NULL)
+	if ((palname = strdup("teradesk.pal")) == NULL)
 		error = ENSMEM;
 	else
-	{
-		/* Find the desktop.bat file. */
+		if ((infname = strdup("teradesk.inf")) == NULL)
+			error = ENSMEM;
+		else
+#if !TEXT_CFG_IN
+			if ((optname = strdup("desktop.cfg")) == NULL)
+				error = ENSMEM;
+			else
+#endif
+			{
+				/* Find teradesk.bat file. */
 
-		if ((batname = xshel_find("desktop.bat", &error)) != NULL)
-		{
-			/* Execute it. */
+#if _BATFILE
+				if ((batname = xshel_find("teradesk.bat", &error)) != NULL)
+				{
+					/* Execute it. */
 
-			exec_bat(batname);
-			free(batname);
-		}
-	}
+					exec_bat(batname);
+					free(batname);
+				}
+#endif
+			}
+
 
 	if ((error != 0) && (error != EFILNF))
 	{
@@ -125,112 +311,76 @@ static boolean exec_deskbat(void)
 		return FALSE;
 }
 
+
+/*
+ * Show information on current versions of teradesk, TOS, AES...
+ */
+
 static void info(void)
 {
-	/* DjV 009 120203 ---vvv--- */
-	/* Note: constant part of info for this dialog is handled in resource.c */
-	long stsize, ttsize; /* size of ST-RAM and TT/ALT-RAM */
-	if ( tos2_0() )
+	/* 
+	 * Note: constant part of info for this dialog is handled in resource.c 
+	 * This involves setting teradesk name and version, etc.
+	 */
+
+	long stsize, ttsize; 			/* sizes of ST-RAM and TT/ALT-RAM */
+
+	/* 
+	 * Inquire about memory size. At least TOS 2.06 is needed in order
+	 * to inquire about TT/Alt memory.
+	 * Note that MagiC reports as TOS 2.00 only; thefefore it is 
+	 * explicitely tested for.
+	 */
+#if _MINT_
+	if ( magx || (tos_version >= 0x206) )
+#else
+	if ( tos_version >=0x206 )
+#endif
 	{
-		(void *)stsize = Mxalloc( -1L, 0 );			/* HR 230203; void * */
-		(void *)ttsize = Mxalloc( -1L, 1 );
+		stsize = (long)Mxalloc( -1L, 0 );	
+		ttsize = (long)Mxalloc( -1L, 1 );
 	}
 	else
 	{
-		(void *)stsize = Malloc( -1L );
+		stsize = (long)Malloc( -1L );
 		ttsize = 0L;
 	}
-	/* rsc_ltoftext(infobox, INFOFMEM, (long) x_alloc(-1L)); */
-	rsc_ltoftext(infobox, INFSTMEM, stsize ); 
+
+	/* Display currently available memory */
+
+	rsc_ltoftext(infobox, INFSTMEM, stsize );
 	rsc_ltoftext(infobox, INFTTMEM, ttsize ); 
-	/* DjV 009 120203 ---^^^--- */
+
 	xd_dialog(infobox, 0);
 }
 
-/* DjV 008 251202:  ---vvv--- */
 
-/* showhelp displays two help dialogs on HELP key */
+/*
+ * Display two consecutive help dialogs on HELP key
+ * or, if <Shift><Help> is pressed, try to call ST-Guide.
+ * Note: currently, there is no notification if call to
+ * st-guide is not successful.  
+ */
 
-static void showhelp (void)
+static void showhelp (unsigned int key) 		
 {
-
 	int button;
 
-	button = xd_dialog( helpno1, 0 );
-	if ( button == HELP1OK ) xd_dialog( helpno2, 0 );
-
-}
-
-/* DjV 008 251202  ---^^^--- */
-
-/********************************************************************
- *																	*
- * Hulpfunkties voor dialoogboxen.									*
- * HR 151102 strip_name, cramped_name courtesy XaAES				*
- *																	*
- ********************************************************************/
-
-/* HR 220401: strip leading and trailing spaces. */
-
-/* static DjV 028 060203 */
-void strip_name(char *to, const char *fro)
-{
-	const char *last = fro + strlen(fro) - 1;
-	while (*fro && *fro == ' ')  fro++;
-	if (*fro)
-	{
-		while (*last == ' ')
-			last--;
-		while (*fro && fro != last + 1)
-			*to++ = *fro++;
-	}
-	*to = 0;
-}
-
-/* should become c:\s...ng\foo.bar */
-
-void cramped_name(const char *s, char *t, int w)
-{
-	const char *q=s;
-	char *p=t, tus[256];
-	int l, d, h;
-
-	l = strlen(q);
-	d = l - w;
-
-	if (d > 0)
-	{
-		strip_name(tus, s);
-		q = tus;
-		l = strlen(tus);
-		d = l - w;
-	}
-
-	if (d <= 0)
-		strcpy(t,s);
+	if ( key & XD_SHIFT )
+		button = va_start_prg("\\ST-GUIDE", "*:\\TERADESK.HYP");
 	else
 	{
-		if (w < 12)		/* 8.3 */
-			strcpy(t, q+d); /* only the last ch's */
-		else
-		{
-			h = (w-3)/2;
-			strncpy(p,q,h);
-			p+=h;
-			*p++='.';
-			*p++='.';
-			*p++='.';
-			strcpy(p,q+l-h);
-		}
+		button = xd_dialog( helpno1, 0 );
+		if ( button == HELP1OK ) 
+			xd_dialog( helpno2, 0 );
 	}
 }
 
-char *strsncpy(char *dst, const char *src, size_t len)	/* HR 120203: secure cpy (0 --> len-1) */
-{
-	strncpy(dst, src, len - 1);		/* len is typical: sizeof(achararray) */
-	*(dst + len - 1) = 0;
-	return dst;
-}
+
+/*
+ * Convert a number (range 0:99 only) into string
+ * (leading zeros shown)
+ */
 
 void digit(char *s, int x)
 {
@@ -239,84 +389,12 @@ void digit(char *s, int x)
 	s[1] = x % 10 + '0';
 }
 
-/* HR 240103 */
-void cv_tos_fn2form(char *dest, const char *source)
-{
-	int s = 0, d = 0;
-
-	while ((source[s] != 0) && (source[s] != '.'))
-		dest[d++] = source[s++];
-	if (source[s] == 0)
-		dest[d++] = 0;
-	else
-	{
-		while (d < 8)
-			dest[d++] = ' ';
-		s++;
-		while (source[s] != 0)
-			dest[d++] = source[s++];
-		dest[d++] = 0;
-	}
-}
-
-/* This_is_a_thirty_two__bytes_name */
-
-/* HR 240103: wrapper function for editable and possibly userdef fields. */
-void cv_fntoform(OBJECT *ob, const char *src)
-{
-	char *dst = xd_get_obspec(ob).tedinfo->te_ptext;
-	int  l    = xd_get_obspec(ob).tedinfo->te_txtlen;
-	
-#if _MINT_
-	if (ob->ob_flags & EDITABLE)	/* HR 240103: cramping not applicable. */
-	{
-		if ((ob->ob_type&0xff) == XD_SCRLEDIT)
-			l = sizeof(LNAME);			/* HR 240203 */
-		strsncpy(dst, src, l);			/* HR 230203: secure copy */
-	}
-	else
-		cramped_name(src, dst, l);			/* HR 151102 */
-#else
-		cv_tos_fn2form(dst, src);
-#endif
-}
-
-/* HR 240103 */
-void cv_tos_form2fn(char *dest, const char *source)
-{
-	int s = 0, d = 0;
-
-	while ((source[s] != 0) && (s < 8))
-		if (source[s] != ' ')
-			dest[d++] = source[s++];
-		else
-			s++;
-	if (source[s] == 0)
-		dest[d++] = 0;
-	else
-	{
-		dest[d++] = '.';
-		while (source[s] != 0)
-			if (source[s] != ' ')
-				dest[d++] = source[s++];
-			else
-				s++;
-		dest[d++] = 0;
-	}
-}
-
-void cv_formtofn(char *dest, const char *source)
-{
-#if _MINT_		/* HR 151102 */
-	strcpy(dest,source);
-#else
-	cv_tos_form2fn(dest, source);
-#endif
-}
 
 /* 
- * Generalize set_opt to change display of any options button from bit flags, 
- * not only related to cprefs
+ * Generalized set_opt to change display of any options button from bit flags, 
+ * not only those related to cprefs.
+ * In fact it can set option buttons from boolean variables as well
+ * (then set opt to 1)
  */
 
 void set_opt( OBJECT *tree, int flags, int opt, int button)
@@ -327,7 +405,10 @@ void set_opt( OBJECT *tree, int flags, int opt, int button)
 		tree[button].ob_state &= ~SELECTED;		
 }
 
-/* Inverse function to the above- set flags from the button */
+
+/* 
+ * Inverse function to the above- set bit flag from button id. 
+ */
 
 void get_opt( OBJECT *tree, int *flags, int opt, int button)
 {
@@ -335,8 +416,12 @@ void get_opt( OBJECT *tree, int *flags, int opt, int button)
 		*flags |= opt;
 	else
 		*flags &= ~opt;
-
 }
+
+
+/* 
+ * Set dialogs to a specific display mode, without too many arguments 
+ */
 
 static void set_dialmode(void)
 {
@@ -344,16 +429,14 @@ static void set_dialmode(void)
 }
 
 
-/* DjV 019 080103 ---vvv--- */
-
 /* See also desk.h */
 
-/* 
+/*
  * A routine for displaying a keyboard shortcut in an ASCII readable form; 
  * <DEL>, <BS>, <TAB> and <SP> are displayed as "DEL", "BS", "TAB" and "SP",
  * other single characters are represented by that character;
  * "control" is represented by "^";
- * Uppercase or ctrl-uppercase are assumed;
+ * Uppercase or ctrl-uppercase are always assumed;
  * resultant string is never more than 4 characters long;
  * XD_CTRL is used for convenience; no need to define a new flag
  */
@@ -367,7 +450,7 @@ static void disp_short
 {
 	int i,j;		/* counters */
 
-	i = 3;			/* position of the leftmost character */
+	i = 3;			/* position of the leftmost character in the shortcut text */
 
 	switch ( kbshort & 0xFF )
 	{
@@ -398,10 +481,10 @@ static void disp_short
 	if ( kbshort & XD_CTRL )	/* Preceded by ^ ? */
 		string[i--] = '^';		
 	
-	for ( j = i; j >= 0; j-- ) /* fill blanks to the left */
+	for ( j = i; j >= 0; j-- )	/* fill blanks to the left */
 		string[j] = ' ';	 
 	
-	if ( i >= 0 && left )		/* if needed- left justify, 0 terminate */
+	if ( i >= 0 && left )		/* if needed- left justify, terminate with 0 */
 	{
 		string[4] = 0;
 		strip_name( string, string );
@@ -411,13 +494,13 @@ static void disp_short
 
 
 /* 
- * A routine for inserting keyboard menu shortcuts into menu texts
+ * A routine for inserting keyboard menu shortcuts into menu texts;
  * it also marks where the domain of a new menu title begins;
  * for this, bit-flag XD_ALT is used (just convenient, no need to define
  * something else)
  */
 
-static void ins_shorts(void)
+static void ins_shorts(void) 
 {
 	int 
 		menui, 	/* menu item counter */
@@ -432,7 +515,7 @@ static void ins_shorts(void)
 		{
 			if ( menu[menui].ob_spec.free_string[1] == ' ') /* and not a separator line */
 			{
-				lm = strlen(menu[menui].ob_spec.free_string); /* includes trailing spaces */
+				lm = (int)strlen(menu[menui].ob_spec.free_string); /* includes trailing spaces */
 				where = menu[menui].ob_spec.free_string + (long)(lm - 5);
 
 				disp_short( where, options.V2_2.kbshort[menui - MFIRST], FALSE);
@@ -446,41 +529,47 @@ static void ins_shorts(void)
 	}				/* for... 			*/
 }
 
-/* DjV 019 080103 ---^^^--- */
 
+/* 
+ * Check for duplicate or invalid keys in menu shortcuts.
+ */
 
-/* check for duplicate or invalid keys */
-static
-boolean check_key(int button, int *tmp)
+static boolean check_key(int button, int i, int *tmp)
 {
-	int i, j;
+	int  j;
 
 	if ( button != OPTCANC && button != OPTKCLR )
 	{
-		for ( i = 0; i < NITEM; i++ )
-			for ( j = i + 1; j <= NITEM; j++ )
-				/* XD_ALT below in order to skip items related to boxes */
-				if (       (tmp[i] & XD_SCANCODE) != 0
-			    	|| (   (tmp[i] & ~XD_ALT) != 0
-			    	    &&  tmp[i] == tmp[j]
-			    	   )
-					|| ( tmp[i] == (XD_CTRL | BACKSPC) ) /* DjV 019 280103 */
-					|| ( tmp[i] == (XD_CTRL | TAB) 		 /* DjV 019 280103 */
-					|| ( tmp[i] == XD_CTRL ) )			 /* DjV 019 280103 */
-			       )
-				{
-					alert_printf ( 1, DUPKEY, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
-					return TRUE;
-				}
+		/* 
+		 * This is not very well optimized, it checks tmp[i] many times
+		 * repeatedly; a legacy from a previous version,
+		 * will perhaps be corrected
+		 */
+
+		for ( j = 0; j <= NITEM; j++ ) 
+		{
+			/* XD_ALT below in order to skip items related to menu boxes */
+			if (   ( (tmp[i] & XD_SCANCODE) != 0 )
+		    	|| (   (tmp[i] & ~XD_ALT) != 0 && (i != j) && tmp[i] == tmp[j] ) /* duplicate */
+				|| tmp[i] == (XD_CTRL | BACKSPC) /* ^BS illegal */
+				|| tmp[i] == (XD_CTRL | TAB)	 /* ^TAB illegal */
+				|| tmp[i] == SPACE				 /* illegal, because used to scroll viewer window */
+				|| tmp[i] == XD_CTRL			 /* ^ only, illegal */
+		       )
+			{
+				alert_printf ( 1, ADUPKEY, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
+				return TRUE;
+			}
+		}
 	}
 	return FALSE;
 }
 
-/* DjV 039 090203 ---vvv--- */
+
 /*
  * routine arrow_form_do handles some redraws around a xd_form_do
  * which are needed to create effect of a pressed (3d) arrow buton
- * related to a scrolled field
+ * related to some fields in dialogs
  */
 
 int arrow_form_do
@@ -496,119 +585,115 @@ int arrow_form_do
 
 	if ( *oldbutton > 0 )
 	{
-		evnt_timer(150, 0);
+		evnt_timer(120, 0); /* delay can be adjusted for comfortable feel */		
 		if ( (xe_button_state() & 1) == 0 )
 		{
 			tree[*oldbutton].ob_state &= ~SELECTED; 
-			xd_draw ( treeinfo, *oldbutton, 1 ); 
+			xd_draw ( treeinfo, *oldbutton, 0 ); 
 			*oldbutton = 0;
 		}	
+		else
+			return *oldbutton;
 	}
 	button = xd_form_do(treeinfo, ROOT) & 0x7FFF;
 
 	if ( button != *oldbutton )
 	{
 		tree[button].ob_state |= SELECTED;
-		xd_draw ( treeinfo, button, 1 );
+		xd_draw ( treeinfo, button, 0 );
 		*oldbutton = button;
 	}
 	return button;
 }
 
-/* DjV 039 090203 ---^^^--- */
+
+/* 
+ * Handle the "Preferences" dialog for setting some 
+ * TeraDesk configuration aspects 
+ */
+
 
 static void setpreferences(void)
 {
 	int button;
-	int oldbutton; /* DjV 039 090203 aux for arrow_form_do */
+	int oldbutton;			/* aux for arrow_form_do */
 
-	/* DjV 019 060103 070103 ---vvv--- */
-
-	static XDINFO prefinfo; 
-	static int menui=MFIRST;/* .rsc index of currently displayed menu item */
+	static /* DjV 075 why static ??? */ XDINFO prefinfo; 
+	static int menui = MFIRST;/* .rsc index of currently displayed menu item */
 	int mi;					/* menui - MFIRST */
 	int redraw;				/* true if to redraw menu item and key def */
 	int lm;					/* length of text field in current menu item */
 	int lf;					/* length of form for menu item text */
 	int i;				 	/* counters */
-	int tmp[NITEM+2];		/* temporary kbd shortcuts (until OK) */
+	int tmp[NITEM+2];		/* temporary kbd shortcuts (until OK'd) */
 	char aux[5];			/* temp. buffer for string manipulation */
+	char *tabsize = setprefs[TABSIZE].ob_spec.tedinfo->te_ptext;
 
-	/* DjV 019 060103 070103 ---^^^--- */
+	/* Set state of dialog mode radio buttons */
 
 	xd_set_rbutton(setprefs, OPTPAR2, (options.cprefs & DIALPOS_MODE) ? DMOUSE : DCENTER);
 	xd_set_rbutton(setprefs, OPTPAR1, DNORMAL + options.dial_mode);
 
-	itoa(options.tabsize, tabsize, 10);
-	/* itoa(options.bufsize, copybuffer, 10); DjV 016 050103 moved to another dialog*/
+	itoa(options.tabsize, tabsize, 10);	
 
-	/* DjV 019 060103 ---vvv--- */
+	lf = (int)strlen(setprefs[OPTMTEXT].ob_spec.free_string); /* get length of space for displaying menu items */
 
-	/* button = xd_dialog(setprefs, TABSIZE); */
+	/* Copy shortcuts to temporry storage */
 
-	/* Get length of space for displaying menu items */
+	memcpy( &tmp[0], &options.V2_2.kbshort[0], (NITEM + 1) * sizeof(int) );
 
-	lf = setprefs[OPTMTEXT].ob_spec.tedinfo->te_txtlen - 1;
+	xd_open(setprefs, &prefinfo);	/* Open dialog; then loop until OK or Cancel */
 
-	/* Copy shortcuts to a temporary buffer (until OK'd)  */
-
-	for ( i = 0; i <= NITEM; i++ )
-		tmp[i] = options.V2_2.kbshort[i];
-
-	/* Open dialog; then loop until OK or Cancel */
-	
-	xd_open(setprefs, &prefinfo);
+	/* 
+	 * Handle setting of keyboard shortcuts; note: because of limitations in
+	 * keyboard scancodes, distinction of some key combintions is impossible
+	 */
 
 	redraw = TRUE;
-	button = OPTMNEXT; /* anything*/
-	oldbutton = -1; 	/* DjV 039 090203 */
+	button = OPTMNEXT;  /* anything */
+	oldbutton = -1;
 
 	while ( button != OPTOK && button != OPTCANC )
 	{
-
 		/* Display text of current menu item */
 
 		mi = menui - MFIRST;
 
 		if ( redraw )
 		{
-			lm = strlen(menu[menui].ob_spec.free_string); /* How long? Assumed always to be lm > 5 */
+			lm = (int)strlen(menu[menui].ob_spec.free_string); /* How long? Assumed always to be lm > 5 */
 
 			/* Copy menu text to dialog, remove shortcut text */
 
 			strncpy 
 			( 
-				setprefs[OPTMTEXT].ob_spec.tedinfo->te_ptext, 
-				menu[menui].ob_spec.free_string, 
-				min(lm, lf) 
+				setprefs[OPTMTEXT].ob_spec.free_string,
+				menu[menui].ob_spec.free_string + 1L,
+				min(lm, lf) - 1
 			);
 
-			for ( i= min(lf, lm - 5); i < lf; i++ )
-				setprefs[OPTMTEXT].ob_spec.tedinfo->te_ptext[i] = ' ';
+			for ( i= min(lf, lm - 6); i < lf; i++ ) 
+				setprefs[OPTMTEXT].ob_spec.free_string[i] = ' '; 
 
-			/* Display defined shortcut */
+			/* Display defined shortcut in ASCII form */
 
 			disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, tmp[mi], TRUE );
         
-			xd_draw ( &prefinfo, OPTMTEXT, 1 );
-			xd_draw ( &prefinfo, OPTKKEY, 1 );
+			xd_draw ( &prefinfo, OPTMTEXT, 0 );
+			xd_draw ( &prefinfo, OPTKKEY, 0 );
 			redraw = FALSE;
 		}
 
-		/* HR Do not use goto's!!! */
 		do 		/* again: */
 		{
-			/* xd_change( &prefinfo, button, NORMAL, TRUE ); DjV 039 090203 */
-			/* button = xd_form_do ( &prefinfo, ROOT ); DjV 039 090203 */
-			button = arrow_form_do ( &prefinfo, &oldbutton ); /* DjV 039 090203 */
+			button = arrow_form_do ( &prefinfo, &oldbutton ); 
 
 			/* Interpret shortcut from the dialog */
 
 			strip_name( aux, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
-			/* strupr ( aux ); DjV 019 280103 not needed anymore */
 			strcpy ( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, aux );
 			
-			i = strlen( aux );
+			i = (int)strlen( aux ); 
 			tmp[mi] = 0;
 
 			switch ( i )
@@ -620,11 +705,12 @@ static void setpreferences(void)
 					break;
 				case 2:						/* two-character ^something shortcut */
 					if (    aux[0] == '^' 
-					     && aux[1] >= 'A'	/* DjV 019 280103 changed > 0x20 to >= 'A' */
-						 && aux[1] <= 'Z' )	/* DjV 019 280103 changed > 0x7f fo <= 'Z' */
+					     && aux[1] >= 'A'
+						 && aux[1] <= 'Z'
+					   )
 						tmp[mi] =  (int)aux[1] | XD_CTRL;
-					else					/* DjV 019 280103 */
-						tmp[mi] = XD_CTRL;  /* DjV 019 280103 illegal */
+					else
+						tmp[mi] = XD_CTRL;  /* illegal/ignored menu object */
 					break;	
 				default:					/* longer shortcuts */
 					if ( aux[0] == '^' )
@@ -634,22 +720,22 @@ static void setpreferences(void)
 						strip_name( aux, aux );
 					}
 					if ( strcmp( aux, "BS" ) == 0 )
-						tmp[mi] |= BACKSPC;	/* DjV 019 280103 used macros instad of hex values*/
+						tmp[mi] |= BACKSPC;
 					else if ( strcmp( aux, "TAB" ) == 0 )
-						tmp[mi] |= TAB;		/* DjV 019 280103 */
+						tmp[mi] |= TAB;
 					else if ( strcmp( aux, "SP" ) == 0 )
-						tmp[mi] |= SPACE;	/* DjV 019 280103 */
+						tmp[mi] |= SPACE;
 					else if ( strcmp( aux, "DEL" ) == 0 )
-						tmp[mi] |= DELETE;	/* DjV 019 280103 */
+						tmp[mi] |= DELETE;
 					else
 						tmp[mi] = XD_SCANCODE; /* use this to mark invalid */
 					break;
 			}
 		}
-		while (check_key(button, tmp));
+		while (check_key(button, mi, tmp));
 
 		/* 
-		 * Only menu items which lie between MFIRST and MLAST are considered;
+		 * Only menu items which lay between MFIRST and MLAST are considered;
 		 * if menu structure is changed, this interval should be redefined too;
 		 * only those menu items with a space in the second char position
 		 * are considered; other items are assumed not to be valid menu texts
@@ -661,17 +747,23 @@ static void setpreferences(void)
 		{
 			case OPTMPREV:
 				while ( menui > MFIRST && menu[--menui].ob_type != G_STRING);
-				if ( menu[menui].ob_spec.free_string[1] != ' ' ) menui--;
+				if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
+					menui--;
 				redraw = TRUE;
 				break;
 			case OPTMNEXT:
 				while ( menui < MLAST && menu[++menui].ob_type != G_STRING);
-				if ( menu[menui].ob_spec.free_string[1] != ' ' ) menui++;
+				if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
+					menui++;
 				redraw = TRUE;
 				break;
 			case OPTKCLR:
+/*
 				for ( i = 0; i <= NITEM; i++ )
 					tmp[i] = 0;
+*/
+				memset( &tmp[0], 0, (NITEM + 2) * sizeof(int) );
+
 				redraw = TRUE;
 				break;
 			default:
@@ -681,44 +773,30 @@ static void setpreferences(void)
 
 	xd_close(&prefinfo);
 
-	/* DjV 019 060103 ---^^^--- */
 	if (button == OPTOK)
 	{
 		int posmode = XD_CENTERED;
 
-		/* DjV 019 070103 ---vvv--- */
+		/* 
+		 * Move kbd. shortcuts into permanent storage,
+		 * then insert them into menu texts
+		 */
 
-		/* Reset pressed OK button */
-	  		
-		xd_change( &prefinfo, OPTOK, NORMAL, FALSE );
-
-		/* Move shortcuts into perm. storage and menu and display them */
-
-		for ( i = 0; i <= NITEM; i++ )
-			options.V2_2.kbshort[i] = tmp[i];
+		memcpy( &options.V2_2.kbshort[0], &tmp[0], (NITEM + 1) * sizeof(int) );
 
 		ins_shorts();
 
-		/* DjV 019 070103 ---^^^--- */
+		/* Get and then set dialog display mode */
 
 		if (xd_get_rbutton(setprefs, OPTPAR2) == DMOUSE)
 		{
-			/* prefs |= DIALPOS_MODE; DjV 016 090103 */
-			options.cprefs |= DIALPOS_MODE;
+			options.cprefs |= DIALPOS_MODE;	
 			posmode = XD_MOUSE;
-
 		}
 		else
 			options.cprefs &= ~DIALPOS_MODE;
 
 		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DNORMAL;
-
-		/* DjV 016 050103 ---vvv--- */
-		/* moved to copyoptions
-		if ((options.bufsize = atoi(copybuffer)) < 1)
-			options.bufsize = 1;
-		*/
-		/* DjV 016 050103 ---^^^--- */
  
 		if ((options.tabsize = atoi(tabsize)) < 1)
 			options.tabsize = 1;
@@ -726,299 +804,415 @@ static void setpreferences(void)
 		set_dialmode();
 		xd_setposmode(posmode);
 	}
-	/* DjV 019 070103 ---vvv--- */
-	else
-		xd_change( &prefinfo, OPTCANC, NORMAL, FALSE );
 
-	/* DjV 019 070103 ---^^^--- */
+	xd_change( &prefinfo, button, NORMAL, FALSE );
 }
 
-/* DjV 016 050103 ---vvv--- */
+
+/* 
+ * Handle the dialog for setting options related to 
+ * copying and printing 
+ */
 
 static void copyprefs(void)
 {
 	int button;
+	char *copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
 
-	/* Set states of appropriate options buttons */
+	/* Set states of appropriate options buttons and copy buffer field */
 
 	set_opt(copyoptions, options.cprefs, CF_COPY, CCOPY);
 	set_opt(copyoptions, options.cprefs, CF_DEL, CDEL);
 	set_opt(copyoptions, options.cprefs, CF_OVERW, COVERW);
-	set_opt(copyoptions, options.cprefs, CF_PRINT, CPRINT); /* DjV 031 010203 */
-	/* set_opt(copyoptions, options.cprefs, CF_KEEP, CKEEP); DjV 016 140203 nothing done yet */
+	set_opt(copyoptions, options.cprefs, CF_PRINT, CPRINT); 
+
+	set_opt(copyoptions, options.cprefs, CF_SHOWD, CSHOWD); 
+	set_opt(copyoptions, options.cprefs, P_HEADER, CPPHEAD);
 
 	itoa(options.bufsize, copybuffer, 10);
+	itoa(options.V2_2.plinelen, copyoptions[CPPLINE].ob_spec.tedinfo->te_ptext, 10 ); 
+
+	/* The dialog itself */
 
 	button = xd_dialog(copyoptions, 0);
 
-	if (button == COPTOK) /* selected OK ? */
+	/* If OK is selected... */
+
+	if (button == COPTOK) 
 	{	  
 		/* Get new states of options buttons and new copy buffer size */
 
 		get_opt( copyoptions, &options.cprefs, CF_COPY, CCOPY );
 		get_opt( copyoptions, &options.cprefs, CF_DEL, CDEL );
 		get_opt( copyoptions, &options.cprefs, CF_OVERW, COVERW );
-		get_opt( copyoptions, &options.cprefs, CF_PRINT, CPRINT ); /* DjV 031 010203 */
-		/* get_opt( copyoptions, &options.cprefs, CF_KEEP, CKEEP ); DjV 016 140203 nothing done about thio yet */
+		get_opt( copyoptions, &options.cprefs, CF_PRINT, CPRINT ); 
+		get_opt( copyoptions, &options.cprefs, CF_SHOWD, CSHOWD );
+		get_opt( copyoptions, &options.cprefs, P_HEADER, CPPHEAD );
 
 		if ((options.bufsize = atoi(copybuffer)) < 1)
 			options.bufsize = 1;
+
+		options.V2_2.plinelen = atoi(copyoptions[CPPLINE].ob_spec.tedinfo->te_ptext);
+		if ((options.V2_2.plinelen < 32) || (options.V2_2.plinelen > 132) )
+			options.V2_2.plinelen = 80;
 	}
 }
 
-/* DjV 016 050103 ---^^^--- */
+
+/*
+ * Set default options to be in effect without a configuration file 
+ */
 
 static void opt_default(void)
 {
 	options.version = CFG_VERSION;
 	options.magic = MAGIC;
-	/* options.cprefs = CF_COPY | CF_DEL | CF_OVERW; DjV 031 010203 */
-	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT; /* DJV 031 010203 */
-	/* options.sort = 0; DjV 010 251202 */
-	options.sort = WD_SORT_NAME; /* DjV 010 251202: substituted "0" with WD_SORT_NAME */
-	options.V2_2.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT; /* DjV 010 251202 */
-	/*	options.attribs = 0; DjV 004 251202 */
-	options.attribs = FA_SUBDIR | FA_SYSTEM; /* DjV 004 251202 */
+	options.sort = WD_SORT_NAME;							
+#if _PREDEF
+	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
+	options.V2_2.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT;    
+	options.V2_2.plinelen = 80; 							
+	options.attribs = FA_SUBDIR | FA_SYSTEM;					
 	options.tabsize = 8;
-	/* options.mode = 0  DjV 010 251202 */
-	options.mode = TEXTMODE; /* DjV 010 251202: subst. "0" with "TEXTMODE" */
 	options.bufsize = 512;
+#endif
+	options.mode = TEXTMODE;										    
 	options.dial_mode = XD_NORMAL;
 	options.resvd1 = 0;
 	options.resvd2 = 0;
-	get_set_video(0); /* DjV 007 030103 get current video mode for default */
-	/* DjV 019 080103 ---vvv--- */
+	get_set_video(0);			/* get current video mode for default */
 	
-	/* Define some default keyboard shortcuts here ... */
+	set_dsk_background((ncolors > 2) ? 7 : 4, 3);
+}
 
-	options.V2_2.kbshort[MOPEN - MFIRST] =    XD_CTRL | 'O';
+
+/* 
+ * Define some default keyboard shortcuts ... 
+ * those offered here have become a de-facto standard
+ * in other applications. On the other hand, they are different
+ * from those which Atari has adopted for the in-built TOS desktop
+ */
+
+static void short_default(void)
+{
+
+	memset( &options.V2_2.kbshort[MOPEN - MFIRST], 0, (size_t)(MSAVESET - MFIRST) );
+
+#if _PREDEF
+	options.V2_2.kbshort[MOPEN - MFIRST] =    XD_CTRL | 'O';	/* ^O, etc. */
 	options.V2_2.kbshort[MSHOWINF - MFIRST] = XD_CTRL | 'I';
 	options.V2_2.kbshort[MSEARCH - MFIRST] =  XD_CTRL | 'F';
-	options.V2_2.kbshort[MPRINT - MFIRST] =   XD_CTRL | 'P'; /* DjV 029 300103 */
+	options.V2_2.kbshort[MPRINT - MFIRST] =   XD_CTRL | 'P';
 	options.V2_2.kbshort[MSELALL - MFIRST] =  XD_CTRL | 'A';
 	options.V2_2.kbshort[MQUIT - MFIRST] =    XD_CTRL | 'Q';
-	options.V2_2.kbshort[MDELETE - MFIRST] =  XD_CTRL | 0x7f; /* ^DEL */
+	options.V2_2.kbshort[MDELETE - MFIRST] =  XD_CTRL | 0x7f; 	/* ^DEL */
 	options.V2_2.kbshort[MSAVESET - MFIRST] = XD_CTRL | 'S';
-
+#endif
 	ins_shorts();
-	/* DjV 019 080103 ---^^^--- */
 }
+
+
+/* 
+ * Read configuration from the configuration file 
+ */
 
 static void load_options(void)
 {
+#if !TEXT_CFG_IN
 	XFILE *file;
 	Options tmp;
-	int error = 0;
 	long n, opt_n;
+#endif
+	int error = 0;
 
-	get_set_video(0); /* DjV 007 030103 get current video mode */
-	
-	if ((file = x_fopen(optname, O_DENYW | O_RDONLY, &error)) != NULL)
-	{
-		opt_n = sizeof(Options);
-		tmp.version = 0;
-		x_fread(file, &tmp, sizeof(int));
 
-/* HR 240103: load older cfg versions */
-		if (   tmp.version >= MIN_VERSION
-		    && tmp.version <  CFG_VERSION
-		   )
-		{
-			memset(&tmp.V2_2, 0, sizeof(tmp.V2_2));
-			opt_n -= sizeof(tmp.V2_2);
-		}
+	get_set_video(0);				/* get current video mode */
+	v3_options.max_dir = 256;		/* start amount for the dir pointer array */
 
-		x_fclose(file);
-	}
+#if TEXT_CFG_IN
+	error = handle_cfgfile(infname, Config_table, infide, 0); 
 
-	if ((file = x_fopen(optname, O_DENYW | O_RDONLY, &error)) != NULL)
-	{
-		if ((n = x_fread(file, &tmp, opt_n)) == opt_n)
-		{
-			if (   tmp.version >= MIN_VERSION		/* DjV 005 120103 (was 0x119) */
-			    && tmp.version <= CFG_VERSION
-			    && tmp.magic   == MAGIC
-			   )
-			{
-				options = tmp;
-				if (opt_n != sizeof(Options))		/* HR 240103 */
-				{
-					options.V2_2.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT; /* DjV 010 251202 HR 240103 */
-					options.attribs = FA_SUBDIR | FA_SYSTEM; /* DjV 004 251202 HR 240103 */
-				}
-				ins_shorts();     /* DjV 019 080103 put kbd shortcuts into menu texts */
-				wd_deselect_all();
-				wd_default();
+#else
+  #include "opt_load.h"
+#endif
 
-				if (tmp.cprefs & SAVE_COLORS)
-					error = load_colors(file);
-
-				if (error == 0)
-					if ((error = dsk_load(file)) == 0)
-						if ((error = ft_load(file)) == 0)
-							if ((error = icnt_load(file)) == 0)
-								if ((error = app_load(file)) == 0)
-									if ((error = prg_load(file)) == 0)
-										error = wd_load(file);
-			}
-			else
-			{
-				alert_printf(1, MVALIDCF);
-				x_fclose(file);
-				return;
-			}
-			/* DjV 007 030103 ---vvv--- */
-			
-			/* If read ok, set video state but do not change resolution */
-			
-			get_set_video(1);
-			
-			/* DjV 007 030103 ---^^^--- */
-		}
-		else
-		{
-			error = (n < 0) ? (int) n : EEOF;
-			hndl_error(MLOADCFG, error);
-			x_fclose(file);
-			return;
-		}
-		x_fclose(file);
-	}
+	/* If there was an error when loading options, set default values */
 
 	if (error != 0)
 	{
-		hndl_error(MLOADCFG, error);
-
+#if !TEXT_CFG_IN
+		alert_printf(1, ALOADCFG, fn_get_name(optname), get_message(error));
+#endif
 		opt_default();
+		short_default();
 		dsk_default();
 		ft_default();
 		icnt_default();
-		app_default();
 		prg_default();
+		app_default();
 		wd_default();
 	}
 
-	if (options.version < 0x0130)
-		options.dial_mode = (options.cprefs & 0x80) ? XD_BUFFERED : XD_NORMAL;
+	/* Set dialogs mode */
 
 	xd_setposmode((options.cprefs & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
 	set_dialmode();
-
-	options.version = CFG_VERSION;
 }
+
+
+/*
+ * A (possibly temporary) utility functions used to load or save
+ * some boolean flags as bitflags 
+ */
+
+void bit_to_bool( int bitflags, int bit, boolean *boo )
+{
+	*boo = ( bitflags & bit ) ? TRUE : false;
+}  
+
+void bool_to_bit( int *bitflags, int bit, boolean boo )
+{
+	*bitflags = ( boo ) ? ( (*bitflags) | bit ) : ( (*bitflags) & ~bit ); 
+}
+
+
+static CfgNest opt_config
+{
+	if (io == CFG_SAVE)
+	{
+		/* Save options */
+
+	#if ! TEXT_CFG_IN
+		dial_mode = options.dial_mode;
+	#endif
+
+		*error = CfgSave(file, Options_table, lvl + 1, CFGEMP); 
+	}
+	else
+	{
+		/* Initialize to zero then load options */
+
+		memset ( &options, 0, sizeof(options) );
+
+		*error = CfgLoad(file, Options_table, MAX_KEYLEN, lvl + 1); 
+
+		/* Check some critical values against limits */
+
+		if ( options.V2_2.plinelen < 32 ) options.V2_2.plinelen = 80; 
+
+		if (   options.version < MIN_VERSION 
+			|| options.version > CFG_VERSION 
+			|| options.sort > WD_NOSORT
+			|| options.V2_2.plinelen > 132
+			|| v3_options.max_dir < 64 
+			|| v3_options.max_dir > 2048
+			|| options.dial_mode > XD_WINDOW
+			|| options.V2_2.vrez > 7 
+			)
+				*error = EFRVAL;
+
+		/* Block possible junk from some fields in config file */
+
+		options.attribs &= 0x0077;
+		options.dsk_pattern &= 0x0007;
+		options.V2_2.win_pattern &= 0x0007;
+
+		/* 
+		 * Currently it makes no sense not to confirm touch;
+		 */
+
+		options.cprefs |= CF_TOUCH;
+		options.cprefs &= ~(CF_CTIME | CF_CATTR);
+
+		/* If all is OK so far, start setting teradesk */
+
+		if ( *error >= 0 )
+			set_dsk_background(options.dsk_pattern, options.dsk_color);
+		else
+			opt_default();
+
+#if PALETTES
+		/* Load palette. Ignore errors */
+
+		if (options.cprefs & SAVE_COLORS)
+			load_colors(0L);
+#endif
+		/* Set video state but do not change resolution */
+
+		get_set_video(1);
+	}
+}
+
+
+/*
+ * Configure (load or save) keyboard shortcuts
+ * Note: for loading, this is initialized to zero earlier in opt_config.
+ */
+
+static CfgNest short_config
+{
+	*error = handle_cfg(file, Shortcut_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, short_default);
+
+	if ( io == CFG_LOAD )
+	{
+		if ( *error == 0 )
+			ins_shorts();
+	}
+}
+
+
+/* 
+ * Save configuration into default config file 
+ */
 
 static void save_options(void)
 {
-	XFILE *file;
-	long n;
-	int error = 0, h;
-
 	graf_mouse(HOURGLASS, NULL);
 
-	if ((file = x_fopen(optname, O_DENYRW | O_WRONLY, &error)) != NULL)
-	{
-		if ((n = x_fwrite(file, &options, sizeof(Options))) == sizeof(Options))
-		{
-			if (options.cprefs & SAVE_COLORS)
-				error = save_colors(file);
+	/* First save the palette (ignore errors) */
+#if PALETTES
+	if (options.cprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
+		save_colors(0L);
+#endif
 
-			if (error == 0)
-				if ((error = dsk_save(file)) == 0)
-					if ((error = ft_save(file)) == 0)
-						if ((error = icnt_save(file)) == 0)
-							if ((error = app_save(file)) == 0)
-								if ((error = prg_save(file)) == 0)
-									error = wd_save(file);
-		}
-		else
-			error = (int) n;
+	/* Then save the configuration */
 
-		if (((h = x_fclose(file)) < 0) && (error == 0))
-			error = h;
-	}
+	handle_cfgfile( infname, Config_table, infide, CFG_SAVE );
+	
+	/* Update destination window */
+
+	wd_set_update(WD_UPD_COPIED, infname, NULL);
+	wd_do_update();
 
 	graf_mouse(ARROW, NULL);
-
-	if (error != 0)
-		hndl_error(MSAVECFG, error);
-
-	wd_set_update(WD_UPD_COPIED, optname, NULL);
-	wd_do_update();
 }
+
+
+/* 
+ * Save configuration into an explicitely specified config file
+ */
 
 static void save_options_as(void)
 {
-	char *newname;
+	char *newinfname;
 
-	if ((newname = locate(optname, L_SAVECFG)) != NULL)
+	if ((newinfname = locate(infname, L_SAVECFG)) != NULL)
 	{
-		free(optname);
-		optname = newname;
+		free(infname);
+		infname = newinfname;
 		save_options();
 	}
 }
 
+
+/* 
+ * Load configuration from an explicitely specified config file 
+ */
+
 static void load_settings(void)
 {
-	char *newname;
+	char *newinfname;
 
-	if ((newname = locate(optname, L_LOADCFG)) != NULL)
+#if TEXT_CFG_IN
+	if ((newinfname = locate(infname, L_LOADCFG)) != NULL)
 	{
-		free(optname);
-		optname = newname;
+		free(infname);
+		infname = newinfname;
 		load_options();
 	}
+#else
+	if ((newinfname = locate(optname, L_LOADCFG)) != NULL)
+	{
+		free(optname);
+		optname = newinfname;
+		load_options();
+	}
+#endif
 }
 
+
 /*
- * Initiation function.
+ * Set complete specification for configuration file(s)
+ */
+
+boolean find_cfgfiles(char **cfgname, boolean report)
+{
+	char *fullname;
+	int error;
+
+	if ((fullname = xshel_find(*cfgname, &error)) != NULL)
+	{
+		free(*cfgname);
+		*cfgname = fullname;
+	}
+	else
+	{
+		if ((error == EFILNF) && ((fullname = x_fullname(*cfgname, &error)) != NULL))
+		{
+			free(*cfgname);
+			*cfgname = fullname;
+		}
+		if (report && error != 0)
+		{
+			xform_error(error);
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+
+/*
+ * Initiation function (reading configuraton, defaults, etc.).
  *
- * Result: FALSE if no error, TRUE if error.
+ * Result: FALSE if OK, TRUE if error (a VERY intuitive concept!).
  */
 
 static boolean init(void)
 {
-	int error;
-	char *fullname;
-
 	xw_get(NULL, WF_WORKXYWH, &screen_info.dsk);
 
-	if ((fullname = xshel_find(optname, &error)) != NULL)
-	{
-		free(optname);
-		optname = fullname;
-	}
-	else
-	{
-		if ((error == EFILNF) && ((fullname = x_fullname(optname, &error)) != NULL))
-		{
-			free(optname);
-			optname = fullname;
-		}
-		if (error != 0)
-		{
-			xform_error(error);
-			return TRUE;
-		}
-	}
+#if !TEXT_CFG_IN
+
+	if ( !find_cfgfiles(&optname, TRUE) )
+		return TRUE;
+
+#endif 
+
+	find_cfgfiles(&infname, FALSE); 
+	find_cfgfiles(&palname, FALSE);
 
 	if (dsk_init() == TRUE)
 		return TRUE;
 
+	/* Clear all definable items */
+
 	ft_init();
 	icnt_init();
-	app_init();
 	prg_init();
+	app_init();
+	edit_init();
 	wd_init();
 
 	menu_bar(menu, 1);
 
 	x_setpath("\\");
 
+	/* Load the configuration file */
+
 	load_options();
+
+	/* Start applications which have been defined as autostart */
+
+	app_autostart();
 
 	return FALSE;
 }
+
+
+/* 
+ * Initialize stuff related to VDI 
+ */
 
 static void init_vdi(void)
 {
@@ -1031,11 +1225,11 @@ static void init_vdi(void)
 	max_w = work_out[0] + 1;	/* Screen width (pixels)  */
 	max_h = work_out[1] + 1;	/* Screen height (pixels) */
 	ncolors = work_out[13];		/* Number of colours      */
-	npatterns = work_out[14];	/* Number of patterns DjV 011 180103 */
+	npatterns = work_out[14];	/* Number of patterns     */
 	pix_height = work_out[4];
 
 
-	/* DjV 007 190103 
+	/* 
 	 * Note: vqt_attributes below uses work_out and destroys information
 	 * in work_out[0] to work_out[9]; not a nice thing to do!
 	 */
@@ -1047,22 +1241,46 @@ static void init_vdi(void)
 	screen_info.vdi_handle = vdi_handle;
 }
 
+
 static int alloc_global_memory(void)
 {
+/* This doesn't seem to take into account possibility of alt-ram on a ST?
 #if _MINT_
 	if (magx || mint)
 		global_memory = Mxalloc(GLOBAL_MEM_SIZE, 0x43);
 	else
 #endif
 		global_memory = Malloc(GLOBAL_MEM_SIZE);
+*/
+
+	/* so, maybe it is better this way? */
+
+	int mode = 
+#if _MINT_
+		( mint ) ? 0x43 : 	/* this is, in fact, for magic OR mint */
+#endif
+		0x3;				/* ST-RAM or Alt/TT-RAM; prefer Alt/TT */ 
+
+#if _MINT_
+	if ( magx || (tos_version >= 0x206) )
+#else
+	if ( tos_version >= 0x206 )
+#endif
+		global_memory = Mxalloc(GLOBAL_MEM_SIZE, mode);
+	else	
+		global_memory = Malloc(GLOBAL_MEM_SIZE);
 
 	return (global_memory) ? 0 : ENSMEM;
 }
 
+
+/* 
+ * Handle TeraDesk's main menu 
+ * (but not all of it, some items are handled in window.c) 
+ */
+
 static void hndlmenu(int title, int item, int kstate)
 {
-	int qbutton; /* DjV 013 291202 */
-
 	if ((menu[item].ob_state & DISABLED) == 0)
 	{
 		switch (item)
@@ -1070,23 +1288,22 @@ static void hndlmenu(int title, int item, int kstate)
 		case MINFO:
 			info();
 			break;
-		case MQUIT:
-			/* DjV 013 291202 ---vvv--- */
-			qbutton = alert_printf(3,QUITALRT); /* DjV 013 090203  shutdown revived */
+		case MQUIT:	
+		{
+			int qbutton = alert_printf(3, ALRTQUIT);
 			switch (qbutton)
 			{
 				case 3:
 					break;
 				case 2:
-					shutdown=TRUE; /* no effect yet */
-					/* break;DjV 013 090203 only without shutdown */
+					shutdown=TRUE;
 				case 1:      
-			/* DjV 013 291202 ---^^^--- */
 					menu_tnormal(menu, title, 1);
 					quit = TRUE;
 					break;
-			}        /* DjV 013 291202 */
+			}
 			break;
+		}
 		case MOPTIONS:
 			setpreferences();
 			break;
@@ -1106,34 +1323,25 @@ static void hndlmenu(int title, int item, int kstate)
 			app_install();
 			break;
 		case MIDSKICN:
-			dsk_insticon();
+			dsk_chngicon();
 			break;
 		case MIWDICN:
 			icnt_settypes();
 			break;
-		case MCHNGICN:
-			dsk_chngicon();
-			break;
 		case MREMICON:
 			dsk_remicon();
 			break;
-		case MEDITOR:
-			set_editor();
-			break;
-		/* DjV 016 050103 ---vvv--- */	
 		case MCOPTS:
 			copyprefs();
 			break;
-		/* DjV 016 050103 ---^^^--- */
 		case MWDOPT:
 			dsk_options();
-			break;
-		/* DjV 007 250102 ---vvv--- */	
+			break;	
 		case MVOPTS:
-			chrez=voptions();
-			if ( chrez ) quit=TRUE;
+			chrez = voptions();
+			if ( chrez ) 
+				quit = TRUE;
 			break;
-		/* DjV 007 250102 ---^^^--- */
 		default:
 			wd_hndlmenu(item, kstate);	/* handle all the rest in window.c */
 			break;
@@ -1142,70 +1350,67 @@ static void hndlmenu(int title, int item, int kstate)
 	menu_tnormal(menu, title, 1);
 }
 
-/* DjV 019 100103 ---vvv--- */
 
-/* 
- * this little routine converts keyboard scancodes into format in which
+/*
+ * Convert keyboard scancodes into format in which
  * keyboard shortcuts are saved ( XD_CTRL | char_ascii_code )
  * this routine should prevent, somewhat better than earlier code,
  * unwanted (erroneous) recognition of weird key combinations
+ * which are created by limitations in keyboard scan codes
+ * (some key combinations can can not be differed from others)
  */
+
 int scansh ( int key, int kstate )
 {
 	int a;
 
 	a = key & 0xff;
 	if ( a <= 'z' && a >= 'a' )
-		a &= 0xdf; 						/* to uppercase */
-	if ( kstate == 4 ) 					/* ctrl  */
-		/* DjV 019 280103 ---vvv--- bug correction */
-		/* a |= (XD_CTRL | 64); */
-		if ( a == SPACE || a == ESCAPE )	/* ^SP ^ESC  */
+		a &= 0xdf; 							/* to uppercase  */
+	if ( kstate == 4 ) 						/* ctrl          */	
+		if ( a == SPACE || a == ESCAPE )	/* ^SP ^ESC      */
 			a |= XD_CTRL;
-		else if ( a == 0x1f ) 				/* ^DEL      */
+		else if ( a == 0x1f ) 				/* ^DEL          */
 			a |= ( XD_CTRL | 0x60 );
-		else 								/* ^A ... ^\ */
+		else 								/* ^A ... ^\     */
 			a |= ( XD_CTRL | 0x40 );
-		/* DjV 019 280103 ---^^^--- */
 	else
-	if ( kstate > 2 || key < 0 ) 		/* everything but shift or plain */
-		a = -1;							/* shortcut def. is never this value */
+	if ( kstate > 2 || key < 0 ) 			/* everything but shift or plain */
+		a = -1;								/* shortcut def. is never this value */
 	return a;
 }
-/* DjV 019 100103 ---^^^--- */
+
+
+/* 
+ * Handle keybard commands 
+ */
 
 static void hndlkey(int key, int kstate)
 {
 	int i = 0, k;
+	unsigned int uk = (unsigned int)key;
 	APPLINFO *appl;
-	int title; 				/* DjV 019 110103 rsc index of current menu title */
+	int title; 				/* rsc index of current menu title */
 
-	if ( (unsigned int)key == HELP )
-		showhelp();						/* DjV 007 251202 */
+	if ( uk  == HELP || uk == SHIFT_HELP )
+		showhelp(uk);
 
-	k = key & ~XD_CTRL;
+	k = key & ~XD_CTRL; 
 
-	if ((((unsigned int) k >= 0x803B) && ((unsigned int) k <= 0x8044)) ||
-		(((unsigned int) k >= 0x8154) && ((unsigned int) k <= 0x815D)))
+	if ((( uk >= 0x803B) && ( uk <= 0x8044)) ||
+		(( uk >= 0x8154) && ( uk <= 0x815D)))
 	{
 		k &= 0xFF;
 		k = (k >= 0x54) ? (k - 0x54 + 11) : (k - 0x3B + 1);
+
+		/* Exec application assigned to a F-key */
 
 		if ((appl = find_fkey(k)) != NULL)
 			app_exec(NULL, appl, NULL, NULL, 0, kstate, FALSE);
 	}
 	else
 	{
-		/* k = key & ~XD_ALT;          DjV 019 100103 */
-		k = scansh ( key, kstate ); /* DjV 019 100103 */
-
-		/* DjV 019 110103 ---vvv--- */
-		/*
-		while ((keys[i].scancode != k) && (i < (NKEYS - 1)))
-			i++;
-
-		if (keys[i].scancode == k)
-		*/
+		k = scansh ( key, kstate );
 
 		title = TFIRST;
 		while (   (options.V2_2.kbshort[i] != k) && (i <= ( MLAST - MFIRST)) )
@@ -1214,23 +1419,20 @@ static void hndlkey(int key, int kstate)
 			i++;
 		}
 
+		/* Handle various user-defined keyboard shortcuts */
+
 		if ( options.V2_2.kbshort[i] == k )
 		{
-			/*
-			menu_tnormal(menu, keys[i].title, 0);
-			hndlmenu(keys[i].title, keys[i].item, kstate);
-			*/
 			menu_tnormal(menu, title, 0 );
 			hndlmenu( title, i + MFIRST, kstate );
-		
 		}
-		/* DjV 019 110103 ---^^^--- */
-
 		else
 		{
 			i = 0;
 			if ((key >= ALT_A) && (key <= ALT_Z))
 			{
+				/* Handle keys which open windows on drives (Alt-A to Alt-Z) */
+
 				i = key - (XD_ALT | 'A');
 				if (check_drive(i))
 				{
@@ -1239,9 +1441,8 @@ static void hndlkey(int key, int kstate)
 					if ((path = strdup("A:\\")) != NULL)
 					{
 						path[0] = (char) i + 'A';
-						/* dir_add_window(path); DjV 017 280103 */
-						dir_add_window(path, NULL); /* DjV 017 280103 */
-						itm_set_menu(xw_top()); /* DjV 029 160203 */
+						dir_add_window(path, NULL);
+						itm_set_menu(xw_top());
 					}
 					else
 						xform_error(ENSMEM);
@@ -1251,10 +1452,15 @@ static void hndlkey(int key, int kstate)
 	}
 }
 
+
+/*
+ * Handle AES messages
+ */
+
 int _hndlmessage(int *message, boolean allow_exit)
 {
 	if (   (   message[0] >= AV_PROTOKOLL
-	        && message[0] <= VA_HIGH			/* HR 060203 */
+	        && message[0] <= VA_HIGH
 	       )
 	    || (   message[0] >= FONT_CHANGED
 	        && message[0] <= FONT_ACK
@@ -1272,7 +1478,7 @@ int _hndlmessage(int *message, boolean allow_exit)
 			{
 				static int ap_tfail[8] = { AP_TFAIL, 0 };
 
-				shel_write(10, 0, 0, (char *) ap_tfail, NULL);
+				shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
 			}
 			break;
 
@@ -1281,14 +1487,20 @@ int _hndlmessage(int *message, boolean allow_exit)
 			break;
 		}
 	}
-
+ 
 	return 0;
 }
+
 
 int hndlmessage(int *message)
 {
 	return _hndlmessage(message, FALSE);
 }
+
+
+/* 
+ * Main  event loop in the program 
+ */
 
 static void evntloop(void)
 {
@@ -1296,11 +1508,20 @@ static void evntloop(void)
 	XDEVENT events;
 
 	events.ev_mflags = EVNT_FLAGS;
-	events.ev_mbclicks = 0x102;			/* HR 151102: right button is double click */
+
+	/*
+	 * Note: right mouse button has the effect of:
+	 * left doubleclick + right button pressed
+	 * (also convenient for activating programs in a non-selected window)
+	 */
+
+	events.ev_mbclicks = 0x102;
 	events.ev_mbmask = 3;
 	events.ev_mbstate = 0;
+
 	events.ev_mm1flags = 0;
 	events.ev_mm2flags = 0;
+
 	events.ev_mtlocount = 0;
 	events.ev_mthicount = 0;
 
@@ -1309,8 +1530,7 @@ static void evntloop(void)
 		event = xe_xmulti(&events);
 
 		clr_key_buf();		/*	HR 151102: This imposed a unsolved problem with N.Aes 1.2 (lockup of teradesk after live moving) */
-/* It is not a essential function. */
-
+							/* It is not a essential function. */
 		if (event & MU_MESAG)
 		{
 			if (events.ev_mmgpbuf[0] == MN_SELECTED)
@@ -1324,20 +1544,33 @@ static void evntloop(void)
 	}
 }
 
+
+
 #if _MINT_
 int have_ssystem;
 #endif
+
+
+/* 
+ * Main TeraDesk routine- the program itself 
+ */
 
 int main(void)
 {
 	int error;
 
-#if _MINT_				/* HR 151102 */
-	have_ssystem = Ssystem(-1, 0, 0) == 0;		/* HR 151102: use Ssystem where possible */
+#if _MINT_
+
+	/* 
+	 * Find out some details on the type of OS 
+	 * This is relevant only for the multitasking version
+	 */
+
+	have_ssystem = Ssystem(-1, 0, 0) == 0;		/* use Ssystem where possible */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
-	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;	/* HR 151102 */
-	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;    /* DjV 035 080203 */
+	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
+	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;
 	mint  |= magx;			/* Quick & dirty */
 
 	if (mint)
@@ -1347,57 +1580,97 @@ int main(void)
 	}
 #endif
 
+	/* Find if files can be locked in this version of OS */
+
 	x_init();
+
+	/* Get id of this application */
 
 	if ((ap_id = appl_init()) < 0)
 		return -1;
 
-	if  (_GemParBlk.glob.version >= 0x400)
+	/* aes_version can not be determined earlier */
+
+	tos_version = get_tosversion();
+	aes_version = _GemParBlk.glob.version;
+
+	/* 
+	 * Inform AES of TeraDesk's capabilities regarding messages 
+	 * (should it be tested for version 0x340 or 0x400 here ?)
+	 */
+
+	if  (aes_version >= 0x400)
 	{
-		shel_write(9, 1, 0, NULL, NULL);
+		shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); /* Inform AES  */
 		menu_register(ap_id, "  Tera Desktop");
 	}
+
+	/* Load resource file */
 
 	if (rsrc_load(RSRCNAME) == 0)
 		form_alert(1, msg_resnfnd);
 	else
 	{
+		/* Initialize x-dialogs */
+
 		if ((error = init_xdialog(&vdi_handle, malloc, free,
 								  "Tera Desktop", 1, &nfonts)) < 0)
 			xform_error(error);
 		else
 		{
+			/* Initialize things related to vdi */
+
 			init_vdi();
+
+			/* Initialize resource structure */
+
 			rsc_init();
 
+			/* If screen resolution is too low (less than 40x25), can't continue */
+
 			if (((max_w / screen_info.fnt_w) < 40) || ((max_h / screen_info.fnt_h) < 25))
-				alert_printf(1, MRESTLOW);
+				alert_printf(1, ARESTLOW);
 			else
 			{
+				/* Allocate global memory */
+
 				if ((error = alloc_global_memory()) == 0)
 				{
+					/* Execute teradesk startup batch file */
+
 					if (exec_deskbat() == FALSE)
 					{
+						/* Load icons from icons resource file */
+
 						if (load_icons() == FALSE)
 						{
+							/* Set defaults, read configuration, etc. */
+
 							if (init() == FALSE)
 							{
 								graf_mouse(ARROW, NULL);
+
+								/* 
+								 * Main event loop 
+								 * All of the work in TeraDesk
+								 * happens in here
+								 */
+
 								evntloop();
+
+								/* Start quitting / shutting down */
 
 								wd_del_all();
 								menu_bar(menu, 0);
 								xw_close_desk();
 							}
+							free_icons();
 
-							free_icons();		/* HR 151102 */
-
-							wind_set(0, WF_NEWDESK, NULL, 0);
-							dsk_draw();
+							regen_desktop(NULL);
 						}
 					}
 
-					Mfree(global_memory);
+					Mfree(global_memory); 
 				}
 				else
 					xform_error(error);
@@ -1408,28 +1681,30 @@ int main(void)
 			exit_xdialog();
 		}
 
+		/* Deallocate resource structures */
+
 		rsrc_free();
 	}
 
-	/* DjV 013 030103 100203 ---vvv--- */
-	/*
-	 * The following section handles system shutdown and resolution change
+	/* 
+	 * The following segment handles final system shutdown and resolution change
 	 * If a resolution change is required, shutdown is performed first
-	 * If only shutdown s required, system will reset at the end.
+	 * If only shutdown is required, system will reset at the end.
 	 */ 
 
-	/* appl_exit(); */
-
-	if ( chrez || shutdown ) /* If change resolution or shutdown ... */
+	if ( chrez || shutdown )						/* If change resolution or shutdown ... */
 	{
+		/* 
+		 * Note: if an alternate shutdown program is to be used some day,
+		 * it probably should be activeded here
+		 */
 
 		/* Tell all applications which would understand it to end */
 
-		quit = shel_write ( 4, 2, 0, NULL, NULL ); 	/* complete shutdown */
+		quit = shel_write ( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
 		evnt_timer( 3000, 0 );						/* Wait a bit? */
 
-		/*
-
+#if 0
 		/* 
 		 * In Mint, must tell all proceseses to terminate nicely ?
 		 * but this is only in this group ? What to do?
@@ -1437,52 +1712,45 @@ int main(void)
 
 		Pkill(0, SIGTERM); 
 		evnt_timer(3000, 0); /* Wait a bit? */
-		*/
-
+#endif
 		/* 
 		 * After all applications have hopefully been closed,
 		 * change the screen resolution if needed;
 		 * else- reset the computer
 		 */
+
 		if ( chrez )
 			get_set_video(2);
 
 #if 1
 		else
+/* But it won't really shutdown in Magic without a reset, just restarts the desktop ?
 	#if _MINT_
 		if (!mint)			/* HR 230203: Dont reset under MiNT or MagiC !!!!! */
 	#endif
+*/
 		{
 			/* Perform a reset here */
 
-	#if 0		/* with warnings */
-			long *m;					/* to memory locations */
-			long rv;					/* reset vector */
+			long (*rv)();				/* reset vector */
 
 			Super ( 0L );				/* Supervisor; old stack won't be needed again */
-			*(m = 0x420L) = 0L;			/* memctrl  */
-			*(m = 0x43aL) = 0L;			/* memval2  */
-			*(m = 0x426L) = 0L;			/* resvalid */	
-			m = *( m = 0x4f2 );			/* to start of OS */
-			rv = *(m + 4);				/* to routine that  handles the reset */
-			Supexec(rv);				/* execute it */
-	#else			/* HR: without warnings */
-			long (*rv)();					/* reset vector */
-
-			Super ( 0L );				/* Supervisor; old stack won't be needed again */
-			memctrl = 0L;
+			memval = 0L; 				
 			memval2 = 0L;
 			resvalid = 0L;
 			(long)rv = *((long *)os_start + 4);	/* routine that handles the reset */
 			Supexec(rv);				/* execute it */
-	#endif
+
 		}
 #endif
 	}
-	else	/* Just Quit */		
+	else	/* Just Quit the desktop */		
 		appl_exit();
-	
-	/* DjV 013 030103 100203 ---^^^--- */
 	
 	return 0;
 }
+
+/* That's all ! */
+
+
+

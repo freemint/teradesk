@@ -1,5 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren
+ *                                           2002, 2003  H. Robbers,
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,13 +23,23 @@
 #include <string.h>
 #include <library.h>
 
-void make_path( char *name,const char *path,const char *fname )
+
+/* 
+ * Concatenate a path+filename string "name" from a path "path"
+ * and a filename "fname"; Add a "\" between the path and
+ * the name if needed.
+ * Space for resultant string has to be allocated before the call
+ * Note: "name" and "path" can be at the same location
+ */
+
+void make_path( char *name, const char *path, const char *fname )
 {
 	long l;
 
-	strcpy(name,path);
+	strcpy(name, path);
 	l = strlen(name);
 	if (l && (name[l - 1] != '\\'))
 		name[l++] = '\\';
-	strcpy(name + l,fname);
+	strcpy(name + l, fname);
 }
+

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,7 +23,7 @@
 #define DP_PATHMAX	2
 #define DP_NAMEMAX	3
 
-/* TOS file attributen */
+/* TOS file attributtes */
 
 #define FA_READONLY     0x01
 #define FA_HIDDEN       0x02
@@ -29,7 +31,8 @@
 #define FA_VOLUME       0x08
 #define FA_SUBDIR       0x10
 #define FA_ARCHIVE      0x20
-#define FA_PARDIR       0x40 /* DjV 004 300103 */
+#define FA_PARDIR       0x40 /* pseudo attribute for parent dir */
+
 
 /* Unix file attributen */
 
@@ -181,7 +184,8 @@ long x_seek(long offset, int handle, int seekmode);
 /* Funkties voor het lezen van een directory */
 
 XDIR *x_opendir(const char *path, int *error);
-long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib);
+
+long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib); 
 long x_rewinddir(XDIR *dir);
 long x_closedir(XDIR *dir);
 long x_attr(int flag, const char *name, XATTR *attrib);
@@ -216,7 +220,9 @@ long x_fseek(XFILE *file, long offset, int mode);
 char *x_freadstr(XFILE *file, char *string, size_t max, int *error);
 int x_fwritestr(XFILE *file, const char *string);
 int x_fgets(XFILE *file, char *string, int n);
+int x_fprintf(XFILE *file, char *format, ...);
 boolean x_feof(XFILE *file);
-boolean x_inq_xfs(const char *path, boolean *casesens);		/* HR 151102 */
+boolean x_inq_xfs(const char *path, boolean *casesens);
 
 void x_init(void);
+

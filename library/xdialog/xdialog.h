@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -25,7 +27,7 @@
 #define cdecl
 #endif
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>
 
 #ifndef __XWINDOW_H__
  #include "xwindow.h"
@@ -155,28 +157,40 @@ typedef struct
 
 typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 
+
 /* Funkties voor het openen en sluiten van een dialoog */
 
 void xd_open(OBJECT *tree, XDINFO *info);
-void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
-						  int zoom);
+void xd_open_wzoom(OBJECT *tree, XDINFO *info
+#if _DOZOOM
+/* DjV 060 260603 conditional */
+, RECT *xywh, int zoom
+#endif
+);
 void xd_close(XDINFO *info);
-void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom);
+void xd_close_wzoom(XDINFO *info
+#if _DOZOOM
+/* DjV 060 260603 conditional */
+, RECT *xywh, int zoom
+#endif
+);
+
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
 void xd_draw(XDINFO *info, int start, int depth);
-void xd_change(XDINFO *info, int object, int newstate,
-					  int draw);
+void xd_change(XDINFO *info, int object, int newstate, int draw);
+void xd_own_xobjects( int setit );
+void clr_object(RECT *r, int color, int pattern);
+
 
 /* Funkties voor het uitvoeren van een dialoog. */
 
-int xd_kform_do(XDINFO *info, int start, userkeys userfunc,
-					   void *userdata);
+int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata);
 int xd_form_do(XDINFO *info, int start);
-int xd_kdialog(OBJECT *tree, int start, userkeys userfunc,
-					  void *userdata);
+int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata);
 int xd_dialog(OBJECT *tree, int start);
+
 
 /* Funkties voor initialisatie van een resource. */
 
@@ -185,11 +199,13 @@ void xd_fixtree(OBJECT *tree);
 void xd_set_userobjects(OBJECT *tree);
 char *xd_set_srcl_text(OBJECT *tree, int item, char *txt);
 
+
 /* Funkties voor het zetten van de verschillende modes */
 
 int xd_setdialmode(int new, int (*hndl_message) (int *message),
 						  OBJECT *menu, int nmnitems, int *mnitems);
 int xd_setposmode(int new);
+
 
 /* Funkties voor initialisatie bibliotheek */
 
@@ -198,23 +214,19 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 						int load_fonts, int *nfonts);
 void exit_xdialog(void);
 
+
 /* Hulpfunkties */
 
 int xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
 int xd_inrect(int x, int y, RECT *r);
-
 long xd_initmfdb(RECT *r, MFDB *mfdb);
-
 void xd_objrect(OBJECT *tree, int object, RECT *r);
-
 void xd_userdef(OBJECT *object, USERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
-
 void xd_rect2pxy(RECT *r, int *pxy);
-
 int xd_obj_parent(OBJECT *tree, int object);
-
 int xd_wdupdate(int mode);
+
 void xd_mouse_off(void);
 void xd_mouse_on(void);
 
@@ -223,14 +235,18 @@ void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 
 OBSPEC xd_get_obspec(OBJECT *object);
 void xd_set_obspec(OBJECT *object, OBSPEC obspec);
-void *xd_get_scrled(OBJECT *tree, int edit_obj);	/* HR 021202 */
+void *xd_get_scrled(OBJECT *tree, int edit_obj);
+void xd_init_shift(OBJECT *obj, char *text);
 
+/* Currently not used anywhere in Teradesk
 int xd_set_tristate(int ob_state, int state);
 int xd_get_tristate(int ob_state);
 int xd_is_tristate(OBJECT *tree);
+*/
 
 void xd_clip_on(RECT *r);
 void xd_clip_off(void);
+
 
 /* Event funkties */
 
@@ -239,11 +255,21 @@ int xe_xmulti(XDEVENT *events);
 int xe_button_state(void);
 int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
 
+
 /* Funkties voor niet modale dialoogboxen. */
 
 int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-			  int start, int x, int y, OBJECT *menu, RECT *xywh,
-			  int zoom, const char *title);
-void xd_nmclose(XDINFO *info, RECT *xywh, int zoom);
+			  int start, int x, int y, OBJECT *menu, 
+#if _DOZOOM
+/* DjV 060 280603 conditional */
+              RECT *xywh, int zoom, 
+#endif
+              const char *title);
+void xd_nmclose(XDINFO *info
+#if _DOZOOM
+/* DjV 060 280603 conditional */
+, RECT *xywh, int zoom
+#endif
+);
 
 #endif

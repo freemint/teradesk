@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
@@ -26,137 +28,56 @@
 #include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
+#include <library.h>
 
 #include "desk.h"
 #include "error.h"
 #include "font.h"
 #include "resource.h"
 #include "xfilesys.h"
+#include "config.h"
 #include "screen.h"
+#include "window.h" /* moved before viewer.h */
 #include "viewer.h"
-#include "window.h"
+#include "file.h"
 
-#define TFLAGS			(NAME|CLOSER|FULLER|MOVER|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE)
-#define MAXWINDOWS		8
-#define FWIDTH			256
-#define HEXLEN			74
-#define min(x,y)		(((x) < (y)) ? (x) : (y))
-#define max(x,y)		(((x) > (y)) ? (x) : (y))
+
+#define FWIDTH			256 /* max.possible width of text window in text mode */
+
+
 #define ASCII_PERC		80
 
-typedef struct
-{
-	unsigned int fulled : 1;
-	unsigned int resvd:15;
-} WDFLAGS;
 
-typedef struct
-{
-	XW_INTVARS;					/* Interne variabelen bibliotheek. */
-	int rows;					/* hoogte en breedte van window in karakters */
-	int columns;				/* (van het geselekteerde font, naar boven afgerond) */
-
-	int nrows;					/* hoogte en breedte van window in karakters */
-	int ncolumns;				/* (van het geselekteerde font, naar beneden afgerond) */
-
-	int px;
-	long py;
-
-	int tabsize;
-
-	const char *name;
-	char title[80];
-
-	char *buffer;				/* buffer met de tekst */
-	long size;					/* aantal bytes in de tekst */
-	long tlines;				/* aantal regels in de tekst */
-	char **lines;				/* lijst met pointers naar het begin van alle tekstregels */
-
-	long nlines;				/* aantal regels in het window */
-
-	unsigned int hexmode : 1;	/* Hexmode flag. */
-
-	struct winfo *winfo;		/* pointer naar WINFO structuur. */
-} TXT_WINDOW;
-
-typedef struct winfo
-{
-	int x;						/* positie van het window */
-	int y;
-	int w;						/* afmetingen van het werkgebied */
-	int h;
-	WDFLAGS flags;
-	boolean used;
-	TXT_WINDOW *txt_window;
-} WINFO;
-
-typedef struct
-{
-	int x;
-	int y;
-	int w;
-	int h;
-	WDFLAGS flags;
-	int resvd;
-} SINFO1;
-
-typedef struct
-{
-	int index;
-	int px;
-	long py;
-	int resvd1;
-	long resvd2;
-	int hexmode : 1;
-	int resvd3 : 7;
-	int tabsize : 8;
-} SINFO2;
-
-typedef struct
-{
-	int id;
-	int size;
-	int resvd1;
-	int resvd2;
-} FDATA;
-
-static WINFO textwindows[MAXWINDOWS];
-static RECT tmax;
-static FONT txt_font;
+WINFO textwindows[MAXWINDOWS]; 
+RECT tmax;
+FONT txt_font;
 
 static void set_menu(TXT_WINDOW *w);
 
-static int txt_hndlkey(WINDOW *w, int scancode, int keystate);
-static void txt_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
-static void txt_redraw(WINDOW *w, RECT *area);
-static void txt_topped(WINDOW *w);
 static void txt_closed(WINDOW *w);
-static void txt_fulled(WINDOW *w);
-static void txt_arrowed(WINDOW *w, int arrows);
-static void txt_hslider(WINDOW *w, int newpos);
-static void txt_vslider(WINDOW *w, int newpos);
-static void txt_sized(WINDOW *w, RECT *newsize);
-static void txt_moved(WINDOW *w, RECT *newpos);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
-static void txt_top(WINDOW *w);
+
 
 static WD_FUNC txt_functions =
 {
-	txt_hndlkey,
-	txt_hndlbutton,
-	txt_redraw,
-	txt_topped,
-	txt_topped,
-	txt_closed,
-	txt_fulled,
-	txt_arrowed,
-	txt_hslider,
-	txt_vslider,
-	txt_sized,
-	txt_moved,
+	wd_type_hndlkey,
+	wd_type_hndlbutton,
+	wd_type_redraw,
+	wd_type_topped,
+	wd_type_topped,	
+	txt_closed,	/* the only one remaining specific for text window */
+	wd_type_fulled, 
+	wd_type_arrowed,
+	wd_type_hslider,
+	wd_type_vslider,
+	wd_type_sized,
+	wd_type_moved,
 	txt_hndlmenu,
-	txt_top
+	wd_type_top,
+	wd_type_iconify,
+	wd_type_uniconify
 };
+
 
 /********************************************************************
  *																	*
@@ -164,181 +85,67 @@ static WD_FUNC txt_functions =
  *																	*
  ********************************************************************/
 
-static int txt_width(TXT_WINDOW *w)
+/*
+ * Determine width of a text window; depending on whether the display is
+ * in hex mode or text mode, it will be either a fixed value or a value
+ * determined from the longest line in the text. Line lengths are calculated
+ * from differences between pointers on line beginnings
+ * (returned width will never be more than FWIDTH).
+ */
+
+int txt_width(TXT_WINDOW *w)
 {
-	return (w->hexmode == 1) ? HEXLEN : FWIDTH;
-}
+	long 
+		i,				/* line counter */
+		mw;				/* maximum line width */
 
-static void txt_draw(TXT_WINDOW *w, boolean message)
-{
-	RECT area;
 
-	xw_get((WINDOW *) w, WF_CURRXYWH, &area);
+	/* 
+	 * If display is in hex mode, return a fixed width (HEXLEN); otherwise
+	 * scan pointers to all lines and find greatest difference between
+	 * two adjecent ones- that would be the maximum line length
+	 */
 
-	if (message)
-		xw_send_redraw((WINDOW *) w, &area);
-	else
-		txt_redraw((WINDOW *) w, &area);
-}
-
-/* Funktie voor het zetten van de default grootte */
-
-static void txt_set_defsize(WINFO *w)
-{
-	RECT border, work;
-
-	xw_get((WINDOW *) w->txt_window, WF_CURRXYWH, &border);
-	xw_get((WINDOW *) w->txt_window, WF_WORKXYWH, &work);
-
-	w->x = border.x - screen_info.dsk.x;
-	w->y = border.y - screen_info.dsk.y;
-	w->w = work.w / screen_info.fnt_w;
-	w->h = work.h / screen_info.fnt_h;
-}
-
-static void txt_calc_rc(TXT_WINDOW *w, RECT *work)
-{
-	w->rows = (work->h + txt_font.ch - 1) / txt_font.ch;
-	w->columns = (work->w + txt_font.cw - 1) / txt_font.cw;
-
-	w->nrows = work->h / txt_font.ch;
-	w->ncolumns = work->w / txt_font.cw;
-}
-
-/* Funktie die uit opgegeven grootte de werkelijke grootte van het
-   window berekent. */
-
-static void txt_wsize(TXT_WINDOW *w, RECT *input, RECT *output)
-{
-	RECT work;
-	int fw, fh;
-
-	fw = screen_info.fnt_w;
-	fh = screen_info.fnt_h;
-
-	xw_calc(WC_WORK, TFLAGS, input, &work, viewmenu);
-
-	work.x += fw / 2;
-	work.w += fw / 2;
-	work.h += fh / 2;
-
-	work.x -= (work.x % fw);
-	work.w -= (work.w % fw);
-	work.h -= (work.h % fh);
-
-	work.w = min(work.w, tmax.w);
-	work.h = min(work.h, tmax.h);
-
-	xw_calc(WC_BORDER, TFLAGS, &work, output, viewmenu);
-
-	txt_calc_rc(w, &work);
-}
-
-/* Funktie voor het bereken van de grootte van een window uit de in
-   w opgeslagen grootte. */
-
-static void txt_calcsize(WINFO *w, RECT *size)
-{
-	if (w->flags.fulled == 1)
-		txt_wsize(w->txt_window, &screen_info.dsk, size);
+	if ( w->hexmode == 1)
+		return HEXLEN;	/* fixed window width in hex mode (add MARGIN?) */
 	else
 	{
-		RECT def, border;
+		/* Length of last (and first, if there is only one) line in the text */
 
-		def.x = w->x + screen_info.dsk.x;
-		def.y = w->y + screen_info.dsk.y;
-		def.w = w->w * screen_info.fnt_w;	/* hoogte en breedte van het */
-		def.h = w->h * screen_info.fnt_h;	/* werkgebied. */
+		mw = (long)(w->lines[0]) + w->size - (long)(w->lines[w->tlines - 1]);
 
-		/* Bereken hoogte en breedte van het window */
-		xw_calc(WC_BORDER, TFLAGS, &def, &border, viewmenu);
+		/* Is length of any other line greater than the above? */
 
-		border.x = def.x;
-		border.y = def.y;
+		for ( i = 1; i < w->tlines; i++ ) 
+			mw = lmax(mw, (long)(w->lines[i]) - (long)(w->lines[i - 1]));
 
-		txt_wsize(w->txt_window, &border, size);
+		/* 
+		 * Window width should be at least (arbitrary) 16 characters 
+		 * but not more than FWIDTH characters 
+		 */
+
+		mw = lmax(16L, lmin(mw, FWIDTH)); /* perhaps mw + MARGIN ? */
+		return (int)mw;
 	}
 }
 
-/********************************************************************
- *																	*
- * Funkties voor het zetten van de sliders.							*
- *																	*
- ********************************************************************/
 
-/* Funktie voor het zetten van de grootte van de verticale
-   slider. */
+/*
+ * Redraw all text windows 
+ */
 
-static void set_vslsize(TXT_WINDOW *w)
+void txt_draw_all(void)
 {
-	long p, lines, wlines;
+	WINDOW *w = xw_first();
 
-	wlines = w->nrows;
-	lines = w->nlines;
-
-	w->py = (lines < wlines) ? 0 : min(w->py, lines - wlines);
-	p = (lines > wlines) ? (wlines * 1000L) / lines : 1000;
-	xw_set((WINDOW *) w, WF_VSLSIZE, (int) p);
+	while (w)
+	{
+		if (xw_type(w) == TEXT_WIND)
+			wd_type_draw( (TYP_WINDOW *)w, TRUE );
+		w = xw_next();
+	}
 }
 
-/* Funktie voor het zetten van de positie van de verticale
-   slider. */
-
-static void set_vslpos(TXT_WINDOW *w)
-{
-	long h, lines, wlines;
-	int pos;
-
-	wlines = w->nrows;
-	lines = w->nlines;
-
-	w->py = (lines < wlines) ? 0 : min(w->py, lines - wlines);
-	h = lines - wlines;
-	pos = (h > 0) ? (int) ((1000L * w->py) / h) : 0;
-	xw_set((WINDOW *) w, WF_VSLIDE, pos);
-}
-
-/* Funktie voor het zetten van de grootte van de horizontale
-   slider. */
-
-static void set_hslsize(TXT_WINDOW *w)
-{
-	int p, width, wwidth;
-
-	wwidth = w->ncolumns;
-	width = txt_width(w);
-
-	w->px = (width < wwidth) ? 0 : min(w->px, width - wwidth);
-	p = (width > wwidth) ? (int) (((long) wwidth * 1000L) / (long) width) : 1000;
-	xw_set((WINDOW *) w, WF_HSLSIZE, p);
-}
-
-/* Funktie voor het zetten van de positie van de horizontale
-   slider. */
-
-static void set_hslpos(TXT_WINDOW *w)
-{
-	int width, wwidth, pos;
-	long h;
-
-	wwidth = w->ncolumns;
-	width = txt_width(w);
-
-	w->px = (width < wwidth) ? 0 : min(w->px, width - wwidth);
-	h = width - wwidth;
-	pos = (h > 0) ? (int) ((1000L * (long) w->px) / h) : 0;
-	xw_set((WINDOW *) w, WF_HSLIDE, pos);
-}
-
-/* Funktie voor het zetten van alle sliders van een window. */
-
-static void set_sliders(TXT_WINDOW *w)
-{
-	set_hslsize(w);
-	set_hslpos(w);
-	set_vslsize(w);
-	set_vslpos(w);
-}
 
 /********************************************************************
  *																	*
@@ -362,6 +169,7 @@ static char hexdigit(int x)
 	return (x <= 9) ? x + '0' : x + 'A' - 10;
 }
 
+
 /*
  * Functie voor het uitlezen van een regel uit de buffer van een
  * window. Afhankelijk van de mode is de presentatie in ASCII of
@@ -369,7 +177,7 @@ static char hexdigit(int x)
  *
  * Parameters:
  *
- * w		- Pointer naar WINFO structuur
+ * w		- Pointer naar WINFO structuur 
  * dest		- Buffer waarin de regel geplaatst moet worden
  * line		- Nummer van de regel
  *
@@ -379,6 +187,7 @@ static char hexdigit(int x)
 static int txt_line(TXT_WINDOW *w, char *dest, long line)
 {
 	char *s, *d = dest;
+	int i; 
 
 	if (line >= w->nlines)
 	{
@@ -386,16 +195,25 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 		return 0;
 	}
 
+	for ( i = w->px; i < MARGIN; i++ )
+		*d++ = ' ';	
+
 	if (w->hexmode == 0)
 	{
+		/* Create a line in text mode */
+
 		char ch;
 		int cnt = 0, m = w->px + w->columns, tabsize = w->tabsize;
+
+		/* If this line does not exist at all, return NULL */
 
 		if ((s = w->lines[line]) == NULL)
 		{
 			*dest = 0;
 			return 0;
 		}
+
+		/* While counted columns are off window's left edge... */
 
 		while (cnt < w->px)
 		{
@@ -421,6 +239,8 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 			}
 			cnt++;
 		}
+
+		/* While counted columns are within window width... */
 
 		while (cnt < m)
 		{
@@ -449,9 +269,20 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 	}
 	else
 	{
-		int cnt = 0, m = w->columns;
-		long a = 16L * line, i, h;
-		char tmp[128], *p = &w->buffer[a];
+		/* Create a line in hex mode */
+
+		int 
+			cnt = 0, 
+			m = w->columns;
+
+		long 
+			a = 16L * line, 
+			i, 
+			h;
+
+		char 
+			tmp[80],	/* changed 128 to 80, should be enough */ 
+			*p = &w->buffer[a];
 
 		if (w->px >= HEXLEN)
 		{
@@ -460,6 +291,7 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 		}
 
 		h = a;
+
 		for (i = 5; i >= 0; i--)
 		{
 			tmp[i] = hexdigit((int) h & 0x0F);
@@ -504,6 +336,7 @@ static int txt_line(TXT_WINDOW *w, char *dest, long line)
 	}
 }
 
+
 /*
  * Bereken de rechthoek die de te tekenen tekst omsluit.
  *
@@ -523,6 +356,7 @@ static void txt_comparea(TXT_WINDOW *w, long line, int strlen, RECT *r, RECT *wo
 	r->w = strlen * txt_font.cw;
 	r->h = txt_font.ch;
 }
+
 
 /*
  * Functie voor het afdrukken van 1 karakter van een regel. Deze
@@ -556,15 +390,15 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *
 		if (c < len)
 		{
 			s[c + 1] = 0;
-			pclear ( & r );							/* DjV 011 030203 */
-			vswr_mode( vdi_handle, MD_TRANS );		/* DjV 011 030203 */
+			pclear ( & r );
+			vswr_mode( vdi_handle, MD_TRANS );
 			v_gtext(vdi_handle, r.x, r.y, &s[c]);
 		}
 		else
-			/* clear(&in);    DjV 011 030203 */
-			pclear(&in);   /* DjV 011 030203 */
+			pclear(&in); 
 	}
 }
+
 
 /*
  * Functie voor het afdrukken van een regel.
@@ -577,7 +411,7 @@ static void txt_prtchar(TXT_WINDOW *w, int column, long line, RECT *area, RECT *
  * work		- Werkgebied van het window
  */
 
-static void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
+void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 {
 	RECT r, in;
 	int len;
@@ -586,17 +420,17 @@ static void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
 	if (rc_intersect2(area, &r) == TRUE)
-	{										/* DjV 011 030203 */
-		pclear(&r);							/* DjV 011 030203 */
-		vswr_mode( vdi_handle, MD_TRANS );	/* DjV 011 030203 */
+	{
+		pclear(&r);
+		vswr_mode( vdi_handle, MD_TRANS );
 		v_gtext(vdi_handle, r.x, r.y, s);
-	}										/* DjV 011 030203 */
+	}
 	r.x += r.w;
 	r.w = work->w - r.w;
 	if (xd_rcintersect(&r, area, &in) == TRUE)
-		/* clear(&in);    DjV 011 030203 */
-		pclear(&in);   /* DjV 011 030203 */
+		pclear(&in); 
 }
+
 
 /*
  * Functie voor het afdrukken van alle regels die zichtbaar zijn in
@@ -608,7 +442,7 @@ static void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
  * area		- Clipping rechthoek
  */
 
-static void txt_prtlines(TXT_WINDOW *w, RECT *area)
+void txt_prtlines(TXT_WINDOW *w, RECT *area)
 {
 	long i;
 	RECT work;
@@ -621,209 +455,12 @@ static void txt_prtlines(TXT_WINDOW *w, RECT *area)
 		txt_prtline(w, w->py + i, area, &work);
 }
 
+
 /********************************************************************
  *																	*
  * Funkties voor scrollen van tekstwindows.							*
  *																	*
  ********************************************************************/
-
-/*
- * Functie om een pagina naar terug te scrollen.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- */
-
-static void w_pageup(TXT_WINDOW *w)
-{
-	long oldy;
-
-	oldy = w->py;
-	w->py -= w->nrows;
-
-	if (w->py < 0)
-		w->py = 0;
-
-	if (w->py != oldy)
-	{
-		set_vslpos(w);
-		txt_draw(w, FALSE);
-	}
-}
-
-/*
- * Functie om een pagina naar verder te scrollen.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- */
-
-static void w_pagedown(TXT_WINDOW *w)
-{
-	long oldy;
-
-	oldy = w->py;
-	w->py += w->nrows;
-
-	if ((w->py + w->nrows) > w->nlines)
-		w->py = max(w->nlines - w->nrows, 0);
-
-	if (w->py != oldy)
-	{
-		set_vslpos(w);
-		txt_draw(w, FALSE);
-	}
-}
-
-/*
- * Functie om een pagina naar links te scrollen.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- */
-
-static void w_pageleft(TXT_WINDOW *w)
-{
-	int oldx;
-
-	oldx = w->px;
-	w->px -= w->ncolumns;
-
-	if (w->px < 0)
-		w->px = 0;
-
-	if (w->px != oldx)
-	{
-		set_hslpos(w);
-		txt_draw(w, FALSE);
-	}
-}
-
-/*
- * Functie om een pagina naar rechts te scrollen.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- */
-
-static void w_pageright(TXT_WINDOW *w)
-{
-	int oldx, width;
-
-	oldx = w->px;
-	width = txt_width(w);
-
-	w->px += w->ncolumns;
-
-	if ((w->px + w->ncolumns) > width)
-		w->px = max(width - w->ncolumns, 0);
-
-	if (w->px != oldx)
-	{
-		set_hslpos(w);
-		txt_draw(w, FALSE);
-	}
-}
-
-/*
- * Zoek de eerste regel van een window, die zichtbaar is binnen
- * een rechthoek.
- *
- * Parameters:
- *
- * wy		- y coordinaat werkgebied window
- * area		- rechthoek
- * prev		- pointer naar een boolean, die aangeeft of een of twee
- *			  regels opnieuw getekend moeten worden.
- *
- * Resultaat: Eerste regel
- */
-
-static long find_firstline(int wy, RECT *area, boolean *prev)
-{
-	long line;
-
-	line = (area->y - wy);
-	*prev = ((line % txt_font.ch) == 0) ? FALSE : TRUE;
-
-	return (line / txt_font.ch);
-}
-
-/*
- * Zoek de laatste regel van een window, die zichtbaar is binnen
- * een rechthoek.
- *
- * Parameters:
- *
- * wy		- y coordinaat werkgebied window
- * area		- rechthoek
- * prev		- pointer naar een boolean, die aangeeft of een of twee
- *			  regels opnieuw getekend moeten worden.
- *
- * Resultaat: Laatste regel
- */
-
-static long find_lastline(int wy, RECT *area, boolean *prev)
-{
-	long line;
-
-	line = (area->y + area->h - wy);
-	*prev = ((line % txt_font.ch) == 0) ? FALSE : TRUE;
-
-	return ((line - 1) / txt_font.ch);
-}
-
-/*
- * Zoek de eerste kolom van een window, die zichtbaar is binnen
- * een rechthoek.
- *
- * Parameters:
- *
- * wx		- x coordinaat werkgebied window
- * area		- rechthoek
- * prev		- pointer naar een boolean, die aangeeft of een of twee
- *			  regels opnieuw getekend moeten worden.
- *
- * Resultaat: Eerste regel
- */
-
-static int find_firstcolumn(int wx, RECT *area, boolean *prev)
-{
-	int column;
-
-	column = (area->x - wx);
-	*prev = ((column % txt_font.cw) == 0) ? FALSE : TRUE;
-
-	return (column / txt_font.cw);
-}
-
-/*
- * Zoek de laatste kolom van een window, die zichtbaar is binnen
- * een rechthoek.
- *
- * Parameters:
- *
- * wx		- x coordinaat werkgebied window
- * area		- rechthoek
- * prev		- pointer naar een boolean, die aangeeft of een of twee
- *			  regels opnieuw getekend moeten worden.
- *
- * Resultaat: Eerste regel
- */
-
-static int find_lastcolumn(int wx, RECT *area, boolean *prev)
-{
-	int column;
-
-	column = (area->x + area->w - wx);
-	*prev = ((column % txt_font.cw) == 0) ? FALSE : TRUE;
-
-	return ((column - 1) / txt_font.cw);
-}
 
 /*
  * Teken een kolom van een window opnieuw.
@@ -836,7 +473,7 @@ static int find_lastcolumn(int wx, RECT *area, boolean *prev)
  * work		- werkgebied window
  */
 
-static void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work)
+void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work)
 {
 	int i;
 
@@ -844,140 +481,6 @@ static void txt_prtcolumn(TXT_WINDOW *w, int column, RECT *area, RECT *work)
 		txt_prtchar(w, column, w->py + i, area, work);
 }
 
-/*
- * Functie om een tekstwindow een regel te scrollen.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- * type		- geeft richting van scrollen aan
- */
-
-static void w_scroll(TXT_WINDOW *w, int type)
-{
-	RECT work, r, in, src, dest;
-	long line;
-	int column, wx, wy;
-	boolean prev;
-
-	switch (type)
-	{
-	case WA_UPLINE:
-		if (w->py <= 0)
-			return;
-		w->py -= 1;
-		break;
-	case WA_DNLINE:
-		if ((w->py + w->nrows) >= w->nlines)
-			return;
-		w->py += 1;
-		break;
-	case WA_LFLINE:
-		if (w->px <= 0)
-			return;
-		w->px -= 1;
-		break;
-	case WA_RTLINE:
-		if ((w->px + w->ncolumns) >= txt_width(w))
-			return;
-		w->px += 1;
-		break;
-	default:
-		return;
-	}
-
-	xw_get((WINDOW *) w, WF_WORKXYWH, &work);
-
-	wx = work.x;
-	wy = work.y;
-
-	if (clip_desk(&work) == FALSE)
-		return;
-
-	xd_wdupdate(BEG_UPDATE);
-
-	if ((type == WA_UPLINE) || (type == WA_DNLINE))
-		set_vslpos(w);
-	else
-		set_hslpos(w);
-
-	graf_mouse(M_OFF, NULL);
-	xw_get((WINDOW *) w, WF_FIRSTXYWH, &r);
-
-	set_txt_default(txt_font.id, txt_font.size);
-
-	while ((r.w != 0) && (r.h != 0))
-	{
-		if (xd_rcintersect(&r, &work, &in) == TRUE)
-		{
-			xd_clip_on(&in);
-
-			src = in;
-			dest = in;
-
-			if ((type == WA_UPLINE) || (type == WA_DNLINE))
-			{
-				if (type == WA_UPLINE)
-				{
-					dest.y += txt_font.ch;
-					line = find_firstline(wy, &in, &prev);
-				}
-				else
-				{
-					src.y += txt_font.ch;
-					line = find_lastline(wy, &in, &prev);
-				}
-				line += w->py;
-				dest.h -= txt_font.ch;
-				src.h -= txt_font.ch;
-			}
-			else
-			{
-				if (type == WA_LFLINE)
-				{
-					dest.x += txt_font.cw;
-					column = find_firstcolumn(wx, &in, &prev);
-				}
-				else
-				{
-					src.x += txt_font.cw;
-					column = find_lastcolumn(wx, &in, &prev);
-				}
-				column += w->px;
-				dest.w -= txt_font.cw;
-				src.w -= txt_font.cw;
-			}
-
-			if ((src.h > 0) && (src.w > 0))
-				move_screen(&dest, &src);
-
-			if ((type == WA_UPLINE) || (type == WA_DNLINE))
-			{
-				txt_prtline(w, line, &in, &work);
-				if (prev == TRUE)
-				{
-					line += (type == WA_UPLINE) ? 1 : -1;
-					txt_prtline(w, line, &in, &work);
-				}
-			}
-			else
-			{
-				txt_prtcolumn(w, column, &in, &work);
-				if (prev == TRUE)
-				{
-					column += (type == WA_LFLINE) ? 1 : -1;
-					txt_prtcolumn(w, column, &in, &work);
-				}
-			}
-
-			xd_clip_off();
-		}
-		xw_get((WINDOW *) w, WF_NEXTXYWH, &r);
-	}
-
-	graf_mouse(M_ON, NULL);
-	xd_wdupdate(END_UPDATE);
-}
 
 /********************************************************************
  *																	*
@@ -995,6 +498,7 @@ static void set_menu(TXT_WINDOW *w)
 	xw_menu_icheck((WINDOW *) w, VMHEX, w->hexmode);
 }
 
+
 /*
  * Functie voor het instellen van de ASCII of de HEXMODE van een
  * window.
@@ -1004,19 +508,24 @@ static void txt_mode(TXT_WINDOW *w)
 {
 	if (w->hexmode == 0)
 	{
+		/* Switch to hex mode */
+
 		w->hexmode = 1;
-		w->nlines = (w->size + 15L) / 16L;
+		w->nlines = (w->size + 15L) / 16L;	/* 16 bytes per line */
 	}
 	else
 	{
+		/* Switch to text mode */
+
 		w->hexmode = 0;
 		w->nlines = w->tlines;
 	}
 
-	set_sliders(w);
-	txt_draw(w, TRUE);
+	set_sliders((TYP_WINDOW *)w);
+	wd_type_draw ( (TYP_WINDOW *)w, TRUE );
 	set_menu(w);
 }
+
 
 /*
  * Functie voor het instellen van de tabultorgrootte van een
@@ -1026,6 +535,7 @@ static void txt_mode(TXT_WINDOW *w)
 static void txt_tabsize(TXT_WINDOW *w)
 {
 	int oldtab;
+	char *vtabsize = stabsize[VTABSIZE].ob_spec.tedinfo->te_ptext;
 
 	oldtab = w->tabsize;
 
@@ -1037,9 +547,10 @@ static void txt_tabsize(TXT_WINDOW *w)
 			w->tabsize = 1;
 
 		if (w->tabsize != oldtab)
-			txt_draw(w, TRUE);
+			wd_type_draw((TYP_WINDOW *)w,TRUE); 
 	}
 }
+
 
 /********************************************************************
  *																	*
@@ -1050,15 +561,23 @@ static void txt_tabsize(TXT_WINDOW *w)
 
 static void txt_rem(TXT_WINDOW *w)
 {
+/* not needed
 	if (w->lines != NULL)
-		x_free(w->lines);
+*/
+		free(w->lines);	
+
+/* not needed 
 	if (w->buffer != NULL)
-		x_free(w->buffer);
+*/
+		free(w->buffer);
+
 	free(w->name);
 
 	w->winfo->used = FALSE;
-	w->winfo->txt_window = NULL;
+	w->winfo->typ_window = NULL; 
+	w->winfo->flags.iconified = 0;
 }
+
 
 /********************************************************************
  *																	*
@@ -1066,163 +585,6 @@ static void txt_rem(TXT_WINDOW *w)
  *																	*
  ********************************************************************/
 
-#pragma warn -par
-
-/*
- * Keyboard event handler voor tekstwindows.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- * scancode	- Scancode van de ingedrukte toets
- * keystate	- Toestand van de SHIFT, CONTROL en ALTERNATE toets
- *
- * Resultaat: 0 - toets kon niet verwerkt worden
- *			  1 - toets kon verwerkt worden
- */
-
-static int txt_hndlkey(WINDOW *w, int scancode, int keystate)
-{
-	long lines;
-	int result = 1;
-
-	switch (scancode)
-	{
-	case CURDOWN:
-	case RETURN:
-		w_scroll((TXT_WINDOW *) w, WA_DNLINE);
-		break;
-	case CURUP:
-		w_scroll((TXT_WINDOW *) w, WA_UPLINE);
-		break;
-	case CURLEFT:
-		w_scroll((TXT_WINDOW *) w, WA_LFLINE);
-		break;
-	case CURRIGHT:
-		w_scroll((TXT_WINDOW *) w, WA_RTLINE);
-		break;
-	case PAGE_DOWN:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
-	case SHFT_CURDOWN:
-	case SPACE:
-		w_pagedown((TXT_WINDOW *) w);
-		break;
-	case PAGE_UP:				/* HR 240103: PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
-	case SHFT_CURUP:
-		w_pageup((TXT_WINDOW *) w);
-		break;
-	case SHFT_CURLEFT:
-		w_pageleft((TXT_WINDOW *) w);
-		break;
-	case SHFT_CURRIGHT:
-		w_pageright((TXT_WINDOW *) w);
-		break;
-	case HOME:
-		((TXT_WINDOW *) w)->px = 0;
-		((TXT_WINDOW *) w)->py = 0;
-		set_sliders((TXT_WINDOW *) w);
-		txt_draw((TXT_WINDOW *) w, FALSE);
-		break;
-	case SHFT_HOME:
-		((TXT_WINDOW *) w)->px = 0;
-		lines = ((TXT_WINDOW *) w)->nlines;
-		if (((TXT_WINDOW *) w)->nrows < lines)
-		{
-			((TXT_WINDOW *) w)->py = lines - ((TXT_WINDOW *) w)->nrows;
-			set_sliders((TXT_WINDOW *) w);
-			txt_draw((TXT_WINDOW *) w, FALSE);
-		}
-		break;
-	default:
-		switch (scancode & (XD_SCANCODE | XD_ALT | 0xDF))
-		{
-		case 'Q':
-		case 'C':
-		case ESCAPE:
-			txt_closed(w);
-			break;
-		default :
-			result = 0;
-			break;
-		}
-		break;
-	}
-
-	return result;
-}
-
-/*
- * Button event handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- * x			- x positie muis
- * y			- y positie muis
- * n			- aantal muisklikken
- * button_state	- Toestand van de muisknoppen
- * keystate		- Toestand van de SHIFT, CONTROL en ALTERNATE toets
- */
-
-static void txt_hndlbutton(WINDOW *w, int x, int y, int n,
-						   int button_state, int keystate)
-{
-}
-
-#pragma warn .par
-
-/*
- * Window redraw handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- * area			- Deel van het window dat opnieuw getekend moet
- *				  worden
- */
-
-static void txt_redraw(WINDOW *w, RECT *area)
-{
-	RECT r1, r2, in;
-
-	r1 = *area;
-
-	if (clip_desk(&r1) == FALSE)
-		return;
-
-	xd_wdupdate(BEG_UPDATE);
-	graf_mouse(M_OFF, NULL);
-	xw_get(w, WF_FIRSTXYWH, &r2);
-
-	while ((r2.w != 0) && (r2.h != 0))
-	{
-		if (xd_rcintersect(&r1, &r2, &in) == TRUE)
-		{
-			xd_clip_on(&in);
-			txt_prtlines((TXT_WINDOW *) w, &in);
-			xd_clip_off();
-		}
-
-		xw_get(w, WF_NEXTXYWH, &r2);
-	}
-
-	graf_mouse(M_ON, NULL);
-	xd_wdupdate(END_UPDATE);
-}
-
-/*
- * Window topped handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_topped(WINDOW *w)
-{
-	xw_set(w, WF_TOP);
-}
-
-#pragma warn -par
 
 /*
  * Window closed handler voor tekstwindows.
@@ -1239,151 +601,6 @@ void txt_closed(WINDOW *w)
 	xw_delete(w);
 }
 
-#pragma warn .par
-
-/*
- * Window fulled handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_fulled(WINDOW *w)
-{
-	WINFO *wd = ((TXT_WINDOW *) w)->winfo;
-	RECT size;
-
-	wd->flags.fulled = (wd->flags.fulled == 1) ? 0 : 1;
-	txt_calcsize(((TXT_WINDOW *) w)->winfo, &size);
-	xw_set(w, WF_CURRXYWH, &size);
-	set_sliders((TXT_WINDOW *) w);
-}
-
-/*
- * Window arrowed handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_arrowed(WINDOW *w, int arrows)
-{
-	switch (arrows)
-	{
-	case WA_UPLINE:
-	case WA_DNLINE:
-	case WA_LFLINE:
-	case WA_RTLINE:
-		w_scroll((TXT_WINDOW *) w, arrows);
-		break;
-	case WA_UPPAGE:
-		w_pageup((TXT_WINDOW *) w);
-		break;
-	case WA_DNPAGE:
-		w_pagedown((TXT_WINDOW *) w);
-		break;
-	case WA_LFPAGE:
-		w_pageleft((TXT_WINDOW *) w);
-		break;
-	case WA_RTPAGE:
-		w_pageright((TXT_WINDOW *) w);
-		break;
-	}
-}
-
-/*
- * Window horizontal slider handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_hslider(WINDOW *w, int newpos)
-{
-	long h;
-	int oldx;
-
-	h = (long) (txt_width((TXT_WINDOW *) w) - ((TXT_WINDOW *) w)->ncolumns);
-	oldx = ((TXT_WINDOW *) w)->px;
-	((TXT_WINDOW *) w)->px = (int) (((long) newpos * h) / 1000L);
-	if (oldx != ((TXT_WINDOW *) w)->px)
-	{
-		set_hslpos((TXT_WINDOW *) w);
-		txt_draw((TXT_WINDOW *) w, FALSE);
-	}
-}
-
-/*
- * Window vertical slider handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_vslider(WINDOW *w, int newpos)
-{
-	long h, oldy;
-
-	h = (long) (((TXT_WINDOW *) w)->nlines - ((TXT_WINDOW *) w)->nrows);
-	oldy = ((TXT_WINDOW *) w)->py;
-	((TXT_WINDOW *) w)->py = (((long) newpos * h) / 1000L);
-	if (oldy != ((TXT_WINDOW *) w)->py)
-	{
-		set_vslpos((TXT_WINDOW *) w);
-		txt_draw((TXT_WINDOW *) w, FALSE);
-	}
-}
-
-/*
- * Window sized handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_sized(WINDOW *w, RECT *newsize)
-{
-	RECT area;
-	int old_w, old_h;
-
-	xw_get(w, WF_WORKXYWH, &area);
-
-	old_w = area.w;
-	old_h = area.h;
-
-	txt_moved(w, newsize);
-
-	xw_get(w, WF_WORKXYWH, &area);
-
-	if ((area.w > old_w) || (area.h > old_h))
-		txt_draw((TXT_WINDOW *) w, TRUE);
-
-	set_sliders((TXT_WINDOW *) w);
-}
-
-/*
- * Window moved handler voor tekstwindows.
- *
- * Parameters:
- *
- * w			- Pointer naar window
- */
-
-static void txt_moved(WINDOW *w, RECT *newpos)
-{
-	WINFO *wd = ((TXT_WINDOW *) w)->winfo;
-	RECT size;
-
-	txt_wsize((TXT_WINDOW *) w, newpos, &size);
-	wd->flags.fulled = 0;
-	xw_set(w, WF_CURRXYWH, &size);
-	txt_set_defsize(wd);
-}
 
 /*
  * Window menu handler voor tekstwindows.
@@ -1410,38 +627,7 @@ static void txt_hndlmenu(WINDOW *w, int title, int item)
 	xw_menu_tnormal(w, title, 1);
 }
 
-/*
- * Functie wordt aangeroepen als deze het bovenste van de applicatie
- * is geworden.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- */
-
-#pragma warn -par
-
-static void txt_top(WINDOW *w)
-{
-	int n = 0;
-	WINDOW *h = xw_first();
-
-	while (h != NULL)
-	{
-		n++;
-		h = xw_next();
-	}
-
-	menu_ienable(menu, MCLOSE, 1);
-	menu_ienable(menu, MCLOSEW, 1);
-	menu_ienable(menu, MNEWDIR, 0);
-	menu_ienable(menu, MSELALL, 0);
-	menu_ienable(menu, MSETMASK, 0);
-	menu_ienable(menu, MCYCLE, (n > 1) ? 1 : 0);
-}
-
-#pragma warn .par
-
+ 
 /********************************************************************
  *																	*
  * Funkties voor het laden van files in een window.					*
@@ -1465,8 +651,13 @@ static long count_lines(char *buffer, long length)
 	return n;
 }
 
-/* Funktie voor het maken van een lijst met pointers naar het begin
-   van elke regel in de file. */
+
+/* 
+ * Funktie voor het maken van een lijst met pointers naar het begin
+ * van elke regel in de file. 
+ *
+ * Line end is detected by "\n" character (linefeed) 
+ */
 
 static void set_lines(char *buffer, char **lines, long length)
 {
@@ -1482,6 +673,13 @@ static void set_lines(char *buffer, char **lines, long length)
 	while (--cnt > 0);
 }
 
+
+/*
+ * Check if a character is printable
+ * 
+ * Acceptable range: ' ' to '~' (32 to 128), <tab>, <cr>, <lf> and 'ÿ'
+ */
+
 static boolean isascii(char c)
 {
 	if (((c >= ' ') && (c <= '~')) || (c == '\t') || (c == '\r') ||
@@ -1491,54 +689,121 @@ static boolean isascii(char c)
 		return FALSE;
 }
 
-/* Funktie voor het laden van een file in het geheugen.
-   Bij een leesfout wordt een waarde ongelijk 0 terug gegeven.
-   Alle buffers zijn dan vrijgegeven. */
 
-static int txt_read(TXT_WINDOW *w, boolean setmode)
+#if _SHOWFIND
+extern long 
+	search_nsm,
+	find_offset;
+#endif
+
+/*
+ * Load a text file for the purpose of displaying in a window, 
+ * or for the purpose of searching to find a string in the file
+ * or for any other purpose where found convenient.
+ * Function returns error code, if there is any.
+ * If parameter "tlines" is NULL, it is assumed that the routine will
+ * be used for string searching; then lines will not be counted and set.
+ * Note: for safety reasons, the routine allocates one byte more than
+ * needed.
+ */
+
+int read_txtfile
+(
+	const char *name,	/* name of file to read */
+	char **buffer,		/* location of the buffer to receive text */
+	long *flength,		/* size of the file being read */
+	long *tlines,		/* number of text lines in the file */
+	char ***lines		/* pointers to beginnings of text lines */
+)
 {
-	int handle, error;
-	long read, length, flength;
-	XATTR attr;
+	int 
+		handle,		/* file handle */ 
+		error;		/* error code  */
 
-	graf_mouse(HOURGLASS, NULL);
+	long 
+		read,		/* number of bytes read from the file */ 
+		fl,			/* file length [bytes] */
+		length;		/* length of space reserved for file  */
 
-	if ((error = (int) x_attr(0, w->name, &attr)) == 0)
+	XATTR 
+		attr;		/* file attributes */
+
+
+	/* Get file attributes */
+
+	if ((error = (int)x_attr(0, name, &attr)) == 0)
 	{
-		flength = attr.size;
+		*flength = attr.size;	/* output file length */
+		fl = *flength;			/* for local use      */
 
-		if ((handle = x_open(w->name, O_DENYW | O_RDONLY)) >= 0)
+		/* Open file */
+
+		if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
 		{
+
 			char *msg_endfile;
 
-			rsrc_gaddr(R_STRING, MENDFILE, &msg_endfile);
+			/* 
+			 * Get "end of file" string for text window display;
+			 * this is not needed if reading is not for the purpose
+			 * of a display.
+			 */
 
-			length = flength + strlen(msg_endfile) + 1;
-			if ((w->buffer = x_alloc(length + 1)) == NULL)
+			length = fl + 2; /* why was this needed? */
+
+			if ( tlines != NULL )
+			{
+				rsrc_gaddr(R_STRING, MENDFILE, &msg_endfile);
+				length = length + strlen(msg_endfile);
+			}
+
+			/* 
+			 * Allocate buffer for complete file; read file into it 
+			 * HR 120803 use malloc; Malloc fragmentates memory too much 
+			 */
+		
+			if ((*buffer = malloc(length + 1L)) == NULL)		
 				error = ENSMEM;
 			else
 			{
-				read = x_read(handle, flength, w->buffer);
+				read = x_read(handle, fl, *buffer);
 
-				if (read == flength)
-				{
-					strcpy(&(w->buffer[flength]), msg_endfile);
-					w->tlines = count_lines(w->buffer, flength + 2);
-					if ((w->lines = x_alloc(w->tlines * sizeof(char *))) != NULL)
+				/* If completely read with success... */
+
+				if (read == fl)
+				{				
+					/* And this has been read for display in a window */
+
+					if ( tlines != NULL )
 					{
-						w->size = flength;
-						set_lines(w->buffer, w->lines, flength + 2);
-					}
-					else
-					{
-						error = ENSMEM;
-						x_free(w->buffer);
+						/* Append "End of file" string to end of data read */
+
+						strcpy( *buffer + fl, msg_endfile);
+
+						/* Count text lines in the file (in fact, in the buffer) */
+
+						fl = fl + 2;
+
+						*tlines = count_lines(*buffer, fl);
+
+						/* 
+						 * Allocate memory for pointers to beginnings of lines,
+						 * then find those beginnings
+						 */
+
+						if ((*lines = malloc(*tlines * sizeof(char *))) != NULL)
+							set_lines(*buffer, *lines, fl);
+						else
+						{
+							error = ENSMEM;
+							free(*buffer);
+						}
 					}
 				}
 				else
 				{
 					error = (read < 0) ? (int) read : EREAD;
-					x_free(w->buffer);
+					free(*buffer);
 				}
 			}
 			x_close(handle);
@@ -1546,6 +811,50 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 		else
 			error = handle;
 	}
+	return error;
+}
+
+
+/*
+ * Set title to a text window 
+ * See also dir_title() in dir.c
+ */
+
+void txt_title(TXT_WINDOW *w)
+{
+	int columns;
+
+	/* 
+	 * How long can the title be? 
+	 * Note: "-5" takes into account window gadgets left/right of the title */
+
+	columns = min( w->scolumns - 5, (int)sizeof(w->title) );
+
+	/* Cramp it to fit window */
+
+	cramped_name(w->name, w->title, columns);
+
+	/* Set window */
+
+	xw_set((WINDOW *) w, WF_NAME, w->title);
+}
+
+
+/* 
+ * Funktie voor het laden van een file in het geheugen.
+ * Bij een leesfout wordt een waarde ongelijk 0 terug gegeven.
+ * Alle buffers zijn dan vrijgegeven. 
+ */
+
+static int txt_read(TXT_WINDOW *w, boolean setmode)
+{
+	int error;
+
+	graf_mouse(HOURGLASS, NULL);
+
+	/* Read complete file */
+
+	error = read_txtfile(w->name, &(w->buffer), &(w->size), &(w->tlines), &(w->lines) );
 
 	graf_mouse(ARROW, NULL);
 
@@ -1556,16 +865,13 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 	}
 	else
 	{
-		int pl;
-		const char *h;
-
 		if (setmode == TRUE)
 		{
 			char *b;
-			int i, e, n = 0;		/* HR 151102: reserve 'end' for language */
+			int i, e, n = 0;
 
 			b = w->buffer;
-			e = (int) min(w->size, 256L);
+			e = (int) lmin(w->size, 256L); /* longest possible line */
 
 			for (i = 0; i < e; i++)
 			{
@@ -1580,28 +886,288 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 			set_menu(w);
 		}
 
+		/* Calculate number of lines for display */
+
 		if (w->hexmode == 0)
 			w->nlines = w->tlines;
 		else
 			w->nlines = (w->size + 15) / 16;
 
 		if ((w->py + w->nrows) > w->nlines)
-			w->py = max(w->nlines - w->nrows, 0);
+			w->py = lmax(w->nlines - (long)w->nrows, 0L);
 
-		if ((pl = (int) strlen(w->name)) < 70)
-			h = w->name;
-		else
-		{
-			h = w->name + (pl - 70);
-			h = strchr(h, '\\') + 1;
-		}
-		strcpy(w->title, h);
-		xw_set((WINDOW *) w, WF_NAME, h);
-		set_sliders(w);
+
+		/* Set display title */
+
+		txt_title( w );
+
+		set_sliders ((TYP_WINDOW *)w); 
 	}
 
 	return error;
 }
+
+
+/* 
+ * Compare contents of two buffers; return index of first difference.
+ * If buffers are identical, return buffer length
+ */
+
+long  compare_buf( char *buf1, char*buf2, long len )
+{
+	long i;
+
+	for ( i = 0; i < len; i++ )
+		if ( buf1[i] != buf2[i] )
+			return i;
+
+	return len;
+}
+
+
+/*
+ * Copy a number of bytes from source to destination, starting from
+ * index "pos" substituting all nulls with something else; Not more than DISPLEN - 2
+ * bytes will be copied, or less if buffer end is encountered first.
+ * Add a 0 char at the end.
+ * Note 1: "pos" should never be larger than "length" !!!! no checking done !
+ * ("length" is length from the beginning of source, not counted from "pos").
+ * Note 2: there is a similar substitution of zeros in showinfo.c;
+ * take care to use the same substitute (maybe define a macro)
+ * Note 3: It turned out that characters [, ] and | must be substituted too,
+ * otherwise they will cause unwanted formatting of alertbox text.
+ */
+
+#define DISPLEN 20
+
+static void copy_unnull( char *dest,  char *source, long length, long pos )
+{
+	long i, n;
+
+	n = lmin( length - pos, DISPLEN - 1 );
+
+	for ( i = 0; i < n; i++ )
+	{
+		dest[i] = source[i + pos];
+
+		/* Some characters can't be printed */
+
+		if ( (dest[i] == 0) || (dest[i] == '|') || (dest[i] == '[') || (dest[i] == ']') )
+			dest[i] = 127; /* [DEL], usually represented by a triangle */		
+	}
+	dest[n] = 0;
+}
+
+
+/*
+ * Compare two files. Display  an alert box with appropriate text.
+ * Note: both files are completely read into memory 
+ * (can be inconvenient for large files).
+ * If only one file is selected, a file selector is activated
+ * to select the second file.
+ * 
+ * This routine attemts to compare files with some intelligence: 
+ * if a difference is found, the routine tries to resynchronize the
+ * contents of the files after a difference. Synchronization window
+ * is currently fixed to about 1/2 of the length of the strings which are
+ * displayed to show a difference (i.e.  synchronization window length 
+ * is about 9 characters). This should be sufficient to resynchronize
+ * the contents of the files after, e.g. an additional empty line, or
+ * an additional (not too long) word in one of the files.
+ * In principle, sync window width might be made configurable
+ * through use of "sw" and "swx" below.
+ */
+
+#define sw   DISPLEN / 2 	/* width of sync window */
+#define swx2 DISPLEN - 1	/* (almost) twice the above */
+
+void compare_files( WINDOW *w, int n, int *list )
+{
+	char 
+		*name1 = NULL,			/* name of the 1st file */
+		*name2 = NULL,			/* Name of the 2nd file */
+		*buf1 = NULL,			/* buffer for file #1   */
+		*buf2 = NULL,			/* buffer for file #2   */
+		show1[DISPLEN],			/* to display file differences */
+		show2[DISPLEN];			/* to display file differences */
+
+	int
+		button,					/* response in the alert box     */
+		error;					/* error code from reading files */
+
+	long
+		size1,				/* size of file #1 */
+		size2,				/* size of file #2 */
+		i1, 				/* index in the first buffer  */
+		i2, 				/* index in the second buffer */
+		in, 				/* next start index for comparison */
+		i1n,				/* new i1 */
+		i2n,				/* new i2 */
+		i2o,				/* previous i2 */
+		nc, 				/* number of bytes to compare */
+		ii;					/* counter of synchronization attempts */
+
+	boolean
+		sync = TRUE, 		/* false while attempting to resynchronize */
+		diff = FALSE;		/* true if not equal files */
+
+	char
+		fname[20];			/* (part of) filename to display in the alert box */
+
+
+	/* Obtain full names of two files; first the first one */
+
+	name1 = itm_fullname( w, list[0] ); /* note: must free name1 later */
+	
+	if (name1)
+	{
+		/* Prepare a short name form for display purposes */
+
+		cramped_name(itm_name(w, list[0]), fname, sizeof(fname) );
+
+		/* 
+		 * If exactly two files are selected, take the name of the second one; 
+		 * else, ask through the fileselector
+		 */
+
+		if ( n == 2 )
+			name2 = itm_fullname( w, list[1] );
+		else
+		{
+			name2 = locate( "*.*", L_FILE ); /* same for name2 */
+			wd_drawall();
+		}
+		if ( name2 )
+		{
+			/* Don't do anything if second file is the same as the first one */
+
+			if ( strcmp(name1, name2) == 0 )
+				alert_iprint( MNOCOMP ); /* a file is identical to itself */
+			else
+			{
+				/* OK; start comparison */ 
+
+				graf_mouse(HOURGLASS, NULL);
+
+				/* Read the files into buffers */
+
+				error = read_txtfile( name1, &buf1, &size1, NULL, NULL );
+				if ( error == 0 )
+					error = read_txtfile( name2, &buf2, &size2, NULL, NULL );
+
+				if ( error == 0 )
+				{
+					/* Current indices: at the beginning */
+
+					i1 = 0; 
+					i2 = 0;
+
+					/* Scan until the ends of files */
+
+					while ( (i1 < size1) && (i2 < size2) )
+					{
+						/* How many bytes to compare and not exceed the ends */
+
+						nc = lmin( (size1 - i1), (size2 - i2) );
+
+						/* How many bytes are equal ? Move to end of that */
+
+						in = compare_buf(&buf1[i1], &buf2[i2], nc);
+
+						i1n = i1 + in;
+						i2n = i2 + in;
+
+						/* If difference is found before file ends, report */
+
+						if ( (in < nc) || ((in >=nc) && ( (i1n < size1) || (i2n < size2) ))  )
+						{
+							/* 
+							 * If there is a difference, display an alert;
+							 * Do so also if files have different lengths
+							 * and the end of one is reached
+							 */
+
+							if ( sync || (in > swx2) )
+							{
+								graf_mouse(ARROW, NULL);
+								sync = FALSE;	
+								diff = TRUE;
+
+								i1 = i1n;
+								i2 = i2n;
+								i2o = i2;
+
+								/* Prepare something to display */
+
+								copy_unnull( show1, buf1, size1, i1 );
+								copy_unnull( show2, buf2, size2, i2 );
+
+								button = alert_printf(1, ACOMPDIF, i1, fname, show1, show2 );	
+
+								/* Stop further comparison ? */
+
+								if ( button == 2 ) 
+									break;
+
+								graf_mouse(HOURGLASS, NULL);
+
+								/* 
+								 * Advance a little further and try to resync;
+								 * it is reasonable that this advance stays
+								 * inside the displayed area
+								 */
+
+								i1 += sw; /* currently half of displayed length */
+								ii = 0;
+							}
+							else
+							{
+								ii++;
+								if ( ii == swx2 )
+								{
+									sync = TRUE;
+									i2 = i2o;
+								}
+							}
+						}
+						else
+						{
+							i1 = i1n;
+							i2 = i2n;
+							sync = TRUE;
+						}
+
+						if ( sync )
+							i1++;
+						i2++;
+					}
+
+					graf_mouse(ARROW, NULL);
+
+					/* Report that files are identical */
+
+					if ( !diff ) 
+						alert_iprint(MCOMPOK);
+				}
+				else
+
+					/* Something went wrong while reading the files */
+
+					xform_error(error);
+			}
+
+			/* Free allocated blocks */
+
+			free(name2);
+			free(buf1);
+			free(buf2);
+		}
+		free(name1);
+	}
+
+}
+
+
 
 /********************************************************************
  *																	*
@@ -1609,24 +1175,28 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
  *																	*
  ********************************************************************/
 
-/* Open een window. file moet een gemallocde string zijn. Deze mag
-   niet vrijgegeven worden door de aanroepende funktie. Bij een fout
-   wordt de string vrijgegeven. */
+/* 
+ * Open een window. file moet een gemallocde string zijn. Deze mag
+ * niet vrijgegeven worden door de aanroepende funktie. Bij een fout
+ * wordt de string vrijgegeven.
+ */
 
 static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 						   long py, int tabsize, boolean hexmode,
-						   boolean setmode, int *error)
+						   boolean setmode, int *error) 
 {
 	TXT_WINDOW *w;
 	RECT size;
 	int errcode;
+
+	wd_in_screen( info );
 
 	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &txt_functions, TFLAGS, &tmax,
 									 sizeof(TXT_WINDOW), viewmenu, &errcode)) == NULL)
 	{
 		if (errcode == XDNMWINDOWS)
 		{
-			alert_printf(1, MTMWIND);
+			alert_iprint(MTMWIND);
 			*error = ERROR;
 		}
 		else if (errcode == XDNSMEM)
@@ -1639,7 +1209,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 		return NULL;
 	}
 
-	info->txt_window = w;
+	info->typ_window = (TYP_WINDOW *)w; 
 	w->px = px;
 	w->py = py;
 	w->name = file;
@@ -1650,7 +1220,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	w->hexmode = hexmode;
 	w->winfo = info;
 
-	txt_calcsize(info, &size);
+	wd_calcsize(info, &size); 
 
 	graf_mouse(HOURGLASS, NULL);
 	*error = txt_read(w, setmode);
@@ -1659,18 +1229,17 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	if (*error != 0)
 	{
 		txt_rem(w);
-		xw_delete((WINDOW *) w);		/* HR 131202: after txt_rem (MP) */
+		xw_delete((WINDOW *) w);		/* after txt_rem (MP) */
 		return NULL;
 	}
 	else
 	{
-		xw_open((WINDOW *) w, &size);
+		wd_iopen((WINDOW *)w, &size); 
 		info->used = TRUE;
 		return (WINDOW *) w;
 	}
 }
 
-#pragma warn -par
 
 boolean txt_add_window(WINDOW *w, int item, int kstate)
 {
@@ -1681,52 +1250,46 @@ boolean txt_add_window(WINDOW *w, int item, int kstate)
 		j++;
 
 	if (textwindows[j].used == TRUE)
-	{
-		alert_printf(1, MTMWIND);
-		return FALSE;
-	}
+		return alert_iprint(MTMWIND), FALSE;
 
 	if ((file = itm_fullname(w, item)) == NULL)
 		return FALSE;
 
 	if (txt_do_open(&textwindows[j], file, 0, 0, options.tabsize, FALSE, TRUE, &error) == NULL)
+		return xform_error(error), FALSE;
+
+#if _SHOWFIND	
+	/* 
+	 * If there was a search for a string, position sliders to show string 
+	 */
+
+	if ( search_nsm > 0 )
 	{
-		xform_error(error);
-		return FALSE;
+		long
+			ppy = 0;	/* line in which the string is   */
+
+		TXT_WINDOW *tw = (TXT_WINDOW *)(textwindows[j].typ_window);
+		search_nsm = 0; /* this search is finished; cancel the finds */
+
+		/* Find in which line and column the found string is */
+
+		for ( ppy = 0; ppy < tw->tlines; ppy++ )
+		{
+			if ( tw->lines[ppy] - tw->lines[0] > find_offset )
+				break;
+		}
+
+		/* Note: "ppy" is now equal to line number + 1 */
+
+		tw->py = ppy - 1;
+		tw->px = find_offset - tw->lines[tw->py];
+		w_page((TYP_WINDOW *)tw, HORIZ | VERTI);
 	}
+#endif
 
 	return TRUE;
 }
 
-#pragma warn .par
-
-/********************************************************************
- *																	*
- * Functies voor het veranderen van het window font.				*
- *																	*
- ********************************************************************/
-
-void txt_setfont(void)
-{
-	int i;
-	WINFO *wd;
-	RECT work;
-
-	if (fnt_dialog(DTVFONT, &txt_font, FALSE) == TRUE)
-	{
-		for (i = 0; i < MAXWINDOWS; i++)
-		{
-			wd = &textwindows[i];
-			if (wd->used != FALSE)
-			{
-				xw_get((WINDOW *) wd->txt_window, WF_WORKXYWH, &work);
-				txt_calc_rc(wd->txt_window, &work);
-				set_sliders(wd->txt_window);
-				txt_draw(wd->txt_window, TRUE);
-			}
-		}
-	}
-}
 
 /********************************************************************
  *																	*
@@ -1745,6 +1308,7 @@ void txt_init(void)
 	tmax.h = work.h - (work.h % screen_info.fnt_h);
 }
 
+
 void txt_default(void)
 {
 	int i;
@@ -1758,131 +1322,153 @@ void txt_default(void)
 		textwindows[i].w = (screen_info.dsk.w * 9) / (10 * screen_info.fnt_w);
 		textwindows[i].h = (screen_info.dsk.h * 8) / (10 * screen_info.fnt_h);
 		textwindows[i].flags.fulled = 0;
+		textwindows[i].flags.iconified = 0;
+		textwindows[i].flags.resvd = 0;
 		textwindows[i].used = FALSE;
 	}
 }
 
-int txt_load(XFILE *file)
-{
-	int i, n;
-	SINFO1 sinfo;
-	WINFO *w;
-	long s;
-	FDATA font;
 
-	if (options.version < 0x125)
-		txt_font = def_font;
+typedef struct
+{
+	int px, py, index,
+	    hexmode, tabsize;
+	LNAME name;
+	WINDOW *w;
+} SINFO2;
+
+static
+SINFO2 that;
+
+
+/* 
+ * Configuration table for one open text window 
+ */
+
+static CfgEntry txtw_table[] =
+{
+	{CFG_HDR, 0, "text" },
+	{CFG_BEG},
+	{CFG_D,   0, "indx", &that.index	},
+	{CFG_S,   0, "name",  that.name	    },
+	{CFG_D,   0, "xrel", &that.px		},
+	{CFG_D,   0, "yrel", &that.py		},
+	{CFG_BD,   0, "hexm", &that.hexmode	},
+	{CFG_D,   0, "tabs", &that.tabsize	},
+	{CFG_END},
+	{CFG_LAST}
+};
+
+
+/* 
+ * Save or load configuration for one open text window 
+ */
+
+#if !TEXT_CFG_IN
+	extern boolean wclose;
+#endif
+
+CfgNest text_one
+{
+	if (io == CFG_SAVE)
+	{
+		int i = 0;
+		TXT_WINDOW *tw;
+	
+		while ((WINDOW *) textwindows[i].typ_window != that.w)
+			i++;
+	
+		tw = (TXT_WINDOW *)textwindows[i].typ_window;
+		that.index = i;
+		that.px = tw->px;
+		that.py = tw->py;
+		that.hexmode = tw->hexmode;
+		that.tabsize = tw->tabsize;
+		strcpy(that.name, tw->name);
+	
+		*error = CfgSave(file, txtw_table, lvl + 1, CFGEMP);
+	}
 	else
+#if !TEXT_CFG_IN
+	if (wclose) /* temporary */
+#endif
 	{
-		if ((s = x_fread(file, &font, sizeof(FDATA))) != sizeof(FDATA))
-			return (s < 0) ? (int) s : EEOF;
-		fnt_setfont(font.id, font.size, &txt_font);
+		memset(&that, 0, sizeof(that));
+
+		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl + 1);
+
+		if (*error == 0 )
+		{
+			if (   that.name[0] == 0
+				|| that.index >= MAXWINDOWS
+				|| that.tabsize > 40
+				|| that.px > 1000
+				|| that.py > 1000
+				)
+					*error = EFRVAL;
+		}
+
+		if (*error == 0)
+		{
+			char *name = malloc(strlen(that.name) + 1);
+			if (name)
+			{
+				strcpy(name, that.name);
+
+				/* Note: in case of error, name is deallocated in txt_do_open */
+
+				txt_do_open(   &textwindows[that.index],
+								name,
+								that.px,
+								that.py,
+								that.tabsize,
+								that.hexmode,
+								FALSE,
+								error
+							);
+				that.index++;
+			}
+			else
+				*error = ENSMEM;
+		}
 	}
-
-	if (options.version == 0x119)
-	{
-		txt_default();
-		n = 6;
-	}
-	else
-		n = MAXWINDOWS;
-
-	for (i = 0; i < n; i++)
-	{
-		w = &textwindows[i];
-
-		if ((s = x_fread(file, &sinfo, sizeof(SINFO1))) != sizeof(SINFO1))
-			return (s < 0) ? (int) s : EEOF;
-
-		w->x = sinfo.x;
-		w->y = sinfo.y;
-		w->w = sinfo.w;
-		w->h = sinfo.h;
-		w->flags = sinfo.flags;
-	}
-	return 0;
 }
 
-int txt_save(XFILE *file)
+
+int text_save(XFILE *file, WINDOW *w, int lvl)
 {
-	int i;
-	SINFO1 sinfo;
-	WINFO *w;
-	long n;
-	FDATA font;
+	int error = 0;
 
-	font.id = txt_font.id;
-	font.size = txt_font.size;
-	font.resvd1 = 0;
-	font.resvd2 = 0;
+	that.w = w;
+	text_one(file, "text", lvl + 1, true, &error );
 
-	if ((n = x_fwrite(file, &font, sizeof(FDATA))) < 0)
-		return (int) n;
-
-	for (i = 0; i < MAXWINDOWS; i++)
-	{
-		w = &textwindows[i];
-
-		sinfo.x = w->x;
-		sinfo.y = w->y;
-		sinfo.w = w->w;
-		sinfo.h = w->h;
-		sinfo.flags = w->flags;
-		sinfo.resvd = 0;
-
-		if ((n = x_fwrite(file, &sinfo, sizeof(SINFO1))) < 0)
-			return (int) n;
-	}
-
-	return 0;
+	return error;
 }
 
-int txt_load_window(XFILE *file)
+
+CfgNest view_config
 {
-	SINFO2 sinfo;
-	char *name;
-	long n;
-	int error;
 
-	if ((n = x_fread(file, &sinfo, sizeof(SINFO2))) != sizeof(SINFO2))
-		return (n < 0) ? (int) n : EEOF;
-
-	if ((name = x_freadstr(file, NULL, sizeof(LNAME), &error)) == NULL)		/* HR 240103: max l */ /* HR 240203 */
-		return error;
-
-	if (txt_do_open(&textwindows[sinfo.index], name, sinfo.px, sinfo.py, sinfo.tabsize, sinfo.hexmode, FALSE, &error) == NULL)
+#if TEXT_CFG_IN
+	if ( io == CFG_LOAD )
 	{
-		if ((error == EPTHNF) || (error == EFILNF) || (error == ERROR))
-			return 0;
-		return error;
+		memset(&thisw, 0, sizeof(thisw));
+		memset(&that, 0, sizeof(that));
 	}
+#endif
 
-	return 0;
+	cfg_font = &txt_font;
+	wtype_table[0].s = "views";
+	thisw.windows = &textwindows[0];
+
+	*error = handle_cfg(file, wtype_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, NULL, NULL );
 }
 
-int txt_save_window(XFILE *file, WINDOW *w)
-{
-	SINFO2 sinfo;
-	TXT_WINDOW *tw;
-	int i = 0;
-	long n;
 
-	while ((WINDOW *) textwindows[i].txt_window != w)
-		i++;
+#if !TEXT_CFG_IN
 
-	tw = textwindows[i].txt_window;
+#include "tw_load.h"
 
-	sinfo.index = i;
-	sinfo.px = tw->px;
-	sinfo.py = tw->py;
-	sinfo.resvd1 = 0;
-	sinfo.resvd2 = 0;
-	sinfo.hexmode = tw->hexmode;
-	sinfo.resvd3 = 0;
-	sinfo.tabsize = tw->tabsize;
+#endif
 
-	if ((n = x_fwrite(file, &sinfo, sizeof(SINFO2))) < 0)
-		return (int) n;
 
-	return x_fwritestr(file, tw->name);
-}

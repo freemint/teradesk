@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
@@ -34,18 +36,22 @@
 #include "resource.h"
 #include "xfilesys.h"
 #include "file.h"
+#include "lists.h" 
+#include "slider.h"
 #include "icon.h"
 #include "screen.h"
 #include "startprg.h"
+#include "font.h"
+#include "config.h"
 #include "window.h"
 
+
 #define MAXTPATH	128
-/* #define PATHSIZE	132 */ /* HR 240203 */
 
 typedef struct
 {
 	const char *name;
-	LNAME path;				/* HR 240203 */
+	LNAME path;
 	COMMAND cml;
 	const char *envp;
 	int appl_type;
@@ -55,106 +61,11 @@ typedef struct
 int cdecl(*old_critic) (int error);
 PRG_INFO pinfo;
 
-#ifdef DUMMY
+extern int tos_version, aes_version;
 
- Not used.
 
-static boolean _make_path(char *fname, char *path, char *name)
-{
-	if ((strlen(path) + strlen(name) + 1) > MAXTPATH)
-		return FALSE;
-	else
-	{
-		make_path(fname, path, name);
-		return TRUE;
-	}
-}
-
-static boolean findenv(char *file, char *npath)
-{
-	LNAME path;				/* HR 240203 */
-	char *env, *fname;
-	int i;
-
-	if (strlen(file) > MAXTPATH)
-		return FALSE;
-
-	fname = strrchr(file, '\\');/* zoek begin van naam */
-
-	if (fname == NULL)
-		fname = strchr(file, ':');
-
-	if (fname != NULL)
-	{
-		fname++;
-		if (x_exist(file, EX_FILE) != FALSE)
-			return TRUE;		/* file heeft zelf pad */
-	}
-	else
-		fname = file;
-
-	if ((npath != NULL) && (_make_path(path, npath, fname) != FALSE) &&
-		(x_exist(path, EX_FILE) != FALSE))	/* Controleer alternatieve directory */
-	{
-		strcpy(file, path);
-		return TRUE;
-	}
-	else
-	{
-		getroot(path);			/* Controleer huidige directory */
-		Dgetpath(&path[2], 0);
-
-		if ((_make_path(path, path, fname) != FALSE) && (x_exist(path, EX_FILE) != FALSE))
-		{
-			strcpy(file, path);
-			return TRUE;
-		}
-		else
-		{
-			getroot(path);		/* Controleer root directory */
-
-			if ((_make_path(path, path, fname) != FALSE) && (x_exist(path, EX_FILE) != FALSE))
-			{
-				strcpy(file, path);
-				return TRUE;
-			}
-			else
-			{
-				if ((env = getenv("PATH")) == NULL)	/* Controleer environment */
-					return FALSE;
-
-				while (*env)
-				{
-					i = 0;
-
-					while (*env && (*env != ';'))
-					{
-						if (i <= MAXTPATH)
-							path[i++] = *env++;
-					}
-
-					path[i] = 0;
-
-					if (*env)
-						env++;
-
-					if ((_make_path(path, path, fname) != FALSE) && (x_exist(path, EX_FILE) != FALSE))
-					{
-						strcpy(file, path);
-						return TRUE;
-					}
-				}
-			}
-		}
-	}
-
-	return FALSE;
-}
-#endif
-
-/*
- * Display an title with the program name in the top of the
- * screen.
+/* 
+ * Display a title with the program name in the top of the screen. 
  */
 
 static void set_title(char *title)
@@ -183,6 +94,7 @@ static void set_title(char *title)
 	objc_draw(&dsktitle, ROOT, MAX_DEPTH, dsktitle.r.x, dsktitle.r.y, dsktitle.r.w, dsktitle.r.h);
 }
 
+
 /*
  * Trick to restore the mouse after some programs, which hide the
  * mouse. Does not work always.
@@ -194,23 +106,27 @@ static void clean_up(void)
 	v_show_c(vdi_handle, 0);
 }
 
+
 static int cdecl new_critic(int error /*,int drive*/ )
 {
 	return error;
 }
+
 
 static void install_critic(void)
 {
 	old_critic = (int cdecl(*)(int error)) Setexc(0x101, (void (*)()) new_critic);
 }
 
+
 static void remove_critic(void)
 {
 	Setexc(0x101, (void (*)()) old_critic);
 }
 
-/*
- * Copy an command line.
+
+/* 
+ * Copy a command line 
  */
 
 static void copy_cmd(COMMAND *d, COMMAND *s)
@@ -229,11 +145,16 @@ static void copy_cmd(COMMAND *d, COMMAND *s)
 		*s2++ = *s1++;
 }
 
+
+/* 
+ * Close and delete all windows before starting a program 
+ */
+
 static void close_windows(void)
 {
 	int handle;
 
-	if (tos1_4())
+	if ( /* tos1_4() */ aes_version >= 0x140 )
 		wind_new();
 	else
 	{
@@ -248,14 +169,19 @@ static void close_windows(void)
 	}
 }
 
-static int exec_com(const char *name, COMMAND * cml, const char *envp,
-					int appl_type)
+
+/* 
+ * Execute ... ... 
+ */
+
+static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_type)
 {
 	int error, *colors, stdout_handle, ostderr_handle;
 
 	/* If save color option is set, save the current colors. */
 
-	if ((options.cprefs & SAVE_COLORS) && ((colors = get_colors()) == NULL))
+	if (   (options.cprefs & SAVE_COLORS)
+	    && ((colors = get_colors()) == NULL))
 		return ENSMEM;
 
 	/* If use file handle 2 as standard error option is set, redirect
@@ -281,8 +207,15 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 
 	graf_mouse(HOURGLASS, NULL);
 
-	if (wd_tmpcls() == FALSE)
+	/* 
+	 * Save current position of windows into a buffer, then close all windows;
+     */
+
+	if ( wd_tmpcls() )
 	{
+		/* If windows successfully closed, remove menu bar */
+
+
 		menu_bar(menu, 0);
 
 		pinfo.name = name;
@@ -297,14 +230,14 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 
 			appl_type = pinfo.appl_type;
 			pinfo.new = FALSE;
-
-			shel_write(1, appl_type, 0, (char *)pinfo.name, (char *)&pinfo.cml);
-
+			shel_write(SHW_EXEC, appl_type, 0, (char *)pinfo.name, (char *)&pinfo.cml);
 			graf_mouse(HOURGLASS, NULL);
 			wind_set(0, WF_NEWDESK, NULL, 0);
 
+			/* Show program name as title on the screen */
+
 			{
-				LNAME pname;		/* HR 240203 */
+				LNAME pname;
 
 				split_path(pinfo.path, pname, pinfo.name);
 				set_title(pname);
@@ -312,7 +245,15 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 
 			appl_exit();
 			appl_init();
+
+			/* close and delete all windows */
+
 			close_windows();
+
+			/* 
+			 * if this is to be a tos program, turn mouse off, etc.
+			 * otherwise draw desktop
+			 */
 
 			if (appl_type == 0)
 			{
@@ -322,6 +263,8 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 			}
 			else
 				dsk_draw();
+
+			/* Start a program using Pexec */
 
 			error = (int) x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
 
@@ -352,14 +295,14 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 				close_windows();
 
 			{
-				LNAME cmd;				/* HR 240203 */
+				LNAME cmd;
 				char tail[128];
 
 				shel_read(cmd, tail);
 
 				if (strcmp(cmd, pinfo.name) && cmd[0])
 				{
-					static LNAME name;		/* HR 240203 */
+					static LNAME name;
 
 					pinfo.new = TRUE;
 					strcpy(name, cmd);
@@ -389,18 +332,26 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 					pinfo.new = FALSE;
 			}
 
+			/* Try to restore a visible mouse if possible */
+
 			clean_up();
 		}
 
-		shel_write(0, 1, 0, "", "\0\0");
+		shel_write(SHW_NOEXEC, 1, 0, "", "\0\0");
 
-		wind_set(0, WF_NEWDESK, desktop, 0);
-		dsk_draw();
+		/* Draw the desktop and menu bar, then reopen all windows */
+		regen_desktop(desktop);
 		menu_bar(menu, 1);
 		wd_reopen();
 	}
 
+	/* 
+	 * Clear keyboard buffer just in case there is something left there; 
+	 * then set mouse pointer to arrow shape 
+	 */
+
 	clr_key_buf();
+
 	graf_mouse(ARROW, NULL);
 
 	/* Restore handle 2 to old handle. */
@@ -423,9 +374,9 @@ static int exec_com(const char *name, COMMAND * cml, const char *envp,
 	return error;
 }
 
+
 /*
- * Description: Build an environment with an ARGV variable.
- *
+ * Build an environment with an ARGV variable.
  * Result: pointer to environment or NULL if an error occured.
  */
 
@@ -443,7 +394,7 @@ const char *make_env(const char *program, const char *cmdline)
 	{
 		d = envp;
 
-		/* Copy current environment. */
+		/* Copy the current environment. */
 
 		s = _BasPag->p_env;
 		do
@@ -499,6 +450,7 @@ const char *make_env(const char *program, const char *cmdline)
 	return envp;
 }
 
+
 /*
  * Description: Start a program. If 'path' is not NULL, 'path' is
  * used as current directory. If 'path' is NULL, the directory of
@@ -506,32 +458,57 @@ const char *make_env(const char *program, const char *cmdline)
  *
  * Parameters:
  *
- * fname		- filename of program
+ * fname		- path+filename of program
  * cl			- command line (first byte is length)
  * path			- current directory
  * prg			- application type
  * argv			- use argv protocol
+ * single		- runs in single mode in Magic 
+ * limmem		- memory limit for program 
  * kstate		- state of SHIFT, CONTROL and ALTERNATE keys
  */
 
-#pragma warn -par
-
 void start_prg(const char *fname, const char *cmdline,
 			   const char *path, ApplType prg, boolean argv,
+			   boolean single, long limmem,
 			   int kstate)
 {
-#if _MINT_
-	if (   _GemParBlk.glob.count != -1
-	    && magx == 0		/* HR 151102 */
+	int appl_type;
+
+	/* Determine program type */
+
+	appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0; 
+
+
+#if _MINT_ 
+
+/*
+ * This is experimental and most probably is a bad thing to do, but better
+ * than nothing: until starting of a non-multitsking app is coded properly (if ever), 
+ * launch it as if it were a single-tasking system. This applies to Magic only
+ * (geneva takes care of the issue by itself), and, in fact, seems to work
+ * (more-less). At least programs like DynaCADD and old 1stWord are running
+ * properly with it, probably mostly because of changing the default directory.
+ * However, memory limit for such application is not applicatble, then.
+ */
+
+	if (   ( single && (magx!=0) )
+	    || (   _GemParBlk.glob.count != -1
+	        && magx == 0
+	       )
 	   )
 #endif
 	{
-		/* AES is not multitasking, use Pexec() to start program. */
+		/* 
+		 * AES is not multitasking, use Pexec() to start program,
+		 * (or else start a background program in mint)
+		 */
 
 		COMMAND cl;
 		char *prgpath, *olddir;
 		const char *envp;
-		int error = 0, appl_type;
+		int error = 0; 
+
 #if _MINT_
 		boolean background = (kstate & 4) ? TRUE : FALSE;
 #endif
@@ -539,25 +516,25 @@ void start_prg(const char *fname, const char *cmdline,
 		/* Make a copy of cmdline. */
 
 		memset(cl.command_tail, 0, sizeof(cl.command_tail));
-		strsncpy(cl.command_tail, cmdline + 1, 126);		/* HR 120203: secure cpy */
+		strsncpy(cl.command_tail, cmdline + 1, 126);
 		cl.length = *cmdline;
 
-		if (prg == PACC)				/* HR 101202: Dont start acc in single tos */
+		if (prg == PACC)	/* Dont start acc in single tos */
 		{
-			alert_printf(1, MCANTACC);
+			alert_iprint(MCANTACC); 
 			return;
 		}
 
-		appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
-
 #if _MINT_
-		if (mint)				/* HR 151102 */
+		if (mint)		
 			if ((appl_type == 1) && (background == TRUE))
 			{
-				alert_printf(1, MGEMBACK);
+				alert_iprint(MGEMBACK); 
 				return;
 			}
 #endif
+
+		/* Build an environment if needed */
 
 		if (argv)
 		{
@@ -569,33 +546,79 @@ void start_prg(const char *fname, const char *cmdline,
 		else
 			envp = NULL;
 
+		/* 
+		 * Do something only if filename of program is specified;
+		 * (fn_get_path extracts path from full filename and
+		 * allocates a string for this path
+		 */
+
 		if ((prgpath = fn_get_path(fname)) != NULL)
 		{
+			/* 
+			 * Find and remember current default directory, 
+			 * if OK, then change to one specified for this program
+			 */
+
 			if ((olddir = getdir(&error)) != NULL)
 			{
-				graf_mouse(HOURGLASS, NULL);
+				/* 
+				 * If path is not given, directory of the program
+				 * will be set as current directory;
+				 * otherwise "path" will be set as current directory
+				 */
+
+				graf_mouse(HOURGLASS, NULL); 
 				error = chdir((path == NULL) ? prgpath : path);
 				graf_mouse(ARROW, NULL);
 
 				if (error == 0)
 				{
+
+					/*
+					 * All is well so far; now start a background program
+					 * in mint, or else start a single-task program	
+					 */
 #if _MINT_
-					if (mint && background == TRUE)			/* HR 151102 */
-						error = (int) x_exec(100, fname, &cl, envp);
+					if ( mint && background )	
+						error = (int) x_exec(100, fname, &cl, envp); /* just Pexec */
 					else
 #endif
 						error = exec_com(fname, &cl, envp, appl_type);
 				}
 
+				/* Return to old default directory */
+
 				graf_mouse(HOURGLASS, NULL);
 				chdir(olddir);
 				graf_mouse(ARROW, NULL);
-
 				free(olddir);
 			}
 
+			/* Free string space which was allocated for program path */
+
 			free(prgpath);
 		}
+
+		/* 
+		 * There seems to be a problem with TOS 2.06 swallowing the 
+		 * first mouse click after executing a program by clicking on
+		 * a desktop icon, and there are no windows open.
+		 * This below seems to cure that, at least temporarily
+		 */
+ 
+		if ( (tos_version == 0x206)  
+#if _MINT_
+		             && !(mint || geneva) 
+#endif
+		   ) 
+		{
+			int p[8] = {0,1, 1,1, 0,1, 0,0};
+
+			appl_tplay( (void *)(&p), 1, 4 );
+			appl_tplay( (void *)(&p[4]), 1, 4 );
+		}
+
+		/* Deallocate environment created for this program */
 
 		if (envp)
 			free(envp);
@@ -608,17 +631,26 @@ void start_prg(const char *fname, const char *cmdline,
 	{
 		/* AES is multitasking, use shel_write() to start program. */
 
-		if (prg == PACC)			/* HR 101202 */
-			shel_write(3, 0, 100, (char *)fname, "\0");
+		if (prg == PACC)
+
+			/* Start an accessory */
+
+			shel_write(SHW_EXEC_ACC, 0, SHW_PARALLEL, (char *)fname, "\0"); 
 		else
 		{
-			int appl_type, mode;
+			/* Start other types of applications */
+
+			int mode;
 			void *p[5];
 			char prgpath[256], *h;
-	
-			appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
-			mode = 0x400 | 1;				/* HR 151102: always use 1 */
-	
+
+			/* Start gem/tos program (0x1), but in extended mode ( | 0x400) */
+
+			mode = SHW_XMDDEFDIR | SHW_EXEC; /* always use SHW_EXEC */
+
+			if ( limmem > 0L )	
+				mode |= SHW_XMDLIMIT;
+
 			if (path == NULL)
 			{
 				strcpy(prgpath, fname);
@@ -630,22 +662,23 @@ void start_prg(const char *fname, const char *cmdline,
 				strcpy(prgpath, path);
 				strcat(prgpath,"\\");		/* Necessary for Geneva. */
 			}
-	
+
 			if (argv)
 				*(char *)cmdline = 127;
 	
-			p[0] = fname;
-			p[1] = NULL;
-			p[2] = NULL;
-			p[3] = prgpath;
+			p[0] = fname;	/* pointer to name */
+			(long)p[1] = limmem;	/* value for Psetlimit() DjV 050 020703 */
+			p[2] = NULL;	/* value for Prenice()   */
+			p[3] = prgpath;	/* pointer to default directory */
 			p[4] = NULL;
 	
-	/* HR 151102: SHW_PARALLEL(100) for MagiC */
-			shel_write(mode, appl_type, magx ? 100 : (int) argv,
-			                 (char *) p, (char *) cmdline);
+			/* SHW_PARALLEL(100) for MagiC */
+
+			shel_write(mode, appl_type, magx ? SHW_PARALLEL : (int)argv,
+			                 (char *)p, (char *)cmdline);
 		}
 	}
 #endif
 }
 
-#pragma .par
+

@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -86,6 +88,7 @@
 #define SHFT_HOME		0x8147
 #define UNDO			0x8061
 #define HELP			0x8062
+#define SHIFT_HELP		0x8162
 #define CURUP			0x8048
 #define CURDOWN			0x8050
 #define CURLEFT			0x804B

@@ -1,5 +1,7 @@
-/*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren, this file Dj.Vukovic
+/* 
+ * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,46 +28,57 @@
 #include <error.h>
 #include <xdialog.h>
 #include <boolean.h>
+
 #include "xfilesys.h"
 #include "resource.h"
 #include "desk.h"
+#include "lists.h"  
+#include "slider.h" 
 #include "icon.h"
 #include "library.h"
+#include "font.h"
+#include "config.h"
 #include "window.h"
 
 static XDINFO vidinfo;
 
 extern GRECT xd_desk;
+extern int tos_version;
+
+extern WINDOW *xd_deskwin; 
+void txt_init(void); 
+void dir_init(void); 
 
 int 
-#ifdef _OVSCAN
-	ovrstat,	/* state of overscan 	      */
+#if _OVSCAN
+	oldstat = -1,   /* previous state of overscan DjV 007 210703 */
+	ovrstat = -1,	/* state of overscan 	DjV 007 210303 set -1  */
 #endif
-	vprefsold,	/* previous state of voptions */
-	bltstat,	/* presence of blitter        */
-	currez;  	/* current screen mode        */    
+	vprefsold,		/* previous state of voptions */
+	bltstat,		/* presence of blitter        */
+	currez;  		/* current screen mode        */    
 
 long
-#ifdef _OVSCAN
-	over,		/* identification of overscan type */
+#if _OVSCAN
+	over,			/* identification of overscan type */
 #endif
-	vdo;		/* identification of video hardware- shifter type */
+	vdo;			/* identification of video hardware- shifter type */
 	
 /* 
  *  Routine get_set_video acquires data on current state of bliter (if any)
  *  and of current resolution, or sets same data
  */
  
-void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
-
+void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
+{
 	long
-#ifdef _OVSCAN
+#if _OVSCAN
 		s,						/* sup.stack p.        */
 #endif
 		logb,       			/* logical screen base  */
 		phyb;       			/* physical screen base */
 
-#ifdef _OVSCAN
+#if _OVSCAN
 	char
 		*acia;
 
@@ -73,7 +86,8 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 
 	int std_x[4] = {320,640,1280,0};
 	int std_y[4] = {200,400,800,0};
-	int idi;
+	static int idi, menu_h;
+	WINDOW *w;
 #endif
 
 	/* Where is the screen ? */
@@ -81,18 +95,26 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 	logb = xbios(3); 				/* Logbase();  */
 	phyb = xbios(2);				/* Physbase(); */
 
-	if ( set == 0 ){ /* get data */
-
+	if ( set == 0 )					 /* get data */
+	{
 		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
 		
 		vdo = find_cookie( '_VDO' );
 		
 		/* Try to find out about a couple of overscan types */
 		
-#ifdef _OVSCAN		
+#if _OVSCAN		
 		if (   ( (over = find_cookie('OVER')) != - 1 )
 		    || ( (over = find_cookie('Lace')) != - 1 ) )
 		{
+			/* Set initial values */
+
+			if ( ovrstat < 0 )
+			{
+				ov_max_w = max_w;
+				ov_max_h = max_h;
+				menu_h = max_h - screen_info.dsk.h; 
+			}
 
 			ovrstat = 0;
 			for ( idi = 0; idi < 3; idi++ )
@@ -100,6 +122,7 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 				{
 					ov_max_w = max_w;
 					ov_max_h = max_h;
+					menu_h = max_h - screen_info.dsk.h;
 					ovrstat = 1;
 					break;
 				}
@@ -115,7 +138,7 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 
 		/* Get current blitter state; insert into options  */
   
-		if ( get_tosversion() >= 0x104 ) 
+		if ( tos_version >= 0x104 ) 
 			bltstat = Blitmode(-1);   /* Function known only to tos >= 1.4 ? */
 		else
 			bltstat = 0;
@@ -126,13 +149,14 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
     		
 		/* Which is the current standard resolution ? */
 	
-		currez = xbios(4); /* Getrez() */   	
+		currez = (int)xbios(4); /* Getrez() */   	
 		
 		options.V2_2.vrez = currez; 
 
 	}
 	else /* set data */
 	{	
+
 		/* Set blitter, if present */
 	
 		if ( bltstat & 0x0002 )
@@ -143,20 +167,20 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 				bltstat &= ~0x0001;
 			bltstat = Blitmode ( bltstat );
 		}
-
-#ifdef _OVSCAN
+		
+#if _OVSCAN
 		/* 
 		 * Set overscan (Lacescan, in fact)
 		 * that which is below is ok but not enough !!!!
-		 * therefore disabled for the time being
 		 */
 
-		if ( (over != 0xffffffffL ) && ( (vprefsold^options.V2_2.vprefs) && VO_OVSCAN) )
+		if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.V2_2.vprefs) && VO_OVSCAN) )
 		{
+			oldstat = ovrstat;
 
 			menu_bar ( menu, 0 ); 
 
-			s = Super (0L );
+			s = Super (0L);
 			(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
 
 			if ( options.V2_2.vprefs & VO_OVSCAN )
@@ -165,6 +189,7 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 				ovrstat = 1;
 				max_h = ov_max_h;
 				max_w = ov_max_w;
+				vidoptions[VBLITTER].ob_state &= ~DISABLED;
 			}
 			else
 			{
@@ -172,6 +197,7 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 				ovrstat = 0;
 				max_w = std_x[idi];
 				max_h = std_y[idi];
+				vidoptions[VBLITTER].ob_state |= DISABLED;
 			}
 
 			/* 
@@ -179,11 +205,17 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 			 * provoke Lacescan to adapt 
 			 */
 
+			screen_info.dsk.w = max_w;
+			screen_info.dsk.h = max_h - menu_h;
+			xd_desk.g_w = max_w;
+			xd_desk.g_h = max_h - menu_h;
+			xd_deskwin->xw_size.w = max_w;
+			xd_deskwin->xw_size.h = max_h;
+
 			xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
 
 			Super ( (void *) s );
-
-			wind_set(0, WF_NEWDESK, desktop, 0); 
+			wind_set(0, WF_NEWDESK, desktop, 0);
 
 			/* 
 			 * For some reason desktop doesn't get redrawn correctly here
@@ -192,11 +224,26 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 			 * part of the screen?)
 			 */
 			menu_bar(menu, 1); 
-			dsk_draw(); 
-			menu_bar(menu, 1); 
 
-/*			wd_attrib();		*/
-            wd_fields();		/* HR 050303 */
+			/* Any window which is too large must be reduced  in size */
+
+			txt_init();
+			dir_init();
+
+			w = xw_first();
+
+			while (w != NULL)
+			{
+				wd_adapt(w);
+				w = xw_next();
+			}
+
+			if ( oldstat != ovrstat )
+			{
+				dsk_draw(); 
+				menu_bar(menu, 1); 
+			}
+           	wd_fields();
 		}	
 			
 #endif
@@ -210,20 +257,23 @@ void get_set_video (int set){ /* 0=get, 1=set, 2=set & change rez */
 			 * This will actually (almost) reset the computer
 			 */
 
-			shel_write( 5, currez + 2, 0, NULL, NULL ); /* DjV 007 110203 */
+			shel_write( SHW_RESCHNG, currez + 2, 0, NULL, NULL );
 
 			/* DjV 007 290103: is no good, so disabled for the time being */
 
-			xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
+			/* xbios(5, logb, phyb, currez); DjV 007 210303 */ 	/* same as Setscreen (logb,phyb,currez); */ 
 
 		}
 	}
 }
 
 
-/* Routine voptions handles video options dialog */ 
+/* 
+ * Routine voptions handles video options dialog 
+ */ 
 
-int voptions(void){
+int voptions(void)
+{
     
 	int 
 		button,    /* selected button */
@@ -252,7 +302,6 @@ int voptions(void){
 	rimap[VTTHIGH] = 6;
 	rimap[VTTLOW]  = 7;
     
-	
 	/* Find current video configuration */
 	
 	get_set_video(0);
@@ -261,9 +310,11 @@ int voptions(void){
 	
 	xd_set_rbutton(vidoptions, VREZOL, rmap[currez]);
 	
-	/* Which video options are not available? Disable unavailables   */
-	/* Or maybe better not- what about graphic cards and multisyncs? */
-
+	/* 
+	 * Which video options are not available? Disable unavailables 
+	 * Or maybe better not- what about graphic cards and multisyncs? 
+	 * note: a TT was not available to test TT-related modes   
+	 */
 	
 	if ( vdo < 2 )         /* this is a ST/STe-type shifter, disable TT res */
 	{	   
@@ -320,7 +371,7 @@ int voptions(void){
 
 	set_opt ( vidoptions, options.cprefs, SAVE_COLORS, SVCOLORS );
 
-#ifdef _OVSCAN 
+#if _OVSCAN 
 	/* Overscan */
   
 	if ( (vdo == 0) && ( over != 0xffffffffL ) )
@@ -348,7 +399,7 @@ int voptions(void){
     
 		get_opt( vidoptions, &options.V2_2.vprefs, VO_BLITTER, VBLITTER);
      
-#ifdef _OVSCAN
+#if _OVSCAN
 		/* Set overscan option (could not have been selected if not present) */
    
 		get_opt ( vidoptions, &options.V2_2.vprefs, VO_OVSCAN, VOVERSCN ); 
@@ -370,3 +421,4 @@ int voptions(void){
   
 	return 0;
 }
+

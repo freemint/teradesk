@@ -1,5 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
+ *                                           2002, 2003  H. Robbers,
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,6 +25,11 @@
 #include <stddef.h>
 #include <boolean.h>
 
+/*
+ * Return TOS version to be read as a hex number,
+ * e.g. 0x104, 0x206, etc.
+ */
+
 int get_tosversion( void )
 {
 	void *stack;
@@ -34,12 +41,3 @@ int get_tosversion( void )
 	return version;
 }
 
-boolean tos1_4( void )
-{
-	return (get_tosversion() >= 0x104) ? TRUE : FALSE;
-}
-
-boolean tos2_0( void )
-{
-	return (get_tosversion() >= 0x200) ? TRUE : FALSE;
-}

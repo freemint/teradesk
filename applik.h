@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,34 +20,43 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-typedef struct ftype
-{
-	SNAME filetype;				/* HR 240203 */
-	struct ftype *prev;
-	struct ftype *next;
-} FTYPE;
-
 typedef struct appl
 {
-	const char *name;
-	const char *cmdline;
-	ApplType appltype;
-	boolean path;
-	int fkey;
-	boolean argv;
-	FTYPE *filetypes;
-	struct appl *prev;
+/* ---vvv--- compatible with PRGTYPE structure */
+ /* ---vvv--- compatible with FTYPE and LSTYPE structures */
+	SNAME shname;
 	struct appl *next;
+ /* ---^^^--- compatible with FTYPE and LSTYPE structures */
+	ApplType appltype;
+	boolean argv;
+	boolean path;
+	boolean single;
+	long limmem;
+	int flags;				/* temporary; for load/save same as argv + path + single */
+/* ---^^^--- compatible with PRGTYPE structure */
+	char *cmdline;
+	char *name;
+	int fkey;
+	boolean edit;
+	boolean autostart;
+	FTYPE *filetypes;
 } APPLINFO;
+
+extern APPLINFO *applikations;
+
+CfgNest app_config;
 
 void app_init(void);
 void app_default(void);
+
+#if !TEXT_CFG_IN
 int app_load(XFILE *file);
-int app_save(XFILE *file);
+#endif
 
 void app_install(void);
 APPLINFO *app_find(const char *file);
+APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
 APPLINFO *find_fkey(int fkey);
 boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate, boolean dragged);
-
 void app_update(wd_upd_type type, const char *fname1, const char *fname2);
+void app_autostart(void);

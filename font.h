@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,9 +28,18 @@ typedef struct
 	int ch;
 } FONT;
 
+typedef struct
+{
+	int id;
+	int size;
+	int resvd1;
+	int resvd2;
+} FDATA;
+
 extern FONT def_font;
 
 extern void fnt_setfont(int font, int height, FONT *data);
 extern boolean fnt_dialog(int title, FONT *font, boolean prop);
 extern void fnt_mdialog(int ap_id, int win, int id, int size, int color,
 						int effect, int prop);
+

@@ -1,6 +1,7 @@
 /*
  * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
- *
+ *                                                2002, 2003  H. Robbers
+ *                                                     
  * This file is part of Teradesk.
  *
  * Teradesk is free software; you can redistribute it and/or modify

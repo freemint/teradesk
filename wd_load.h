@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,23 +20,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define BLOCKSIZE	8192L
-#define MINSIZE		(2 * sizeof(BLOCK))
-#define MAGIC		0x32143344L
+/* Load configuration of directory windows, text windows and open windows */
 
-typedef struct block
+int wd_load(XFILE *file)
 {
-	struct block *prev;			/* Pointer to previous block. */
-	struct block *next;			/* Pointer to next block. */
-	unsigned size_t size;		/* Length of block. */
-	struct heap *heapblock;		/* Pointer to heap. */
-} BLOCK;
+	int error;
 
-typedef struct heap
-{
-	unsigned long magic;		/* Magic. */
-	struct heap *prev;			/* Pointer to previous heap block. */
-	struct heap *next;			/* Pointer to next heap block. */
-	struct block *freelist;		/* List with free memory blocks. */
-	struct block *usedlist;		/* List with used memory blocks. */
-} HEAP;
+	/* Positions of all dir windows and text windows */
+
+	if ((error = wd_type_load(file, DIR_WIND)) < 0)		/* DjV 041 210303 */
+		return error;
+	if ((error = wd_type_load(file, TEXT_WIND)) < 0)	/* DjV 041 210303 */
+		return error;
+
+	if ((error = edit_load(file)) < 0)
+		return error;
+
+	/* Configuration of open windows */
+
+	if ((error = load_windows(file)) < 0)
+		return error;
+
+	return 0;
+}

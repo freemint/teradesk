@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,18 +36,29 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <string.h>
+#include <library.h>
 
 #include "xscncode.h"
 #include "xdialog.h"
 
 #include "internal.h"
 
-int aes_flags    = 0,				/* HR 151102: proper appl_info protocol (works with ALL Tos */
+int aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
+/*
 	MagX_version = 0,
-	colour_icons = 0,
-	aes_hor3d    = 0,
-	aes_ver3d    = 0,				/* HR 120203: 3d enlargement values */
-	xresources   = 0;
+*/
+	colour_icons = 0,   		/* result of appl_getinfo(2,,,) */
+	aes_hor3d    = 0,			/* 3d enlargement value */
+	aes_ver3d    = 0,			/* 3d enlargement value */
+	xresources   = 0,   		/* result of appl_getinfo(2,,,)  */
+	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
+	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
+	xd_aes4_0,					/* AES 4.0 flag */
+	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
+	xd_bg_col = WHITE,			/* colour of background object */
+	xd_ind_col = LWHITE,		/* colour of indicator object */
+	xd_act_col = LWHITE,		/* colour of activator object */
+	xd_sel_col = BLACK;			/* colour of selected object */
 
 #define XD_WDFLAGS	(NAME | MOVER)
 
@@ -64,26 +77,35 @@ static int (*xd_usermessage) (int *message) = 0L;	/*
                                    the dialog window */
 const char *xd_prgname;			/* Name of program, used in title bar of windows */
 OBJECT *xd_menu = NULL;			/* Pointer to menu tree of the program */
-static int xd_nmnitems = 0,		/* Number of menu titles that have to be disabled */
-		   *xd_mnitems = 0,		/* Array with indices to menu titles in xd_menu,
-                                   which have to be disabled. The first index is
-                                   not a title, but the index of the info item. */
-		   xd_upd_ucnt = 0,		/* Counter for wind_update */
-		   xd_upd_mcnt = 0,		/* Counter for wind_update */
-		   xd_msoff_cnt = 0;	/* Counter for xd_mouse_on/xd_mouse_off */
-int xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
-	xd_aes4_0,					/* AES 4.0 flag */
-	
-/*	xd_draw_3d,					/* Draw objects in 3D if 3D flag of object is set. */
-*/	xd_fdo_flag = FALSE;		/* Flag voor form_do */
-XDOBJDATA *xd_objdata = NULL;	/* Arrays with USERBLKs */
-XDINFO *xd_dialogs = NULL;		/* Chained list of modal dialog boxes. */
-XDINFO *xd_nmdialogs;			/* List with non modal dialog boxes. */
-RECT xd_desk;					/* Dimensions of desktop background. */
-XD_FONT xd_regular_font, xd_small_font;
+
+static 
+	int xd_nmnitems = 0,	/* Number of menu titles that have to be disabled */
+	*xd_mnitems = 0,		/* Array with indices to menu titles in xd_menu,
+                               which have to be disabled. The first index is
+                               not a title, but the index of the info item. */
+	xd_upd_ucnt = 0,		/* Counter for wind_update */
+	xd_upd_mcnt = 0,		/* Counter for wind_update */
+	xd_msoff_cnt = 0;		/* Counter for xd_mouse_on/xd_mouse_off */
+
+
+XDOBJDATA 
+	*xd_objdata = NULL;	/* Arrays with USERBLKs */
+
+XDINFO 
+	*xd_dialogs = NULL,		/* Chained list of modal dialog boxes. */
+	*xd_nmdialogs;			/* List with non modal dialog boxes. */
+
+RECT 
+	xd_desk;				/* Dimensions of desktop background. */
+
+XD_FONT 
+	xd_regular_font,		/* system font definition */ 
+	xd_small_font;			/* small font definition */
 
 void __xd_redraw(WINDOW *w, RECT *area);
 void __xd_moved(WINDOW *w, RECT *newpos);
+int get_tosversion(void);
+void get_fsel( XDINFO *info, char *result, int mlen, int *pos );
 
 static WD_FUNC xd_wdfuncs =
 {
@@ -100,6 +122,8 @@ static WD_FUNC xd_wdfuncs =
 	0L,
 	__xd_moved,
 	0L,
+	0L,
+	0L,  
 	0L
 };
 
@@ -109,7 +133,10 @@ static WD_FUNC xd_wdfuncs =
  *																	*
  ********************************************************************/
 
-/* Funktie voor het opslaan van het scherm onder de dialoogbox. */
+/* 
+ * Funktie voor het opslaan van het scherm onder de dialoogbox. 
+ * save screen under the dialog?
+ */
 
 static void xd_save(XDINFO *info)
 {
@@ -130,7 +157,11 @@ static void xd_save(XDINFO *info)
 	xd_mouse_on();
 }
 
-/* Funktie voor het opnieuw tekenen van het scherm. */
+
+/* 
+ * Funktie voor het opnieuw tekenen van het scherm. 
+ * Restore saved part of the screen?
+ */
 
 static void xd_restore(XDINFO *info)
 {
@@ -151,6 +182,11 @@ static void xd_restore(XDINFO *info)
 	xd_mouse_on();
 }
 
+
+/* 
+ * Disable all items in a menu 
+ */
+
 static void xd_disable_menu(void)
 {
 	if (xd_menu != NULL)
@@ -163,6 +199,11 @@ static void xd_disable_menu(void)
 		menu_bar(xd_menu, 1);
 	}
 }
+
+
+/* 
+ * Enable items in a menu 
+ */
 
 static void xd_enable_menu(void)
 {
@@ -177,8 +218,11 @@ static void xd_enable_menu(void)
 	}
 }
 
-/* Funktie die ervoor zorgt dat een dialoogbox binnen het scherm
-   valt. */
+
+/* 
+ * Funktie die ervoor zorgt dat een dialoogbox binnen het scherm valt.
+ * Find minimum of two areas for clipping ? 
+ */
 
 static void xd_clip(XDINFO *info, RECT *clip)
 {
@@ -192,8 +236,10 @@ static void xd_clip(XDINFO *info, RECT *clip)
 		info->drect.y = clip->y + clip->h - info->drect.h;
 }
 
-/* Funktie voor het verplaatsen van een dialoog naar een nieuwe
-   positie */
+
+/* 
+ * Funktie voor het verplaatsen van een dialoog naar een nieuwe positie 
+ */
 
 static void xd_set_position(XDINFO *info, int x, int y)
 {
@@ -210,7 +256,10 @@ static void xd_set_position(XDINFO *info, int x, int y)
 	info->drect.y = y;
 }
 
-/* Funktie voor het berekenen van de rand om een dialoogbox. */
+
+/* 
+ * Funktie voor het berekenen van de rand om een dialoogbox. 
+ */
 
 static void xd_border(OBJECT *tree, int *xl, int *xr, int *yu, int *yl)
 {
@@ -230,8 +279,10 @@ static void xd_border(OBJECT *tree, int *xl, int *xr, int *yu, int *yl)
 	tree->ob_y = old_y;
 }
 
-/* Funktie voor het berekenen van de positie van de dialoog op het
-   scherm. */
+
+/* 
+ * Funktie voor het berekenen van de positie van de dialoog op het scherm. 
+ */
 
 void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 {
@@ -271,6 +322,11 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 	}
 }
 
+
+/*
+ * Toggle on/off and redraw a radiobutton within a parent object
+ */
+
 static void xd_rbutton(XDINFO *info, int parent, int object)
 {
 	int i, prvstate, newstate;
@@ -298,6 +354,7 @@ static void xd_rbutton(XDINFO *info, int parent, int object)
 		xd_cursor_on(info);
 
 }
+
 
 /********************************************************************
  *																	*
@@ -331,11 +388,9 @@ int xd_wdupdate(int mode)
 }
 
 
-/********************************************************************
- *																	*
- * Hide the mouse pointer.											*
- *																	*
- ********************************************************************/
+/* 
+ * Hide the mouse pointer.
+ */
 
 void xd_mouse_off(void)
 {
@@ -344,11 +399,10 @@ void xd_mouse_off(void)
 	xd_msoff_cnt++;
 }
 
-/********************************************************************
- *																	*
- * Show the mouse pointer.											*
- *																	*
- ********************************************************************/
+
+/*
+ * Show the mouse pointer.
+ */
 
 void xd_mouse_on(void)
 {
@@ -356,6 +410,7 @@ void xd_mouse_on(void)
 		graf_mouse(M_ON, NULL);
 	xd_msoff_cnt--;
 }
+
 
 /********************************************************************
  *																	*
@@ -371,13 +426,13 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 
 	for (;;)
 	{	
-		char *h = NULL;				/* HR 151102 */
+		char *h = NULL;
 		OBJECT *c_obj = &tree[cur];
 
 		int etype = (c_obj->ob_type >> 8) & 0xFF;
 		int state = c_obj->ob_state;
 
-	/* HR 151102: use AES 4 extended object state if there. */
+		/* Use AES 4 extended object state if there. */
 
 		if (   xd_is_xtndbutton(etype)
 		    || (c_obj->ob_type&0xff) == G_BUTTON
@@ -400,17 +455,17 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 	
 				/* find single '#' */
 				for (h = xd_get_obspec(c_obj).free_string;
-					 (h = strchr(h, '#')) != 0 && (h[1] == '#');		/* HR 151102 != 0 */
+					 (h = strchr(h, '#')) != 0 && (h[1] == '#');
 					 h += 2)
 					;
 	
-				if (h) h++;					/* HR 151102: pinpoint exactly */
+				if (h) h++;	/* pinpoint exactly */
 			}
 		}
 
-		if (h)		/* HR 151102: one of the above options. */
+		if (h)		/* one of the above options. */
 		{
-			int ch = toupper((int) *h);			/* HR 151102: pinpointed exactly */
+			int ch = toupper((int) *h);			/* pinpointed exactly */
 
 			if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')))
 				kinfo[i].key = XD_ALT | ch;
@@ -435,7 +490,10 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 	}
 }
 
-/* Funktie die controleert of een toets selecteerbaar is. */
+
+/* 
+ * Funktie die controleert of een toets selecteerbaar is. 
+ */
 
 static int xd_selectable(OBJECT *tree, int object)
 {
@@ -460,7 +518,10 @@ static int xd_selectable(OBJECT *tree, int object)
 	return TRUE;
 }
 
-/* Zoek de button die bij een toets hoort. */
+
+/* 
+ * Zoek de button die bij een toets hoort. 
+ */
 
 int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 {
@@ -474,6 +535,7 @@ int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 
 	return -1;
 }
+
 
 /********************************************************************
  *																	*
@@ -515,8 +577,9 @@ XDINFO *xd_find_dialog(WINDOW *w, int flag)
 	return info;
 }
 
-/*
- * Funktie voor het afhandelen van een redraw event.
+
+/* 
+ * Funktie voor het afhandelen van een redraw event. 
  */
 
 void __xd_redraw(WINDOW *w, RECT *area)
@@ -528,8 +591,9 @@ void __xd_redraw(WINDOW *w, RECT *area)
 	xd_wdupdate(END_UPDATE);
 }
 
-/*
- * Funktie voor het afhandelen van een window moved event.
+
+/* 
+ * Funktie voor het afhandelen van een window moved event. 
  */
 
 void __xd_moved(WINDOW *w, RECT *newpos)
@@ -542,24 +606,27 @@ void __xd_moved(WINDOW *w, RECT *newpos)
 	xd_set_position(info, work.x, work.y);
 }
 
+
 /********************************************************************
  *																	*
  * Funkties ter vervanging van objc_edit.							*
  *																	*
  ********************************************************************/
 
-/* Funktie die de positie van de cursor in de template string bepaalt
-   uit de positie van de cursor in de text string. */
+/* 
+ * Funktie die de positie van de cursor in de template string bepaalt
+ * uit de positie van de cursor in de text string. 
+ */
 
 int xd_abs_curx(OBJECT *tree, int object, int curx)
 {
-	XUSERBLK *blk = xd_get_scrled(tree, object);		/* HR 021202 */
+	XUSERBLK *blk = xd_get_scrled(tree, object);
 	char *tmplt, *s, *h;
 
 	if (blk)
 		curx -= blk->ob_shift;
 
-	tmplt = xd_get_obspec(tree + object).tedinfo->te_ptmplt;		/* HR 021202 */
+	tmplt = xd_get_obspec(tree + object).tedinfo->te_ptmplt;
 
 	if ((s = strchr(tmplt, '_')) != NULL)
 	{
@@ -578,13 +645,16 @@ int xd_abs_curx(OBJECT *tree, int object, int curx)
 		return 0;
 }
 
-/* Funktie die uit de positie van de cursor in de template string
-   de positie in de text string bepaald. */
+
+/* 
+ * Funktie die uit de positie van de cursor in de template string
+ * de positie in de text string bepaald. 
+ */
 
 static int xd_rel_curx(OBJECT *tree, int edit_obj, int curx)
 {
 	int x = 0, i;
-	char *tmplt = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt;	/* HR 021202 */
+	char *tmplt = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt;
 
 	for (i = 0; i < curx; i++)
 	{
@@ -595,7 +665,10 @@ static int xd_rel_curx(OBJECT *tree, int edit_obj, int curx)
 	return x;
 }
 
-/* Funktie voor het wissen van een teken uit een string. */
+
+/* 
+ * Funktie voor het wissen van een teken uit een string. 
+ */
 
 static void str_delete(char *s, int pos)
 {
@@ -612,7 +685,10 @@ static void str_delete(char *s, int pos)
 	}
 }
 
-/* Funktie voor het tussenvoegen van een karakter in een string. */
+
+/* 
+ * Funktie voor het tussenvoegen van een karakter in een string. 
+ */
 
 static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 {
@@ -627,8 +703,10 @@ static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 	}
 }
 
-/* Funktie die controleert of een toets is toegestaan op positie
-   in string. */
+
+/* 
+ * Funktie die controleert of een toets is toegestaan op positie in string. 
+ */
 
 static int xd_chk_key(char *valid, int pos, int key)
 {
@@ -639,7 +717,6 @@ static int xd_chk_key(char *valid, int pos, int key)
 	{
 		if (cvalid == 'X')
 			return ch;
-		/* DjV 026 220103 ---vvv--- */
 		else if ( cvalid == 'x' )
 		{
 			if ((cch >= 'A') && (cch <= 'Z'))
@@ -647,7 +724,6 @@ static int xd_chk_key(char *valid, int pos, int key)
 			else
 				return ch;
 		}
-		/* DjV 026 220103 ---^^^--- */
 
 		if (ch < 0x80)
 		{
@@ -686,10 +762,10 @@ static int xd_chk_key(char *valid, int pos, int key)
 	return 0;
 }
 
-static
-int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
+
+static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 {
-	char *s = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt,	/* HR 021202 */
+	char *s = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt,
 	     *h;
 
 	if (key & (XD_SCANCODE | XD_CTRL | XD_ALT))
@@ -701,6 +777,7 @@ int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 	return 0;
 }
 
+
 void *xd_get_scrled(OBJECT *tree, int edit_obj)
 {
 	if (((tree[edit_obj].ob_type >> 8) & 0xff) == XD_SCRLEDIT)
@@ -708,59 +785,109 @@ void *xd_get_scrled(OBJECT *tree, int edit_obj)
 	return NULL;
 }
 
-/* HR 021202: scrolling editable texts. */
-static
-bool xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
+
+/* 
+ * Initialize shift position for scrolled text field so as to
+ * agree with initial cursor position at the end of the string
+ * (this amounts to initially displaying the -trailing- end of the text).
+ * Note: use carefully, there is no checking of object type
+ */
+
+void xd_init_shift(OBJECT *obj, char *text)
+{
+	XUSERBLK *blk = (XUSERBLK *)obj->ob_spec.userblk->ub_parm;
+	TEDINFO *tedinfo = xd_get_obspec(obj).tedinfo;
+
+	int
+		tl = (int)strlen(text), 
+		vl = (int)strlen(tedinfo->te_pvalid);
+
+	blk->ob_shift = max(tl - vl, 0);
+}
+
+
+/* 
+ * HR 021202: scrolling in scrolling editable texts. 
+ * Note: "pos" is position in the edited text, not in the visible field.
+ * flen is the length of the editable field
+ */
+
+static bool xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
 {
 	if (blk)
 	{
 		int shift = blk->ob_shift;
 
-		if (pos == clen)
+		if (pos == clen)			/* trailing end of text is visible */
 			shift = clen - flen;
-		if (shift < 0)
+
+		if (shift < 0)				/* can't go off the first character */
 			shift = 0;
-		if (pos < shift)
+
+		if (pos < shift)			/* scroll left */
 			shift = pos;
-		if (pos > shift + flen)
+
+		if (pos > shift + flen)		/* scroll right */
 			shift = pos - flen;
-		if (shift != blk->ob_shift)
+
+		if (shift != blk->ob_shift)	/* there was a change in shift amount */
 			return blk->ob_shift = shift, true;
 	}
 	return false;
 }
 
+/*
+ * Edit a scrolling editable text 
+ */
+
 int xd_edit_char(XDINFO *info, int key)
 {
-	int edit_obj, oldpos, newpos, curlen, maxlen, flen, pos, ch;
-	OBJECT *tree;
-	TEDINFO *tedinfo;
-	RECT clip;
-	XUSERBLK *blk;
-	int result = TRUE;
+	int 
+		edit_obj, 
+		newpos,	/* new position in edited string (i.e. tedinfo->te_ptext) */ 
+		oldpos,	/* previous position in same */ 
+		curlen,	/* length of edited string   */ 
+		maxlen, 
+		flen,	/* length of editable field (i.e. tedinfo->te_pvalid) */ 
+		pos, 
+		ch,
+		result = TRUE;
+
+	OBJECT 
+		*tree;
+
+	TEDINFO 
+		*tedinfo;
+
+	RECT 
+		clip;
+
+	XUSERBLK 
+		*blk;
 
 	tree = info->tree;
 
 	if ((edit_obj = info->edit_object) <= 0)
 		return FALSE;
 
-	tedinfo = xd_get_obspec(tree + edit_obj).tedinfo;		/* HR 021202 */
+	tedinfo = xd_get_obspec(tree + edit_obj).tedinfo;
 	blk = xd_get_scrled(tree, edit_obj);
 
 	oldpos = newpos = info->cursor_x;
 	curlen = (int) strlen(tedinfo->te_ptext);
 
 	flen = (int) strlen(tedinfo->te_pvalid);
-	maxlen = blk ? XD_MAX_SCRLED : flen;		/* HR 021202 */
+	maxlen = blk ? XD_MAX_SCRLED : flen;
 
 	objc_offset(tree, edit_obj, &clip.x, &clip.y);
 	clip.h = xd_regular_font.fnt_chh;
-	clip.w = xd_regular_font.fnt_chw * tedinfo->te_tmplen;		/* HR 021202 */
+	clip.w = xd_regular_font.fnt_chw * tedinfo->te_tmplen;
 
 	if (blk)
 	{
-		clip.x -= 2*xd_regular_font.fnt_chw;		/* HR: This temporary until ub_scrledit() handles templates properly. */
-		clip.w += 4*xd_regular_font.fnt_chw;
+		clip.x -= xd_regular_font.fnt_chw + 2;		/* HR: This temporary until ub_scrledit() handles templates properly. */
+		clip.w += 2 * xd_regular_font.fnt_chw + 4;
+		clip.h += 4;
 	}
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
@@ -790,8 +917,8 @@ int xd_edit_char(XDINFO *info, int key)
 			xd_cursor_off(info);
 			info->cursor_x = newpos;
 
-			if (xd_shift(blk, newpos, flen, curlen))	/* HR 021202: scrolling editable texts. */
-				xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
+			if (xd_shift(blk, info->cursor_x, flen, curlen))	/* scrolling editable texts. */
+				xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 
 			xd_cursor_on(info);
 
@@ -801,9 +928,9 @@ int xd_edit_char(XDINFO *info, int key)
 	case BACKSPC:
 	case DELETE:
 	case ESCAPE:
-		if (   (key == BACKSPC && oldpos > 0)
-		    || (key == DELETE  && oldpos < curlen)
-		    || (key == ESCAPE  && *tedinfo->te_ptext != 0)
+		if (   (key == BACKSPC && oldpos > 0) /* any char but the first */
+		    || (key == DELETE  && oldpos < curlen) /* any char but the last */
+		    || (key == ESCAPE  && *tedinfo->te_ptext != 0) /* clear all */
 		   )
 		{
 /*	HR 021202: maintaining a tiny optimization, using clipping of
@@ -819,7 +946,7 @@ int xd_edit_char(XDINFO *info, int key)
 				info->cursor_x = 0;
 				curlen = 0;
 			}
-			else
+			else /* BACKSPC and DELETE */
 			{
 				if (key == BACKSPC)
 					info->cursor_x--;
@@ -827,17 +954,35 @@ int xd_edit_char(XDINFO *info, int key)
 				curlen--;
 			}
 
-			xd_shift(blk, info->cursor_x, flen, curlen);	/* HR 021202: scrolling editable texts. */
-			xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
-
+			xd_shift(blk, info->cursor_x, flen, curlen);	/* scrolling editable texts. */
+			xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 			xd_cursor_on(info);
+
 			xd_mouse_on();
 		}
 		break;
+	case HOME:
+	case HELP:
+	case SHFT_INSERT:
+		/* These codes have no effect */
+		break;
+	case INSERT: 
+/* possibly disable call of get_fsel for cfg2inf.prg- or else use absolute calls  */
+
+		xd_cursor_off(info);
+		get_fsel(info, tedinfo->te_ptext, maxlen, &info->cursor_x);
+		xd_shift( blk, info->cursor_x, flen, (int)strlen(tedinfo->te_ptext) );
+		xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
+		xd_cursor_on(info);
+
+		break;
 	default:
 		pos = oldpos - ((oldpos == maxlen) ? 1 : 0);
-		if (blk)			/* HR 021202 */
-			ch = key & 0xff;
+		if (blk)
+			/* ch = key & 0xff; DjV 067 150703 */
+			/* use only the first validation char ( i.e. [0] ) */
+
+			ch  = xd_chk_key(tedinfo->te_pvalid, 0, key); 
 		else			/* HR 051202: Dangerous stuff! relying on evaluation order of &&, || */
 		{
 			ch  = xd_chk_key(tedinfo->te_pvalid, pos, key);
@@ -867,8 +1012,8 @@ int xd_edit_char(XDINFO *info, int key)
 				str[pos] = 0;
 			}
 
-			xd_shift(blk, info->cursor_x, flen, curlen + 1);	/* HR 021202: scrolling editable texts. */
-			xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
+			xd_shift(blk, info->cursor_x, flen, curlen + 1); /* scrolling editable texts. */
+			xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 
 			xd_cursor_on(info);
 			xd_mouse_on();
@@ -881,6 +1026,7 @@ int xd_edit_char(XDINFO *info, int key)
 	return result;
 }
 
+
 void xd_edit_end(XDINFO *info)
 {
 	if (info->edit_object > 0)
@@ -891,13 +1037,14 @@ void xd_edit_end(XDINFO *info)
 	}
 }
 
+
 void xd_edit_init(XDINFO *info, int object, int curx)
 {
 	OBJECT *tree = info->tree;
 
 	if ((object > 0) && xd_selectable(tree, object))
 	{
-		XUSERBLK *blk = xd_get_scrled(tree, object);		/* HR 021202 */
+		XUSERBLK *blk = xd_get_scrled(tree, object);
 		TEDINFO *ted = xd_get_obspec(tree + object).tedinfo;
 		int x, dummy, maxlen;
 
@@ -908,7 +1055,7 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 			objc_offset(tree, object, &x, &dummy);
 			x = (curx - x + xd_regular_font.fnt_chw / 2) / xd_regular_font.fnt_chw;
 			
-			if (blk)										/* HR 021202 */
+			if (blk)	
 				x += blk->ob_shift;
 			else
 				x = xd_rel_curx(tree, object, x);
@@ -931,17 +1078,21 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 			xd_cursor_on(info);
 		}
 
-		xd_shift(blk, info->cursor_x, strlen(ted->te_pvalid), maxlen);	/* HR 021202 */
+		xd_shift(blk, info->cursor_x, strlen(ted->te_pvalid), maxlen);
 	}
 }
 
+ 
 /********************************************************************
  *																	*
  * Funkties ter vervanging van form_keybd.							*
  *																	*
  ********************************************************************/
 
-/* Funktie voor het vinden van het volgende editable object. */
+/* 
+ * Funktie voor het vinden van het volgende editable object.
+ * Note: if no editable objects are found, routine returns "start" ! 
+ */
 
 int xd_find_obj(OBJECT *tree, int start, int which)
 {
@@ -977,8 +1128,8 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 	return start;
 }
 
-static
-char cancel_buttons[][18] =
+
+static char cancel_buttons[][18] =
 {
 	"cancel",
 	"abbruch",
@@ -987,12 +1138,14 @@ char cancel_buttons[][18] =
 	"anuluj",
 	"afbryd",
 	"undo",
+	"abort",
 	"\0"
 };
 
-/* HR 151102: courtesy XaAES */
-static
-int xd_find_cancel(OBJECT *ob)
+
+/*: courtesy XaAES */
+
+static int xd_find_cancel(OBJECT *ob)
 {
 	int f = 0;
 
@@ -1003,6 +1156,20 @@ int xd_find_cancel(OBJECT *ob)
 		       )
 			&& (ob[f].ob_flags & (SELECTABLE|TOUCHEXIT|EXIT)) != 0       )
 		{
+			/*
+			 * DjV 059 note: it seems to me that there is some waste here;
+			 * a) "cancel" texts above are never longer than 7 chars,
+			 *    so dimensioning to [18] above and 16 below is much too much;
+			 
+			 *    HR: Yes, but I wanted to leave room for languages having
+			          a very long word for cancel.
+			          Just adding the word without worrying *must* be enough.
+			 * b) possibly strnicmp could be used insead of stricmp below,
+			 *    so that "e" need not be copied into "t", and t[32] is not needed?
+			      HR: possibly. I think I didnt know about strnicmp
+			                    (or just to lazy to learn them all :-)
+			 */
+
 			int l;
 			char t[32]; char *s = t,*e;
 			e = xd_get_obspec(ob+f).free_string;
@@ -1031,6 +1198,7 @@ int xd_find_cancel(OBJECT *ob)
 	while ( ! (ob[f++].ob_flags & LASTOB));
 	return -1;
 }
+
 
 int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
 					  int *knxtobject, int *knxtchar)
@@ -1064,7 +1232,7 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
 			return FALSE;
 		}
 		break;
-	case UNDO:				/* HR 151102 */
+	case UNDO:	
 		if ((i = xd_find_cancel(tree)) > 0)
 		{
 			xd_change(info, i, SELECTED, TRUE);
@@ -1079,6 +1247,7 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
 
 	return TRUE;
 }
+
 
 /********************************************************************
  *																	*
@@ -1109,7 +1278,12 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 			XDEVENT events;
 			int evflags, newstate, state;
 
+
+/* DjV 074 ---vvv--- */
+/* there are currently no tristate objects in Teradesk
+
 			/* I_A changed to fit tristate-buttons! */
+
 			if (!xd_is_tristate(tree + object))
 				newstate = (oldstate & SELECTED) ? oldstate & ~SELECTED : oldstate | SELECTED;
 			else
@@ -1129,7 +1303,10 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 					break;
 				}
 			}
+*/
+			newstate = (oldstate & SELECTED) ? oldstate & ~SELECTED : oldstate | SELECTED;
 
+/* DjV 074 ---^^^--- */
 			events.ev_mflags = MU_BUTTON | MU_TIMER;
 			events.ev_mbclicks = 1;
 			events.ev_mbmask = 1;
@@ -1189,14 +1366,17 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 	return TRUE;
 }
 
+
 /********************************************************************
  *																	*
  * Funkties voor form_do.											*
  *																	*
  ********************************************************************/
 
-/* Funktie voor het zoeken van de button waarmee de dialoogbox
-   verplaatst kan worden. */
+/* 
+ * Funktie voor het zoeken van de button waarmee de dialoogbox
+ * verplaatst kan worden. 
+ */
 
 int xd_movebutton(OBJECT *tree)
 {
@@ -1217,7 +1397,10 @@ int xd_movebutton(OBJECT *tree)
 	}
 }
 
-/* Eigen form_do */
+
+/* 
+ * Eigen form_do 
+ */
 
 int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 {
@@ -1226,6 +1409,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	int cont = TRUE;
 	OBJECT *tree = info->tree;
 	KINFO kinfo[MAXKEYS];
+
 
 	xd_wdupdate(BEG_UPDATE);
 
@@ -1250,7 +1434,6 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	events.ev_mthicount = 0;
 
 	next_obj = 0;
-
 	start = (start == 0) ? xd_find_obj(tree, 0, FMD_FORWARD) : start;
 
 	xd_edit_init(info, start, cmode);
@@ -1343,10 +1526,12 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	return (next_obj);
 }
 
+
 int xd_form_do(XDINFO *info, int start)
 {
 	return xd_kform_do(info, start, (userkeys) 0, NULL);
 }
+
 
 /********************************************************************
  *																	*
@@ -1355,21 +1540,35 @@ int xd_form_do(XDINFO *info, int start)
  *																	*
  ********************************************************************/
 
-/* initialisatie voor dialoog. Berekent de positie van de box en redt
-   het scherm.
+/* 
+ * initialisatie voor dialoog. Berekent de positie van de box en redt
+ * het scherm.
+ *
+ * tree		- objectboom,
+ * info		- bevat informatie over buffer voor scherm en de positie
+ *   			  van de dialoogbox.
+ */
 
-   tree		- objectboom,
-   info		- bevat informatie over buffer voor scherm en de positie
-   			  van de dialoogbox.
-*/
+
 
 void xd_open(OBJECT *tree, XDINFO *info)
 {
-	xd_open_wzoom(tree, info, NULL, FALSE);
+#ifdef _DOZOOM
+	RECT xywh;
+	xd_open_wzoom(tree, info, &xywh, TRUE);
+#else
+	/* xd_open_wzoom(tree, info, NULL, FALSE); */
+	xd_open_wzoom(tree, info);
+#endif
 }
 
-void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
-				   int zoom)
+
+void xd_open_wzoom(OBJECT *tree, XDINFO *info
+#ifdef _DOZOOM
+/* DjV 060 260603 conditional */ 
+,RECT *xywh, int zoom
+#endif
+)
 {
 	int dialmode = xd_dialmode;
 	int db;
@@ -1388,7 +1587,7 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 	xd_calcpos(info, prev, xd_posmode);
 
 	if (dialmode == XD_WINDOW)
-	{
+	{		
 		if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
 		{
 			WINDOW *w;
@@ -1396,6 +1595,10 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 			int error;
 
 			xw_calc(WC_BORDER, XD_WDFLAGS, &info->drect, &wsize, NULL);
+
+			tree->ob_x -= 1; 
+			wsize.w -= 2;
+			wsize.h -= 1;
 
 			if (wsize.x < xd_desk.x)
 			{
@@ -1415,12 +1618,15 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 				wsize.y = xd_desk.y;
 			}
 
+#ifdef _DOZOOM 
+			/* DjV 060 260603 conditional */
 			if (zoom && xywh)
 			{
 				graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
 							 wsize.x, wsize.y, wsize.w, wsize.h);
 				zoom = FALSE;
 			}
+#endif
 
 			if ((w = xw_create(XW_DIALOG, &xd_wdfuncs, XD_WDFLAGS,
 							   &wsize, sizeof(WINDOW), NULL, &error)) != NULL)
@@ -1442,14 +1648,18 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 			dialmode = XD_BUFFERED;
 	}
 
+#ifdef _DOZOOM
+	/* DjV 060 260603 conditional */
 	if (zoom && xywh)
 	{
 		graf_growbox(xywh->x, xywh->y, xywh->w, xywh->h,
 		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 		zoom = FALSE;
 	}
+#endif
 
-	if (dialmode == XD_BUFFERED)
+	/* if (dialmode == XD_BUFFERED) DjV 061 290603 */
+	if (dialmode == XD_BUFFERED || (dialmode == XD_NORMAL && prev != NULL) ) /* DjV 061 290603 */
 	{
 		long scr_size;
 
@@ -1460,6 +1670,8 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 	}
 
 	info->dialmode = dialmode;
+
+	/* Hide or show the "ear" for moving flying dialog around */
 
 	if ((db = xd_movebutton(tree)) >= 0)
 	{
@@ -1473,9 +1685,12 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 	{
 		if (dialmode == XD_NORMAL)
 		{
-			if (prev != NULL)
-				xd_calcpos(info, prev, XD_CENTERED);
 
+			if (prev != NULL)
+			{							/* DjV 061 290603 */
+				xd_save(info);  		/* DjV 061 290603 */
+				xd_calcpos(info, prev, XD_CENTERED);
+			} 							/* DjV 061 290603 */
 			if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
 				form_dial(FMD_START, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 		}
@@ -1486,17 +1701,31 @@ void xd_open_wzoom(OBJECT *tree, XDINFO *info, RECT *xywh,
 	}
 }
 
-/* funktie die opgeroepen moet worden na het einde van de dialoog.
-   De funktie hersteld het scherm en geeft het geheugen van de
-   schermbuffer weer vrij. */
+
+/* 
+ * funktie die opgeroepen moet worden na het einde van de dialoog.
+ * De funktie hersteld het scherm en geeft het geheugen van de
+ * schermbuffer weer vrij. 
+ */
 
 void xd_close(XDINFO *info)
 {
-	xd_close_wzoom(info, NULL, FALSE);
+#ifdef _DOZOOM
+	RECT xywh;
+	xd_close_wzoom(info, &xywh, TRUE);
+#else
+	/* xd_close_wzoom(info, NULL, FALSE); */
+	xd_close_wzoom(info);
+#endif
 }
 
 
-void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom)
+void xd_close_wzoom(XDINFO *info
+#ifdef _DOZOOM
+/* DjV 060 260603 conditional */
+, RECT *xywh, int zoom
+#endif
+)
 {
 	XDINFO *prev;
 
@@ -1521,7 +1750,8 @@ void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom)
 			xw_set(prev->window, WF_TOP);
 	}
 
-	if (info->dialmode == XD_BUFFERED)
+	/* if (info->dialmode == XD_BUFFERED)  DjV 061 290603 */
+	if (info->dialmode == XD_BUFFERED || ( info->dialmode == XD_NORMAL && prev != NULL) ) /* DjV 061 290603 */
 	{
 		xd_restore(info);
 		Mfree(info->mfdb.fd_addr);
@@ -1535,19 +1765,25 @@ void xd_close_wzoom(XDINFO *info, RECT *xywh, int zoom)
 			form_dial(FMD_FINISH, 0, 0, 0, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
 
+#ifdef _DOZOOM
+	/* DjV 060 260603 conditional */
 	if (zoom && xywh)
 	{
 		graf_shrinkbox(xywh->x, xywh->y, xywh->w, xywh->h,
 		info->drect.x, info->drect.y, info->drect.w, info->drect.h);
 	}
+#endif
 
 	xd_wdupdate(END_UPDATE);
 
 	xd_dialogs = prev;
 
-/*!!!	if ((prev != NULL) && (prev->dialmode == XD_WINDOW))
-		xd_scan_messages(XD_EVREDRAW, NULL);*/
+/*!!!	
+	if ((prev != NULL) && (prev->dialmode == XD_WINDOW))
+		xd_scan_messages(XD_EVREDRAW, NULL);
+*/
 }
+
 
 /********************************************************************
  *																	*
@@ -1570,10 +1806,12 @@ int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata)
 	return exit;
 }
 
+
 int xd_dialog(OBJECT *tree, int start)
 {
 	return xd_kdialog(tree, start, (userkeys) 0, NULL);
 }
+
 
 /********************************************************************
  *																	*
@@ -1601,6 +1839,7 @@ int xd_setdialmode(int new, int (*hndl_message) (int *message),
 	return old;
 }
 
+
 int xd_setposmode(int new)
 {
 	int old;
@@ -1612,6 +1851,7 @@ int xd_setposmode(int new)
 
 	return old;
 }
+
 
 /********************************************************************
  *																	*
@@ -1634,17 +1874,30 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_prgname = prgname;
 	xd_multitos = FALSE;
 #ifdef __PUREC__
-/*	xd_draw_3d = (_GemParBlk.glob.version >= 0x330);
-*/	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
+	
+	/* 
+	 * Note: Magic (V6.20 at least) returns AES version 3.99.
+	 * IN that case, after an inquiry ?AGI has been made,
+	 * xd_aes4_0 is set to true.
+	 * On the other hand, TOS 4.0 returns AES version 3.40
+	 * but still is a "3D" AES
+	 */
+
+	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
 #else
+
 	xd_aes4_0 = (_global[0] >= 0x330);
-/*	xd_draw_3d = (_global[0] >= 0x400);
-*/
+
 #endif
+
+
+
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 
 	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
 	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);
+
+	/* Open virtual workstation on screen */
 
 	for (i = 0; i < 10; i++)
 		work_in[i] = 1;
@@ -1656,13 +1909,12 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		return XDVDI;
 	else
 	{
-	/*	int pix_height; */
-
 		xd_ncolors = work_out[13];
-	/*	pix_height = work_out[4]; */
 
 		vq_extnd(xd_vhandle, 1, work_out);
 		xd_nplanes = work_out[4];
+
+		vsf_perimeter(xd_vhandle, 0);		/* no border; HR never used any other value */
 
 #ifdef __GNUC_INLINE__
 		if (load_fonts && vq_vgdos())
@@ -1673,81 +1925,174 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		else
 			*nfonts = 0;
 
-/* HR 151102: proper appl_getinfo protocol, works also with MagiC */
-		if ( appl_find( "?AGI" ) == 0 )		/* appl_getinfo() vorhanden? */
+		/* proper appl_getinfo protocol, works also with MagiC */
+
+		/* DjV 063 030703 ---vvv--- */
+
+		/* 
+		 * Some AESses (at least Geneva 4, AES 4.1, NAES 1.1...) 
+		 * do not react to "?AGI" but in fact support appl_getinfo;
+		 * So below is forcing to use appl_getinfo with any AES 4.
+		 * In fact this is not so bad; a document on TOS recommends:
+		 *	has_agi = ((_GemParBlk.global[0] == 0x399 && get_cookie ("MagX", &dummy))
+         *	|| (_GemParBlk.global[0] == 0x400 && type < 4)
+         *	|| (_GemParBlk.global[0] > 0x400)
+         *	|| (appl_find ("?AGI") >= 0));
+		 */
+
+		/* if ( appl_find( "?AGI" ) == 0 )	*/	/* appl_getinfo() vorhanden? */
+
+		if ( xd_aes4_0 || (appl_find("?AGI") == 0) )
 			aes_flags |= GAI_INFO;
+
+		/* DjV 063 030703 ---^^^--- */
+
+		/* If appl_getinfo is supported, then get diverse information: */
 
 		if (aes_flags & GAI_INFO)
 		{
 			int ag1, ag2, ag3, ag4;
+
+			/* This is surely some sort of "3D" AES 4 */
+
 			xd_aes4_0 |= TRUE;
-			aes_hor3d = 2;			/* HR 120203 */
-			aes_ver3d = 2;
+
+			if ( xd_ncolors > 4 )
+			{
+				xd_bg_col = LWHITE;		/* gray background for some objects */		
+				xd_sel_col = LBLACK;	/* dark gray for selected objects */
+			}
+
+			/* Information on "normal" AES font */
 
 			appl_getinfo(0, &xd_regular_font.fnt_height, &xd_regular_font.fnt_id,
 						 &xd_regular_font.fnt_type, &dummy);
+
+			/* Information on "small" AES font */
+
 			appl_getinfo(1, &xd_small_font.fnt_height, &xd_small_font.fnt_id,
 						 &xd_small_font.fnt_type, &dummy);
-			appl_getinfo(2, &ag1, &ag2, &colour_icons, &xresources);		/* HR 151102 */
 
-			if ( appl_getinfo( 13, &ag1, &ag2, &ag3, &ag4 ))		/* Unterfunktion 13, Objekte */
+			/* Information on colour icons and supported rsc format */
+
+			appl_getinfo(2, &ag1, &ag2, &colour_icons, &xresources);
+
+			/* 
+			 * Information on supported window handling capabilities;
+			 * theoretically, inquiry types higher than 4 are supposed 
+			 * to work only with AES higher than 4.0, but at least Geneva >= 4 
+			 * (AES 4.0 ?) recognizes these inquiries anyway
+			 */
+
+			appl_getinfo(11, &aes_wfunc, &dummy, &dummy, &dummy );
+
+			/* Information on object handling capabilites */
+
+			if ( appl_getinfo( 13, &ag1, &ag2, &ag3, &ag4 ))
 			{
 				if ( ag4 & 0x08 )				/* G_SHORTCUT untersttzt ? */
 					aes_flags |= GAI_GSHORTCUT;
 				if ( ag4 & 0x04 )				/* MagiC (WHITEBAK) objects */
 					aes_flags |= GAI_WHITEBAK;
-/* HR 120203: get 3D enlargement value */
+
+				/* get 3D enlargement value */
+
 				if ( ag1 && ag2 )					/* 3D-Objekte und objc_sysvar() vorhanden? */
 					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-Look eingeschaltet? */
 			}
-			if (xd_small_font.fnt_id > 0)		/* HR 051202: for some AES's (Milan) */
+			
+			/* Set some details of font specifications */
+
+			if (xd_small_font.fnt_id > 0)		/* for some AES's (Milan) */
 				xd_small_font.fnt_id = vst_font(xd_vhandle, xd_small_font.fnt_id);
 			else
 				xd_small_font.fnt_height = 8;
 
-			if (xd_regular_font.fnt_id > 0)		/* HR 051202: for some AES's (Milan) */
+			if (xd_regular_font.fnt_id > 0)		/* for some AES's (Milan) */
 				xd_regular_font.fnt_id = vst_font(xd_vhandle, xd_regular_font.fnt_id);
 			else
 			{
-				int dum,effects[3],d[5];
-				vqt_fontinfo(xd_vhandle,&dum,&dum,d,&dum,effects);
+				int dum, effects[3], d[5];
+				vqt_fontinfo(xd_vhandle, &dum, &dum,d, &dum, effects);
 				xd_regular_font.fnt_height = d[4];		/* celltop to baseline */
 			}
 		}
 		else
 		{
+			/* 
+			 * Appl_getinfo is not supported, so probably  this is AES < 4 
+			 * except that TOS 4.0* (Falcon) identifies itself as AES 3.40 but
+			 * is still a "3D" AES. That particular case is dealt here, hopefully
+			 * without bad effects: AES4 is declared manually.
+			 */
+
+			if ( get_tosversion() > 0x400 && _GemParBlk.glob.version >= 0x330 )
+			{
+				xd_aes4_0 = TRUE; 
+				aes_hor3d = 2;
+				aes_ver3d = 2;
+				colour_icons = TRUE;
+
+				if ( xd_ncolors > 4 )
+				{
+					xd_bg_col = LWHITE;		/* gray background for some objects */		
+					xd_sel_col = LBLACK;	/* dark gray for selected objects */
+				}
+			}
+
+			/* Manually set  details of font specifications */
+
 			vqt_attributes(xd_vhandle, work_out);
 
 			xd_regular_font.fnt_id = 1;
 			xd_regular_font.fnt_type = 0;
 			xd_regular_font.fnt_height = (work_out[7] <= 7) ? 9 : 10;
-
 			xd_small_font.fnt_id = 1;
 			xd_small_font.fnt_type = 0;
 			xd_small_font.fnt_height = 8;
 		}
 
+		/* Some more settings of font sizes */
+
 		xd_small_font.fnt_height = vst_point(xd_vhandle, xd_small_font.fnt_height, &dummy, &dummy, &dummy, &xd_small_font.fnt_chh);
 		vqt_width(xd_vhandle, ' ', &xd_small_font.fnt_chw, &dummy, &dummy);
 
+		/* 
+		 * In some cases (at least Magic low-res), a too-small font size
+		 * is set above; to make matters worse, that information is not
+		 * systematically applied, which would make dialogs unusable; 
+		 * forcing regular font size to a minimum of 9pt seems to cure this
+		 */
+
+		if ( xd_regular_font.fnt_height < 9 )
+			xd_regular_font.fnt_height = 9;	
+
 		xd_regular_font.fnt_height = vst_point(xd_vhandle, xd_regular_font.fnt_height, &dummy, &dummy, &dummy, &xd_regular_font.fnt_chh);
+
 		vqt_width(xd_vhandle, ' ', &xd_regular_font.fnt_chw, &dummy, &dummy);
 
 		*vdi_handle = xd_vhandle;
-
 		return 0;
 	}
 }
+
 
 void exit_xdialog(void)
 {
 	XDOBJDATA *h = xd_objdata, *next;
 
+	/* Close the dialogs if there are any that are still open */
+
 	while (xd_dialogs)
 		xd_close(xd_dialogs);
 
 	while (xd_nmdialogs)
+#ifdef _DOZOOM
+/* DjV 060 290603 conditional */
 		xd_nmclose(xd_nmdialogs, NULL, FALSE);
+#else
+		xd_nmclose(xd_nmdialogs);
+#endif
 
 	while (h != NULL)
 	{
@@ -1758,5 +2103,9 @@ void exit_xdialog(void)
 
 	xw_closeall();
 
+	/* At the very end, close virtual workstation on screen */
+
 	v_clsvwk(xd_vhandle);
 }
+
+

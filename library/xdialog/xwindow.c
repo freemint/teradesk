@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>
 #include <vdi.h>
 #include <stdarg.h>
@@ -30,8 +33,12 @@
 
 #include "internal.h"
 
+extern int xd_vhandle;
+
+
 static WINDOW *windows;				/* lijst met windows. */
 static WINDOW *desktop;				/* pointer to desktop window. */
+WINDOW *xd_deskwin; /* but global and avoid name conflict */
 
 /*
  * Stuur een redraw boodschap naar een window.
@@ -48,17 +55,17 @@ static WINDOW *desktop;				/* pointer to desktop window. */
 
 void xw_send_redraw(WINDOW *w, RECT *area)
 {
-	int message[8];
 #ifdef __PUREC__
 	extern int ap_id;		/* Defined in application. */
+	#define aes_pid ap_id
+#else
+	#define aes_pid gl_apid
 #endif
 
+	int message[8];
+
 	message[0] = WM_REDRAW;
-#ifdef __PUREC__
-	message[1] = ap_id;
-#else
-	message[1] = gl_apid;
-#endif
+	message[1] = aes_pid;
 	message[2] = 0;
 	message[3] = w->xw_handle;
 	message[4] = area->x;
@@ -66,12 +73,9 @@ void xw_send_redraw(WINDOW *w, RECT *area)
 	message[6] = area->w;
 	message[7] = area->h;
 
-#ifdef __PUREC__
-	appl_write(ap_id, 16, message);
-#else
-	appl_write(gl_apid, 16, message);
-#endif
+	appl_write(aes_pid, 16, message);
 }
+
 
 /*
  * Funktie voor het vinden van een WINDOW structuur, aan de hand
@@ -91,6 +95,7 @@ WINDOW *xw_hfind(int handle)
 	return (handle == 0) ? desktop : NULL;
 }
 
+
 /*
  * Funktie voor het vinden van een window dat zich op een bepaalde
  * positie bevindt.
@@ -109,6 +114,7 @@ WINDOW *xw_find(int x, int y)
 {
 	return xw_hfind(wind_find(x, y));
 }
+
 
 /*
  * Funktie voor het vinden van het bovenste window.
@@ -144,6 +150,7 @@ WINDOW *xw_top(void)
 	return desktop;
 }
 
+
 /*
  * Funktie die kijkt of een bepaalde WINDOW structuur, inderdaad
  * (nog) bestaat.
@@ -174,6 +181,7 @@ int xw_exist( WINDOW *w )
 	return 0;
 }
 
+
 static WINDOW *next_window;
 
 /*
@@ -197,6 +205,7 @@ WINDOW *xw_first(void)
 	}
 }
 
+
 /*
  * Funktie die het volgende window uit de windowlijst teruggeeft.
  *
@@ -217,6 +226,7 @@ WINDOW *xw_next(void)
 	else
 		return NULL;
 }
+
 
 static WINDOW *prev_window;
 
@@ -248,6 +258,7 @@ WINDOW *xw_last(void)
 	}
 }
 
+
 /*
  * Funktie die het vorige window uit de windowlijst teruggeeft.
  *
@@ -268,6 +279,7 @@ WINDOW *xw_prev(void)
 	else
 		return NULL;
 }
+
 
 /*
  * Funktie die van een bepaald window het bovenste window maakt.
@@ -296,6 +308,7 @@ static void xw_set_top(WINDOW *w)
 	}
 }
 
+
 /*
  * Funktie voor het cyclen van windows. De funktie maakt van het
  * onderste window het bovenste.
@@ -316,6 +329,7 @@ void xw_cycle(void)
 		xw_set_top(nt);
 }
 
+
 /*
  * Funktie voor het bepalen van de rechthoek om de menubalk
  * van een window.
@@ -326,6 +340,7 @@ static void xw_bar_rect(WINDOW *w, RECT *r)
 	xd_objrect(w->xw_menu, w->xw_bar, r);
 	r->h += 1;
 }
+
 
 /*
  * Funktie die de positie van de menubalk zet op de positie van
@@ -339,10 +354,11 @@ static void xw_set_barpos(WINDOW *w)
 	if (menu != NULL)
 	{
 		menu->ob_x = w->xw_work.x;
-		menu->ob_y = w->xw_work.y;
+		menu->ob_y = w->xw_work.y; 
 		menu[w->xw_bar].ob_width = w->xw_work.w;
 	}
 }
+
 
 /*
  * Funktie die de menubalk in een window opnieuw tekent,
@@ -355,10 +371,10 @@ static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 	OBJECT *menu = w->xw_menu;
 	int pxy[4];
 
-	if (menu != NULL)
-	{
-/*		xw_bar_rect(w,&r1);*/
+	/* don't redraw in iconified window */
 
+	if ( menu != NULL && w->iflag == 0 )
+	{
 		xd_objrect(w->xw_menu, object, &r1);
 		if (object == w->xw_bar)
 			r1.h += 1;
@@ -400,6 +416,7 @@ static void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 	}
 }
 
+
 /*
  * Funktie die de ouder objecten van de menubalk en van de 
  * pulldown menu's bepaalt.
@@ -411,6 +428,7 @@ static void xw_find_objects(OBJECT *menu, int *bar, int *boxes)
 	*boxes = menu->ob_tail;
 }
 
+
 /*
  * Funktie voor het tekenen van een pulldown menu.
  */
@@ -419,6 +437,7 @@ static void xw_menu_draw(OBJECT *menu, int item, RECT *box)
 {
 	objc_draw(menu, item, MAX_DEPTH, box->x, box->y, box->w, box->h);
 }
+
 
 /*
  * Funktie voor het selecteren en deselecteren van een item
@@ -433,6 +452,7 @@ static void xw_menu_change(OBJECT *menu, int item, int select, RECT *box)
 	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
 }
 
+
 /*
  * Funktie voor het kopieren van een deel van het scherm van of
  * naar een buffer (voor het redden van het scherm onder een
@@ -445,6 +465,7 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
 	vro_cpyfm(xd_vhandle, S_ONLY, pxy, src, dest);
 	xd_mouse_on();
 }
+
 
 /*
  * Funktie voor het afhandelen van muis klikken in de menubalk
@@ -461,7 +482,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
-	if (menu == NULL)
+	if (menu == NULL || w->iflag != 0 )
 		return FALSE;
 
 	xw_bar_rect(w, &r);
@@ -604,6 +625,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	return TRUE;
 }
 
+
 /*
  * Funktie voor het plaatsen of verwijderen van een marker voor
  * een menupunt.
@@ -623,6 +645,7 @@ void xw_menu_icheck(WINDOW *w, int item, int check)
 		w->xw_menu[item].ob_state |= CHECKED;
 }
 
+
 /*
  * Funktie voor het enablen of disablen van een menupunt.
  *
@@ -641,6 +664,7 @@ void xw_menu_ienable(WINDOW *w, int item, int enable)
 		w->xw_menu[item].ob_state &= ~DISABLED;
 }
 
+
 /*
  * Funktie voor het veranderen van de tekst van een menupunt.
  *
@@ -655,6 +679,7 @@ void xw_menu_text(WINDOW *w, int item, const char *text)
 {
 	w->xw_menu[item].ob_spec.free_string = (char *) text;
 }
+
 
 /*
  * Funktie voor het selecteren en deselecteren van een menutitel.
@@ -679,6 +704,7 @@ void xw_menu_tnormal(WINDOW *w, int item, int normal)
 	xw_redraw_menu(w, item, &r);
 }
 
+
 /*
  * Bepaal het type van een window.
  */
@@ -688,6 +714,7 @@ int xw_type(WINDOW *w)
 	return w->xw_type;
 }
 
+
 /*
  * Bepaal de window handle van een window.
  */
@@ -696,6 +723,7 @@ int xw_handle(WINDOW *w)
 {
 	return w->xw_handle;
 }
+
 
 /*
  * Funktie voor het afhandelen van een button event. Als er voor
@@ -734,6 +762,7 @@ int xw_hndlbutton(int x, int y, int n, int bstate, int kstate)
 		return FALSE;
 }
 
+
 /*
  * Funktie voor het afhandelen van een keyboard event. Als er voor
  * een bepaald window geen handler is geinstalleerd of als het
@@ -761,6 +790,45 @@ int xw_hndlkey(int scancode, int keystate)
 		return FALSE;
 }
 
+/* DjV 042 250303 100403 ---vvv--- */
+
+/*
+ * Iconify/uniconify functions
+ */
+
+void xw_iconify(WINDOW *w, int width, int height)
+{
+	/* Remember size and position of window in normal state */
+
+	w->xw_nsize.x = w->xw_size.x; /* not really needed */
+	w->xw_nsize.y = w->xw_size.y; /* not really needed */
+	w->xw_nsize.w = w->xw_size.w;
+	w->xw_nsize.h = w->xw_size.h;
+
+	/* 
+	 * Set window to iconified state; note that this function
+	 * apparently does not change xw_size ??? 
+	 */
+
+	wind_set(w->xw_handle, WF_ICONIFY, w->xw_size.x, w->xw_size.y, width, height);
+
+	w->iflag = 1;
+}
+
+
+void xw_uniconify(WINDOW *w)
+{
+	wind_set(w->xw_handle,WF_UNICONIFY,w->xw_size.x,w->xw_size.y,w->xw_nsize.w,w->xw_nsize.h);
+
+	w->xw_nsize.x = w->xw_size.x;
+	w->xw_nsize.y = w->xw_size.y;
+
+	w->iflag = 0;
+}
+
+/* DjV 042 250303 100403 ---^^^--- */
+
+
 /*
  * Funktie voor het afhandelen van een message event.
  *
@@ -774,7 +842,9 @@ int xw_hndlmessage(int *message)
 	WD_FUNC *func;
 	WINDOW *w;
 
-	if ((message[0] < WM_REDRAW) || (message[0] > WM_NEWTOP))
+	if (   (message[0] < WM_REDRAW)
+	    || (message[0] > WM_UNICONIFY)
+	   )
 		return FALSE;
 
 	if ((w = xw_hfind(message[3])) == NULL)
@@ -816,12 +886,23 @@ int xw_hndlmessage(int *message)
 		if (func->wd_newtop != 0L)
 			func->wd_newtop(w);
 		break;
+	/* DjV 042 250303 ---vvv--- */
+	case WM_ICONIFY:
+		func->wd_iconify(w);
+		break;
+	case WM_UNICONIFY:
+		func->wd_uniconify(w);
+		func->wd_sized( w, &(w->xw_nsize) );
+		break;
+	/* DjV 042 250303 ---^^^--- */
+
 	default :
 		return FALSE;
 	}
 
 	return TRUE;
 }
+
 
 /*
  * Vervanger van wind_set(). De funktie corrigeert de grootte van
@@ -868,6 +949,7 @@ void xw_set(WINDOW *w, int field,...)
 	va_end(p);
 }
 
+
 static unsigned char xw_get_argtab[] =
 {
 	1, 1, 1, 4, 4, 4, 4, 1,
@@ -875,6 +957,7 @@ static unsigned char xw_get_argtab[] =
 	4, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1
 };
+
 
 /*
  * Vervanger van wind_get(). Voor het opvragen van informatie over
@@ -952,6 +1035,7 @@ void xw_get(WINDOW *w, int field,...)
 	va_end(p);
 }
 
+
 /*
  * Vervanger van wind_calc(), die rekening houdt met een eventuele
  * menubalk.
@@ -984,6 +1068,7 @@ void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output,
 	}
 }
 
+
 /*
  * Funktie voor het bepalen van het aantal OBJECT structuren in een
  * object boom.
@@ -1004,6 +1089,7 @@ static int xw_tree_size(OBJECT *menu)
 		return i;
 	}
 }
+
 
 /*
  * Funktie voor het alloceren van geheugen voor een nieuw window.
@@ -1033,6 +1119,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
 
 	return w;
 }
+
 
 /*
  * Funktie voor het creeren van een window.
@@ -1085,6 +1172,7 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 	return w;
 }
 
+
 /*
  * Funktie voor het openen van een window.
  *
@@ -1110,6 +1198,7 @@ void xw_open(WINDOW *w, RECT *size)
 		w->xw_func->wd_top(w);
 }
 
+
 /*
  * Funktie voor het verwijderen van een window uit de window lijst
  * en het vrijgeven van gealloceerd geheugen.
@@ -1128,6 +1217,7 @@ static void xw_rem(WINDOW *w)
 	(*xd_free)(w);
 }
 
+
 /*
  * Funktie voor het sluiten van een window.
  *
@@ -1144,6 +1234,7 @@ void xw_close(WINDOW *w)
 	{
 		wind_close(w->xw_handle);
 		w->xw_opened = FALSE;
+		w->iflag = 0;
 		if ((tw = xw_top()) != NULL)
 		{
 			if (tw->xw_func->wd_top != 0L)
@@ -1153,6 +1244,7 @@ void xw_close(WINDOW *w)
 			desktop->xw_func->wd_top(tw);
 	}
 }
+
 
 /*
  * Funktie voor het deleten van een window.
@@ -1171,8 +1263,9 @@ void xw_delete(WINDOW *w)
 	}
 }
 
+
 /*
- * Function for opening the desktop window.
+ * Function for opening the desktop root window.
  *
  * type				- type van het window,
  * functions		- pointer naar een structuur met pointers naar
@@ -1201,6 +1294,7 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 	w->xw_menu = NULL;
 
 	desktop = w;
+	xd_deskwin = w; /* globally available */
 
 	w->xw_prev = NULL;
 	w->xw_next = NULL;
@@ -1216,6 +1310,7 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 	return w;
 }
 
+
 /*
  * Function for closing the desktop window.
  */
@@ -1228,6 +1323,7 @@ void xw_close_desk(void)
 		desktop = NULL;
 	}
 }
+
 
 /*
  * Funktie voor het sluiten van alle windows.
@@ -1244,3 +1340,4 @@ void xw_closeall(void)
 
 	xw_close_desk();
 }
+

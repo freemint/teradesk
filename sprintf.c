@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,19 +20,42 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 240203 */
+#include <np_aes.h>	
 #include <stdlib.h>
-#include <stdarg.h>			/* HR 240203 */
+#include <stdarg.h>
+#include <string.h>
 #include <boolean.h>
 #include <ctype.h>
 
+
+/*
+ * "Write" into a string. 
+ * Note: This routine is able to perform only basic formatting.
+ * Recognized formats are -only- : %d %x %ld %lx %s.
+ * Maximum width of numeric output should not exceed 15 characters.
+ * Width specifier is supported. Output is a null-terminated string.
+ */
+
 int vsprintf(char *buffer, const char *format, va_list argpoint)
 {
-	char *s, *d, *h, tmp[16];
-	boolean lng, ready;
-	int maxl, i;
-	long value;
+	char 
+		*s, 
+		*d, 
+		*h, 
+		fill,
+		tmp[16];
 
+	boolean 
+		lng, 
+		ready;
+
+	int 
+		radix,
+		maxl, 
+		i;
+/*
+	long value;
+*/
 	s = (char *) format;
 	d = buffer;
 
@@ -50,8 +75,8 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					h = va_arg(argpoint, char *);
 
 					i = 0;
-					if (maxl == 0)
-						maxl = 32767;
+					if (maxl == 0 || maxl > 255)
+						maxl = 256 - (d - buffer);	
 
 					while ((h[i]) && (i < maxl))
 						*d++ = h[i++];
@@ -62,10 +87,34 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					break;
 				case 'd':
 				case 'x':
+/*
+ This did not correctly format "%x for int with highest bit set."
 					value = (lng == TRUE) ? va_arg(argpoint, long) : va_arg(argpoint, int);
-
 					ltoa(value, tmp, (*s == 'x') ? 16 : 10);
+*/
+					if ( *s == 'x' )
+					{
+						radix = 16;
+						fill = '0';
+					}
+					else
+					{
+						radix = 10;
+						fill = ' ';
+					}
+					if ( lng )					
+						ltoa(va_arg(argpoint, long), tmp, radix);
+					else
+						itoa(va_arg(argpoint, int), tmp, radix);
+
 					h = tmp;
+					i = strlen(tmp);
+					if (maxl && i < maxl) /* use maxl for d as well */
+					{
+						i = maxl - i;
+						while (i--)
+							*d++ = fill;
+					}
 					while (*h)
 						*d++ = *h++;
 					ready = TRUE;
@@ -83,7 +132,8 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 		else
 			*d++ = *s++;
 	}
-	*d++ = 0;
+
+	*d = 0;	
 
 	return (int) (d - buffer);
 }
@@ -119,3 +169,4 @@ int aprintf( int def,const char *string, ... )
 
 	return button;
 }
+

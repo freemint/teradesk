@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
@@ -27,313 +29,385 @@
 
 #include "desk.h"
 #include "error.h"
-#include "resource.h"
+#include "resource.h" /* includes desktop.h */
+#include "lists.h" /* must be above slider.h */
 #include "slider.h"
 #include "xfilesys.h"
 #include "file.h"
+#include "config.h"	
 #include "filetype.h"
+#include "font.h"
 #include "window.h"
 
-#define NLINES		4
 
-typedef struct filetype
+FTYPE
+	fwork,			/* temp. area for currently edited filetype */ 
+	*filetypes; 	/* List of defined filetype masks */
+
+
+
+/*
+ * Some (mostly same) filetype masks are used 
+ * in filetype.c, prgtype.c and icontype.c, 
+ * so they are here defined once for all
+ */
+
+char *presets[10] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG" };
+
+
+/*  
+ * Copy one filemask dataset to another; this routine doesn't do
+ * anything special except copying the string, but is formed to be
+ * compatible with similar routines for other lists
+ * (note: must not just copy *t = *s because t->next should be preserved)
+ */
+
+void copy_ftype(FTYPE *t, FTYPE *s)
 {
-	SNAME name;
-	struct filetype *next;
-} FTYPE;
-
-typedef struct
-{
-	ITM_INTVARS;				/* Interne variabelen bibliotheek. */
-} ITM_WINDOW;
-
-FTYPE *filetypes;
-
-static FTYPE *add(char *name)
-{
-	FTYPE *f, *prev;
-
-	f = filetypes;
-	prev = NULL;
-
-	while (f != NULL)
-	{
-		prev = f;
-		f = f->next;
-	}
-
-	if ((f = malloc(sizeof(FTYPE))) == NULL)
-		xform_error(ENSMEM);
-	else
-	{
-		strcpy(f->name, name);
-		f->next = NULL;
-
-		if (prev == NULL)
-			filetypes = f;
-		else
-			prev->next = f;
-	}
-
-	return f;
+	strsncpy ( t->filetype, s->filetype, sizeof(SNAME) );
 }
 
-static void rem(FTYPE *item)
+
+/*
+ * Add one filetype mask to end of list, explicitely setting data; 
+ * here, only the name is entered, but for other lists the
+ * corresponding routines enter additional data as appropriate
+ */
+
+static FTYPE *ftadd_one(char *filetype)
 {
-	FTYPE *f, *prev;
+	strsncpy( fwork.filetype, filetype, sizeof(fwork.filetype));
 
-	f = filetypes;
-	prev = NULL;
+	/* 
+	 * note: in other similar routines name is converted to lowercase
+	 * if mint is active; should it be so here too? (was not in old code).
+	 * Currently disabled, i.e. always uppercase
+	 */
 
-	while ((f != NULL) && (f != item))
-	{
-		prev = f;
-		f = f->next;
-	}
+#if _MINT_
+/*
+	if ( mint && !magic )
+		strlwr(fwork.filetype);
+*/
+#endif
 
-	if (f == item)
-	{
-		if (prev == NULL)
-			filetypes = f->next;
-		else
-			prev->next = f->next;
-
-		free(f);
-	}
+	return (FTYPE *)lsadd( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), END, copy_ftype); 
 }
+
+/*
+ * Find (or create, if nonexistent!) information about an filetype in a list;
+ * input: filename or a filename mask;
+ * output: filetype (i.e. FTYPE) data
+ * this routine does not do much except copy the name; 
+ * it has been created for compatibility with routines for other lists
+ * which manipulate additional data
+ */
+
+static void ftype_info
+( 
+	FTYPE **list, 		/* list of defined masks */
+	char *filetype,		/* filetype to search for */ 
+	int dummy,			/* not used, exists for compatibility */
+	FTYPE *ft 			/* output information */
+)
+{
+	find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, NULL );
+	return;
+}
+
+
+/*
+ * Remove complete list of filetypes;
+ * Original routine was renamed to rem_all(...) and moved to lists.c 
+ */
 
 static void rem_all_filetypes(void)
 {
-	FTYPE *f, *next;
-
-	f = filetypes;
-
-	while (f != NULL)
-	{
-		next = f->next;
-		free(f);
-		f = next;
-	}
-
-	filetypes = NULL;
+	rem_all( (LSTYPE **)(&filetypes), rem ); 
 }
 
-static int cnt_types(void)
-{
-	int n = 0;
-	FTYPE *f = filetypes;
 
-	while (f != NULL)
+/*
+ * Handle the dialog for entering a filetype for file mask; 
+ * return data in *ft; if operation is canceled, entry values
+ * in *ft are unchanged.
+ * This routine was practically rewritten, 
+ * old code was removed completely
+ * 
+ */
+
+static boolean filetype_dialog
+(
+	FTYPE **list, 	/* list in which duplicates are checked for */
+	int pos,		/* positin in the list where to add data */ 
+	FTYPE *ft,		/* data to be edited */ 
+	int use			/* use of this dialog (filetype or doctype, add or edit) */
+)
+{
+	int 
+		title, 	/* rsc index of dialog title string */
+		button;	/* code of pressed button */
+
+/*
+	char
+		*ftxt;			/* point to editable field in dialog */
+*/
+
+	boolean
+		stat = FALSE,	/* changes accepted or not */
+		stop = FALSE;	/* true to exit from dialog */
+
+	XDINFO
+		info;			/* dialog info structure */
+
+/*
+	ftxt = ftydialog[FTYPE0].ob_spec.tedinfo->te_ptext;
+*/
+
+	/* Set dialog title (add/edit) */
+
+	if ( use & LS_EDIT )
 	{
-		n++;
-		f = f->next;
-	}
-
-	return n;
-}
-
-static FTYPE *get_item(int item)
-{
-	int i = 0;
-	FTYPE *f = filetypes;
-
-	while ((f != NULL) && (i != item))
-	{
-		i++;
-		f = f->next;
-	}
-
-	return f;
-}
-
-static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
-{
-	int i;
-	FTYPE *f;
-	OBJECT *o;
-
-	for (i = 0; i < 4; i++)
-	{
-		o = &setmask[FTYPE1 + i];
-
-		if ((f = get_item(i + slider->line)) == NULL)
-			*o->ob_spec.tedinfo->te_ptext = 0;
-		else
-			cv_fntoform(o, f->name);				/* HR 240103 */
-	}
-
-	if (draw == TRUE)
-		xd_draw(info, FTPARENT, MAX_DEPTH);
-}
-
-static int find_selected(void)
-{
-	int object;
-
-	return ((object = xd_get_rbutton(setmask, FTPARENT)) < 0) ? 0 : object - FTYPE1;
-}
-
-static boolean filetype_dialog(char *name)
-{
-	int button;
-
-	rsc_title(newfolder, NDTITLE, DTADDMSK);
-
-	cv_fntoform(newfolder + DIRNAME, name);		/* HR 240103 */
-
-	button = xd_dialog(newfolder, DIRNAME);
-
-	if ((button == NEWDIROK) && (strlen(dirname) != 0))
-	{
-		cv_formtofn(name, dirname);
-		return TRUE;
+		title = (use & LS_FMSK) ? DTEDTMSK : DTEDTDT;
 	}
 	else
-		return FALSE;
+	{
+		title = (use & LS_FMSK) ? DTADDMSK : DTADDDT;
+	}
+	rsc_title(ftydialog, FTYTITLE, title); 
+
+	cv_fntoform(ftydialog + FTYPE0, ft->filetype);
+
+	/* Open the dialog, then loop until stop */
+
+	xd_open(ftydialog, &info);
+
+	while (!stop)
+	{
+		button = xd_form_do( &info, ROOT );
+
+		if ( button == FTYPEOK )
+		{
+			/* 
+			 * If selected OK, check if this filetype has not already
+			 * been entered in this list
+			 */
+
+			SNAME ftxt;
+
+			cv_formtofn( ftxt, &ftydialog[FTYPE0]);
+
+			if ( *ftxt != 0 )
+			{
+				if ( check_dup((LSTYPE **)list, ftxt, pos ) )
+				{
+					strcpy(ft->filetype, ftxt);
+					stop = TRUE;
+					stat = TRUE;
+				}
+			}
+		}
+		else
+			stop = TRUE;
+
+		xd_change(&info, button, NORMAL, TRUE);
+	}
+	xd_close(&info);
+	return stat;
 }
+
 
 void wd_set_filemask(WINDOW *w)
 {
 	((ITM_WINDOW *) w)->itm_func->wd_filemask(w);
 }
 
-/* Default funktie voor het zetten van een filemask. Bij het
-   aanroepen moet het huidige masker in mask staan. Na afloop zal
-   hierin het nieuwe masker staan. Als het resultaat TRUE is, dan
-   is op OK gedrukt, als het resultaat FALSE is, dan is op Cancel
-   gedrukt, of er is een fout opgetreden. */
 
-char *wd_filemask(const char *mask)
+/* 
+ * Default funktie voor het zetten van een filemask. Bij het
+ * aanroepen moet het huidige masker in mask staan. Na afloop zal
+ * hierin het nieuwe masker staan. Als het resultaat TRUE is, dan
+ * is op OK gedrukt, als het resultaat FALSE is, dan is op Cancel
+ * gedrukt, of er is een fout opgetreden.
+ */
+
+char *wd_filemask(const char *mask) 
 {
-	int button;
-	int i;
-	XDINFO info;
-	boolean stop = FALSE, redraw, dc, ok;
-	FTYPE *f;
-	SNAME name, newmask;			/* HR 240203 */
-	char *result;
-	SLIDER sl;
-
-	sl.type = 1;
-	sl.up_arrow = FTUP;
-	sl.down_arrow = FTDOWN;
-	sl.slider = FTSLIDER;
-	sl.sparent = FTSPAR;
-	sl.lines = NLINES;
-	sl.n = cnt_types();
-	sl.line = 0;
-	sl.set_selector = set_selector;
-	sl.first = FTYPE1;
-	sl.findsel = find_selected;
-
-	/* DjV 004 290103 ---vvv--- */
-	if ( mask == NULL )
-	{
-		setmask[FILETYPE].ob_state |= DISABLED;
-		*setmask[FILETYPE].ob_spec.tedinfo->te_ptext = 0;
-	}		
-	else
-	{
-	/* DjV 004 290103 ---^^^--- */
-		cv_fntoform(setmask + FILETYPE, mask);			/* HR 240103 */
-		setmask[FILETYPE].ob_state &= ~DISABLED;	/* DjV 004 290103 */
-	}												/* DjV 004 290103 */
-
-	/* DjV 004 020103 Put file attributes buttons into right state */
-	set_opt( setmask, options.attribs, FA_HIDDEN, MSKHID );
-	set_opt( setmask, options.attribs, FA_SYSTEM, MSKSYS );
-	set_opt( setmask, options.attribs, FA_SUBDIR, MSKDIR );
-	set_opt( setmask, options.attribs, FA_PARDIR, MSKPAR );
-
-	sl_init(setmask, &sl);
-
-	xd_open(setmask, &info);
-
-	while (stop == FALSE)
-	{
-		redraw = FALSE;
-
-		button = sl_form_do(setmask, FILETYPE, &sl, &info);
-		dc = (button & 0x8000) ? TRUE : FALSE;
-		button &= 0x7FFF;
-
-		if ((button < FTYPE1) || (button > FTYPE4))
-		{
-			switch (button)
-			{
-			case FTADD:
-				name[0] = 0;
-
-				if (filetype_dialog(name) == TRUE)
-				{
-					add(name);
-					sl.n = cnt_types();
-					redraw = TRUE;
-					sl_set_slider(setmask, &sl, &info);
-				}
-				break;
-			case FTDELETE:
-				i = find_selected() + sl.line;
-				if ((f = get_item(i)) != NULL)
-				{
-					rem(f);
-					sl.n = cnt_types();
-					redraw = TRUE;
-					sl_set_slider(setmask, &sl, &info);
-				}
-				break;
-			default:
-				ok = (button == FTOK) ? TRUE : FALSE;
-				stop = TRUE;
-				break;
-			}
-			xd_change(&info, button, NORMAL, (stop == FALSE) ? 1 : 0);
-		}
-		else if ( button >= MSKHID && button <= MSKPAR )
-		{
-			/* DjV 004 020103 do nothing until exit */	
-		}		
-		else
-		{
-			strcpy(filetype, setmask[button].ob_spec.tedinfo->te_ptext);
-			xd_draw(&info, FILETYPE, 1);
-			if (dc == TRUE)
-			{
-				ok = TRUE;
-				stop = TRUE;
-			}
-		}
-
-		if (redraw == TRUE)
-			set_selector(&sl, TRUE, &info);
-	}
-
-	xd_close(&info);
-
-	if (ok == TRUE)
-	{
-		/* DjV 004 030103 ---vvv--- */
-		get_opt( setmask, &options.attribs, FA_HIDDEN, MSKHID );
-		get_opt( setmask, &options.attribs, FA_SYSTEM, MSKSYS );
-		get_opt( setmask, &options.attribs, FA_SUBDIR, MSKDIR ); /* DjV 004 280103 wrongly was MSKHID */ 
-		get_opt( setmask, &options.attribs, FA_PARDIR, MSKPAR );
-		/* DjV 004 020103 ---^^^--- */
-
-		if ( mask == NULL )		/* DjV 004 290103 */
-			return NULL;		/* DjV 004 290103 */
-		else					/* DjV 004 290103 */
-		{						/* DjV 004 290103 */
-			cv_formtofn(newmask, filetype);
-			if ((result = malloc(strlen(newmask) + 1)) != NULL)
-				strcpy(result, newmask);
-			else
-				xform_error(ENSMEM);
-			return result;
-		}						/* DjV 004 290103 */
-	}
-	else
-		return NULL;
+	return ft_dialog( mask, &filetypes, LS_FMSK );
 }
+
+
+/*
+ * Use these kind-specific functions to manipulate filetype lists: 
+ */
+
+#pragma warn -sus
+static LS_FUNC ftlist_func =
+{
+	copy_ftype,
+	rem,
+	ftype_info,
+	find_lsitem,
+	filetype_dialog
+};
+#pragma warn .sus
+
+
+/* 
+ * Handling of the dialog for setting filetype masks (add/delete/change);
+ * Note: this dialog is also called when an application is installed
+ * (to set document types for that application). A recursion occurs then,
+ * because list_edit(...) routine is called from within itself:
+ * app_install-->list_edit-->app_dialog-->ft_dialog-->list_edit
+ */
+ 
+char *ft_dialog
+( 
+	const char *mask,	/* file mask which will be current from now on */ 
+	FTYPE **flist,		/* list of defined filetypes/masks */ 
+	int use				/* determines if sets filemasks or documenttypes */ 
+)
+{
+	OBJECT
+		savedial;	/* to save dialog before recursive call */
+
+	int 
+		luse,		/* local value of use */
+		button,		/* code of pressed button */
+		ftb,		/* button, too   */
+		i;			/* local counter */
+
+	SNAME 
+		newmask;	/* newly specified filemask */
+
+	char 
+		*result;	/* to be return value of this routine */
+
+
+	/* 
+	 * If necessary, save the previous state of this dialog's root object
+	 * (to return to proper state after a recursive call) 
+	 */
+
+	if ( use & LS_DOCT )
+	{
+		memcpy( &savedial, setmask, sizeof(OBJECT));
+		ftb = xd_get_rbutton ( setmask, FTPARENT );
+		xd_set_rbutton( setmask, FTPARENT, FTYPE1 );
+	}
+
+	luse = use & ~LS_WSEL;
+
+	/* Make visible what is relevant for each particular use of this dialog */
+
+	if ( mask != NULL )
+	{
+		cv_fntoform(setmask + FILETYPE, mask);		
+		setmask[FILETYPE].ob_flags &= ~HIDETREE;
+		setmask[FTTEXT].ob_flags &= ~HIDETREE;
+	}
+
+	/*
+	 * As there are finally only two uses for this routine, an 
+	 * if-then-else could have been used below instead of switch...
+	 */
+
+	switch(luse)
+	{
+		case LS_FMSK:
+
+			/* Use this dialog to set file mask */
+
+			rsc_title(setmask, DTSMASK, DTFTYPES);
+ 			rsc_title(setmask, FTTEXT, TFTYPE ); 
+			setmask[MSKATT].ob_flags &= ~HIDETREE; 
+			setmask[FILETYPE].ob_flags |= EDITABLE;
+
+			/* Scrolled fields must be touchexit for easier selection of mask */
+
+			for ( i = 0; i < NLINES; i++ )
+				setmask[FTYPE1 + i].ob_flags |= TOUCHEXIT;
+
+			/* Enter values of file attributes flags into dialog */
+
+			set_opt( setmask, options.attribs, FA_HIDDEN, MSKHID );
+			set_opt( setmask, options.attribs, FA_SYSTEM, MSKSYS );
+			set_opt( setmask, options.attribs, FA_SUBDIR, MSKDIR );
+			set_opt( setmask, options.attribs, FA_PARDIR, MSKPAR );
+			break;
+
+		case LS_DOCT:
+
+			/* 
+			 * Use this dialog to set document types for an application;
+			 * must deselect add/delete/change buttons because of a 
+			 * recursive call of setmask dialog when selecting document types
+			 */
+
+			rsc_title(setmask, DTSMASK, DTDTYPES);
+			rsc_title(setmask, FTTEXT, TAPP ); 
+			setmask[FILETYPE].ob_flags &= ~EDITABLE;
+			setmask[FTADD].ob_state &= ~SELECTED; 
+			setmask[FTDELETE].ob_state &= ~SELECTED;
+			setmask[FTCHANGE].ob_state &= ~SELECTED;
+			break;
+
+		default:
+			break;
+	}
+
+	/* Edit the filemasks list: add/delete/change entry */
+
+	button = list_edit( &ftlist_func, (LSTYPE **)(flist), NULL, sizeof(FTYPE), (LSTYPE *)(&fwork), luse);
+
+	setmask[MSKATT].ob_flags |= HIDETREE;
+	setmask[FILETYPE].ob_flags |= HIDETREE;
+	setmask[FTTEXT].ob_flags |= HIDETREE;
+
+	for ( i = 0; i < NLINES; i++ )
+		setmask[FTYPE1 + i].ob_flags &= ~TOUCHEXIT;
+
+	if ( button == FTOK )
+	{
+		/* If changes are accepted... */
+
+		if ( luse & LS_FMSK )
+		{
+			get_opt( setmask, &options.attribs, FA_HIDDEN, MSKHID );
+			get_opt( setmask, &options.attribs, FA_SYSTEM, MSKSYS );
+			get_opt( setmask, &options.attribs, FA_SUBDIR, MSKDIR ); 
+			get_opt( setmask, &options.attribs, FA_PARDIR, MSKPAR );
+
+			if ( mask != NULL )
+			{
+				cv_formtofn(newmask, &setmask[FILETYPE]);
+				if ((result = malloc(strlen(newmask) + 1)) != NULL)
+					strcpy(result, newmask);
+				else
+					xform_error(ENSMEM);
+				return result;
+			}
+		}
+	}
+
+	/* 
+	 * If necessary, restore previous state of dialog root object 
+	 * (needed after a recursive call)
+	 */
+
+	if ( use & LS_DOCT )
+	{
+		memcpy ( setmask, &savedial, sizeof(OBJECT));
+		xd_set_rbutton( setmask, FTPARENT, ftb );
+	}
+
+	/* No mask set */
+
+	return NULL;
+}
+
+
+/* Initialize (empty) list of filetype masks */
 
 void ft_init(void)
 {
@@ -343,57 +417,144 @@ void ft_init(void)
 #endif
 }
 
+
+/* Set a list of filetype masks with some predefined ones */
+
 void ft_default(void)
 {
-	rem_all_filetypes();
-
-	add("*");			/* HR 271102: no more distinction between MiNT/TOS */
-	add("*.*");			/*            The comparison is made case INsensitive */
-	add("*.CFG");
-	add("*.C");
-	add("*.H");
-	add("*.S");
-	add("*.PRJ");
-	add("*.PRG");
-	add("*.TOS");
-	add("*.TTP");
-	add("*.ACC");
-}
-
-int ft_load(XFILE *file)
-{
-	SNAME name;			/* HR 240203 */
-	int error;
+	int i;
 
 	rem_all_filetypes();
 
-	do
-	{
-		if (x_freadstr(file, name, sizeof(name), &error) == NULL)		/* HR 240103: max l */
-			return error;
+	/* 
+	 * Note 1: first two masks must be set in order to show anything in windows 
+	 * Note 2: ftadd_one can be used with explicitely entered name, too:
+	 * e.g. ftadd_one("*.C");
+	 */
 
-		if ((strlen(name) != 0) && (add(name) == NULL))
-			return ERROR;
-	}
-	while (strlen(name) != 0);
+	ftadd_one(presets[0]);	/* 		* 		*/			
+	ftadd_one(presets[1]);	/* 		*.*		*/
 
-	return 0;
+#if _PREDEF
+
+	/* Note: for upper/lowercase match see routine ftadd_one */
+
+	for ( i = 2; i < 10; i++ )
+		ftadd_one(presets[i]);
+#endif
 }
 
-int ft_save(XFILE *file)
+
+#if !TEXT_CFG_IN
+
+#include "ft_load.h"
+
+#endif
+
+
+/*
+ * Configuration table for one filetype or doctype
+ */
+
+CfgEntry ft_table[] =
 {
-	FTYPE *f;
-	int error;
+	{CFG_HDR, 0, "*type"  },
+	{CFG_BEG},
+	{CFG_S,   0, "mask", fwork.filetype },
+	{CFG_END},
+	{CFG_LAST}
+};
 
-	f = filetypes;
 
-	while (f)
+/* 
+ * This routine handles saving of all defined filetypes, but it handles
+ * loading of -only one- 
+ */
+ 
+FTYPE 
+	*fthis, 
+	**ffthis;
+
+
+CfgNest one_ftype
+{
+	*error = 0;
+
+	if (io == CFG_SAVE)
 	{
-		if ((error = x_fwritestr(file, f->name)) < 0)
-			return error;
+		/* Save data: all defined filetypes */
 
-		f = f->next;
+		while ( (*error == 0) && fthis)
+		{
+			fwork = *fthis;
+
+			*error = CfgSave(file, ft_table, lvl + 1, CFGEMP); 
+
+			fthis = fthis->next;
+		}
 	}
+	else
+	{
 
-	return x_fwritestr(file, "");
+#if TEXT_CFG_IN
+		/* Load data; one filetype */
+
+		memset( &fwork, 0, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
+
+		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME) - 1, lvl + 1); 
+
+		if (*error == 0 )
+		{
+			if ( fwork.filetype[0] == 0 )
+				*error = EFRVAL;
+			else
+			{
+				if (
+						lsadd(  (LSTYPE **)ffthis,
+		    				sizeof(FTYPE),
+		                	(LSTYPE *)&fwork,
+		                	END,
+		                	copy_ftype) == NULL
+					)
+						*error = ENOMSG; /* there was an allert in lsadd */
+			}
+		}
+#endif
+
+	}
 }
+
+
+/*
+ * Configuration table for filetypes (filename masks)
+ */
+
+CfgEntry filetypes_table[] =
+{
+	{CFG_HDR, 0, "*"     },
+	{CFG_BEG},
+	{CFG_NEST,0, "*type", one_ftype },		/* Repeating group */
+	{CFG_ENDG},
+	{CFG_LAST}
+};
+
+
+/*
+ * Load or save all filetypes
+ */
+
+CfgNest ft_config
+{
+	fthis = filetypes;
+	ffthis = &filetypes;
+
+	ft_table[0].s[0] = 'f'; 
+	filetypes_table[0].s =    "filetypes";
+	filetypes_table[2].s[0] = 'f';
+	filetypes_table[3].type = CFG_ENDG;
+
+	*error = handle_cfg(file, filetypes_table, MAX_KEYLEN, lvl + 1, CFGEMP, io, rem_all_filetypes, ft_default);
+}
+
+
+

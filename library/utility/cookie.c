@@ -1,5 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
+ *                                           2002, 2003  H. Robbers,
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -45,7 +47,12 @@ static void cookie_reset( void )
 extern int have_ssystem;
 #endif
 
-long find_cookie( long name )		/* HR 151102: return cookie value or -1 */
+
+/*
+ * return cookie value or -1
+ */
+
+long find_cookie( long name )		
 {
 	COOKIE *cookie;
 #if _MINT_
@@ -108,7 +115,7 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 				r = -1;
 			else
 			{
-				int e;		/* HR 151102: reserve 'end' for lamgiage */
+				int e;		/* reserve 'end' for lamgiage */
 
 				e = (int)cookie[i].value - 1;
 

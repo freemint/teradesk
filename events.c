@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,18 +20,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>	
 #include <stddef.h>
 #include <vdi.h>
 
 #include <boolean.h>
 #include <xdialog.h>
+#include <xscncode.h>
 
 #include "desk.h"
 #include "events.h"
-#include <xscncode.h> /* DjV 033 010203 */
-#include "error.h"    /* DjV 033 010203 */
-#include "desktop.h"  /* DjV 033 010203 */
+#include "error.h" 
+#include "desktop.h"
 
 
 static int event(int evflags, int mstate, int *key)
@@ -121,11 +123,10 @@ int clr_msg_buf(void)
 		return 0;
 }
 
-/* DjV 033 010203 ---vvv--- */
 /*
  * This is a routine for confirmation of an abort caused
  * by pressing [ESC] during multiple copy, delete, print, etc.
- * An alert is posted with a text "Abort current operation? 
+ * An alert is posted with a text "Abort current operation?" 
  */
 
 boolean escape_abort( boolean hndl_msg )
@@ -135,13 +136,12 @@ boolean escape_abort( boolean hndl_msg )
 	if ((r = key_state(&key, hndl_msg)) > 0)
 	{
 		if (key == ESCAPE)
-			if ( alert_printf(2, ABOOP) == 1 )
+			if ( alert_printf(2, AABOOP) == 1 )
 				return TRUE;
 	}
 	else if (r < 0)
 		return TRUE;
 	
 	return FALSE;
-
 } 
-/* DjV 033 010203 ---^^^--- */
+

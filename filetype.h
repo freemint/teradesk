@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,10 +20,38 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+typedef struct ftype
+{
+	SNAME filetype;	
+	struct ftype *next;
+} FTYPE;
+
+#define END 32767
+
+extern CfgEntry 
+	ft_table[],
+	filetypes_table[];
+
+extern FTYPE 
+	*fthis, 
+	**ffthis;
+
+CfgNest ft_config;
+
 void wd_set_filemask(WINDOW *w);
 char *wd_filemask(const char *mask);
 
 void ft_init(void);
 void ft_default(void);
-int ft_load(XFILE *file);
-int ft_save(XFILE *file);
+
+#if !TEXT_CFG_IN
+int ft_load(XFILE *file, FTYPE **list);
+#endif
+
+void copy_ftype(FTYPE *target, FTYPE *source);
+char *ft_dialog( const char *mask, FTYPE **list, int what );
+
+
+
+

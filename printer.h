@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,5 +21,5 @@
  */
 
 boolean prt_file(WINDOW *w, int item);
-boolean item_print(WINDOW *w, int n, int *sel_list);
-void dir_print(WINDOW *w, int n, int *list); /*DjV 029 140203 */
+boolean check_print( WINDOW *w, int n, int *list); 
+boolean print_list(WINDOW *w, int n, int *list, long *folders, long *files, long *bytes, int function);

@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,10 +33,15 @@
 #define XSKIP		-1027		/* Skip file */
 #define XOVERWRITE	-1028		/* Overwrite file */
 #define XEXIST		-1029		/* File exists */
+#define XALL 		-1031		/* mark all */
 
-int alert_msg(const char *string, ...);		/* HR 151102 */
+
+int alert_msg(const char *string, ...);	
 int alert_printf(int def, int message,...);
+int alert_iprint( int message );
+
 void xform_error(int error);
 void hndl_error(int msg, int error);
 int xhndl_error(int msg, int error, const char *file);
-char *get_freestring( int stringid ); /* DjV 035 120203 */
+char *get_freestring( int stringid );
+char *get_message(int error);

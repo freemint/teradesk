@@ -1,5 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                                            2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -104,8 +106,11 @@ int xe_xmulti(XDEVENT *events)
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW))
 		events->ev_mflags &= ~MU_MESAG;
 
+
 #ifdef __PUREC__
+
 	EvntMulti((EVENT *) events);
+
 #else
 	events->ev_mwhich = evnt_multi(events->ev_mflags, events->ev_mbclicks,
 		events->ev_mbmask, events->ev_mbstate, events->ev_mm1flags,
@@ -115,6 +120,7 @@ int xe_xmulti(XDEVENT *events)
 		(((unsigned long) events->ev_mthicount) << 16) | (unsigned long) events->ev_mtlocount,
 		&events->ev_mmox, &events->ev_mmoy, &events->ev_mmobutton,
 		&events->ev_mmokstate, &events->ev_mkreturn, &events->ev_mbreturn);
+
 #endif
 
 	if (((r = events->ev_mwhich) & MU_MESAG) && (events->ev_mmgpbuf[0] == AV_SENDKEY))
@@ -170,7 +176,7 @@ int xe_xmulti(XDEVENT *events)
 	if ((r & MU_BUTTON) && !xd_dialogs && (level == 1))
 	{
 		if (events->ev_mmobutton == 2)
-			events->ev_mbreturn = 2;				/* HR 151102: right button is double click */
+			events->ev_mbreturn = 2;	/* right button is double click */
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
 						  events->ev_mbreturn, events->ev_mmobutton,
 						  events->ev_mmokstate) == TRUE)
@@ -235,3 +241,4 @@ int xe_mouse_event(int mstate, int *x, int *y, int *kstate)
 
 	return (flags & MU_BUTTON) ? TRUE : FALSE;
 }
+

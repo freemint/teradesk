@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -18,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <np_aes.h>			/* HR 151102: modern */
+#include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -33,23 +35,20 @@
 #include "printer.h"
 #include "error.h"
 #include "xfilesys.h"
+#include "font.h"
+#include "config.h"
 #include "window.h"
 #include "file.h"
-#include "dir.h"			/* DjV 031 070203 */
+#include "dir.h"
 #include "events.h"
-#include "copy.h" /* DjV 031 070203 */
+#include "copy.h"
 
 #define PBUFSIZ	1024L
 
-/* DjV 031 150203 ---vvv--- */
-/* 
- * Printer line length; directory line longer than this is wrapped;
- * sometime plinelen may be made settable 
- */
-int plinelen = 80; 	/* decent values are between 64 and 132 */
-XATTR pattr;		/* item attributes */
 
-/* DjV 031 150203 ---^^^--- */
+#define plinelen options.V2_2.plinelen
+
+XATTR pattr;		/* item attributes */
 
 static boolean prtchar(char ch)
 {
@@ -69,7 +68,7 @@ static boolean prtchar(char ch)
 		}
 		else
 		{
-			button = alert_printf(2, MPRNRESP);
+			button = alert_printf(2, APRNRESP);
 			result = TRUE;
 			ready = (button == 2) ? TRUE : FALSE;
 		}
@@ -79,8 +78,9 @@ static boolean prtchar(char ch)
 	return result;
 }
 
-/* DjV 013 150203 ---vvv--- */
+
 /* 
+ * DjV 029 150203 
  * print_eol() prints CR LF for end of line;
  * same as prtchar above, it returns FALSE when OK!
  */
@@ -93,18 +93,19 @@ static boolean print_eol(void)
 	return status;
 }
 
+
 /* 
  * print_line prints a cr-lf terminated line for directory print 
  * If the line is longer than plinelen it is wrapped to the next printer line.
- * Function returns FALSE if ok, in line with other print functions
+ * Function returns FALSE if ok, in style with other print functions
  */
 
 static boolean print_line 
 ( 
-	char *dline 	/* 0-terminated line to print */
+	const char *dline 	/* 0-terminated line to print */
 )
 {
-	char *p;					/* address of position in dline string */
+	const char *p;					/* address of position in dline string */
 	int i;						/* position in printer line */
 	boolean status = FALSE;		/* prtchar print status */
 
@@ -124,22 +125,35 @@ static boolean print_line
 
 	return status;					/* this one is FALSE if ok, too! */
 }
-/* DjV 013 150203 ---^^^--- */
 
 static int print_file(WINDOW *w, int item)
 {
-	/* int handle, error = 0, i, key, result = 0, r; DjV 033 010203 */
-	int handle, error = 0, i, result = 0; /* DjV 033 010203 */
+	int handle, error = 0, i, result = 0;
 	char *buffer;
 	const char *name;
 	long l;			/* index in buffer[] */
-	int ll = 0;		/* DjV 031 150203 line length counter */
+	int ll = 0;		/* line length counter */
 	boolean stop = FALSE;
 
 	if ((name = itm_fullname(w, item)) == NULL)
 		return XFATAL;
 
-	buffer = x_alloc(PBUFSIZ);
+
+	/* Print a header here */
+
+	if ( options.cprefs & P_HEADER )
+	{
+		if ( (stop = print_line(name)) == FALSE )	/* print header */
+			stop = print_eol();	  					/* print blank line */
+
+		if (stop)
+		{
+			free(name);
+			return XFATAL;
+		}
+	}
+
+	buffer = malloc(PBUFSIZ);
 
 	if (buffer != NULL)
 	{
@@ -153,8 +167,7 @@ static int print_file(WINDOW *w, int item)
 				{
 					for (i = 0; i < (int) l; i++)
 					{
-						/* DjV 031 150203 ---vvv--- */
-						/* 
+						/*  DjV 031 150203
 						 * line wrap & new line handling;
 						 */
 						ll++;
@@ -166,26 +179,13 @@ static int print_file(WINDOW *w, int item)
 							if (( stop = print_eol() ) == TRUE)
 								break;
 						}
-						/* DjV 031 150203 ---^^^--- */
 
 						if ((stop = prtchar(buffer[i])) == TRUE)
 							break;
 					}
-					/* DjV 033 010203 ---vvv--- */
-					/*
-					if ((r = key_state(&key, TRUE)) > 0)
-					{
-						if (key == ESCAPE)
-							stop = TRUE;
-					}
-					else if (r < 0)
-						stop = TRUE;
-					*/
 
 					if ( escape_abort(TRUE) )
 						stop = TRUE;
-
-					/* DjV 033 010203 ---^^^--- */
 				}
 				else
 					error = (int) l;
@@ -193,7 +193,7 @@ static int print_file(WINDOW *w, int item)
 			while ((l == PBUFSIZ) && (stop == FALSE));
 
 			x_close(handle);
-			print_eol(); /* DjV 031 150203 print cr lf at end of file */
+			print_eol();			/* print cr lf at end of file */
 		}
 		else
 			error = handle;
@@ -205,7 +205,7 @@ static int print_file(WINDOW *w, int item)
 			result = xhndl_error(MEPRINT, error, itm_name(w, item));
 
 		graf_mouse(ARROW, NULL);
-		x_free(buffer);
+		free(buffer);
 	}
 	else
 	{
@@ -215,14 +215,25 @@ static int print_file(WINDOW *w, int item)
 
 	free(name);
 
+	
+	if ( options.cprefs & P_HEADER )
+		if ( prtchar( (char)12 ) )
+			return XFATAL;
+
 	return result;
 }
 
-static boolean check_print(WINDOW *w, int n, int *list)
+
+/*
+ * Check if an item can be printed
+ */
+
+boolean check_print(WINDOW *w, int n, int *list)
 {
 	int i;
 	boolean noerror;
 	char *mes = "";
+
 
 	for (i = 0; i < n; i++)
 	{
@@ -253,192 +264,184 @@ static boolean check_print(WINDOW *w, int n, int *list)
 			break;
 	}
 	if (noerror == FALSE)
-		alert_printf(1, MNOPRINT, mes);
+		alert_printf(1, ANOPRINT, mes);
 
 	return noerror;
 }
+
+
+/* 
+ * Similar to print_file() but returns TRUE if successful 
+ */
 
 boolean prt_file(WINDOW *w, int item)
 {
 	return (print_file(w, item) == 0) ? TRUE : FALSE;
 }
 
-boolean item_print(WINDOW *wd, int n, int *list)
-{
-	int i = 0, button, result = 0;
-	boolean noerror = TRUE;
 
-	/* DjV 031 070203 ---vvv--- */
-	/* XDINFO info; */
-	long nfiles=0, nfolders=0, nbytes=0, error;
-	const char *name;
-	/* DjV 031 070203 ---^^^--- */
+/*
+ * Routine item_print() didn't  work correctly, but printed only the first file!!!- 
+ * seems like a part of the code (a loop) disappeared somehow, sometime; Anyway,
+ * now replaced by a simpler routine print_list(), more in style with other 
+ * file-list-dealing routines. So: item_print() removed.
+ */ 
+ 
 
-	if (check_print(wd, n, list) == FALSE)
-		return FALSE;
+/* 
+ * Print a list of items selected in a window, or print a directory. 
+ * This routine currently does -not- recurse into subdirectories, 
+ * but prints only files in the current directory level.
+ * Directory printout is performed by using window lines, and so
+ * sorting and display of diverse information is the same as for the 
+ * directory window the directory of which is being printed.
+ */
 
-	/* DjV 031 080203 ---vvv--- */
-
-	/* rsc_ltoftext(print, NITEMS, n); */
-
-	/* xd_open(print, &info); */
-	if ( count_items(wd, n, list, &nfolders, &nfiles, &nbytes) )	/* HR 151102: always display. */
-	{	/* DjV 031 140203 */
-
-		cv_fntoform ( copyinfo + CPFOLDER, fn_get_name(dir_path(wd)) );	  	/* DjV 031 140203 */
-		cv_fntoform ( copyinfo + CPFILE, itm_name(wd, list[0]) ); 			/* DjV 031 140203 */
-
-		button = open_cfdialog( CF_PRINT, 0L, (long)n, nbytes, CMD_PRINT ); /* DJV 031 070203 */
-	} /* DjV 031 140203 */
-	else
-		button = 0;
-
-	/* if (button == PRINTOK) */ 
-	if ( button == COPYOK ) 
-	/* DjV 031 080203 ---^^^--- */
-	{
-		if ((i < n) && (result != XFATAL) && (result != XABORT))
-		{
-			/* DjV 031 080203 ---vvv--- */
-			name = itm_name(wd, list[i]);
-			upd_name( dir_path(wd), CPFOLDER );	
-			upd_name ( name, CPFILE ); 
-			/* DjV 031 080203 ---^^^--- */
-
-			result = print_file(wd, list[i]);
-
-			if (result == XFATAL)
-				noerror = FALSE;
-
-			/* DJV 031 070203 150203 ---vvv--- */
-			/* 
-			rsc_ltoftext(print, NITEMS, n - i - 1);
-			xd_draw(&info, NITEMS, 1);
-			*/
-			if ((error = itm_attrib(wd, list[i], 0, &pattr)) == 0)
-			{
-				nbytes -= pattr.size;
-				upd_copyinfo ( 0L, n - i - 1, nbytes ); 
-			}
-			else
-				result = copy_error(error, name, 0); /* 0= any op but move or delete is "copy" */
-			/* DjV 031 070203 150203 ---^^^--- */
-
-			i++;
-		}
-	}
-	else
-		noerror = FALSE;
-
-	/* DjV 031 070203 ---vvv--- */
-	/*
-	xd_change(&info, button, NORMAL, 0);
-	xd_close(&info);
-	*/
-	if ( button != 0 )
-		close_cfdialog( button );
-	/* DjV 031 070203 ---^^^--- */
-
-	return noerror;
-}
-
-/* DjV 029 140203 ---vvv--- */
-
-/* Routine dir_print prints directory of current window */
-
-void dir_print
-(
-	WINDOW *wd, 	/* to window structure */
-	int n, 			/* number of items */
-	int *list		/* to item list */
+boolean print_list
+( 
+	WINDOW *w, 
+	int n, 
+	int *list, 
+	long *folders, 
+	long *files, 
+	long *bytes,
+	int function
 )
 {
-	boolean 
-		noerror = TRUE;	/* true while no error */
+	int 
+		i,			/* counter */ 
+		item,		/* item type (file/folder) */ 
+		error,		/* error code */ 
+		result;		/* TRUE if operation successful */
 
-	char 
-		dline[134];		/* sufficiently long string for directory line */
+	ITMTYPE 
+		type;		/* Item type (file/folder...) */
 
-	long 
-		nfiles = 0,		/* file count */
-	 	nfolders = 0,	/* folder count */
-		nbytes = 0;		/* bytes sum */
+	const char 
+		*path,		/* Item's path */ 
+		*name;		/* Item's name */
 
-	int
-		error,			/* error id; =0 if  no errors */ 
-		i,				/* item counter */
-		button,			/* pressed button id. */
-		type;			/* item type (file, folder...) */ 
-	
+	XATTR
+		attr;		/* Enhanced file attributes information */
 
-	/* Count files, folders and bytes in this directory only (don't recurse) */
+	char
+		dline[256];	/* sufficiently long string for a complete directory line */
 
-	for ( i = 0; i < n; i++ )
+	boolean
+		noerror = TRUE;		/* true if there is no error */
+
+
+	/* If this is a directory printout, then maybe print direcory title */
+
+	if ( function == CMD_PRINTDIR && (options.cprefs & P_HEADER) )
 	{
-		type = itm_type(wd, list[i]);
-		if ( type == ITM_FILE || type == ITM_PROGRAM )
-		{
-			if ( (error = itm_attrib( wd, list[i], 0 ,&pattr) ) == 0 )
-			{
-				nbytes += pattr.size;
-				nfiles++;
-			}
-			else
-				error = copy_error(error, itm_name(wd, list[i]), 0); /* 0= any op but move or delete */
-		}
-		else if ( type == ITM_FOLDER )
-			nfolders++;
+		strcpy ( dline, get_freestring(TDIROF) ); 		/* Get "Directory of " string */
+		get_dir_line( w, &dline[strlen(dline)], -1 );	/* Append window title */
 
-		if ( error != 0 )
-		{
-			noerror = FALSE;
-			break;
-		}
+		if ( (noerror = !print_line(dline) ) == TRUE )
+			noerror = !print_eol();
 	}
 
-	if ( noerror )
+	if ( !noerror )
+		return FALSE;
+
+	/* Repeat print or dir-line print operation for each item in the list */
+
+	for (i = 0; i < n; i++)
 	{
-		/* Open confirmation dialog */
+		if ((item = list[i]) == -1)
+			continue;
 
-		cv_fntoform ( copyinfo + CPFOLDER, dir_path(wd) );
-		*cpfile = 0;
-		button = open_cfdialog( CF_PRINT, nfolders, nfiles, nbytes, CMD_PRINTDIR ); 
+		name = itm_name(w, item);
 
-		/* If confirmed, print indeed */
-
-		if ( button == COPYOK ) 
-		{
-			strcpy ( dline, get_freestring(TDIROF) ); 		/* Get "Directory of " string */
-			get_dir_line( wd, &dline[strlen(dline)], -1 );	/* Append window title */
-
-			if ( (noerror = !print_line(dline) ) == TRUE )
-				noerror = !print_eol();
-
-			i = 0;
-			while ( (i < n) && noerror )
-			{
-				get_dir_line( wd, dline, list[i] );
-				if ( dline[1] == (char)7 )
-					dline[1] = '\\';	/* Mark folders with "\" */
-				noerror = !print_line(dline);
-				if ( escape_abort( cfdial_open ) )
-					noerror = FALSE;
-				i++;
-			}
-	
-			if ( noerror )
-			{
- 				get_dir_line ( wd, dline, -2 );						/* get directory info line */
-				if ( (noerror = !print_eol()) == TRUE )				/* print blank line */
-					if ( ( noerror = !print_line(dline) ) == TRUE )	/* print directory total */
-						noerror = !print_eol();						/* print blank line */
-			}	/* noerror */
-		}		/* button  */
+		if ((path = itm_fullname(w, item)) == NULL)
+			result = copy_error(ENSMEM, name, function);
 		else
-			noerror = FALSE;
+		{
+			type = itm_type(w, item);
+			if ((error = itm_attrib(w, item, 0, &attr)) == 0)
+			{
+				if ( function == CMD_PRINT )
+				{
+					/* Only files can be printed, ignore everything else */
 
-	} /* if noerror */
+					*folders = 0; 
 
-	if ( button != 0 )
-		close_cfdialog(button);
+					if ( type == ITM_FILE )
+					{
+						upd_copyname(NULL, NULL, name);
+
+						result = print_file(w, list[i]);
+						*bytes -= attr.size;
+						*files -= 1;
+
+						upd_copyname(NULL, NULL, "");
+					}
+
+				}
+				else
+				{
+					/* Printing of a directory line (all kinds of items) */
+
+					get_dir_line( w, dline, list[i] );
+
+					if ( dline[1] == (char)7 )
+					{
+						dline[1] = '\\';	/* Mark folders with "\" */
+						*folders -= 1;
+					}
+					else
+					{
+						*files -= 1;
+						*bytes -= attr.size;
+					}
+
+					noerror = !print_line(dline);
+					if ( escape_abort( cfdial_open ) )
+					noerror = FALSE;
+
+				} /*  function */
+
+			}
+			else
+				result = copy_error(error, name, function);
+
+			free(path);
+
+			/* If something is wrong, get out of the loop */
+
+			if ( !noerror )
+				result = XFATAL;
+
+			/* Update information on the number of folders/files/bytes remaining */
+
+			upd_copyinfo(*folders, *files, *bytes);
+
+		}
+
+		/* Check for user abort */
+
+		if (result != XFATAL)
+		{
+			if ( escape_abort(cfdial_open) )
+				result = XABORT;
+		}
+
+		if ((result == XABORT) || (result == XFATAL))
+			break;
+	}
+
+
+	/* Print directory summary, if needed */
+
+	if ( result !=XABORT && result != XFATAL && (function == CMD_PRINTDIR) && (options.cprefs & P_HEADER) )
+	{
+ 		get_dir_line ( w, dline, -2 );						/* get directory info line */
+		if ( (noerror = !print_eol()) == TRUE )				/* print blank line */
+			if ( ( noerror = !print_line(dline) ) == TRUE )	/* print directory total */
+				if ( (noerror = !print_eol()) == TRUE )		/* print blank line */
+					noerror = prtchar( (char)12 );			/* print formfeed */		
+	}
+
+	return ((result == XFATAL || !noerror) ? FALSE : TRUE);
 }

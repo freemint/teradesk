@@ -1,6 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 1995, 1997, 2002 W. Klaren.
- *                         2002-2003 H.Robbers
+ * Teradesk. Copyright (c) 1993, 1994, 1995, 1997, 2002  W. Klaren,
+ *                                           2002, 2003  H. Robbers,
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,18 +20,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define CFG_VERSION		0x0300		/* current version id. of cfg/inf file */ 
 
-/* DjV 009 251202 120103 */
+#if TEXT_CFG_IN 
+#define MIN_VERSION		0x0300		/* min.acceptabe version of inf file */	 
+#else
+#define MIN_VERSION		0x0200		/* min.acceptabe version of cfg file */	 
+#endif
 
-#define CFG_VERSION		0x0202
-#define MIN_VERSION		0x0200	 
-#define INFO_VERSION	"Tera Desktop V2.3  26.02.2003"
+#define INFO_VERSION	"Tera Desktop V3.00  22-12-2003"
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"
 #define INFO_OTHER "1991-2003"
 
 #if _MINT_
-  #define INFO_SYSTEMS	"for TOS, MiNT, MagiC & Geneva"
+
+#if TEXT_CFG_IN
+  #define INFO_SYSTEMS 	  "for TOS, MiNT, MagiC and Geneva"
+#else 
+  #define INFO_SYSTEMS     "Config.file Conversion Utility" 
+#endif
+
 #else
   #define INFO_SYSTEMS	"for single TOS only"
 #endif
+
+
+
 

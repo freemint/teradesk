@@ -1,0 +1,328 @@
+Tera Desktop V2, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
+                           2002, 2003                   H. Robbers.
+                           2002, 2003                   Dj. Vukovic.
+
+Version 3.0
+
+H. Robbers:
+
+- Configuration data now in text mode. Easy to keep compatability.
+    Name of textmode confguration file is TERADESK.INF.
+- Program cfg2inf.prg for converting the binary cfg to the textmode inf.
+- Colour palette is saved in a separate file TERADESK.PAL.
+- Replaced use of Malloc (Gemdos) to standard malloc.
+    (replace all x_alloc by malloc and x_free by free, except 2 that were
+    used for interrogation)
+    This reduces memory fragmentation on the Gemdos level considerably,
+    especially important in multitasking environments.
+- Replaced Wout's mememory allocator by mine (AHCM).
+    AHCM allows memory leak detection and reduces fragmentation even
+    more by always allocating Gemdos blocks in whole multiples of
+    chunk size.
+- As a result of the above it wasn't possible anymore to shrink the
+    start amount of 2000 directory entry structures (68 Kb).
+    So I implemented a pointer array instead. It starts with 256
+    entries (1 Kb) and is mildly exponentially expanded when needed.
+    The amount of memory used by the pointer array is so low that
+    shrinking isn't vital anymore. The amount of entry structures
+    never exceeds the actual amount present in the directory.
+    (A slight but nice advantage is that sorting now takes place on
+    the pointer array which only needs swapping around of 4 instead
+    of 34 bytes. :-)
+- Removed more of older cfg version 
+- cfg2inf.prg: The editor string in the old config is converted to a flag
+    for the (installed) editor in the new config.
+    So it is preserved if the editor was installed.
+
+Dj. Vukovic:
+
+- Fixed a bug of not immediately refreshing a changed background 
+    pattern/colour in text windows;
+- Fixed a bug of not correctly setting and so corrupting type of desktop 
+  icon in desktop icons dialog;
+- Fixed some bugs which disabled printing of more than one file at a time;
+- Fixed some bugs in scrolling text fields (cursor placement, padding...)
+- Fixed a bug which swallowed the first char of command lines for .TTPs
+- Corrected enabling/disabling of some menu items depending on context;
+- Fixed two cases of not releasing allocated memory after use;
+- Fixed bad redraw of animated colour icons; 
+- Fixed a bug of cv_fntoform() overrunning available dialog buffer;
+- Removed some overlooked fixed keyboard shortcuts from previous version;
+- Adjusted length of "filetype" dialog fields vs. allocated string length
+    (dialog field was longer than permitted string length);
+- Some fixes which (hopefully) will correct improper window and dialog 
+    redrawing with XaAES only (V0.963).
+- A lot of source code cleaned up; also removed some commented-out code from 
+    previous versions;
+- Some optimization of desktop.rsc and use of it; removed unnecessary alerts,
+    reused some strings, etc.
+- Significant reduction of code size by reorganizing routines and data structures
+    related to text and directory windows, so that same code is used for both
+    window types;
+- Integrated dialogs, routines and data structures regarding filetype-selectors,
+    so that there is only one filetype-selector dialog in desktop.rsc; significant
+    reduction in executable code size because a lot of routines are made to
+    work on all file/filetype lists.  New files: lists.c and lists.h
+- Reorganization of "Install Application" function, so that a dialog is
+    shown displaying a list of installed applications. Reduction in 
+    code size because of modifications in several routines.
+- Same concept is used for entering/editing all lists: filetype masks,
+    program types, window icon filetypes and applications. It is possible to
+    select an item from the list and manually edit it (i.e. two dialog levels),
+    or to select an item in a window and then immediately open a second-level
+    dialog to edit the entry.
+- ALL dialogs now fit ST-low resolution. Some are reduced in size even more
+    for faster redraws on low-end machines
+- Several small fixes and improvements in floppy formatting routines;
+- Target floppy drive is locked during formatting/copying in Mint & MagiC;
+- Somewhat improved handling of overscan hack (tested with Lacescan);
+- Improved operation of the "fuller" gadget- fulled window is moved left until
+    it is completely on the screen;
+- Improved operation of the "fuller" gadget for text window in "hex" mode-
+    window is made only as wide as needed;
+- Created "pressed" 3d effects when arrows pressed in Window Optons and
+    Desk Preferences;
+- Added window iconify/deiconify capability in AESses which  support it 
+    (AES4.1, Geneva, Magic, XaAES...)
+- Cosmetic change: added left margin to text windows;
+- Added checking for duplicate entries in filemasks, program types, 
+    window icons and applications lists;
+- Added possibility to properly cancel changes in filemasks list;
+- Added posibility to start an application or program type in "no-multitasking"
+    mode in Magic (not working very well yet);
+- Added possibility to limit memory available to a program type or application.
+- Added capability to mark an installed application as "autostart";
+- Added capability of "Search" to find text in files as well;
+- Added "touch" ((re)set date and/or attributes) functionality; user interface
+    implemented through additional button in the "Object info" dialog. 
+    Considerable reorganisation of that dialog(s). TeraDesk is now able to 
+    display DOS/Windows folder attributes though not able to change them.
+- While copying files it is possible to change date/time and attributes.
+- Added "Compare files" functionality;  a nice knack is that it 
+    resynchronizes search positions after a found difference.
+- Improved "Open..." function; it now tries to figure out what type of item
+    should be opened: a program, a folder/drive, a file assigned as a document
+    to application, or an unassigned file. In case of a program/application,
+    it is possible to enter a comand tail after path+name;
+- Command line dialog for .TTP programs remembers last command if program
+    name has not changed.
+- Filename/filetype entry forms in dialogs appear in 8+3 length if there is
+    no long-filename-capable OS present (i.e. without Mint or Magic);
+- Much improved appearance of dialog elements, especially in 3D AESses; 
+    3D effects are properly drawn when needed. Significant reorganization
+    and simplification of routines for progdefined objects in xddraw.c;
+- <Shift><Help> calls ST-Guide (if available) to display TERADESK.HYP;
+- Cramped_name() used for nicer display of long window titles;
+- Improved recognition of TOS and AES versions and their capabilities
+    and limitations;
+- Added capability to call a file selector in scrolled text fields;
+    upon pressing the [Insert] key
+- As "Print" option now exists in the menu, that option has been removed
+    from the Show/Edit/Cancel dialog and an alertbox is used instead.
+- Updated the .HYP documentation (not quite finished yet) 
+  
+Version 2.3
+
+H. Robbers:
+- Repaired wrong usage of window structure after freeing it.
+    Caused memory violation when the structure happened to be the only
+    area left in a GEMDOS memory block.
+- Changed OB_SPEC to OBSPEC (the original name)
+- Replaced all GRECT by RECT; Use the AES structs with RECT r.
+    (Gone those extremely annoying prefixes and long member names)
+- Teradesk now uses gempb.h & np_aes.h.
+- Improved function cv_fntoform. It doesnt need a length parameter
+    anymore and it doesnt call cramped_name for editable fields.
+- Support for PgUp/PgDn keys on emulators and MILAN (PC keyboards)
+- function x_feadstr gets a max length parameter (protects the stack
+    in certain calling functions).
+- Implementation of drag & drop
+    Because there is a standard header vaproto.h, changed the Teradesk
+    specific name to va.c and va.h
+    New files: dragdrop.c dragdrop.h
+- Implemented objc_sysvar to find 3D enlargements for proper alignment
+- Changed most of strncpy by strsncpy; the secure cpy which itself writes
+    the 0 at len-1.
+- Use Dxreaddir in stead of Dreaddir+Fxattr.
+    Makes it easier to handle errors while reading a directory.
+    It cures the 'path not found' problem for empty floppy drives,
+    and hopefully other problem conditions.
+    Replaced mintlib.s by mintbind.s + osmacros.s in library/mint.
+    This is the same binding as used by XaAES.
+    Handle links properly.
+- Replaced ALL <stdio.h> by "sprintf.h"
+    Moved aprintf and vaprintf to sprintf.c
+    Teradesk doesnt use stream io.
+- Several fixes to eliminate a lot of warnings about pointer conversions.
+    Most of them were about 'const char'
+    1 real bug in dir.c (initializing itm_func structure).
+- There is now only 1 commandline dialogue.
+    The commandline is changed into a scrollable editable field.
+- OK, there was another commandline, in 'install appication' dialogue.
+    Changed that one to scrolling as well, now the dialogue is
+    less than 40 ch's wide.
+
+Dj. Vukovic:
+
+- Some small fixes to enable compilation in a more general PureC setup.
+- Modification of Set Filemask dialog: moved "Show System Files"
+    and "Show Hidden Files" here from menu; added "Show Subfolders" and
+    "Show Parent" as well.
+- Added support for floppy-disk formatting and copying; dialog and executive
+    code. Disk are copied "raw", but must have proper information in the
+    boot block. Two new files: FLOPPY.C and FLOPPY.H.
+- Added "Video Options" dialog and executive code: support for resolution
+    change (when possible via shel_write(), i.e. with AES V4), blitter and
+    overscan. Two new files: VIDEO.C and VIDEO.H; overscan support is for
+    ST-series machines (tested with U.R.Andersson's Lacescan, but should be
+    more-less compatible with other variants, which are switched by the
+    keyboard-ACIA chip).
+- Added two HELP dialogs, activated by HELP keyboard key, containing
+    short information on basic (keyboard) desktop functions.
+- Added File/Folder search, menu entry and executive code; file/folder
+    info dialog opened for each found item, and window opened on final
+    selection. Modified file_info() and folder_info() functions; Modified
+    and re-used cnt_items function from COPY.C for this purpose
+- If nothing else is selected, "Open" menu entry can now start explicietly
+    named application or open a file assigned to an application.
+- Enhancement of Print function: added "Print" menu entry, added
+    option or confirmation of print in "Copy Options", added line-wrap
+    in print, added printing of directory listing if no files are selected.
+    Directory print respects setting of visible fields in "View" menu.
+- "Show Info" function now shows info on the drive of the top window if
+    nothing else is selected.
+- Added display of path in "File Information" and "Folder Information"
+    dialogs (uses cramped_name() to fit a long path into available width)
+- Made "Show Info" function work prettier- and faster: Info dialogs
+    are not reopened anew for each item.
+- Modified Info dialog to fit low-res screen and to show additional
+    information on free memory and OS version.
+- Split "Set Preferences" dialog into two: "Preferences" and "Copy Options",
+    in order to better group logically similar actions, and to fit dialogs
+    into low-res screen.
+- Added support for user-definable keyboard shortcuts for menu items.
+    Removed old code related to shortcuts from MAIN.C; Handling of this in
+    "Preferences" dialog. Additional routines handling keyboard shortcuts
+    in MAIN.C.
+- Added support for configuring window background colour and pattern
+    in "Window Options" dialog; removed a bug related to assumed number
+    of colours here.
+- Added menu entries for selection of directory fields to display in
+    text mode: Show size, Show time, Show date, Show attributes.
+- Enabled multiple delete from the menu.
+- Removed showing meaningless time and date for parent directory in
+    text mode.
+- Improved operation of the Fuller window gadget in text mode: a fulled
+    window is made wide just enough to display all visible directory fields
+    (name, size, date, etc.). It takes into account directory font size.
+- Added Shutdown option ( via shell_write() ); alert for confirmation of
+    Quit/Shutdown.
+- Added confirmation of aborting current operation: an alert is opened
+    if ESC is pressed during copying or printing.
+- Improved fix of positions of slider elements and nearby objects to
+    look proper with "3d" AES: improved routines rsc_xalign and rsc_yalign.
+- Fixed shifting of desktop-icon position in non-standard resolutions
+    (like overscanned ones). Desktop icons are now always a fixed distance
+    apart.
+- Names of essential icons are taken from DESKTOP.RSC, for easier support
+    of other languages; there should be no texts left in the code now
+    (except a warning that there is no DESKTOP.RSC).
+- Reduced field lengths for file types in all dialogs to 16 characters,
+    to enable fitting into low-res screens. This affects -display- of
+    filetypes, not actual mask lengths.
+- Created "pressed button" 3d effects for vertical sliders; added an
+    arrow_form_do() routine to handle this.
+- Removed a bug in open_cfdialog() which caused improper drawing of the
+    dialog at start of copying/printing.
+- Removed a bug which disabled "Add Window Icon" in previous version.
+- Rearranged most dialogs in DESKTOP.RSC in order to fit low-res screens
+  (just two of them still don't fit ST-Low resolution).
+- Reduction of DESKTOP.RSC size by removing some dialogs (ADDITYPE, PRINT)
+    and by reusing some other for different functions when appropriate.
+- Removed several alerts from DESKTOP.RSC, as those texts already existed
+    as free-strings; used those strings with one general-purpose alert.
+
+
+Version 2.02
+    Was never published.
+
+Version 2.01
+
+- Scrolling editable text fields for very very long names.
+    Increased maximum name length in directory windows to 128
+- Correct calculation of window width for TOS
+- Correction of background colour in TC
+- Not all AES's return sensible appl_getinfo(1&2) font info. (Milan)
+    Use the VDI in such cases.
+- Accessories are started as it should.
+    New prgtype *.ACC in the dialogues.
+- In file XFILESYS.C
+    Replaced ALL gemdos(...) calls by real function names which are
+    prototyped, so correct parameter coercions will automatically
+    be performed.
+    A wrong GEMDOS call can have implications on the MiNT gemdos as a whole
+    resulting in loosing the console device under XaAES.
+    (I experienced similar problems in early history of XaAES).
+
+    Hoping that this will repair the keyboard input problems.
+    Well, it didnt.
+    
+    Then I changed XaAES's Fopen(u:\dev\console,O_RDONLY)
+    to Fopen(u:\dev\console,O_RDONLY|O_DENYRW)
+    It looks like this helps.
+- DESKTOS.PRG is a single TOS only version, which will be kept alive
+    all the time.
+
+Version 2.00
+
+- Right button is double click. No more pain in the shoulder.
+- Use Ssystem(-1,...) for detecting MiNT.
+- If mint, use Ssystem in find_cookie.
+- Only 1 version for MiNT, MagiC and single TOS.
+    Global boolean mint and magx used throughout dynamically.
+- Arrogant MiNT's Dreaddir spoils case of DOS 8.3 names.
+    Change DOS 8.3 names back to upper case.
+- Resource to modern AES 4 3D flags and MagiC object types.
+    Had to change dialogie titles to G_STRING's
+- Fix rsrc_title() to be able to use G_STRING titles in stead of
+    G_USERDEF or G_BUTTON.
+- Dialogue title userdefs written transparent.
+- Many places:
+    fix unsetting of bits in ob_state, to preserve the MagiC object bits.
+- appl_getinfo protocol that also works with MagiC;
+    (MagiC object types detection) and shel_write behaviour).
+- MagiC: shel_write must specify SHW_PARALLEL.
+- In text mode fuller only fulls vertically.
+- Courtesy XaAES: UNDO searches for cancel button.
+- Courtesy XaAES: Use cramped_name for displaying filenames.
+    If a filename doesnt fit in a box, replace enough of it by ...
+- Always display copy and delete dialogue.
+    If confirm is off, continue, else wait for dialogue action.
+- Textmode window displays date in front of time.
+- As a preparation for colour icon support, icons are now loaded
+    by using rsrc_load.
+- Replaced ALL ICONBLK by CICONBLK (colour icons embrace mono icons
+    and are downwards compatable to mono icons)
+- Delete via menu (+CTRL)
+
+- Icons are identified by name, not index.
+    This makes the 2.00 CFG incompatible to previous versions. !!!!
+    Make sure your icon files contain at least the following names:
+    FLOPPY, HARD DISC, APP, FILE, FOLDER, TRASH, PRINTER
+
+To do (maybe):
+
+use NKCC
+find the console bug
+multiple column display of directory windows
+improve manipulation of file attributes
+integrate a windowed, long-filename-capable fileselector
+update doc's
+
+
+
+
+
+
+
+

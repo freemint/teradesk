@@ -1,5 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003  H. Robbers,
+ *                                     2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,22 +23,21 @@
 boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 				  int *list, int kstate);
 
-/* DjV 031 070203 ---vvv--- */
+
 #define CMD_COPY	 0
 #define CMD_MOVE	 1
 #define CMD_DELETE	 2
 #define CMD_PRINT    3
-#define CMD_PRINTDIR 4 /* for future development */
+#define CMD_PRINTDIR 4
+#define CMD_TOUCH    8 
 
 extern boolean cfdial_open;
 
-int open_cfdialog(int mask, long folders, long files, long bytes, int function);
+int open_cfdialog(long folders, long files, long bytes, int function);
 void close_cfdialog(int button);
 void upd_copyinfo(long folders, long files, long bytes);
-void upd_name(const char *name, int item);
-boolean count_items(WINDOW *w, int n, int *list, long *folders,
-						   long *files, long *bytes);
+void upd_copyname(const char *dest, const char *path, const char *name);
 int copy_error(int error, const char *name, int function);
-/* DjV 031 070203 ---^^^--- */
 
-boolean itm_delete(WINDOW *w, int n, int *list);
+boolean itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
+int touch_file( const char *fullname, DOSTIME *time, int attr );

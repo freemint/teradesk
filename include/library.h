@@ -1,5 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
+ *                                           2002, 2003  H. Robbers
+ *                                                 2003  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,6 +30,16 @@ typedef struct
 	long value;
 } COOKIE;
 
+/* Some general-purpose functions */
+
+char *strsncpy(char *dst, const char *src, size_t len);	
+
+int min(int x, int y);
+int max(int x, int y);
+long lmin(long x, long y);
+long lmax(long x, long y);
+
+
 /* Funkties voor filenamen */
 
 void make_path( char *name,const char *path,const char *fname );
@@ -35,7 +47,7 @@ void split_path( char *path,char *fname,const char *name );
 
 /* Funkties voor cookie-jar */
 
-long find_cookie( long name );		/* HR 151102: return cookie value or -1 */
+long find_cookie( long name );
 int install_cookie( long name,long value,COOKIE *buffer,long l );
 
 /* GEM uitbreidingen */
@@ -45,5 +57,3 @@ int aprintf( int def,const char *string, ... );
 /* Funkties voor het bepalen van de TOS-versie */
 
 int get_tosversion( void );
-boolean tos1_4( void );
-boolean tos2_0( void );
