@@ -41,18 +41,18 @@ unsigned char xd_emode_specs[XD_EMODECOUNT] =
 	0,							/* (4) */
 	__XD_IS_ELEMENT,			/* XD_DRAGBOX(5): button rechtsboven waarmee dialoogbox verplaatst kan worden. */
 	__XD_IS_ELEMENT |
-	__XD_IS_SELTEXT,			/* XD_ROUNDRB(6): ronde radiobutton. */
+	  __XD_IS_SELTEXT,			/* XD_ROUNDRB(6): ronde radiobutton. */
 	__XD_IS_ELEMENT |
-	__XD_IS_SELTEXT,			/* XD_RECTBUT(7): rechthoekige button. */
+	  __XD_IS_SELTEXT,			/* XD_RECTBUT(7): rechthoekige button. */
 	__XD_IS_ELEMENT |
-	__XD_IS_SELTEXT,			/* XD_BUTTON(8): gewone button (met toetsbediening! I_A). */
+	  __XD_IS_SELTEXT,			/* XD_BUTTON(8): gewone button (met toetsbediening! I_A). */
 	__XD_IS_ELEMENT,			/* XD_RBUTPAR(9): Rechthoek met titel. */
 	__XD_IS_ELEMENT,			/* XD_RBUTTITLE(10): IA: Underlined title */
 	__XD_IS_ELEMENT |
-	__XD_IS_SELTEXT,			/* XD_RECTBUTTRI(11): IA: rectangle button: tri-state! */
+	  __XD_IS_SELTEXT,			/* XD_RECTBUTTRI(11): IA: rectangle button: tri-state! */
 	__XD_IS_ELEMENT |
-	__XD_IS_SELTEXT,			/* XD_CYCLBUT(12): IA: cycling button. used with pop-ups mostly. */
-	__XD_IS_NOTYETDEF,			/* (13) */
+	  __XD_IS_SELTEXT,			/* XD_CYCLBUT(12): IA: cycling button. used with pop-ups mostly. */
+	__XD_IS_ELEMENT,			/* XD_SCRLEDIT(13): HR 021202: scrollable editable texts. */
 	__XD_IS_NOTYETDEF,			/* (14) */
 	__XD_IS_NOTYETDEF,			/* (15) */
 	__XD_IS_NOTYETDEF,			/* (16) */

@@ -579,7 +579,7 @@ static int hndl_nameconflict(char **dname, int smode,
 		else
 			nameconflict[OLDNAME].ob_flags |= EDITABLE;
 
-		cv_fntoform(oldname, fn_get_name(*dname));
+		cv_fntoform(oldname, fn_get_name(*dname), 64);		/* HR 271102 */
 		strcpy(newname, oldname);
 		strcpy(dupl, oldname);
 
@@ -689,8 +689,8 @@ static int hndl_rename(char *name)
 {
 	int button,oldmode;
 
-	cv_fntoform(oldname, name);
-	cv_fntoform(newname, name);
+	cv_fntoform(oldname, name, 64);		/* HR 271102 */
+	cv_fntoform(newname, name, 64);		/* HR 271102 */
 
 	rsc_title(nameconflict, RNMTITLE, DTRENAME);
 

@@ -127,7 +127,8 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *p
 	userblk->ub_parm = userblk;
 	userblk->ob_type = object->ob_type;
 	userblk->ob_flags = object->ob_flags;
-	userblk->ob_spec = object->ob_spec.index;
+	userblk->ob_shift = 0;						/* HR 021202: for scrolling editable texts */
+	userblk->ob_spec = object->ob_spec;			/* HR 021202 */
 
 	object->ob_type = (object->ob_type & 0xFF00) | G_USERDEF;
 	object->ob_flags &= ~(AES3D_1 | AES3D_2);
@@ -217,7 +218,8 @@ void xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
  * zowel als USERDEF als XUSERDEF objecten!
  */
 
-long xd_get_obspec(OBJECT *object)
+/* HR 021202: Use correct types ! */
+OBSPEC xd_get_obspec(OBJECT *object)
 {
 	if ((object->ob_type & 0xFF) == G_USERDEF)
 	{
@@ -226,10 +228,10 @@ long xd_get_obspec(OBJECT *object)
 		if (IS_XUSER(userblk))
 			return ((XUSERBLK *)userblk)->ob_spec;
 		else
-			return userblk->ub_parm;
+			return *(OBSPEC *)&userblk->ub_parm;
 	}
 	else
-		return object->ob_spec.index;
+		return object->ob_spec;
 }
 
 /*
@@ -237,7 +239,8 @@ long xd_get_obspec(OBJECT *object)
  * als USERDEF als XUSERDEF objecten!
  */
 
-void xd_set_obspec(OBJECT *object, long obspec)
+/* HR 021202: Use correct types ! */
+void xd_set_obspec(OBJECT *object, OBSPEC obspec)
 {
 	if ((object->ob_type & 0xFF) == G_USERDEF)
 	{
@@ -246,10 +249,10 @@ void xd_set_obspec(OBJECT *object, long obspec)
 		if (IS_XUSER(userblk))
 			((XUSERBLK *)userblk)->ob_spec = obspec;
 		else
-			userblk->ub_parm = obspec;
+			userblk->ub_parm = *(long *)&obspec;
 	}
 	else
-		object->ob_spec.index = obspec;
+		object->ob_spec = obspec;
 }
 
 /* tristate-button functions... */

@@ -43,6 +43,7 @@ boolean check_drive(int drv);
 
 boolean cmp_wildcard(const char *fname, const char *wildcard);
 boolean cmp_part(const char *name, const char *wildcard);
+bool match_pattern(const char *t, const char *pat);		/* HR 051202: courtesy XaAES */
 
 char *locate(const char *name, int type);
 

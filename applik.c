@@ -334,7 +334,7 @@ void app_install(void)
 		return;
 	appl = find_appl(pname);
 
-	cv_fntoform(applname, name);
+	cv_fntoform(applname, name, 32);		/* HR 271102 */
 
 	if (appl == NULL)
 	{
@@ -378,7 +378,7 @@ void app_install(void)
 		if (current == NULL)
 			current = list;
 
-		cv_fntoform(appltype, (current != NULL) ? current->filetype : "");
+		cv_fntoform(appltype, (current != NULL) ? current->filetype : "", 26);		/* HR 271102 */
 		xd_draw(&info, APTYPE, MAX_DEPTH);
 
 		button = xd_form_do(&info, APCMLINE) & 0x7FFF;

@@ -36,6 +36,7 @@
 #include "xfilesys.h"
 
 #define XBUFSIZE	2048L
+#define USE_gemdos 0
 
 long maxpath = 128;
 static boolean flock;
@@ -117,7 +118,11 @@ static int _fullname(char *buffer)
 		}
 		else
 		{
+#if USE_gemdos
 			if ((error = xerror((int) gemdos(71, d, (int) (buffer[0] - 'A' + 1)))) == 0)
+#else
+			if ((error = xerror(Dgetpath(d, buffer[0] - 'A' + 1))) == 0)
+#endif
 				make_path(buffer, buffer, h);
 		}
 		free(name);
@@ -152,7 +157,11 @@ char *x_fullname(const char *file, int *error)
 
 int x_setpath(const char *path)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(59, path));
+#else
+	return xerror(Dsetpath(path));
+#endif
 }
 
 char *x_getpath(int drive, int *error)
@@ -168,7 +177,11 @@ char *x_getpath(int drive, int *error)
 	buffer[0] = (char) (((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
 	buffer[1] = ':';
 
+#if USE_gemdos
 	if ((*error = xerror((int) gemdos(71, buffer + 2, drive))) < 0)
+#else
+	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
+#endif
 	{
 		free(buffer);
 		return NULL;
@@ -181,27 +194,47 @@ char *x_getpath(int drive, int *error)
 
 int x_mkdir(const char *path)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(57, path));
+#else
+	return xerror(Dcreate(path));
+#endif
 }
 
 int x_rmdir(const char *path)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(58, path));
+#else
+	return xerror(Ddelete(path));
+#endif
 }
 
 int x_dfree(DISKINFO *diskinfo, int drive)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(54, diskinfo, drive));
+#else
+	return xerror(Dfree(diskinfo, drive));
+#endif
 }
 
 int x_getdrv(void)
 {
+#if USE_gemdos
 	return (int) gemdos(25);
+#else
+	return Dgetdrv();
+#endif
 }
 
 long x_setdrv(int drive)
 {
+#if USE_gemdos
 	return gemdos(14, drive);
+#else
+	return Dsetdrv(drive);
+#endif
 }
 
 int x_getlabel(int drive, char *label)
@@ -210,20 +243,33 @@ int x_getlabel(int drive, char *label)
 	int error;
 	char path[10];
 
+#if USE_gemdos
 	olddta = (DTA *) gemdos(47);
 	gemdos(26, &dta);
+#else
+	olddta = Fgetdta();
+	Fsetdta(&dta);
+#endif
 
 	strcpy(path, "A:\\*.*");
 	path[0] += (char) drive;
 
+#if USE_gemdos
 	error = (int) gemdos(78, path, 0x3F);
+#else
+	error = Fsfirst(path, 0x3F);
+#endif
 
 	if ((error == 0) && (dta.d_attrib & 8))
 		strcpy(label, dta.d_fname);
 	else
 		*label = 0;
 
+#if USE_gemdos
 	gemdos(26, olddta);
+#else
+	Fsetdta(olddta);
+#endif
 
 	return ((error == -49) || (error == -33)) ? 0 : error;
 }
@@ -232,22 +278,38 @@ int x_getlabel(int drive, char *label)
 
 int x_rename(const char *oldname, const char *newname)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(86, 0, oldname, newname));
+#else
+	return xerror(Frename(0, oldname, newname));
+#endif
 }
 
 int x_unlink(const char *file)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(65, file));
+#else
+	return xerror(Fdelete(file));
+#endif
 }
 
 int x_fattrib(const char *file, int wflag, int attrib)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(67, file, wflag, attrib));
+#else
+	return xerror(Fattrib(file, wflag, attrib));
+#endif
 }
 
 int x_datime(DOSTIME *time, int handle, int wflag)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(87, time, handle, wflag));
+#else
+	return xerror(Fdatime(time, handle, wflag));
+#endif
 }
 
 int x_open(const char *file, int mode)
@@ -257,30 +319,46 @@ int x_open(const char *file, int mode)
 	if (!flock)
 		mode &= O_RWMODE;
 
+#if USE_gemdos
 	result = gemdos(61, file, mode);
+#else
+	result = Fopen(file, mode);
+#endif
 
 	return (result < 0) ? xerror(result) : result;
 }
 
 int x_create(const char *file, int attr)
 {
-	int result;
+	long result;				/* HR 101202 long */
 
+#if USE_gemdos
 	result = (int) gemdos(60, file, attr);
+#else
+	result = Fcreate(file, attr);
+#endif
 
 	return (result < 0) ? xerror(result) : result;
 }
 
 int x_close(int handle)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(62, handle));
+#else
+	return xerror(Fclose(handle));
+#endif
 }
 
 long x_read(int handle, long count, char *buf)
 {
 	long result;
 
+#if USE_gemdos
 	result = gemdos(63, handle, count, buf);
+#else
+	result = Fread(handle, count, buf);
+#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
@@ -289,7 +367,11 @@ long x_write(int handle, long count, char *buf)
 {
 	long result;
 
+#if USE_gemdos
 	result = gemdos(64, handle, count, buf);
+#else
+	result = Fwrite(handle, count, buf);
+#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
@@ -298,7 +380,11 @@ long x_seek(long offset, int handle, int seekmode)
 {
 	long result;
 
+#if USE_gemdos
 	result = gemdos(66, offset, handle, seekmode);
+#else
+	result = Fseek(offset, handle, seekmode);
+#endif
 
 	return (result < 0) ? (long) xerror((int) result) : result;
 }
@@ -328,7 +414,7 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 
 XDIR *x_opendir(const char *path, int *error)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)			/* HR 151102 */
 	{
 		XDIR *dir;
@@ -353,8 +439,13 @@ XDIR *x_opendir(const char *path, int *error)
 				 */
 
 				dir->data.gdata.first = 1;
-				dir->data.gdata.old_dta = Fgetdta();
+#if USE_gemdos
+				dir->data.gdata.old_dta = (DTA *) gemdos(47);
 				gemdos(26, &dir->data.gdata.dta);
+#else
+				dir->data.gdata.old_dta = Fgetdta();
+				Fsetdta(&dir->data.gdata.dta);
+#endif
 				*error = 0;
 			}
 			else
@@ -363,7 +454,11 @@ XDIR *x_opendir(const char *path, int *error)
 				 * File system with long filenames.
 				 */
 	
+#if USE_gemdos
+				if (((dir->data.handle = gemdos(0x128, path, 0)) & 0xFF000000L) == 0xFF000000L)
+#else
 				if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
+#endif
 				{
 					*error = xerror((int) dir->data.handle);
 					free(dir);
@@ -384,8 +479,13 @@ XDIR *x_opendir(const char *path, int *error)
 		{
 			dir->path = (char *) path;
 			dir->data.gdata.first = 1;
+#if USE_gemdos
 			dir->data.gdata.old_dta = (DTA *) gemdos(47);
 			gemdos(26, &dir->data.gdata.dta);
+#else
+			dir->data.gdata.old_dta = Fgetdta();
+			Fsetdta(&dir->data.gdata.dta);
+#endif
 			*error = 0;
 		}
 		return dir;
@@ -394,7 +494,7 @@ XDIR *x_opendir(const char *path, int *error)
 
 long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)			/* HR 151102 */
 	{
 		if (dir->type)
@@ -411,15 +511,22 @@ long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 		
 				if ((fspec = x_makepath(dir->path, "*.*", &error)) != NULL)
 				{
+#if USE_gemdos
 					error = xerror((int) gemdos(78, fspec, 0x37));
+#else
+					error = xerror(Fsfirst(fspec, 0x37));
+#endif
 					free(fspec);
 					dir->data.gdata.first = 0;
 				}
 			}
 			else
+#if USE_gemdos
 				error = xerror((int) gemdos(79));
-		
-	
+#else
+				error = xerror(Fsnext());
+#endif
+
 			if (error == 0)
 			{
 				if (strlen(dir->data.gdata.dta.d_fname) + 1 > len)
@@ -445,7 +552,11 @@ long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 	
 			if ((str = malloc(len + 4)) != NULL)
 			{
+#if USE_gemdos
 				if ((error = gemdos(0x129, len, dir->data.handle, str)) == 0)
+#else
+				if ((error = Dreaddir(len, dir->data.handle, str)) == 0)
+#endif
 					strcpy(buffer, &str[4]);
 				free(str);
 		
@@ -481,13 +592,21 @@ long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 	
 			if ((fspec = x_makepath(dir->path, "*.*", &error)) != NULL)
 			{
+#if USE_gemdos
 				error = xerror((int) gemdos(78, fspec, 0x37));
+#else
+				error = xerror(Fsfirst(fspec, 0x37));
+#endif
 				free(fspec);
 				dir->data.gdata.first = 0;
 			}
 		}
 		else
+#if USE_gemdos
 			error = xerror((int) gemdos(79));
+#else
+			error = xerror(Fsnext());
+#endif
 	
 		if (error == 0)
 		{
@@ -506,7 +625,7 @@ long x_xreaddir(XDIR *dir, char *buffer, int len, XATTR *attrib)
 
 long x_rewinddir(XDIR *dir)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)			/* HR 151102 */
 	{
 		if (dir->type)
@@ -524,7 +643,11 @@ long x_rewinddir(XDIR *dir)
 			 * File system with long filenames.
 			 */
 	
+#if USE_gemdos
 			return xerror(gemdos(0x12A, dir->data.handle));
+#else
+			return xerror(Drewinddir(dir->data.handle));
+#endif
 		}
 	}
 	else
@@ -537,7 +660,7 @@ long x_rewinddir(XDIR *dir)
 
 long x_closedir(XDIR *dir)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)			/* HR 151102 */
 	{
 		if (dir->type)
@@ -546,7 +669,11 @@ long x_closedir(XDIR *dir)
 			 * DOS file system.
 			 */
 	
+#if USE_gemdos
 			gemdos(26, dir->data.gdata.old_dta);
+#else
+			Fsetdta(dir->data.gdata.old_dta);
+#endif
 			free(dir);
 			return 0L;
 		}
@@ -558,7 +685,11 @@ long x_closedir(XDIR *dir)
 	
 			long error;
 	
+#if USE_gemdos
 			error = xerror(gemdos(0x12B, dir->data.handle));
+#else
+			error = xerror(Dclosedir(dir->data.handle));
+#endif
 			free(dir);
 			return error;
 		}
@@ -566,7 +697,11 @@ long x_closedir(XDIR *dir)
 	else
 #endif
 	{
+#if USE_gemdos
 		gemdos(26, dir->data.gdata.old_dta);
+#else
+		Fsetdta(dir->data.gdata.old_dta);
+#endif
 		free(dir);
 		return 0L;
 	}
@@ -576,15 +711,20 @@ long x_closedir(XDIR *dir)
 
 long x_attr(int flag, const char *name, XATTR *xattr)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)				/* HR 151102 */
+#if USE_gemdos
 		return xerror((int) gemdos(0x12C, flag, name, xattr));
+#else
+		return xerror(Fxattr(flag, name, xattr));
+#endif
 	else
 #endif
 	{
 		DTA *olddta, dta;
 		int result;
 	
+#if USE_gemdos
 		olddta = (DTA *) gemdos(47);
 		gemdos(26, &dta);
 	
@@ -592,7 +732,16 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 			dta_to_xattr(&dta, xattr);
 	
 		gemdos(26, olddta);
+#else
+		olddta = Fgetdta();
+		Fsetdta(&dta);
 	
+		if ((result = xerror(Fsfirst(name, 0x37))) == 0)
+			dta_to_xattr(&dta, xattr);
+	
+		Fsetdta(olddta);
+#endif
+
 		return result;
 	}
 }
@@ -605,7 +754,7 @@ long x_attr(int flag, const char *name, XATTR *xattr)
 
 long x_pathconf(const char *path, int which)
 {
-#ifdef _MINT_
+#if _MINT_
 	if (mint)				/* HR 151102 */
 	{
 		long result;
@@ -645,17 +794,29 @@ long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
 
 void *x_alloc(long amount)
 {
+#if USE_gemdos
 	return (void *) gemdos(72, amount);
+#else
+	return Malloc(amount);
+#endif
 }
 
 int x_free(void *block)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(73, block));
+#else
+	return xerror(Mfree(block));
+#endif
 }
 
 int x_shrink(void *block, long newsize)
 {
+#if USE_gemdos
 	return xerror((int) gemdos(74, (int) 0, block, newsize));
+#else
+	return xerror(Mshrink(0, block, newsize));
+#endif
 }
 
 /* GEM funkties */
@@ -775,6 +936,8 @@ static int write_buffer(XFILE *file)
 	else
 		return 0;
 }
+
+int alert_msg(int def, const char *string, ...);
 
 XFILE *x_fopen(const char *file, int mode, int *error)
 {

@@ -41,10 +41,10 @@
 #define MSAVEAS          58  /* STRING in Baum MENU */
 
 #define INFOBOX          1   /* Formular/Dialog */
-#define INFOVERS         1   /* FTEXT in Baum INFOBOX */
-#define COPYRGHT         2   /* TEXT in Baum INFOBOX */
-#define INFOFMEM         4   /* FTEXT in Baum INFOBOX */
-#define INFOTV           5   /* FTEXT in Baum INFOBOX */
+#define INFOVERS         2   /* TEXT in Baum INFOBOX */
+#define COPYRGHT         3   /* TEXT in Baum INFOBOX */
+#define INFOFMEM         5   /* FTEXT in Baum INFOBOX */
+#define INFOTV           6   /* FTEXT in Baum INFOBOX */
 
 #define OPENFILE         2   /* Formular/Dialog */
 #define SHOWFILE         3   /* BUTTON in Baum OPENFILE */
@@ -57,9 +57,9 @@
 #define CMLOK            4   /* BUTTON in Baum GETCML */
 
 #define NEWDIR           4   /* Formular/Dialog */
-#define NDTITLE          1   /* STRING in Baum NEWDIR */
-#define DIRNAME          2   /* FTEXT in Baum NEWDIR */
-#define NEWDIROK         3   /* BUTTON in Baum NEWDIR */
+#define NDTITLE          2   /* STRING in Baum NEWDIR */
+#define DIRNAME          4   /* FTEXT in Baum NEWDIR */
+#define NEWDIROK         5   /* BUTTON in Baum NEWDIR */
 
 #define ADDICON          5   /* Formular/Dialog */
 #define AITITLE          2   /* STRING in Baum ADDICON */
@@ -84,23 +84,24 @@
 #define APPLIKAT         6   /* Formular/Dialog */
 #define APNAME           2   /* FTEXT in Baum APPLIKAT */
 #define APFKEY           3   /* FTEXT in Baum APPLIKAT */
-#define APCMLINE         5   /* FTEXT in Baum APPLIKAT */
-#define APARGV           6   /* BUTTON in Baum APPLIKAT */
-#define APPAR1           7   /* BUTTON in Baum APPLIKAT */
-#define APPRG            8   /* BUTTON in Baum APPLIKAT */
-#define APWINDOW         9   /* BUTTON in Baum APPLIKAT */
-#define ADDTYPE          11  /* BUTTON in Baum APPLIKAT */
-#define DELTYPE          12  /* BUTTON in Baum APPLIKAT */
-#define APPREV           13  /* BOXCHAR in Baum APPLIKAT */
-#define APTYPE           14  /* FBOXTEXT in Baum APPLIKAT */
-#define APNEXT           15  /* BOXCHAR in Baum APPLIKAT */
+#define ADDTYPE          5   /* BUTTON in Baum APPLIKAT */
+#define DELTYPE          6   /* BUTTON in Baum APPLIKAT */
+#define APPREV           7   /* BOXCHAR in Baum APPLIKAT */
+#define APTYPE           8   /* FBOXTEXT in Baum APPLIKAT */
+#define APNEXT           9   /* BOXCHAR in Baum APPLIKAT */
+#define APCMLINE         11  /* FTEXT in Baum APPLIKAT */
+#define APARGV           12  /* BUTTON in Baum APPLIKAT */
+#define APPAR1           13  /* BUTTON in Baum APPLIKAT */
+#define APPRG            14  /* BUTTON in Baum APPLIKAT */
+#define APWINDOW         15  /* BUTTON in Baum APPLIKAT */
 #define APPAR2           16  /* BUTTON in Baum APPLIKAT */
 #define AGEM             17  /* BUTTON in Baum APPLIKAT */
 #define AGTP             18  /* BUTTON in Baum APPLIKAT */
-#define ATOS             19  /* BUTTON in Baum APPLIKAT */
-#define ATTP             20  /* BUTTON in Baum APPLIKAT */
-#define APOK             21  /* BUTTON in Baum APPLIKAT */
-#define APREM            22  /* BUTTON in Baum APPLIKAT */
+#define AACC             19  /* BUTTON in Baum APPLIKAT */
+#define ATOS             20  /* BUTTON in Baum APPLIKAT */
+#define ATTP             21  /* BUTTON in Baum APPLIKAT */
+#define APOK             23  /* BUTTON in Baum APPLIKAT */
+#define APREM            24  /* BUTTON in Baum APPLIKAT */
 
 #define DRVINFO          7   /* Formular/Dialog */
 #define DILABEL          10  /* FTEXT in Baum DRVINFO */
@@ -113,25 +114,25 @@
 #define DIDRIVE          17  /* BOXCHAR in Baum DRVINFO */
 
 #define FLDRINFO         8   /* Formular/Dialog */
-#define FIOK             7   /* BUTTON in Baum FLDRINFO */
-#define FINAME           9   /* FTEXT in Baum FLDRINFO */
-#define FIBYTES          10  /* FTEXT in Baum FLDRINFO */
-#define FITIME           11  /* FTEXT in Baum FLDRINFO */
-#define FIDATE           12  /* FTEXT in Baum FLDRINFO */
-#define FIABORT          13  /* BUTTON in Baum FLDRINFO */
-#define FIFOLDER         14  /* FTEXT in Baum FLDRINFO */
-#define FIFILES          15  /* FTEXT in Baum FLDRINFO */
+#define FINAME           4   /* FTEXT in Baum FLDRINFO */
+#define FITIME           6   /* FTEXT in Baum FLDRINFO */
+#define FIDATE           7   /* FTEXT in Baum FLDRINFO */
+#define FIFOLDER         9   /* FTEXT in Baum FLDRINFO */
+#define FIFILES          11  /* FTEXT in Baum FLDRINFO */
+#define FIBYTES          13  /* FTEXT in Baum FLDRINFO */
+#define FIOK             15  /* BUTTON in Baum FLDRINFO */
+#define FIABORT          17  /* BUTTON in Baum FLDRINFO */
 
 #define FILEINFO         9   /* Formular/Dialog */
-#define ISWP             6   /* BUTTON in Baum FILEINFO */
-#define FLOK             7   /* BUTTON in Baum FILEINFO */
-#define ISHIDDEN         8   /* BUTTON in Baum FILEINFO */
-#define FLNAME           10  /* FTEXT in Baum FILEINFO */
-#define FLBYTES          11  /* FTEXT in Baum FILEINFO */
-#define ISSYSTEM         12  /* BUTTON in Baum FILEINFO */
-#define FLTIME           13  /* FTEXT in Baum FILEINFO */
-#define FLDATE           14  /* FTEXT in Baum FILEINFO */
-#define FLABORT          15  /* BUTTON in Baum FILEINFO */
+#define FLNAME           4   /* FTEXT in Baum FILEINFO */
+#define FLTIME           6   /* FTEXT in Baum FILEINFO */
+#define FLDATE           7   /* FTEXT in Baum FILEINFO */
+#define FLBYTES          9   /* FTEXT in Baum FILEINFO */
+#define ISWP             12  /* BUTTON in Baum FILEINFO */
+#define ISHIDDEN         13  /* BUTTON in Baum FILEINFO */
+#define ISSYSTEM         14  /* BUTTON in Baum FILEINFO */
+#define FLOK             16  /* BUTTON in Baum FILEINFO */
+#define FLABORT          18  /* BUTTON in Baum FILEINFO */
 
 #define COPYINFO         10  /* Formular/Dialog */
 #define CPTITLE          1   /* STRING in Baum COPYINFO */
@@ -143,13 +144,13 @@
 #define COPYOK           9   /* BUTTON in Baum COPYINFO */
 
 #define NAMECONF         11  /* Formular/Dialog */
-#define RNMTITLE         1   /* STRING in Baum NAMECONF */
-#define OLDNAME          2   /* FTEXT in Baum NAMECONF */
-#define NEWNAME          3   /* FTEXT in Baum NAMECONF */
-#define NCOK             4   /* BUTTON in Baum NAMECONF */
-#define NCALL            5   /* BUTTON in Baum NAMECONF */
-#define NCSKIP           6   /* BUTTON in Baum NAMECONF */
-#define NCABORT          7   /* BUTTON in Baum NAMECONF */
+#define RNMTITLE         2   /* STRING in Baum NAMECONF */
+#define OLDNAME          4   /* FTEXT in Baum NAMECONF */
+#define NEWNAME          6   /* FTEXT in Baum NAMECONF */
+#define NCOK             8   /* BUTTON in Baum NAMECONF */
+#define NCALL            9   /* BUTTON in Baum NAMECONF */
+#define NCSKIP           10  /* BUTTON in Baum NAMECONF */
+#define NCABORT          11  /* BUTTON in Baum NAMECONF */
 
 #define PRINT            12  /* Formular/Dialog */
 #define NITEMS           2   /* FTEXT in Baum PRINT */
@@ -204,18 +205,19 @@
 #define PSTDERR          20  /* BUTTON in Baum PRGOPTNS */
 
 #define ADDPTYPE         16  /* Formular/Dialog */
-#define APTITLE          1   /* STRING in Baum ADDPTYPE */
-#define APTPAR1          3   /* BUTTON in Baum ADDPTYPE */
-#define ATPRG            4   /* BUTTON in Baum ADDPTYPE */
-#define ATWINDOW         5   /* BUTTON in Baum ADDPTYPE */
-#define ATARGV           6   /* BUTTON in Baum ADDPTYPE */
-#define PRGNAME          7   /* FTEXT in Baum ADDPTYPE */
+#define APTITLE          2   /* STRING in Baum ADDPTYPE */
+#define PRGNAME          4   /* FTEXT in Baum ADDPTYPE */
+#define APTPAR1          5   /* BUTTON in Baum ADDPTYPE */
+#define ATPRG            6   /* BUTTON in Baum ADDPTYPE */
+#define ATWINDOW         7   /* BUTTON in Baum ADDPTYPE */
 #define APTPAR2          8   /* BUTTON in Baum ADDPTYPE */
 #define APGEM            9   /* BUTTON in Baum ADDPTYPE */
 #define APGTP            10  /* BUTTON in Baum ADDPTYPE */
-#define APTOS            11  /* BUTTON in Baum ADDPTYPE */
-#define APTTP            12  /* BUTTON in Baum ADDPTYPE */
-#define APTOK            13  /* BUTTON in Baum ADDPTYPE */
+#define APACC            11  /* BUTTON in Baum ADDPTYPE */
+#define APTOS            12  /* BUTTON in Baum ADDPTYPE */
+#define APTTP            13  /* BUTTON in Baum ADDPTYPE */
+#define ATARGV           14  /* BUTTON in Baum ADDPTYPE */
+#define APTOK            16  /* BUTTON in Baum ADDPTYPE */
 
 #define SETICONS         17  /* Formular/Dialog */
 #define IPARENT          4   /* IBOX in Baum SETICONS */
@@ -504,3 +506,5 @@
 #define MFSELERR         106 /* Alert String */
 
 #define MECOLORS         107 /* Alert String */
+
+#define MCANTACC         108 /* Alert String */

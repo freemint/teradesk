@@ -39,7 +39,7 @@ char *ltoa(long value, char *string, int radix);
 
 typedef enum
 {
-	PGEM = 0, PGTP, PTOS, PTTP
+	PGEM = 0, PGTP, PACC, PTOS, PTTP			/* HR 101202: PACC */
 } ApplType;
 
 typedef struct
@@ -102,9 +102,13 @@ typedef struct
 extern Options options;
 extern SCRINFO screen_info;
 extern int vdi_handle, ncolors, max_w, max_h, ap_id, nfonts;
-extern boolean quit,
-               mint,			/* HR 151102 */
+extern boolean quit;
+
+#if _MINT_
+extern boolean mint,			/* HR 151102 */
                magx;
+#endif
+
 extern int colour_icons;
 
 extern char *global_memory;
@@ -114,7 +118,7 @@ void set_opt(OBJECT *tree, int opt, int button);
 
 void digit(char *s, int x);
 void cv_formtofn(char *dest, const char *source);
-void cv_fntoform(char *dest, const char *source);
+void cv_fntoform(char *dest, const char *source, int l);		/* HR 271102: length */
 void cramped_name(char *s, char *t, int w);
 
 extern int hndlmessage(int *message);

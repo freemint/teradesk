@@ -32,6 +32,7 @@
 
 #define XD_RDIALOG	0x1
 #define XD_RCURSOR	0x2
+#define XD_MAX_SCRLED 128		/* HR 021202: maximum size of scrolling editable texts. */
 
 /* Vlaggen voor xd_form_button() */
 
@@ -73,7 +74,8 @@ typedef struct xuserblk
 	struct xuserblk *ub_parm;		/* Pointer to itself. */
 	int ob_type;					/* Original object type. */
 	int ob_flags;					/* Original object flags. */
-	long ob_spec;					/* Original object specifier. */
+	OBSPEC ob_spec;					/* Original object specifier. */ 	/* HR 021202 */
+	int ob_shift;					/* For scrledit: left position of letterbox. */
 } XUSERBLK;
 
 typedef struct xdobjdata
@@ -100,8 +102,8 @@ extern
 int xd_vhandle, xd_nplanes, xd_ncolors,
     xd_posmode,
     xd_min_timer,
-    xd_draw_3d,
-    xd_aes4_0,
+/*    xd_draw_3d,
+*/  xd_aes4_0,
     aes_flags,			/* HR 151102 */
     colour_icons,
     xresources,

@@ -59,11 +59,11 @@
 
 
 #define DEFAULT_EXT		"*"
-#define MAXLENGTH		24				/* Maximum length of a filename to display in a window. */
+#define MAXLENGTH		128				/* Maximum length of a filename to display in a window. HR: 128 */
 #define MINLENGTH		12				/* Minimum length of a filename to display in a window. */
 #define ITEMLEN			44				/* Length of a line, without the filename. */
 /* HR 151102: must have both at the same time. */
-#define TOSDEFAULT_EXT		"*.*"
+#define TOSDEFAULT_EXT		"*"
 #define TOSITEMLEN			51				/* Length of a line. */
 
 typedef struct
@@ -582,7 +582,9 @@ static int read_dir(DIR_WINDOW *w)
 
 		if ((dir = x_opendir(w->path, &error)) != NULL)
 		{
+#if _MINT_
 			w->fs_type = dir->type;		/* HR 151102: Needs to know the filesystem type elsewhere. */
+#endif
 			while (error == 0)
 			{
 				if ((error = (int) x_xreaddir(dir, name, 256, &attr)) == 0)
@@ -1011,8 +1013,9 @@ static void dir_calcsize(WINFO *w, GRECT *size)
 
 static int linelength(DIR_WINDOW *w)
 {
-#ifdef _MINT_
-	if (mint)				/* HR 151102 */
+	if (w->fs_type)				/* HR 151102, 021202 */
+		return TOSITEMLEN;
+	else
 	{
 		int l;
 	
@@ -1025,9 +1028,6 @@ static int linelength(DIR_WINDOW *w)
 	
 		return ITEMLEN + l;
 	}
-	else
-#endif
-		return TOSITEMLEN;
 }
 
 #pragma warn .par
@@ -1249,7 +1249,7 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 		p = h->name;
 		i = 0;
 
-#ifdef _MINT_
+#if _MINT_
 		if (mint && dw->fs_type == 0)		/* HR 151102 */
 		{
 			while ((*p) && (i < MAXLENGTH))
@@ -1334,7 +1334,7 @@ static void dir_line(DIR_WINDOW *dw, char *s, int item)
 		*d++ = ' ';
 		*d++ = ' ';
 
-#ifdef _MINT_
+#if _MINT_
 		if (mint && dw->fs_type == 0)		/* HR 151102 */
 		{
 			switch(h->attrib.mode & S_IFMT)
@@ -2325,11 +2325,7 @@ boolean dir_add_window(const char *path)
 	}
 	else
 	{
-#ifdef _MINT_				/* HR 151102 */
-		if ((fspec = strdup(mint ? DEFAULT_EXT : TOSDEFAULT_EXT)) == NULL)
-#else
-		if ((fspec = strdup(TOSDEFAULT_EXT)) == NULL)
-#endif
+		if ((fspec = strdup(DEFAULT_EXT)) == NULL)				/* HR 271102 */
 		{
 			xform_error(ENSMEM);
 			free(path);
@@ -3114,7 +3110,7 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
 	}
 }
 
-/* Routine voor het maken van een lijst met geseleketeerde items. */
+/* Routine voor het maken van een lijst met geselekteerde items. */
 
 static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible,
 						 int **sel_list, ICND **icns, int mx, int my)

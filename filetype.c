@@ -159,7 +159,7 @@ static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((f = get_item(i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, f->name);
+			cv_fntoform(o->ob_spec.tedinfo->te_ptext, f->name, 24);		/* HR 271102 */
 	}
 
 	if (draw == TRUE)
@@ -179,7 +179,7 @@ static boolean filetype_dialog(char *name)
 
 	rsc_title(newfolder, NDTITLE, DTADDMSK);
 
-	cv_fntoform(dirname, name);
+	cv_fntoform(dirname, name, 64);		/* HR 271102 */
 	button = xd_dialog(newfolder, DIRNAME);
 
 	if ((button == NEWDIROK) && (strlen(dirname) != 0))
@@ -224,7 +224,7 @@ char *wd_filemask(const char *mask)
 	sl.first = FTYPE1;
 	sl.findsel = find_selected;
 
-	cv_fntoform(filetype, mask);
+	cv_fntoform(filetype, mask, 24);		/* HR 271102 */
 
 	sl_init(setmask, &sl);
 
@@ -312,32 +312,17 @@ void ft_default(void)
 {
 	rem_all_filetypes();
 
-#ifdef _MINT_
-	if (mint)				/* HR 151102 */
-	{
-		add("*");
-		add("*.cfg");
-		add("*.c");
-		add("*.h");
-		add("*.s");
-		add("*.prj");
-		add("*.prg");
-		add("*.tos");
-		add("*.ttp");
-	}
-	else
-#endif
-	{
-		add("*.*");
-		add("*.CFG");
-		add("*.C");
-		add("*.H");
-		add("*.S");
-		add("*.PRJ");
-		add("*.PRG");
-		add("*.TOS");
-		add("*.TTP");
-	}
+	add("*");			/* HR 271102: no more distinction between MiNT/TOS */
+	add("*.*");			/*            The comparison is made case INsensitive */
+	add("*.CFG");
+	add("*.C");
+	add("*.H");
+	add("*.S");
+	add("*.PRJ");
+	add("*.PRG");
+	add("*.TOS");
+	add("*.TTP");
+	add("*.ACC");
 }
 
 int ft_load(XFILE *file)

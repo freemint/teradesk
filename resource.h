@@ -20,7 +20,8 @@
 
 #include "desktop.h"			/* HR 151102: only 1 rsc */
 
-extern OBJECT *menu,
+extern
+OBJECT *menu,
 	   *setprefs,
 	   *setprgprefs,
 	   *addprgtype,
@@ -45,14 +46,17 @@ extern OBJECT *menu,
 	   *wdoptions,
 	   *wdfont;
 
-extern char *dirname,
+extern
+char *dirname,
+	 *oldname,
+	 *newname,
+	 *finame,
+	 *flname,
 	 *disklabel,
 	 *drvid,
 	 *iconlabel,
 	 *cmdline1,
 	 *cmdline2,
-	 *oldname,
-	 *newname,
 	 *cpfile,
 	 *cpfolder,
 	 *filetype,
@@ -65,6 +69,13 @@ extern char *dirname,
 	 *prgname,
 	 *icnname,
 	 *vtabsize;
+
+extern
+char dirnametxt[],		/* HR 021202: The 5 scrolling editable texts. */
+     finametxt[],
+     flnametxt[],
+     oldnametxt[],
+     newnametxt[];
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);

@@ -21,8 +21,10 @@
 #include <np_aes.h>			/* HR 151102: modern */
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>			/* HR 271102: for wildcards */
 #include <tos.h>
 #include <mint.h>
+#include <ctype.h>
 
 #include "desk.h"
 #include "desktop.h"			/* HR 151102: only 1 rsc */
@@ -31,7 +33,7 @@
 #include "file.h"
 #include "prgtype.h"
 
-#ifdef _MINT_
+#if _MINT_
 #define CFG_EXT		"*.cfg"
 #else
 #define CFG_EXT		"*.CFG"
@@ -186,15 +188,21 @@ char *locate(const char *name, int type)
 
 	if (type == L_FOLDER)
 	{
-		if ((fspec = fn_make_path(name, "*.*")) == NULL)
+		if ((fspec = fn_make_path(name, "*")) == NULL)		/* HR 271102 */
 			return NULL;
 		fname[0] = 0;
 		ex_flags = EX_DIR;
 	}
 	else
 	{
-		if ((fspec = fn_make_newname(name, ((type == L_LOADCFG) ||
-						   (type == L_SAVECFG)) ? CFG_EXT : "*.*")) == NULL)
+		if (   (fspec = fn_make_newname(
+		                        name, 
+		                        (  (type == L_LOADCFG) || (type == L_SAVECFG) )
+		                          ? CFG_EXT
+		                          : "*"					/* HR 271102 */
+		                               )
+		       ) == NULL
+		   )
 			return NULL;
 		strcpy(fname, fn_get_name(name));
 		ex_flags = EX_FILE;
@@ -294,6 +302,58 @@ boolean check_drive(int drv)
 	return FALSE;
 }
 
+#if _MINT_
+
+bool match_pattern(const char *t, const char *pat)
+{
+	bool valid = true;
+	
+	while(    valid
+	      and (   ( *t and *pat)
+	           or (!*t and *pat == '*')	/* HR: catch empty that should be OK */
+	         )
+	      )
+	{
+		switch(*pat)
+		{
+		case '?':			/* Any character */
+			t++;
+			pat++;
+			break;
+		case '*':			/* String of any character */
+			pat++;
+			while(*t and (toupper(*t) != toupper(*pat)))
+				t++;
+			break;
+		case '!':			/* !X means any character but X */
+			if (toupper(*t) != toupper(pat[1]))
+			{
+				t++;
+				pat += 2;
+			} else
+				valid = false;
+			break;
+		case '[':			/* [<chars>] means any one of <chars> */
+			while((*(++pat) != ']') and (toupper(*t) != toupper(*pat)));
+			if (*pat == ']')
+				valid = false;
+			else
+				while(*++pat != ']');
+			pat++;
+			t++;			/* HR: yeah, this one was missing */
+			break;
+		default:
+			if (toupper(*t++) != toupper(*pat++))
+				valid = false;
+			break;
+		}
+	}
+	
+	return valid and toupper(*t) == toupper(*pat);
+}
+
+#else
+
 boolean cmp_part(const char *name, const char *wildcard)
 {
 	int i = -1, j = -1;
@@ -323,7 +383,7 @@ boolean cmp_part(const char *name, const char *wildcard)
 				return FALSE;
 			}
 		default:
-			if (name[j] != wildcard[i])
+			if (tolower(name[j]) != tolower(wildcard[i]))		/* HR 271102: case insensitive */
 				return FALSE;
 			break;
 		}
@@ -331,14 +391,13 @@ boolean cmp_part(const char *name, const char *wildcard)
 	while (wildcard[i] != 0);
 	return TRUE;
 }
+#endif
 
 boolean cmp_wildcard(const char *fname, const char *wildcard)
 {
-#ifdef _MINT_
-	if (mint)				/* HR 151102 */
-		return cmp_part(fname,wildcard);
-	else
-#endif
+#if _MINT_		/* HR 151102 */
+        return match_pattern(fname,wildcard);		/* HR 051202: courtesy XaAES */
+#else
 	{
 		char name[10], ext[4], wname[10], wext[4];
 	
@@ -348,6 +407,7 @@ boolean cmp_wildcard(const char *fname, const char *wildcard)
 			return FALSE;
 		return cmp_part(ext, wext);
 	}
+#endif
 }
 
 typedef long cdecl (*Func)();
@@ -387,14 +447,18 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 
 void force_mediach(const char *path)
 {
-	int drive;
+	int drive, p = *path;
 
-	if ((path[0] == 0) || (path[1] != ':'))
+	if (   p == 0
+	    || !(isalnum(p) && path[1] == ':')		/* HR 271102: alnum */
+	   )
 		return;
 
-	drive = (path[0] & 0xDF) - 'A';
+	drive =   isalpha(p)
+	        ? tolower(p) - 'a'			/* HR 271102 */
+	        : p - '0' + 'z' - 'a'  + 2;
 
-#ifdef _MINT_			/* HR 151102 */
+#if _MINT_			/* HR 151102 */
 	if (mint)
 	{
 		if (Dlock(1, drive) == 0)

@@ -250,7 +250,7 @@ static void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((p = get_item(i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->name);
+			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->name, 24);		/* HR 271102 */
 	}
 
 	if (draw == TRUE)
@@ -283,7 +283,7 @@ static boolean prgtype_dialog(char *name, ApplType *type, boolean *argv, boolean
 
 	rsc_title(addprgtype, APTITLE, (edit == TRUE) ? DTEDTPRG : DTADDPRG);
 
-	cv_fntoform(prgname, name);
+	cv_fntoform(prgname, name, 24);		/* HR 271102 */
 	set_prgtype(*type);
 	set_prgpath(*path);
 
@@ -418,12 +418,13 @@ void prg_default(void)
 {
 	rem_all_prgtypes();
 
-#ifdef _MINT_
+#if _MINT_
 	if (mint)				/* HR 151102 */
 	{
 		add("*.prg", PGEM, TRUE, TRUE, END);
 		add("*.app", PGEM, TRUE, TRUE, END);
 		add("*.gtp", PGTP, TRUE, TRUE, END);
+		add("*.acc", PACC, TRUE, TRUE, END);
 		add("*.tos", PTOS, TRUE, FALSE, END);
 		add("*.ttp", PTTP, TRUE, FALSE, END);
 	}

@@ -524,7 +524,7 @@ long    Dopendir(const char *name, int flag );
 long    Dreaddir( int buflen, long dir, char *buf );
 long    Drewinddir( long dir );
 long    Dclosedir( long dir );
-long    Fxattr( int flag, char *name, XATTR *buf );
+long    Fxattr( int flag, const char *name, XATTR *buf );
 long    Flink( char *oldname, char *newname );
 long    Fsymlink( char *oldname, char *newname );
 long    Freadlink( int size, char *buf, char *name );

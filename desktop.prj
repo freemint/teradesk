@@ -18,22 +18,24 @@
 ;* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ;*
 
-desktop.prg
+;desktos.prg		; _MINT_=0  tos only
+desktop.prg		; _MINT_=1  includes tos & magic
 
+.C [-D_MINT_=1]
 .C [-DTERADESK=1]			; for np_aes.h
 
 .C [-P -Ilibrary\xdialog -Iinclude]
 .C [-DV2=1]
-.C [-D_MINT_=1]
 .C [-DNEWICON=1]
 .S [-S]
 .L [-S=8192]
-; .L [-G]
+.L [-G]
 
 =
 PCSTART.O
 
 ;GEM gedeelte en hoofdprogramma
+;GEM part and main program
 
 MAIN.C		(desk.h,desktop.h,resource.h,window.h,events.h,error.h,batch.h,environm.h,file.h,prgtype.h,icontype.h,applik.h,filetype.h,icon.h,dir.h,open.h,edit.h,version.h,xfilesys.h,screen.h,font.h,vaproto.h)
 RESOURCE.C	(desk.h,desktop.h,resource.h,version.h)
@@ -51,6 +53,7 @@ FONT.C		(desk.h,desktop.h,resource.h,xfilesys.h,screen.h,slider.h,error.h,font.h
 vaproto.c	(desk.h, font.h, vaproto.h)
 
 ;TOS gedeelte
+;TOS part
 
 BATCH.C		(desk.h,desktop.h,batch.h,file.h,error.h,xfilesys.h)
 ENVIRONM.C	(environm.h)
@@ -58,6 +61,7 @@ STARTPRG.C	(desk.h,desktop.h,window.h,startprg.h,file.h,error.h,environm.h,event
 FILE.C		(desk.h,desktop.h,file.h,prgtype.h,error.h,xfilesys.h)
 
 ;Ingebouwde modules
+;Builtin modules
 
 DIR.C		(desk.h,desktop.h,resource.h,window.h,dir.h,error.h,file.h,screen.h,icontype.h,icon.h,showinfo.h,open.h,copy.h,filetype.h,xfilesys.h,events.h,font.h)
 OPEN.C		(desk.h,desktop.h,resource.h,window.h,open.h,dir.h,applik.h,printer.h,file.h,edit.h,viewer.h,xfilesys.h,error.h)
@@ -65,6 +69,7 @@ VIEWER.C	(desk.h,desktop.h,error.h,font.h,resource.h,xfilesys.h,screen.h,viewer.
 EDIT.C		(desk.h,desktop.h,window.h,edit.h,file.h,applik.h,xfilesys.h,error.h,prgtype.h)
 
 ;Vervangingen en aanvullingen van bibliotheekfuncties
+;Replacements of and additions to library functions
 
 events.c	(desk.h,events.h)
 slider.c	(desk.h,events.h,slider.h)
@@ -76,12 +81,11 @@ ERROR.C		(desktop.h,error.h)
 
 btst.s
 
-pure_c\wind_get.s		; HR 151102 (same as XaAES)
-pure_c\mintbind.s		; HR 151102 (same as XaAES)
-
 ;Libraries
 
 library\xdialog\xdialog.prj
+;library\multitos\multitos.prj   HR: not used
+library\mint\mintlib.prj
 library\utility\library.prj
 
 PCSTDLIB.LIB

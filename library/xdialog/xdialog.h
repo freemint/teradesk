@@ -61,6 +61,8 @@
 								   this means cycle between:
 								   NORMAL / SELECTED / CHECKED */
 #define XD_CYCLBUT		12		/* IA: cycling button. used with pop-ups mostly. */
+#define XD_SCRLEDIT		13		/* HR 021202: scrolling editable text fields. */
+
 #define XD_UP			52		/* Codes voor buttons met bediening cursortoetsen */
 #define XD_DOWN			53
 #define XD_LEFT			54
@@ -155,83 +157,85 @@ typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 
 /* Funkties voor het openen en sluiten van een dialoog */
 
-extern void xd_open(OBJECT *tree, XDINFO *info);
-extern void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
+void xd_open(OBJECT *tree, XDINFO *info);
+void xd_open_wzoom(OBJECT *tree, XDINFO *info, GRECT *xywh,
 						  int zoom);
-extern void xd_close(XDINFO *info);
-extern void xd_close_wzoom(XDINFO *info, GRECT *xywh, int zoom);
+void xd_close(XDINFO *info);
+void xd_close_wzoom(XDINFO *info, GRECT *xywh, int zoom);
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
-extern void xd_draw(XDINFO *info, int start, int depth);
-extern void xd_change(XDINFO *info, int object, int newstate,
+void xd_draw(XDINFO *info, int start, int depth);
+void xd_change(XDINFO *info, int object, int newstate,
 					  int draw);
 
 /* Funkties voor het uitvoeren van een dialoog. */
 
-extern int xd_kform_do(XDINFO *info, int start, userkeys userfunc,
+int xd_kform_do(XDINFO *info, int start, userkeys userfunc,
 					   void *userdata);
-extern int xd_form_do(XDINFO *info, int start);
-extern int xd_kdialog(OBJECT *tree, int start, userkeys userfunc,
+int xd_form_do(XDINFO *info, int start);
+int xd_kdialog(OBJECT *tree, int start, userkeys userfunc,
 					  void *userdata);
-extern int xd_dialog(OBJECT *tree, int start);
+int xd_dialog(OBJECT *tree, int start);
 
 /* Funkties voor initialisatie van een resource. */
 
-extern int xd_gaddr(int type, int index, void *addr);
-extern void xd_fixtree(OBJECT *tree);
-extern void xd_set_userobjects(OBJECT *tree);
+int xd_gaddr(int type, int index, void *addr);
+void xd_fixtree(OBJECT *tree);
+void xd_set_userobjects(OBJECT *tree);
+char *xd_set_srcl_text(OBJECT *tree, int item, char *txt);
 
 /* Funkties voor het zetten van de verschillende modes */
 
-extern int xd_setdialmode(int new, int (*hndl_message) (int *message),
+int xd_setdialmode(int new, int (*hndl_message) (int *message),
 						  OBJECT *menu, int nmnitems, int *mnitems);
-extern int xd_setposmode(int new);
+int xd_setposmode(int new);
 
 /* Funkties voor initialisatie bibliotheek */
 
-extern int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
+int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 						void (*free) (void *block), const char *prgname,
 						int load_fonts, int *nfonts);
-extern void exit_xdialog(void);
+void exit_xdialog(void);
 
 /* Hulpfunkties */
 
-extern int xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *intersection);
-extern int xd_inrect(int x, int y, GRECT *r);
+int xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *intersection);
+int xd_inrect(int x, int y, GRECT *r);
 
-extern long xd_initmfdb(GRECT *r, MFDB *mfdb);
+long xd_initmfdb(GRECT *r, MFDB *mfdb);
 
-extern void xd_objrect(OBJECT *tree, int object, GRECT *r);
+void xd_objrect(OBJECT *tree, int object, GRECT *r);
 
-extern void xd_userdef(OBJECT *object, USERBLK *userblk,
+void xd_userdef(OBJECT *object, USERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
 
-extern void xd_rect2pxy(GRECT *r, int *pxy);
+void xd_rect2pxy(GRECT *r, int *pxy);
 
-extern int xd_obj_parent(OBJECT *tree, int object);
+int xd_obj_parent(OBJECT *tree, int object);
 
-extern int xd_wdupdate(int mode);
-extern void xd_mouse_off(void);
-extern void xd_mouse_on(void);
+int xd_wdupdate(int mode);
+void xd_mouse_off(void);
+void xd_mouse_on(void);
 
-extern int xd_get_rbutton(OBJECT *tree, int rb_parent);
-extern void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
+int xd_get_rbutton(OBJECT *tree, int rb_parent);
+void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 
-extern long xd_get_obspec(OBJECT *object);
-extern void xd_set_obspec(OBJECT *object, long obspec);
+OBSPEC xd_get_obspec(OBJECT *object);
+void xd_set_obspec(OBJECT *object, OBSPEC obspec);		/* HR 021202 */
+void *xd_get_scrled(OBJECT *tree, int edit_obj);	/* HR 021202 */
 
-extern int xd_set_tristate(int ob_state, int state);
-extern int xd_get_tristate(int ob_state);
-extern int xd_is_tristate(OBJECT *tree);
+int xd_set_tristate(int ob_state, int state);
+int xd_get_tristate(int ob_state);
+int xd_is_tristate(OBJECT *tree);
 
-extern void xd_clip_on(GRECT *r);
-extern void xd_clip_off(void);
+void xd_clip_on(GRECT *r);
+void xd_clip_off(void);
 
 /* Event funkties */
 
-extern int xe_keycode(int scancode, int kstate);
-extern int xe_xmulti(XDEVENT *events);
+int xe_keycode(int scancode, int kstate);
+int xe_xmulti(XDEVENT *events);
 int xe_button_state(void);
 int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
 

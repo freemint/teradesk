@@ -1,5 +1,5 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+ * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
  *
  * This file is part of Teradesk.
  *
@@ -18,25 +18,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <aes.h>
-#include <stdlib.h>
-#include <string.h>
+#include <np_aes.h>
 
-#include "desk.h"
-
-/*
- * Duplicate 's', returning an identical malloc'd string.
- */
-
-char *strdup(const char *s)
+typedef struct
 {
-	size_t l;
-	char *new;
+	int *contrl;
+	int *glob;
+	int *intin;
+	int *intout;
+	void **addrin;
+	void **addrout;
+} AESPB;
 
-	l = strlen(s) + 1;
-
-	if ((new = malloc(l)) != NULL)
-		memcpy(new, s, l);
-
-	return new;
-}
+AESPB aes_parm_blk =
+{
+	_GemParBlk.contrl,
+	&_GemParBlk.glob,
+	_GemParBlk.intin,
+	_GemParBlk.intout,
+	_GemParBlk.addrin,
+	_GemParBlk.addrout
+};

@@ -230,7 +230,7 @@ static void pset_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((p = get_item(*curlist, i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->type);
+			cv_fntoform(o->ob_spec.tedinfo->te_ptext, p->type, 12);		/* HR 271102 */
 	}
 
 	if (draw == TRUE)
@@ -284,7 +284,7 @@ static boolean icntype_dialog(char *name, int *icon, boolean edit)
 
 	rsc_title(addicntype, AITTITLE, (edit == TRUE) ? DTEDTICT : DTADDICT);
 
-	cv_fntoform(icnname, name);
+	cv_fntoform(icnname, name, 12);		/* HR 271102 */
 
 	sl_info.type = 0;
 	sl_info.up_arrow = ITUP;
@@ -438,8 +438,6 @@ void icnt_default(void)
 	free_list(&files);
 	free_list(&folders);
 }
-
-int alert_msg(int def, const char *string, ...);
 
 static int load_list(XFILE *file, ICONTYPE **list)
 {

@@ -1,5 +1,5 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
  *
  * This file is part of Teradesk.
  *
@@ -18,17 +18,42 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <xerror.h>
+#include <aes.h>
+#include <stdarg.h>
+#include <multitos.h>
 
-int xerror( int toserror )
+static unsigned char argtab[] =
 {
-	if (toserror >= 0)
-		return 0;
-	else
-	{
-		if (toserror > -1024)
-			return toserror;
-		else
-			return XUNKNOWN;
-	}
+	1, 1, 1, 4, 4, 4, 4, 1,
+	1, 1, 4, 4, 1, 1, 1, 1,
+	4, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1
+};
+
+int wind_get(int handle, int field, ... )
+{
+	va_list args;
+	int parms, i;
+
+	va_start(args, field);
+
+	_GemParBlk.contrl[0] = 0x68;
+	_GemParBlk.contrl[1] = 2;
+	_GemParBlk.contrl[2] = 5;
+	_GemParBlk.contrl[3] = 0;
+	_GemParBlk.contrl[4] = 0;
+
+	_GemParBlk.intin[0] = handle;
+	_GemParBlk.intin[1] = field;
+
+	aes();
+
+	parms = argtab[(field - 1) & 0x1F];
+
+	for(i = 0; i < parms; i++)
+		*(va_arg(args, int *)) = _GemParBlk.intout[i + 1];
+
+	va_end(args);
+
+	return _GemParBlk.intout[0];
 }

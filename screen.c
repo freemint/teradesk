@@ -47,6 +47,7 @@ void clipdesk_on(void)
 	vs_clip(vdi_handle, 1, clip_rect);
 }
 
+#if 0
 void clear(GRECT *r)
 {
 	int pxy[8];
@@ -55,8 +56,20 @@ void clear(GRECT *r)
 	xd_rect2pxy(r, pxy);
 	xd_rect2pxy(r, &pxy[4]);
 	mfdb.fd_addr = NULL;
-	vro_cpyfm(vdi_handle, 0, pxy, &mfdb, &mfdb);
+	vro_cpyfm(vdi_handle, ALL_WHITE, pxy, &mfdb, &mfdb);
 }
+#else
+void clear(GRECT *r)		/* HR 021202: use v_bar for a white rectangle (for true colour) */
+{
+	int pxy[4];
+	vsf_color(vdi_handle, WHITE);
+	vsf_interior(vdi_handle, FIS_SOLID);
+	vsf_perimeter(vdi_handle, 0);
+	vswr_mode(vdi_handle, MD_REPLACE);
+	xd_rect2pxy(r, pxy);
+	v_bar(vdi_handle, pxy);
+}
+#endif
 
 boolean rc_intersect2(GRECT *r1, GRECT *r2)
 {

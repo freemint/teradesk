@@ -531,7 +531,11 @@ void start_prg(const char *fname, const char *cmdline,
 			   const char *path, ApplType prg, boolean argv,
 			   int kstate)
 {
-	if (_GemParBlk.glob.count != -1 && magx == 0)		/* HR 151102 */
+#if _MINT_
+	if (   _GemParBlk.glob.count != -1
+	    && magx == 0		/* HR 151102 */
+	   )
+#endif
 	{
 		/* AES is not multitasking, use Pexec() to start program. */
 
@@ -539,7 +543,7 @@ void start_prg(const char *fname, const char *cmdline,
 		char *prgpath, *olddir;
 		const char *envp;
 		int error = 0, appl_type;
-#ifdef _MINT_
+#if _MINT_
 		boolean background = (kstate & 4) ? TRUE : FALSE;
 #endif
 
@@ -549,9 +553,15 @@ void start_prg(const char *fname, const char *cmdline,
 		strncpy(cl.command_tail, cmdline + 1, 125);
 		cl.length = *cmdline;
 
+		if (prg == PACC)				/* HR 101202: Dont start acc in single tos */
+		{
+			alert_printf(1, MCANTACC);
+			return;
+		}
+
 		appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
 
-#ifdef _MINT_
+#if _MINT_
 		if (mint)				/* HR 151102 */
 			if ((appl_type == 1) && (background == TRUE))
 			{
@@ -580,7 +590,7 @@ void start_prg(const char *fname, const char *cmdline,
 
 				if (error == 0)
 				{
-#ifdef _MINT_
+#if _MINT_
 					if (mint && background == TRUE)			/* HR 151102 */
 						error = (int) x_exec(100, fname, &cl, envp);
 					else
@@ -604,42 +614,49 @@ void start_prg(const char *fname, const char *cmdline,
 		if (error < 0)
 			xform_error(error);
 	}
+#if _MINT_
 	else
 	{
 		/* AES is multitasking, use shel_write() to start program. */
 
-		int appl_type, mode;
-		void *p[5];
-		char prgpath[256], *h;
-
-		appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
-		mode = 0x400 | 1;				/* HR 151102: always use 1 */
-
-		if (path == NULL)
-		{
-			strcpy(prgpath, fname);
-			if ((h = strrchr(prgpath, '\\')) != NULL)
-				h[1] = 0;
-		}
+		if (prg == PACC)			/* HR 101202 */
+			shel_write(3, 0, 100, (char *)fname, "\0");
 		else
 		{
-			strcpy(prgpath, path);
-			strcat(prgpath,"\\");		/* Necessary for Geneva. */
+			int appl_type, mode;
+			void *p[5];
+			char prgpath[256], *h;
+	
+			appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
+			mode = 0x400 | 1;				/* HR 151102: always use 1 */
+	
+			if (path == NULL)
+			{
+				strcpy(prgpath, fname);
+				if ((h = strrchr(prgpath, '\\')) != NULL)
+					h[1] = 0;
+			}
+			else
+			{
+				strcpy(prgpath, path);
+				strcat(prgpath,"\\");		/* Necessary for Geneva. */
+			}
+	
+			if (argv)
+				*(char *)cmdline = 127;
+	
+			p[0] = fname;
+			p[1] = NULL;
+			p[2] = NULL;
+			p[3] = prgpath;
+			p[4] = NULL;
+	
+	/* HR 151102: SHW_PARALLEL(100) for MagiC */
+			shel_write(mode, appl_type, magx ? 100 : (int) argv,
+			                 (char *) p, (char *) cmdline);
 		}
-
-		if (argv)
-			*(char *)cmdline = 127;
-
-		p[0] = fname;
-		p[1] = NULL;
-		p[2] = NULL;
-		p[3] = prgpath;
-		p[4] = NULL;
-
-/* HR 151102: SHW_PARALLEL(100) for MagiC */
-		shel_write(mode, appl_type, magx ? 100 : (int) argv,
-		                 (char *) p, (char *) cmdline);
 	}
+#endif
 }
 
 #pragma .par

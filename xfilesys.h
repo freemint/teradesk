@@ -128,7 +128,7 @@ typedef struct
 			DTA dta;
 		} gdata;
 	} data;
-#ifdef _MINT_
+#if _MINT_
 	int type;
 #endif
 } XDIR;

@@ -448,7 +448,7 @@ static void xw_menu_change(OBJECT *menu, int item, int select, GRECT *box)
 static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
 {
 	xd_mouse_off();
-	vro_cpyfm(xd_vhandle, 3, pxy, src, dest);
+	vro_cpyfm(xd_vhandle, S_ONLY, pxy, src, dest);
 	xd_mouse_on();
 }
 

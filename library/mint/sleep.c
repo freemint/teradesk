@@ -1,5 +1,5 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Teradesk. Copyright (c) 1993, 2002 W. Klaren.
  *
  * This file is part of Teradesk.
  *
@@ -18,17 +18,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <xerror.h>
+#include <mint.h>
 
-int xerror( int toserror )
+#pragma warn -par
+
+static void cdecl _alarm(long signal)
 {
-	if (toserror >= 0)
-		return 0;
-	else
-	{
-		if (toserror > -1024)
-			return toserror;
-		else
-			return XUNKNOWN;
-	}
+}
+
+#pragma warn .par
+
+void sleep(unsigned short n)
+{
+	Psignal(SIGALRM, _alarm);
+	Talarm(n);
+	Pause();
 }

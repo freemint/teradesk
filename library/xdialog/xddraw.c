@@ -56,9 +56,9 @@ static int xd_ind_col = 8;
 static int xd_act_col = 8;
 
 static MFDB cursor_mfdb = {	NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
-
+/*
 int xd_get_3d_color(int flags);
-
+*/
 /********************************************************************
  *																	*
  * Funkties voor het tekenen van de userdefined objects.			*
@@ -73,7 +73,7 @@ int xd_get_3d_color(int flags);
  * flags	- De objectvlaggen van een object.
  *
  * Resultaat : kleur van het object.
- */
+ *
 
 int xd_get_3d_color(int flags)
 {
@@ -90,7 +90,7 @@ int xd_get_3d_color(int flags)
 
 	return (color >= xd_ncolors) ? 0 : color;
 }
-
+*/
 /*
  * Funktie die de dikte van de rand om een button teruggeeft.
  */
@@ -272,13 +272,13 @@ static int cdecl ub_drag(PARMBLK *pb)
 
 	xd_clip_on(&clip);
 
-	clr_object(&frame, (xd_draw_3d) ? xd_get_3d_color(tree[object].ob_flags) : 0);
+	clr_object(&frame, /* (xd_draw_3d) ? xd_get_3d_color(tree[object].ob_flags) : */ 0);
 
 	obspec.index = pb->pb_parm;
 
 	set_linedef(obspec.obspec.framecol);
 	draw_frame(&frame, 0, obspec.obspec.framesize - 1);
-
+/*
 	if(xd_draw_3d)
 	{	
 		pxy[0] = frame.g_x - 1;
@@ -300,7 +300,7 @@ static int cdecl ub_drag(PARMBLK *pb)
 		border = 0;			/* schuine lijn alleen in binnenzijde */
 	}
 	else
-	{
+*/	{
 		if (tree[object].ob_state & OUTLINED)		/* HR 151102 */
 		{
 			vsl_color(xd_vhandle, 1);
@@ -376,8 +376,8 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	smfdb.fd_addr = data;
 	vrt_cpyfm(xd_vhandle, MD_TRANS, pxy, &smfdb, &dmfdb, ci);
 
-	vswr_mode(xd_vhandle, (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
-						   xd_draw_3d) ? MD_TRANS : MD_REPLACE);
+	vswr_mode(xd_vhandle, /* (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
+						   xd_draw_3d) ? MD_TRANS : */ MD_REPLACE);
 	set_textdef();
 	prt_text((char *) pb->pb_parm, x + (5 * xd_regular_font.fnt_chw) / 2, y,
 			 pb->pb_currstate);
@@ -422,8 +422,8 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 		v_pline(xd_vhandle, 2, pxy);
 	}
 
-	vswr_mode(xd_vhandle, (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
-						   xd_draw_3d) ? MD_TRANS : MD_REPLACE);
+	vswr_mode(xd_vhandle, /* (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
+						   xd_draw_3d) ? MD_TRANS : */ MD_REPLACE);
 	set_textdef();
 	prt_text((char *) pb->pb_parm, x + 3 * xd_regular_font.fnt_chw, y,
 			 pb->pb_currstate);
@@ -470,6 +470,7 @@ static int cdecl ub_rectbuttri(PARMBLK *pb)
 		vsf_style(xd_vhandle, 4);
 		vsf_color(xd_vhandle, 1);
 		v_bar(xd_vhandle, pxy);
+		vsf_interior(xd_vhandle, FIS_SOLID);	/* HR 021202 always return to default */
 		break;
 	case TRISTATE_2:
 		pxy[0]--;
@@ -483,8 +484,8 @@ static int cdecl ub_rectbuttri(PARMBLK *pb)
 		break;
 	}
 
-	vswr_mode(xd_vhandle, (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
-						   xd_draw_3d) ? MD_TRANS : MD_REPLACE);
+	vswr_mode(xd_vhandle, /* (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) &&
+						   xd_draw_3d) ? MD_TRANS : */ MD_REPLACE);
 	set_textdef();
 	prt_text((char *) pb->pb_parm, x + 3 * xd_regular_font.fnt_chw, y, state);
 
@@ -515,12 +516,66 @@ static int cdecl ub_cyclebut(PARMBLK *pb)
 	return 0;
 }
 
+/* HR 021202: */
+static int cdecl ub_scrledit(PARMBLK *pb)
+{
+	char s[132];
+	XUSERBLK *blk = (XUSERBLK *)pb->pb_parm;
+	TEDINFO *ted = blk->ob_spec.tedinfo;	/* HR 021202 */
+	char *text = s,
+	     *save = ted->te_ptext;
+	int x = pb->pb_x,
+	    y = pb->pb_y,
+	    w = pb->pb_w,
+	    h = pb->pb_h,
+	    tw = strlen(save),
+	    ow = strlen(ted->te_pvalid);
+	GRECT clip;
+
+	ted->te_ptext = s;
+	clip.g_x = pb->pb_xc;
+	clip.g_y = pb->pb_yc;
+	clip.g_w = pb->pb_wc;
+	clip.g_h = pb->pb_hc;
+
+	xd_clip_on(&clip);
+
+	vswr_mode(xd_vhandle, MD_REPLACE);
+	set_textdef();
+	y += (h - xd_regular_font.fnt_chh - 1) / 2;
+	if (tw > ow)
+	{
+		strncpy(s, save + blk->ob_shift, ow);
+		*(s + ow) = 0;
+		prt_text("< ", x - 2*xd_regular_font.fnt_chw, y, 0);
+		prt_text(s, x, y, pb->pb_currstate);
+		prt_text(" >", x + w, y, 0);
+	}
+	else
+	{
+		int i= ow - tw;
+		strcpy(s, save);
+		text += tw;
+		while (i--)
+			*text++ = '_';
+		*text = 0;
+		prt_text("  ", x - 2*xd_regular_font.fnt_chw, y, 0);
+		prt_text(s, x, y, pb->pb_currstate);
+		prt_text("  ", x + w, y, 0);
+	}
+
+	xd_clip_off();
+
+	ted->te_ptext = save;
+	return 0;
+}
+
 static int cdecl ub_button(PARMBLK *pb)
 {
 	int border, object = pb->pb_obj, pxy[8], flags, offset = 0;
 	int x, y;
-	int button_3d, act_ind_sel = FALSE;
-	char *string;
+/*	int button_3d, act_ind_sel = FALSE;
+*/	char *string;
 	GRECT frame, clip;
 	OBJECT *tree = pb->pb_tree;
 
@@ -536,7 +591,7 @@ static int cdecl ub_button(PARMBLK *pb)
 	if (IS_XUSER(tree[object].ob_spec.userblk))
 	{
 		flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-		string = (char *)((XUSERBLK *)(pb->pb_parm))->ob_spec;
+		string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;		/* HR 021202 */
 	}
 	else
 	{
@@ -549,15 +604,15 @@ static int cdecl ub_button(PARMBLK *pb)
 	frame.g_w = pb->pb_w - 2 * border;
 	frame.g_h = pb->pb_h - 2 * border;
 
-	button_3d = ( (IS_ACT(flags) || IS_IND(flags)) && xd_draw_3d );
-
-	if(((pb->pb_currstate & SELECTED) == (pb->pb_prevstate & SELECTED)) ||
-		 button_3d )
+/*	button_3d = ( (IS_ACT(flags) || IS_IND(flags)) && xd_draw_3d );
+*/
+	if(((pb->pb_currstate & SELECTED) == (pb->pb_prevstate & SELECTED)) /* ||
+		 button_3d */)
 	{
 		vswr_mode(xd_vhandle, MD_REPLACE);
 		set_linedef(1);
 
-		if (button_3d)
+/*		if (button_3d)
 		{
 			if (pb->pb_currstate & SELECTED)
 				act_ind_sel = TRUE;
@@ -591,7 +646,7 @@ static int cdecl ub_button(PARMBLK *pb)
 			v_pline(xd_vhandle, 3, pxy);
 		}
 		else
-			clr_object(&frame, 0);
+*/			clr_object(&frame, 0);
 
 		vsl_color(xd_vhandle, 1);
 		draw_frame(&frame, -1, -border);
@@ -601,14 +656,14 @@ static int cdecl ub_button(PARMBLK *pb)
 
 		vswr_mode(xd_vhandle, MD_TRANS);
 		set_textdef();
-		if (act_ind_sel && IS_IND(flags))
+/*		if (act_ind_sel && IS_IND(flags))
 			vst_color(xd_vhandle, 0);
-		prt_text(string, x, y, pb->pb_currstate);
+*/		prt_text(string, x, y, pb->pb_currstate);
 	}
 	else
 		goto invert;
 
-	if ((pb->pb_currstate & SELECTED) && !button_3d)
+	if ((pb->pb_currstate & SELECTED) /* && !button_3d */)
 	{
 	  invert:
 		vswr_mode(xd_vhandle, MD_XOR);
@@ -644,8 +699,8 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 	set_linedef(1);
 	set_textdef();
 
-	if (!(IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d))
-		clr_object(&frame, 0);
+/*	if (!(IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d))
+*/		clr_object(&frame, 0);
 
 	vqt_extent(xd_vhandle, (char *) pb->pb_parm, ext);
 
@@ -663,9 +718,9 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 	pxy[11] = pxy[1];
 
 	v_pline(xd_vhandle, 6, pxy);
-	if (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d)
+/*	if (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d)
 		vswr_mode(xd_vhandle, MD_TRANS);
-	prt_text((char *) pb->pb_parm, x + xd_regular_font.fnt_chw, y, pb->pb_currstate);
+*/	prt_text((char *) pb->pb_parm, x + xd_regular_font.fnt_chw, y, pb->pb_currstate);
 
 	xd_clip_off();
 
@@ -694,9 +749,9 @@ static int cdecl ub_title(PARMBLK *pb)
 	set_linedef(1);
 	v_pline(xd_vhandle, 2, pxy);
 
-	if (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d)
+/*	if (IS_BG(pb->pb_tree[pb->pb_obj].ob_flags) && xd_draw_3d)
 		vswr_mode(xd_vhandle, MD_TRANS);
-
+*/
 	set_textdef();
 	vswr_mode(xd_vhandle, MD_TRANS);			/* HR 151102 */
 	prt_text((char *) pb->pb_parm, x, y + (h - xd_regular_font.fnt_chh - 1) / 2,
@@ -1029,6 +1084,9 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 				else
 					(*n)++;
 				break;
+			case XD_SCRLEDIT:		/* HR 021202 */
+				(*nx)++;
+				break;
 			default :
 				(*n)++;
 				break;
@@ -1108,14 +1166,14 @@ void xd_set_userobjects(OBJECT *tree)
 				if (must_userdef(c_obj))	/* HR 151102 */
 				{
 					d = xd_bborder(tree, object);
-	
+/*
 					if (GET_3D(c_obj->ob_flags) && !IS_BG(c_obj->ob_flags))
 					{
 						xuserblk = TRUE;
 						if (xd_draw_3d)
 							d += 2;
 					}
-	
+*/	
 					c_obj->ob_x -= d;
 					c_obj->ob_y -= d;
 					c_obj->ob_width += 2 * d;
@@ -1140,6 +1198,10 @@ void xd_set_userobjects(OBJECT *tree)
 					c_code = ub_title;
 					c_obj->ob_height += 1;
 				}
+				break;
+			case XD_SCRLEDIT:				/* HR 021202 */
+				c_code = ub_scrledit;
+				xuserblk = TRUE;
 				break;
 			default :
 				/* yet unknown userdef! */
@@ -1179,6 +1241,14 @@ int xd_gaddr(int type, int index, void *addr)
 		xd_set_userobjects(*(OBJECT **) addr);
 
 	return result;
+}
+
+char *xd_set_srcl_text(OBJECT *tree, int item, char *txt)
+{
+	TEDINFO *ted = xd_get_obspec(tree + item).tedinfo;
+	ted->te_ptext = txt;
+	*txt = 0;
+	return txt;
 }
 
 void xd_fixtree(OBJECT *tree)

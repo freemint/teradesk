@@ -1,5 +1,5 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002 W. Klaren.
+ * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
  *
  * This file is part of Teradesk.
  *
@@ -18,17 +18,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <xerror.h>
+#include <aes.h>
+#include <multitos.h>
 
-int xerror( int toserror )
+int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2,
+				 int *ap_gout3, int *ap_gout4)
 {
-	if (toserror >= 0)
-		return 0;
-	else
-	{
-		if (toserror > -1024)
-			return toserror;
-		else
-			return XUNKNOWN;
-	}
+	_GemParBlk.contrl[0] = 130;
+	_GemParBlk.contrl[1] = 1;
+	_GemParBlk.contrl[2] = 5;
+	_GemParBlk.contrl[3] = 0;
+	_GemParBlk.contrl[4] = 0;
+
+	_GemParBlk.intin[0] = ap_gtype;
+
+	aes();
+
+	*ap_gout1 = _GemParBlk.intout[1];
+	*ap_gout2 = _GemParBlk.intout[2];
+	*ap_gout3 = _GemParBlk.intout[3];
+	*ap_gout4 = _GemParBlk.intout[4];
+
+	return _GemParBlk.intout[0];
 }

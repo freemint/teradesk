@@ -111,7 +111,7 @@ static int si_drive(const char *path, int *x, int *y)
 
 			clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
 
-			cv_fntoform(disklabel, dskl);
+			cv_fntoform(disklabel, dskl, 12);		/* HR 271102 */
 			rsc_ltoftext(driveinfo, DIFOLDER, nfolders);
 			rsc_ltoftext(driveinfo, DIFILES, nfiles);
 			rsc_ltoftext(driveinfo, DIBYTES, bytes);
@@ -150,7 +150,7 @@ static int folder_info(const char *oldname, const char *fname, XATTR *attr, int 
 	long nfolders, nfiles, bytes;
 	int error, start, button, result = 0;
 
-	name = folderinfo[FINAME].ob_spec.tedinfo->te_ptext;
+	name = xd_get_obspec(folderinfo + FINAME).tedinfo->te_ptext;	/* HR 021202 */
 	time = folderinfo[FITIME].ob_spec.tedinfo->te_ptext;
 	date = folderinfo[FIDATE].ob_spec.tedinfo->te_ptext;
 
@@ -160,7 +160,7 @@ static int folder_info(const char *oldname, const char *fname, XATTR *attr, int 
 
 	if (error == 0)
 	{
-		cv_fntoform(name, fname);
+		cv_fntoform(name, fname, 64);		/* HR 271102 */
 		cv_ttoform(time, attr->mtime);
 		cv_dtoform(date, attr->mdate);
 		rsc_ltoftext(folderinfo, FIFOLDER, nfolders);
@@ -245,15 +245,15 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 	char *name, *time, *date, nfname[256], *newname;
 	int button, attrib = attr->attr, result = 0;
 
-	name = fileinfo[FLNAME].ob_spec.tedinfo->te_ptext;
+	name = xd_get_obspec(fileinfo + FLNAME).tedinfo->te_ptext;
 	time = fileinfo[FLTIME].ob_spec.tedinfo->te_ptext;
 	date = fileinfo[FLDATE].ob_spec.tedinfo->te_ptext;
 
-	cv_fntoform(name, fname);
+	cv_fntoform(name, fname, 64);		/* HR 271102 */
 	cv_ttoform(time, attr->mtime);
 	cv_dtoform(date, attr->mdate);
 	rsc_ltoftext(fileinfo, FLBYTES, attr->size);
-#ifdef _MINT_				/* HR 151102 */
+#if _MINT_				/* HR 151102 */
 	if (!mint)
 #endif
 		set_file_attribs(attrib);
@@ -264,7 +264,7 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 	{
 		int error = 0, new_attribs;
 
-#ifdef _MINT_				/* HR 151102 */
+#if _MINT_				/* HR 151102 */
 		if (mint)
 			new_attribs = attrib;
 		else
@@ -275,7 +275,7 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 
 		if ((newname = fn_make_newname(oldname, nfname)) != NULL)
 		{
-#ifdef _MINT_				/* HR 151102 */
+#if _MINT_				/* HR 151102 */
 			if (!mint)
 #endif
 			{
@@ -286,7 +286,7 @@ static int file_info(const char *oldname, const char *fname, XATTR *attr, int *x
 			if ((strcmp(nfname, fname) != 0) && (error == 0))
 				error = frename(oldname, newname);
 
-#ifdef _MINT_				/* HR 151102 */
+#if _MINT_				/* HR 151102 */
 			if (!mint)
 #endif
 			{

@@ -20,5 +20,9 @@
  */
 
 #define CFG_VERSION		0x0200
-#define INFO_VERSION	"200"
-#define INFO_COPYRIGHT	"\xBD W. Klaren & H.Robbers, 1991-2003"
+#if _MINT_
+#define INFO_VERSION	"Tera Desktop V2.01 for TOS, MiNT & MagiC"
+#else
+#define INFO_VERSION	"Tera Desktop V2.01 for single TOS only"
+#endif
+#define INFO_COPYRIGHT	"\xBD W. Klaren & H. Robbers, 1991-2003"

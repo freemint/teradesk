@@ -105,7 +105,12 @@ SCRINFO screen_info;
 FONT def_font;
 static int menu_items[] =
 {MINFO, TDESK, TLFILE, TVIEW, TOPTIONS};
-boolean mint = FALSE, magx = FALSE, quit = FALSE;		/* HR 151102 */
+
+#if _MINT_
+boolean mint = FALSE, magx = FALSE;		/* HR 151102 */
+#endif
+
+boolean quit = FALSE;
 
 char *global_memory;
 
@@ -234,11 +239,10 @@ void digit(char *s, int x)
 
 /* This_is_a_thirty_two__bytes_name */
 
-void cv_fntoform(char *dest, const char *source)
+void cv_fntoform(char *dest, const char *source, int l)		/* HR 271102 l */
 {
-#ifdef _MINT_
-		cramped_name(source, dest, 32);			/* HR 151102 */
-/*		strncpy(dest,source, 32); */
+#if _MINT_
+		cramped_name(source, dest, l);			/* HR 151102 */
 #else
 	{
 		int s = 0, d = 0;
@@ -262,7 +266,7 @@ void cv_fntoform(char *dest, const char *source)
 
 void cv_formtofn(char *dest, const char *source)
 {
-#ifdef _MINT_		/* HR 151102 */
+#if _MINT_		/* HR 151102 */
 		strcpy(dest,source);
 #else
 	{
@@ -552,7 +556,7 @@ static boolean init(void)
 
 static void init_vdi(void)
 {
-	int dummy, work_out[57], pix_height;
+	int dummy, work_out[58], pix_height;
 
 	screen_info.phy_handle = graf_handle(&screen_info.fnt_w, &screen_info.fnt_h, &dummy, &dummy);
 
@@ -570,9 +574,11 @@ static void init_vdi(void)
 
 static int alloc_global_memory(void)
 {
+#if _MINT_
 	if (magx || mint)
 		global_memory = Mxalloc(GLOBAL_MEM_SIZE, 0x43);
 	else
+#endif
 		global_memory = Malloc(GLOBAL_MEM_SIZE);
 
 	return (global_memory) ? 0 : ENSMEM;
@@ -740,11 +746,9 @@ static void evntloop(void)
 
 	while (!quit)
 	{
-		if (events.ev_mflags == 0)
-			alert_msg(1, "[1][ events.ev_mflags == 0 ][ OK ]");
 		event = xe_xmulti(&events);
 
-/*		clr_key_buf();			HR 151102: This imposed a unsolved problem with N.Aes 1.2 (lockup of teradesk after live moving) */
+		clr_key_buf();		/*	HR 151102: This imposed a unsolved problem with N.Aes 1.2 (lockup of teradesk after live moving) */
 /* It is not a essential function. */
 
 		if (event & MU_MESAG)
@@ -760,17 +764,27 @@ static void evntloop(void)
 	}
 }
 
+#if _MINT_
 int have_ssystem;
+#endif
 
 int main(void)
 {
 	int error;
 
+#if _MINT_				/* HR 151102 */
 	have_ssystem = Ssystem(-1, 0, 0) == 0;		/* HR 151102: use Ssystem where possible */
 
 	mint = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx = (find_cookie('MagX') == -1) ? FALSE : TRUE;	/* HR 151102 */
 	mint |= magx;			/* Quick & dirty */
+
+	if (mint)
+	{
+		Psigsetmask(0x7FFFE14EL);
+		Pdomain(1);
+	}
+#endif
 
 	x_init();
 
@@ -782,11 +796,6 @@ int main(void)
 		shel_write(9, 1, 0, NULL, NULL);
 		menu_register(ap_id, "  Tera Desktop");
 	}
-
-#ifdef _MINT_
-	if (mint)				/* HR 151102 */
-		Pdomain(1);
-#endif
 
 	if (rsrc_load(RSRCNAME) == 0)
 		form_alert(1, msg_resnfnd);

@@ -153,7 +153,7 @@ void exec_bat(char *name)
 
 					if (strcmp(com, "cd") != 0)
 					{
-#ifdef _MINT_
+#if _MINT_
 						boolean bg;
 						if (mint)				/* HR 151102 */
 						{
@@ -173,7 +173,7 @@ void exec_bat(char *name)
 #endif
 						strcpy(comline.command_tail, tail);
 						comline.length = (unsigned char) strlen(tail);
-#ifdef _MINT_
+#if _MINT_
 						if (mint)				/* HR 151102 */
 							error = (int) x_exec((bg == FALSE) ? 0 : 100, com, &comline, NULL);
 						else

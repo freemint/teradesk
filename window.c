@@ -264,7 +264,7 @@ void wd_update_drv(int drive)
 			{			
 				const char *path = ((ITM_WINDOW *) w)->itm_func->wd_path(w);
 
-#ifdef _MINT_
+#if _MINT_
 				if (mint)				/* HR 151102 */
 				{
 					if ((drive == ('U' - 'A')) &&

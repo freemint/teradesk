@@ -41,14 +41,18 @@ static void cookie_reset( void )
 	jmpa6();
 }
 
+#if _MINT_
 extern int have_ssystem;
+#endif
 
 long find_cookie( long name )		/* HR 151102: return cookie value or -1 */
 {
 	COOKIE *cookie;
+#if _MINT_
 	if (have_ssystem)
 		Ssystem(S_GETCOOKIE, name, (long) &name);
 	else
+#endif
 	{
 		void *old_stack;
 	

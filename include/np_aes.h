@@ -540,16 +540,11 @@ typedef struct
 
 struct __parmblk;
 
-#if !((defined  __STDC__) && CDECL)
-/*	   using this structure is not possible
- *      if ANSI keywords only is ON, and __Cdecl is non empty
- */
 typedef struct
 {
 	int __Cdecl (*ub_code)(struct __parmblk *parmblock);
 	long      ub_parm;
 } USERBLK;
-#endif
 
 typedef struct
 {
@@ -571,12 +566,7 @@ typedef union obspecptr
 	ICONBLK	*iconblk;
 	CICONBLK *ciconblk;
 	BITBLK	*bitblk;
-#if !((defined  __STDC__) && CDECL)
-/*	   using this structure is not possible
- *      if ANSI keywords only is ON, and __Cdecl is non empty
- */
 	USERBLK *userblk;
-#endif
 	char	*free_string;
 } OBSPEC;
 

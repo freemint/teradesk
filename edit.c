@@ -80,7 +80,7 @@ void set_editor(void)
 			input = editor;
 
 		strcpy(fname, fn_get_name(input));
-		fspec = fn_make_newname(input, "*.*");
+		fspec = fn_make_newname(input, "*");		/* HR 271102 */
 
 		if (prgselected == TRUE)
 			free(input);
@@ -93,7 +93,7 @@ void set_editor(void)
 			return;
 		}
 
-		fspec = fn_make_path(input, "*.*");
+		fspec = fn_make_path(input, "*");		/* HR 271102 */
 
 		free(input);
 	}

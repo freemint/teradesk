@@ -59,12 +59,14 @@ OBJECT *menu,
 	   *wdfont;
 
 char *dirname,
+	 *oldname,
+	 *newname,
+	 *finame,
+	 *flname,
 	 *drvid,
 	 *iconlabel,
 	 *cmdline1,
 	 *cmdline2,
-	 *oldname,
-	 *newname,
 	 *cpfile,
 	 *cpfolder,
 	 *filetype,
@@ -77,6 +79,12 @@ char *dirname,
 	 *prgname,
 	 *icnname,
 	 *vtabsize;
+
+char dirnametxt[132],		/* HR 021202: The 5 scrolling editable texts. */
+     finametxt[132],
+     flnametxt[132],
+     oldnametxt[132],
+     newnametxt[132];
 
 static void set_menubox(int box)
 {
@@ -193,20 +201,25 @@ void rsc_init(void)
 	xd_gaddr(R_TREE, WOPTIONS, &wdoptions);
 	xd_gaddr(R_TREE, WDFONT, &wdfont);
 
-#ifndef _MINT_
+#if ! _MINT_
 	if (getcml->ob_width > max_w)
 		xd_gaddr(R_TREE, LGETCML, &getcml);
 #endif
 
-	dirname = newfolder[DIRNAME].ob_spec.tedinfo->te_ptext;
+/* HR 021202: use correct function! */
+/*  handle pointers for scrolling editable texts. */
+	dirname = xd_set_srcl_text(newfolder,    DIRNAME, dirnametxt);
+	oldname = xd_set_srcl_text(nameconflict, OLDNAME, oldnametxt);
+	newname = xd_set_srcl_text(nameconflict, NEWNAME, newnametxt);
+	finame  = xd_set_srcl_text(folderinfo,   FINAME,  finametxt );
+	flname  = xd_set_srcl_text(fileinfo,     FLNAME,  flnametxt );
+
+	cpfile = copyinfo[CPFILE].ob_spec.tedinfo->te_ptext;
+	cpfolder = copyinfo[CPFOLDER].ob_spec.tedinfo->te_ptext;
 	drvid = addicon[DRIVEID].ob_spec.tedinfo->te_ptext;
 	iconlabel = addicon[ICNLABEL].ob_spec.tedinfo->te_ptext;
 	cmdline1 = getcml[CMDLINE1].ob_spec.tedinfo->te_ptext;
 	cmdline2 = getcml[CMDLINE2].ob_spec.tedinfo->te_ptext;
-	oldname = nameconflict[OLDNAME].ob_spec.tedinfo->te_ptext;
-	newname = nameconflict[NEWNAME].ob_spec.tedinfo->te_ptext;
-	cpfile = copyinfo[CPFILE].ob_spec.tedinfo->te_ptext;
-	cpfolder = copyinfo[CPFOLDER].ob_spec.tedinfo->te_ptext;
 	filetype = setmask[FILETYPE].ob_spec.tedinfo->te_ptext;
 	tabsize = setprefs[TABSIZE].ob_spec.tedinfo->te_ptext;
 	copybuffer = setprefs[COPYBUF].ob_spec.tedinfo->te_ptext;
@@ -235,7 +248,7 @@ void rsc_init(void)
 	*cmdline1 = 0;
 	*cmdline2 = 0;
 
-	strcpy(infobox[INFOVERS].ob_spec.tedinfo->te_ptext, INFO_VERSION);
+	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = INFO_VERSION;
 	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = INFO_COPYRIGHT;
 
 	tosversion = infobox[INFOTV].ob_spec.tedinfo->te_ptext;
@@ -250,10 +263,10 @@ void rsc_init(void)
 
 void rsc_title(OBJECT *tree, int object, int title)
 {
-	char *s;
+	OBSPEC s;
 
 	xd_gaddr(R_STRING, title, &s);
-	xd_set_obspec(tree + object, (long) s);		/* HR 151102 */
+	xd_set_obspec(tree + object, s);		/* HR 151102 */
 /*	tree[object].ob_spec.userblk->ub_parm = (long) s; */
 }
 
@@ -274,7 +287,7 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 	char s[16], *p;
 	TEDINFO *ti;
 
-	ti = tree[object].ob_spec.tedinfo;
+	ti = xd_get_obspec(tree + object).tedinfo;		/* HR 021202 */
 	p = ti->te_ptext;
 	l1 = (int) strlen(ti->te_pvalid);	/* Length of text field. */
 	ltoa(value, s, 10);					/* Convert value to ASCII. */

@@ -71,8 +71,8 @@ static int xd_nmnitems = 0,		/* Number of menu titles that have to be disabled *
 		   xd_msoff_cnt = 0;	/* Counter for xd_mouse_on/xd_mouse_off */
 int xd_multitos = FALSE,		/* MultiTOS flag, always FALSE */
 	xd_aes4_0,					/* AES 4.0 flag */
-	xd_draw_3d,					/* Draw objects in 3D if 3D flag of object is set. */
-	xd_fdo_flag = FALSE;		/* Flag voor form_do */
+/*	xd_draw_3d,					/* Draw objects in 3D if 3D flag of object is set. */
+*/	xd_fdo_flag = FALSE;		/* Flag voor form_do */
 XDOBJDATA *xd_objdata = NULL;	/* Arrays with USERBLKs */
 XDINFO *xd_dialogs = NULL;		/* Chained list of modal dialog boxes. */
 XDINFO *xd_nmdialogs;			/* List with non modal dialog boxes. */
@@ -123,7 +123,7 @@ static void xd_save(XDINFO *info)
 	pxy[7] = info->drect.g_h - 1;
 
 	xd_mouse_off();
-	vro_cpyfm(xd_vhandle, 3, pxy, &source, &info->mfdb);
+	vro_cpyfm(xd_vhandle, S_ONLY, pxy, &source, &info->mfdb);
 	xd_mouse_on();
 }
 
@@ -144,7 +144,7 @@ static void xd_restore(XDINFO *info)
 	xd_rect2pxy(&info->drect, &pxy[4]);
 
 	xd_mouse_off();
-	vro_cpyfm(xd_vhandle, 3, pxy, &info->mfdb, &dest);
+	vro_cpyfm(xd_vhandle, S_ONLY, pxy, &info->mfdb, &dest);
 	xd_mouse_on();
 }
 
@@ -382,7 +382,7 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 		{
 			if (state & WHITEBAK)
 			{
-				char *p = (char *) xd_get_obspec(c_obj);
+				char *p = xd_get_obspec(c_obj).free_string;
 				int und = (state<<1)>>9;
 				if (und >= 0)
 				{
@@ -396,7 +396,7 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 				/* I_A: changed to let '#' through if doubled! */
 	
 				/* find single '#' */
-				for (h = (char *) xd_get_obspec(c_obj);
+				for (h = xd_get_obspec(c_obj).free_string;
 					 (h = strchr(h, '#')) != 0 && (h[1] == '#');		/* HR 151102 != 0 */
 					 h += 2)
 					;
@@ -550,7 +550,13 @@ void __xd_moved(WINDOW *w, GRECT *newpos)
 
 int xd_abs_curx(OBJECT *tree, int object, int curx)
 {
-	char *tmplt = tree[object].ob_spec.tedinfo->te_ptmplt, *s, *h;
+	XUSERBLK *blk = xd_get_scrled(tree, object);		/* HR 021202 */
+	char *tmplt, *s, *h;
+
+	if (blk)
+		curx -= blk->ob_shift;
+
+	tmplt = xd_get_obspec(tree + object).tedinfo->te_ptmplt;		/* HR 021202 */
 
 	if ((s = strchr(tmplt, '_')) != NULL)
 	{
@@ -575,7 +581,7 @@ int xd_abs_curx(OBJECT *tree, int object, int curx)
 static int xd_rel_curx(OBJECT *tree, int edit_obj, int curx)
 {
 	int x = 0, i;
-	char *tmplt = tree[edit_obj].ob_spec.tedinfo->te_ptmplt;
+	char *tmplt = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt;	/* HR 021202 */
 
 	for (i = 0; i < curx; i++)
 	{
@@ -668,9 +674,11 @@ static int xd_chk_key(char *valid, int pos, int key)
 	return 0;
 }
 
-static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
+static
+int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 {
-	char *s = tree[edit_obj].ob_spec.tedinfo->te_ptmplt, *h;
+	char *s = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt,	/* HR 021202 */
+	     *h;
 
 	if (key & (XD_SCANCODE | XD_CTRL | XD_ALT))
 		return 0;
@@ -681,12 +689,42 @@ static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 	return 0;
 }
 
+void *xd_get_scrled(OBJECT *tree, int edit_obj)
+{
+	if (((tree[edit_obj].ob_type >> 8) & 0xff) == XD_SCRLEDIT)
+		return (XUSERBLK *)tree[edit_obj].ob_spec.userblk->ub_parm;
+	return NULL;
+}
+
+/* HR 021202: scrolling editable texts. */
+static
+bool xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
+{
+	if (blk)
+	{
+		int shift = blk->ob_shift;
+
+		if (pos == clen)
+			shift = clen - flen;
+		if (shift < 0)
+			shift = 0;
+		if (pos < shift)
+			shift = pos;
+		if (pos > shift + flen)
+			shift = pos - flen;
+		if (shift != blk->ob_shift)
+			return blk->ob_shift = shift, true;
+	}
+	return false;
+}
+
 int xd_edit_char(XDINFO *info, int key)
 {
-	int edit_obj, oldpos, newpos, curlen, maxlen, pos, ch;
+	int edit_obj, oldpos, newpos, curlen, maxlen, flen, pos, ch;
 	OBJECT *tree;
 	TEDINFO *tedinfo;
 	GRECT clip;
+	XUSERBLK *blk;
 	int result = TRUE;
 
 	tree = info->tree;
@@ -694,14 +732,24 @@ int xd_edit_char(XDINFO *info, int key)
 	if ((edit_obj = info->edit_object) <= 0)
 		return FALSE;
 
-	tedinfo = tree[edit_obj].ob_spec.tedinfo;
+	tedinfo = xd_get_obspec(tree + edit_obj).tedinfo;		/* HR 021202 */
+	blk = xd_get_scrled(tree, edit_obj);
 
 	oldpos = newpos = info->cursor_x;
 	curlen = (int) strlen(tedinfo->te_ptext);
-	maxlen = (int) strlen(tedinfo->te_pvalid);
+
+	flen = (int) strlen(tedinfo->te_pvalid);
+	maxlen = blk ? XD_MAX_SCRLED : flen;		/* HR 021202 */
 
 	objc_offset(tree, edit_obj, &clip.g_x, &clip.g_y);
 	clip.g_h = xd_regular_font.fnt_chh;
+	clip.g_w = xd_regular_font.fnt_chw * tedinfo->te_tmplen;		/* HR 021202 */
+
+	if (blk)
+	{
+		clip.g_x -= 2*xd_regular_font.fnt_chw;		/* HR: This temporary until ub_scrledit() handles templates properly. */
+		clip.g_w += 4*xd_regular_font.fnt_chw;
+	}
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
 		key &= 0xFF;
@@ -729,6 +777,10 @@ int xd_edit_char(XDINFO *info, int key)
 
 			xd_cursor_off(info);
 			info->cursor_x = newpos;
+
+			if (xd_shift(blk, newpos, flen, curlen))	/* HR 021202: scrolling editable texts. */
+				xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
+
 			xd_cursor_on(info);
 
 			xd_mouse_on();
@@ -737,12 +789,15 @@ int xd_edit_char(XDINFO *info, int key)
 	case BACKSPC:
 	case DELETE:
 	case ESCAPE:
-		if (((key == BACKSPC) && (oldpos > 0)) ||
-			((key == DELETE) && (oldpos < curlen)) ||
-			((key == ESCAPE) && (*tedinfo->te_ptext != 0)))
+		if (   (key == BACKSPC && oldpos > 0)
+		    || (key == DELETE  && oldpos < curlen)
+		    || (key == ESCAPE  && *tedinfo->te_ptext != 0)
+		   )
 		{
-			int s, e;
-
+/*	HR 021202: maintaining a tiny optimization, using clipping of
+                the changed character places, became far too complicated
+                together with the scrolling options.
+*/
 			xd_mouse_off();
 			xd_cursor_off(info);
 
@@ -750,20 +805,17 @@ int xd_edit_char(XDINFO *info, int key)
 			{
 				*tedinfo->te_ptext = 0;
 				info->cursor_x = 0;
+				curlen = 0;
 			}
 			else
 			{
 				if (key == BACKSPC)
 					info->cursor_x--;
 				str_delete(tedinfo->te_ptext, info->cursor_x);
+				curlen--;
 			}
 
-			s = xd_abs_curx(tree, edit_obj, info->cursor_x);
-			e = xd_abs_curx(tree, edit_obj, curlen);
-
-			clip.g_x += s * xd_regular_font.fnt_chw;
-			clip.g_w = (e - s) * xd_regular_font.fnt_chw;
-
+			xd_shift(blk, info->cursor_x, flen, curlen);	/* HR 021202: scrolling editable texts. */
 			xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
 
 			xd_cursor_on(info);
@@ -772,11 +824,17 @@ int xd_edit_char(XDINFO *info, int key)
 		break;
 	default:
 		pos = oldpos - ((oldpos == maxlen) ? 1 : 0);
-
-		if (((ch = xd_chk_key(tedinfo->te_pvalid, pos, key)) != 0) || ((pos = xd_chk_skip(tree, edit_obj, key)) > 0))
+		if (blk)			/* HR 021202 */
+			ch = key & 0xff;
+		else			/* HR 051202: Dangerous stuff! relying on evaluation order of &&, || */
 		{
-			int s, e;
+			ch  = xd_chk_key(tedinfo->te_pvalid, pos, key);
+			if (ch == 0)
+				pos = xd_chk_skip(tree, edit_obj, key);
+		}
 
+		if (ch != 0 || pos > 0 )
+		{
 			xd_mouse_off();
 			xd_cursor_off(info);
 
@@ -784,9 +842,6 @@ int xd_edit_char(XDINFO *info, int key)
 			{
 				info->cursor_x = pos + 1;
 				str_insert(tedinfo->te_ptext, pos, ch, curlen, maxlen);
-
-				s = xd_abs_curx(tree, edit_obj, pos);
-				e = xd_abs_curx(tree, edit_obj, min(curlen + 1, maxlen));
 			}
 			else
 			{
@@ -798,14 +853,9 @@ int xd_edit_char(XDINFO *info, int key)
 				for (i = oldpos; i < pos; i++)
 					str[i] = ' ';
 				str[pos] = 0;
-
-				s = xd_abs_curx(tree, edit_obj, oldpos);
-				e = xd_abs_curx(tree, edit_obj, pos + 1);
 			}
 
-			clip.g_x += s * xd_regular_font.fnt_chw;
-			clip.g_w = (e - s) * xd_regular_font.fnt_chw;
-
+			xd_shift(blk, info->cursor_x, flen, curlen + 1);	/* HR 021202: scrolling editable texts. */
 			xd_redraw(info, edit_obj, 1, &clip, XD_RDIALOG);
 
 			xd_cursor_on(info);
@@ -832,17 +882,26 @@ void xd_edit_end(XDINFO *info)
 void xd_edit_init(XDINFO *info, int object, int curx)
 {
 	OBJECT *tree = info->tree;
-	int x, dummy, maxlen;
 
 	if ((object > 0) && xd_selectable(tree, object))
 	{
-		maxlen = (int) strlen(tree[object].ob_spec.tedinfo->te_ptext);
+		XUSERBLK *blk = xd_get_scrled(tree, object);		/* HR 021202 */
+		TEDINFO *ted = xd_get_obspec(tree + object).tedinfo;
+		int x, dummy, maxlen;
+
+		maxlen = strlen(ted->te_ptext);
 
 		if (curx >= 0)
 		{
 			objc_offset(tree, object, &x, &dummy);
 			x = (curx - x + xd_regular_font.fnt_chw / 2) / xd_regular_font.fnt_chw;
-			if ((x = xd_rel_curx(tree, object, x)) > maxlen)
+			
+			if (blk)										/* HR 021202 */
+				x += blk->ob_shift;
+			else
+				x = xd_rel_curx(tree, object, x);
+
+			if (x > maxlen)
 				x = maxlen;
 		}
 
@@ -859,6 +918,8 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 			info->cursor_x = x;
 			xd_cursor_on(info);
 		}
+
+		xd_shift(blk, info->cursor_x, strlen(ted->te_pvalid), maxlen);	/* HR 021202 */
 	}
 }
 
@@ -917,8 +978,6 @@ char cancel_buttons[][18] =
 	"\0"
 };
 
-int alert_msg(int def, const char *string, ...);
-
 /* HR 151102: courtesy XaAES */
 static
 int xd_find_cancel(OBJECT *ob)
@@ -934,7 +993,7 @@ int xd_find_cancel(OBJECT *ob)
 		{
 			int l;
 			char t[32]; char *s = t,*e;
-			e = (char *) xd_get_obspec(ob+f);
+			e = xd_get_obspec(ob+f).free_string;
 			l = strlen(e);
 			if (l < 32)
 			{
@@ -1563,11 +1622,12 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_prgname = prgname;
 	xd_multitos = FALSE;
 #ifdef __PUREC__
-	xd_draw_3d = (_GemParBlk.glob.version >= 0x330);
-	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
+/*	xd_draw_3d = (_GemParBlk.glob.version >= 0x330);
+*/	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
 #else
 	xd_aes4_0 = (_global[0] >= 0x330);
-	xd_draw_3d = (_global[0] >= 0x400);
+/*	xd_draw_3d = (_global[0] >= 0x400);
+*/
 #endif
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 
@@ -1584,10 +1644,11 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		return XDVDI;
 	else
 	{
-		int pix_height;
+	/*	int pix_height; */
+int alert_msg(int def, const char *string, ...);
 
 		xd_ncolors = work_out[13];
-		pix_height = work_out[4];
+	/*	pix_height = work_out[4]; */
 
 		vq_extnd(xd_vhandle, 1, work_out);
 		xd_nplanes = work_out[4];
@@ -1609,17 +1670,32 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		{
 			int ag1, ag2, ag3, ag4;
 			xd_aes4_0 |= TRUE;
+
 			appl_getinfo(0, &xd_regular_font.fnt_height, &xd_regular_font.fnt_id,
 						 &xd_regular_font.fnt_type, &dummy);
 			appl_getinfo(1, &xd_small_font.fnt_height, &xd_small_font.fnt_id,
 						 &xd_small_font.fnt_type, &dummy);
 			appl_getinfo(2, &ag1, &ag2, &colour_icons, &xresources);		/* HR 151102 */
+
 			if ( appl_getinfo( 13, &ag1, &ag2, &ag3, &ag4 ))		/* Unterfunktion 13, Objekte */
 			{
 				if ( ag4 & 0x08 )				/* G_SHORTCUT untersttzt ? */
 					aes_flags |= GAI_GSHORTCUT;
 				if ( ag4 & 0x04 )				/* MagiC (WHITEBAK) objects */
 					aes_flags |= GAI_WHITEBAK;
+			}
+			if (xd_small_font.fnt_id > 0)		/* HR 051202: for some AES's (Milan) */
+				xd_small_font.fnt_id = vst_font(xd_vhandle, xd_small_font.fnt_id);
+			else
+				xd_small_font.fnt_height = 8;
+
+			if (xd_regular_font.fnt_id > 0)		/* HR 051202: for some AES's (Milan) */
+				xd_regular_font.fnt_id = vst_font(xd_vhandle, xd_regular_font.fnt_id);
+			else
+			{
+				int dum,effects[3],d[5];
+				vqt_fontinfo(xd_vhandle,&dum,&dum,d,&dum,effects);
+				xd_regular_font.fnt_height = d[4];		/* celltop to baseline */
 			}
 		}
 		else
@@ -1635,11 +1711,9 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 			xd_small_font.fnt_height = 8;
 		}
 
-		xd_small_font.fnt_id = vst_font(xd_vhandle, xd_small_font.fnt_id);
 		xd_small_font.fnt_height = vst_point(xd_vhandle, xd_small_font.fnt_height, &dummy, &dummy, &dummy, &xd_small_font.fnt_chh);
 		vqt_width(xd_vhandle, ' ', &xd_small_font.fnt_chw, &dummy, &dummy);
 
-		xd_regular_font.fnt_id = vst_font(xd_vhandle, xd_regular_font.fnt_id);
 		xd_regular_font.fnt_height = vst_point(xd_vhandle, xd_regular_font.fnt_height, &dummy, &dummy, &dummy, &xd_regular_font.fnt_chh);
 		vqt_width(xd_vhandle, ' ', &xd_regular_font.fnt_chw, &dummy, &dummy);
 
