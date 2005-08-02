@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -38,13 +38,30 @@
 
 #define XBUFSIZE	2048L
 
+
 static boolean flock;
 extern int tos_version, aes_version;
+extern const char *presets[];
+
+extern boolean prg_isprogram(const char *name);
+
+
+/* 
+ * Aux. function for size optimization when returning results
+ * of some GEMDOS operations.
+ */
+
+static long x_retresult(long result)
+{
+	return (result < 0) ? (long)xerror((int)result) : result;
+}
 
 
 /*
- * Check if a filename or path + name is valid in this OS/
+ * Check if a filename or path + name is valid in this OS.
  * Return 0 if OK.
+ * Beware: it is still possible that a path+name be too long for
+ * some buffers in TeraDesk!
  */
 
 int x_checkname(const char *path, const char *name)
@@ -61,7 +78,7 @@ int x_checkname(const char *path, const char *name)
 
 /* 
  * Create a path+filename string from path "path" and filename "name".
- * Return pointer to created string (being allocated in this routine)
+ * Return a pointer to the created string (being allocated in this routine)
  */
 
 char *x_makepath(const char *path, const char *name, int *error)
@@ -83,7 +100,7 @@ char *x_makepath(const char *path, const char *name, int *error)
 /* 
  * Check if a file or folder or link exists. Return true if it exists.
  * If EX_LINK is set in flags, check for the link itself;
- * otherwise follow the link. 
+ * otherwise follow the link and check for target existence. 
  */
 
 boolean x_exist(const char *file, int flags)
@@ -93,11 +110,11 @@ boolean x_exist(const char *file, int flags)
 
 
 #if _MINT_
-	if ( x_attr( (flags & EX_LINK) ? 1 : 0, file,  &attr) != 0 )
+	if ( x_attr( (flags & EX_LINK) ? 1 : 0, FS_LFN, file,  &attr) != 0 )
 #else
-	if (x_attr(0, file, &attr) != 0) 
+	if (x_attr(0, FS_LFN, file, &attr) != 0) 
 #endif
-		return FALSE; /* x_attr can't find trget */
+		return FALSE; /* x_attr can't find target */
 	else
 	{
 		type = attr.mode & S_IFMT;
@@ -125,6 +142,11 @@ boolean x_exist(const char *file, int flags)
 }
 
 
+/*
+ * Modify a name string so that it represents a full path + name ?
+ * Note: it seems that the resulting string can be longer than the
+ * original one? Use with care.
+ */
 
 static int _fullname(char *buffer)
 {
@@ -145,6 +167,11 @@ static int _fullname(char *buffer)
 
 		if ((h = strchr(name, ':')) == NULL)
 		{
+			/* 
+			 * If there is no drive name in the name, put one first.
+			 * Original string will be appended to it later
+			 */
+
 			*d++ = (char) (x_getdrv() + 'A');
 			*d++ = ':';
 			h = name;
@@ -177,7 +204,7 @@ char *x_fullname(const char *file, int *error)
 {
 	char *buffer;
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)
+	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -186,13 +213,16 @@ char *x_fullname(const char *file, int *error)
 	strcpy(buffer, file);
 
 	if ((*error = _fullname(buffer)) != 0)
-		free_item(&((void *)buffer));
+	{
+		free(buffer);
+		return NULL;
+	}
 
 	return buffer;
 }
 
 
-/* Funkties voor directories */
+/* Directory functions */
 
 /* 
  * Set a directory path 
@@ -214,7 +244,7 @@ char *x_getpath(int drive, int *error)
 
 	/* Allocate a buffer */
 
-	if ((buffer = malloc(sizeof(LNAME))) == NULL)
+	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -228,7 +258,10 @@ char *x_getpath(int drive, int *error)
 	/* Append the rest */
 
 	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
-		free_item(&((void *)buffer));
+	{
+		free(buffer);
+		return NULL;
+	}
 	
 	return buffer;
 }
@@ -267,17 +300,30 @@ int x_mklink(const char *newname, const char *oldname)
 
 
 /*
- * Read target name of a symbolic link 
+ * Read target name of a symbolic link.
+ * Any '/' characters are converted to '\', otherwise other routines
+ * may not find this target
  */
 
 int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 {
-	return xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
+	char *slash;
+	int err;
+
+	err =  xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
+
+	if (err == 0)
+	{
+		while( ( slash = strchr(tgt, '/') ) != NULL )
+			*slash = '\\';
+	}
+
+	return err;
 }
 
 
 /*
- * Append a path to a link target definition, if it is not given.
+ * Prepend a path to a link target definition, if it is not given.
  * Return a path + name string (memory allocated here)
  */
 
@@ -312,8 +358,8 @@ char *x_pathlink( char *tgtname, char *linkname )
 /*
  * Obtain the name of the object referenced by a link (link target); 
  * if "linkname" is not the name of a link, or, if some other error happens, 
- * just copy the name.This routine allocates space for the output "real" 
- * object name. If te name of the target does not contain a path, append
+ * just copy the name.This routine allocates space for the output of real 
+ * object name. If the name of the target does not contain a path, prepend
  * the path of the link.
  */
 
@@ -343,12 +389,10 @@ char *x_fllink( char *linkname )
 				else
 					/* this is a link */
 					target = x_pathlink(tmp, linkname);
-
 			}
 		}
 
 		if (tmp == NULL)
-
 #endif
 			target = strdup(linkname);
 
@@ -392,34 +436,78 @@ long x_setdrv(int drive)
 /* 
  * Get information about a disk-volume label 
  * note: drive 0 = A:\, 1 = B:\, etc.
+ * It seems that in other than FAT fs labels can be longer than 11 (8+3) 
+ * characters.  Maximum intermediate label length is here limited to
+ * 39 characters, but output label name always cramped to 12 characters.
  */
+
+#define LBLMAX 40 /* maximum permitted intermediate label length + 1 */
 
 int x_getlabel(int drive, char *label)
 {
 	DTA *olddta, dta;
 	int error;
-	char path[10];
-
-	olddta = Fgetdta();
-	Fsetdta(&dta);
+	char path[8], lblbuf[LBLMAX];
 
 	strcpy(path, "A:\\*.*");
-	path[0] += (char) drive;
+	path[0] += (char)drive;
 
-	error = Fsfirst(path, 0x3F);
+#if _MINT_
+	if(mint)
+	{
+		path[3] = 0;
+		error = x_retresult(Dreadlabel(path, lblbuf, LBLMAX));
+	}
+	else
+#endif
+	{
+		olddta = Fgetdta();
+		Fsetdta(&dta);
 
-	if ((error == 0) && (dta.d_attrib & FA_VOLUME)) 
-		strcpy(label, dta.d_fname);
+		if (((error = Fsfirst(path, 0x3F)) == 0) && (dta.d_attrib & FA_VOLUME)) 
+			strsncpy(lblbuf, dta.d_fname, (size_t)LBLMAX);
+		else
+			error = EFILNF;
+
+		Fsetdta(olddta);
+	}
+
+	if(error == 0)
+		cramped_name(lblbuf, label, sizeof(INAME));
 	else
 		*label = 0;
-
-	Fsetdta(olddta);
 
 	return ((error == ENMFIL) || (error == EFILNF)) ? 0 : error;
 }
 
 
-/* File funkties */
+#if _EDITLABELS
+
+/*
+ * Create a volume label (for the time being, mint or magic only).
+ * In single TOS, does not do anything, but does not return error.
+ * Currently, this routine is not used anywhere in TeraDesk
+ */
+
+int x_putlabel(int drive, char *label)
+{
+	char path[4];
+
+	strcpy(path, "A:\\");
+	path[0] += (char)drive;
+
+#if _MINT_
+	if(mint)
+		return x_retresult(Dwritelabel(path, label));
+	else
+#endif
+		return 0;
+}
+
+#endif
+
+
+/* File functions */
 
 /* 
  * Rename a file from "oldname" to "newname"; 
@@ -433,7 +521,7 @@ int x_rename(const char *oldname, const char *newname)
 
 
 /* 
- * "Unlink" a file (i.e. delete) .
+ * "Unlink" a file (i.e. delete it) .
  * When operated on a symblic link, it deletes the link, not the file
  */
 
@@ -444,12 +532,42 @@ int x_unlink(const char *file)
 
 
 /* 
- * Get/set GEMDOS file attributes 
+ * Set GEMDOS file attributes and access rights.
+ * Note: Applying Fattrib() to folders in Mint will fail
+ * on -some- FAT partitions (why?) 
  */
 
-int x_fattrib(const char *file, int wflag, int attrib)
+int x_fattrib(const char *file, XATTR *attr)
 {
-	return xerror(Fattrib(file, wflag, attrib));
+	int 
+		error = xerror((int)Fattrib(file, 1, attr->attr));
+
+#if _MINT_
+	int
+		mode = attr->mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
+
+	if(mint)
+	{
+		/* Quietly fail if necessary in Mint (why?) */
+
+		if(!magx && (attr->mode & S_IFMT) == S_IFDIR && error == EFILNF)
+			error = 0;
+
+		/* Set access rights and owner IDs if possible */
+
+		if ( error >= 0 && ((x_inq_xfs(file) & FS_UID) != 0) )
+		{
+			/* Don't use Fchmod() on links; target will be modified! */
+
+			if ( (attr->mode & S_IFLNK) != S_IFLNK ) 
+				error = xerror( (int)Fchmod((char *)file, mode) );
+			if ( error >= 0 )
+				error = xerror( (int)Fchown((char *)file, attr->uid, attr->gid) );
+		}
+	}
+#endif
+
+	return error;
 }
 
 
@@ -464,48 +582,44 @@ int x_datime(DOSTIME *time, int handle, int wflag)
 
 
 /* 
- * Aux. function for size optimization
- */
-
-static long x_retresult(long result)
-{
-	return (result < 0) ? (long)xerror((int)result) : result;
-}
-
-
-/* 
  * Open a file 
  */
 
 int x_open(const char *file, int mode)
 {
-	long result;
-
 	if (!flock)
 		mode &= O_RWMODE;
 
-	result = Fopen(file, mode);
-
-	return (int)x_retresult(result);
+	return (int)x_retresult(Fopen(file, mode));
 }
 
 
 /* 
- * Create a new file with specified attributes
+ * Create a new file with specified attributes and access rights
  */
 
-int x_create(const char *file, int attr)
+int x_create(const char *file, XATTR *attr)
 {
-	long result;
+	int error = (int)x_retresult(Fcreate(file, (attr) ? attr->attr : 0));
 
-	result = Fcreate(file, attr);
+#if _MINT_
+	if (mint && (error >= 0) && attr)
+	{
+		int handle = error;
 
-	return (int)x_retresult(result);
+		error = x_fattrib(file, attr);
+
+		if (error >= 0)
+			error = handle;
+	}
+#endif
+
+	return error;
 }
 
 
 /* 
- * Close a file 
+ * Close an open file 
  */
 
 int x_close(int handle)
@@ -515,40 +629,32 @@ int x_close(int handle)
 
 
 /* 
- * Read from a file 
+ * Read 'count' bytes from a file into 'buf' 
  */
 
 long x_read(int handle, long count, char *buf)
 {
-	long result;
-
-	result = Fread(handle, count, buf);
-
-	return x_retresult(result);
+	return x_retresult(Fread(handle, count, buf));
 }
 
 
 /* 
- * Write to a file 
+ * Write 'count' bytes to a file from 'buf' 
  */
 
 long x_write(int handle, long count, char *buf)
 {
-	long result;
-
-	result = Fwrite(handle, count, buf);
-
-	return x_retresult(result);
+	return x_retresult(Fwrite(handle, count, buf));
 }
 
 
+/*
+ * Position the file pointer at some offset from file beginning
+ */
+
 long x_seek(long offset, int handle, int seekmode)
 {
-	long result;
-
-	result = Fseek(offset, handle, seekmode);
-
-	return x_retresult(result);
+	return x_retresult(Fseek(offset, handle, seekmode));
 }
 
 
@@ -558,50 +664,107 @@ long x_seek(long offset, int handle, int seekmode)
 /* 
  * Convert a DTA structure to a XATTR structure. The index, dev,
  * rdev, blksize and nblocks fields in attrib are not set. They
- * are not necessary anyway on TOS. 
+ * are not necessary anyway on TOS.
+ * Access rights are read and write for everybody, unless an item
+ * is set as readonly.
+ * For directories, execute rights are added. 
+ * Note: perhaps the default rights should not be rwxrwxrwx but rwxr-x--- ?
  */
 
 static void dta_to_xattr(DTA *dta, XATTR *attrib)
 {
+	attrib->mode = 	(S_IRUSR | S_IRGRP | S_IROTH); 	/* everything is readonly */
 
-	attrib->mode = 0777;
+	if ((dta->d_attrib & FA_READONLY) == 0)			/* can write as well */
+		attrib->mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
+
 	if (dta->d_attrib & FA_SUBDIR)
-		attrib->mode |= S_IFDIR;
-	else
+		attrib->mode |= (S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH );
+	else if (!(dta->d_attrib & FA_VOLUME))
 		attrib->mode |= S_IFREG;
-	if (dta->d_attrib & FA_READONLY)
-		attrib->mode &= ~(S_IWUSR | S_IWGRP | S_IWOTH);
+
 	attrib->size = dta->d_length;
+#if _MINT_
 	attrib->uid = 0;
 	attrib->gid = 0;
+#endif
 	attrib->mtime = attrib->atime = attrib->ctime = dta->d_time;
 	attrib->mdate = attrib->adate = attrib->cdate = dta->d_date;
-	attrib->attr = (int) dta->d_attrib & 0xFF;
+	attrib->attr = (int)dta->d_attrib & 0xFF;
 }
 
 
 /* 
- * Inquire about details of filesystem
+ * Inquire about details of filesystem in which 'path' item resides.
  * HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC 
+ * Dj.V. Modified here to return integer code identifying file system type.
+ * Return code contains bitflags describing the filesystem: 
+ * 0x0000: standard TOS FAT filesystem
+ * 0x0001: long file names are possible
+ * 0x0002: symbolic links are possible
+ * 0x0004: access rights and user/group IDs are possible.
+ * If neither mint or magic are present, always return 0. 
+ * If the inquiry is about the contents of a folder specified
+ * then 'path' should be terminated by a '\'
  */
 
-boolean x_inq_xfs(const char *path, boolean *casesens)
+int x_inq_xfs(const char *path)
 {
-	long c, t, csens; char p[256];
+	int
+		retcode = 0;
 
-	strcpy(p, path);
-	if (*(p + strlen(p) - 1) != '\\')
-		strcat(p, bslash);
+#if _MINT_
 
-	c = Dpathconf(p, DP_CASE);
-	t = Dpathconf(p, DP_TRUNC);
+	if (mint)
+	{
+		long c, t, m, x;
 
-	csens = !(c == DP_NOSENSITIVE && t == DP_DOSTRUNC);
+		/* Inquire about filesystem details */
 
-	if (casesens)
-		*casesens = csens;
+		c = Dpathconf(path, DP_CASE); 	/* case-sensitive names? */
+		t = Dpathconf(path, DP_TRUNC);	/* name truncation */
+		m = Dpathconf(path, DP_MODE);	/* valid mode bits */
+		x = Dpathconf(path, DP_XATT);	/* valid XATTR fields */
 
-	return (c >= 0 && csens);
+		/* 
+		 * If information can not be returned, results will be < 0, then
+		 * treat as if there are no valid fields
+		 */
+
+		if ( m < 0 )
+			m = 0;
+		if ( x < 0 )
+			x = 0;
+
+		/* 
+		 * If (m & 0x1FF00), nine access rights bits are valid mode fields
+		 * If (x & 0x0030), user and group ids are valid XATTR fields
+		 */
+
+		if ((m & 0x0001FF00L) != 0 && (x & 0x00000030L) != 0 )
+			retcode |= FS_UID;
+
+		/* Are link itemtypes valid ? */
+
+		if ( (m & 0x01000000L) != 0 )
+			retcode |= FS_LNK;
+
+		/*  
+		 * DP_NOSENSITIVE = 1 = not sensitive, converted to uppercase
+		 * DP_DOSTRUNC = 2 = file names truncated to 8+3
+		 */
+
+		if (c >= 0 && t >= 0 && !(c == DP_NOSENSITIVE && t == DP_DOSTRUNC))
+			retcode |= FS_LFN;
+
+		/* 
+		 * Generally, retcode will contain FS_LFN | FS_LNK (0x0003) for LFN+links, 
+		 * and FS_UID (0x0004) for user access rights 
+		 */
+	}
+#endif
+
+	return retcode;
 }
 
 
@@ -612,16 +775,23 @@ boolean x_inq_xfs(const char *path, boolean *casesens)
 XDIR *x_opendir(const char *path, int *error)
 {
 	XDIR *dir;
+	VLNAME p;
 
 	if ((dir = malloc(sizeof(XDIR))) == NULL)
 		*error = ENSMEM;
 	else
 	{
-		dir->path = (char *) path;
-#if _MINT_
-		dir->type = mint ? (x_inq_xfs(path, nil) ? 0 : 1) : 1;
+		dir->path = (char *)path;
 
-		if (dir->type)
+		strsncpy(p, path, sizeof(VLNAME)-1L);
+		if (*(p + strlen(p) - 1) != '\\')
+			strcat(p, bslash);
+
+#if _MINT_
+
+		dir->type = x_inq_xfs(p);
+
+		if (dir->type == 0)
 		{
 #endif
 			/* Dos file system */
@@ -640,7 +810,8 @@ XDIR *x_opendir(const char *path, int *error)
 			if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
 			{
 				*error = xerror((int) dir->data.handle);
-				free_item(&((void *)dir));
+				free(dir);
+				dir = NULL;
 			}
 		}
 #endif
@@ -651,7 +822,7 @@ XDIR *x_opendir(const char *path, int *error)
 
 
 /* 
- * Read a directory entry 
+ * Read a directory entry. 
  * Note: In order to increase speed, only the pointer is passed, 
  * and the name is no more copied to output location (in all uses of this
  * routine in TeraDesk, obtained name is immediately copied elsewhere).
@@ -669,16 +840,16 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 	*buffer = fspec;
 
 #if _MINT_
-	if (dir->type)
+	if (dir->type == 0)
 #endif
 	{
-		/* Mint is not present or, if it is, it is a DOS-filesystem volume */	
+		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */	
 
 		int error;
 
 		if (dir->data.gdata.first != 0)
 		{
-			make_path(fspec, dir->path, "*.*");	
+			make_path(fspec, dir->path, TOSDEFAULT_EXT); /* presets[1] = "*.*"  */	
 			error = xerror(Fsfirst(fspec, FA_ANY));
 			dir->data.gdata.first = 0;
 		}
@@ -705,28 +876,40 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 	else
 	{
 		/*
-		 * File system with long filenames.
-		 * Use Dxreaddir in stead of Dreaddir, handle links correctly.
+		 * File system with long filenames. Mint (or Magic) is surely present.
+		 * Use Dxreaddir instead of Dreaddir, handle links correctly.
 		 */
+
 		long error, rep;
+		char *n;
 
 		if ((error = Dxreaddir(len, dir->data.handle, fspec, (long)attrib, &rep)) == 0)
 			*buffer = fspec + 4L;
 
-		if (error == 0)
-			return error;
-		
-		return (long) xerror((int) error);
+		/* By convention, names beginning with '.' are invisible in mint */
+
+		n = fn_get_name(*buffer);
+		if ( n[0] == '.' && n[1] != '.' )
+			attrib->attr |= FA_HIDDEN;
+
+		return x_retresult(error);
 	}
 #endif /* _MINT_ */
 }
 
 
+/* This routine is currently not used in TeraDesk
+
+/*
+ * Rewind an open directory, so that the next reading is that of the first
+ * item in it.
+ */
+
 long x_rewinddir(XDIR *dir)
 {
 
 #if _MINT_
-	if (dir->type)
+	if (dir->type == 0)
 	{
 #endif
 		/* DOS file system */
@@ -739,10 +922,12 @@ long x_rewinddir(XDIR *dir)
 	{
 		/* File system with long filenames (why this long/int nonsense?) */
 	
-		return (long)xerror((int)Drewinddir(dir->data.handle));
+		return x_retresult(Drewinddir(dir->data.handle));
 	}
 #endif /* _MINT_ */
 }
+
+*/
 
 
 /* 
@@ -754,9 +939,8 @@ long x_closedir(XDIR *dir)
 	long error;
 
 #if _MINT_
-	if (dir->type)
+	if (dir->type == 0)
 	{
-
 #endif
 		/* DOS file system */
 	
@@ -768,8 +952,8 @@ long x_closedir(XDIR *dir)
 	else
 	{
 		/* File system with long filenames */
-	
-		error = (long)xerror((int)Dclosedir(dir->data.handle));
+
+		error = x_retresult(Dclosedir(dir->data.handle));
 	}
 #endif /* _MINT_ */
 
@@ -780,36 +964,113 @@ long x_closedir(XDIR *dir)
 
 /* 
  * Read file atttributes (in the extended sense) 
+ * mode=0: follow link; 1: attribute of the link itself
+ * fs_type contains bitflags ( see x_inq_xfs() ):
+ * FS_TOS = 0x0000 : TOS filesystem
+ * FS_LFN = 0x0001 : has long filenames
+ * FS_LNK = 0x0002 : has links
+ * FS_UID = 0x0004 : has user rights
+ * FS_INQ = 0x0100 : inquire about filesystem
  */
 
-long x_attr(int flag, const char *name, XATTR *xattr)
+long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 {
+	long result;
+
+	if ( (fs_type & FS_INQ) != 0 )
+		fs_type |= x_inq_xfs(name); /* this change is local only */ 
+
 #if _MINT_
-	if (mint)
-		return xerror((int)Fxattr(flag, name, xattr));
+	if (mint && ((fs_type & FS_ANY) != 0) )
+	{
+		/* 
+		 * Not FAT filesystem.
+		 * Attempt to set some sensible file attributes 
+		 * from access rights and filename. If noone has
+		 * write permission, set READONLY attribute;
+		 * If the name begins with a dot, set HIDDEN attribute.
+		 */
+
+		result = x_retresult(Fxattr(flag, name, xattr));
+
+		if ( (result >= 0) && ((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0))
+			if((xattr->mode & S_IFMT)  != S_IFLNK)
+				xattr->attr |= FA_READONLY;
+
+		if( name[0] == '.' && name[1] != '.' )
+			xattr->attr |= FA_HIDDEN;			
+	}
 	else
 #endif
 	{
+		/* FAT filesystem */
+
 		DTA *olddta, dta;
-		int result;
 	
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 	
-		if ((result = xerror(Fsfirst(name, FA_ANY))) == 0) 
+		if ((result = (long)xerror(Fsfirst(name, FA_ANY))) == 0) 
 			dta_to_xattr(&dta, xattr);
 
 		Fsetdta(olddta);
+	}
+
+#if _MINT_
+	if ((fs_type & FS_UID) == 0 )
+	{
+		/* This is a filesystem without user rights; fix some */
+
+		xattr->mode |= (S_IRUSR | S_IRGRP | S_IROTH);
+
+		if ((xattr->attr & FA_READONLY) == 0 )
+			xattr->mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
+
+		/* 
+		 * Information about execute rights need not be always
+		 * set; only for file copy. As it happens, in all such
+		 * cases, fs_type parameter will always contain a FS_INQ 
+		 */
+
+		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(name))
+			xattr->mode |= ( S_IXUSR | S_IXGRP | S_IXOTH ); 
+	}
+#endif
+
+	return result;
+}
+
+
+/*
+ * Read flags from a program file header.
+ * TPA size is not passed.
+ */
+
+long x_pflags(char *filename)
+{
+	char buf[26];
+	long result;
+	int fh = x_open(filename, O_RDONLY);
+
+	if (fh >= 0)
+	{
+		if ((result = x_read(fh, 26L, buf)) == 26 )
+			result =  (*((long *)(&buf[22]))) & 0x00001037L; 
+		else
+			result = EREAD;
+	
+		x_close(fh);
 		return result;
 	}
+	else
+		return fh;
 }
 
 
 /* 
- * Configuratie funkties
- * This function returns tha maximum possible path or name length.
+ * This function returns the maximum possible path or name length.
  * In single TOS those lengths are assigned fixed values, in Mint,
- * they are obtained through Dpathconv. 
+ * they are obtained through Dpathconf. 
  */
 
 long x_pathconf(const char *path, int which)
@@ -817,11 +1078,7 @@ long x_pathconf(const char *path, int which)
 #if _MINT_
 	if (mint)
 	{
-		long result;
-	
-		result = Dpathconf(path, which);
-
-		return (result < 0) ? xerror((int) result) : result;
+		return x_retresult(Dpathconf(path, which));
 	}
 	else
 #endif
@@ -841,9 +1098,8 @@ long x_pathconf(const char *path, int which)
 
 long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3)
 {
-	int result;
+	int result = xerror((int) Pexec(mode, ptr1, ptr2, ptr3));
 
-	result = xerror((int) Pexec(mode, ptr1, ptr2, ptr3));
 
 	if ((result != EFILNF) && (result != EPTHNF) && (result != ENSMEM) && (result != EPLFMT))
 		result = 0;
@@ -860,7 +1116,7 @@ char *xshel_find(const char *file, int *error)
 {
 	char *buffer;
 
-	if ((buffer = calloc(sizeof(LNAME), 1)) == NULL)
+	if ((buffer = calloc(sizeof(VLNAME), 1)) == NULL)
 	{
 		*error = ENSMEM;
 		return NULL;
@@ -884,6 +1140,7 @@ char *xshel_find(const char *file, int *error)
 
 /* 
  * Call a fileselector (make an extended call, if possible)
+ * Memory is allocated for the returned path in "buffer"
  */
 
 char *xfileselector(const char *path, char *name, const char *label)
@@ -891,7 +1148,7 @@ char *xfileselector(const char *path, char *name, const char *label)
 	char *buffer;
 	int error, button;
 
-	if ((buffer = malloc_chk(sizeof(LNAME))) == NULL)
+	if ((buffer = malloc_chk(sizeof(VLNAME))) == NULL)
 		return NULL;
 
 	strcpy(buffer, path);
@@ -1022,14 +1279,17 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 		}
 		else if (rwmode == O_WRONLY)
 		{
-			if ((xfile->handle = x_create(file, 0)) < 0)
+			if ((xfile->handle = x_create(file, NULL)) < 0)
 				result = xfile->handle;
 		}
 		else
 			result = EINVFN;
 
 		if (result != 0)
-			free_item(&((void *)xfile));
+		{
+			free(xfile);
+			xfile = NULL;
+		}
 	}
 
 	*error = result;
@@ -1039,13 +1299,11 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 
 
 /* 
- * Open a memory area as a file 
- * (in fact, mode is always 0x01 | 0x02 )
+ * Open a memory area as a file (in fact, mode is always 0x01 | 0x02 )
  * If allocation is unsuccessful, return ENSMEM (-39)
  * If not read/write mode it returned EINVFN (-32) 
  * (why bother?, this routine is used only once, so this check
- * is disabled, but use carefully then!)
- * If OK, return 0
+ * is disabled, but use carefully then!). If OK, return 0
  */
 
 XFILE *x_fmemopen(int mode, int *error)
@@ -1074,11 +1332,12 @@ XFILE *x_fmemopen(int mode, int *error)
 		xfile->eof = FALSE;		/* end of file not reached */
 		xfile->memfile = TRUE;	/* this is a memory file   */
 
-/* no need to bother, routine is used only once in a controlled way 
+/* no need to bother, routine is used only once and in a controlled way 
 		if (rwmode != O_RDWR) /* 0x02 */
 		{
 			result = EINVFN; /* unknown function ? */
-			free_item(&xfile);
+			free(xfile);
+			xfile = NULL;
 		}
 */
 	}
@@ -1116,10 +1375,10 @@ int x_fclose(XFILE *file)
 }
 
 
-/* This routine (a pair to x_fwrite) is never used inTeraDesk
+/* This routine (a pair to x_fwrite) is never used in TeraDesk
 
 /* 
- * Read file contents (not more than "lentgh" bytes)
+ * Read file contents (not more than "length" bytes)
  */
 
 long x_fread(XFILE *file, void *ptr, long length)
@@ -1196,10 +1455,18 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 */
 
+
 /* 
- * Write "length" bytes to a file;
+ * Write 'length' bytes to a file;
  * return (negative) error code (long!) or else number of bytes written 
+ * Note: open window data need about 20 bytes. For each open window about 
+ * 32 bytes more is needed, plus path and mask lengths. So, one 128-byte 
+ * record in a memory file would be fit for about 2-3 open windows. Better 
+ * allocate slightly more, to avoid copying halfway into window saving, 
+ * e.g. allocate 256 bytes.
  */
+
+#define MRECL 256L
 
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
@@ -1236,11 +1503,11 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 
 				/* 
 				 * Existing buffer has been filled (or this is the first record)
-				 * If this is the first "record" then allocate 128 bytes;
+				 * If this is the first "record" then allocate MRECL bytes;
 				 * otherwise, try to increase the allocated amount;
 				 */
 
-				new  = malloc(file->bufsize + 128L);
+				new  = malloc(file->bufsize + MRECL);
 				if ( new )
 				{
 					if ( file->buffer )
@@ -1253,7 +1520,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 					return ENSMEM;	
 
 				dest = file->buffer = new;
-				file->bufsize += 128;
+				file->bufsize += MRECL;
 			}
 
 			/* Now write till the end of input */
@@ -1307,8 +1574,11 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 }
 
 
+/* Not used anymore
+
 /*
- * Position file pointer to location "offset" from the start of file
+ * Position file pointer to location 'offset' from the start of 
+ * a 'memory file'
  */
 
 long x_fseek(XFILE *file, long offset, int mode)
@@ -1317,14 +1587,16 @@ long x_fseek(XFILE *file, long offset, int mode)
 		return EINVFN;
 	else
 	{
-		file->read = (int) offset;
+		file->read = (int)offset;
 		return 0;
 	}
 }
 
+*/
+
 
 /* 
- * Read a string from a file, but not more than "n" characters 
+ * Read a string from a file, but not more than 'n' characters 
  */
 
 int x_fgets(XFILE *file, char *string, int n)
@@ -1333,7 +1605,7 @@ int x_fgets(XFILE *file, char *string, int n)
 	int i = 1, read, write, error;
 	char *dest, *src, ch, nl = 0;
 
-/* DjV 076: why ? Just a safety precaution against careless use maybe?
+/* Why ? Just a safety precaution against careless use maybe?
 
 	if ((file->mode & O_RWMODE) != O_RDONLY)
 	{
@@ -1341,7 +1613,6 @@ int x_fgets(XFILE *file, char *string, int n)
 		return 0;
 	}
 */
-
 	/* Has end-of-file been reached? */
 
 	if (x_feof(file))
@@ -1352,7 +1623,7 @@ int x_fgets(XFILE *file, char *string, int n)
 	read = file->read;
 	write = file->write;
 
-	while (ready == FALSE)
+	while (!ready)
 	{
 		if (read == write)
 		{

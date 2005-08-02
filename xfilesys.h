@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -36,9 +36,9 @@
 
 #define FA_ANY  (FA_READONLY | FA_HIDDEN | FA_SYSTEM | FA_SUBDIR | FA_ARCHIVE)
 
-/* Unix file attributen */
+/* Unix file attributes are defined identically as in tos.h */
 
-#define S_IFMT	0170000
+#define S_IFMT	0170000		/* mask to select file type */
 #define S_IFREG	0100000		/* Regular file */
 #define S_IFDIR	0040000		/* Directory */
 #define S_IFCHR	0020000		/* BIOS special file */
@@ -46,15 +46,31 @@
 #define S_IMEM	0140000		/* memory region or process */
 #define S_IFLNK	0160000		/* symbolic link */
 
-#define S_IRUSR	0400
-#define S_IWUSR 0200
-#define S_IXUSR 0100
-#define S_IRGRP 0040
-#define S_IWGRP	0020
-#define S_IXGRP	0010
-#define S_IROTH	0004
-#define S_IWOTH	0002
-#define S_IXOTH	0001
+/* File access rights are defined identically as in tos.h */
+
+#define S_ISUID 04000
+#define S_ISGID 02000
+#define S_ISVTX 01000
+#define S_IRUSR	 0400
+#define S_IWUSR  0200
+#define S_IXUSR  0100
+#define S_IRGRP  0040
+#define S_IWGRP	 0020
+#define S_IXGRP	 0010
+#define S_IROTH	 0004
+#define S_IWOTH	 0002
+#define S_IXOTH	 0001
+#define DEFAULT_DIRMODE (0777)
+#define DEFAULT_MODE    (0666)
+
+/* Filesystem characteristics bitflags */
+
+#define FS_TOS 0x0000	/* plain TOS/DOS FAT filesystem */
+#define FS_LFN 0x0001	/* supports long filenames */
+#define FS_LNK 0x0002	/* supports symbolic links */
+#define FS_UID 0x0004	/* supports user/group IDs */
+#define FS_ANY 0x000f	/* bitmask for all */
+#define FS_INQ 0x0100	/* inquire about the filesystem */
 
 /* Modes voor x_exist */
 
@@ -81,11 +97,13 @@ enum
 	DP_NOTRUNC,
 	DP_AUTOTRUNC,
 	DP_DOSTRUNC,
-	DP_SENITIVE   = 0,
+	DP_SENSITIVE   = 0,
 	DP_NOSENSITIVE,
 	DP_SAVE_ONLY,
 	DP_TRUNC      = 5,
-	DP_CASE
+	DP_CASE,
+	DP_MODE,
+	DP_XATT
 };
 
 #ifndef __TOS
@@ -173,16 +191,17 @@ int x_dfree(DISKINFO *diskinfo, int drive);
 int x_getdrv(void);
 long x_setdrv(int drive);
 int x_getlabel(int drive, char *label);
+int x_putlabel(int drive, char *label);
 
 /* File funkties */
 
 int x_rename(const char *oldname, const char *newname);
 int x_unlink(const char *file);
-int x_fattrib(const char *file, int wflag, int attrib);
+int x_fattrib(const char *file, XATTR *attr);
 int x_datime(DOSTIME *time, int handle, int wflag);
 
 int x_open(const char *file, int mode);
-int x_create(const char *file, int attr);
+int x_create(const char *file, XATTR *attr);
 int x_close(int handle);
 long x_read(int handle, long count, char *buf);
 long x_write(int handle, long count, char *buf);
@@ -195,7 +214,7 @@ XDIR *x_opendir(const char *path, int *error);
 long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib); 
 long x_rewinddir(XDIR *dir);
 long x_closedir(XDIR *dir);
-long x_attr(int flag, const char *name, XATTR *attrib);
+long x_attr(int flag, int fs_type, const char *name, XATTR *attrib);
 
 /* Configuratie funkties */
 
@@ -223,7 +242,8 @@ int x_fwritestr(XFILE *file, const char *string);
 int x_fgets(XFILE *file, char *string, int n);
 int x_fprintf(XFILE *file, char *format, ...);
 boolean x_feof(XFILE *file);
-boolean x_inq_xfs(const char *path, boolean *casesens);
+int x_inq_xfs(const char *path);
+long x_pflags(char *filename);
 
 void x_init(void);
 

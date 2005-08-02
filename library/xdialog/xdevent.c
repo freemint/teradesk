@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -40,6 +40,8 @@
 
 #define AV_SENDKEY		0x4710
 
+int xd_kstate; /* kbd state while clicking a button; */
+
 /* 
  * Funktie voor het converteren van een VDI scancode  naar een
  * eigen scancode. 
@@ -51,12 +53,12 @@ int xe_keycode(int scancode, int kstate)
 
 	/* Zet key state om in eigen formaat */
 
-	nkstate = (kstate & 3) ? XD_SHIFT : 0;
+	nkstate = (kstate & (K_RSHIFT | K_LSHIFT)) ? XD_SHIFT : 0;
 	nkstate = nkstate | ((kstate & 0xC) << 7);
 
 	/* Bepaal scancode */
 
-	scan = ((unsigned int) scancode & 0xFF00) >> 8;
+	scan = ((unsigned int)scancode & 0xFF00) >> 8;
 
 	/* Controleer of de scancode hoort bij een ASCII teken */
 
@@ -67,13 +69,16 @@ int xe_keycode(int scancode, int kstate)
 		if (scan >= 120)
 			scan -= 118;
 
-
 		if ((keycode = scancode & 0xFF) == 0)
 		{
 #ifdef __PUREC__
+/* shorter below
 			keycode = toupper((int) ((unsigned char) (Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
+*/
+			keycode = touppc(((unsigned char)(Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
+
 #else
-			keycode = toupper((int) ((unsigned char) (((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
+			keycode = touppc((int) ((unsigned char) (((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
 #endif
 		}
 
@@ -93,7 +98,6 @@ int xe_keycode(int scancode, int kstate)
  * Vervanging van evnt_multi, die eigen keycode terug levert. 
  */
 
-int xe_wmess = 0; /* in fact not used ever */
 int xe_mbshift;
 
 int xe_xmulti(XDEVENT *events)
@@ -120,9 +124,13 @@ int xe_xmulti(XDEVENT *events)
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
 
+	/* Wait for an event */
+
+	events->xd_keycode = 0; /* ??? */
+
 #ifdef __PUREC__
 
-	EvntMulti((EVENT *) events);
+	EvntMulti((EVENT *)events);
 
 #else
 	events->ev_mwhich = evnt_multi(events->ev_mflags, events->ev_mbclicks,
@@ -134,28 +142,9 @@ int xe_xmulti(XDEVENT *events)
 		&events->ev_mmox, &events->ev_mmoy, &events->ev_mmobutton,
 		&events->ev_mmokstate, &events->ev_mkreturn, &events->ev_mbreturn);
 #endif
-
 	xe_mbshift = events->ev_mmokstate;
 
-/* not used ever
-	if 
-	( 
-		(
-			( (events->ev_mwhich & MU_MESAG) !=0 ) 
-		)
-		&&
-		( 
-			(events->ev_mmgpbuf[0] == WM_TOPPED) ||
-			(events->ev_mmgpbuf[0] == WM_CLOSED) ||
-			(events->ev_mmgpbuf[0] == WM_NEWTOP) 
-		)
-	)
-	{
-		xe_wmess = 1;
-	}
-	else
-		xe_wmess = 0;
-*/
+	/* AV_SENDKEY message is transformed into a keyboard event */
 
 	if (((r = events->ev_mwhich) & MU_MESAG) && (events->ev_mmgpbuf[0] == AV_SENDKEY))
 	{
@@ -164,6 +153,8 @@ int xe_xmulti(XDEVENT *events)
 		r &= ~MU_MESAG;
 		r |= MU_KEYBD;
 	}
+
+	/* If this is a keyboard event... */
 
 	if (r & MU_KEYBD)
 	{
@@ -179,11 +170,13 @@ int xe_xmulti(XDEVENT *events)
 		}
 	}
 
+	/* If this is a message event... */
+
 	if (r & MU_MESAG)
 	{
 		if ((events->ev_mmgpbuf[0] == MN_SELECTED) && xd_dialogs)
 		{
-			if (xd_menu != NULL)
+			if (xd_menu)
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
 			r &= ~MU_MESAG;
 		}
@@ -202,7 +195,7 @@ int xe_xmulti(XDEVENT *events)
 		{
 			WINDOW *ww = xw_hfind(events->ev_mmgpbuf[3]);
 
-			if (ww != xd_dialogs->window )
+			if ( ww != xd_dialogs->window )
 				bell();
 
 			if ( xd_nmdialogs && ww == xd_nmdialogs->window )
@@ -212,9 +205,11 @@ int xe_xmulti(XDEVENT *events)
 
 			r &= ~MU_MESAG;
 		}
-		else if (xw_hndlmessage(events->ev_mmgpbuf))
+		else if (xw_hndlmessage(events->ev_mmgpbuf)) /* window-handling messages processed */
 			r &= ~MU_MESAG;
 	}
+
+	/* If this is a button event... */
 
 	if ((r & MU_BUTTON) && !xd_dialogs && (level == 1))
 	{

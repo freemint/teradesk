@@ -1,7 +1,7 @@
 
 ;  Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
 ;                                2002, 2003  H. Robbers,
-;                                2003, 2004  Dj. Vukovic
+;                          2003, 2004, 2005  Dj. Vukovic
 ;
 ;  This file is part of Teradesk.
 ;
@@ -37,9 +37,16 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 .C [-D_MORE_AV=0] 		; 0 for Single-TOS-only desktop
 
 
+; Disk-volume label editing feature is disabled ror the rime being,
+; as it does not behave consistently in Mint vs. Magic and may be
+; confusing.
+
+.C [-D_EDITLABELS=0] 	
+
 ; Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.
 ; Relevant only for ST-series machines.
 ; It is of no use for anyone who doesn't have this hardware installed.
+
 
 .C [-D_OVSCAN=1] ;
 
@@ -57,7 +64,7 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 .C [-DCFGEMP=0]
 
 
-; Define PALETTES as 0 if you dont want the palette load/save stuff
+; Define PALETTES as 0 if you don't want the palette load/save stuff
 ; (palette won't be saved at all then)
 
 .C [-DPALETTES=1]
@@ -165,8 +172,7 @@ viewer.c
 
 events.c
 slider.c
-sprintf.c
-strdup.c
+stringf.c
 xfilesys.c
 error.c
 
@@ -174,11 +180,12 @@ btst.s
 
 
 ;Specific libraries:
-;Note: ahcm source is not part of the TeraDesk package.
+
+;Note: AHCM source is not part of the TeraDesk package.
 ;binary only is provided; for the source see:
 ;http://members.ams.chello.nl/h.robbers/ahcm.zip
-;If other library is used, it must execute free(NULL) 
-;without bad effects (i.e. no action shouod be taken in such case)
+;If some other library is used, it must be able to execute free(NULL) 
+;without bad effects (i.e. no action should occur in such case)
 
 library\ahcm\ahcm.prj
 library\xdialog\xdialog.prj

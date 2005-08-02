@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -40,6 +40,7 @@
 #include "window.h"
 #include "lists.h" 
 #include "internal.h"
+#include "stringf.h"
 
 OBJECT *menu,
 	   *setprefs,
@@ -78,7 +79,7 @@ char
 	 *finame,
 	 *flname,
 	 *cmdline,	
-	 *applcmdline,
+	 *applcmd,
 	 *spattfld,
 	 *drvid,
 	 *iconlabel,
@@ -146,20 +147,6 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 
 static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 {
-/* DjV
-	tree[object].r.x -= aes_hor3d;
-	tree[object].r.w += ( 2 * aes_hor3d - ((aes_hor3d) ? 1 : 0 ) );
-	tree[tree[object].ob_head].r.x += aes_hor3d;
-
-	tree[object].r.y = tree[up  ].r.y + tree[up    ].r.h + aes_ver3d + 1;
-	tree[object].r.h = tree[down].r.y - tree[object].r.y - aes_ver3d - 1;
-
-	/* Change fill pattern in sliders to full dark gray when appropriate */
-
-	if ( xd_aes4_0 && ncolors > 4 )
-		tree[object].ob_spec.obspec.fillpattern = 7; 
-*/
-
 	OBJECT *ob = &tree[object];
 	int v3d1 = aes_ver3d + 1;
 
@@ -174,9 +161,6 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 
 	if ( xd_aes4_0 && xd_colaes )
 		ob->ob_spec.obspec.fillpattern = 7; 
-
-
-
 }
 
 
@@ -200,7 +184,6 @@ void rsc_yfix
 
 
 /* 
- * Funktie voor het verwijderen van een menupunt uit een menu 
  * Delete a menu item when the screen buffer is too small
  * for the complete menu.
  */
@@ -234,8 +217,6 @@ static void mn_del(int box, int item)
 
 static void rsc_fixmenus(void)
 {
-	RECT desk;
-
 	/* 
 	 * Some modifications may be needed for older TOS (1.0, 1.2, 1.4, 1.6)
 	 * Certain menu items will have to be deleted, in order
@@ -249,88 +230,85 @@ static void rsc_fixmenus(void)
 
 	/* List of menuboxes and items in them to be deleted (maybe) */
 
-	static const int mnbx[] = 
+	static const char mnbx[] = 
 	{
 		MNFILEBX,MNFILEBX,MNFILEBX,
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,
-		MNOPTBOX,MNOPTBOX,
+		MNOPTBOX,MNOPTBOX,MNOPTBOX,
 		MNFILEBX,MNFILEBX,
-		MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX,
-		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
+		MNVIEWBX,MNVIEWBX,
+
+		MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX, /* TOS < 1.04 only */
+		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
 	};
 
-	static const int mnit[] = 
+	static const char mnit[] = 
 	{
 		SEP1,SEP2,SEP3,
-		SEP5,SEP6,
-		SEP7,SEP8,
+		SEP4,SEP5,SEP6,
+		SEP7,SEP8,SEP9,
 		MDELETE,MFCOPY,
-		MSHSIZ,MSHDAT,MSHTIM,MSHATT,MSUNSORT,MREVS,
-		MPRGOPT,SEP9,MWDOPT,MVOPTS,MSAVEAS
+		MSHSIZ,MREVS,
+
+		MSHDAT,MSHTIM,MSHATT,MSUNSORT,		/* TOS < 1.04 only */
+		MPRGOPT,MWDOPT,MVOPTS,MSAVEAS
 	};
 
-/* no harm done if it is always checked
-	if ( tos_version < 0x200 )
+	static const char maxbox[] = {MNVIEWBX, MNOPTBOX};
 
+	int i, n, dummy;
+	long mnsize = 0;
+	RECT desk, boxrect;
+	MFDB mfdb;
+	union
 	{
-*/
-		int i, n, dummy;
-		long mnsize;
-		RECT boxrect;
-		MFDB mfdb;
-		union
+		long size;
+		struct
 		{
-			long size;
-			struct
-			{
-				int high;
-				int low;
-			} words;
-		} buffer;
+			int high;
+			int low;
+		} words;
+	} buffer;
 
-		/* 
-		 * memory needed for the menu is estimated from the
-		 * size of the Options menu box, because it is the largest
-		 * Note: if any item is added to the "View" menu, this
-		 * may change, and View menu will have to be checked
-		 */
+	/* 
+	 * memory needed for the menu is estimated from the
+	 * size of the View and Options menu boxes (the largest ones)
+	 */
 
-		xd_objrect(menu, MNOPTBOX, &boxrect);
-		mnsize = xd_initmfdb(&boxrect, &mfdb);
-
-		/*
-		 * TOS 1.4 and higher can answer an inquiry about screen buffer size.
-		 * Older TOSses (in fact older AESses ?)  can not.
-		 */
-
-		if ( aes_version >= 0x140 )
-		{
-			wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
-			n = 12;
-		}
-		else
-		{
-			buffer.size = 8000L;
-			n = 19;
-		}
-		/*
-		 * Only the options menu is tested, but items from several boxes
-		 * are removed. Not very logical, but so it is for the time being
-		 * (a test showed that all menu boxes are of the approximately 
-		 * same size, "Options" being slightly larger than the others).
-		 * If buffer size is sufficient, nothing will happen.
-		 */
-
-		if (mnsize >= buffer.size)
-		{
-			for ( i = 0; i < n; i++ )
-				mn_del(mnbx[i], mnit[i]);
-		}
-
-/* because always checked
+	for( i = 0; i < 2; i++ )
+	{
+		xd_objrect(menu, (int)maxbox[i], &boxrect);
+		mnsize = max(mnsize, xd_initmfdb(&boxrect, &mfdb));
 	}
-*/
 
+	/*
+	 * TOS 1.4 and higher can answer an inquiry about screen buffer size.
+	 * Older TOSses (in fact older AESses ?)  can not.
+	 */
+
+	if ( aes_version >= 0x140 )
+	{
+		wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
+		n = 13;
+	}
+	else
+	{
+		buffer.size = 8000L;
+		n = 21;
+	}
+
+	if (mnsize >= buffer.size)
+	{
+		for ( i = 0; i < n; i++ )
+			mn_del((int)mnbx[i], (int)mnit[i]);
+	}
+#endif
+
+	/* 'Show owner' is shown in mint only; otherwise deleted */
+
+#if _MINT_
+	if (!mint)
+		mn_del(MNVIEWBX, MSHOWN);
 #endif
 
 	/* Move some menu boxes left to fit the screen (if needed) */
@@ -339,7 +317,7 @@ static void rsc_fixmenus(void)
 	set_menubox(MNWINBOX);
 	set_menubox(MNOPTBOX);
 
-	/* Adapt menu bar width to be the same as screen width */
+	/* Adapt menu bar width to have the same width as screen */
 
 	xw_getwork(NULL, &desk);
 	menu[menu->ob_head].r.w = desk.w;
@@ -356,17 +334,20 @@ static void rsc_fixmenus(void)
  *  just > 0: move left edge by "just" characters to the right
  *  just < 0: move right edge by "just"-1 characters to the left
  * 
- * See also (changes in) routines cv_fntoform and cv_formtofn in main.c
+ * See also (changes in) routines cv_fntoform and cv_formtofn 
  *
  */
  
-static char *tos_fnform( OBJECT *obj, int just )
+static char *tos_fnform( OBJECT *tree, int object, int just )
 {
 	int
 		dx = 0;
 
+	OBJECT
+		*obj = tree + object;
+
 	TEDINFO 
-		*ted = xd_get_obspec(obj).tedinfo;
+		*ted = xd_get_obspecp(obj)->tedinfo; 
 
 	/* Fix horizontal position and size */ 
 
@@ -387,8 +368,10 @@ static char *tos_fnform( OBJECT *obj, int just )
 	/* 
 	 * Change validation and template strings; 
 	 * It is assumed that the original (scrolled text) strings are 
-	 * never shorter than the new ones, so the same locations are used.
+	 * always longer than the new ones, so the same locations are used.
 	 * The remaining old string space is currently wasted !
+	 * as validation and template are short anyway, it doesn't matter much.
+	 * the only really wasted space is for the string itself (about 110 bytes)
 	 */
 
 	strcpy(ted->te_pvalid, "FFFFFFFFFFF");
@@ -403,27 +386,17 @@ static char *tos_fnform( OBJECT *obj, int just )
 
 /*
  * Decode (hexadecimal) information on OS / AES version for the infobox
+ * This will work correctly only on a three-digit number.
  */
 
 static void show_os( OBJECT *obj, int v )
 {
-	int 
-		i, 
-		o;
-
-	char 
-		tmp[5],
-		*tosversion = obj->ob_spec.tedinfo->te_ptext;
-
-	o = (int)strlen(itoa(v, tmp, 16)) - 4;
-
-	for (i = 0; i < 4; i++)
-		tosversion[i] = ((i + o) >= 0) ? tmp[i + o] : ' ';
+	sprintf(obj->ob_spec.tedinfo->te_ptext, " %3x", v);
 }
 
 
 /* 
- * Initialize the resource structures 
+ * Initialize the resource structures. All used dialogs should be set here. 
  */
 
 void rsc_init(void)
@@ -470,11 +443,12 @@ void rsc_init(void)
 	cmdline = xd_set_srcl_text(getcml,       CMDLINE,  cmdlinetxt );	 /* a command, i.e. very long */
 	          xd_set_srcl_text(applikation,  APNAME,   flnametxt );	
 	          xd_set_srcl_text(applikation,  APPATH,   dirnametxt );
+	          xd_set_srcl_text(addicon,      IFNAME,   dirnametxt );
 	cfile1 =  xd_set_srcl_text(compare, CFILE1, cfile1txt);
 	cfile2 =  xd_set_srcl_text(compare, CFILE2, cfile2txt);	
-	applcmdline = xd_set_srcl_text(applikation,  APCMLINE, cmdlinetxt); /* a command, i.e. long */
-	envline  = xd_set_srcl_text(applikation,     APLENV, envlinetxt );
-	spattfld = xd_set_srcl_text(searching, SMASK, dirnametxt ); 
+	applcmd  = xd_set_srcl_text(applikation, APCMLINE, cmdlinetxt); /* a command, i.e. long */
+	envline  = xd_set_srcl_text(applikation, APLENV,   envlinetxt );
+	spattfld = xd_set_srcl_text(searching,   SMASK,    dirnametxt ); 
 
 	/* Pointers to some other texts */
 
@@ -486,9 +460,7 @@ void rsc_init(void)
 	/* 
 	 * Section immediately following fixes some characteristics of
 	 * rsc objects depending on AES, screen resolution, etc.
-	 */
-
-	/* 
+	 *
 	 * Note: rsc_xalign and rsc_yalign below change the dimensions
 	 * of dialog items so that they do not overlap with adjacent items;
 	 * this is supposed to prevent overlapping of scrolling arrow buttons
@@ -499,16 +471,19 @@ void rsc_init(void)
 	rsc_xalign(wdoptions, DSKCDOWN, DSKCUP, DSKPAT);
 	rsc_xalign(wdoptions, WINPDOWN, WINPUP, WINPAT);
 	rsc_xalign(wdoptions, WINCDOWN, WINCUP, WINPAT);
+	rsc_xalign(wdfont, WDFSUP, WDFSDOWN, WDFSIZE);
+	rsc_xalign(wdfont, WDFCDOWN, WDFCUP, WDFCOL);
+	rsc_xalign(vidoptions, VNCOLDN, VNCOLUP, VNCOL);
+	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
+
+	addicon[ICONBACK].r.w = addicon[ICSELBOX].r.w - addicon[ICNUP].r.w - 2 * aes_hor3d - 1;
+
 	wdoptions[DSKCUP].r.y   += v3d2;
 	wdoptions[DSKCDOWN].r.y += v3d2;
 	wdoptions[WINCUP].r.y   += v3d2;
 	wdoptions[WINCDOWN].r.y += v3d2;
 	wdoptions[DSKPAT].r.h   += v3d2;
 	wdoptions[WINPAT].r.h   += v3d2;
-	
-	rsc_xalign(wdfont, WDFSUP, WDFSDOWN, WDFSIZE);
-	rsc_xalign(vidoptions, VNCOLDN, VNCOLUP, VNCOL);
-	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
 
 	rsc_yalign(addicon, ICNUP, ICNDWN, ICPARENT);
 	rsc_yalign(setmask, FTUP, FTDOWN, FTSPAR);
@@ -522,8 +497,8 @@ void rsc_init(void)
 	 * perhaps a more compact solution should be used.
 	 */  
 
-	rsc_yfix( copyinfo, CPT4, CPT4, 1 );		/* copy info dialog     */
-	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy format dialog */		
+	rsc_yfix( copyinfo, CPT4, CPT4, 1 );		/* copy-info dialog     */
+	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy-format dialog */		
 	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
 	/* Assuming that filemask dialog and fonts dialog listboxes have the same size... */
@@ -546,27 +521,30 @@ void rsc_init(void)
 	if ( !mint )
 #endif
 	{
-		tos_fnform( &addicon[ICNTYPE], 3 );
-		tos_fnform( &addprgtype[PRGNAME], 3 );
-		tos_fnform( &ftydialog[FTYPE0], -1);
-		tos_fnform( &setmask[FILETYPE], 3);
+		tos_fnform( addicon, ICNTYPE, 3 );
+		tos_fnform( addprgtype, PRGNAME, 3 );
+		tos_fnform( ftydialog, FTYPE0, -1);
+		tos_fnform( setmask, FILETYPE, 3);
 	
 		for ( i = 0; i < NLINES; i++ )
-			tos_fnform( &setmask[FTYPE1 + i], 3 );
+			tos_fnform( setmask, FTYPE1 + i, 3 );
 
-		tos_fnform(&fileinfo[FLNAME], -1);
-		tos_fnform(&copyinfo[CPFILE], -1);
-		tos_fnform(&applikation[APNAME], -1);
-		tos_fnform(&nameconflict[NEWNAME], -1);
-		tos_fnform(&nameconflict[OLDNAME], -1);
-		tos_fnform(&searching[SMASK], -1);
-		tos_fnform(&newfolder[DIRNAME], -1);
+		tos_fnform(fileinfo, FLNAME, -1);
+		tos_fnform(copyinfo, CPFILE, -1);
+		tos_fnform(applikation, APNAME, -1);
+		tos_fnform(nameconflict, NEWNAME, -1);
+		tos_fnform(nameconflict, OLDNAME, -1);
+		tos_fnform(searching, SMASK, -1);
+		tos_fnform(newfolder, DIRNAME, -1);
 
-		xd_get_obspec(&applikation[APPATH]).tedinfo->te_pvalid[0] = 'x';
+		/* Path should be upppercase only. Icon namemask must allow ".." */
+
+		xd_get_obspecp(&applikation[APPATH])->tedinfo->te_pvalid[0] = 'x';
+		xd_get_obspecp(&addicon[ICNTYPE])->tedinfo->te_pvalid[8] = 'P';
 
 		/* 
 		 * Below are substituted "Files and links" with "Files" if no mint.
-		 * Once links get into dialogs separately, this should be removed
+		 * If sometime links get into dialogs separately, this should be removed
 		 */
 
 		rsc_title(copyinfo, CIFILES, SFILES);
@@ -621,31 +599,36 @@ void rsc_title(OBJECT *tree, int object, int title)
  * it is used to determine field length
  * Note: it would be possible to use strcpyj() but there would be
  * almost no gain in size.
+ * This routine works with G_TEXT and G_FTEXT objects.
  */
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
 {
-	long l1, l2, i;
+	long l2;
 	char s[16], *p;
+	OBJECT *ob = tree + object;
 	TEDINFO *ti;
 
-	ti = xd_get_obspec(tree + object).tedinfo;
+	ti = xd_get_obspecp(ob)->tedinfo;
 	p = ti->te_ptext;
-	l1 = strlen(ti->te_pvalid);	/* Length of the text field.        */
 	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
-
 
 	l2 = strlen(s);				/* Length of the number as string.  */
 
-	i = 0;
-
-	while (i < (l1 - l2))
+    if((ob->ob_type & 0xFF) == G_FTEXT)
 	{
-		*p++ = ' ';				/* Fill with spaces. */
-		i++;
+		long i, l1;
+
+		i = 0;
+		l1 = strlen(ti->te_pvalid);	/* Length of the text field.   */
+
+		while (i < (l1 - l2))
+		{
+			*p++ = ' ';				/* Fill with spaces. */
+			i++;
+		}
 	}
 
 	strsncpy(p, s, l2 + 1);		/* Copy number. */
 }
-
 

@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -32,7 +32,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <library.h>
 
 #include "xdialog.h"
@@ -49,6 +48,9 @@ extern int
 	xd_ind_col,
 	xd_act_col,
 	xd_sel_col;
+
+extern int
+	brd_l, brd_r, brd_u, brd_d; /* object border sizes */
 
 static MFDB cursor_mfdb = {	NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
 
@@ -110,15 +112,20 @@ static long xd_strlen(char *s)
 }
 
 
-#define prt_text(s, x, y, state)  prt_xtndtext(s, x, y, state, 0)
+/*
+ * Note: in earlier versions, this routine had an additional
+ * argument: attrib; but it was allways called with attrib = 0
+ */
 
-static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
+static void prt_text(char *s, int x, int y, int state)
 {
+	int
+		attrib = 0;
+
 	char 
-		tmp[80], /* <- buffer is enlarged! (DjV: why so much?) */
+		tmp[42], 
 		*h, 
-		*p = NULL,
-		uc; /* underlined character */
+		*p = NULL;
 
 	if (state & DISABLED)
 		attrib ^= 2;
@@ -131,7 +138,7 @@ static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
 
 	if (state & WHITEBAK)
 	{
-		int und = (state<<1)>>9;
+		int und = (state << 1) >> 9;
 		if (und >= 0)
 		{
 			und &= 0x7f;
@@ -159,55 +166,44 @@ static void prt_xtndtext(char *s, int x, int y, int state, int attrib)
 		}
 */
 
-	if ( p )
-	{
-		uc = *p;
-		*p = ' ';	/* to better handle XOR writing */
-	}
-
 	v_gtext(xd_vhandle, x, y, tmp);
 
 	if (p)
 	{
-		/* do underline some character! */
+		/* do underline some character! Use red colour */
 
 		int xtnd[8];
 
 		*p = 0;
-
-		/* request position of this character! */
-
 		vqt_extent(xd_vhandle, tmp, xtnd);
 		vst_effects(xd_vhandle, attrib ^ 8);	/* XOR due to text-style extensions! */
-		tmp[0] = uc;
-		tmp[1] = 0;
-		v_gtext(xd_vhandle, x + (xtnd[2] - xtnd[0]), y, tmp);
+		vst_color(xd_vhandle, RED);
+		v_gtext(xd_vhandle, x + (xtnd[2] - xtnd[0]), y, " ");
+		vst_color(xd_vhandle, BLACK);
 	}
 }
 
 
 /*
- * Draw a rectangle
+ * Draw a simple rectangle
+ * Note: smaller code is generated when pointers to pxy are used
  */
 
-static void draw_rect(int x, int y, int w, int h)
+void draw_xdrect(int x, int y, int w, int h)
 {
 	int pxy[10];
+	int *pxyp = pxy;
 
-	pxy[0] = x;
-	pxy[1] = y;
-
-	pxy[2] = x + w - 1;
-	pxy[3] = y;
-
-	pxy[4] = pxy[2];
-	pxy[5] = y + h - 1;
-
-	pxy[6] = x;
-	pxy[7] = pxy[5];
-
-	pxy[8] = x;
-	pxy[9] = y;
+	*pxyp++ = x;			/* [0] */
+	*pxyp++ = y;			/* [1] */
+	*pxyp++ = x + w - 1;	/* [2] */
+	*pxyp++ = y;			/* [3] */
+	*pxyp++ = pxy[2];		/* [4] */
+	*pxyp++ = y + h - 1;	/* [5] */
+	*pxyp++ = x;			/* [6] */
+	*pxyp++ = pxy[5];		/* [7] */
+	*pxyp++ = x;			/* [8] */
+	*pxyp = y;				/* [9] */
 
 	v_pline(xd_vhandle, 5, pxy);
 }
@@ -222,6 +218,8 @@ static void draw_frame(RECT *frame, int start, int eind)
 {
 	int i, s, e;
 
+	/* Note: this is slightly shorter than using min() and max() */
+
 	if (start > eind)
 	{
 		s = eind;
@@ -234,13 +232,15 @@ static void draw_frame(RECT *frame, int start, int eind)
 	}
 
 	for (i = s; i <= e; i++)
-		draw_rect
+	{
+		draw_xdrect
 		(
 			frame->x + i, 
 			frame->y + i, 
 			frame->w - 2 * i, 
 			frame->h - 2 * i
 		);
+	}
 }
 
 
@@ -248,7 +248,7 @@ static void draw_frame(RECT *frame, int start, int eind)
  * Set suitable (default) line attributes. Full line, width 1 pixel.
  */
 
-static void set_linedef(int color)
+void set_linedef(int color)
 {
 	vsl_color(xd_vhandle, color);
 	vsl_ends(xd_vhandle, 0, 0);
@@ -273,29 +273,48 @@ static void set_textdef(void)
 }
 
 
+/* 
+ * Set 'transparent'  and 'replace' drawing modes
+ */
+
+
+void xd_vswr_trans_mode(void)
+{
+	vswr_mode(xd_vhandle, MD_TRANS);
+}
+
+
+void xd_vswr_repl_mode(void)
+{
+	vswr_mode(xd_vhandle, MD_REPLACE);
+}
+
+
 /*
  * Clear an object by drawing a borderless filled rectangle  
- * of desired colour and pattern (except pattern -1, then draw solid)
- * Rectangle is drawn in replace mode.
+ * of desired colour and pattern (except when pattern is -1, then draw solid).
+ * Rectangle is always drawn in replace mode.
  */
 
 void clr_object(RECT *r, int color, int pattern)
 {
 	int pxy[4];
-
-	if ( pattern < 0 )
-		vsf_interior(xd_vhandle, FIS_SOLID);
-	else
-	{
-		vsf_style(xd_vhandle, pattern);
-		vsf_interior(xd_vhandle, FIS_PATTERN);
-	}
-	vsf_color(xd_vhandle, color);
+	int fillmode = FIS_SOLID;
 
 	xd_rect2pxy(r, pxy);
-	vswr_mode(xd_vhandle, MD_REPLACE);
+
+	if ( pattern >= 0 )
+	{
+		vsf_style(xd_vhandle, pattern);
+		fillmode = FIS_PATTERN;
+	}
+
+	vsf_interior(xd_vhandle, fillmode);
+	vsf_color(xd_vhandle, color);
+	vswr_mode(xd_vhandle, MD_REPLACE); /* for speed do not use xd_vswr_repl_mode() */
 	v_bar(xd_vhandle, pxy);
 }
+
 
 /*
  * Divine whether a userdef object should be drawn in 3D:
@@ -343,7 +362,33 @@ static bool xd_is3dobj(int flags)
  * 
  */
 
-#define OUT_BRD 3 /* hard-coded border size for outlining the object */
+
+/*
+ * Calculate size of an object enlargement, including 3D effects
+ */
+
+static void xd_3dbrd( int ob_state, int *xl, int *xr, int *yu, int *yd)
+{
+	*xl = aes_hor3d;
+	*xr = aes_hor3d;
+	*yu = aes_ver3d;
+	*yd = aes_ver3d;
+
+	if (ob_state & OUTLINED)
+	{
+		*xl = max(*xl, brd_l);
+		*xr = max(*xr, brd_r);
+		*yu = max(*yu, brd_u);
+		*yd = max(*yd, brd_d);
+	}
+}
+
+
+/*
+ * Draw a rectangular box with 3D effects. This type of object is used
+ * several times in xdialog;
+ * Specified box size will be enlarged by the value of 3D enlargements
+ */
 
 static void xd_drawbox
 (
@@ -357,9 +402,10 @@ static void xd_drawbox
 		outsize;	/* external object dimensions (final) */
 
 	int 
-		hx,			/* horizontal enlargement  */
-		vx,			/* vertical enlargement    */
-		ox = 0,		/* outline enlargement     */
+		hxl,		/* horizontal enlargement  */
+		vxu,		/* vertical enlargement    */
+		hxr,		/* horizontal enlargement  */
+		vxd,		/* vertical enlargement    */
 		border,		/* border thickness        */
 		color,		/* current colour          */
 		color2,		/* other (inverse) colour  */		
@@ -367,24 +413,21 @@ static void xd_drawbox
 
 
 	/* 
- 	 * Determine size of object 
+ 	 * Determine size of this object
 	 * (are combinations of border and 3d enlargement really 
-	 * to be implemented like below? not sure). 
+	 * to be implemented like in xd_3dbrd? not sure). 
 	 */
 
-	if ( state & OUTLINED )
-		ox = OUT_BRD;			/* hardcoded outline width */
-	hx = max(aes_hor3d, ox);	/* horizontal enlargement  */
-	vx = max(aes_ver3d, ox);	/* vertical enlargement    */
+	xd_3dbrd(state, &hxl, &hxr, &vxu, &vxd);
 
-	outsize.x = r->x - hx;
-	outsize.y = r->y - vx;
-	outsize.w = r->w + 2 * hx;
-	outsize.h = r->h + 2 * vx;
+	outsize.x = r->x - hxl;
+	outsize.y = r->y - vxu;
+	outsize.w = r->w + hxl + hxr;
+	outsize.h = r->h + vxu + vxd;
 
 	/* Writing mode is generally "replace" */
 
-	vswr_mode(xd_vhandle, MD_REPLACE); 
+	xd_vswr_repl_mode(); 
 
 	/* 
 	 * Fill the area with appropriate colour (except for the scrolled text);
@@ -432,6 +475,7 @@ static void xd_drawbox
 			color = xd_sel_col;
 		else
 			color = BLACK;
+
 		set_linedef(color);
 		draw_frame( &outsize, 0, -border );
 	}
@@ -450,20 +494,22 @@ static void xd_drawbox
 
 	if ( xd_is3dobj(flags) )
 	{
-		pxy[0] = outsize.x + outsize.w - 2;	/* upper right corner */
-		pxy[1] = outsize.y + 1;
+		int *pxyp = pxy;
 
-		pxy[2] = pxy[0];
-		pxy[3] = outsize.y + outsize.h - 2;	/* lower right corner */
+		*pxyp++ = outsize.x + outsize.w - 2;	/* [0] upper right corner */
+		*pxyp++ = outsize.y + 1;				/* [1] */
+	
+		*pxyp++ = pxy[0];						/* [2] */
+		*pxyp++ = outsize.y + outsize.h - 2;	/* [3] lower right corner */
 
-		pxy[4] = outsize.x + 1;				/* lower left corner  */
-		pxy[5] = pxy[3];
+		*pxyp++ = outsize.x + 1;				/* [4] lower left corner  */
+		*pxyp++ = pxy[3];						/* [5] */
 
-		pxy[6] = pxy[4];					/* upper left corner  */
-		pxy[7] = pxy[1];
+		*pxyp++ = pxy[4];						/* [6] upper left corner  */
+		*pxyp++ = pxy[1];						/* [7] */
 		
-		pxy[8] = pxy[0];					/* upper right corner */
-		pxy[9] = pxy[1];
+		*pxyp++ = pxy[0];						/* [8] upper right corner */
+		*pxyp = pxy[1];							/* [9] */
 
 		if ( state & SELECTED )
 		{
@@ -491,19 +537,20 @@ static void xd_drawbox
 static int cdecl ub_drag(PARMBLK *pb)
 {
 	int 
-		dh,
-		dv,
+		dhl,
+		dhr,
+		dvu,
+		dvd,
 		pxy[6],
 		b,
 		c,
-		ox = 0,
 		flags;
 
 	RECT 
 		size; 
 
 	OBSPEC 
-		obspec = xd_get_obspec(&pb->pb_tree[pb->pb_obj]);
+		*obspec = xd_get_obspecp(&pb->pb_tree[pb->pb_obj]);
 
 
 	/* Define clipping area */
@@ -515,11 +562,7 @@ static int cdecl ub_drag(PARMBLK *pb)
 	 * Note: must compensate for ST-low/med res aspect ratio oddities
 	 */
 
-	if (pb->pb_tree[pb->pb_obj].ob_state & OUTLINED )
-		ox = OUT_BRD;  /* hard-coded "outline" size */
-
-	dh = max(ox, aes_hor3d); /* Is it really implemented so? not sure. */
-	dv = max(ox, aes_ver3d); 
+	xd_3dbrd(pb->pb_tree[pb->pb_obj].ob_state, &dhl, &dhr, &dvu, &dvd); 
 
 	if ( xd_regular_font.fnt_chh > 9 || xd_desk.w > 2 * xd_desk.h )
 	{
@@ -531,10 +574,11 @@ static int cdecl ub_drag(PARMBLK *pb)
 		size.w = pb->pb_w / 2;
 		size.x = pb->pb_x + size.w;
 	}
+
 	size.y = pb->pb_y;
 	size.h = pb->pb_h;
 
-	vswr_mode(xd_vhandle, MD_REPLACE);
+	xd_vswr_repl_mode();
 
 	/* Draw object box */
 
@@ -543,19 +587,18 @@ static int cdecl ub_drag(PARMBLK *pb)
 
 	/* Draw "\" diagonal in the box */
 
-	pxy[0] = size.x - dh;
-	pxy[1] = size.y - dv;
-	pxy[2] = size.x + size.w + dh - 1;
-	pxy[3] = size.y + size.h + dv - 1;
+	pxy[0] = size.x - dhl;
+	pxy[1] = size.y - dvu;
+	pxy[2] = size.x + size.w + dhr - 1;
+	pxy[3] = size.y + size.h + dvd - 1;
 
 	set_linedef(xd_sel_col);
 	v_pline(xd_vhandle, 2, pxy);
 
-	/* Draw something like a part of a border visible behind the "ear" */
+	/* Draw something looking like a part of the border visible behind the "ear" */
 
-	b = abs((int)obspec.obspec.framesize);	/* border thickness */ 
-
-	c = (int)obspec.obspec.framecol;		/* border colour */
+	b = abs((int)obspec->obspec.framesize);	/* border thickness */
+	c = (int)obspec->obspec.framecol;		/* border colour */
 
 	if ( b != 0 )
 	{
@@ -600,164 +643,203 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	 * There are bitmasks for low res, med res (i.e. different aspect ratio)
 	 * and one common for all other (high) res.
 	 * For each resolution the bitmasks are in three parts, to enable
-	 * creation of 3d effects: upper left arc with centre circle, 
-	 * lower right arc and centre circle. Button is drawn in three
-	 * steps, the first one always being drawn in replace mode,
-	 * the other two transparent. If 3d capability does not exist,
-	 * button is drawn from other segments (full circle and centre dot)
+	 * creation of 3d effects: 
+	 * -upper left arc with centre circle, 
+	 * -lower right arc 
+	 * -centre circle. 
+	 * Button is drawn in three steps, the first one always being drawn 
+	 * in replace mode, the other two transparent. If 3d capability does 
+	 * not exist, button is drawn from other segments 
+	 * (full circle and centre dot)
 	 */
 
 	/* low res, full circle (deselected) */
-	static const short rbf_8x8[] = { 0x3800, 
-		     		           0x4400, 
-	    	     		       0x8200, 
-	        	               0x8200, 
-	            	       	   0x8200,
-	                   	       0x4400, 
-	                           0x3800, 
-	                           0x0000 };
+	static const short rbf_8x8[] = 
+	{ 
+		0x3800, 
+		0x4400, 
+	    0x8200, 
+	    0x8200, 
+	    0x8200,
+	    0x4400, 
+		0x3800, 
+		0x0000 
+	};
 
 	/* low res, center dot */
-	static const short rbc_8x8[] = { 0x0000, 
-	                           0x0000, 
-	                           0x3800, 
-	                           0x3800, 
-	                           0x3800,
-	                           0x0000, 
-	                           0x0000, 
-	                           0x0000 };
+	static const short rbc_8x8[] = 
+	{ 
+		0x0000, 
+		0x0000, 
+		0x3800, 
+		0x3800, 
+		0x3800,
+		0x0000, 
+		0x0000, 
+		0x0000 
+	};
 
 	/* low res, upper left arc and center dot */
-	static const short rbu_8x8[] = { 0x3800, 
-	                           0x4400, 
-	                           0xB800, 
-	                           0xB800, 
-	                           0xB800,
-	                           0x0000, 
-	                           0x0000, 
-	                           0x0000 };
+	static const short rbu_8x8[] = 
+	{ 
+		0x3800, 
+		0x4400, 
+		0xB800, 
+		0xB800, 
+		0xB800,
+		0x0000, 
+		0x0000, 
+		0x0000 
+	};
 
 	/* low res, lower right arc */
-	static const short rbl_8x8[] = { 0x0000, 
-	                           0x0000, 
-	                           0x0200, 
-	                           0x0200, 
-	                           0x0200,
-	                           0x4400, 
-	                           0x3800, 
-	                           0x0000 };
+	static const short rbl_8x8[] = 
+	{
+		0x0000, 
+		0x0000, 
+		0x0200, 
+		0x0200, 
+		0x0200,
+		0x4400, 
+		0x3800, 
+		0x0000 
+	};
 
 	/* med res (2:1 aspect ratio), full circle and center dot */
-	static const short rbf_16x8[] = {0x1FD0, 
-	                           0x6018, 
-	                           0x8784, 
-	                           0x8844, 
-	                           0x8784,
-	                           0x6018, 
-	                           0x1FD0, 
-	                           0x0000 };
+	static const short rbf_16x8[] = 
+	{
+		0x1FD0, 
+		0x6018, 
+		0x8784, 
+		0x8844, 
+		0x8784,
+		0x6018, 
+		0x1FD0, 
+		0x0000 
+	};
 
 	/* med res (2:1 aspect ratio), center dot */
-	static const short rbc_16x8[] = {0x0000, 
-	                           0x0000, 
-	                           0x0780, 
-	                           0x0F40, 
-	                           0x0780,
-	                           0x0000, 
-	                           0x0000, 
-	                           0x0000 };
+	static const short rbc_16x8[] = 
+	{
+		0x0000, 
+		0x0000, 
+		0x0780, 
+		0x0F40, 
+		0x0780,
+		0x0000, 
+		0x0000, 
+		0x0000 
+	};
 
 	/* med res (2:1 aspect ratio), upper left arc and center dot */
-	static const short rbu_16x8[] = { 0x1FD0, 
-	                            0x7810, 
-	                            0xD780, 
-	                            0xCFC0, 
-	                            0xC780,
-	                            0x4000, 
-	                            0x0000, 
-	                            0x0000 };
+	static const short rbu_16x8[] = 
+	{ 
+		0x1FD0, 
+		0x7810, 
+		0xD780, 
+		0xCFC0, 
+		0xC780,
+		0x4000, 
+		0x0000, 
+		0x0000 
+	};
 
 	/* med res, lower right arc */
-	static const short rbl_16x8[] = {0x0000, 
-	                           0x0008, 
-	                           0x000C, 
-	                           0x000C, 
-	                           0x001C,
-	                           0x1078, 
-	                           0x1FD0, 
-	                           0x0000 };
+	static const short rbl_16x8[] = 
+	{
+		0x0000, 
+		0x0008, 
+		0x000C, 
+		0x000C, 
+		0x001C,
+		0x1078, 
+		0x1FD0, 
+		0x0000 
+	};
 
 	/* high res, full circle, deselected center dot, 2D */
-	static const short rbf_16x16[] = { 0x0000, 
-	                             0x03C0, 
-	                             0x0C30,
-	                             0x1008,
-	                             0x2184,
-	                             0x2664, 
-	                             0x4422, 
-	                             0x4812, 
-	                             0x4812, 
-	                             0x4422,
-	                             0x2664, 
-	                             0x2184, 
-	                             0x1008, 
-	                             0x0C30, 
-	                             0x03C0,
-						         0x0000 };
+	static const short rbf_16x16[] = 
+	{ 
+		0x0000, 
+		0x03C0, 
+		0x0C30,
+		0x1008,
+		0x2184,
+		0x2664, 
+		0x4422, 
+		0x4812, 
+		0x4812, 
+		0x4422,
+		0x2664, 
+		0x2184, 
+		0x1008, 
+		0x0C30, 
+		0x03C0,
+		0x0000 
+	};
 
 	/* high res, center dot */
-	static const short rbc_16x16[] = { 0x0000, 
-	                             0x0000, 
-	                             0x0000, 
-	                             0x0000, 
-	                             0x0180,
-	                             0x07E0, 
-	                             0x07E0, 
-	                             0x0FF0, 
-	                             0x0FF0, 
-	                             0x07E0,
-	                             0x07E0, 
-	                             0x0180, 
-	                             0x0000, 
-	                             0x0000, 
-	                             0x0000,
-	                             0x0000 };
+	static const short rbc_16x16[] = 
+	{ 
+		0x0000, 
+		0x0000, 
+		0x0000, 
+		0x0000, 
+		0x0180,
+		0x07E0, 
+		0x07E0, 
+		0x0FF0, 
+		0x0FF0, 
+		0x07E0,
+		0x07E0, 
+		0x0180, 
+		0x0000, 
+		0x0000, 
+		0x0000,
+		0x0000 
+	};
 
 	/* high res, upper left arc and center dot, 3D */ 
-	static const short rbu_16x16x3[] = { 0x0000, 
-	                               0x03C0, 
-	                               0x0FF0,
-	                               0x1C18,
-	                               0x3180,
-	                               0x37E0, 
-	                               0x67E0, 
-	                               0x6FF0,  
-	                               0x6FF0, 
-	                               0x67E0,
-	                               0x27E0, 
-	                               0x3180, 
-	                               0x0000, 
-	                               0x0000, 
-	                               0x0000,
-	                               0x0000 };
+	static const short rbu_16x16x3[] = 
+	{ 
+		0x0000, 
+		0x03C0, 
+		0x0FF0,
+		0x1C18,
+		0x3180,
+		0x37E0, 
+		0x67E0, 
+		0x6FF0,  
+		0x6FF0, 
+		0x67E0,
+		0x27E0, 
+		0x3180, 
+		0x0000, 
+		0x0000, 
+		0x0000,
+		0x0000 
+	};
 
 	/* high res, lower right arc, 3D */
-	static const short rbl_16x16x3[] = { 0x0000, 
-	                               0x0000, 
-	                               0x0000, 
-	                               0x0000, 
-	                               0x000C,
-	                               0x0004, 
-	                               0x0006, 
-	                               0x0006, 
-	                               0x0006, 
-	                               0x0006,
-	                               0x000C, 
-	                               0x000C, 
-	                               0x1C38, 
-	                               0x0FF0, 
-	                               0x03C0,
-	                               0x0000 };
+	static const short rbl_16x16x3[] = 
+	{ 
+		0x0000, 
+		0x0000, 
+		0x0000, 
+		0x0000, 
+		0x000C,
+		0x0004, 
+		0x0006, 
+		0x0006, 
+		0x0006, 
+		0x0006,
+		0x000C, 
+		0x000C, 
+		0x1C38, 
+		0x0FF0, 
+		0x03C0,
+		0x0000
+	};
 
 	char
 		*string;		/* text beside the button */
@@ -804,19 +886,19 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	 * Make a selection of four bitmaps, according to resolution
 	 */
 
-	if (xd_regular_font.fnt_chh < 16)	/* low resolution(s) */
+	if (xd_regular_font.fnt_chh < 16)		/* low resolution(s) */
 	{
 		smfdb.fd_h = 8;
 		pxy[3] = 7;
 
-		if ( xd_desk.w < 2 * xd_desk.h ) /* low res */
+		if ( xd_desk.w < 2 * xd_desk.h ) 	/* low res */
 		{
 			bmu = rbu_8x8;
 			bml = rbl_8x8;
 			bmc = rbc_8x8;
 			bmf = rbf_8x8;
 		}
-		else /* med res */
+		else 								/* med res */
 		{
 			bmu = rbu_16x8;
 			bml = rbl_16x8;
@@ -824,7 +906,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 			bmf = rbf_16x8;
 		}
 	}
-	else								/* other (high) resolutuon(s) */
+	else									/* other (high) resolutuon(s) */
 	{
 		smfdb.fd_h = 16;
 		pxy[3] = 15;
@@ -899,9 +981,9 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 		vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i] );
 	}
 
-	/* Write text, always transparent, beside the button */
+	/* Write the text, always transparent, beside the button */
 
-	vswr_mode(xd_vhandle, MD_TRANS); 
+	xd_vswr_trans_mode(); 
 	set_textdef();
 	prt_text(string, x + (5 * xd_regular_font.fnt_chw) / 2, y, pb->pb_currstate);
 
@@ -920,11 +1002,9 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 static int cdecl ub_rectbut(PARMBLK *pb)
 {
 	int
-		pxy[8], 
-		flags,
-		b,
 		x = pb->pb_x, 
-		y = pb->pb_y;
+		y = pb->pb_y,
+		flags;
 
 	char 
 		*string;
@@ -947,8 +1027,8 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 	 * 3/4 of character height + 2 pixels + 3D enlargements
 	 */
 
-	size.x = pb->pb_x; /* intentionally without "+ aes_hor3d" here */
-	size.y = pb->pb_y + xd_regular_font.fnt_chh / 8 + aes_ver3d - 1;
+	size.x = x; /* intentionally without "+ aes_hor3d" here */
+	size.y = y + xd_regular_font.fnt_chh / 8 + aes_ver3d - 1;
  	size.h = pb->pb_h - xd_regular_font.fnt_chh / 4 - 2 * aes_ver3d + 2;
 
 	if ( xd_desk.w > 2 * xd_desk.h )
@@ -956,7 +1036,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 	else 
 		size.w = size.h;
 
-	/* Draw object box */
+	/* Draw object box. Specified size will be enlarged as appropriate */
 
 	xd_drawbox(&size, flags, pb->pb_currstate, XD_RECTBUT );
 
@@ -964,19 +1044,22 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 
 	if ( pb->pb_currstate & SELECTED )
 	{
-		if ( xd_is3dobj(flags) )
-			b = (aes_hor3d > 0) ? aes_hor3d - 1 : 1;
-		else
+		int
+			pxy[8], 
+			*pxyp = pxy,
 			b = 0;
 
-		pxy[0] = size.x + b;
-		pxy[1] = size.y + b;
-		pxy[2] = size.x + size.w - 1 - b;
-		pxy[3] = size.y + size.h - 1 - b;
-		pxy[4] = pxy[2];
-		pxy[5] = pxy[1];
-		pxy[6] = pxy[0];
-		pxy[7] = pxy[3];
+		if ( xd_is3dobj(flags) )
+			b = 1;
+
+		*pxyp++ = x + b; 					/* x = size.x */
+		*pxyp++ = size.y + b;
+		*pxyp++ = size.x + size.w - 1 - b;
+		*pxyp++ = size.y + size.h - 1 - b;
+		*pxyp++ = pxy[2];
+		*pxyp++ = pxy[1];
+		*pxyp++ = pxy[0];
+		*pxyp   = pxy[3];
 
 		set_linedef(BLACK);			
 		v_pline(xd_vhandle, 2, pxy);
@@ -986,8 +1069,8 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 	/* Draw object text beside the box, always in transparent mode */
 
 	set_textdef();
-	vswr_mode(xd_vhandle, MD_TRANS); 
-	prt_text(string, x + (5 * xd_regular_font.fnt_chw) / 2, y, pb->pb_currstate);
+	xd_vswr_trans_mode(); 
+	prt_text(string, x + 3 * xd_regular_font.fnt_chw, y, pb->pb_currstate);
 
 	/* Turn clipping off */
 
@@ -1077,7 +1160,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 			xd_drawbox(&size, AES3D_1, SELECTED, XD_SCRLEDIT );
 		else
 		{
-			/* other "gray background" AESses V4 */
+			/* other "gray background" AESes V4 */
 			clr_object(&size, xd_bg_col, -1);
 			tmode = MD_TRANS;
 		}
@@ -1095,28 +1178,29 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 
 	/* 
 	 * Put or remove marks that part of the text is not visible in the field 
+	 * ( characters < and/or > )
 	 */
 
 	if ( blk->ob_shift > 0 )
 	{
-		vswr_mode(xd_vhandle, MD_TRANS);
+		xd_vswr_trans_mode();
 		prt_text("<", xl, y, 0);
 	}
 	else
 	{
-		vswr_mode(xd_vhandle, MD_REPLACE);
+		xd_vswr_repl_mode();
 		cb.x = xl;
 		clr_object(&cb, xd_bg_col, -1);
 	}
 
 	if ( tw - blk->ob_shift > ow )
 	{
-		vswr_mode(xd_vhandle, MD_TRANS);
+		xd_vswr_trans_mode();
 		prt_text(">", xr, y, 0);
 	}
 	else
 	{
-		vswr_mode(xd_vhandle, MD_REPLACE);
+		xd_vswr_repl_mode();
 		cb.x = xr;
 		clr_object(&cb, xd_bg_col, -1);
 	} 
@@ -1182,7 +1266,7 @@ static int cdecl ub_button(PARMBLK *pb)
 	/* Define text position and writing mode */
 
 	set_textdef();
-	vswr_mode(xd_vhandle, MD_TRANS);
+	xd_vswr_trans_mode();
 
 	if ( pb->pb_currstate & SELECTED )
 	{
@@ -1219,7 +1303,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 		x, y,		/* text position */
 		dh,			/* height change */
 		flags,		/* state flags */
-		gap = 2; 	/* distance between the frame and thetxtt (pixels) */
+		gap = 2; 	/* distance between the frame and the text (pixels) */
 
 	char 
 		*string;	/* text to be written */
@@ -1256,7 +1340,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 
 	/* Clear the area for text */
 
-	vswr_mode(xd_vhandle, MD_REPLACE);
+	xd_vswr_repl_mode();
 
 	size.x = x - gap;
 	size.y = y - 1;
@@ -1268,13 +1352,12 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 	/* Draw text */
 
 	set_textdef();
-	vswr_mode(xd_vhandle, MD_TRANS);
+	xd_vswr_trans_mode();
 	prt_text(string, x, y, pb->pb_currstate);
 
 	/* Turn clipping off */
 
 	xd_clip_off();
-
 	return 0;
 }
 
@@ -1282,9 +1365,9 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 /* 
  * Code for drawing a progdefined "underlined title" object.
  * With few colours available, or if there is no 3D AES present,
- * just draw the text wit a line beneath. Else, draw a box with
+ * just draw the text with a line below it. Else, draw a box with
  * 3D effects and put the text inside it.
- * Note: tis should be improved a bit. The box always displays
+ * Note: this should be improved a bit. The box always displays
  * a little wider then other box objects in the dialog. 
  * What should be done is to move the text a little to the right
  * (but only if a box is drawn), and not increase object width.
@@ -1293,6 +1376,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 static int cdecl ub_title(PARMBLK *pb)
 {
 	int 
+		dx,
 		pxy[4],
 		flags;
 
@@ -1316,20 +1400,22 @@ static int cdecl ub_title(PARMBLK *pb)
 
 	if ( xd_colaes && xd_is3dobj(flags) )
 	{
-		size.x = pb->pb_x - 2;
+		dx = 2;
+		size.x = pb->pb_x;
 		size.y = pb->pb_y - 1;
-		size.w = pb->pb_w + 4; /* this is too wide! */
+		size.w = pb->pb_w;
 		size.h = pb->pb_h;
 		xd_drawbox( &size, flags, pb->pb_currstate, XD_TITLE );
 	}
 	else
-	{		
+	{
+		dx = 0;		
 		pxy[0] = pb->pb_x;
 		pxy[1] = pb->pb_y + pb->pb_h;
 		pxy[2] = pxy[0] + pb->pb_w - 1;
 		pxy[3] = pxy[1];
 
-		vswr_mode(xd_vhandle, MD_REPLACE);
+		xd_vswr_repl_mode();
 		set_linedef(BLACK);
 		v_pline(xd_vhandle, 2, pxy);
 	}
@@ -1337,8 +1423,10 @@ static int cdecl ub_title(PARMBLK *pb)
 	/* Draw title text */
 
 	set_textdef();
-	vswr_mode(xd_vhandle, MD_TRANS);
-	prt_text(string, pb->pb_x, pb->pb_y + (pb->pb_h - xd_regular_font.fnt_chh - 1) / 2, pb->pb_currstate);
+	xd_vswr_trans_mode();
+	vst_color(xd_vhandle, LBLUE);
+	prt_text(string, pb->pb_x + dx, pb->pb_y + (pb->pb_h - xd_regular_font.fnt_chh - 1) / 2, pb->pb_currstate);
+	vst_color(xd_vhandle, BLACK);
 
 	/* Turn clipping off */
 
@@ -1363,7 +1451,7 @@ static int cdecl ub_unknown(PARMBLK *pb)
 	xd_clip_on(clip);
 
 	set_linedef(BLACK);
-	vswr_mode(xd_vhandle, MD_REPLACE);
+	xd_vswr_repl_mode();
 	clr_object(frame, 0, -1);
 	draw_frame(frame, 0, 0);
 
@@ -1417,7 +1505,7 @@ static void xd_credraw(XDINFO *info, RECT *area)
 	{
 		RECT cursor, r;
 		MFDB smfdb;
-		int pxy[8];
+		int pxy[8], *pxyp = pxy;
 
 		xd_calc_cursor(info, &cursor);
 		smfdb.fd_addr = NULL;
@@ -1426,23 +1514,21 @@ static void xd_credraw(XDINFO *info, RECT *area)
 		{
 			/* Save area below cursor. */
 			
-			pxy[0] = r.x;
-			pxy[1] = r.y;
-			pxy[2] = r.x + r.w - 1;
-			pxy[3] = r.y + r.h - 1;
-			pxy[4] = r.x - cursor.x;
-			pxy[5] = r.y - cursor.y;
-			pxy[6] = pxy[4] + r.w - 1;
-			pxy[7] = pxy[5] + r.h - 1;
+			*pxyp++ = r.x;
+			*pxyp++ = r.y;
+			*pxyp++ = r.x + r.w - 1;
+			*pxyp++ = r.y + r.h - 1;
+			*pxyp++ = r.x - cursor.x;
+			*pxyp++ = r.y - cursor.y;
+			*pxyp++ = pxy[4] + r.w - 1;
+			*pxyp   = pxy[5] + r.h - 1;
 
-			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb,
-					  &cursor_mfdb);
+			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb, &cursor_mfdb);
 
 			/* Draw cursor. */
 			
 			xd_clip_on(&r);
-
-			vswr_mode(xd_vhandle, MD_REPLACE);
+			xd_vswr_repl_mode();
 			set_linedef(BLACK);
 
 			pxy[0] = pxy[2] = cursor.x;
@@ -1450,7 +1536,6 @@ static void xd_credraw(XDINFO *info, RECT *area)
 			pxy[3] = cursor.y + cursor.h - 1;
 
 			v_pline(xd_vhandle, 2, pxy);
-
 			xd_clip_off();
 		}
 	}
@@ -1467,7 +1552,7 @@ static void xd_cur_remove(XDINFO *info)
 	{
 		RECT cursor, r1, r2;
 		MFDB dmfdb;
-		int pxy[8];
+		int pxy[8], *pxyp = pxy;
 
 		xd_calc_cursor(info, &cursor);
 		xd_mouse_off();
@@ -1477,17 +1562,16 @@ static void xd_cur_remove(XDINFO *info)
 		{
 			xd_clip_on(&cursor);
 
-			pxy[0] = 0;
-			pxy[1] = 0;
-			pxy[2] = cursor.w - 1;
-			pxy[3] = cursor.h - 1;
-			pxy[4] = cursor.x;
-			pxy[5] = cursor.y;
-			pxy[6] = cursor.x + cursor.w - 1;
-			pxy[7] = cursor.y + cursor.h - 1;
+			*pxyp++ = 0;
+			*pxyp++ = 0;
+			*pxyp++ = cursor.w - 1;
+			*pxyp++ = cursor.h - 1;
+			*pxyp++ = cursor.x;
+			*pxyp++ = cursor.y;
+			*pxyp++ = cursor.x + pxy[2];
+			*pxyp   = cursor.y + pxy[3];
 
-			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb,
-					  &dmfdb);
+			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 
 			xd_clip_off();
 		}
@@ -1501,17 +1585,18 @@ static void xd_cur_remove(XDINFO *info)
 				{
 					xd_clip_on(&cursor);
 
-					pxy[0] = r2.x - cursor.x;
-					pxy[1] = r2.y - cursor.y;
-					pxy[2] = pxy[0] + r2.w - 1;
-					pxy[3] = pxy[1] + r2.h - 1;
-					pxy[4] = r2.x;
-					pxy[5] = r2.y;
-					pxy[6] = r2.x + r2.w - 1;
-					pxy[7] = r2.y + r2.h - 1;
+					pxyp = pxy;
 
-					vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb,
-							  &dmfdb);
+					*pxyp++ = r2.x - cursor.x;
+					*pxyp++ = r2.y - cursor.y;
+					*pxyp++ = pxy[0] + r2.w - 1;
+					*pxyp++ = pxy[1] + r2.h - 1;
+					*pxyp++ = r2.x;
+					*pxyp++ = r2.y;
+					*pxyp++ = r2.x + r2.w - 1;
+					*pxyp   = r2.y + r2.h - 1;
+
+					vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 
 					xd_clip_off();
 				}
@@ -1618,6 +1703,17 @@ void xd_drawdeep(XDINFO *info, int start)
 }
 
 
+/*
+ * Similar, but draw this level only
+ */
+
+void xd_drawthis(XDINFO *info, int start)
+{
+	xd_draw(info, start, 0);
+}
+
+
+
 /********************************************************************
  *																	*
  * Funktie voor het veranderen van de status van een object.		*
@@ -1646,7 +1742,7 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 		tree[object].ob_state = twostates;
 
 		if (draw)
-			xd_draw(info, object, 0); /* 0: draw only this object */
+			xd_drawthis(info, object); /* draw only this object */
 	}
 }
 
@@ -1722,7 +1818,7 @@ static int must_userdef(OBJECT *ob)
 
 
 /*
- * Specify that xdialog will always draw all extended object types on itself,
+ * Specify that xdialog will always draw all extended object types by itself,
  * whether an AES can support them or not. sometimes they may look nicer that way.
  * 1= force xdialog to draw all; 0= let AES do it. This could be
  * used elsewhere in TeraDesk to set how the dialogs should be drawn-
@@ -1764,7 +1860,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 
 	for (;;)
 	{
-		etype = (object->ob_type >> 8) & 0xFF;
+		etype = xd_xobtype(object);
 
 		if (xd_is_xtndelement(etype) && ((object->ob_type & 0xFF) != G_USERDEF))
 		{
@@ -1853,7 +1949,7 @@ void xd_set_userobjects(OBJECT *tree)
 		c_code = 0L;							/* no pointer to user code */
 		c_obj = tree + object;					/* object index */
 		xuserblk = FALSE;						/* no extended block */
-		etype = (c_obj->ob_type >> 8) & 0xFF;	/* extended object type */
+		etype = xd_xobtype(c_obj);				/* extended type */
 
 		if (xd_is_xtndelement(etype) && ((c_obj->ob_type & 0xFF) != G_USERDEF))
 		{
@@ -1900,17 +1996,22 @@ void xd_set_userobjects(OBJECT *tree)
 			case XD_BUTTON :
 				/* 
 				 * Rectangular button with (possibly) underlined text;   
-				 * This object should have a minimum height   
+				 * This object should have a minimum height in order   
 				 * to accomodate the underline inside the button.
 				 * Modification should affect both userdefined and 
 				 * AES-supported objects.
 				 */
 				hmin = xd_regular_font.fnt_chh + 2; /* minimum height */
+
+				if ( xd_has3d && (aes_ver3d == 0) ) /* 3D but without enlargements */
+					hmin += 2;
+
 				if ( c_obj->ob_height < hmin )
 				{
 					c_obj->ob_y -= (hmin - c_obj->ob_height) / 2;
 					c_obj->ob_height = hmin;
 				}
+
 				if (must_userdef(c_obj))
 					c_code = ub_button;
 				break;
@@ -1921,7 +2022,7 @@ void xd_set_userobjects(OBJECT *tree)
 				 * the upper side will alwas be drawn about
 				 * 1/2 character heights inside the object;
 				 * withut increasing object size, the upper
-				 * edge would have been too close to objects  
+				 * edge would be too close to objects  
 				 * inside. This affects both userdefined and
 				 * AES-supported objects.
 				 */
@@ -1941,11 +2042,11 @@ void xd_set_userobjects(OBJECT *tree)
 				 * underline gets too close to the text
 				 * (in fact, it is drawn OVER the text)
 				 */
-				d = 1;
+
 				if (must_userdef(c_obj))
 					c_code = ub_title;
-				else if ( xd_colaes && (aes_ver3d == 0) )
-					d += 2; /* mostly for magic */
+
+				d = ( xd_colaes && (aes_ver3d == 0) ) ? 3 : 1;
 				c_obj->ob_height += 2 * d; 
 				c_obj->ob_y -= d + 1;
 				break;
@@ -1954,10 +2055,15 @@ void xd_set_userobjects(OBJECT *tree)
 				c_code = ub_scrledit;
 				break;
 			case XD_FONTTEXT:
-				c_code = ub_unknown;
+				/* 
+				 * Sample text in font selector dialog;
+				 * ub_unknown is rplaced later by a pointer to
+				 * actual code
+				 */
+				c_code = ub_unknown; 
 				break;
 			default:
-				/* yet unknown userdef! */
+				/* Yet unknown userdef; this should never happen! */
 				c_code = ub_unknown;
 				xuserblk = FALSE;
 				break;
@@ -2012,7 +2118,7 @@ int xd_gaddr(int type, int index, void *addr)
 
 char *xd_set_srcl_text(OBJECT *tree, int item, char *txt)
 {
-	TEDINFO *ted = xd_get_obspec(tree + item).tedinfo;
+	TEDINFO *ted = xd_get_obspecp(tree + item)->tedinfo;
 	ted->te_ptext = txt;
 	*txt = 0;
 	return txt;
@@ -2030,7 +2136,5 @@ void xd_fixtree(OBJECT *tree)
 			break;
 		i++;
 	}
-
-	xd_set_userobjects(tree);
 }
 

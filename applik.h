@@ -39,7 +39,7 @@ typedef struct appl
 	FTYPE *filetypes;
 } APPLINFO;
 
-extern APPLINFO *applikations;
+extern APPLINFO awork, *applikations;
 
 CfgNest app_config;
 

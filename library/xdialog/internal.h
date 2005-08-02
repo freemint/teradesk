@@ -121,7 +121,9 @@ extern int
 	xd_posmode,
 	xd_min_timer,
 	aes_flags,
-	xd_fdo_flag,
+	xd_fdo_flag;
+
+extern const int
 	ckeytab[];
 
 extern const char *xd_prgname;
@@ -134,6 +136,7 @@ extern OBJECT *xd_menu;
 extern RECT xd_desk;
 extern XD_FONT xd_regular_font, xd_small_font;
 
+extern void set_linedef(int color);
 extern int xd_movebutton(OBJECT *tree);
 extern int xd_abs_curx(OBJECT *tree, int object, int curx);
 extern void xd_cursor_on(XDINFO *info);

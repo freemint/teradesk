@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren. 
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+#if _LOGFILE
+#include <stdio.h>
+#endif
 
 #include <np_aes.h>
 #include <stdlib.h>
@@ -60,41 +64,46 @@
 
 #define RSRCNAME	"desktop.rsc" /* Name of te program's resource file */
 
-#define EVNT_FLAGS	(MU_MESAG|MU_BUTTON|MU_KEYBD) /* For the main loop */
+#define EVNT_FLAGS	(MU_MESAG | MU_BUTTON | MU_KEYBD) /* For the main loop */
 
 #define MAX_PLINE 132 	/* maximum printer line length */
 #define MIN_PLINE 32	/* minimum printer line length */
-#define DEF_PLINE 80	/* defeult printer line length */
+#define DEF_PLINE 80	/* default printer line length */
+
+extern boolean
+	fargv;				/* flag to force use of ARGV whenever possible */
 
 extern char 
 	*xd_cancelstring;	/* from xdialog; possible 'Cancel' texts */
 
 Options 
-	options;		/* configuration options */
+	options;			/* configuration options */
 
 int 
+	tos_version,	/* detected version of TOS; interpret in hex format */
+	aes_version,	/* detected version of AES; interpret in hex format */
 	ap_id,			/* application id. of this program (TeraDesk) */
 	vdi_handle, 	/* current VDI station handle   */
-	max_w,			/* screen width */ 
-	max_h,			/* screen height */ 
+	max_w,			/* screen width in pixel units */ 
+	max_h,			/* screen height in pixel units */ 
 	nfonts;			/* number of available fonts    */
 
 SCRINFO 
-	screen_info;	/* Screen handle, size, font size */ 
+	screen_info;	/* Screen handle, size rectangle, font size */ 
 
 FONT 
 	def_font;		/* Data for the default (system) font */
 
-/* Names of menu boxes */
+/* Names of menu boxes in the main menu */
 
 static const int 
 	menu_items[6] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
 
 #if _MINT_
-boolean			/* No need to define values, set when starting main() */
-	mint, 		/* true if Mint  is present  */
+boolean			/* No need to define values, always set when starting main() */
+	mint, 		/* True if Mint  is present  */
 	magx,		/* True if MagiC is present  */	
-	naes,		/* TRUE if N.AES is present  */
+	naes,		/* True if N.AES is present  */
 	geneva;		/* True if Geneva is present */
 
 int 
@@ -102,18 +111,29 @@ int
 #endif
 
 static boolean
-	chrez = FALSE, 		/* true if resolution sould be changed */
+	chrez = FALSE, 		/* true if resolution should be changed */
 	quit = FALSE,		/* true if teradesk should finish      */ 
-	shutdown = FALSE;	/* true if system shutdown is required */
+	shutdown = FALSE,	/* true if system shutdown is required */
+	shutting = FALSE;	/* true if started shutting down       */
 
 char
 	*teraenv,		/* pointer to value of TERAENV environment variable */ 
 	*fsdefext,		/* default filename extension in current OS */
-	*optname,		/* name of old configuration file (teradesk.cfg) */ 
 	*infname,		/* name of V3 configuration file (teradesk.inf)  */ 
 	*palname,		/* name of colour palette file (teradesk.pal)    */
-	*global_memory,	/* Globally available buffer for passing params */
-	*infide = "TeraDesk-inf", /* File identifier header */
+	*global_memory;	/* Globally available buffer for passing params */
+
+#if _LOGFILE
+FILE
+	*logfile;
+char
+	*logname;
+#endif
+
+static const char
+	*infide = "TeraDesk-inf"; /* File identifier header */
+
+const char
 	*empty = "\0",		/* often used string */
 	*bslash = "\\",		/* often used string */
 	*adrive = "A:\\";	/* often used string */
@@ -124,35 +144,38 @@ char
  * can not be found. It is shown in an alert box.
  */
 
-static char 
-	msg_resnfnd[] =  "[1][Unable to find resource file.|"
+static const char 
+	msg_resnfnd[] =  "[1][Unable to find the resource file.|"
 					 "Resource file niet gevonden.|"
 					 "Impossible de trouver le|fichier resource.|"
 					 "Resource Datei nicht gefunden.][ OK ]";
 
-int 
-	tos_version,	/* detected version of TOS; interpret in hex format */
-	aes_version;	/* detected version of AES; interpret in hex format */
+static XDEVENT 
+	loopevents;		/* events awaited for in the main loop */
 
 
-int hndlmessage(int *message);
 void Shutdown(long mode);
 
-CfgNest				/* Elsewhere defined configuration routines */ 
+static CfgNest				/* Elsewhere defined configuration routines */ 
 	opt_config, 
-	short_config, 
+	short_config; 
+
+CfgNest
 	dsk_config;
+
+/* Compatibility issue, remove after V3.60 */
+char dummy_helpprg[16];
 
 /* Root level of configuration data */
 
-CfgEntry Config_table[] =
+static const CfgEntry Config_table[] =
 {
 	{CFG_NEST, 0, "options",	 opt_config	 },
 	{CFG_NEST, 0, "shortcuts",	 short_config},
-	{CFG_NEST, 0, "deskicons",	 dsk_config	 },
 	{CFG_NEST, 0, "filetypes",	 ft_config	 },
-	{CFG_NEST, 0, "icontypes",	 icnt_config },
 	{CFG_NEST, 0, "apptypes",    prg_config	 },
+	{CFG_NEST, 0, "icontypes",	 icnt_config },
+	{CFG_NEST, 0, "deskicons",	 dsk_config	 },
 	{CFG_NEST, 0, "applications",app_config	 },
 	{CFG_NEST, 0, "windows",	 wd_config	 },
 	{CFG_NEST, 0, "avstats",	 va_config   },
@@ -162,8 +185,8 @@ CfgEntry Config_table[] =
 
 
 /*
- * Configuration table for desktop options
- * Take care to keep "infv" at the first place.
+ * Configuration table for desktop options.
+ * Take care to keep "infv" first in the list.
  * Bit flags are written in hex format for easier 
  * manipulation by humans.
  */
@@ -175,14 +198,19 @@ CfgEntry Options_table[] =
 	/* file version */
 	{CFG_X, 0, "infv", &options.version	    }, 		/* file version */
 	/* desktop preferences */
-	{CFG_D, 0, "dial", &options.dial_mode	},
-	{CFG_D, 0, "save", &options.sexit		},
-	{CFG_S, 0, "help", &options.helpprg		},
+
+/* Compatibility issue, remove after V3.60 */
+
+	{CFG_S, CFG_INHIB, "help", &dummy_helpprg},		/* name of the help program */
+
+	{CFG_D, 0, "save", &options.sexit		},		/* save desk at exit */
+	{CFG_X, 0, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
+	{CFG_X, 0, "xpre", &options.xprefs		}, 		/* bit flags !!! diverse prefs */
 	/* Copy preferences */
 	{CFG_X, 0, "pref", &options.cprefs		}, 		/* bit flags !!! copy prefs */
 	/* sizes of diverse items */
 	{CFG_D, 0, "buff", &options.bufsize	    }, 		/* copy buffer size */
-	{CFG_L, 0, "maxd", &options.max_dir	}, 			/* initial dir size */
+	{CFG_L, 0, "maxd", &options.max_dir		},		/* initial dir size */
 	{CFG_D, 0, "plin", &options.plinelen	},		/* printer line length */
 	{CFG_D, 0, "tabs", &options.tabsize	    }, 		/* tab size    */
 	{CFG_D, 0, "cwin", &options.cwin	    }, 		/* compare match size */
@@ -191,7 +219,7 @@ CfgEntry Options_table[] =
 	{CFG_H, 0, "aarr", &options.aarr		}, 		/* auto arrange */
 	{CFG_H, 0, "sort", &options.sort		}, 		/* sorting key */
 	{CFG_X, 0, "attr", &options.attribs	    }, 		/* Bit flags !!! global attributes to show */
-	{CFG_X, 0, "flds", &options.fields	}, 			/* Bit flags !!! dir. fields to show  */
+	{CFG_X, 0, "flds", &options.fields		},		/* Bit flags !!! dir. fields to show  */
 	/* video options */
 	{CFG_X, 0, "vidp", &options.vprefs	}, 			/* Bit flags ! */
 	{CFG_D, 0, "vres", &options.vrez	},			/* video resolution */
@@ -212,6 +240,9 @@ CfgEntry Options_table[] =
  * match the actual state.
  */
 
+
+static int inhibit; /* receive some compatibility values */
+
 CfgEntry Shortcut_table[] =
 {
 	{CFG_HDR,0, "shortcuts" },
@@ -225,10 +256,6 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, 0, "srch", &options.kbshort[MSEARCH		- MFIRST]	},
 	{CFG_X, 0, "prin", &options.kbshort[MPRINT		- MFIRST]	},
 	{CFG_X, 0, "dele", &options.kbshort[MDELETE		- MFIRST]	},
-	{CFG_X, 0, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
-	{CFG_X, 0, "wdup", &options.kbshort[MDUPLIC		- MFIRST]	},
-	{CFG_X, 0, "wclo", &options.kbshort[MCLOSEW		- MFIRST]	},
-	{CFG_X, 0, "cycl", &options.kbshort[MCYCLE		- MFIRST]	},
 	{CFG_X, 0, "sela", &options.kbshort[MSELALL		- MFIRST]	},
 #if MFCOPY
 	{CFG_X, 0, "copy", &options.kbshort[MFCOPY		- MFIRST]	},
@@ -255,14 +282,24 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, 0, "adat", &options.kbshort[MSHDAT		- MFIRST]	},
 	{CFG_X, 0, "atim", &options.kbshort[MSHTIM		- MFIRST]	},
 	{CFG_X, 0, "aatt", &options.kbshort[MSHATT		- MFIRST]	},
+#if _MINT_
+	{CFG_X, 0, "aown", &options.kbshort[MSHOWN		- MFIRST]	},
+#endif
 	{CFG_X, 0, "smsk", &options.kbshort[MSETMASK	- MFIRST]	},
+
+	/* Window menu */
+	{CFG_X, 0, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
+	{CFG_X, 0, "wclo", &options.kbshort[MCLOSEW		- MFIRST]	},
+	{CFG_X, 0, "cloa", &options.kbshort[MCLOSALL	- MFIRST]	},
+	{CFG_X, 0, "wdup", &options.kbshort[MDUPLIC		- MFIRST]	},
+	{CFG_X, 0, "cycl", &options.kbshort[MCYCLE		- MFIRST]	},
 
 	/* Options menu */
 	{CFG_X, 0, "appl", &options.kbshort[MAPPLIK		- MFIRST]	},
 	{CFG_X, 0, "ptyp", &options.kbshort[MPRGOPT		- MFIRST]	},
 	{CFG_X, 0, "dski", &options.kbshort[MIDSKICN	- MFIRST]	},
 	{CFG_X, 0, "wini", &options.kbshort[MIWDICN		- MFIRST]	},
-	{CFG_X, 0, "remi", &options.kbshort[MREMICON	- MFIRST]	},
+	{CFG_X, CFG_INHIB, "remi", &inhibit}, /* compatibility issue, remove after V3.7 */
 	{CFG_X, 0, "pref", &options.kbshort[MOPTIONS	- MFIRST]	},
 	{CFG_X, 0, "copt", &options.kbshort[MCOPTS		- MFIRST]	},
 	{CFG_X, 0, "wopt", &options.kbshort[MWDOPT		- MFIRST]	},
@@ -277,7 +314,7 @@ CfgEntry Shortcut_table[] =
 
 
 /* 
- * Try to llocate some memory and check success.
+ * Try to allocate some memory and check success.
  * There will generally be some loss in speed, 
  * so use with discretion.
  */
@@ -296,7 +333,7 @@ void *malloc_chk(size_t size)
 /*
  * Show information on current versions of TeraDesk, TOS, AES...
  * Note: constant part of info for this dialog is handled in resource.c 
- * This involves setting teradesk name and version, etc.
+ * This involves setting TeraDesk name and version, etc.
  */
 
 static void info(void)
@@ -335,10 +372,11 @@ static void info(void)
 
 /*
  * Display three consecutive boxes of text on HELP key
- * or, if <Shift><Help> is pressed, try to call ST-Guide.
- * Note 1: currently, there is no notification if call to
- * ST-Guide is not successful.
- * Note 2: according to AV-protocol documentation all filenames
+ * or, if <Shift><Help> is pressed, try to call the .HYP file viewer
+ * (usually this is ST-GUIDE program or accessory).
+ * Note 1: currently, there is no notification if the call to the viewer
+ * is successful.
+ * Note 2: according to AV-protocol documentation, all filenames
  * must be input in capitals with complete paths (at least the documentation
  * for ST-Guide says so. How does this comply with unixoid filesystems? 
  * Maybe should use lowercase after all?)
@@ -346,11 +384,18 @@ static void info(void)
  */
 
 static void showhelp (unsigned int key) 		
-{
+{		
+	static const char 
+		hbox[] = {HLPBOX1, HLPBOX2, HLPBOX3};
+
 	if ( key & XD_SHIFT )
 	{
-		onfile = TRUE;
-		va_start_prg(options.helpprg, PACC,  "*:\\TERADESK.HYP");
+		APPLINFO *helpprg = app_find("*.HYP");
+		if(helpprg)
+		{
+			onfile = TRUE;
+			app_exec(NULL, helpprg, NULL, (int *)("*:\\TERADESK.HYP"), -1, 0);
+		}
 	}
 	else
 	{
@@ -361,34 +406,30 @@ static void showhelp (unsigned int key)
 			i = 0, 
 			button;
 
-		static const int 
-			hbox[3] = {HLPBOX1, HLPBOX2, HLPBOX3};
-
-
 		obj_unhide(helpno1[HELPOK]);
+		obj_unhide(helpno1[HLPBOX1]);
 
 		xd_open(helpno1, &info);
 
 		do
 		{
-			obj_unhide( helpno1[hbox[i]] );
-
-			if ( i == 2 )
-				obj_hide(helpno1[HELPOK]);
-
-			xd_drawdeep(&info, ROOT);
-
 			button = xd_form_do(&info, ROOT);
 			xd_buttnorm(&info, button); 
-			
 			obj_hide(helpno1[hbox[i]]);
+
+			/* At i == 2 one must and can exit this way only */
 
 			if ( button == HELPCANC )
 				break;
 
 			i++;
+
+			obj_unhide( helpno1[hbox[i]] );
+			if ( i == 2 )
+				obj_hide(helpno1[HELPOK]);
+			xd_drawdeep(&info, ROOT);
 		}
-		while(i < 3);
+		while(TRUE);
 
 		xd_close(&info);
 	}
@@ -429,14 +470,14 @@ void get_opt( OBJECT *tree, int *flags, int opt, int button)
 
 static void set_dialmode(void)
 {
-	xd_setdialmode(options.dial_mode, hndlmessage, menu, (int) (sizeof(menu_items) / sizeof(int)), menu_items);
+	xd_setdialmode( (options.dial_mode & DIAL_MODE), hndlmessage, menu, (int) (sizeof(menu_items) / sizeof(int)), menu_items);
 }
 
 
 /* See also desk.h */
 
 /*
- * A routine for displaying a keyboard shortcut in an ASCII readable form; 
+ * A routine for displaying a keyboard shortcut in a human-readable form; 
  * <DEL>, <BS>, <TAB> and <SP> are displayed as "DEL", "BS", "TAB" and "SP",
  * other single characters are represented by that character;
  * "control" is represented by "^";
@@ -524,9 +565,7 @@ static void ins_shorts(void)
 			} 		/* ' ' ? 			*/
 		}			/* string ? 		*/
 		else
-		{
 			options.kbshort[menui - MFIRST] = XD_ALT; /* under new title from now on */
-		}
 	}				/* for... 			*/
 }
 
@@ -537,25 +576,22 @@ static void ins_shorts(void)
 
 static boolean check_key(int button, int i, unsigned int *tmp)
 {
-	int  j;
-
 	if ( button != OPTCANC && button != OPTKCLR )
 	{
-		/* 
-		 * This is not very well optimized, it checks tmp[i] many times
-		 * repeatedly; a legacy from a previous version,
-		 * should perhaps be corrected
-		 */
+		int j;
+		unsigned int *tmpi = &tmp[i];
+
+		/* Note: this tests tmp[i] many times repeatedly, but who cares */
 
 		for ( j = 0; j <= NITEM; j++ ) 
 		{
 			/* XD_ALT below in order to skip items related to menu boxes */
-			if (   ( ( (tmp[i] & XD_SCANCODE) != 0 ) && ( (tmp[i] & 0xFF) < 128) )
-		    	|| (   (tmp[i] & ~XD_ALT) != 0 && (i != j) && tmp[i] == tmp[j] ) /* duplicate */
-				|| tmp[i] == (XD_CTRL | BACKSPC) /* ^BS illegal, can't differentiate */
-				|| tmp[i] == (XD_CTRL | TAB)	 /* ^TAB illegal, can't differentiate */
-				|| tmp[i] == SPACE				 /* illegal, because used to scroll viewer window */
-				|| tmp[i] == XD_CTRL			 /* ^ only, illegal */
+			if (   ( ( (*tmpi & XD_SCANCODE) != 0 ) && ( (*tmpi & 0xFF) < 128) )
+		    	|| (   (*tmpi & ~XD_ALT) != 0 && (i != j) && *tmpi == tmp[j] ) /* duplicate */
+				|| *tmpi == (XD_CTRL | BACKSPC) /* ^BS illegal, can't differentiate */
+				|| *tmpi == (XD_CTRL | TAB)	 	/* ^TAB illegal, can't differentiate */
+				|| *tmpi == SPACE				/* SPACE illegal, because used to scroll viewer window */
+				|| *tmpi == XD_CTRL				/* ^ only, illegal */
 		       )
 			{
 				alert_printf ( 1, ADUPKEY, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
@@ -568,9 +604,9 @@ static boolean check_key(int button, int i, unsigned int *tmp)
 
 
 /*
- * routine arrow_form_do handles some redraws around a xd_form_do
- * which are needed to create effect of a pressed (3d) arrow buton
- * related to some fields in dialogs
+ * routine arrow_form_do handles some redraws related to xd_form_do()
+ * which are needed to create the effect of a pressed (3d) arrow button
+ * on some objects in dialogs
  */
 
 int arrow_form_do
@@ -590,7 +626,7 @@ int arrow_form_do
 		if ( (xe_button_state() & 1) == 0 )
 		{
 			obj_deselect(tree[*oldbutton]); 
-			xd_draw ( treeinfo, *oldbutton, 0 ); 
+			xd_drawthis( treeinfo, *oldbutton ); 
 			*oldbutton = 0;
 		}	
 		else
@@ -601,7 +637,7 @@ int arrow_form_do
 	if ( button != *oldbutton )
 	{
 		obj_select(tree[button]);
-		xd_draw ( treeinfo, button, 0 );
+		xd_drawthis( treeinfo, button );
 		*oldbutton = button;
 	}
 	return button;
@@ -628,6 +664,7 @@ static void setpreferences(void)
 		i;					/* counters */
 
 	unsigned int 
+		*tmpmi,
 		tmp[NITEM+2];		/* temporary kbd shortcuts (until OK'd) */
 
 	char 
@@ -640,8 +677,8 @@ static void setpreferences(void)
 
 	/*  Set state of radio buttons and checkbox button(s) */
 
-	xd_set_rbutton(setprefs, OPTPAR2, (options.cprefs & DIALPOS_MODE) ? DMOUSE : DCENTER);
-	xd_set_rbutton(setprefs, OPTPAR1, DBUFFERD + options.dial_mode - 1);
+	xd_set_rbutton(setprefs, OPTPAR2, (options.dial_mode & DIALPOS_MODE) ? DMOUSE : DCENTER);
+	xd_set_rbutton(setprefs, OPTPAR1, DBUFFERD + (options.dial_mode & DIAL_MODE) - 1);
 	set_opt( setprefs, options.sexit, 1, SEXIT);
 
 	itoa(options.tabsize, tabsize, 10);	
@@ -664,6 +701,7 @@ static void setpreferences(void)
 		/* Display text of current menu item */
 
 		mi = menui - MFIRST;
+		tmpmi = &tmp[mi];
 
 		if ( redraw )
 		{
@@ -683,10 +721,10 @@ static void setpreferences(void)
 
 			/* Display defined shortcut in ASCII form */
 
-			disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, tmp[mi], TRUE );
+			disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, *tmpmi, TRUE );
         
-			xd_draw( &prefinfo, OPTMTEXT, 0 );
-			xd_draw( &prefinfo, OPTKKEY, 0 );
+			xd_drawthis( &prefinfo, OPTMTEXT );
+			xd_drawthis( &prefinfo, OPTKKEY );
 			redraw = FALSE;
 		}
 
@@ -700,14 +738,14 @@ static void setpreferences(void)
 			strcpy ( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, aux );
 			
 			i = (int)strlen( aux ); 
-			tmp[mi] = 0;
+			*tmpmi = 0;
 
 			switch ( i )
 			{
 				case 0:						/* nothing defined */
 					break;
 				case 1:						/* single-character shortcut */
-					tmp[mi] = aux[0] & 0x00FF;
+					*tmpmi = aux[0] & 0x00FF;
 					break;
 				case 2:						/* two-character ^something shortcut */
 					if 
@@ -715,30 +753,30 @@ static void setpreferences(void)
 						(aux[0] == '^')  &&
 					    ( 
 							((aux[1] >= 'A') && (aux[1] <= 'Z')) || 
-							( (aux[i] & 80) != 0 )
+							( (aux[i] & 0x80) != 0 )
 						)
 					)
-						tmp[mi] = (aux[1] & 0x00FF) | XD_CTRL;
+						*tmpmi = (aux[1] & 0x00FF) | XD_CTRL;
 					else
-						tmp[mi] = XD_CTRL;  /* illegal/ignored menu object */
+						*tmpmi = XD_CTRL;  /* illegal/ignored menu object */
 					break;	
 				default:					/* longer shortcuts */
 					if ( aux[0] == '^' )
 					{
-						tmp[mi] = XD_CTRL;
+						*tmpmi = XD_CTRL;
 						aux[0] = ' ';
 						strip_name( aux, aux );
 					}
 					if ( strcmp( aux, "BS" ) == 0 )
-						tmp[mi] |= BACKSPC;
+						*tmpmi |= BACKSPC;
 					else if ( strcmp( aux, "TAB" ) == 0 )
-						tmp[mi] |= TAB;
+						*tmpmi |= TAB;
 					else if ( strcmp( aux, "SP" ) == 0 )
-						tmp[mi] |= SPACE;
+						*tmpmi |= SPACE;
 					else if ( strcmp( aux, "DEL" ) == 0 )
-						tmp[mi] |= DELETE;
+						*tmpmi |= DELETE;
 					else
-						tmp[mi] = XD_SCANCODE; /* use this to mark invalid */
+						*tmpmi = XD_SCANCODE; /* use this to mark invalid */
 					break;
 			}
 		}
@@ -768,7 +806,7 @@ static void setpreferences(void)
 				redraw = TRUE;
 				break;
 			case OPTKCLR:
-				memset( &tmp[0], 0, (NITEM + 2) * sizeof(int) );
+				memclr( &tmp[0], (NITEM + 2) * sizeof(int) );
 				redraw = TRUE;
 				break;
 			default:
@@ -796,15 +834,15 @@ static void setpreferences(void)
 
 		/* Get and then set dialog display mode */
 
+		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DBUFFERD + 1;
+
 		if (xd_get_rbutton(setprefs, OPTPAR2) == DMOUSE)
 		{
-			options.cprefs |= DIALPOS_MODE;	
+			options.dial_mode |= DIALPOS_MODE;	
 			posmode = XD_MOUSE;
 		}
 		else
-			options.cprefs &= ~DIALPOS_MODE;
-
-		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DBUFFERD + 1;
+			options.dial_mode &= ~DIALPOS_MODE;
 
 		get_opt(setprefs, &options.sexit, 1, SEXIT);
  
@@ -818,8 +856,7 @@ static void setpreferences(void)
 
 
 /* 
- * Handle the dialog for setting options related to 
- * copying and printing 
+ * Handle the dialog for setting options related to copying and printing 
  */
 
 static void copyprefs(void)
@@ -831,8 +868,8 @@ static void copyprefs(void)
 	static const int 
 		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_FOLL, CF_SHOWD, P_HEADER};
  
-
-	char *copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
+	char 
+		*copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
 
 	/* Set states of appropriate options buttons and copy buffer field */
 
@@ -874,16 +911,15 @@ static void opt_default(void)
 {
 	get_set_video(0);			/* get current video mode for default */
 	
-	memset( &options, 0, sizeof(options) );
+	memclr( &options, sizeof(options) );
 	options.version = CFG_VERSION;
 	options.max_dir = 256;
 	options.dial_mode = XD_BUFFERED;
 	options.bufsize = 512;
 	options.tabsize = 8;
-	strcpy(options.helpprg, "ST-GUIDE");
 #if _PREDEF
 	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
-	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT;    
+	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT | WD_SHOWN;    
 	options.plinelen = DEF_PLINE; 							
 	options.attribs = FA_SUBDIR | FA_SYSTEM;					
 #endif
@@ -891,9 +927,9 @@ static void opt_default(void)
 	options.aarr = 1;										    
 	options.sort = WD_SORT_NAME;							
 
-	set_dsk_background((xd_ncolors > 2) ? 7 : 4, 3);
-	options.win_pattern = 0;
-	options.win_color = 0; 
+	set_dsk_background((xd_ncolors > 2) ? 7 : 4, GREEN);
+	options.win_pattern = 0;	/* no pattern */
+	options.win_color = WHITE;
 }
 
 
@@ -908,7 +944,7 @@ static void opt_default(void)
 
 static void short_default(void)
 {
-	memset( &options.kbshort[MOPEN - MFIRST], 0, (size_t)(MSAVESET - MFIRST + 1) );
+	memclr( &options.kbshort[MOPEN - MFIRST], (size_t)(MSAVESET - MFIRST + 1) );
 
 #if _PREDEF
 	options.kbshort[MOPEN - MFIRST] =    XD_CTRL | 'O';		/* ^O, etc. */
@@ -946,10 +982,10 @@ static void load_options(void)
 		opt_default();		/* options */
 		get_set_video(1);	/* set video */
 		short_default();	/* kbd shortcuts */
-		dsk_default();		/* desktop */
 		ft_default();		/* filetypes */
-		icnt_default();		/* icontypes */
 		prg_default();		/* programtypes */
+		icnt_default();		/* icontypes */
+		dsk_default();		/* desktop */
 		app_default();		/* applications */
 		wd_default();		/* windows */
 		vastat_default();	/* AV status strings */
@@ -957,7 +993,7 @@ static void load_options(void)
 
 	/* Set dialogs mode */
 
-	xd_setposmode((options.cprefs & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
+	xd_setposmode((options.dial_mode & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
 	set_dialmode();
 }
 
@@ -988,10 +1024,6 @@ static CfgNest opt_config
 
 		if ( *error >= 0 )
 		{
-			/* "Normal" dialog mode is cancelled; this is for compatibility */
-
-			options.dial_mode = max(options.dial_mode, 1);
-
 			/* 
 			 * Check some critical values against limits; if not checked and
 			 * some illegal value happens to be in the file, these variables
@@ -1006,9 +1038,9 @@ static CfgNest opt_config
 				|| options.version > CFG_VERSION 
 				|| (options.sort & ~WD_REVSORT) > WD_NOSORT
 				|| options.plinelen > MAX_PLINE
-				|| options.max_dir < 64 
-				|| options.max_dir > 2048
-				|| options.dial_mode > XD_WINDOW
+				|| options.max_dir < 32 
+				|| options.max_dir > 4096
+				|| (options.dial_mode & DIAL_MODE) > XD_WINDOW
 				|| options.vrez > 7 
 			)
 				*error = EFRVAL;
@@ -1034,8 +1066,7 @@ static CfgNest opt_config
 #if PALETTES
 				/* Load palette. Ignore errors */
 
-				if (options.cprefs & SAVE_COLORS)
-					handle_colors(CFG_LOAD);
+				handle_colors(CFG_LOAD);
 #endif
 				/* Set video state but do not change resolution */
 
@@ -1073,7 +1104,6 @@ static void save_options(void)
 
 	/* First save the palette (ignore errors) */
 #if PALETTES
-	if (options.cprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
 		handle_colors(CFG_SAVE);
 #endif
 
@@ -1168,6 +1198,15 @@ static boolean init(void)
 	find_cfgfiles(&infname, FALSE); 
 	find_cfgfiles(&palname, FALSE);
 
+#if _LOGFILE
+	logname  = strdup(infname);
+	strcpy(strrchr(logname,'.'), ".log");
+	logfile = fopen((const char *)logname, "w");
+	if (logfile == NULL)
+		printf("\n CAN'T OPEN LOGFILE");
+	fprintf(logfile, "\n LOG FILE OPENED; ap_id %i", ap_id);
+#endif
+
 	if (!dsk_init())
 		return FALSE;
 
@@ -1181,6 +1220,8 @@ static boolean init(void)
 	wd_init();				/* windows        */
 
 	menu_bar(menu, 1);
+
+	/* Set a default path. Ignore errors */
 
 	x_setpath(bslash);
 
@@ -1198,19 +1239,20 @@ static boolean init(void)
 
 /* 
  * Initialize some stuff related to VDI
- * Note: work_out[] used here is local 
  */
 
 static void init_vdi(void)
 {
-	int dummy, work_out[10];
+	int dummy, lwork_out[10];
 
 	/* Note: graf_handle returns screen physical handle, but it is not needed */
 
 	graf_handle(&screen_info.fnt_w, &screen_info.fnt_h, &dummy, &dummy);
 	screen_size();
-	vqt_attributes(vdi_handle, work_out);
-	fnt_setfont(1, (int) (((long) work_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
+	vqt_attributes(vdi_handle, lwork_out);
+	fnt_setfont(1, (int) (((long) lwork_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
+	def_font.effects = 0;
+	def_font.colour = BLACK;
 }
 
 
@@ -1256,6 +1298,9 @@ static int alloc_global_memory(void)
 
 static void hndlmenu(int title, int item, int kstate)
 {
+#if _LOGFILE
+fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
+#endif
 	if ((menu[item].ob_state & DISABLED) == 0)
 	{
 		switch (item)
@@ -1267,6 +1312,9 @@ static void hndlmenu(int title, int item, int kstate)
 		{
 			int qbutton;
 
+#if _LOGFILE
+fprintf(logfile,"\n  hndlmenu MQUIT");
+#endif
 			bell();
 			wait(150);
 			bell();
@@ -1304,15 +1352,6 @@ static void hndlmenu(int title, int item, int kstate)
 		case MAPPLIK:
 			app_install(LS_APPL);
 			break;
-		case MIDSKICN:
-			dsk_chngicon();
-			break;
-		case MIWDICN:
-			icnt_settypes();
-			break;
-		case MREMICON:
-			dsk_remicon();
-			break;
 		case MCOPTS:
 			copyprefs();
 			break;
@@ -1348,24 +1387,21 @@ static void hndlmenu(int title, int item, int kstate)
 int scansh ( int key, int kstate )
 {
 	int 
-		a = key & 0xff,
-		h = a & 0x80;		/* foreign characters */
+		a = touppc(key & 0xFF),
+		h = key & 0x80;
 
-
-	if ( (a <= 'z' && a >= 'a')  || h )		/* lowercase or foreign */
-		a &= 0xdf; 							/* to uppercase  */
-	if ( kstate == 4 ) 						/* ctrl          */	
+	if ( kstate == K_CTRL ) 				/* ctrl          */	
+	{
 		if ( a == SPACE || a == ESCAPE )	/* ^SP ^ESC      */
 			a |= XD_CTRL;
 		else if ( a == 0x1f ) 				/* ^DEL          */
 			a |= ( XD_CTRL | 0x60 );
 		else  if (!h) 						/* ^A ... ^\     */
 			a |= ( XD_CTRL | 0x40 );
-
 		else
-			a |= (XD_CTRL | (a & 0xdf) );	/* ^foreign */
-
-	else if ( kstate > 2 || key < 0 ) 		/* everything but shift or plain */
+			a |= XD_CTRL;
+	}
+	else if ( kstate > (K_RSHIFT | K_LSHIFT) || key < 0 ) 		/* everything but shift or plain */
 		a = -1;								/* shortcut def. is never this value */
 
 	return a;
@@ -1382,6 +1418,10 @@ static void hndlkey(int key, int kstate)
 	unsigned int uk = (unsigned int)key;
 	APPLINFO *appl;
 	int title; 				/* rsc index of current menu title */
+
+#if _LOGFILE
+fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
+#endif
 
 	if ( uk  == HELP || uk == SHIFT_HELP )
 		showhelp(uk);
@@ -1417,6 +1457,9 @@ static void hndlkey(int key, int kstate)
 		if ( options.kbshort[i] == k )
 		{
 			menu_tnormal(menu, title, 0 );
+#if _LOGFILE
+fprintf(logfile,"\n hndlkey->hndlmenu %i",i);
+#endif
 			hndlmenu( title, i + MFIRST, kstate );
 		}
 		else
@@ -1444,19 +1487,25 @@ static void hndlkey(int key, int kstate)
 
 
 /*
- * Handle AES messages
+ * Handle (some) AES messages: All AV-protocol & FONT protocol ones.
+ * and also AP_TERM and SH_WDRAW. 
+ * It should also handle drag & drop (receive) messages some day
+ * Return -1 upon AP_TERM message, return 0 otherwise
  */
 
-int _hndlmessage(int *message, boolean allow_exit)
+static int _hndlmessage(int *message, boolean allow_exit)
 {
-	if (   (   message[0] >= AV_PROTOKOLL
-	        && message[0] <= VA_HIGH
-	       )
-	    || (   message[0] >= FONT_CHANGED
-	        && message[0] <= FONT_ACK
-	       )
+#if _LOGFILE
+fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exit);
+#endif
+
+	if (   
+			( message[0] >= AV_PROTOKOLL && message[0] <= VA_HIGH ) || 
+			( message[0] >= FONT_CHANGED && message[0] <= FONT_ACK )
 	   )
+	{
 		handle_av_protocol(message);
+	}
 	else
 	{
 		/* Perhaps it would make sense to support SH_M_SPECIAL as well? */
@@ -1464,26 +1513,44 @@ int _hndlmessage(int *message, boolean allow_exit)
 		switch (message[0])
 		{
 			case AP_TERM:
+#if _LOGFILE
+fprintf(logfile,"\n  AP_TERM");
+#endif
 				if (allow_exit)
 				{
+					/* This will cause an exit from TeraDesk's main loop */
 					quit = TRUE;
 				}
 				else
 				{
-					int ap_tfail[8] = { AP_TFAIL, 0 };
+					/* Tell the AES that TeraDesk can't terminate just now */
+					int ap_tfail[8] = {AP_TFAIL, 0, 0, 0};
+					ap_tfail[1] = ap_id; /* ??? */
+
 					shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
 				}
-				break;
+				return -1;
 
 			case SH_WDRAW:
+				/* Windows will be updated */
 				wd_update_drv(message[3]);
 				break;
+
+/* currently not used
+			case AP_DRAGDROP:
+				break;
+*/
 		}
 	}
  
 	return 0;
 }
 
+
+/*
+ * Similar to above, but with one argument only.
+ * Return -1 upon AP_TERM message, return 0 otherwise
+ */
 
 int hndlmessage(int *message)
 {
@@ -1495,31 +1562,28 @@ int hndlmessage(int *message)
  * Main event loop in the program 
  */
 
-extern int xe_wmess;
-
 static void evntloop(void)
 {
 	int event;
-	XDEVENT events;
 
-	events.ev_mflags = EVNT_FLAGS;
+	loopevents.ev_mflags = EVNT_FLAGS;
 
 	/*
 	 * Set-up parameters for waiting on anevent.
 	 * Note: right mouse button has the effect of:
-	 * left doubleclick + right button pressed
+	 * [ left button doubleclick + right button pressed ]
 	 * (also convenient for activating programs in a non-selected window)
 	 */
 
-	events.ev_mbclicks = 0x102;
-	events.ev_mbmask = 3;
-	events.ev_mbstate = 0;
+	loopevents.ev_mbclicks = 0x102;
+	loopevents.ev_mbmask = 3;
+	loopevents.ev_mbstate = 0;
 
-	events.ev_mm1flags = 0;
-	events.ev_mm2flags = 0;
+	loopevents.ev_mm1flags = 0;
+	loopevents.ev_mm2flags = 0;
 
-	/* events.ev_mtlocount = 0; see below */
-	events.ev_mthicount = 0;
+	/* loopevents.ev_mtlocount = 0; see below */
+	loopevents.ev_mthicount = 0;
 
 	while (!quit)
 	{
@@ -1529,7 +1593,7 @@ static void evntloop(void)
 		 * the loop has to executed every once in a while-
 		 * like every 500ms defined below. It looks as if this 
 		 * is not needed in a multitasking environment.
-		 * This is needed only if there are open accessory windows.
+		 * Also, this is needed only if there are open accessory windows.
 		 */
 
 		if
@@ -1540,13 +1604,13 @@ static void evntloop(void)
 			va_accw()
 		)
 		{
-			events.ev_mtlocount = 500;
-			events.ev_mflags |= MU_TIMER;
+			loopevents.ev_mtlocount = 500;
+			loopevents.ev_mflags |= MU_TIMER;
 		}	
 		else
 		{
-			events.ev_mtlocount = 0;
-			events.ev_mflags &= ~MU_TIMER;
+			loopevents.ev_mtlocount = 0;
+			loopevents.ev_mflags &= ~MU_TIMER;
 		}
 
 		/*
@@ -1558,31 +1622,71 @@ static void evntloop(void)
 
 		itm_set_menu(selection.w);
 
-		/* Wait for an event */
+		/* 
+		 * Wait for an event.
+		 * Note: as some of the events are handled within xe_xmulti,
+		 * after which the appropriate bitflags are reset,
+		 * it is quite possible that the result returned by xe_xmulti
+		 * be a "nonevent" i.e. 0
+		 */
 
-		event = xe_xmulti(&events);
+		event = xe_xmulti(&loopevents);
+
+#if _LOGFILE
+	fprintf(logfile,"\n loopevent 0x%x", event); 
+#endif
 
 		/*		
-		 * HR 151102: This imposed a unsolved problem with N.Aes 1.2 	
+		 * HR 151102: This imposed an unsolved problem with N.Aes 1.2 	
 		 * (lockup of TeraDesk after live moving) 	
 		 * It is not a essential function. 
 		 */
-
 		clr_key_buf();		
 
-		/* Process messages received */
+		/* Process any recieved messages */
 
 		if (event & MU_MESAG)
 		{
-			if (events.ev_mmgpbuf[0] == MN_SELECTED)
-				hndlmenu(events.ev_mmgpbuf[3], events.ev_mmgpbuf[4], events.ev_mmokstate);	
+			if (loopevents.ev_mmgpbuf[0] == MN_SELECTED)
+				hndlmenu(loopevents.ev_mmgpbuf[3], loopevents.ev_mmgpbuf[4], loopevents.ev_mmokstate);	
 			else
-				_hndlmessage(events.ev_mmgpbuf, TRUE);
+				_hndlmessage(loopevents.ev_mmgpbuf, TRUE);
 		}
+		/* Process keyboard events */
 
 		if (event & MU_KEYBD)
-			hndlkey(events.xd_keycode, events.ev_mmokstate);
+			hndlkey(loopevents.xd_keycode, loopevents.ev_mmokstate);
 	}
+
+}
+
+
+/*
+ * Set shutting = true and return TRUE 
+ * if AP_TERM was received within 3 seconds
+ * after starting this routine
+ */
+
+boolean wait_to_quit(void)
+{
+	int event = 0;
+
+	loopevents.ev_mflags = MU_TIMER | MU_MESAG;
+	loopevents.ev_mbstate = 0;
+	loopevents.ev_mm1flags = 0;
+	loopevents.ev_mm2flags = 0;
+	loopevents.ev_mtlocount = 3000; /* 3 seconds */
+	loopevents.ev_mthicount = 0;
+
+	event = xe_xmulti(&loopevents);
+
+	if((event & MU_MESAG)  && (loopevents.ev_mmgpbuf[0] == AP_TERM))
+	{
+		shutting = TRUE;
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 
@@ -1604,11 +1708,14 @@ int main(void)
 	 * D = always draw userdef objects, regardless of AES capabiliites
 	 */
 
-	if ( (teraenv=getenv("TERAENV")) == NULL )
-		teraenv = empty;
+	if ( (teraenv = getenv("TERAENV")) == NULL )
+		teraenv = (char *)empty;
 
-	if ( strchr(teraenv,'D') )
+	if ( strchr(teraenv, 'D') )
 		xd_own_xobjects(1);
+
+	if( strchr(teraenv, 'A') )
+		fargv = TRUE;
 
 	/* 
 	 * Find out and set some details depending on the type of OS.
@@ -1628,7 +1735,7 @@ int main(void)
 	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;
 	naes   = (find_cookie('nAES') == -1) ? FALSE : TRUE;
 
-	/* In most cases behaviour in Magc should be the same as in Mint */
+	/* In most cases behaviour in Magic should be the same as in Mint */
 
 	mint  |= magx;			/* Quick & dirty */
 
@@ -1707,7 +1814,6 @@ int main(void)
 
 				if ((error = alloc_global_memory()) == 0)
 				{
-
 					/* Remove the ARGV variable from the environment. */
 
 					clr_argv();
@@ -1718,7 +1824,6 @@ int main(void)
 					 * teradesk.pal = colour palette file
 					 * Note: in teradesk.inf it is specified whether
 					 * teradesk.pal will be used at all.
-					 *
 					 * Proceed only of OK
 					 */
 
@@ -1732,7 +1837,7 @@ int main(void)
 
 						if ( load_icons() )
 						{
-							/* Proceed if deafults set, configuration loaded, etc. */
+							/* Proceed if defaults set, configuration loaded, etc. */
 
 							if ( init() )
 							{
@@ -1750,7 +1855,8 @@ int main(void)
 								 * (remove AV-windows before save)
 								 */
 
-								va_delall(-1);		/* remove all pseudowindows  */
+								va_checkclient();	/* remove nonexistent clients */
+								va_delall(-1);		/* remove remaining pseudowindows  */
 
 								if (options.sexit)	/* save config */
 									save_options();
@@ -1787,59 +1893,58 @@ int main(void)
 		rsrc_free();
 	}
 
+
+#if _LOGFILE
+		fprintf(logfile,"\n CLOSE LOG FILE \n");
+		fclose(logfile);
+#endif
+
 	/* 
 	 * The following segment handles final system shutdown and resolution change
-	 * If a resolution change is required, shutdown is performed first.
+	 * If a resolution change is required, shutdown is (supposed to be)
+	 * performed first (but it did not work as planned... see below).
 	 * If only shutdown is required, the system will reset at the end.
 	 */ 
 
 	if ( chrez || shutdown )	/* If change resolution or shutdown ... */
 	{
-		/* 
-		 * Tell all GEM applications which would understand it to end.
-		 * This was supposed to be done also before resolution change,
-		 * but it was found out that Magic and XaAES do not react to
-		 * it properly: magic just restarts the desktop and XaAES goes
-		 * to shutdown.
-		 */
-
-		if (!chrez)
+		if ( chrez )
 		{
-			int ignor;
-			quit = shel_write ( SHW_SHUTDOWN, 2, 0, (void *)&ignor, NULL ); 	/* complete shutdown */
-			wait(5000);						/* Wait a bit? */
+			/* 
+			 * Change the screen resolution if needed;
+			 * A call to shel-write to change resolution
+			 * in get_set_video also closes all applications
+			 */
+			get_set_video(2); /* contains shel_write(SHW_RESCHNG,...) */
+		}
+		else
+		{
+			/* 
+			 * Tell all GEM applications which would understand it to end.
+			 * This was supposed to be done also before resolution change,
+			 * but it was found out that Magic and XaAES do not react to
+			 * it properly: magic just restarts the desktop and XaAES goes
+			 * to shutdown. Therefore it is not done now for resolution change.
+			 */
+
+			int ignor = 0;
+
+			quit = shel_write( SHW_SHUTDOWN, 2, 0, (void *)&ignor, NULL ); 	/* complete shutdown */
+			wait_to_quit();	/* for three seconds */
 		}
 
-#if 0
+		wait(1000);
+
 		/* 
-		 * In Mint/Magic, must tell all proceseses to terminate nicely ?
-		 * Probably not needed in a GEM environment anyway, so disabled
+		 * If a shutdown was initiated but no termination message received,
+		 * and also if this is not a resolution change, teraDesk must
+		 * kill the system on its own. So perform a reset
 		 */
 
-		Pkill(0, SIGTERM); 
-		wait(3000); /* Wait a bit? */
-#endif
-		/* 
-		 * After all applications have hopefully been closed,
-		 * change the screen resolution if needed;
-		 * else- reset the computer.
-		 * It seems that a call to shel-write to change resolution
-		 * in get_set_video also closes all applications?
-		 */
-
-		if ( chrez )
-			get_set_video(2);
-
-		else
-
-/* DjV: But it won't really shutdown in Magic without a reset, just restarts the desktop ?
-	#if _MINT_
-		if (!mint)			/* HR 230203: Dont reset under MiNT or MagiC !!!!! */
-	#endif
-*/
+		if(!shutting && !chrez)		
 		{
 			/*
-			 * Perform a reset here 
+			 * Perform a reset here. 
 			 * Note: maybe use Ssystem here as well, when appropriate?
 			 */
 
@@ -1849,21 +1954,24 @@ int main(void)
 			if ( mint && !magx ) /* has no effect in Magic?? */
 			{
 				Shutdown(2L);	/* restart */ 
-				wait(3000);
+				wait(1000);
 			}
 #endif
 			Super ( 0L );	/* Get into supervisor; old stack won't be needed again */
 			memval = 0L;	/* Spoil some variables to cause a reset */ 				
-			memval2 = 0L;
-			resvector = 0L;
-			resvalid = 0L;
-			(long)rv = *((long *)os_start + 4);	/* routine that handles the reset */
-			Supexec(rv);				/* execute it */
+			memval2 = 0L;	/* same... */
+			resvector = 0L;	/* same... */
+			resvalid = 0L;	/* same... */
+			(long)rv = *((long *)os_start + 4);	/* pointer to reset handler */
+			Supexec(rv);						/* execute it */
 
+			/* At this point this machine will reset... */
 		}
 	}
-	else	/* Just Quit the desktop */		
-		appl_exit();
+	
+	/* Just quit the desktop */		
+	
+	appl_exit();
 	
 	return 0;
 }

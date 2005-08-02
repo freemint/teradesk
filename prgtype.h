@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -35,7 +35,7 @@ typedef struct prgtype
 /* For consistency with other flags which are saved as bits... */
 
 #define PT_ARGV 0x0001 	/* understands ARGV */
-#define PT_PDIR 0x0002	/* program directory is the default */ 
+#define PT_PDIR 0x0002	/* program directory is the default; OBSOLETE */ 
 #define PT_SING 0x0004	/* do not multitask */
 #define AT_EDIT 0x0008	/* set as editor */
 #define AT_AUTO 0x0010	/* set as startup/autostart */
@@ -44,7 +44,12 @@ typedef struct prgtype
 #define AT_SRCH 0x0080	/* set as file search app */
 #define AT_FFMT 0x0100	/* set as floppy format application */
 #define AT_VIEW 0x0200	/* set as viewer */
-#define AT_CONS 0x0400	/* set as console */
+#define AT_CONS 0x0400	/* set as console placeholder */
+#define AT_RES1 0x0800	/* placeholder */
+#define AT_RES2 0x1000	/* placeholder */
+#define PD_PDIR 0x2000	/* Program directory is the default */
+#define PD_PPAR 0x4000	/* First parameter directory is the default */
+#define PT_BACK 0x8000	/* background */
 
 extern CfgEntry prg_table[];
 extern PRGTYPE pwork;
@@ -61,6 +66,7 @@ void prg_init(void);
 void prg_default(void);
 
 boolean prg_isprogram(const char *name);
+boolean prg_isproglink(const char *fname);
 void sim_click(void);
 
 

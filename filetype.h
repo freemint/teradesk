@@ -34,6 +34,7 @@ extern CfgEntry
 	filetypes_table[];
 
 extern FTYPE 
+	fwork,
 	*fthis, 
 	**ffthis;
 

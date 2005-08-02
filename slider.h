@@ -59,7 +59,6 @@ void sl_init(OBJECT *tree, SLIDER *slider);
 void sl_set_slider(OBJECT *tree, SLIDER *slider, XDINFO *info);
 int sl_handle_button(int button, OBJECT *tree, SLIDER *sl, XDINFO *dialog);
 int sl_form_do(OBJECT *tree, int start, SLIDER *slider, XDINFO *info);
-int sl_dialog(OBJECT *tree, int start, SLIDER *slider);
 void set_selector(SLIDER *slider, boolean draw, XDINFO *info);
 void ls_sl_init (int n, void *set_sel, SLIDER *sl, LSTYPE **list);
 int keyfunc(XDINFO *info, SLIDER *sl, int scancode); 

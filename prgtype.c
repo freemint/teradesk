@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h> 
+#include <library.h>
 #include <xdialog.h>
 #include <mint.h>
 
@@ -40,6 +41,7 @@
 #include "filetype.h" 
 #include "font.h"
 #include "window.h"
+#include "icon.h"
 
 #define END			32767
 
@@ -47,6 +49,8 @@
 PRGTYPE
 	pwork,				/* work area for editing prgtypes */ 
 	*prgtypes; 			/* List of executable file types */
+
+void dir_refresh_all(void);
 
 
 /*
@@ -67,7 +71,9 @@ void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
  * input: filename of an executable file or a filename mask;
  * output: program type data
  * if filetype has not been defined, default values are set.
- * Also, if there is no list, set default values
+ * Also, if there is no list, set default values.
+ * Note: a full path can be given as an argument, but only
+ * the name proper is considered.
  */
 
 void prg_info
@@ -83,7 +89,7 @@ void prg_info
 		/* If program type not defined or name not given: default */
 
 		pt->appl_type = PGEM;	/* GEM program */
-		pt->flags = PT_PDIR;
+		pt->flags = PD_PDIR;
 		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
 	return;
@@ -92,12 +98,14 @@ void prg_info
 
 /*
  * Check if filename is to be considered as that of a program;
- * return true if executable (program);
+ * return true if name matches one of the masks defined
+ * for executable files (programs)
  */
 
-boolean prg_isprogram(const char *name)
+boolean prg_isprogram(const char *fname)
 {
 	PRGTYPE *p;
+	char *name = fn_get_name(fname);
 
 	p = prgtypes;
 
@@ -109,6 +117,22 @@ boolean prg_isprogram(const char *name)
 	}
 
 	return FALSE;
+}
+
+
+/*
+ * Check if a link points to a program.
+ * It can be used on real filenames as well.
+ */
+
+boolean prg_isproglink(const char *fname)
+{
+	boolean p = FALSE;
+	char *tgtname = x_fllink((char *)fname);
+	if (tgtname)
+		p = prg_isprogram(fn_get_name(tgtname));
+	free(tgtname);
+	return p;
 }
 
 
@@ -154,8 +178,6 @@ static void rem_all_prgtypes(void)
  * Handling of the dialog for setting characteristics 
  * of one executable (program) filetype; return data in *pt;
  * if operation is cancelled, entry values in *pt should be unchanged.
- * Note: because of many rather drastic changes  
- * old code was not commented out but completely removed
  */
 
 boolean prgtype_dialog
@@ -178,8 +200,8 @@ boolean prgtype_dialog
 		title,			/* resoruce index of title to be used for dialog */
 		button;			/* code of pressed button */
 
-	/* Determine which title to put on dialog, depending on use */
 
+	/* Determine which title to put on dialog, depending on use */
 
 	lbl = TFTYPE;
 
@@ -206,12 +228,18 @@ boolean prgtype_dialog
 
 	/* Copy all data to dialog */
 
-	cv_fntoform(addprgtype + PRGNAME, pt->name);
+	cv_fntoform(addprgtype, PRGNAME, pt->name);
 	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (int)(pt->appl_type) );
+	xd_set_rbutton
+	(
+		addprgtype,
+		APTPAR1,
+		(pt->flags & (PD_PDIR | PD_PPAR)) / PD_PDIR + ATWINDOW
+	);
 
-	xd_set_rbutton(addprgtype, APTPAR1, (pt->flags & PT_PDIR) ? ATPRG : ATWINDOW);
 
 	set_opt(addprgtype, pt->flags, PT_ARGV, ATARGV);
+	set_opt(addprgtype, pt->flags, PT_BACK, ATBACKG);
 
 #if _MINT_
 	/* 
@@ -223,8 +251,8 @@ boolean prgtype_dialog
 	ltoa(pt->limmem / 1024L, addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext, 10);
 
 #else
-		obj_hide(addprgtype[MEMLIM]);
-		obj_hide(addprgtype[ATSINGLE]);
+	obj_hide(addprgtype[MEMLIM]);
+	obj_hide(addprgtype[ATSINGLE]);
 #endif
 	
 	/* Open the dialog, then loop until exit button */
@@ -241,20 +269,22 @@ boolean prgtype_dialog
 		{	
 			SNAME thename;
 
-			cv_formtofn(thename, &addprgtype[PRGNAME]);
- 
+			cv_formtofn(thename, addprgtype, PRGNAME);
+ 			
 			if ( strlen(thename) != 0 )
 			{
 				if (check_dup((LSTYPE **)list, thename, pos) ) 
 				{
 					/* Get all data back from the dialog */
 
-					strcpy( pt->name, thename);
 					pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
+					pt->flags = (xd_get_rbutton(addprgtype, APTPAR1) - ATWINDOW) * PD_PDIR;
+
+					get_opt(addprgtype, &pt->flags, PT_BACK, ATBACKG);
 					get_opt(addprgtype, &pt->flags, PT_ARGV, ATARGV);
-					get_opt(addprgtype, &pt->flags, PT_PDIR, ATPRG);
 					get_opt(addprgtype, &pt->flags, PT_SING, ATSINGLE);
-				
+
+					strcpy( pt->name, thename);
 #if _MINT_
 					pt->limmem = 1024L * atol(addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext);
 #endif
@@ -275,7 +305,7 @@ boolean prgtype_dialog
 
 
 /* 
- * Use these kind-specific functions to manipulate program types list:
+ * Use these listtype-specific functions to manipulate program types list:
  */
 
 #pragma warn -sus
@@ -292,38 +322,35 @@ static LS_FUNC ptlist_func =
 
 /*
  * Handling of the dialog for setting program (executable) file options;
- * Note: because of many rather drastic changes  
- * old code was not commented out but completely removed
  */
 
 void prg_setprefs(void)
 {
 	int 
-		button,			/* code of pressed button */
-		prefs;			/* temporary program preferences */
+		button;			/* code of pressed button */
 
-			
-	prefs = options.cprefs & 0xFDDF;
 
-	set_opt(setmask, options.cprefs, TOS_KEY, PKEY);
-	set_opt(setmask, options.cprefs, TOS_STDERR, PSTDERR);
-
+	set_opt(setmask, options.xprefs, TOS_KEY, PKEY);
+	set_opt(setmask, options.xprefs, TOS_STDERR, PSTDERR);
 	rsc_title(setmask, DTSMASK, DTPTYPES);	
 	obj_unhide(setmask[PGATT]);
 
 	/*  Edit programtypes list: add/delete/change */
 
-	button = list_edit( &ptlist_func, (LSTYPE **)(&prgtypes), NULL, sizeof(PRGTYPE), (LSTYPE *)(&pwork), LS_PRGT); 
+	button = list_edit( &ptlist_func, (LSTYPE **)(&prgtypes), 1, sizeof(PRGTYPE), (LSTYPE *)(&pwork), LS_PRGT); 
 
 	obj_hide(setmask[PGATT]);
 
 	if ( button == FTOK )
 	{
-		prefs |= ((setmask[PKEY].ob_state & SELECTED) != 0) ? TOS_KEY : 0;
-		prefs |= ((setmask[PSTDERR].ob_state & SELECTED) != 0) ? TOS_STDERR : 0;
+		get_opt(setmask, &options.xprefs, TOS_KEY, PKEY);
+		get_opt(setmask, &options.xprefs, TOS_STDERR, PSTDERR);
+		icn_fix_ictype();
 
-		options.cprefs = prefs;
+/* not needed ?
 		wd_seticons();
+*/
+		dir_refresh_all();
 	}
 }
 
@@ -342,33 +369,25 @@ void prg_init(void)
 
 
 /* 
- * Set some default predefined program file types 
+ * Set default predefined program file types 
  */
 
 void prg_default(void)
 {
+	static const ApplType pt[]={PGEM,PGEM,PGTP,PTOS,PTTP,PACC};
+	static const int dd[]={PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
+	int i;
+
 	rem_all_prgtypes();
 
-	/*
-	 * if mint is active, there is conversion to lowercase in ptadd_one
-	 * If mint is active, accessory is defined as program type 
-	 */
-
-	ptadd_one((char *)presets[2], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.PRG 	*/
-	ptadd_one((char *)presets[3], PGEM, PT_PDIR | PT_ARGV, 0L);		/*	*.APP	*/
-	ptadd_one((char *)presets[4], PGTP, PT_PDIR | PT_ARGV, 0L);		/*	*.GTP	*/
-	ptadd_one((char *)presets[5], PTOS, PT_PDIR, 0L);				/*	*.TOS	*/
-	ptadd_one((char *)presets[6], PTTP, PT_PDIR, 0L);				/*	*.TTP	*/
-
 #if _MINT_
-	if ( mint )
-		ptadd_one((char *)presets[7], PACC, PT_PDIR, 0L);			/*	*.ACC	*/
+	for(i = 2; i < 8; i++)
+#else
+	for(i = 2; i < 7; i++)
 #endif
+		ptadd_one((char *)presets[i], pt[i - 2], dd[i - 2], 0L);
 }
 
-
-#define PRG_PATH		8		/* 0 = window, 1 = program */
-#define TOS_PATH		16		/* 0 = window, 1 = program */
 
 /*
  * Configuration table for one program type
@@ -387,6 +406,20 @@ CfgEntry prg_table[] =
 };
 
 
+/* 
+ * Fix a configuration file compatibility issue, remove after V3.60 
+ */
+
+void fix_prgtype_v360(PRGTYPE *p)
+{
+	if ((p->flags & PT_PDIR) != 0 )
+	{
+		p->flags |= PD_PDIR;
+		p->flags &= ~PT_PDIR;
+	}
+}
+
+
 /*
  * Save or load configuration for program type(s)
  */
@@ -402,10 +435,10 @@ static CfgNest one_ptype
 		while ( (*error == 0) && p)
 		{
 			strcpy(pwork.name, p->name);
-			pwork.appl_type = (int) p->appl_type;
+			pwork.appl_type = (int)p->appl_type;
 			pwork.limmem = p->limmem;
 			pwork.flags = p->flags;
-	
+
 			*error = CfgSave(file, prg_table, lvl, CFGEMP); 
 	
 			p = p->next;
@@ -413,17 +446,20 @@ static CfgNest one_ptype
 	}
 	else
 	{
-		memset(&pwork, 0, sizeof(pwork));
+		memclr(&pwork, sizeof(pwork));
 
 		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl); 
 
 		if (*error == 0 )
 		{
-
 			if ( pwork.appl_type > PTTP || pwork.name[0] == 0 )
 				*error = EFRVAL;		
 			else
 			{
+				fix_prgtype_v360(&pwork); /* Compatibility issue, remove after V3.60 */
+
+				/* Add a program type into the list */
+
 				if ( 
 					lsadd(  (LSTYPE **)&prgtypes, 
 		            		sizeof(pwork), 
@@ -463,5 +499,7 @@ CfgNest prg_config
 	prg_table[2].flag = 0;
 
 	*error = handle_cfg(file, prgty_table, lvl, CFGEMP, io, rem_all_prgtypes, prg_default);
-}
+
+	icn_fix_ictype(); /* compatibility issue; remove after V3.60 */
+} 
 

@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -27,6 +27,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <library.h>
 
 #include "xwindow.h"
 #include "xdialog.h"
@@ -37,10 +38,11 @@ extern int xe_mbshift;
 
 #define ACC_WIND	19 /* from window.h !!! */
 
-static WINDOW *windows = NULL;		/* lijst met windows. */
-static WINDOW *desktop;				/* pointer to desktop window. */
-WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 
+static WINDOW *windows = NULL;		/* lijst met windows. */
+static WINDOW *desktop = NULL;		/* pointer to desktop window. */
+WINDOW *xd_deskwin = NULL; 			/* same, but global and avoid name conflict */
+int xw_dosend = 1;					/* if 0, xw_send is disabled */
 
 #ifdef __PUREC__
 	extern int ap_id;		/* Defined in application. */
@@ -51,19 +53,22 @@ WINDOW *xd_deskwin; 				/* same, but global and avoid name conflict */
 
 
 /*
- * Send a message to this or other window owner
+ * Send a message to this or other window owner.
+ * Sending is disabled if xw_dosend is set to 0.
  */
 
-static void xw_send(WINDOW *w, int messid )
+void xw_send(WINDOW *w, int messid)
 {
 	int message[8];
 
-	memset(message, 0, (size_t)16 );
-
-	message[0] = messid;
-	message[1] = aes_pid;
-	message[3] = w->xw_handle;
-	appl_write(w->xw_ap_id, 16, message);
+	if(xw_dosend)
+	{
+		memclr(message, (size_t)16 );
+		message[0] = messid;
+		message[1] = aes_pid;
+		message[3] = w->xw_handle;
+		appl_write(w->xw_ap_id, 16, message);
+	}
 }
 
 /*
@@ -81,17 +86,20 @@ static void xw_send(WINDOW *w, int messid )
 
 void xw_send_redraw(WINDOW *w, RECT *area)
 {
+	int message[8], *messagep = message;
 
-	int message[8];
+	*messagep++ = WM_REDRAW;
+	*messagep++ = aes_pid;
+	*messagep++ = 0;
+	*messagep++ = w->xw_handle;
 
-	message[0] = WM_REDRAW;
-	message[1] = aes_pid;
-	message[2] = 0;
-	message[3] = w->xw_handle;
-	message[4] = area->x;
-	message[5] = area->y;
-	message[6] = area->w;
-	message[7] = area->h;
+/* can be simpler
+	*messagep++ = area->x;
+	*messagep++ = area->y;
+	*messagep++ = area->w;
+	*messagep   = area->h;
+*/
+	*(RECT *)(messagep) = *area;	
 
 	appl_write(aes_pid, 16, message);
 }
@@ -107,7 +115,7 @@ WINDOW *xw_hfind(int handle)
 {
 	WINDOW *w = windows;
 
-	while (w != NULL)
+	while (w)
 	{
 		if (w->xw_handle == handle)
 			return (w);
@@ -171,8 +179,8 @@ WINDOW *xw_top(void)
 
 	while (w)
 	{
-		if (w->xw_opened)
-			return w;					/* else, first teradesk's window */
+		if ((w->xw_xflags & XWF_OPN) != 0)
+			return w;					/* first teradesk's window */
 		w = w->xw_next;
 	}
 
@@ -224,7 +232,7 @@ int xw_exist( WINDOW *w )
 {
 	WINDOW *h = windows;
 
-	while (h != NULL)
+	while (h)
 	{
 		if (h == w)
 			return 1;
@@ -423,7 +431,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 	/* don't redraw in iconified window */
 
-	if ( menu && (w->xw_iflag == 0) )
+	if ( menu && ((w->xw_xflags & XWF_ICN) == 0) )
 	{
 		xd_objrect(w->xw_menu, object, &r1);
 		if (object == w->xw_bar)
@@ -439,13 +447,8 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 		{
 			xd_wdupdate(BEG_UPDATE);
 			xd_mouse_off();
-
-			vswr_mode(xd_vhandle, MD_REPLACE);
-
-			vsl_color(xd_vhandle, 1);
-			vsl_ends(xd_vhandle, 0, 0);
-			vsl_type(xd_vhandle, 1);
-			vsl_width(xd_vhandle, 1);
+			xd_vswr_trans_mode();
+			set_linedef(1);
 
 			xw_getfirst(w, &r2);
 
@@ -532,7 +535,9 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
-	if (menu == NULL || w->xw_iflag != 0 )
+	/* If no meny, or iconifid window, return */
+
+	if (menu == NULL || ((w->xw_xflags & XWF_ICN) != 0) )
 		return FALSE;
 
 	xw_bar_rect(w, &r);
@@ -868,7 +873,7 @@ void xw_iconify(WINDOW *w, int width, int height)
 
 	wind_set(w->xw_handle, WF_ICONIFY, w->xw_size.x, w->xw_size.y, width, height);
 
-	w->xw_iflag = 1;
+	w->xw_xflags |= XWF_ICN;
 }
 
 
@@ -881,7 +886,7 @@ void xw_uniconify(WINDOW *w)
 {
 	wind_set(w->xw_handle,WF_UNICONIFY,w->xw_nsize.x,w->xw_nsize.y,w->xw_nsize.w,w->xw_nsize.h);
 
-	w->xw_iflag = 0;
+	w->xw_xflags &= ~XWF_ICN;
 }
 
 
@@ -945,10 +950,10 @@ int xw_hndlmessage(int *message)
 		func->wd_moved(w, (RECT *)&message[4]);
 		break;
 	case WM_NEWTOP:
-	case WM_ONTOP:
 		if (func->wd_newtop != 0L)
 			func->wd_newtop(w);
 		break;
+	case WM_ONTOP:
 	case WM_UNTOPPED:
 		xw_top(); /* just note the new top window ? */
 		break;
@@ -1033,7 +1038,7 @@ void xw_getsize(WINDOW *w, RECT *size)
 }
 
 
-static unsigned char xw_get_argtab[] =
+static unsigned const char xw_get_argtab[] =
 {
 	1, 1, 1, 4, 4, 4, 4, 1,
 	1, 1, 4, 4, 1, 1, 1, 1,
@@ -1056,7 +1061,7 @@ void xw_get(WINDOW *w, int field,...)
 {
 	RECT *r;
 	int *parm[4], dummy;
-	register int i, parms, handle;
+	/* register - not needed in PureC ? */ int i, parms, handle;
 	va_list p;
 
 	va_start(p, field);
@@ -1204,6 +1209,7 @@ static int xw_tree_size(OBJECT *menu)
 /*
  * Funktie voor het alloceren van geheugen voor een nieuw window.
  * Tevens wordt een kopie gemaakt van de menubalk.
+ * Note: all unspecified structure elements are set to zero
  */
 
 static WINDOW *xw_add(size_t size, OBJECT *menu)
@@ -1216,12 +1222,12 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
 	if ((w = (*xd_malloc)(size + msize)) == NULL)
 		return NULL;
 
-	memset(w, 0, size);
+	memclr(w, size);
 
-	if (menu == NULL)
-		w->xw_menu = NULL;
-	else
+	if (menu)
 	{
+		/* Menu follows immediately after window memory area */
+
 		w->xw_menu = (OBJECT *) &(((char*)w)[size]);
 		memcpy(w->xw_menu, menu, msize);
 		xw_find_objects(menu, &w->xw_bar, &w->xw_mparent);
@@ -1252,7 +1258,7 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 {
 	WINDOW *w;
 
-	/* Allocate memory for the window structure */
+	/* Allocate memory for the window structure and zero it */
 
 	if ((w = xw_add(wd_struct_size, menu)) == NULL)
 	{
@@ -1271,10 +1277,9 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 		}
 	}
 	else
-		w->xw_handle = flags;
+		w->xw_handle = flags; /* ONLY for acc window */
 
 	w->xw_type = type;
-	w->xw_opened = FALSE;
 	w->xw_flags = flags;
 	w->xw_func = functions;
 
@@ -1283,10 +1288,10 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 	if (windows)
 		windows->xw_prev = w;
 
-	w->xw_prev = NULL;
+	/* w->xw_prev = NULL; no need, because structure zeroed */
+
 	w->xw_next = windows;
 	windows = w;
-
 	*error = 0;
 
 	return w;
@@ -1295,7 +1300,7 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 
 /*
  * Funktie voor het openen van een window.
- * A new window will be added as the first one in the list.
+ * A new window will be added as the first one in the list, and topped.
  *
  * Parameters:
  *
@@ -1305,15 +1310,14 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 
 void xw_open(WINDOW *w, RECT *size)
 {
-	wind_open(w->xw_handle, size->x, size->y, size->w,
-			  size->h);
+	wind_open(w->xw_handle, size->x, size->y, size->w, size->h);
 	w->xw_size = *size;
 	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
 			 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
 
 	xw_set_barpos(w);
 
-	w->xw_opened = TRUE;
+	w->xw_xflags |= XWF_OPN;
 
 	if (w->xw_func->wd_top != 0L)
 		w->xw_func->wd_top(w);
@@ -1367,8 +1371,8 @@ void xw_close(WINDOW *w)
 		else
 			wind_close(w->xw_handle);
 
-		w->xw_opened = FALSE;
-		w->xw_iflag = 0;
+		w->xw_xflags &= ~(XWF_ICN | XWF_OPN); /* not iconified or open anymore */	
+
 		if ( (tw = xw_top()) != NULL)
 		{
 			if (tw->xw_func->wd_top != 0L)
@@ -1430,11 +1434,11 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 		return NULL;
 	}
 
-	memset(w, 0, wd_struct_size);
+	memclr(w, wd_struct_size);
 
 	w->xw_handle = 0;
 	w->xw_type = type;
-	w->xw_opened = TRUE;
+	w->xw_xflags |= XWF_OPN;
 	w->xw_flags = 0;
 	w->xw_func = functions;
 	w->xw_menu = NULL;
@@ -1463,23 +1467,28 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 
 void xw_close_desk(void)
 {
+/* can be simpler, because AHCM permits free(NULL)
+
 	if (desktop != NULL)
 	{
 		(*xd_free)(desktop);
 		desktop = NULL;
 	}
+*/
+	(*xd_free)(desktop);
+	desktop = NULL;
 }
 
 
 /*
- * Funktie voor het sluiten van alle windows.
+ * Function for closing (and deleting) all windows, incl. desktop
  */
 
 void xw_closeall(void)
 {
 	while(windows)
 	{
-		if (windows->xw_opened)
+		if ((windows->xw_xflags & XWF_OPN) != 0)
 			xw_close(windows);
 		xw_delete(windows);
 	}

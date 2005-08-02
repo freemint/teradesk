@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -63,12 +63,17 @@ typedef struct
 
 static ICONTYPE 
 	iwork, 			/* work area for editing icon data */
-	*files,			/* pointer to list of icons assigned to files      */ 
-	*folders; 		/* pointer to list of icons assigned to folders    */
-
+	*iconlists[3];	/* pointers to lists of files, folders and programs */
 
 static ITMTYPE
 	defictype;
+
+extern XDINFO 
+	icd_info;
+
+extern int 
+	sl_noop;
+
 
 /*
  * Copy icon-file assignment data to another location 
@@ -84,10 +89,10 @@ static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
 
 
 /* 
- * Find an icon defined by associated file(type) in the files or folders list;
+ * Find an icon defined by associated file(type) in an icontypes list;
  * return identifier of the icon.
  * Note: this function searches for an icon sequentially through a list.
- * On a low-end Atari, finding icons near the end of a largelist can take
+ * On a low-end Atari, finding icons near the end of a large list can take
  * noticeable time. Routine cmp_wildcards() is rather slow.
  */
 
@@ -99,6 +104,7 @@ static int find_icon(const char *name, ICONTYPE *list)
 	{
 		if (cmp_wildcard(name, p->type))
 			return min(n_icons - 1, p->icon);
+
 		p = p->next;
 	}
 	return -1;
@@ -116,29 +122,31 @@ static void icnt_info
 ( 
 	ICONTYPE **list, 	/* pointer to list in which the icon is searched for */
 	char *filetype,		/* file(type) for which the associated icon is searched */ 
-	int group,			/* is this files or folders icon group */
+	int group,			/* is this files or folders or programs icon group */
 	ICONTYPE *it 		/* output information */
 )
 {
-	int iconid;
-
 	if ( !find_wild( (LSTYPE **)list, filetype, (LSTYPE *)it, copy_icntype ) )
 	{
-		/* 
-	 	 * If icon type not defined or name not given:
-	 	 * set general file or folder icon
-	 	 */
+		/* Attempt o divine the icon from a possibly defined desktop icon */
 
-		if ( group & LS_FIIC )
+		it->icon = icn_iconid(filetype);
+
+		if(it->icon < 0)
 		{
-			if ( prg_isprogram(it->type) )
+			/* No suitable icon on the desktop, set general icon */
+
+			int 
+				iconid = FIINAME, 
+				lg = group & (LS_FIIC | LS_FOIC | LS_PRIC);
+
+			if (lg == LS_FOIC)
+				iconid = FOINAME;
+			else if (lg == LS_PRIC)
 				iconid = APINAME;
-			else
-				iconid = FIINAME;
+
+			it->icon = rsrc_icon_rscid( iconid, iname ); 
 		}
-		else
-			iconid = FOINAME;
-		it->icon = rsrc_icon_rscid ( iconid, iname ); 
 	}
 	
 	return;
@@ -147,85 +155,80 @@ static void icnt_info
 
 /*  
  * Find icons in the icons resource file by name, not index.
- * Parameter "link" currently not used, but may be used someday,
- * e.g. to set specific icons for links.  
  */
 
-int icnt_geticon(const char *name, ITMTYPE type, boolean link)
+int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link)
 {
-	int icon;
+	int icon, deficon, i;
+	boolean more = TRUE;
+	ITMTYPE thetype = type;
 
-	/* Find a related icon, depending on item type (folder/file/program) */
+	/* 
+	 * Find a related icon, depending on item type (folder/file/program) 
+	 * Links ara handled in a somewhat dirty (but efficient) way
+	 */
 
-	if ((type == ITM_PREVDIR) || (type == ITM_FOLDER))
+	again:;
+
+	switch(thetype)
 	{
-		/* Find an icon in the folder group. If not found, use default */
-
-		if ((icon = find_icon(name, folders)) < 0)
-			icon = rsrc_icon_rscid ( FOINAME, iname ); 
+		case ITM_PREVDIR:
+		case ITM_FOLDER:
+			i = 1;
+			deficon = FOINAME;
+			break;
+		case ITM_PROGRAM:
+			i = 2;
+			deficon = APINAME;
+			break;
+		default:	/* ITM_FILE or ITM_LINK */
+			i = 0;
+			deficon = FIINAME;
 	}
-	else
-	{
-		/* 
-		 * Find an icon in the file group (match the name against wildcard masks). 
-		 * If not found, use default file and program icons
-		 */
 
-		if ((icon = find_icon(name, files)) < 0)
-			icon = rsrc_icon_rscid ( prg_isprogram(name) ? APINAME : FIINAME, iname ); 
+	if ((icon = find_icon(name, iconlists[i])) < 0)
+	{
+		/* Specific icon not found */
+
+		if(link && more)
+		{
+			/* Go back and find default icon for this item type */
+
+			thetype = tgt_type;
+			more = FALSE;
+			goto again;			
+		}
+
+		icon = rsrc_icon_rscid ( deficon, iname ); 
 	}
 
 	return icon;
 }
 
 
-/*
- * Add an icon assignment into the list, explicitely giving parameters
- */
-
-static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
-{
-	/* Define filemask */
-
-	strsncpy ( (char *)iwork.type, filetype, sizeof(iwork.type) );
-
-#if _MINT_
-	if ( mint && !magic )
-		strlwr(iwork.type);
-#endif
-
-	/* Index of that icon in (c)icons.rsc */
-
-	iwork.icon = icon;
-
-	/* Copy icon name (i.e. icon name in (c)icons.rsc) */
-
-	strsncpy(iwork.icon_name, icons[icon].ob_spec.ciconblk->monoblk.ib_ptext, sizeof(INAME));	
-
-	/* Add that to list */
-
-	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), END, copy_icntype );
-}
-
-
 /* 
  * Handle the dialog for assigning an icon to a file;
  * assignment of icon to a device (desktop icon) uses the same dialog 
- * in resource but a different routine.
+ * in resource but a different handling routine.
  * list = list into which the item is placed;
- * pos = position in the list (ordinal) where to place the item
- * it = item to be placed in te list
+ * pos = position (ordinal) in the list where to place the item
+ * it = item to be placed in the list
  * use = purpose of use of dialog (add/edit)
  */
 
 static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 {
-	int button;
-	int title; 
+	int 
+		button, 
+		theic = it->icon, 
+		title;
 
-	SLIDER sl_info;
+	SLIDER 
+		sl_info;
 
-	SNAME thename;
+	SNAME 
+		thename;
+
 
 	/* Which title to use? */
 
@@ -234,50 +237,58 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 	else
 		title = DTADDICT;
 
-	/* Files list or folders list? */
+	/* Files list or folders or programs list? */
 
-	if ( use & LS_FIIC )
+	obj_hide(addicon[ICSHFIL]);
+	obj_hide(addicon[ICSHFLD]);
+	obj_hide(addicon[ICSHPRG]);
+
+	switch( use & (LS_FIIC | LS_FOIC | LS_PRIC) )
 	{
-		obj_hide(addicon[ICSHFLD]);
-		obj_unhide(addicon[ICSHFIL]);
+		case LS_FOIC:
+			obj_unhide(addicon[ICSHFLD]); 
+			break;
+		case LS_PRIC:
+			obj_unhide(addicon[ICSHPRG]); 
+			break;
+		default:	/* LS_FIIC */
+			obj_unhide(addicon[ICSHFIL]);
 	}
-	else
-	{
-		obj_unhide(addicon[ICSHFLD]); 
-		obj_hide(addicon[ICSHFIL]);
-	}
+
+	/* Set dialog title and initial name */
 
 	rsc_title(addicon, AITITLE, title);
 
-	cv_fntoform(addicon + ICNTYPE, it->type);
+	cv_fntoform(addicon, ICNTYPE, it->type);
 
 	/* Set some fields as visible or invisible */
 
 	obj_hide(addicon[CHNBUTT]);
-	obj_unhide(addicon[ADDBUTT]);
 	obj_hide(addicon[ICBTNS]);
 	obj_hide(addicon[DRIVEID]);
 	obj_hide(addicon[ICNLABEL]); 
 	obj_unhide(addicon[ICNTYPE]);
 	obj_unhide(addicon[ICNTYPT]);
+	obj_unhide(addicon[ADDBUTT]);
+	obj_hide(addicon[INAMBOX]);
 
-	icn_sl_init(it->icon, &sl_info);
+	sl_noop = 0;
+	button = icn_dialog(&sl_info, &theic, ICNTYPE, options.win_pattern, options.win_color);
+	xd_close(&icd_info);
 
-	button = sl_dialog(addicon, ICNTYPE, &sl_info); 
-
+/* maybe not needed
 	obj_hide(addicon[ICSHFLD]); 
 	obj_hide(addicon[ICSHFIL]);
+	obj_hide(addicon[ICSHPRG]);
+*/
+	cv_formtofn(thename, addicon, ICNTYPE);
 
-	cv_formtofn( thename, addicon + ICNTYPE);
+	/* Button is OK but check for duplicate assignment, then set what needed */
 
-	if 
-	( 
-		(button == ADDICNOK ) && 
-		(check_dup( (LSTYPE **)list, thename, pos)) 
-	)
+	if((button == ADDICNOK) && (check_dup((LSTYPE **)list, thename, pos)))
 	{
 		strcpy(it->type, thename);
-		it->icon = sl_info.line;
+		it->icon = theic;
 
 		strsncpy
 		(
@@ -320,20 +331,20 @@ void icnt_settypes(void)
 	int 
 		button;
 
+
 	/* Set dialog title, show radio buttons for selecting icon list */
 
 	rsc_title(setmask, DTSMASK, DTITYPES);		
 	obj_unhide(setmask[ICATT]);
-	obj_select(setmask[ITFILES]); /* list_edit always starts from the 1st list */
-	obj_deselect(setmask[ITFOLDER]);
+	xd_set_rbutton(setmask, ICATT, ITFILES);
 
 	/*  Edit icontypes list: add/delete/change */
 
 	button = list_edit
 	         ( 
 				&itlist_func, 
-				(LSTYPE **)(&files), 
-				(LSTYPE **)(&folders), 
+				(LSTYPE **)iconlists, 
+				3,
 				sizeof(ICONTYPE), 
 				(LSTYPE *)(&iwork), 
 				LS_ICNT
@@ -348,39 +359,70 @@ void icnt_settypes(void)
 }
 
 
-/* Initiate (empty) lists of assigned files and folders */
+/* Initiate (empty) lists of assigned files, folders and programs */
 
 void icnt_init(void)
 {
-	files = NULL;
-	folders = NULL;
+	iconlists[0] = NULL;
+	iconlists[1] = NULL;
+	iconlists[2] = NULL;
 }
 
 
 /*
- * Clear all icontypes
+ * Clear all icontypes (files, folders and programs)
  */
 
 static void rem_all_icontypes(void)
 {
-	lsrem_all((LSTYPE **)(&files), lsrem);
-	lsrem_all((LSTYPE **)(&folders), lsrem);
-
+	lsrem_three((LSTYPE **)iconlists, lsrem);
 }
 
 /*
  * Set up some predefined lists of icons-files and icons-folders assignments.
- * This can be tricky: Lists of assignments from searched from the first
- * to the last item. If the most general wildcards such as "*" and "*.*" 
+ * This can be tricky: Lists of assignments are searched from the first
+ * towards the last item. If the most general wildcards such as "*" and "*.*" 
  * are defined among the first ones, other matches later in the list will 
  * never be found. So, at the least, the most general wildcards should be
  * placed near the end of the list, if at all. Anyway, this can lead to
  * a confusion, so perhaps it is best to disable all of these predefined
  * icontypes which were set below; Teradesk anyway assigns some default
- * icons in such cases. To enable below set ENABLE_PREDEFIC to 1.
+ * icons in such cases. To enable all below set ENABLE_PREDEFIC to 1.
  */
 
 #define ENABLE_PREDEFIC 0
+
+
+#if ENABLE_PREDEFIC
+/*
+ * Add an icon assignment into the list, explicitely giving parameters
+ */
+
+static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
+{
+	/* Define filemask */
+
+	strsncpy ( (char *)iwork.type, filetype, sizeof(iwork.type) );
+
+#if _MINT_
+	if ( mint && !magic )
+		strlwr(iwork.type);
+#endif
+
+	/* Index of that icon in (c)icons.rsc */
+
+	iwork.icon = icon;
+
+	/* Copy icon name (i.e. icon name in (c)icons.rsc) */
+
+	strsncpy(iwork.icon_name, icons[icon].ob_spec.ciconblk->monoblk.ib_ptext, sizeof(INAME));	
+
+	/* Add that to list */
+
+	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), END, copy_icntype );
+}
+#endif
+
 
 void icnt_default(void)
 {
@@ -401,13 +443,13 @@ void icnt_default(void)
 	ilist[2] =	rsrc_icon_rscid ( APINAME, iname );  /*   PRG, APP, TOS  */
 #endif
 
-	itadd_one(&folders, (char *)presets[0],  ilist[0]);	/*	*		*/ 
-	itadd_one(&files, (char *)presets[1],   ilist[1]);	/* 	*.*		*/
+	itadd_one(&iconlists[1], (char *)presets[0],  ilist[0]);	/*	*		*/ 
+	itadd_one(&iconlists[0], (char *)presets[1],  ilist[1]);	/* 	*.*		*/
 #if _PREDEF
-	itadd_one(&files, (char *)presets[2], ilist[2]);	/*	*.PRG	*/
-	itadd_one(&files, (char *)presets[3], ilist[2]);	/*	*.APP	*/
-	itadd_one(&files, (char *)presets[4], ilist[2]);	/*	*.GTP	*/
-	itadd_one(&files, (char *)presets[5], ilist[2]);	/*	*.TOS	*/
+	itadd_one(&iconlists[2], (char *)presets[2], ilist[2]);	/*	*.PRG	*/
+	itadd_one(&iconlists[2], (char *)presets[3], ilist[2]);	/*	*.APP	*/
+	itadd_one(&iconlists[2], (char *)presets[4], ilist[2]);	/*	*.GTP	*/
+	itadd_one(&iconlists[2], (char *)presets[5], ilist[2]);	/*	*.TOS	*/
 #endif
 
 #endif /* ENABLE_PREFEDIC */
@@ -417,8 +459,8 @@ void icnt_default(void)
 
 
 static ICONTYPE 
-	*pthis,		/* pointer to current member of files or folders icon group */ 
-	**ppthis;	/* pointer to address of current member of files or folders icon group */
+	*pthis,		/* pointer to current member of files, folders or programs icon group */ 
+	**ppthis;	/* pointer to address of current member of icon group */
 
 
 /*
@@ -457,7 +499,7 @@ static CfgNest one_itype
 	{
 		/* Clear work area, so that data not explicitelly set will be zero */
 
-		memset(&iwork, 0, sizeof(iwork));
+		memclr(&iwork, sizeof(iwork));
 
 		/* Load configuration data for one icontype */
 
@@ -471,19 +513,25 @@ static CfgNest one_itype
 				*error = EFRVAL;
 			else
 			{
-				iwork.icon = rsrc_icon(iwork.icon_name);
-				if ( iwork.icon < 0 )
+				if ( (iwork.icon  = rsrc_icon(iwork.icon_name)) < 0 )
 					iwork.icon = default_icon(defictype);	
 
-				if (
-					lsadd(	(LSTYPE **)ppthis,
+				if 
+				(
+					lsadd
+					(
+						/* Compatibility issue, modify after V3.60 */
+/*	
+						(LSTYPE **)ppthis,
+*/
+prg_isprogram(iwork.type) ? (LSTYPE **)(&iconlists[2]) : (LSTYPE **)ppthis,
 						sizeof(ICONTYPE),
 						(LSTYPE *)&iwork,
 						END,
 						copy_icntype
-			      		) == NULL
-					)
-						*error = ENOMSG; /* there was an alert in lsadd */
+			      	) == NULL
+				)
+					*error = ENOMSG; /* there was an alert in lsadd */
 			}
 		}
 	}
@@ -491,7 +539,7 @@ static CfgNest one_itype
 
 
 /* 
- * Table for configuring one group of window icons (icontypes; files or folders)
+ * Table for configuring one group of window icons (files/folders/programs)
  */
 
 static CfgEntry icngrp_table[] =
@@ -505,7 +553,7 @@ static CfgEntry icngrp_table[] =
 
 
 /* 
- * Save or load "files" or "folders" group of icon definitions 
+ * Save or load "files", "folders" or "programs" group of icon definitions 
  */
 
 static CfgNest icngrp_cfg
@@ -523,8 +571,8 @@ static CfgNest icngrp_cfg
 
 static CfgNest file_cfg
 {
-	pthis = files;
-	ppthis = &files;
+	pthis = iconlists[0];
+	ppthis = &iconlists[0];
 	icngrp_table[0].s = "files";
 	defictype = ITM_FILE;
 	icngrp_cfg(file, lvl, io, error);
@@ -537,10 +585,24 @@ static CfgNest file_cfg
 
 static CfgNest folder_cfg
 {
-	pthis = folders;
-	ppthis = &folders;
+	pthis = iconlists[1];
+	ppthis = &iconlists[1];
 	icngrp_table[0].s = "folders";
 	defictype = ITM_FOLDER;
+	icngrp_cfg(file, lvl, io, error);
+}
+
+
+/* 
+ * Save or load "programs" group of window icontypes 
+ */
+
+static CfgNest program_cfg
+{
+	pthis = iconlists[2];
+	ppthis = &iconlists[2];
+	icngrp_table[0].s = "programs";
+	defictype = ITM_PROGRAM;
 	icngrp_cfg(file, lvl, io, error);
 }
 
@@ -553,8 +615,9 @@ static CfgEntry icontypes_table[] =
 {
 	{CFG_HDR, 0, "icontypes" },
 	{CFG_BEG},
-	{CFG_NEST,0, "files",     file_cfg  },		/* group */
-	{CFG_NEST,0, "folders", folder_cfg  },		/* group */
+	{CFG_NEST,0, "files",     file_cfg    },		/* group */
+	{CFG_NEST,0, "folders",   folder_cfg  },		/* group */
+	{CFG_NEST,0, "programs",  program_cfg },		/* group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };

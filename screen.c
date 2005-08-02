@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,9 +34,9 @@
 #include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
-#include "screen.h"
 #include "config.h"
 #include "font.h"
+#include "screen.h"
 #include "window.h"
 
 
@@ -75,7 +75,7 @@ void clipdesk_on(void)
 
 
 /*
- * Clear a rectangle by filling it with pattern and colour. Use v_bar. 
+ * Clear a rectangle by filling it with pattern and colour. Use v_bar(). 
  * (pattern and colour are those defined for window background)
  */
 
@@ -115,7 +115,7 @@ boolean inrect(int x, int y, RECT *r)
 
 
 /*
- * Set default attributes for rectangles
+ * Set default attributes for drawing rectangles
  */
 
 void set_rect_default(void)
@@ -130,23 +130,14 @@ void set_rect_default(void)
 
 
 /*
- * Draw a simple rectangle
+ * Draw a simple rectangle.
  */
 
 void draw_rect(int x1, int y1, int x2, int y2)
 {
-	int p[10];
-
 	moff_mouse();
 	xd_clip_on(&screen_info.dsk);
-
-	p[0] = p[6] = p[8] = x1;
-	p[1] = p[3] = p[9] = y1;
-	p[2] = p[4] = x2;
-	p[5] = p[7] = y2;
-
-	v_pline(vdi_handle, 5, p);
-
+	draw_xdrect(x1, y1, x2 - x1, y2 - y1);
 	xd_clip_off();
 	mon_mouse();
 }
@@ -181,28 +172,30 @@ void move_screen(RECT *dest, RECT *src)
 	mfdb.fd_addr = NULL;
 	xd_rect2pxy(src, pxy);
 	xd_rect2pxy(dest, &pxy[4]);
-
 	vro_cpyfm(vdi_handle, S_ONLY, pxy, &mfdb, &mfdb);
 }
 
 
 /* 
  * Funktie voor het initialiseren van het vdi. 
- * Set default text attributes.
+ * Set default text attributes from font data 
+ * for subsequent writings to the screen.
+ * Note: effects are currently ignored, always set to 0
  */
 
-void set_txt_default(int font, int height)
+void set_txt_default(FONT *f)
 {
 	int dummy;
 
-	vswr_mode(vdi_handle, MD_REPLACE);
-
-	vst_font(vdi_handle, font);
-	vst_color(vdi_handle, 1); /* always black */
+	xd_vswr_repl_mode();
+	vst_font(vdi_handle, f->id);
+	vst_color(vdi_handle, f->colour); 
 	vst_rotation(vdi_handle, 0);
 	vst_alignment(vdi_handle, 0, 5, &dummy, &dummy);
-	vst_point(vdi_handle, height, &dummy, &dummy, &dummy, &dummy);
+	vst_point(vdi_handle, f->size, &dummy, &dummy, &dummy, &dummy);
 	vst_effects(vdi_handle, 0);
+
+
 }
 
 
@@ -249,7 +242,7 @@ void set_colors(int *colors)
 
 #if PALETTES
 
-static char *palide = "TeraDesk-pal";
+static const char *palide = "TeraDesk-pal";
 extern char *palname;
 
 typedef struct rgb
@@ -311,7 +304,6 @@ static CfgNest rgb_config
 		for ( i = 0; i < xd_ncolors; i++ )
 		{
 			cwork.ind = i;
-
 			cwork.red =  *thecolor++;
 			cwork.green = *thecolor++;
 			cwork.blue =  *thecolor++; 
@@ -325,35 +317,23 @@ static CfgNest rgb_config
 	}
 	else
 	{
-		if ( palsize != xd_ncolors )
+		/* initialize rgb but NOT ind */
+
+		cwork.red = 0;
+		cwork.green = 0;
+		cwork.blue = 0;
+
+		*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl);
+
+		if ( (*error == 0) && (cwork.ind < palsize) )
 		{
-			alert_iprint(MECOLORS); 
-			*error = ENOMSG; /* abort but don't display more error messages */
-		}
-		else
-		{
-			/* initialize rgb but not ind */
-			cwork.red = 0;
-			cwork.green = 0;
-			cwork.blue = 0;
+			int *p = &cwork.red;
 
-			*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl);
+			thecolor += 3 * cwork.ind; /* need not be in sequence */
+			cwork.ind++;
 
-			if ( *error == 0 )
-			{
-				if ( cwork.ind >= palsize )
-					*error = EFRVAL;
-				else
-				{
-					int *p = &cwork.red;
-
-					thecolor += 3 * cwork.ind;
-					cwork.ind++;
-
-					for ( i = 0; i < 3; i++ )
-						*thecolor++ = min(p[i],1000);
-				}
-			}
+			for ( i = 0; i < 3; i++ )
+				*thecolor++ = min(p[i], 1000);
 		}
 	}
 }
@@ -378,8 +358,13 @@ static CfgNest pal_config
 	{
 		*error = handle_cfg(file, palette_table, lvl, CFGEMP, io, NULL, NULL );
 
-		if (*error != 0 && io == CFG_LOAD)
-			set_colors(palette);
+		if ( io == CFG_LOAD )
+		{
+			if (palsize != xd_ncolors)
+				alert_iprint(MECOLORS); /* warning */
+			if (*error == 0)
+				set_colors(palette);
+		}
 
 		free(palette);
 	}
@@ -392,11 +377,14 @@ static CfgNest pal_config
  * Load or save complete colour palette configuration.
  * Palete file is opened, read/written to, and closed.
  * Note: temporary space for the palette is both allocated and freed here
+ * Parameter "io" can be CFG_LOAD or CFG_SAVE.
+ * Errors from handle_cfgfile() are ignored.
  */
 
-int handle_colors(int io)
+void handle_colors(int io)
 {
-	return handle_cfgfile( palname, palette_root, palide, io );
+	if (options.vprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
+		handle_cfgfile( palname, palette_root, palide, io );
 }
 
 

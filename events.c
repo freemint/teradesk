@@ -39,6 +39,7 @@ static int event(int evflags, int mstate, int *key)
 	XDEVENT events;
 	int result;
 
+
 	events.ev_mflags = MU_TIMER | evflags;
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
@@ -52,6 +53,11 @@ static int event(int evflags, int mstate, int *key)
 	{
 		if ((result = xe_xmulti(&events)) & MU_MESAG)
 		{
+			/* 
+			 * Message received; handle AV-protocol and FONT protocol messages, 
+			 * AP_TERM and SH_WDRAW. If AP_TERM is received, -1 will be returned 
+			 */
+
 			if (hndlmessage(events.ev_mmgpbuf) != 0)
 				return -1;
 		}
@@ -84,10 +90,8 @@ int key_state(int *key, boolean hndl_msg)
 
 	if (result == -1)
 	{
-		if (hndl_msg)
-			return -1;
-		else
-			return 0;
+		/* only if hndl_msg == TRUE can -1 be returned from event() */
+		return -1;
 	}
 	else if (result & MU_KEYBD)
 		return 1;
@@ -97,7 +101,9 @@ int key_state(int *key, boolean hndl_msg)
 
 
 /*
- * Clear the keyboard buffer
+ * Clear the keyboard buffer.
+ * Note: no events but the keyboard and the timer are processed here
+ * because of FALSE below; 
  */
 
 void clr_key_buf(void)
@@ -108,6 +114,8 @@ void clr_key_buf(void)
 }
 
 
+/* This routine is never used in Teradesk
+
 /*
  * Wait for a button click
  */
@@ -116,6 +124,8 @@ void wait_button(void)
 {
 	while (xe_button_state());
 }
+
+*/
 
 
 /*
@@ -127,6 +137,8 @@ void wait(int dt)
 	evnt_timer(dt, 0);
 }
 
+
+/* This is never used in TeraDesk
 
 /*
  * Handle (ignore) all messages still in the message buffer.
@@ -145,11 +157,18 @@ int clr_msg_buf(void)
 		return 0;
 }
 
+*/
+
+
 
 /*
  * This is a routine for confirmation of an abort caused
  * by pressing [ESC] during multiple copy, delete, print, etc.
- * An alert is posted with a text "Abort current operation?" 
+ * An alert is posted with a text "Abort current operation?"
+ * If hndl_msg = TRUE, this routine will process AV_PROTOCOL 
+ * messages and also AP_TERM and SH_WDRAW.
+ * If a message is recived which terminates the desktop (i.e. AP_TERM)
+ * then TRUE will be returned, as if OK was selected. 
  */
 
 boolean escape_abort( boolean hndl_msg )

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
+#include <library.h>
 #include <xdialog.h>
 #include <mint.h>
 
@@ -58,6 +59,9 @@ FTYPE
 const char 
 	*presets[10] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG" };
 
+const char 
+	fas[] = {FA_READONLY, FA_ARCHIVE, FA_HIDDEN, FA_SYSTEM, FA_SUBDIR, FA_PARDIR};
+
 
 /*  
  * Copy one filemask dataset to another; this routine doesn't do
@@ -83,7 +87,7 @@ static FTYPE *ftadd_one(char *filetype)
 	strsncpy( fwork.filetype, filetype, sizeof(fwork.filetype));
 
 	/* 
-	 * note: in other similar routines name is converted to lowercase
+	 * Note: in other similar routines name is converted to lowercase
 	 * if mint is active; should it be so here too? (was not in old code).
 	 * Currently disabled, i.e. always uppercase
 	 */
@@ -170,7 +174,7 @@ static boolean filetype_dialog
 
 	rsc_title(ftydialog, FTYTITLE, title); 
 
-	cv_fntoform(ftydialog + FTYPE0, ft->filetype);
+	cv_fntoform(ftydialog, FTYPE0, ft->filetype);
 
 	/* Open the dialog, then loop until stop */
 
@@ -189,7 +193,7 @@ static boolean filetype_dialog
 
 			SNAME ftxt;
 
-			cv_formtofn( ftxt, &ftydialog[FTYPE0]);
+			cv_formtofn( ftxt, ftydialog, FTYPE0);
 
 			if ( *ftxt != 0 )
 			{
@@ -260,6 +264,7 @@ char *ft_dialog
 		savedial;		/* to save the dialog before recursive calls */
 
 	int 
+		j,				/* loop counter */
 		luse,			/* local value of use */
 		button,			/* code of pressed button */
 		ftb;			/* button, too   */
@@ -270,6 +275,8 @@ char *ft_dialog
 	char 
 		*result = NULL;	/* to be return value of this routine */
 
+	static const char 
+		ois[] = {0, 0, MSKHID, MSKSYS, MSKDIR, MSKPAR};
 
 	/* 
 	 * If necessary, save the previous state of this dialog's root object
@@ -279,7 +286,8 @@ char *ft_dialog
 
 	if ( use & LS_DOCT )
 	{
-		memcpy( &savedial, setmask, sizeof(OBJECT));
+		savedial = *setmask;
+
 		ftb = xd_get_rbutton ( setmask, FTPARENT );
 		xd_set_rbutton( setmask, FTPARENT, FTYPE1 );
 	}
@@ -290,7 +298,7 @@ char *ft_dialog
 
 	if ( mask )
 	{
-		cv_fntoform(setmask + FILETYPE, mask);		
+		cv_fntoform(setmask, FILETYPE, mask);		
 		obj_unhide(setmask[FILETYPE]);
 		obj_unhide(setmask[FTTEXT]);
 	}
@@ -313,10 +321,9 @@ char *ft_dialog
 
 			/* Enter values of file attributes flags into dialog */
 
-			set_opt( setmask, options.attribs, FA_HIDDEN, MSKHID );
-			set_opt( setmask, options.attribs, FA_SYSTEM, MSKSYS );
-			set_opt( setmask, options.attribs, FA_SUBDIR, MSKDIR );
-			set_opt( setmask, options.attribs, FA_PARDIR, MSKPAR );
+			for(j = 2; j < 6; j++)
+				set_opt( setmask, options.attribs, (int)fas[j], (int)ois[j]);
+
 			break;
 
 		case LS_DOCT:
@@ -341,7 +348,7 @@ char *ft_dialog
 
 	/* Edit the filemasks list: add/delete/change entry */
 
-	button = list_edit( &ftlist_func, (LSTYPE **)(flist), NULL, sizeof(FTYPE), (LSTYPE *)(&fwork), luse);
+	button = list_edit( &ftlist_func, (LSTYPE **)(flist), 1, sizeof(FTYPE), (LSTYPE *)(&fwork), luse);
 
 	obj_hide(setmask[MSKATT]);
 	obj_hide(setmask[FILETYPE]);
@@ -353,14 +360,12 @@ char *ft_dialog
 
 		if ( luse & LS_FMSK )
 		{
-			get_opt( setmask, &options.attribs, FA_HIDDEN, MSKHID );
-			get_opt( setmask, &options.attribs, FA_SYSTEM, MSKSYS );
-			get_opt( setmask, &options.attribs, FA_SUBDIR, MSKDIR ); 
-			get_opt( setmask, &options.attribs, FA_PARDIR, MSKPAR );
+			for(j = 2; j < 6; j++)
+				get_opt( setmask, &options.attribs, (int)fas[j], (int)ois[j]);
 
 			if ( mask != NULL )
 			{
-				cv_formtofn(newmask, &setmask[FILETYPE]);
+				cv_formtofn(newmask, setmask, FILETYPE);
 				if ((result = malloc_chk(strlen(newmask) + 1)) != NULL)
 					strcpy(result, newmask);
 				return result;
@@ -375,7 +380,7 @@ char *ft_dialog
 
 	if ( use & LS_DOCT )
 	{
-		memcpy ( setmask, &savedial, sizeof(OBJECT));
+		*setmask = savedial;
 		xd_set_rbutton( setmask, FTPARENT, ftb );
 	}
 
@@ -385,7 +390,9 @@ char *ft_dialog
 }
 
 
-/* Initialize (empty) list of filetype masks */
+/* 
+ * Initialize (empty) list of filetype masks 
+ */
 
 void ft_init(void)
 {
@@ -396,7 +403,9 @@ void ft_init(void)
 }
 
 
-/* Set a list of filetype masks with some predefined ones */
+/* 
+ * Set a list of filetype masks with some predefined ones 
+ */
 
 void ft_default(void)
 {
@@ -466,7 +475,7 @@ CfgNest one_ftype
 	{
 		/* Load data; one filetype */
 
-		memset( &fwork, 0, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
+		memclr( &fwork, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
 
 		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME) - 1, lvl); 
 
@@ -476,17 +485,18 @@ CfgNest one_ftype
 				*error = EFRVAL;
 			else
 			{
-				if (
-						lsadd
-						(  
-							(LSTYPE **)ffthis,
-		    				sizeof(FTYPE),
-		                	(LSTYPE *)&fwork,
-		                	END,
-		                	copy_ftype
-						) == NULL
-					)
-						*error = ENOMSG; /* there was an alert in lsadd */
+				if 
+				(
+					lsadd
+					(  
+						(LSTYPE **)ffthis,
+		    			sizeof(FTYPE),
+		               	(LSTYPE *)&fwork,
+		               	END,
+		               	copy_ftype
+					) == NULL
+				)
+					*error = ENOMSG; /* there was an alert in lsadd */
 			}
 		}
 	}

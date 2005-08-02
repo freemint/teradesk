@@ -28,6 +28,7 @@
 #include <vdi.h> 
 #include <error.h>
 #include <xerror.h>
+#include <library.h>
 #include <xdialog.h>
 #include <boolean.h>
 
@@ -67,35 +68,6 @@ static void fpartoftext
 
 	xd_drawdeep( &fdinfo, FPAR3);
 } 
-
-
-/* 
- * Routine fpenable enables/disables editing of floppy format params
- * bu (re)setting the DISABLED ob_state flags 
- */
-
-static void fpenable 
-( 
-	int e  /* e=1: enable; e=0: disable */
-)
-{
-	if ( e )
-	{ 
-		obj_enable(fmtfloppy[FSIDES]);
-		obj_enable(fmtfloppy[FTRACKS]);
-		obj_enable(fmtfloppy[FSECTORS]);
-		obj_enable(fmtfloppy[FDIRSIZE]);
-		obj_enable(fmtfloppy[FLABEL]);
-	}
-	else
-	{
-		obj_disable(fmtfloppy[FSIDES]);
-		obj_disable(fmtfloppy[FTRACKS]);
-		obj_disable(fmtfloppy[FSECTORS]);
-		obj_disable(fmtfloppy[FDIRSIZE]);
-		obj_disable(fmtfloppy[FLABEL]);  
-	}
-}
 
 
 /* 
@@ -139,7 +111,7 @@ char *xbioserr(long istat)
 	if ( istat == WRITE_PROTECT )
 		return get_freestring( TWPROT );
 	else
-		return empty;
+		return (char *)empty;
 }
 
 
@@ -170,6 +142,16 @@ long onetrack
 	if ( !istat )
 		istat = xbios( 19, buf, filler, devno, 1, itrack, iside, spt );
 	return istat;
+}
+
+
+/*
+ * Aux. sze-optimization routine
+ */
+
+int fl_atoi(int obj)
+{
+	return atoi(fmtfloppy[obj].ob_spec.tedinfo->te_ptext);
 }
 
 
@@ -253,10 +235,9 @@ void formatfloppy
 	drive[1] = 0;	/* terminator, for the time being */
 	fmtsel   = 0;	/* no format selected so far */
 	finished = 0;	/* no success yet */
-  
-	fpenable(0);	/* disable editable format params fields */
-  
-	obj_deselect(fmtfloppy[FSSIDED]); 	/* deselect all format buttons */
+
+	xd_set_child(fmtfloppy, FPAR3, 0);
+ 	obj_deselect(fmtfloppy[FSSIDED]); 	/* deselect all format buttons */
 	obj_deselect(fmtfloppy[FDSIDED]);
 	obj_deselect(fmtfloppy[FHSIDED]);
 	obj_deselect(fmtfloppy[FESIDED]);
@@ -277,10 +258,7 @@ void formatfloppy
 	{
 		rsc_title(fmtfloppy, FLTITLE, DTFFMT);		/* title */
 		obj_hide(fmtfloppy[FTGTDRV]);  	/* hide "to ... " text */
-		obj_enable(fmtfloppy[FSSIDED]); /* enable all format buttons */
-		obj_enable(fmtfloppy[FDSIDED]);
-		obj_enable(fmtfloppy[FHSIDED]);
-		obj_enable(fmtfloppy[FESIDED]);
+		xd_set_child(fmtfloppy, FFTYPE, 1);
 		obj_unhide(fmtfloppy[FPAR3]); 	/* show editable fields */
 		obj_unhide(fmtfloppy[FLABEL]); 	/* show label field */
 		obj_enable(fmtfloppy[FLABEL]); 	/* it is editable */
@@ -291,13 +269,10 @@ void formatfloppy
 		rsc_title(fmtfloppy, FLTITLE, DTFCPY);	/* Title */
 		obj_unhide(fmtfloppy[FTGTDRV]);			/* show "to ..." text */
 		obj_hide(fmtfloppy[FPAR3]);				/* hide format param fields */
-		obj_disable(fmtfloppy[FSSIDED]);		/* disable all format buttons */
-		obj_disable(fmtfloppy[FDSIDED]);
-		obj_disable(fmtfloppy[FHSIDED]);
-		obj_disable(fmtfloppy[FESIDED]);    
+		xd_set_child(fmtfloppy, FFTYPE, 0);
 		obj_hide(fmtfloppy[FLABEL]);			/* hide label field */
 		sdevno = (int)fdrive - 'A';				/* source drive */
-		tdevno = 1 & (1^sdevno);  				/* target is the other one */
+		tdevno = 1 & (1 ^ sdevno);  			/* target is the other one */
 		drive[0] = tdevno + 'A';    			/* target drive letter */
 		strcpy(fmtfloppy[FTGTDRV].ob_spec.tedinfo->te_ptext, drive); /* put into dialog */ 
 	}
@@ -311,15 +286,15 @@ void formatfloppy
 		
 	xd_open(fmtfloppy, &fdinfo);
 	
+	again: /* return here if invalid format parameters */
+
 	button = FDSIDED; /* anything but OK or Cancel */
 	
 	/* Loop until OK or Cancel */
 	
 	while ( button != FMTOK && button != FMTCANC )
 	{
-		again: /* return here if invalid format parameters */
-      
-		button = xd_form_do ( &fdinfo, ROOT );
+      	button = xd_form_do ( &fdinfo, ROOT );
           
     	/* Set formatting parameters */
        
@@ -331,10 +306,10 @@ void formatfloppy
 			 * is specified, previous valus will be used
 			 */
 
-			tsides =  atoi(fmtfloppy[FSIDES].ob_spec.tedinfo->te_ptext);
-			tspt =    atoi(fmtfloppy[FSECTORS].ob_spec.tedinfo->te_ptext);
-			ttracks = atoi(fmtfloppy[FTRACKS].ob_spec.tedinfo->te_ptext);
-			dirsize = atoi(fmtfloppy[FDIRSIZE].ob_spec.tedinfo->te_ptext); 
+			tsides =  fl_atoi(FSIDES);
+			tspt =    fl_atoi(FSECTORS);
+			ttracks = fl_atoi(FTRACKS);
+			dirsize = fl_atoi(FDIRSIZE);
 
 			/* 
 			 * Configure format; always use "optimized" (i.e. smaller) FAT size 
@@ -397,8 +372,8 @@ void formatfloppy
   		/* Update displayed params regarding selected or found format */
  
 		if ( fmtsel ) 
-			fpenable(1);
-    
+			xd_set_child(fmtfloppy, FPAR3, 1);
+   
 		fpartoftext( tsides, tspt, ttracks, dirsize );
   
 	} /* while... */
@@ -423,7 +398,7 @@ void formatfloppy
 			tbps = 512; /* always 512 bytes per sector */
 		  
 			if ( ( tsides  <  1  ) || ( tsides > 2 )   ||
-			   ( ttracks <  1 ) || ( ttracks > 84 ) || /* 84=physical limit, most often it is 83 */
+			   ( ttracks <  1 ) || ( ttracks > 84 ) || /* 84=extreme physical limit, most often it is 83 */
 			   ( tspt < 3 )  || ( tspt > mspt ) ||     /* mspt depends on disk type */
 			   ( fatsize < 1 ) || ( fatsize > ((tspt - 1) / 2) ) || /* two fats + sector 0 fit on a track */
 			   ( dirsize < 32) || ( dirsize > ( (tspt * tbps) / 32 - 1) ) ) /* 32 byes per entry */
@@ -506,15 +481,13 @@ void formatfloppy
 							} /* switch */
 						} /* istat ? */
 						else
-							if ( escape_abort(FALSE) )
+							if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 								goto endall;
-          
 					} /* iside */
           
 					/* Report formatting progress after each track */
           
 					prdisp ( itrack, ttracks );
-                         
 				} /* itrack */
         
 				/* 
@@ -526,7 +499,7 @@ void formatfloppy
 
 				/* Clear two complete tracks */
 
-				memset( sect0, 0x00, (size_t)( tspt * tbps * 2 ) );
+				memclr( sect0, (size_t)( tspt * tbps * 2 ) );
        
 				/* Create a MS-DOS-compatible header */
 
@@ -590,12 +563,7 @@ void formatfloppy
 				for ( itrack = 0; itrack < 2; itrack++ )
 				{
 					label = sect0 + tbps * tspt * itrack; /* start of next track in buffer */ 
-/*
-					istat = xbios( 9, label, filler, tdevno, 1, itrack, 0, tspt );
-					if ( !istat )
-						istat = xbios( 19, label, filler, tdevno, 1, itrack, 0, tspt );
-*/
-istat = onetrack(9, (void *)label, tdevno, itrack, 0, tspt);
+					istat = onetrack(9, (void *)label, tdevno, itrack, 0, tspt);
 
 					if ( istat ) 
 						goto abortfmt;
@@ -613,11 +581,7 @@ istat = onetrack(9, (void *)label, tdevno, itrack, 0, tspt);
 				/* Insert target disk, read boot sector */
         
 				drive[0] = 'A' + tdevno; /* target drive letter */
-
-/*
-				istat = xbios( 8, sect0, filler, tdevno, 1, 0, 0, 1 );
-*/
-istat = onetrack(8, sect0, tdevno, 0, 0, 1);
+				istat = onetrack(8, sect0, tdevno, 0, 0, 1);
  
 				if ( istat ) 
 					goto abortfmt;
@@ -634,13 +598,10 @@ istat = onetrack(8, sect0, tdevno, 0, 0, 1);
 				/* Insert source disk, read boot sector */
         
 				drive[0] = 'A' + sdevno; /* source drive letter */
+				istat = onetrack(8, sect0, sdevno, 0, 0, 1);
 
-/*
-				istat = xbios( 8, sect0, filler, sdevno, 1, 0, 0, 1 );
-*/
-istat = onetrack(8, sect0, sdevno, 0, 0, 1);
-
-				if ( istat ) goto abortfmt;
+				if ( istat ) 
+					goto abortfmt;
 
 				cctoi((unsigned char *)(&sbps), &sect0[0x0b]);
 				cctoi((unsigned char *)(&sectors), &sect0[0x13]);
@@ -706,22 +667,16 @@ istat = onetrack(8, sect0, sdevno, 0, 0, 1);
 					{				  			  
 						for ( iside = 0; iside < tsides; iside++ )
 						{
-/*
-							label = sect0 + ((long)sbps) * sspt * ( itrack * ssides + iside );
-							istat = xbios( 8, label, filler, sdevno, 1, i+itrack, iside, sspt );
-							if ( !istat )
-								istat = xbios( 19, label, filler, sdevno, 1, i+itrack, iside, sspt );
-*/
-label = sect0 + ((long)tbpt) * ( itrack * ssides + iside );
-istat = onetrack(8, (void *)label, sdevno, i + itrack, iside, sspt);
+							label = sect0 + ((long)tbpt) * ( itrack * ssides + iside );
+							istat = onetrack(8, (void *)label, sdevno, i + itrack, iside, sspt);
  
 							if ( istat ) 
 								goto abortfmt;
-							if ( escape_abort(FALSE) )
+							if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 								goto endall;
 						}				    
 
-						prdisp ( i + j + itrack, ttracks * 2 ); /* diplay progress */
+						prdisp ( i + j + itrack, ttracks * 2 ); /* display progress */
  						
 					}
 					i = i + n;
@@ -733,17 +688,11 @@ istat = onetrack(8, (void *)label, sdevno, i + itrack, iside, sspt);
 						for ( iside = 0; iside < tsides; iside++ )
 						{				    	
 							label = sect0 + ((long)tbpt) * ( itrack * tsides + iside );
-
-/*				    	
-							istat = xbios( 9, label, filler, tdevno, 1, j + itrack, iside, tspt );
-							if ( !istat )
-								istat = xbios( 19, label, filler, tdevno, 1, j + itrack, iside, sspt );
-*/
-istat = onetrack(9, (void *)label, tdevno, j + itrack, iside, tspt);
+							istat = onetrack(9, (void *)label, tdevno, j + itrack, iside, tspt);
 
 							if ( istat ) 
 								goto abortfmt;
-							if ( escape_abort(FALSE) )
+							if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 								goto endall;
 						}
 				    
@@ -804,12 +753,6 @@ istat = onetrack(9, (void *)label, tdevno, j + itrack, iside, tspt);
 
 	if ( finished )
 	{
-/*
-		drive[0] = 'A' + tdevno;
-		drive[1] = ':';
-		drive[2] = '\\';
-		drive[3] = 0;
-*/
 		strcpy(drive, adrive);
 		drive[0] += tdevno;
 

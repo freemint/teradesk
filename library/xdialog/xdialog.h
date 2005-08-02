@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -98,7 +98,7 @@
 #define TRISTATE_1		CHECKED
 #define TRISTATE_2		(CROSSED | CHECKED)
 
-extern unsigned char xd_emode_specs[XD_EMODECOUNT];
+extern const unsigned char xd_emode_specs[XD_EMODECOUNT];
 
 #define __XD_IS_ELEMENT		0x01
 #define __XD_IS_SPECIALKEY	0x02
@@ -171,18 +171,22 @@ extern int
 
 void xd_open(OBJECT *tree, XDINFO *info);
 void xd_close(XDINFO *info);
+void xd_enable_menu(int state);
 
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
 void xd_draw(XDINFO *info, int start, int depth);
 void xd_drawdeep(XDINFO *info, int start);
+void xd_drawthis(XDINFO *info, int start);
 void xd_change(XDINFO *info, int object, int newstate, int draw);
 void xd_buttnorm(XDINFO *info, int button);
 void xd_drawbuttnorm(XDINFO *info, int button);
 void xd_own_xobjects( int setit );
 void clr_object(RECT *r, int color, int pattern);
-
+void draw_xdrect(int x, int y, int w, int h);
+void xd_vswr_trans_mode(void);
+void xd_vswr_repl_mode(void);
 
 /* Funkties voor het uitvoeren van een dialoog. */
 
@@ -227,15 +231,18 @@ void xd_userdef(OBJECT *object, USERBLK *userblk,
 					   int cdecl(*code) (PARMBLK *parmblock));
 void xd_rect2pxy(RECT *r, int *pxy);
 int xd_obj_parent(OBJECT *tree, int object);
+int xd_xobtype(OBJECT *tree);
 int xd_wdupdate(int mode);
 
 void xd_mouse_off(void);
 void xd_mouse_on(void);
 
 int xd_get_rbutton(OBJECT *tree, int rb_parent);
-void xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
+int xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
+int xd_set_child(OBJECT *tree, int rb_parent, int enab);
 
 OBSPEC xd_get_obspec(OBJECT *object);
+OBSPEC *xd_get_obspecp(OBJECT *object);
 char *xd_ptext(OBJECT *object);
 void xd_zerotext(OBJECT *object);
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec);

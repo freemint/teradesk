@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,19 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define MFINDS 999 /* max. number of found instances of searched-for string */
+#define MFINDS 999  /* max. number of found instances of searched-for string */
+
 
 void item_showinfo(WINDOW *w, int n, int *list, boolean search); 
 void closeinfo (void);
 int si_drive(const char *path);
 
-/*
-int folder_info(const char *oldname, const char *fname, XATTR *attr);
-int file_info(const char *oldname, const char *fname, XATTR *attr);
-*/
-
 
 int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *attr);
-
-
 boolean searched_found( char *path, char *name, XATTR *attr);

@@ -1,6 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                     2003  H. Robbers
+ *                               2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,14 +22,12 @@
 
 #ifndef DRAGDROP_H
 
-int
-ddcreate(
+int ddcreate(
 	int dpid, int spid, int winid, int msx, int msy, int kstate, char exts[] );
-
-int
-ddstry(int fd, char *ext, char *name, long size);
-
-void
-ddclose(int fd);
+int ddstry(int fd, char *ext, char *name, long size);
+void ddclose(int fd);
+int ddopen(int ddnam, char *preferext);
+int ddrtry(int fd, char *name, char *whichext, long *size);
+int ddreply(int fd, int ack);
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -64,28 +64,27 @@
 
 /* Diverse options which are bitflags */
 
+
+/* Copy and print options */
+
 #define CF_COPY			0x0001	/* confirm copy             */
 #define CF_DEL			0x0002	/* confirm delete           */
 #define CF_OVERW		0x0004	/* confirm overwrite        */
 #define CF_PRINT		0x0008 	/* confirm print            */
 #define CF_TOUCH		0x0010  /* confitm touch (not used) */
-
-#define TOS_KEY			0x0020	/* 0 = continue, 1 = wait */
-#define DIALPOS_MODE	0x0040	/* 0 = mouse, 1 = center  */
-
+								/* unused 0x0020 0x0040     */
 #define P_GDOS			0x0080	/* use GDOS device for printing; currently NOT used */
-
-#define SAVE_COLORS		0x0100	/* save palette */
-#define TOS_STDERR		0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
+								/* unused 0x0010 0x0020 0x0040 */
 #define CF_CTIME		0x0400	/* change date & time */
-
 #define CF_CATTR		0x0800  /* change file attributes */
 #define CF_SHOWD		0x1000 	/* always show dialog */
-
 #define P_HEADER		0x2000	/* print header and formfeed */
 #define CF_FOLL			0x4000	/* follow links */
 
 /* Other diverse options */
+
+#define DIALPOS_MODE	0x0040	/* OFF = mouse, ON = center    */
+#define DIAL_MODE   	0x0003  /* 0x0001 = flying, 0x0002 = windowed */
 
 #define TEXTMODE		0		/* display directory as text */
 #define ICONMODE		1		/* display directory as icons */
@@ -103,13 +102,22 @@
 #define WD_SHDAT 0x0002 /* show file date  */
 #define WD_SHTIM 0x0004 /* show file time  */
 #define WD_SHATT 0x0008 /* show attributes */
+#define WD_SHOWN 0x0010 /* show owner      */
 
-/* Option bitflags for settable video modes */
+/* Option bitflags for some settable video modes and related information */
 
-#define VO_BLITTER 0x0001 	/* video option blitter ON  */
-#define VO_OVSCAN  0x0002 	/* video option overscan ON */
-#define VO_LDOUBL  0x0004	/* video option line doubling (Falcon) */
+#define VO_BLITTER	0x0001 	/* video option blitter ON  */
+#define VO_OVSCAN  	0x0002 	/* video option overscan ON */
+							/* unused: 0x0004 0x0008 0x0010 0x0020 0x0040 0x0080 */
+#define SAVE_COLORS	0x0100	/* save palette */
 
+/* Option bitflags for other diverse settings */
+
+#define S_IGNCASE	0x0001	/* Ignore string case when searching */
+#define S_SKIPSUB	0x0002	/* Skip subdirectories when searching */
+							/* unused 0x0004 0x0008   */
+#define TOS_KEY		0x0020	/* 0 = continue, 1 = wait */
+#define TOS_STDERR	0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
 
 /*
  * It is assumed that the first menu item for which a keyboard shortcut
@@ -144,10 +152,10 @@ typedef struct
 	/* Desktop */
 
 	int version;				/* cfg. file version */
-	int cprefs;					/* copy and program preferences */
+	int cprefs;					/* copy prefs: CF_COPY|CF_DEL|CF_OVERW|CF_PRINT|CF_TOUCH|CF_CTIME|CF_CATTR|CF_SHOWD|P_HEADER|CF_FOLL */
+	int xprefs;					/* more preferences: S_IGNCASE | S_SKIPSUB | TOS_KEY | TOS_STDERR  */
 	unsigned int dial_mode;		/* dialog mode (window/flying) */
 	int sexit;					/* save desk on exit */
-	char helpprg[16];			/* name of the help program */
 	int kbshort[NITEM + 2];		/* keyboard shortcuts */
 
 	/* Sizes */
@@ -199,7 +207,7 @@ typedef struct
 
 /* Strings of specific lengths for icon labels, file types, etc. */
 
-typedef char INAME[14];	  /* Icon name/label length */
+typedef char INAME[13];	  /* Icon name/label length */
 typedef char SNAME[18];   /* filetype mask; must be compatible with (longer than) dialog field width */
 typedef char LNAME[132];  /* filename or path   */
 typedef char VLNAME[256]; /* a very long string */
@@ -215,7 +223,9 @@ extern int
 	nfonts;			/* number of available fonts */
 
 extern char 
-		*global_memory,
+		*global_memory;
+
+extern const char
 		*empty,
 		*bslash,
 		*adrive;
@@ -243,4 +253,6 @@ void get_opt(OBJECT *tree, int *flags, int opt, int button );
 char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */
 int scansh ( int key, int kstate );
 int hndlmessage(int *message);
+boolean wait_to_quit(void);
+
 

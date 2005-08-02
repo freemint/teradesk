@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -46,23 +46,21 @@
 #include "dir.h"
 #include "va.h"
 
-XDINFO dinfo; 	
-int dopen = FALSE;    			/* flag that dialog is open */ 
 
+static XDINFO 
+	dinfo; 	
+
+int 
+	infodopen = FALSE;    	/* flag that dialog is open */ 
 
 extern boolean
 	can_touch;
 
-extern DOSTIME 
-		now,
-		optime;	
+extern const char 
+	fas[];			/* file attributes flags */
 
-extern int opattr;
-extern int tos_version;
-
-unsigned int Tgettime(void);
-unsigned int Tgetdate(void);
-
+static const char
+	ois[] = {ISWP, ISARCHIV, ISHIDDEN, ISSYSTEM};
 
 /*
  * Search parameters: pattern, string, date range, size range...
@@ -72,7 +70,7 @@ long
 	find_offset;	/* offset of found string from file start */
 
 int 
-	search_nsm;		/* number of found string matches */	
+	search_nsm = 0;	/* number of found string matches */	
 
 static long
 	search_losize,	/* low end of file size range for search, inclusive */
@@ -80,23 +78,25 @@ static long
 
 static int 
 	search_lodate,	/* low end of file/folder date for search, inclusive */
-	search_hidate,	/* high end of file/folder date for search, inclusive */
-	search_icase;	/* if not 0, ignore string character case */
+	search_hidate;	/* high end of file/folder date for search, inclusive */
 
 static size_t
 	search_length;	/* length of string to search for */
 
 static char 
-	*search_txt,	/* string to search for (directly in dialog field) */
-	*search_buf,	/* buffer to store file to search the string in */
-	**search_finds;	/* pointers to found strings */
+	*search_txt,		/* string to search for (directly in dialog field) */
+	*search_buf,		/* buffer to store the file to search the string in */
+	**search_finds;		/* pointers to found strings */
 
 static LNAME 
 	search_pattern = {0}; /* store filename pattern for search */
 
 static boolean
-	nodirs,			/* TRUE if dirs are not to be searched */
-	nofound;		/* TRUE if no items ofund */
+	nodirs,					/* TRUE if directory names are not to be searched */
+	nofound = TRUE;			/* TRUE if no items founnd */
+
+
+extern char *app_find_name(const char *fname);
 
 
 /* 
@@ -136,15 +136,18 @@ static void cv_dtoform(char *tstr, unsigned int date)
 
 
 /*
- * Convert a string (format: ddmmyy) to DOS date; for brevity, date is only 
- * partially checked: day can be 1:31 in any month, month is 1:12, year is 0:99;
- * return -1 if invalid date is entered;  
+ * Convert a string (format: ddmmyy) to DOS date; 
+ * for brevity, date is only partially checked: 
+ * february can be 1:29 in any year, month is 1:12, year is 0:99;
+ * return -1 if invalid date is entered; 
+ * It is assumed that the input string, if not empty, is always long enough. 
  */
 
 static int cv_formtod( char *dstr )
 {
-	char b[3] = {0,0,0};
-	int d,m,y,dd;
+	int d, m, y, dd;
+	char b[3];
+	static const char md[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 	if ( dstr[0] == 0 )
 		return 0;
@@ -166,29 +169,32 @@ static int cv_formtod( char *dstr )
 		y += 100;
 	y -= 80;
 
-	dd = d | (m<<5) | (y<<9);
+	dd = d | (m << 5) | (y << 9);
 
-	if ( d < 1 || d > 31 || m < 1 || m > 12 )
+	if ( m < 1 || m > 12 || d < 1 || d > md[m] )
 		return -1;
 
 	return dd;
 } 
 
+
 /*
- * Convert a string to DOS time
+ * Convert a string (format: hhmmss) to DOS time
+ * It is assumed that the input string, if not empty, is always long enough. 
  */
 
 static int cv_formtot( char *tstr )
 {
 	int h, m, s, tt;
 
-	char b[3] = {0,0,0};
+	char b[3];
 
 	if ( tstr[0] == 0 )
 		return 0;
 
 	b[0] = tstr[4];
 	b[1] = tstr[5];
+	b[2] = 0;
 
 	s = atoi(b);
 
@@ -202,7 +208,7 @@ static int cv_formtot( char *tstr )
 
 	h = atoi(b);
 
-	tt = (h << 11) | (m << 5) | (s/2); 
+	tt = (h << 11) | (m << 5) | (s / 2); 
 
 	if ( h > 23 || m > 59 || s > 59 )
 		return -1;
@@ -223,20 +229,20 @@ static int search_dialog(void)
 	int 
 		button = 0;		/* code of pressed button */
 
+	search_txt = searching[SGREP].ob_spec.tedinfo->te_ptext;
 
 	/* Clear all fields */
 
-	search_txt = searching[SGREP].ob_spec.tedinfo->te_ptext;
-
-	*spattfld = 0;
-	*search_txt = 0;	
+	*spattfld = 0;		/* name mask in the dialog */
+	*search_txt = 0;	/* string pattern in the dialog */	
 	*(searching[SLOSIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHISIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SLODATE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHIDATE].ob_spec.tedinfo->te_ptext) = 0;
 
-	set_opt( searching, search_icase, 1, IGNCASE); 
 	nodirs = TRUE;
+	set_opt( searching, options.xprefs, S_IGNCASE, IGNCASE); 
+	set_opt( searching, options.xprefs, S_SKIPSUB, SKIPSUB); 
 
 	/* Open the dialog */
 
@@ -246,7 +252,7 @@ static int search_dialog(void)
 
 	while (button != SOK && button != SCANCEL)
 	{
-		/* Wait for appropriate button */
+		/* Wait for the appropriate button */
 
 		button = xd_form_do_draw(&info);
 
@@ -254,11 +260,11 @@ static int search_dialog(void)
 		{
 			/* 
 			 * OK, get data out of dialog, but check it.
-			 * Directories will be searched for only if size range is not set
+			 * Directory names will be searched for only if size range is not set
 			 * and search string is not set
 			 */
 
-			cv_formtofn( search_pattern, &searching[SMASK] );
+			cv_formtofn( search_pattern, searching, SMASK );
 			search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
 			search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
 			if ( search_hisize == 0L )
@@ -276,19 +282,29 @@ static int search_dialog(void)
 			if (search_length > 0)
 				nodirs = TRUE;
 
-			get_opt( searching, &search_icase, 1, IGNCASE); 
-
 			/* Check if parameters entered have sensible values */
 
-			if (  *search_pattern == 0 ||		/* must have a pattern */
-	              search_lodate == -1  ||		/* valid low date      */ 
-	              search_hidate == -1  ||		/* valid high date     */
-	              search_hidate < search_lodate || /* valid date range */
-	              search_hisize < search_losize /* valid size range    */ 
-               )
+			if 
+			(  
+				*search_pattern == 0 ||			 /* must have a pattern */
+				search_lodate == -1  ||			 /* valid low date      */ 
+				search_hidate == -1  ||			 /* valid high date     */
+				search_hidate < search_lodate || /* valid date range    */
+				search_hisize < search_losize	 /* valid size range    */ 
+			)
 			{
 				alert_iprint(MINVSRCH);
 				button = 0;
+			}
+			else
+			{
+				/* OK, can commence search */
+
+				nofound = TRUE;
+				get_opt( searching, &options.xprefs, S_IGNCASE, IGNCASE ); 
+				get_opt( searching, &options.xprefs, S_SKIPSUB, SKIPSUB ); 	
+				if ( *search_txt != 0 ) /* search for a string */
+					obj_unhide(fileinfo[MATCHBOX]);
 			}
 		} 		/* ok? */
 	} 			/* while */
@@ -325,7 +341,7 @@ char *find_string
 
 	while ( p < pend )
 	{
-		if ( search_icase ) 
+		if ( (options.xprefs & S_IGNCASE) != 0 ) 
 		{
 			if (strnicmp(p, search_txt, search_length) == 0)
 				return p;
@@ -463,7 +479,6 @@ boolean searched_found
 										p = p + search_length;
 									}
 								}
-
 							}
 
 							/* 
@@ -501,17 +516,14 @@ boolean searched_found
 
 void closeinfo(void)
 {
-	if ( dopen )
+	if ( infodopen )
 	{
 		xd_close (&dinfo);
-		dopen = FALSE;
-		obj_hide(fileinfo[MATCHBOX]);
-
-/*
-		*search_txt = 0;		/* is this really necessary here ? */
-*/
-		*search_pattern = 0;	/* same ? */
+		infodopen = FALSE;
 	}
+	
+	obj_hide(fileinfo[MATCHBOX]);	
+	*search_pattern = 0;
 }
 
 
@@ -532,29 +544,69 @@ static int si_error(const char *name, int error)
 
 static void set_file_attribs(int attribs)
 {
-	set_opt( fileinfo, attribs, FA_READONLY, ISWP );
-	set_opt( fileinfo, attribs, FA_HIDDEN,   ISHIDDEN );
-	set_opt( fileinfo, attribs, FA_SYSTEM,   ISSYSTEM );
-	set_opt( fileinfo, attribs, FA_ARCHIVE,  ISARCHIV );
+	int i;
+
+	for(i = 0; i < 4; i++)
+		set_opt(fileinfo, attribs, (int)fas[i], (int)ois[i]);
 }
 
 
 /* 
- * Get state of file attributes from dialog, change attributes 
+ * Get state of file attributes from dialog, change DOS attributes 
  * (preserve other attributte bits) 
  */
 
 static int get_file_attribs(int old_attribs)
 {
-	int attribs = (old_attribs & 0xFFD8);
+	int 
+		i,
+		attribs = (old_attribs & 0xFFD8);
 
-	get_opt ( fileinfo, &attribs, FA_READONLY, ISWP );
-	get_opt ( fileinfo, &attribs, FA_HIDDEN, ISHIDDEN );
-	get_opt ( fileinfo, &attribs, FA_SYSTEM, ISSYSTEM );
-	get_opt ( fileinfo, &attribs, FA_ARCHIVE, ISARCHIV );
-
+	for (i = 0; i < 4; i++)
+		get_opt(fileinfo, &attribs, (int)fas[i], (int)ois[i]);
+	
 	return attribs;
 }
+
+#if _MINT_
+
+/*
+ * Note: for the access rights to be correctly set,
+ * checkbox-button indexes must agree with the order
+ * of the flags specified here
+ */ 
+
+static const int rflg[]={S_IRUSR,S_IWUSR,S_IXUSR,S_ISUID,S_IRGRP,S_IWGRP,S_IXGRP,S_ISGID,S_IROTH,S_IWOTH,S_IXOTH,S_ISVTX};
+
+/* 
+ * Set item access rights in the dialog checkboxes
+ */
+
+static void set_file_rights(int mode)
+{
+	int i;
+
+	for ( i = 0; i < 12; i++)
+		set_opt(fileinfo, mode, rflg[i], OWNR + i);
+}
+
+
+/* 
+ * Get access rights from the dialog; return changed rights
+ */
+
+static int get_file_rights(int old_mode)
+{
+	int 
+		i,
+		mode = old_mode;
+
+	for ( i = 0; i < 12; i++ )
+		get_opt(fileinfo, &mode, rflg[i], OWNR + i);
+
+	return mode; 
+}
+#endif
 
 
 /*
@@ -575,6 +627,7 @@ static void disp_smatch( int ism )
 		*s2,	 	/* string after searched */ 
 		*disp;		/* form string to display */
 
+
 	/* Show number of matches */
 
 	rsc_ltoftext(fileinfo, ISMATCH, (long)(ism + 1) );
@@ -585,11 +638,13 @@ static void disp_smatch( int ism )
 
 	/* Completely clear the display field (otherwise it won't work!) */
 
-	memset( &disp[0], 0, (size_t)fld );
+	memclr( disp, (size_t)fld );
 
 	/* 
 	 * Try to display some text just before found string. 
-	 * Must not be before beginning of buffer (i.e. file) 
+	 * Must not be before beginning of buffer (i.e. file).
+	 * Out of available length, 5 characters will be wasted
+	 * for the string itself, represented by a "[...]" 
 	 */
 
 	s1 = search_finds[ism] - (fld - 5) / 2;
@@ -623,7 +678,7 @@ static void disp_smatch( int ism )
 
 
 /*
- * Show or set information about one drive, folder or file or link. 
+ * Show or set information about one drive, folder, file or link. 
  * Return result code
  */
 
@@ -636,44 +691,60 @@ int object_info
 )
 {
 	char 
-		*time,		/* time string */ 
-		*date,		/* date string */ 
-		*newname = NULL;
+		*time,			/* time string */ 
+		*date;			/* date string */ 
 
 #if _MORE_AV
-	char
-		*avname;	/* name to be reported to an AV client */
-
 	LNAME
-		ltgtname;	/* link target name */
+		avname;			/* name to be reported to an AV client */
+
+#if _MINT_
+	LNAME
+		ltgtname;		/* link target name */
+#endif
 #endif	
 
 	LNAME
-		nfname;		/* changed item name taken from the dialog fielad */	
+		nfname;			/* changed item name taken from the dialog field */	
 
 	long 
-		nfolders, 	/* number of subfolders */
-		nfiles,		/* number of files   */ 
-		nbytes;		/* sum of bytes used */
+		nfolders, 		/* number of subfolders */
+		nfiles,			/* number of files   */ 
+		nbytes;			/* sum of bytes used */
 
 	int 
 		drive,			/* drive id */
 		error = 0,		/* error code */
 		ism = 0,		/* ordinal of string search match */
 		button,			/* button index */ 
+#if _MINT_
+		mode = 0,		/* copy access rights to temp. storage */
+		fs_type,		/* filesystem characteristics flags */
+		uid = 0,		/* file owner user id. */
+		gid = 0,		/* file owner group id. */
+#endif
 		attrib = 0, 	/* copy state of attributes to temp. storage */ 
-		result = 0;		/* return code of this routine */
+		result = 0,		/* return code of this routine */
+		thetitle;		/* dialog title */
 
 	boolean
-		changed = FALSE, 	/* TRUE if objectinfo changed */
-		quit = FALSE;		/* TRUE to exit from dialog */ 
+		changed = FALSE, /* TRUE if objectinfo changed */
+		qquit = FALSE;	/* TRUE to exit from dialog */ 
 
 	DISKINFO 
-		diskinfo;			/* some disk volume information */
+		diskinfo;		/* some disk volume information */
 
 	SNAME 
-		dskl;				/* disk label */
+		dskl;			/* disk label */
 
+	TEDINFO
+		*lblted = fileinfo[FLLABEL].ob_spec.tedinfo;
+
+	/* In which filesystem does this item reside */
+
+#if _MINT_
+	fs_type = x_inq_xfs(oldname);
+#endif
 
 	/* Pointers to time and date fields in the dialog */
 
@@ -684,21 +755,26 @@ int object_info
 
 	obj_hide(fileinfo[FLLIBOX]);	/* link target name */
 	obj_hide(fileinfo[FLFOLBOX]);	/* number of folders and files */
-
-
-/*
-	/* This is to be set in the next release, depending on file system */
-
-	obj_hide(fileinfo[RIGHTBOX]);
-*/
+	obj_hide(fileinfo[PFBOX]);		/* program flags */
+	obj_hide(fileinfo[FOPWITH]);	/* open with... */
+	obj_hide(fileinfo[FOPWTXT]);	/* open with... */
 
 	/* Put object data into dialog forms */
 
 	if ( type != ITM_DRIVE )
+	{
 		attrib = attr->attr; /* copy state of attributes to temp. storage */ 
+#if _MINT_
+		mode = attr->mode;
+		/* If noone has write access, set the file to readonly */
+
+		if ( (mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0 )
+			attrib |= FA_READONLY;
+#endif
+	}
 
 #if _MORE_AV
-	avname = (char *)oldname;
+	strsncpy(avname, oldname, sizeof(LNAME));
 #endif	
 
 	switch(type)
@@ -721,7 +797,7 @@ int object_info
 			rsc_ltoftext(fileinfo, FLBYTES, nbytes);
 
 			/* 
-			 * Folder could not be renamed before TOS 1.4 
+			 * Folders could not be renamed before TOS 1.4 
 			 * (But can they always be renamed in mint? I suppose so)
 			 */
 
@@ -747,7 +823,7 @@ int object_info
 		case ITM_LINK:
 			rsc_title(fileinfo, FLTITLE, DTLIINF);
 			obj_unhide(fileinfo[FLLIBOX]);
-			memset(ltgtname, 0, sizeof(ltgtname) );
+			memclr(ltgtname, sizeof(ltgtname) );
 			ltgtname[0] = 0;
 			error = x_rdlink( (int)sizeof(ltgtname), ltgtname, oldname);
 			if ( error != 0 )
@@ -755,17 +831,90 @@ int object_info
 				result = si_error(fname, error);
 				return result;
 			}
-			cv_fntoform(fileinfo + FLTGNAME, ltgtname);
+			cv_fntoform(fileinfo, FLTGNAME, ltgtname);
 			goto evenmore;
 #endif
 
-		case ITM_FILE:
 		case ITM_PROGRAM:
 
-			rsc_title(fileinfo, FLTITLE, DTFIINF);
+			thetitle = DTPRGINF;
+			if (*search_pattern == 0)
+			{
+				char 
+					*pflags = fileinfo[PFLAGS].ob_spec.tedinfo->te_ptext,
+					*pprot = fileinfo[PMEM].ob_spec.tedinfo->te_ptext;
+				long 
+					flg;
+				int
+					jf;
+	
+				*pflags = 0;
 
+				flg = x_pflags((char *)oldname);
+
+				if(flg >= 0)
+				{
+					/* 
+					 * Note: strings must be in a sequence
+					 * for the following code to work
+					 */
+
+					for ( jf = 0; jf < 3; jf++ )
+					{
+						if( (flg & (0x1 << jf)) != 0 )
+							strcat(pflags, get_freestring(PFFLOAD + jf));
+					}
+
+					strcpy(pprot, get_freestring(PPPRIVAT + ((flg & 0x30) >> 4)));
+
+					if( (flg & 0x1000) != 0 )
+						strcat(pprot, get_freestring(PPSHARE));
+				}
+				else
+					return (int)flg;
+
+				obj_unhide(fileinfo[PFBOX]);
+			}
+			goto settitle;
+
+		case ITM_FILE:
+
+#if _MINT_
+			/* Handle some special 'file' objects from drive U */
+
+			switch ( attr->mode & S_IFMT )
+			{
+				case S_IFCHR:
+					thetitle = DTDEVINF;
+					break;
+				case S_IFIFO:
+					thetitle = DTPIPINF;
+					break;
+				case S_IMEM:
+					thetitle = DTMEMINF;
+					break;
+				default:
+				{
+					char *appname = app_find_name(fname);
+
+					if(appname && *search_pattern == 0)
+					{
+		 				obj_unhide(fileinfo[FOPWITH]);
+		 				obj_unhide(fileinfo[FOPWTXT]);
+						strcpy(fileinfo[FOPWITH].ob_spec.tedinfo->te_ptext, appname);
+					}
+
+					thetitle = DTFIINF;
+					break;
+				}
+			}
+#endif
+			settitle:;
+
+			rsc_title(fileinfo, FLTITLE, thetitle);
+#if _MINT_
 			evenmore:;
-
+#endif
 			rsc_title(fileinfo, TDTIME, TACCTIM);
 			rsc_ltoftext(fileinfo, FLBYTES, attr->size);
 
@@ -774,8 +923,8 @@ int object_info
 			strcpy ( nfname, oldname );
 			path_to_disp ( nfname );
 
-			cv_fntoform(fileinfo + FLPATH, nfname);	
-			cv_fntoform(fileinfo + FLNAME, fname);
+			cv_fntoform(fileinfo, FLPATH, nfname);	
+			cv_fntoform(fileinfo, FLNAME, fname);
 			cv_ttoform(time, attr->mtime);
 			cv_dtoform(date, attr->mdate);
 
@@ -783,7 +932,27 @@ int object_info
 			obj_hide(fileinfo[FLSPABOX]);			
 			obj_hide(fileinfo[FLCLSIZ]);
 			obj_unhide(fileinfo[FLNAMBOX]);
-			obj_unhide(fileinfo[ATTRBOX]);
+
+#if _MINT_
+			gid = attr->gid;
+			uid = attr->uid;
+			if ( (fs_type & FS_UID) != 0 )
+			{
+				/* user ids and access rights possible */
+				set_file_rights(mode);
+				itoa(uid, fileinfo[UID].ob_spec.tedinfo->te_ptext, 10);
+				itoa(gid, fileinfo[GID].ob_spec.tedinfo->te_ptext, 10);
+				obj_unhide(fileinfo[RIGHTBOX]);
+				obj_hide(fileinfo[ATTRBOX]);
+			}
+			else
+#endif
+			{
+				/* dos-type file attributes possible */
+				set_file_attribs(attrib);
+				obj_hide(fileinfo[RIGHTBOX]);
+				obj_unhide(fileinfo[ATTRBOX]);
+			}
 
 			if ( can_touch && *search_pattern == 0 && !va_reply ) 
 				obj_unhide(fileinfo[FLALL]);
@@ -796,7 +965,13 @@ int object_info
 
 			rsc_title(fileinfo, FLTITLE, DTDRINF);
 
-			drive = (oldname[0] & 0xDF) - 'A';
+#if _EDITLABELS
+#if _MINT_
+			if(mint)
+				fileinfo[FLLABEL].ob_flags |= EDITABLE;
+#endif
+#endif
+			drive = (oldname[0] & 0x5F) - 'A';
 
 			if (check_drive( drive ) != FALSE)
 			{
@@ -814,12 +989,24 @@ int object_info
 					fbytes = diskinfo.b_free * clsize;
 					tbytes = diskinfo.b_total * clsize;
 
-					cv_fntoform(fileinfo + FLLABEL, dskl);
+#if _MINT_
+					if((fs_type & FS_UID) != 0)
+					{
+						strcpy(lblted->te_ptmplt, "____________");
+						lblted->te_txtlen = 13;
+					}
+					else
+#endif
+					{
+						strcpy(lblted->te_ptmplt, "________.___");
+						lblted->te_txtlen = 12;
+					}
+
+					cv_fntoform(fileinfo, FLLABEL, dskl);
 
 					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
 					rsc_ltoftext(fileinfo, FLFILES, nfiles);
 					rsc_ltoftext(fileinfo, FLBYTES, nbytes);
-
 					rsc_ltoftext(fileinfo, FLFREE, fbytes);
 					rsc_ltoftext(fileinfo, FLSPACE, tbytes);
 					rsc_ltoftext(fileinfo, FLCLSIZ, clsize);
@@ -836,6 +1023,7 @@ int object_info
 
 			obj_hide(fileinfo[FLNAMBOX]);
 			obj_hide(fileinfo[ATTRBOX]);	/* file attributes */
+			obj_hide(fileinfo[RIGHTBOX]);
 			obj_hide(fileinfo[FLALL]);
 			obj_unhide(fileinfo[FLLABBOX]);
 			obj_unhide(fileinfo[FLSPABOX]);
@@ -853,13 +1041,9 @@ int object_info
 	if (result != 0)
 		return result;
 
-	/* Set state of dialog buttons according to attibutes */
-
-	set_file_attribs(attrib);
-
 	/* Loop until told to quit */
 
-	while ( !quit )	
+	while ( !qquit )	
 	{
 		/* Prepare to display the next string match, if any */
 
@@ -868,10 +1052,10 @@ int object_info
 
 		/* Maybe open (else redraw) the dialog;  */
 
-		if ( !dopen )
+		if ( !infodopen )
 		{
 			xd_open( fileinfo, &dinfo );
-			dopen = TRUE;
+			infodopen = TRUE;
 		}
 		else
 			xd_drawdeep(&dinfo, ROOT);
@@ -883,7 +1067,7 @@ int object_info
 		/* Get the (maybe changed) name from the dialog field */
 
 		if ( type != ITM_DRIVE )
-			cv_formtofn(nfname, fileinfo + FLNAME);
+			cv_formtofn(nfname, fileinfo, FLNAME);
 
 		/* 
 		 * Check if date and time have sensible values; forbid exit otherwise 
@@ -932,11 +1116,13 @@ int object_info
 					 * Information on disk volumes is currently readonly
 					 */
 
-					int error = 0, new_attribs;
+					char *newname;
+					int error = 0;
+					XATTR new_attribs = *attr;
 					boolean link = (type == ITM_LINK);
 
 					hourglass_mouse();
-					quit = TRUE;
+					qquit = TRUE;
 					if ( search_nsm > 0 )
 						find_offset = search_finds[ism] - search_buf;
 					else
@@ -944,8 +1130,15 @@ int object_info
 
 					/* Set states of attributes from the states of dialog buttons */
 	
-					new_attribs = get_file_attribs(attrib);
-
+					new_attribs.attr = get_file_attribs(attrib);
+#if _MINT_
+					if ( (fs_type & FS_UID) != 0 )
+					{
+						new_attribs.mode = get_file_rights(mode);
+						new_attribs.uid = atoi(fileinfo[UID].ob_spec.tedinfo->te_ptext);
+						new_attribs.gid = atoi(fileinfo[GID].ob_spec.tedinfo->te_ptext);
+					}
+#endif
 					if ((newname = fn_make_newname(oldname, nfname)) != NULL)
 					{
 						/* 
@@ -956,7 +1149,7 @@ int object_info
 						 */
 
 						if ((strcmp(nfname, fname) != 0) && (error == 0))
-							error = frename(oldname, newname);
+							error = frename(oldname, newname, &new_attribs);
 
 						if ( error == 0 )
 							changed = TRUE;
@@ -985,15 +1178,34 @@ int object_info
 								error = ENSMEM;
 						}
 #endif
-						/* Currently, setting of folder attributes is not supported */
+						/* Act only if something has changed... */
 
-						if ( type != ITM_FOLDER && error == 0)
+						if
+						(
+							(new_attribs.attr != attrib) || 
+#if _MINT_
+							(new_attribs.mode != mode) ||
+							(new_attribs.uid != uid) ||
+							(new_attribs.gid != gid) ||
+#endif
+							(optime.time != attr->mtime) || 
+							(optime.date != attr->mdate) 
+						)
 						{
+							/* 
+							 * Currently, setting of folder attributes is
+							 * not supported in single-TOS (or Magic?)
+							 */
+
 							if 
-							( 
-								(new_attribs != attrib) || 
-								(optime.time != attr->mtime) || 
-								(optime.date != attr->mdate) 
+							(
+								error == 0 && 
+								(
+#if _MINT_
+									(mint && !magx) || 
+#endif
+									type != ITM_FOLDER
+								) 
 							)
 							{
 								/* 
@@ -1001,38 +1213,77 @@ int object_info
 								 * be reset before other changes are made
 								 */
 
-								if ( (attrib & FA_READONLY) && ( ( (attrib ^ new_attribs) != FA_READONLY) || (optime.date != attr->mdate) || ( optime.time != attr->mtime) ) )
+								if 
+								( 
+									(attrib & FA_READONLY) && 
+									( 
+										( (attrib ^ new_attribs.attr) != FA_READONLY) || 
+										(optime.date != attr->mdate) || 
+										( optime.time != attr->mtime) 
+									) 
+								)
 									error = EACCDN;
 								else
 								{
 									changed = TRUE;
-									error = touch_file(newname, &optime, new_attribs, link);								
+									error = touch_file(newname, &optime, &new_attribs, link);								
 								}
 							}
-						}
+						}		/* changed */
 
 						if (error != 0)
 						{
 							arrow_mouse();
-							result = si_error(fname, error);
+							result = si_error(fn_get_name(newname), error);
 							hourglass_mouse();
 						}
 
-						if (result != XFATAL)
-							if (changed)
-								wd_set_update(WD_UPD_COPIED, oldname, NULL);
+						if ((result != XFATAL) && changed)
+							wd_set_update(WD_UPD_COPIED, oldname, NULL);
 #if _MORE_AV
-						avname = newname;
+						strsncpy(avname, newname, sizeof(LNAME));
 #endif
 						free(newname);
 					}
+
 					arrow_mouse();
 				}
 				else /* for the disk volume */
 				{
-					/* result = XABORT; Better skip ? */
+#if _EDITLABELS
+					SNAME ndskl;
+#endif
+
+					/* result = XABORT; Better to skip ? */
 					result = XSKIP;
-					quit = TRUE;
+#if _EDITLABELS
+
+#if _MINT_
+					cv_formtofn(ndskl, fileinfo, FLLABEL);
+
+					/* 
+					 * Unfortunately label-handling functions in mint
+					 * and magic appear to have different behaviour. In mint,
+					 * there should not be the dot in the label on FAT fs, and
+					 * also, there should be no blanks. At least the dot
+					 * is handled here.
+					 */
+ 
+					if(!magx && ((fs_type & FS_UID) == 0) )
+					{
+						char *r = strchr(ndskl, '.');
+						if(r)
+							strsncpy(r, r + 1, 4);
+					}
+
+					if(strcmp(ndskl, dskl) != 0)
+						if(x_putlabel(drive, ndskl) != 0)
+							result = XABORT;
+#endif
+
+#endif
+
+					qquit = TRUE;
 				}
 
 				nofound = FALSE;
@@ -1043,7 +1294,7 @@ int object_info
 
 				result = XABORT;
 				nofound = FALSE;
-				quit = TRUE;
+				qquit = TRUE;
 				break; 		
 
 			case FLSKIP:
@@ -1053,15 +1304,20 @@ int object_info
 				if ( ism >= search_nsm )
 				{
 					result = XSKIP;
-					quit = TRUE;
+					qquit = TRUE;
 				}
 				break;
 
 			case FLALL:
 			{
 				opattr = get_file_attribs(attrib);
+#if _MINT_
+				opmode = get_file_rights(mode);
+				opuid = atoi(fileinfo[UID].ob_spec.tedinfo->te_ptext);
+				opgid = atoi(fileinfo[GID].ob_spec.tedinfo->te_ptext);
+#endif
 				result = XALL;
-				quit = TRUE;
+				qquit = TRUE;
 				break;
 			}
 			default:
@@ -1073,8 +1329,6 @@ int object_info
 		if ( va_reply && avname )
 			va_add_name(type, avname);
 #endif
-		free(newname);
-
 	}
 
 	/* Free buffers used for string search */
@@ -1103,6 +1357,10 @@ void item_showinfo
 ) 
 {
 	int 
+#if _MINT_
+		whandle,	/* saved top window handle */
+		wap_id,		/* saved owner of the top window */
+#endif
 		i,			/* item counter */ 
 		item,		/* dir.index of the current item in the list */ 
 		error = 0, 	/* error code */
@@ -1125,26 +1383,19 @@ void item_showinfo
 
 	/* Some settings if search is specified... */
 
+#if _MINT_
+	wd_restoretop(0, &whandle, &wap_id); /* remember the top window */
+#endif
+
 	*search_pattern = 0;
 	nofound = FALSE;
 
-	if ( search )
-	{
-		/* open a dialog to input search pattern */
+	/* Open a dialog to input search pattern */
 
-		if ( search_dialog() != SOK )
-			return;
+	if ( search && search_dialog() != SOK )
+		return;
 
-		if ( *search_txt != 0 )
-		{
-			/* obj_hide(fileinfo[ATTRBOX]); they do not overlap */
-			obj_unhide(fileinfo[MATCHBOX]);
-		};
-
-		nofound = TRUE;
-	}
-
-	dopen = FALSE; /* Show info dialog is currently closed */ 	
+	infodopen = FALSE; /* Show info dialog is currently closed */ 	
 
 	/* Proceed, for each item in the list */
 
@@ -1161,7 +1412,7 @@ void item_showinfo
 			{
 				if ( search ) 
 				{
-					if ( (result = cnt_items ( path, &nd, &nf, &nb, 0x1 | options.attribs, search ) ) != XSKIP )
+					if ( (result = cnt_items ( path, &nd, &nf, &nb, 0x1 | options.attribs, search ) ) != XSKIP && result != 0)
 						break;
 				}
 				else
@@ -1215,11 +1466,19 @@ void item_showinfo
 	else
 	{
 		wd_do_update();
-		if (nofound)
+		if (search && nofound)
 			alert_iprint(MSRFINI);
 	}
+	
+	/* Restore the top window if this was caused by an AV client */
+
+#if _MINT_
+	if(va_reply)
+		wd_restoretop(1, &whandle, &wap_id);
+#endif
 
 	arrow_mouse (); 
+
 }
 
 

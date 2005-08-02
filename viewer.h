@@ -58,7 +58,6 @@ typedef struct
 
 CfgNest text_one;
 
-void txt_default(void);
 boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
 void txt_closed(WINDOW *w);
 void txt_hndlmenu(WINDOW *w, int title, int item);
@@ -66,7 +65,6 @@ void txt_hndlmenu(WINDOW *w, int title, int item);
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
 void txt_prtlines(TXT_WINDOW *w, RECT *area);
 void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work);
-void txt_title(TXT_WINDOW *w);
 int txt_read(TXT_WINDOW *w, boolean setmode);
 int txt_reread( TXT_WINDOW *w, char *name, int px, long py);
 

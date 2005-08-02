@@ -32,6 +32,7 @@ typedef struct lstype
 	struct lstype *next;
 } LSTYPE;
 
+extern LSTYPE *selitem;
 
 /* 
  * Pointers to functions for manipulating 
@@ -53,17 +54,19 @@ LSTYPE *get_item(LSTYPE **list, int item);
 LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos);
 void lsrem(LSTYPE **list, LSTYPE *item);
 void lsrem_all(LSTYPE **list, void *rem_func);
+void lsrem_three(LSTYPE **clist, void *remfunc);
 LSTYPE *lsadd( LSTYPE **list, size_t size, LSTYPE *pt, int pos, void *copy_func );
 boolean copy_all(LSTYPE **copy, LSTYPE **list, size_t size, void *copy_func ); 
 int cnt_types(LSTYPE **list );
 boolean check_dup( LSTYPE **list, char *name, int pos );
-int list_edit(LS_FUNC *lsfunc,	LSTYPE **list1, LSTYPE **list2, size_t size, LSTYPE *lwork, int use );
+int list_edit(LS_FUNC *lsfunc,	LSTYPE **lists, int nl, size_t size, LSTYPE *lwork, int use );
 
 #define NLINES 4	/* Number of lines in a filetype-selector dialog */
 
 #define LS_EDIT 1		/* edit existing item in a list */
 #define LS_ADD  2		/* add new item to a list */
 #define LS_WSEL 4		/* there has been a selection from the window */
+
 #define LS_FMSK 16		/* use to set filemasks */
 #define LS_DOCT 32		/* use to set app doctypes */
 #define LS_PRGT 64		/* use to set program types */
@@ -71,5 +74,7 @@ int list_edit(LS_FUNC *lsfunc,	LSTYPE **list1, LSTYPE **list2, size_t size, LSTY
 #define LS_APPL 256		/* use to set applications */
 #define LS_FIIC 512		/* work on list of icons assigned to files  */
 #define LS_FOIC 1024	/* work on list of icons assigned to folders */
-#define LS_SELA 2048	/* Select a one-time-use application */
+#define LS_PRIC 2048	/* work on list of icons assigned to programs */
+
+#define LS_SELA 8192	/* Select a one-time-use application */
 

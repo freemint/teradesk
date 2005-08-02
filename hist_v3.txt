@@ -1,6 +1,387 @@
 Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
-                                    2002, 2003, 2004  Dj. Vukovic.
+                              2002, 2003, 2004, 2005  Dj. Vukovic.
+
+Version 3.60
+------------
+
+- In order to accomodate other changes in this release, there are some
+  modifications in the structure of the configuration file. As a consequence:
+  . Some compatibility-handling code exists in this release, enlarging 
+    program size slightly; this code will be removed in the next release.
+  . If configuration files created with TeraDesk OLDER than V3.50 are
+    used, window fonts colours should be manually set in Window options...
+    otherwise, nothing will be seen in windows if background is white.
+  . Users should load and then save each configuration file.
+
+- Better handling of user access rights and file attributes:
+  . Access rights and user/group IDs can be set in the 'Info...' dialog.
+  . When copying executable files from FAT to non-FAT partitions, execute 
+    rights are set now.
+  . Better decision making on when to show access rights and when to show 
+    TOS/DOS attributes in a directory window.
+  . User and group IDs can be shown in directory windows (selectable menu
+    option, visible only in Mint or Magic).
+  . Note: manipulations of access rights or FAT file attributes are mutually 
+    exclusive, depending on the filesystem in which the object resides
+    (AFAIK no Atari-relevant file system uses both simultaneously?).
+
+- Hypertext help file will be opened (upon [Shift][Help]) by any application
+  installed for the *.HYP filetype. entry for the help program in the 
+  earlier version(s) of configuration files will be ignored.
+ 
+- More than one selected item at a time can be opened by 'Open...' menu item. 
+  Files and folders are each opened in a new window. In single-TOS operation,
+  opening of multiple items terminates if a program is started (because all
+  windows are closed and reopened). In a multitasking environment, there
+  is a delay of 2 seconds between starting of selected programs (so that
+  each program is given some time to configure, shrink its memory, etc.).
+
+- New menu item 'Close all' added in 'Window' menu. It closes all TeraDesk's
+  windows, including those of signed-on AV-protocol clients.
+
+- Improved functionality of the 'Search...' function:
+  . It also works on a list of selected files or folders as well now, 
+    not only a single folder or a drive.
+  . It works in a file showed in the topped text window.
+
+- Improved functionality of the 'Set desk icons' dialog:
+  . More than one desk icon at a time can be installed by dragging objects
+    from a directory window to desktop.
+  . Names of (file or folder) items to which the icons are assigned are
+    displayed and editable.
+  . Fourth desktop icon type ('File/Folder') radiobutton added; direct
+    specification of object name in the dialog is possible.
+  . Objects selected in a directory window can be set to the desktop
+    through 'Set desk icons' menu action.
+  . Desktop icons can be removed through the dialog; 'Remove icons'
+    menu item item deleted as unnecessary.
+  . Desktop icons can be removed by dragging them to the trashcan. 
+    An alert appears asking whether to remove the icons or to delete 
+    selected objects.
+  . If label for a disk icon is not specified by the user when installing
+    the icon, TeraDesk reads and uses the disk volume label. 
+
+- New window icons group added; beside 'Files' and 'Folders' there is
+  now 'Programs'. This should speed-up opening of directory windows in icon
+  mode in configurations with many window icons assigned, because smaller
+  lists will have to be searched for each directory item.  Compatibility
+  code exists which moves appropriate icons from the 'Files' group into
+  the new group when old configuration files are loaded. 
+
+- Third default-directory option added to 'Program type' dialog: beside the
+  top window and the program directory, the path of the first parameter 
+  of the command line can be set as the default directory. Some intelligence
+  is used trying to detect a path in a command line which may contain other 
+  strings as well. Program type dialog somewhat rearranged.
+ 
+- Appropriate dialog titles are shown when showing 'Info...' about some items 
+  (from the directories on the U:\ volume) which are not standard files or 
+  folders.  Maybe should be further enhanced to display e.g. device number, 
+  etc?
+
+- Program header flags are displayed in the 'Info...' dialog for executable 
+  files. Name of the associated application is displayed for other files,
+  if such an application is defined.
+
+- When copying large files (larger than copy buffer size), number of
+  remaining bytes is updated in the copy-info dialog after each buffer 
+  copied. Loss in speed is negligible.
+
+- Items with names beginning with a '.' are treated as invisible in Mint,
+  as per Unix convention.
+
+- Directory window icons of invisible files are displayed faded. Currently
+  this works only if window background colour is white- the 'disabled' flag
+  is used to display them, and for a disabled object the complete object
+  rectangle is disabled by all AESes, which looks very ugly with a window 
+  background pattern.  The inconvenience is similar to one appearing for 
+  disabled checkboxes and radiobuttons: AESes shade the complete object 
+  rectangle, instead of applying some inteligence to shade only what is 
+  needed. There is a chance that this will be improved at least in XaAES 
+  and MyAES.
+
+- Icons of links are marked with a "check" mark. This is experimental and 
+  may yet be removed if it does not prove practical (or nice). 
+ 
+- Executable files are detected by their names/types upon opening of 
+  directories. However, this does slow down opening of directory windows 
+  somewhat. May yet be marked for optional compilation only. Introduction 
+  of this feature caused a small change in the structure of the 
+  configuration file. 
+ 
+- With directory windows in text mode, executable files are shown with '-' 
+  character preceding the name. This feature depends on the above change.
+
+- Reworked wildcard matching to increase speed, so that slowdown caused
+  by the previous changes is almost completely compensated for, especially 
+  so in single-TOS.
+
+- When deleting, touching, moving or overwriting files, protection is checked
+  (when possible) before attempting the operation, instead of relying on the
+  return statuses of the GEMDOS/Mint functions (they seem to be of little 
+  relevance when working as a superuser).
+
+- Added a capability to influence the implementation of the ARGV protocol;
+  if environment variable TERAENV contains flag 'A', it will force
+  TeraDesk to:
+  . Always use ARGV on all program files which are declared to support it,
+    regardless of the length of the command line;
+  . Always build a local environment with ARGV appended and pass it
+    to the program being started, bypassing the environment concatenation 
+    mechanism in shel_write().
+  This may help solve some problems originating in differences (bugs?)
+  of ARGV implementation in various AESes.
+
+- A number of program size optimizations, in order to compensate for the
+  increase in size caused by the new features. Still, the new version is
+  about 3 KB larger than the previous one :(   Hopefully, the improvements
+  are worth it.
+
+- Some cleanup of the source code; a lot of comments added to the soruce.
+
+- Disk volume labels are read using the more general (?) Dreadlabel() when
+  possible, instead of using Fsfirst().
+
+- Capability to edit disk volume labels in the Info... dialog was created, 
+  but only for Magic or Mint. Unfortunately, it seems that Dreadlabel() and 
+  Dwritelabel() behave too differently in Mint vs. Magic regarding dots and 
+  blanks in the label, so volume labels in the 8+3 form (e.g. as possible on
+  floppies) may unwantedly get changed in Mint. Therefore, complete feature
+  was disabled, at least for the time being.
+
+- File copy routine simplified a bit.
+
+- Some simplifications in DESKTOP.RSC.
+
+- Files SPRINFT.C and STRDUP.C with substitutes of some library functions
+  concatenated into a single file STRINGF.C to be used from now on; 
+  SPRINTF.H renamed to STRINGF.H 
+
+- Limited length (cramped) filenames displayed on icon labels in directory 
+  windows in icon mode, so that icon labels of long filenames do not 
+  overlap anymore.
+
+- Better column alignment of texts beside the 'checkbox' buttons (when drawn
+  by TeraDesk, not by an AES).
+
+- When printing raw data, CR LF no more appended at the end of the file.
+
+- Corrected positioning of the icon in the icon-selector in low resolutions
+  (it overflowed the lower edge of the box).
+
+- Corrected display of program name in dialogs related to installing
+  applications, in case when name is entered manually.
+
+- Corrected the routine for creating cramped names; it produced strings
+  which were one character too short.
+
+- Icon in the icon-selector dialog is displayed on a background of appropriate
+  (desktop or window) colour and pattern. Icons can also be previewed in the 
+  selector in the selected state (when clicked upon).
+
+- Sample text in the font selector can be previewed in the selected state 
+  too, when clicked upon.
+
+- Improved (hopefully) reaction to an AP_TERM message received after 
+  TeraDesk initiates a shutdown.
+
+- Fixed a bug (probably introduced in V3.40) which caused creation of 
+  symbolic links through 'New...' menu item to fail with 'Not enough memory'
+  error.
+
+- Fixed inappropriate sending of 'close window' messages. A routine which
+  sends WM_CLOSED was overlooked in a routine which was used for other
+  purposes. Hopefully this fixes a problem when starting an editor in aMail.
+
+- Fixed unwanted topping of TeraDesk windows after closing the systemwide
+  fileselector dialog, or the Info... dialog when requested through the 
+  AV protocol. Not ideal, but better than it was...
+
+- Fixed some errors which affected manipulation of folders in Info...
+  (errors were visible only in Mint).
+
+- Fixed some errors in file-deleting: TeraDesk attempted to follow a link 
+  after it had been deleted. Routines simplified for single-TOS version. 
+
+- Fixed several instances of using memory blocks after they had been
+  deallocated.
+
+- Optimized selection of default icons; fixed a possible reference to a 
+  NULL pointer to icon name.
+
+- Fixed (hopefully) a possible instance of buffer overflow when starting
+  programs in single-TOS.
+
+- Fixed a bug which could cause TeraDesk to crash while reopening windows
+  after running a program in Single-TOS (window pointer for deselecting
+  items existed but sometimes was no longer valid, as windows were reopened).
+  It is not clear when was this bug created, possibly long ago...
+
+- Windows of AV-protocol clients are no more closed when saving or loading
+  desktop configuration. It seems that there is in fact no need to do it.
+
+- Corrections and updates in the hypertext help/manual file, in order
+  to reflect the latest changes.
+
+
+Version 3.50
+------------
+
+- New basic sets of monochrome and colour icons. Hopefully these contain
+  more useful icons than earlier did. Btw. some of the icon names from the 
+  old sets do not exist in the new ones.
+
+- Removed the constraint (introduced in V3.0) of having to use a monochrome
+  icon file whenever in monochrome video mode, even when colour icon file
+  would do. Why not have animated monochrome icons when possible? 
+
+- Some tidying-up of the configuration file structure. Certain bitflag items
+  moved from "copy options" data to other, more logical, places. As a result
+  of this, certain options set in configuration files prior to V3.50 will be 
+  ignored:
+
+  . State of "Save colours"    (OFF will be assumed)
+  . State of "Dialog options"  ("centered" will be assumed)
+  . State of "Wait for key after TOS programs" (OFF will be assumed)
+  . State of "Use handle 2 for stderr" (OFF will be assumed)
+
+  These options should be set as desired and the configuration file(s) 
+  saved anew. It is assumed that these differences are not significant 
+  enough to justify additional compatibility-handling code.
+
+- Font colour can now be set in TeraDesk's font selector.
+
+- If no selection is made, 'Search' is active in the top directory window.
+
+- Added settable option to skip subfolders when searching for files.
+
+- If a desktop disk icon is set without a drive letter, then icons for
+  any missing disk volumes are set on the desktop, which eliminates
+  the tedious one-by-one setting of disk icons. 
+
+- Added setting of basic Falcon video modes in Video options. For the time
+  being it works only with some AES 4 versions, but not :(  with Falcon 
+  TOS 4.04. It works  Atari AES 4.1 (with or without Mint), Geneva and 
+  probably Magic (not tested yet), but not with current versions of XaAES 
+  or MyAES.  (Generally, it should work in all AESes which can handle 
+  shel_write(5,...) )
+
+- Added "background" option in the application-type dialog. If selected, 
+  a TOS (non-GEM) application will be started as "background" in Mint- it 
+  will be basically just Pexec()-ed (same as starting it while [Control] is 
+  pressed). Works in single-TOS too, where found to be convenient for some 
+  simple utilities which do not write anything on the screen and there is 
+  no need to close the windows, clear the screen and display the program 
+  title bar (e.g. a sound-playing utility such as WAVEST).
+
+- Improved handling of the "BORDERED" object flag for self-drawn in-dialog 
+  objects; actual border size is determined, as used by any particular 
+  AES, resulting in better looking dialogs in any AES which does not (yet?) 
+  support borders and/or particular object types in the standard way 
+  (i.e. MyAES). Visible mostly in the appearance of the dragbox "ear" on 
+  a dialog.
+
+- Improved sizing of buttons with underlined keyboard-shortcut characters 
+  so that underlines are now seen in MyAES/monochrome.
+
+- Keyboard shortcuts (underlined) in dialogs, when TeraDesk draws them
+  (i.e. always except in Magic, XaAES or N.AES), are shown in different 
+  colour (red) when possible.
+
+- Dialog titles, when TeraDesk draws them (i.e. always except in Magic,
+  XaAES or N.AES) are drawn in colour (dark blue) when possible. Sizing 
+  of the title object slightly modified for better alignment.
+
+- Some small optimizations in event-handling routines.
+
+- Newest version of AHCM memory-allocation routines used.
+
+- Somewhat relaxed validation for window icon name mask in single-TOS, so 
+  that an icon can be assigned to ".." (parent folder).
+
+- Links pointing to items with paths containing slashes ("/") are now
+  interpreted as if they contain backslashes ("\"). This hopefully fixes
+  the problem of not finding link targets on minix or ext2 partitions.
+
+- Some more work started on better handling of access rights; nothing
+  visible to the user, yet.
+
+- Corrected action taken upon WM_ONTOP message (i.e. there should be no
+  window action taken, just the change of top window noted).
+
+- Corrected dialog and window redraws when showing copy-info and 
+  name-conflict dialogs.
+
+- Fixed a bug which restricted the use of FONT protocol only to signed-on
+  AV-protocol clients.
+
+- Fixed a possible instance of attempting to free a non-allocated memory 
+  block while doing VA_DRAGACCWIND.
+
+- Fixed several instances of using data from memory blocks after they 
+  had been deallocated.
+
+- Fixed a bug in implementation of AV-protocol which could lead to corrupted
+  replies being sent to AV-clients (data for two replies overlapped).
+
+- Fixed a bug which disabled 'Skip' action in a response to Skip/Abort
+  alert during file operations such as copying or deleting.
+
+- Fixed a bug in string conversion to uppercase which could have affected
+  wildcard-matching with patterns containing digits.
+
+- Fixed a bug which disabled recognition of other-than-ST video hardware.
+
+- Fixed a bug, unfortunately introduced in V3.42, in rubberbox redraw when
+  directory window was scrolled.
+
+- Fixed a bug in the video-setting code; on a Falcon some ST-specific
+  code was executed.
+
+- Fixed a bug which disabled loading of colour palette. Also improved
+  tolerance to loading palette sizes other than the current palette- 
+  palette file will not be rejected anymore but only colours in valid 
+  range will load.
+
+- Fixed a bug in dialog-handling routines which could cause object index 
+  in a dialog to exceed tree extents. This was visible in 'Set mask'
+  dialog when cursor keys were used.
+
+- Fixed a bug in fulling a text window for large files (i.e. with more
+  than about 2000 lines)
+
+- Fixed some noncritical errors in the resource file.
+
+- Some corrections made in the hyopertext manual.
+
+
+Version 3.43 (never published, except for testing)
+--------------------------------------------------
+
+- Some small changes which soon evolved enough to be considered  as V3.50;
+
+
+Version 3.42
+------------
+
+- Simplified calculation of default window sizes and positions.
+
+- Improved speed (and code size) of wildcard-matching.
+
+- Some other code size optimizations where speed is not critical. 
+  Program size reduced even more.
+
+- Enabled opening of the fileselector upon a double click on a
+  scrolled editable text field, as intended a long time ago.
+  (previous use of [INSERT] key for this purpose is kept as well).
+
+- Plugged a memory leak which could sometimes happen when starting 
+  installed applications. 
+
+- Improved checking of dates entered in file-info dialog.
+
+- Improved redraw in the 'Help' dialog
 
 
 Version 3.41
@@ -8,8 +389,8 @@ Version 3.41
 
 - Simplification of routines for loading and saving configuration files.
   Also, eliminated saving of empty data structures, which will sometimes
-  result in somewhat smaller configuration files. Slightly better tolerance 
-  to faulty configuration files.
+  result in somewhat smaller configuration files. Slightly better 
+  tolerance to faulty configuration files.
 
 - Simplification of routines for floppy formatting. An insignificant bug
   corrected.
@@ -24,15 +405,15 @@ Version 3.41
   must know of VA_START and understand its syntax as used by ST-Guide
   (this was actaully added in V3.40 but was not properly documented). 
 
-- Fixed incorrect handling (cramping) of of the names of selected files
+- Fixed incorrect handling (cramping) of the names of selected files
   when using 'Compare...'  more than once.
   
 - Improved a somewhat ilogical behaviour of the 'Search...' function
   when size range or search text are specified. In such cases only 
   files will be name-matched now, not folders.
 
-- 'Select all' in directory windows does not needlessly select 
-  the parent directories anymore.
+- 'Select all' in directory windows does not needlessly select the parent
+  directories anymore.
 
 - Better handling of missing icons, including the required ones. Missing
   icons  turned out to be a realistic situation  if icon resource file(s) 
@@ -52,7 +433,7 @@ Version 3.40
 - Reduction of sizes of confirmation dialogs for file deletion and printing
  (some empty space removed).
 
-- Improvement of the Show/Edit/Cancel dialog:
+- Improvement of the 'Show/Edit/Cancel' dialog:
   . It is a dialog now (again), not an alert;
   . Added "Run" option  (treat the file as executable);
   . Added "With" option (select an application to open the file with);
@@ -61,10 +442,10 @@ Version 3.40
   to a file. Also, three printing modes now exist, selectable from the 
   confirm-print dialog:
   . Text mode (lines wrapped; cr/lf inserted when appropriate);
-  . Hex dump;
+  . Hex dump (hex-codes + ascii, 16 bytes shown per printer line);
   . Raw data (file sent to printer as it is);
 
-- Improvement of 'Compare': there is a dialog now to enter parameters; 
+- Improvement of 'Compare...': there is a dialog now to enter parameters; 
   width of resync window can be specified.
   
 - 'Reverse sort' option for directory windows added.
@@ -103,7 +484,7 @@ Version 3.40
 
 - 'Search finished' information issued.
 
-- Improved detection of '3D' AESses.
+- Improved detection of '3D' AESes.
 
 - Introduced environment variable TERAENV (not obligatory)  for setting
   some configuration details which were not convenient to be set through
@@ -111,7 +492,7 @@ Version 3.40
   Currently only "TERAENV=D" is understood: force TeraDesk to always draw
   all extended-type objects by itself, even if an AES supports them.
 
-- Some improvements in handling of the Info... dialog.
+- Some improvements in handling of the 'Info...' dialog.
 
 - Small improvement in handling of video mode(s). 
 
@@ -120,7 +501,7 @@ Version 3.40
 - Warning issued before change of video resolution (reset).
 
 - An alert is displayed if an application fails to start (multitasking).
-  Does not work in all AESses.
+  Does not work in all AESes.
 
 - Additional objects added to video-options dialog, as an anticipation
   for some changes planned for a future release. Currently set to invisible.
@@ -155,7 +536,7 @@ Version 3.40
 - Fixed some wrongly set object flags in DESKTOP.RSC
 
 - Fixed a bug which could freeze TeraDesk in a windowed dialog when 
-  translated to other languages (e.g. Russian).
+  texts were translated to other languages (e.g. Russian).
 
 - Fixed a bug in cancelling the loading of configuration files 
   (i.e. it could not be cancelled).
@@ -243,7 +624,7 @@ Version 3.31
   in TOS 3.06 as well ?)
 
 - Clicking on desktop area now properly tops TeraDesk (may not work with 
-  all AESses).
+  all AESes).
 
 - Some left-over strings moved from the code to the resource file.
 
@@ -317,7 +698,7 @@ Version 3.10 (or 3.1; never published, except for testing)
 - Moved window-related menu items under a new menu title "Window".
 
 - Much larger subset of AV-protocol messages handled; TeraDesk is now
-  a passable AV-server.
+  a passable AV-server!
 
 - Repaired the system-wide font selector callable via FONT protocol (e.g. 
   from ST-Guide, Multistrip, etc.) (this was inherited from previous 
@@ -335,7 +716,7 @@ Version 3.10 (or 3.1; never published, except for testing)
 - More logical interpretation of links when "opening" items: real item 
   names are checked for, and real file names passed as parameters.
 
-- With dialogs are in window mode, added a closer widget which acts the 
+- When dialogs are in window mode, added a closer widget which acts the 
   same as Cancel button.
 
 - Removed "normal" dialog mode.
@@ -508,7 +889,7 @@ Dj. Vukovic:
 - Created "pressed" 3d effects when arrows pressed in Window Optons and 
   Desk Preferences;
 
-- Added window iconify/deiconify capability in AESses which  support it 
+- Added window iconify/deiconify capability in AESes which  support it 
   (AES4.1, Geneva, Magic, XaAES...)
 
 - Cosmetic change: added left margin to text windows;
@@ -551,7 +932,7 @@ application.
 - Filename/filetype entry forms in dialogs appear in 8+3 length if there 
   is no long-filename-capable OS present (i.e. without Mint or Magic);
 
-- Much improved appearance of dialog elements, especially in 3D AESses; 3D 
+- Much improved appearance of dialog elements, especially in 3D AESes; 3D 
   effects are properly drawn when needed. Significant reorganization and 
   simplification of routines for progdefined objects in xddraw.c;
 

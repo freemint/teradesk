@@ -44,7 +44,7 @@ typedef enum
 
 typedef enum
 {	
-	CFG_INHIB = 0x01,	/* accept input; dont write (compatability flag) */
+	CFG_INHIB = 0x01,	/* accept input; don't write (compatability flag) */
 	CFG_NOFMT = 0x02,	/* ignore default formatting, set explicitely */
 } CFG_FLAG;
 
@@ -84,5 +84,5 @@ typedef void CfgNest(XFILE *file, int lvl, int io, int *error);
 int	CfgLoad(XFILE *f, CfgEntry *tab, int maxs, int lvl);
 int CfgSave(XFILE *f, CfgEntry *tab, int lvl, boolean emp);
 int handle_cfg(XFILE *f, CfgEntry *tab, int lvl0, int emp, int io, void *ini, void *def);
-int handle_cfgfile( char *name,	CfgEntry *tab, char *ident,	int io);
+int handle_cfgfile( char *name,	CfgEntry *tab, const char *ident,	int io);
 char *nonwhite ( char *s);

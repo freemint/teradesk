@@ -38,9 +38,12 @@
 #include "file.h"
 
 
-OBJECT *dialog;
+OBJECT *dialogo;
 
-/* Set slider size and position */
+
+/* 
+ * Set slider size and position 
+ */
 
 void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 {
@@ -52,7 +55,7 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 	if (sl->n > slines)
 	{
-		sh = (int) (((long) slines * (long) tree[sparent].r.h) / (long) sl->n);
+		sh = (int)(((long)slines * (long)tree[sparent].r.h) / (long) sl->n);
 		if (sh < screen_info.fnt_h)
 			sh = screen_info.fnt_h;
 	}
@@ -131,7 +134,7 @@ long calc_slpos(int newpos, long lines)
 
 
 /*
- * Calculate slider position (0:1000) from the first visible item
+ * Calculate slider position (0:1000) for the first visible item
  * pos = index of first item
  * lines = number of items
  */
@@ -159,7 +162,7 @@ static void do_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	if ( newpos < 40 )
 		newpos = 0;
 
-	lines = (long) (sl->n - sl->lines);
+	lines = (long)(sl->n - sl->lines);
 	sl->line = (int)calc_slpos(lines, newpos);
 	sl_set_slider(tree, sl, info);
 }
@@ -176,7 +179,7 @@ static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	{
 		old = sl->line;
 
-		/* Note: do not use min() and max() here; would be longer */
+		/* Note: do not use min() and max() here; code would be longer */
 
 		if (my < oy)
 		{
@@ -213,14 +216,14 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 		if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
 		{
 			selected += sl->first;
-			obj_deselect(dialog[selected]);
-			obj_select(dialog[selected - 1]);
+			obj_deselect(dialogo[selected]);
+			obj_select(dialogo[selected - 1]);
 			redraw = TRUE;
 		}
 		else if (sl->line > 0)
 		{
 			sl->line--;
-			sl_set_slider(dialog, sl, info);
+			sl_set_slider(dialogo, sl, info);
 			redraw = TRUE;
 		}
 		break;
@@ -228,14 +231,14 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 		if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)))
 		{
 			selected += sl->first;
-			obj_deselect(dialog[selected]);
-			obj_select(dialog[selected + 1]);
+			obj_deselect(dialogo[selected]);
+			obj_select(dialogo[selected + 1]);
 			redraw = TRUE;
 		}
 		else if (sl->line < (sl->n - sl->lines))
 		{
 			sl->line++;
-			sl_set_slider(dialog, sl, info);
+			sl_set_slider(dialogo, sl, info);
 			redraw = TRUE;
 		}
 		break;
@@ -274,58 +277,13 @@ int sl_form_do(OBJECT *tree, int start, SLIDER *sl, XDINFO *info)
 {
 	int button;
 
-	dialog = tree;
+	dialogo = tree;
 
 	do
 	{
 		button = xd_kform_do(info, start, (userkeys)keyfunc, sl);
 	}
 	while (sl_handle_button(button, tree, sl, info));
-
-	return button;
-}
-
-
-/*
- * Currently, this routine is used only for setting icons.
- * sl_abobutt -specifies the ind. of the Abort button
- * sl_noop    -sets bitflags for open/close control: 0x01:
- *             0x01 = do not open; 0x02 = do not close
- */
-
-int 
-	sl_abobutt = -1,	/* Specify abort button for immediate closing */
-	sl_noop = 0;		/* Control opening and closing in multiple use */
-
-int sl_dialog(OBJECT *tree, int start, SLIDER *slider)
-{
-	static XDINFO info;
-	int button;
-
-	sl_init(tree, slider);
-
-	/* 
-	 * Open the dialog only if used on the first item; otherwise redraw.
-	 * (it would be better not to redraw from the root)
-	 */
-
-	if ( (sl_noop & 0x01) == 0 )
-		xd_open(tree, &info);
-	else
-		xd_drawdeep(&info, ROOT);
-
-	/* Manipulate the dialog */
-
-	button = sl_form_do(tree, start, slider, &info) & 0x7FFF;
-
-	/* Reset button to normal state */
-
-	xd_buttnorm(&info, button);
-
-	/* Close the dialog if not specified otherwise */
-
-	if ( (sl_noop & 0x02) == 0 || button == sl_abobutt )
-		xd_close(&info);
 
 	return button;
 }
@@ -362,7 +320,7 @@ void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		if ((f = get_item( slider->list, i + slider->line)) == NULL)
 			*o->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o, f->filetype );
+			cv_fntoform(o, 0, f->filetype );
 	}
 
 	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */

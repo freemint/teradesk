@@ -33,7 +33,7 @@
 #include "boolean.h"
 #include "desk.h"
 #include "error.h"
-#include "sprintf.h"
+#include "stringf.h"
 #include "xfilesys.h"
 #include "config.h"
 #include "file.h"
@@ -61,10 +61,10 @@ void wd_do_update(void);
  */
 
 static char
-	*cname = "?";			/* name of curently open file */
+	*cname = "?";		/* name of curently open file */
 
 char
-	*lastnest = "?";		/* last remembered nesting keyword */
+	*lastnest = "?";	/* last remembered nesting keyword */
 
 int 
 	chklevel = 0;		/* summary nest level */
@@ -73,7 +73,7 @@ int
 /* 
  * End of line: either <cr> <lf> or <lf> only.
  * Using <cr><lf> is more in line with TOS standard, but can produce
- * significantly larger inf file. Using only <lf> produces smaller
+ * significantly larger .INF file. Using only <lf> produces smaller
  * files, is in line with mint standards, but can create problems 
  * when read with some programs -including the Pure-C editor!!!
  */
@@ -83,6 +83,7 @@ static const char
 	eol[3] = {'\r','\n', 0}; /* <cr> <lf> */
 */
 	eol[3] = {'\n', 0, 0};   /* <lf>      */
+
 
 /* 
  * Substitute all "%" in a string with  "$" ?? 
@@ -125,7 +126,7 @@ static void append_fmt
 		switch(cfgtype)
 		{
 			case CFG_HDR:
-				strcat(dest,"=");
+				strcat(dest, "=");
 				break;
 			case CFG_BEG:
 				strcpy(dest, "{");
@@ -217,7 +218,7 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 /* 
  * Save a part of configuration defined by one table.
  * Option "emp" to only write field if non zero or non empty.
- * Note: level is intrnally increased by one.  
+ * Note: level is internally increased by one.  
  */
 
 int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp) 
@@ -227,7 +228,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 		error = 0;
 
 	char 
-		fmt[2 * MAX_KEYLEN]; /* 2* because of "end..." */
+		fmt[2 * MAX_KEYLEN]; /* "2 *" because of "end..." */
 
 	while( (tab->type) && (error >= 0) )
 	{
@@ -265,7 +266,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 				break;
 			default:
 			{
-				if ( !(tab->flag &CFG_INHIB) )
+				if ( !(tab->flag & CFG_INHIB) )
 				{
 					/* Write data according to type (check if data exist) */
 
@@ -287,7 +288,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 							}
 							break;
 						}
-/* not used
+/* currently not used
 						case CFG_C:
 */
 						case CFG_BD:
@@ -383,7 +384,7 @@ static void crlf(char *f)
 
 
 /*
- * Strip the comment from a line
+ * Strip any comments from the end of a line (everything after ";")
  */
 
 static char *nocomment( char *f )
@@ -395,6 +396,8 @@ static char *nocomment( char *f )
 
 	return f;
 }
+
+
 /* 
  * Copy not more than "x" characters from "s" to "d",
  * until blank, tab, end of string or comment character (";") reached,
@@ -726,10 +729,10 @@ int handle_cfg
 
 int handle_cfgfile
 (
-	char *name,		/* name of configuration file to read/write */
-	CfgEntry *tab,	/* table which has to be handled */
-	char *ident,	/* Identification header t the file */
-	int io			/* 1=save, 0=read */
+	char *name,			/* name of configuration file to read/write */
+	CfgEntry *tab,		/* table which has to be handled */
+	const char *ident,	/* Identification header for this file */
+	int io				/* 1=save, 0=read */
 )
 {
 	XFILE 
@@ -745,7 +748,6 @@ int handle_cfgfile
 		*savelastnest;
 
 	int
-		etext,
 		savechklevel;
 
 	static char
@@ -771,8 +773,6 @@ int handle_cfgfile
 
 	if ( io == CFG_SAVE )
 	{
-		etext = ASAVECFG;
-
 		if ((file = x_fopen(name, O_DENYRW | O_WRONLY, &error)) != NULL)
 		{
 			/* Write file identification header */
@@ -798,21 +798,18 @@ int handle_cfgfile
 	}
 	else
 	{
-		etext = ALOADCFG;
-
 		if ((file = x_fopen(name, O_DENYW | O_RDONLY, &error)) != NULL)
 		{
 			char identbuf[MAX_CFGLINE];
 
 			if ((n = x_fgets(file, identbuf, MAX_CFGLINE - 1) ) == 0)
 			{
-				lastnest = ident;
+				lastnest = (char *)ident;
 				chklevel = 0;
 
 				/* 
 				 * Check the file identifier header. If it is OK, 
-				 * then read complete configuration 
-				 * (use level - 1 here)
+				 * then read complete configuration (use level-1 here)
 				 */
 
 				if (strncmp(identbuf, ident, strlen(ident)) == 0)
@@ -835,7 +832,7 @@ int handle_cfgfile
 	/* Display error information */
 
 	if ( (error < 0) && (error != ENOMSG) )
-		alert_printf(1, etext, cname, get_message(error));
+		alert_printf(1, ALOADCFG, cname, get_message(error));
 
 	/* Restore previous filename, nest name and level if any */
 

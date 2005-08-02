@@ -61,7 +61,7 @@ extern char
 	*finame,
 	*flname,
 	*cmdline,
-	*applcmdline,
+	*applcmd,
 	*spattfld,	
 	*drvid,
 	*iconlabel,
@@ -74,4 +74,3 @@ extern char
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);
 void rsc_ltoftext(OBJECT *tree, int object, long value);
-

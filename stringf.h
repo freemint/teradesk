@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                               2002, 2003  H. Robbers
+ *                                     2005  Dj.Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,35 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdarg.h>
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "desktop.h"
-#include "desk.h"
-#include "error.h"
-
-
-/*
- * Duplicate 's', returning an identical malloc'd string.
- * This is a replacement for the library routine;
- * it displays an alert if memory can not be allocated.
- * Also, if the source is NULL, NULL is returned.
- */
-
-char *strdup(const char *s)
-{
-	size_t l;
-	char *new;
-
-	if ( s == NULL )
-		return NULL;
-
-	l = strlen(s) + 1;
-
-	if ((new = malloc_chk(l)) != NULL)
-		memcpy(new, s, l);
-
-	return new;
-}
+int vsprintf(char *buffer, const char *format, va_list argpoint);
+int sprintf(char *buffer, const char *format, ...);
+int vaprintf( int def,const char *string,va_list argpoint );
+int aprintf( int def,const char *string, ... );

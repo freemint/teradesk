@@ -29,21 +29,20 @@
  * in de window structuur staan.
  */
 
-#define XW_INTVARS		struct window *xw_prev;	\
-						struct window *xw_next;	\
-						int xw_type;			\
-						int xw_handle;			\
-						int xw_ap_id;			\
-						int xw_opened;			\
-						int xw_flags;			\
-						struct wd_func *xw_func;\
-						OBJECT *xw_menu;		\
-						int xw_bar;				\
-						int xw_mparent;			\
-						RECT xw_size;			\
-						RECT xw_nsize;	/* size before iconify */ \
-						int xw_iflag;      /* flag for iconify    */ \
-						RECT xw_work
+#define XW_INTVARS	struct window *xw_prev;	\
+					struct window *xw_next;	\
+					int xw_type;	/* window type */		\
+					int xw_handle;	/* window handle */		\
+					int xw_ap_id;	/* app id of owner */	\
+					int xw_flags;	/* flags for widgets */	\
+					struct wd_func *xw_func;				\
+					OBJECT *xw_menu;/* menu object */		\
+					int xw_bar;		/* menubar object ind */\
+					int xw_mparent;	/* parent window id */	\
+					RECT xw_size;	/* window size */		\
+					RECT xw_nsize;	/* uniconified size */	\
+					RECT xw_work;	/* work area size */	\
+					int xw_xflags	/* diverse flags */ 	
 
 /*
  * Default window structuur, bevat alleen de door de window
@@ -115,6 +114,14 @@ typedef struct wd_func
 
 
 /*
+ * Some bit flags for xw_xflags
+ */
+
+#define XWF_ICN 1	/* is iconified */
+#define XWF_SIM 2	/* is a simulated window */
+#define XWF_OPN 4	/* window has been opened */
+
+/*
  * Declaratie van de voor de gebruiker beschikbare funkties.
  */
 
@@ -154,6 +161,8 @@ extern int xw_type(WINDOW *w);
 extern int xw_handle(WINDOW *w);
 #endif
 
+extern int xw_dosend;
+
 /* 
  * The two macros below are not used; provided just in case, as a 
  * substitute for xw_next() and xw_prev() routines which can not be 
@@ -164,6 +173,7 @@ extern int xw_handle(WINDOW *w);
 #define xw_prev(w) ((w)->xw_prev)
 
 extern void xw_cycle(void);
+extern void xw_send(WINDOW *w, int messid);
 extern void xw_send_redraw(WINDOW *w, RECT *area);
 extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);

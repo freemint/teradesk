@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -61,6 +61,11 @@ int
 	xd_act_col = LWHITE,		/* colour of activator object  */
 	xd_sel_col = BLACK;			/* colour of selected object   */
 
+int
+	brd_l, brd_r, brd_u, brd_d; /* object border sizes */
+
+extern int 
+	xe_mbshift;
 
 /* Window elements for xdialog wndows */
 
@@ -231,35 +236,19 @@ static void xd_restore(XDINFO *info)
 
 
 /* 
- * Disable all items in a menu 
+ * Enable all items in a menu (NORMAL or DISABLED).
+ * First menu item will always be set to NORMAL in order to enable
+ * access to accessorries.
  */
 
-static void xd_disable_menu(void)
+void xd_enable_menu(int state)
 {
-	if (xd_menu != NULL)
+	if (xd_menu)
 	{
 		int i;
 
 		for (i = 0; i < xd_nmnitems; i++)
-			xd_menu[xd_mnitems[i]].ob_state = (i == 1) ? NORMAL : DISABLED;
-
-		menu_bar(xd_menu, 1);
-	}
-}
-
-
-/* 
- * Enable all items in a menu 
- */
-
-static void xd_enable_menu(void)
-{
-	if (xd_menu != NULL)
-	{
-		int i;
-
-		for (i = 0; i < xd_nmnitems; i++)
-			xd_menu[xd_mnitems[i]].ob_state = NORMAL;
+			xd_menu[xd_mnitems[i]].ob_state = (i == 1) ? NORMAL : state;
 
 		menu_bar(xd_menu, 1);
 	}
@@ -295,10 +284,8 @@ static void xd_set_position(XDINFO *info, int x, int y)
 
 	dx = x - info->drect.x;
 	dy = y - info->drect.y;
-
 	tree->ob_x += dx;
 	tree->ob_y += dy;
-
 	info->drect.x = x;
 	info->drect.y = y;
 }
@@ -306,21 +293,32 @@ static void xd_set_position(XDINFO *info, int x, int y)
 
 /* 
  * Funktie voor het berekenen van de rand om een dialoogbox. 
+ * Get the values of size enlargement of a bordered object.
+ * This function returns separate values for enlargements
+ * on all four sides of an object.
  */
 
-static void xd_border(OBJECT *tree, int *xl, int *xr, int *yu, int *yl)
+static void xd_border(OBJECT *tree /* , int *xl, int *xr, int *yu, int *yl */ )
 {
 	int old_x, old_y, x, y, w, h;
+
+	/* Remember old position */
 
 	old_x = tree->ob_x;
 	old_y = tree->ob_y;
 
+	/* form_center() will return actual object size incl. border */
+
 	form_center(tree, &x, &y, &w, &h);
 
-	*xl = tree->ob_x - x;
-	*xr = w - tree->ob_width - *xl;
-	*yu = tree->ob_y - y;
-	*yl = h - tree->ob_height - *yu;
+	/* Compute border enlargements on all four sides of the object */
+
+	brd_l = tree->ob_x - x;
+	brd_r = w - tree->ob_width - brd_l;
+	brd_u = tree->ob_y - y;
+	brd_d = h - tree->ob_height - brd_u;
+
+	/* Return to previous object position */
 
 	tree->ob_x = old_x;
 	tree->ob_y = old_y;
@@ -333,17 +331,25 @@ static void xd_border(OBJECT *tree, int *xl, int *xr, int *yu, int *yl)
 
 void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 {
-	int dummy, xl, xr, yu, yl;
+	int dummy;
 	OBJECT *tree = info->tree;
+
+	/* 
+	 * Find border sizes. Attention: proper use of this data relies on
+	 * an assumption that ALL dialogs opened one from another
+	 * will have identical borders!!!
+	 */
+
+	xd_border(tree /* , &brd_l, &brd_r, &brd_u, &brd_d */ );
+
+	/* Now locate the dialog appropriately */
 
 	if ((pmode == XD_CENTERED) && (prev == NULL))
 		form_center(tree, &info->drect.x, &info->drect.y, &info->drect.w, &info->drect.h);
 	else
 	{
-		xd_border(tree, &xl, &xr, &yu, &yl);
-
-		info->drect.w = tree->ob_width + xl + xr;
-		info->drect.h = tree->ob_height + yu + yl;
+		info->drect.w = tree->ob_width + brd_l + brd_r;
+		info->drect.h = tree->ob_height + brd_u + brd_d;
 
 		switch (pmode)
 		{
@@ -352,7 +358,10 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
 			if ( xd_desk.w > 400 && xd_desk.h > 300 )
 			{
-				/* stack dialogs a little to the right & down, for nicer looks */
+				/* 
+				 * If there is room on the screen,
+				 * stack dialogs a little to the right & down, for nicer looks 
+				 */
 				info->drect.x += 16;
 				info->drect.y += 16;
 			}
@@ -363,15 +372,15 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 			info->drect.y -= info->drect.h / 2;
 			break;
 		case XD_CURRPOS:
-			info->drect.x = tree->ob_x - xl;
-			info->drect.y = tree->ob_y - yu;
+			info->drect.x = tree->ob_x - brd_l;
+			info->drect.y = tree->ob_y - brd_u;
 			break;
 		}
 
 		xd_clip(info, &xd_desk);
 
-		tree->ob_x = info->drect.x + xl;
-		tree->ob_y = info->drect.y + yu;
+		tree->ob_x = info->drect.x + brd_l;
+		tree->ob_y = info->drect.y + brd_u;
 	}
 }
 
@@ -487,20 +496,17 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 	{	
 		char *h = NULL;
 		OBJECT *c_obj = &tree[cur];
-
-		int etype = (c_obj->ob_type >> 8) & 0xFF;
+		int etype = xd_xobtype(c_obj);
 		int state = c_obj->ob_state;
 
-		/* Use AES 4 extended object state if there. */
+		/* Use AES 4 extended object state if it is there. */
 
-		if (   xd_is_xtndbutton(etype)
-		    || (c_obj->ob_type&0xff) == G_BUTTON
-		   )
+		if ( xd_is_xtndbutton(etype) || (c_obj->ob_type & 0xff) == G_BUTTON)
 		{
 			if (state & WHITEBAK)
 			{
-				char *p = xd_get_obspec(c_obj).free_string;
-				int und = (state<<1)>>9;
+				char *p = xd_get_obspecp(c_obj)->free_string;
+				int und = (state << 1) >> 9;
 				if (und >= 0)
 				{
 					und &= 0x7f;
@@ -508,18 +514,21 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 						h = p + und;
 				}
 			}
+/* Currently not used anywhere in teradesk
 			else if ( xd_is_xtndbutton(etype))
 			{
 				/* I_A: changed to let '#' through if doubled! */
 	
 				/* find single '#' */
-				for (h = xd_get_obspec(c_obj).free_string;
+				for (h = xd_get_obspecp(c_obj)->free_string;
 					 (h = strchr(h, '#')) != 0 && (h[1] == '#');
 					 h += 2)
 					;
 	
-				if (h) h++;	/* pinpoint exactly */
+				if (h) 
+					h++;	/* pinpoint exactly */
 			}
+*/
 		}
 
 		if (h)		/* one of the above options. */
@@ -527,7 +536,7 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 /* doesn't seem to work for characters above 127
 			int ch = toupper((int) *h);			/* pinpointed exactly */
 */
-			int ch = ((int)*h) & 0xDF;
+			int ch = touppc((int)*h);
 
 			if (((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')) || (ch > 127) )
 				kinfo[i].key = XD_ALT | ch;
@@ -554,7 +563,9 @@ int xd_set_keys(OBJECT *tree, KINFO *kinfo)
 
 
 /* 
- * Funktie die controleert of een toets selecteerbaar is. 
+ * Funktie die controleert of een toets selecteerbaar is.
+ * Return TRUE if an object is selectable; otherwise return FALSE
+ * if this object or any of its ancestors is hidden or disabled. 
  */
 
 static int xd_selectable(OBJECT *tree, int object)
@@ -590,10 +601,11 @@ int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 {
 	int i, k= (key & 0xFF);
 
+
 	/* Create "uppercase" of characters above 127 for other codepages */
 
 	if ( k > 127 )
-		key = ( (key & 0xFF00) | (k & 0xDF) );
+		key = ( (key & 0xFF00) | touppc(key & 0xFF) );
 
 	for (i = 0; i < nk; i++)
 	{
@@ -699,7 +711,7 @@ int xd_abs_curx(OBJECT *tree, int object, int curx)
 	if (blk)
 		curx -= blk->ob_shift;
 
-	tmplt = xd_get_obspec(tree + object).tedinfo->te_ptmplt;
+	tmplt = xd_get_obspecp(tree + object)->tedinfo->te_ptmplt;
 
 	if ((s = strchr(tmplt, '_')) != NULL)
 	{
@@ -727,7 +739,7 @@ int xd_abs_curx(OBJECT *tree, int object, int curx)
 static int xd_rel_curx(OBJECT *tree, int edit_obj, int curx)
 {
 	int x = 0, i;
-	char *tmplt = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt;
+	char *tmplt = xd_get_obspecp(tree + edit_obj)->tedinfo->te_ptmplt;
 
 	for (i = 0; i < curx; i++)
 	{
@@ -741,6 +753,8 @@ static int xd_rel_curx(OBJECT *tree, int edit_obj, int curx)
 
 /* 
  * Funktie voor het wissen van een teken uit een string. 
+ * When a character is deleted, remaining characters are 
+ * shifted left one space
  */
 
 static void str_delete(char *s, int pos)
@@ -777,7 +791,7 @@ static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 
 		for (i = m; i > pos; i--)
 			s[i] = s[i - 1];
-		s[pos] = (char) ch;
+		s[pos] = (char)ch;
 	}
 
 }
@@ -794,7 +808,7 @@ static int xd_chk_key(char *valid, int pos, int key)
 
 	int 
 		ch = key & 0xFF, 
-		cch = key & 0xDF;	/* uppercase */
+		cch = key & 0xDF;	/* uppercase, but valid only  above '?' */
 
 	if (!(key & (XD_SCANCODE | XD_CTRL | XD_ALT)))
 	{
@@ -848,7 +862,7 @@ static int xd_chk_key(char *valid, int pos, int key)
 
 static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 {
-	char *s = xd_get_obspec(tree + edit_obj).tedinfo->te_ptmplt,
+	char *s = xd_get_obspecp(tree + edit_obj)->tedinfo->te_ptmplt,
 	     *h;
 
 	if (key & (XD_SCANCODE | XD_CTRL | XD_ALT))
@@ -863,7 +877,7 @@ static int xd_chk_skip(OBJECT *tree, int edit_obj, int key)
 
 void *xd_get_scrled(OBJECT *tree, int edit_obj)
 {
-	if (((tree[edit_obj].ob_type >> 8) & 0xFF) == XD_SCRLEDIT)
+	if(xd_xobtype(&tree[edit_obj]) == XD_SCRLEDIT)
 		return (XUSERBLK *)tree[edit_obj].ob_spec.userblk->ub_parm;
 	return NULL;
 }
@@ -879,7 +893,7 @@ void *xd_get_scrled(OBJECT *tree, int edit_obj)
 void xd_init_shift(OBJECT *obj, char *text)
 {
 	XUSERBLK *blk = (XUSERBLK *)obj->ob_spec.userblk->ub_parm;
-	TEDINFO *tedinfo = xd_get_obspec(obj).tedinfo;
+	TEDINFO *tedinfo = xd_get_obspecp(obj)->tedinfo;
 
 	int
 		tl = (int)strlen(text), 				/* real string length */
@@ -954,12 +968,10 @@ int xd_edit_char(XDINFO *info, int key)
 	if ((edit_obj = info->edit_object) <= 0)
 		return FALSE;
 
-	tedinfo = xd_get_obspec(tree + edit_obj).tedinfo;
+	tedinfo = xd_get_obspecp(tree + edit_obj)->tedinfo;
 	blk = xd_get_scrled(tree, edit_obj);
-
 	oldpos = newpos = info->cursor_x;
-	curlen = (int) strlen(tedinfo->te_ptext);
-
+	curlen = (int)strlen(tedinfo->te_ptext);
 	flen = (int) strlen(tedinfo->te_pvalid);
 	maxlen = blk ? XD_MAX_SCRLED : flen;
 
@@ -997,15 +1009,14 @@ int xd_edit_char(XDINFO *info, int key)
 		if (oldpos != newpos)
 		{
 			xd_mouse_off();
-
 			xd_cursor_off(info);
+
 			info->cursor_x = newpos;
 
 			if (xd_shift(blk, info->cursor_x, flen, curlen))	/* scrolling editable texts. */
 				xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 
 			xd_cursor_on(info);
-
 			xd_mouse_on();
 		}
 		break;
@@ -1041,7 +1052,6 @@ int xd_edit_char(XDINFO *info, int key)
 			xd_shift(blk, info->cursor_x, flen, curlen);	/* scrolling editable texts. */
 			xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 			xd_cursor_on(info);
-
 			xd_mouse_on();
 		}
 		break;
@@ -1052,13 +1062,10 @@ int xd_edit_char(XDINFO *info, int key)
 		break;
 	case INSERT: 
 		xd_cursor_off(info);
-
 		get_fsel(info, tedinfo->te_ptext, maxlen, &info->cursor_x);
-
 		xd_shift( blk, info->cursor_x, flen, (int)strlen(tedinfo->te_ptext) );
 		xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
 		xd_cursor_on(info);
-
 		break;
 	default:
 		pos = oldpos - ((oldpos == maxlen) ? 1 : 0);
@@ -1097,7 +1104,6 @@ int xd_edit_char(XDINFO *info, int key)
 
 			xd_shift(blk, info->cursor_x, flen, curlen + 1); /* scrolling editable texts. */
 			xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
-
 			xd_cursor_on(info);
 			xd_mouse_on();
 		}
@@ -1128,7 +1134,7 @@ void xd_edit_init(XDINFO *info, int object, int curx)
 	if ((object > 0) && xd_selectable(tree, object))
 	{
 		XUSERBLK *blk = xd_get_scrled(tree, object);
-		TEDINFO *ted = xd_get_obspec(tree + object).tedinfo;
+		TEDINFO *ted = xd_get_obspecp(tree + object)->tedinfo;
 		int x, dummy, maxlen;
 
 		maxlen = (int)strlen(ted->te_ptext);
@@ -1183,7 +1189,7 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 
 	obj = 0;
 	flag = EDITABLE;
-	inc = 1;
+	inc = ((tree[start].ob_flags & LASTOB) != 0) ? 0 : 1;
 
 	switch (which)
 	{
@@ -1235,9 +1241,13 @@ static int xd_find_cancel(OBJECT *ob)
 
 		/* Consider only normal buttons and buttons with underlined text */
 
-		if (   (   (ob[f].ob_type)            == G_BUTTON
-		        || (ob[f].ob_type  & 0xff00)  == (XD_BUTTON<<8)
+		if (   (   (ob[f].ob_type)           == G_BUTTON
+/*
+		        || (ob[f].ob_type & 0xff00)  == (XD_BUTTON << 8)
+*/
+				|| (xd_xobtype(&ob[f]) == XD_BUTTON)
 		       )
+
 			&& (ob[f].ob_flags & (SELECTABLE | TOUCHEXIT | EXIT)) != 0       )
 		{
 			/* 
@@ -1247,7 +1257,7 @@ static int xd_find_cancel(OBJECT *ob)
 			 * ( '|' + word + '|' + '\0'  should fit in t[] )
 			 */
 
-			s = xd_get_obspec(ob + f).free_string;
+			s = xd_get_obspecp(ob + f)->free_string;
 
 			/* Copy and strip no more than 13 characters + terminator */
 
@@ -1330,9 +1340,7 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 	int flags = tree[object].ob_flags, parent, oldstate, dummy;
 
 
-	if (   xd_selectable(tree, object)
-	    && ((flags & SELECTABLE) || (flags & TOUCHEXIT))
-	   )
+	if (xd_selectable(tree, object) && ((flags & SELECTABLE) || (flags & TOUCHEXIT)))
 	{
 		oldstate = tree[object].ob_state;
 
@@ -1372,8 +1380,7 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 				}
 			}
 */
-			newstate = (oldstate & SELECTED) ? oldstate & ~SELECTED : oldstate | SELECTED;
-
+			newstate = oldstate ^ SELECTED;
 			events.ev_mflags = MU_BUTTON | MU_TIMER;
 			events.ev_mbclicks = 1;
 			events.ev_mbmask = 1;
@@ -1382,8 +1389,8 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 			events.ev_mm2flags = 0;
 			events.ev_mtlocount = 0;
 			events.ev_mthicount = 0;
-			xd_objrect(tree, object, &events.ev_mm1);
 
+			xd_objrect(tree, object, &events.ev_mm1);
 			xd_change(info, object, newstate, TRUE);
 
 			do
@@ -1454,8 +1461,7 @@ int xd_movebutton(OBJECT *tree)
 	for (;;)
 	{
 		c_obj = &tree[cur];
-
-		if (((c_obj->ob_type >> 8) & 0xFF) == XD_DRAGBOX)
+		if(xd_xobtype(c_obj) == XD_DRAGBOX)
 			return cur;
 
 		if (c_obj->ob_flags & LASTOB)
@@ -1480,6 +1486,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	OBJECT *tree = info->tree;
 	boolean inw = TRUE;
 
+
 	KINFO kinfo[MAXKEYS];
 
 	xd_wdupdate(BEG_UPDATE);
@@ -1495,7 +1502,6 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	}
 	
 	events.ev_mflags = MU_KEYBD | MU_BUTTON | MU_MESAG;
-
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
 	events.ev_mbstate = 1;
@@ -1503,11 +1509,10 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 	events.ev_mm2flags = 0;
 	events.ev_mtlocount = 0;
 	events.ev_mthicount = 0;
-
 	events.ev_mmgpbuf[0] = 0; 
 	next_obj = 0;
 
-	/* Find the first editable objett,; if none found, return 'start' */
+	/* Find the first editable object; if none found, return 'start' */
  
 	if ( start == 0 )
 		start = xd_find_obj(tree, start, FMD_FORWARD);
@@ -1548,7 +1553,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		{
 			int object;
 
-			if ((userfunc == (userkeys) 0) || (userfunc(info, userdata, events.xd_keycode) == 0))
+			if ((userfunc == (userkeys)0) || (userfunc(info, userdata, events.xd_keycode) == 0))
 			{
 				if ((object = xd_find_key(tree, kinfo, nkeys, events.xd_keycode)) >= 0)
 				{
@@ -1585,9 +1590,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 								 xd_desk.x, xd_desk.y, xd_desk.w, xd_desk.h, &nx, &ny);
 
 					xd_restore(info);
-
 					xd_set_position(info, nx, ny);
-
 					xd_save(info);
 					xd_redraw(info, ROOT, MAX_DEPTH, &info->drect, XD_RDIALOG | XD_RCURSOR);
 
@@ -1600,6 +1603,8 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		if (cont && (next_obj != 0))
 		{
 			xd_edit_init(info, next_obj, cmode);
+			if ((events.ev_mbreturn == 2) && xd_xobtype(&(info->tree[next_obj])) == XD_SCRLEDIT)
+				xd_edit_char(info, INSERT);
 			next_obj = 0;
 		}
 	}
@@ -1609,21 +1614,19 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 
 	xd_edit_end(info);
 	xd_fdo_flag = FALSE;
-
 	xd_wdupdate(END_UPDATE);
-
 	return (next_obj);
 }
 
 
 int xd_form_do(XDINFO *info, int start)
 {
-	return xd_kform_do(info, start, (userkeys) 0, NULL);
+	return xd_kform_do(info, start, (userkeys)0, NULL);
 }
 
 
 /*
- * Same as above but immediately change button state to normal
+ * Same as above but immediately change button state to normal and redraw
  */
 
 int xd_form_do_draw(XDINFO *info)
@@ -1822,7 +1825,7 @@ static int xd_open_wzoom
 				}
 				else 
 					if (prev == NULL)
-						xd_disable_menu();
+						xd_enable_menu(DISABLED);
 
 				xw_open(w, &wsize);
 
@@ -1863,18 +1866,19 @@ static int xd_open_wzoom
 
 		scr_size = xd_initmfdb(&info->drect, &info->mfdb);
 
-/* DjV 000 Beware: no more checking below!!!
+/* DjV Beware: no more checking below!!!
 Btw. can this be xd_malloc ???
 
 		if ((info->mfdb.fd_addr = (void *) Malloc(scr_size)) == NULL)
 			dialmode = XD_NORMAL;
 */
-
 		info->mfdb.fd_addr = (void *)Malloc(scr_size);
+
 		if ( info->mfdb.fd_addr == NULL )
 			return XDNSMEM;
 
 		tree[db].ob_flags &= ~HIDETREE; 
+
 		xd_save(info);
 		xd_drawdeep(info, ROOT);
 	}
@@ -1899,7 +1903,6 @@ void xd_open(OBJECT *tree, XDINFO *info)
 	RECT xywh;
 	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL,   &xywh, TRUE,  NULL);
 #else
-	/* xd_open_wzoom(tree, info, NULL, FALSE); */
 	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL, NULL);
 #endif
 }
@@ -1967,7 +1970,7 @@ RECT *xywh, int zoom,
 		xd_wdupdate(BEG_UPDATE);
 
 		if (!(nmd || prev) )
-			xd_enable_menu();
+			xd_enable_menu(NORMAL);
 
 		xw_closedelete(w);
 
@@ -1990,10 +1993,6 @@ RECT *xywh, int zoom,
 /* Can this be xd_free ? */
 
 		Mfree(info->mfdb.fd_addr);
-/*
-		xd_free(info->mfdb.fd_addr);
-*/
-
 	}
 
 #ifdef _DOZOOM
@@ -2065,7 +2064,6 @@ int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata)
 	exit = xd_kform_do(&info, start, userfunc, userdata);
 	xd_buttnorm(&info, exit);
 	xd_close(&info);
-
 	return exit;
 }
 
@@ -2095,7 +2093,6 @@ int xd_setdialmode(int new, int (*hndl_message) (int *message),
 	xd_menu = menu;
 	xd_nmnitems = nmnitems;
 	xd_mnitems = mnitems;
-
 	return old;
 }
 
@@ -2114,7 +2111,7 @@ int xd_setposmode(int new)
 
 /*
  * A small routine to set default colours in AES 4
- * Otherwise, these have been set to WHITE and BLACK, respectively.
+ * Otherwise, these have been set earlier to WHITE and BLACK, respectively.
  */
 
 void xd_aes4col(void)
@@ -2230,7 +2227,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		{
 			int ag1, ag2, ag3, ag4;
 
-			/* This is surely some sort of "3D" AES 4 */
+			/* This is surely (or hopefully?) some sort of "3D" AES 4 */
 
 			xd_aes4_0 |= TRUE;
 
@@ -2375,7 +2372,7 @@ void exit_xdialog(void)
 		xd_nmclose(xd_nmdialogs);
 #endif
 
-	while (h != NULL)
+	while (h)
 	{
 		next = h->next;
 		xd_free(h);

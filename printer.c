@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -47,18 +47,17 @@
 
 #define PBUFSIZ	1024L /* Should be divisible by 16 !!! */
 
+#define PTIMEOUT 2000 /* 2000 * 1/200s = 10s printer timeout */
 
 #define plinelen options.plinelen
 
 XATTR pattr;				/* item attributes */
-
-int printmode;				/* text, hex, raw */
 XFILE *printfile = NULL;	/* print file; if NULL print to port */
+int printmode;				/* text, hex, raw */
 
 
 /*
  * Print a character through GEMDOS.
- * Timeout is fixed here to 2000 * 1/200s = 10s.
  */
 
 static boolean prtchar(char ch)
@@ -83,7 +82,7 @@ static boolean prtchar(char ch)
 	{
 		do
 		{
-			time = clock() + 2000;
+			time = clock() + PTIMEOUT;
 			while ((clock() < time) && (Cprnos() == 0));
 			if (Cprnos() != 0)
 			{
@@ -120,7 +119,7 @@ static boolean print_eol(void)
 
 
 /* 
- * print_line prints a cr-lf terminated line for directory or hex-dump print 
+ * print_line prints a CR-LF terminated line for directory or hex-dump print 
  * If the line is longer than plinelen it is wrapped to the next printer line.
  * Function returns FALSE if ok, in style with other print functions
  */
@@ -150,7 +149,7 @@ static boolean print_line
 		if ( !status && ((*p == 0) || (i >= plinelen)) ) /* end of line or line too long */
 		{
 			i = 0;					/* reset linelength counter */
-			status = print_eol();	/* print cr lf */
+			status = print_eol();	/* print CR-LF */
 		}							/* if...    */ 
 	} 								/* while... */
 
@@ -263,6 +262,8 @@ static int print_file(WINDOW *w, int item)
 						}
 					}
 
+					/* Note: AV and termination messages will be processed here */
+
 					if ( escape_abort(TRUE) )
 						stop = TRUE;
 				}
@@ -272,7 +273,8 @@ static int print_file(WINDOW *w, int item)
 			while ((l == PBUFSIZ) && (stop == FALSE));
 
 			x_close(handle);
-			print_eol();			/* print cr lf at end of file */
+			if(printmode != PM_RAW)
+				print_eol();			/* print CR-LF at end of file */
 		}
 		else
 			error = handle;
@@ -307,41 +309,39 @@ static int print_file(WINDOW *w, int item)
 
 boolean check_print(WINDOW *w, int n, int *list)
 {
-	int i;
-	boolean noerror;
-	char *mes = empty;
-
+	int mes, i;
 
 	for (i = 0; i < n; i++)
 	{
-		noerror = FALSE;
+		mes = 0;
 
 		switch (itm_type(w, list[i]))
 		{
-		case ITM_PRINTER:
-			mes = get_freestring(MPRINTER);
-			break;
-		case ITM_TRASH:
-			mes = get_freestring(MTRASHCN);
-			break;
-		case ITM_DRIVE:
-			mes = get_freestring(MDRIVE);
-			break;
-		case ITM_FOLDER:
-			mes = get_freestring(MFOLDER);
-			break;
-		case ITM_PROGRAM:
-		case ITM_FILE:
-			noerror = TRUE;
-			break;
+			case ITM_TRASH:
+				mes = MTRASHCN;
+				break;
+			case ITM_PRINTER:
+				mes = MPRINTER;
+				break;
+			case ITM_DRIVE:
+				mes = MDRIVE;
+				break;
+			case ITM_FOLDER:
+			case ITM_PREVDIR:
+				mes = MFOLDER;
+				break;
+			default:
+				break;
 		}
-		if (noerror == FALSE)
-			break;
-	}
-	if (noerror == FALSE)
-		alert_printf(1, ANOPRINT, mes);
 
-	return noerror;
+		if (mes)
+		{
+			alert_printf(1, ANOPRINT, get_freestring(mes));
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 
@@ -439,7 +439,6 @@ boolean print_list
 						*bytes -= attr.size;
 						*files -= 1;
 						upd_copyname(NULL, NULL, empty);
-
 						printmode = oldmode;
 					}
 
@@ -462,8 +461,9 @@ boolean print_list
 					}
 
 					noerror = !print_line(dline);
+
 					if ( escape_abort( cfdial_open ) )
-					noerror = FALSE;
+						noerror = FALSE;
 
 				} /*  function */
 
@@ -485,11 +485,7 @@ boolean print_list
 
 		/* Check for user abort */
 
-		if (result != XFATAL)
-		{
-			if ( escape_abort(cfdial_open) )
-				result = XABORT;
-		}
+		check_opabort(&result);
 
 		if ((result == XABORT) || (result == XFATAL))
 			break;

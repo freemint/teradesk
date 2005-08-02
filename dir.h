@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -27,6 +27,9 @@ typedef struct fattr
 	long size;
 	unsigned int mtime, mdate;
 	unsigned int attrib;
+#if _MINT_
+	unsigned int gid, uid;
+#endif
 } FATTR;
 
 typedef struct
@@ -102,7 +105,6 @@ extern const char *prevdir;
 
 CfgNest dir_one;
 
-void dir_default(void);
 boolean dir_add_window(const char *path, const char *thespec, const char *name);
 boolean dir_add_dwindow(const char *path);
 void dir_close(WINDOW *w, int mode);
@@ -120,12 +122,12 @@ void calc_nlines(DIR_WINDOW *w);
 int linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
 			
-void dir_title(DIR_WINDOW *w);
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
 void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean text, RECT *work); 
 void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
 void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
+void dir_refresh_all(void);
 void dir_trim_slash ( char *path );
 boolean dir_do_path( char *path, int action );
 void dir_readnew(DIR_WINDOW *w);
@@ -133,6 +135,3 @@ OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boole
 void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t size, int attrib);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);
-boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
-						int *list, ICND *icns, int x, int y, int kstate);
-

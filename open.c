@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -47,11 +47,10 @@
 #include "library.h"
 #include "prgtype.h"
 
-extern APPLINFO awork;
-extern FTYPE fwork;
-extern LSTYPE *selitem;
-
 boolean onfile = FALSE; /* true if app is started to open a file */
+
+int trash_or_print(ITMTYPE type);
+
 
 /*
  * Handle the Show/Edit/Run... dialog. Return button index.
@@ -89,9 +88,8 @@ int open_dialog(void)
 			break;
 	}
 
-	xd_buttnorm( &owinfo, thebutton);
+	xd_buttnorm(&owinfo, thebutton);
 	xd_close(&owinfo);
-
 
 	return button;
 }
@@ -140,7 +138,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 		item = initem;	/* "item", locally (i.e. maybe changed) */
 
 
-	if ( (kstate & 8) != 0 )
+	if ( (kstate & K_ALT) != 0 )
 		alternate = TRUE;
 	
 	if ( inw && !theitem )
@@ -150,17 +148,17 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 		 * get its full name
 		 */
 
-		/* Note: it is possible that realname == NULL (for trashcan, printer...) */
+		/* Note: it is possible that 'realname' be NULL (for trashcan, printer...) */
 
 		realname = itm_tgtname(inw, initem);
 
 		/* Try to divine which type of item this is */
 
-		type = itm_type( inw, initem );
+		type = itm_tgttype( inw, initem );
 
 		/* Is this really needed ? */
 
-		if ( realname && type != ITM_TRASH && type != ITM_PRINTER && type != ITM_NOTUSED )
+		if ( realname && !trash_or_print(type) && type != ITM_NOTUSED )
 			type = diritem_type( (char *)realname );
 
 		 /* If "Alternate" is pressed a program is treated like ordinary file */
@@ -178,7 +176,6 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			obj_hide(newfolder[DIRNAME]);
 			obj_unhide(newfolder[OPENNAME]);
 			xd_init_shift(&newfolder[OPENNAME], openline);
-
 			button = xd_dialog( newfolder, ROOT );
 		}
 
@@ -207,13 +204,13 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 
 				/* 
 				 * Try to see if there is a command attached.
-				 * Separate comand from item name by inserting a '0'
+				 * Separate this command from item name by inserting a '0'
 				 * instead of the (first) space between the two.
 				 * If there is no command, 'cmline' will point
 				 * to an empty string.
 				 */
 
-				cmline = empty; /* first, cmline points to an empty string */
+				cmline = (char *)empty; /* first, cmline points to an empty string */
 
 				if ( (blank = strchr(openline,' ') ) != NULL )
 				{
@@ -222,7 +219,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 					cmline++; /* now cmline points to after the first blank */
 				}
 
-				/* Convert item name to uppercase */
+				/* Convert item name to uppercase, keep the command as it is */
 #if _MINT_
 				if (!mint)
 #endif
@@ -245,7 +242,6 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 
 				if ( blank )
 					*blank = ' ';
-
 			}
 			else
 			{
@@ -277,22 +273,17 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 		return FALSE;
 	}
 
-	/* Now thet the type of the item is known, do something */
+	/* Now that the type of the item is known, do something */
 
 	switch(type)
 	{
 		case ITM_TRASH:
 		case ITM_PRINTER:
-
-			/* Object is a trah can or a printer and can not be opened */
-
-			alert_iprint(MICNOPEN); 
-			break;
-
 		case ITM_NOTUSED:
 
-			/* Can't do anything with unknown type of item */
+			/* Object is a trah can or a printer (or unknown) and can not be opened */
 
+			alert_iprint(MICNOPEN); 
 			break;
 
 		default:
@@ -322,7 +313,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 	{
 		case ITM_DRIVE:
 
-			/* Object is a disk volume */
+			/* Object is a disk volume (codes 0 to 25 for check_drive() ) */
 
 			if ( ( path = itm_fullname(w, item) ) != NULL )
 			{
@@ -385,7 +376,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 					button = OWSHOW;
 				else
 				{
-					memset(&awork, 0, sizeof(APPLINFO));
+					memclr(&awork, sizeof(APPLINFO));
 					awork.name = itm_fullname(w, item);
 					button = open_dialog();
 				}
@@ -426,6 +417,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 
 			deselect = FALSE;
 	}
+
 	return deselect;
 }
 

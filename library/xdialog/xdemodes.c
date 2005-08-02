@@ -34,7 +34,7 @@
 #include "xscncode.h"
 #include "internal.h"
 
-unsigned char xd_emode_specs[XD_EMODECOUNT] =
+const unsigned char xd_emode_specs[XD_EMODECOUNT] =
 {
 	0,							/* (0) */
 	0,							/* (1) */
@@ -107,7 +107,7 @@ unsigned char xd_emode_specs[XD_EMODECOUNT] =
 	__XD_IS_SPECIALKEY			/* XD_CRIGHT(63) */
 };
 
-int ckeytab[] =
+const int ckeytab[] =
 {
 	CURUP,						/* XD_UP */
 	CURDOWN,

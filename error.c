@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,13 +23,14 @@
 
 #include <np_aes.h>			/* modern */
 #include <stdarg.h>
-#include <sprintf.h>
 #include <stddef.h>
 #include <vdi.h>
 #include <xdialog.h> 
 
 #include "desktop.h"
 #include "error.h"
+#include "stringf.h"
+
 
 /* 
  * Obtain a pointer to a free-string in the resource,
@@ -186,7 +187,7 @@ int alert_query( int message )
 
 
 /* 
- * Display an alert box (" ! " icon, except in one case) 
+ * Display an alert box (" ! " icon, except in one case), 
  * text being identified only by error code.
  * Error code ENOMSG will not create an alert.
  * Anything undefined is "TOS error %d".
@@ -252,7 +253,7 @@ int xhndl_error(int msg, int error, const char *file)
 				txtid = TABORT;
 
 			if (txtid)
-				alert_printf
+				button = alert_printf
 				(
 					1, AGFALERT, 
 					get_freestring(msg), 

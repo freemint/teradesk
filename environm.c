@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -80,7 +80,7 @@ static char *findvar(const char *var)
 	 * is an empty space before it.
 	 */
 
-	while ((*p) && (found == FALSE))
+	while ((*p) && !found)
 	{
 		if ((p[l] == '=') && (strncmp(p, var, l) == 0) && ( (p == p0) || (p[-1] <= ' ') ) )
 			found = TRUE;
@@ -154,7 +154,7 @@ char *new_env
 
 	if (!(p && l))
 	{
-		p = empty;
+		p = (char *)empty;
 		l = 2;
 	}
 

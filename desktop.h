@@ -37,29 +37,30 @@
 #define MSHDAT           45  /* STRING in tree MENU */
 #define MSHTIM           46  /* STRING in tree MENU */
 #define MSHATT           47  /* STRING in tree MENU */
-#define SEP6             48  /* STRING in tree MENU */
-#define MSETMASK         49  /* STRING in tree MENU */
-#define MNWINBOX         50  /* BOX in tree MENU */
-#define MCLOSE           51  /* STRING in tree MENU */
-#define MCLOSEW          52  /* STRING in tree MENU */
-#define MDUPLIC          53  /* STRING in tree MENU */
-#define MCYCLE           54  /* STRING in tree MENU */
-#define MNOPTBOX         55  /* BOX in tree MENU */
-#define MAPPLIK          56  /* STRING in tree MENU */
-#define MPRGOPT          57  /* STRING in tree MENU */
-#define SEP7             58  /* STRING in tree MENU */
-#define MIDSKICN         59  /* STRING in tree MENU */
-#define MIWDICN          60  /* STRING in tree MENU */
-#define MREMICON         61  /* STRING in tree MENU */
-#define SEP8             62  /* STRING in tree MENU */
-#define MOPTIONS         63  /* STRING in tree MENU */
-#define MCOPTS           64  /* STRING in tree MENU */
-#define MWDOPT           65  /* STRING in tree MENU */
-#define MVOPTS           66  /* STRING in tree MENU */
-#define SEP9             67  /* STRING in tree MENU */
-#define MLOADOPT         68  /* STRING in tree MENU */
-#define MSAVESET         69  /* STRING in tree MENU */
-#define MSAVEAS          70  /* STRING in tree MENU */
+#define MSHOWN           48  /* STRING in tree MENU */
+#define SEP6             49  /* STRING in tree MENU */
+#define MSETMASK         50  /* STRING in tree MENU */
+#define MNWINBOX         51  /* BOX in tree MENU */
+#define MCLOSE           52  /* STRING in tree MENU */
+#define MCLOSEW          53  /* STRING in tree MENU */
+#define MCLOSALL         54  /* STRING in tree MENU */
+#define MDUPLIC          55  /* STRING in tree MENU */
+#define MCYCLE           56  /* STRING in tree MENU */
+#define MNOPTBOX         57  /* BOX in tree MENU */
+#define MAPPLIK          58  /* STRING in tree MENU */
+#define MPRGOPT          59  /* STRING in tree MENU */
+#define SEP7             60  /* STRING in tree MENU */
+#define MIDSKICN         61  /* STRING in tree MENU */
+#define MIWDICN          62  /* STRING in tree MENU */
+#define SEP8             63  /* STRING in tree MENU */
+#define MOPTIONS         64  /* STRING in tree MENU */
+#define MCOPTS           65  /* STRING in tree MENU */
+#define MWDOPT           66  /* STRING in tree MENU */
+#define MVOPTS           67  /* STRING in tree MENU */
+#define SEP9             68  /* STRING in tree MENU */
+#define MLOADOPT         69  /* STRING in tree MENU */
+#define MSAVESET         70  /* STRING in tree MENU */
+#define MSAVEAS          71  /* STRING in tree MENU */
 
 #define INFOBOX          1   /* Form/Dialog-box */
 #define INFOVERS         2   /* TEXT in tree INFOBOX */
@@ -83,93 +84,110 @@
 
 #define ADDICON          4   /* Form/Dialog-box */
 #define AITITLE          1   /* STRING in tree ADDICON */
-#define AIPARENT         3   /* BUTTON in tree ADDICON */
-#define ICBTNS           4   /* IBOX in tree ADDICON */
-#define APRINTER         5   /* BUTTON in tree ADDICON */
-#define ADISK            6   /* BUTTON in tree ADDICON */
-#define ATRASH           7   /* BUTTON in tree ADDICON */
-#define ICSHFIL          8   /* STRING in tree ADDICON */
-#define ICSHFLD          9   /* STRING in tree ADDICON */
-#define ICONBACK         11  /* BOX in tree ADDICON */
-#define ICONDATA         12  /* IMAGE in tree ADDICON */
-#define ICNUP            13  /* BUTTON in tree ADDICON */
-#define ICPARENT         14  /* BOX in tree ADDICON */
-#define ICSLIDER         15  /* BOX in tree ADDICON */
-#define ICNDWN           16  /* BUTTON in tree ADDICON */
-#define CHNBUTT          17  /* IBOX in tree ADDICON */
-#define CHNICNOK         18  /* BUTTON in tree ADDICON */
-#define CHNICNAB         20  /* BUTTON in tree ADDICON */
-#define ADDBUTT          21  /* IBOX in tree ADDICON */
-#define ADDICNOK         22  /* BUTTON in tree ADDICON */
-#define DRIVEID          24  /* FTEXT in tree ADDICON */
-#define ICNTYPE          25  /* FTEXT in tree ADDICON */
-#define ICNLABEL         26  /* FTEXT in tree ADDICON */
-#define ICNTYPT          27  /* STRING in tree ADDICON */
+#define DRIVEID          3   /* FTEXT in tree ADDICON */
+#define INAMBOX          4   /* IBOX in tree ADDICON */
+#define INAMET           5   /* STRING in tree ADDICON */
+#define IFNAME           6   /* FTEXT in tree ADDICON */
+#define ICNTYPE          7   /* FTEXT in tree ADDICON */
+#define ICNLABEL         8   /* FTEXT in tree ADDICON */
+#define ICNTYPT          9   /* STRING in tree ADDICON */
+#define CHNBUTT          10  /* IBOX in tree ADDICON */
+#define CHNICNOK         11  /* BUTTON in tree ADDICON */
+#define CHICNSK          12  /* BUTTON in tree ADDICON */
+#define CHNICNAB         13  /* BUTTON in tree ADDICON */
+#define CHICNRM          14  /* BUTTON in tree ADDICON */
+#define ADDBUTT          15  /* IBOX in tree ADDICON */
+#define ADDICNOK         16  /* BUTTON in tree ADDICON */
+#define ADDICNAB         17  /* BUTTON in tree ADDICON */
+#define ICSELBOX         18  /* BOX in tree ADDICON */
+#define ICONBACK         19  /* BOX in tree ADDICON */
+#define ICONDATA         20  /* IBOX in tree ADDICON */
+#define ICNUP            21  /* BUTTON in tree ADDICON */
+#define ICPARENT         22  /* BOX in tree ADDICON */
+#define ICSLIDER         23  /* BOX in tree ADDICON */
+#define ICNDWN           24  /* BUTTON in tree ADDICON */
+#define AIPARENT         25  /* BUTTON in tree ADDICON */
+#define ICBTNS           26  /* IBOX in tree ADDICON */
+#define ADISK            27  /* BUTTON in tree ADDICON */
+#define APRINTER         28  /* BUTTON in tree ADDICON */
+#define ATRASH           29  /* BUTTON in tree ADDICON */
+#define AFILE            30  /* BUTTON in tree ADDICON */
+#define ICSHFIL          31  /* STRING in tree ADDICON */
+#define ICSHFLD          32  /* STRING in tree ADDICON */
+#define ICSHPRG          33  /* STRING in tree ADDICON */
 
 #define APPLIKAT         5   /* Form/Dialog-box */
 #define APDTITLE         1   /* STRING in tree APPLIKAT */
 #define APT1             3   /* STRING in tree APPLIKAT */
 #define APT2             4   /* STRING in tree APPLIKAT */
 #define APT3             5   /* STRING in tree APPLIKAT */
-#define APOK             7   /* BUTTON in tree APPLIKAT */
-#define APPPTYPE         9   /* BUTTON in tree APPLIKAT */
-#define APPFTYPE         10  /* BUTTON in tree APPLIKAT */
-#define APPATH           11  /* FTEXT in tree APPLIKAT */
-#define APNAME           12  /* FTEXT in tree APPLIKAT */
-#define APCMLINE         13  /* FTEXT in tree APPLIKAT */
-#define APFKEY           14  /* FTEXT in tree APPLIKAT */
-#define SETUSE           15  /* BUTTON in tree APPLIKAT */
-#define APLENV           16  /* FTEXT in tree APPLIKAT */
-#define APT4             17  /* STRING in tree APPLIKAT */
+#define APT4             6   /* STRING in tree APPLIKAT */
+#define APPATH           7   /* FTEXT in tree APPLIKAT */
+#define APNAME           8   /* FTEXT in tree APPLIKAT */
+#define APCMLINE         9   /* FTEXT in tree APPLIKAT */
+#define APLENV           10  /* FTEXT in tree APPLIKAT */
+#define APFKEY           11  /* FTEXT in tree APPLIKAT */
+#define SETUSE           12  /* BUTTON in tree APPLIKAT */
+#define APPPTYPE         13  /* BUTTON in tree APPLIKAT */
+#define APPFTYPE         14  /* BUTTON in tree APPLIKAT */
+#define APOK             15  /* BUTTON in tree APPLIKAT */
 
 #define FILEINFO         6   /* Form/Dialog-box */
 #define FLITITLE         1   /* STRING in tree FILEINFO */
-#define FLBYTES          4   /* FTEXT in tree FILEINFO */
+#define FLBYTES          4   /* TEXT in tree FILEINFO */
 #define ATTRBOX          5   /* IBOX in tree FILEINFO */
 #define ISWP             6   /* BUTTON in tree FILEINFO */
 #define ISHIDDEN         7   /* BUTTON in tree FILEINFO */
 #define ISSYSTEM         8   /* BUTTON in tree FILEINFO */
 #define ISARCHIV         10  /* BUTTON in tree FILEINFO */
-#define FLOK             12  /* BUTTON in tree FILEINFO */
-#define FLSKIP           13  /* BUTTON in tree FILEINFO */
-#define FLABORT          14  /* BUTTON in tree FILEINFO */
-#define FLALL            15  /* BUTTON in tree FILEINFO */
-#define MATCHBOX         16  /* BOX in tree FILEINFO */
-#define NSMATCH          17  /* FTEXT in tree FILEINFO */
-#define MATCH1           18  /* FTEXT in tree FILEINFO */
-#define ISMATCH          19  /* FTEXT in tree FILEINFO */
-#define FLCLSIZ          20  /* FTEXT in tree FILEINFO */
-#define FLNAMBOX         21  /* IBOX in tree FILEINFO */
-#define FLT1             22  /* STRING in tree FILEINFO */
-#define FLPATH           23  /* FTEXT in tree FILEINFO */
-#define FLT2             24  /* STRING in tree FILEINFO */
-#define FLNAME           25  /* FTEXT in tree FILEINFO */
-#define TDTIME           26  /* STRING in tree FILEINFO */
-#define FLDATE           27  /* FTEXT in tree FILEINFO */
-#define FLTIME           28  /* FTEXT in tree FILEINFO */
-#define FLFOLBOX         29  /* IBOX in tree FILEINFO */
-#define FLFOLDER         30  /* FTEXT in tree FILEINFO */
-#define FLFILES          31  /* FTEXT in tree FILEINFO */
-#define FLLABBOX         32  /* IBOX in tree FILEINFO */
-#define FLDRIVE          33  /* FTEXT in tree FILEINFO */
-#define FLLABEL          34  /* FTEXT in tree FILEINFO */
-#define FLSPABOX         35  /* IBOX in tree FILEINFO */
-#define FLSPACE          36  /* FTEXT in tree FILEINFO */
-#define FLFREE           37  /* FTEXT in tree FILEINFO */
-#define FLLIBOX          38  /* IBOX in tree FILEINFO */
-#define FLTGNAME         39  /* FTEXT in tree FILEINFO */
-#define RIGHTBOX         41  /* IBOX in tree FILEINFO */
-#define OWNRD            42  /* BUTTON in tree FILEINFO */
-#define OWNRW            43  /* BUTTON in tree FILEINFO */
-#define OWNRX            44  /* BUTTON in tree FILEINFO */
-#define GRPR             45  /* BUTTON in tree FILEINFO */
-#define GRPW             46  /* BUTTON in tree FILEINFO */
-#define GRPX             47  /* BUTTON in tree FILEINFO */
-#define WRLR             48  /* BUTTON in tree FILEINFO */
-#define WRLW             49  /* BUTTON in tree FILEINFO */
-#define WRLX             50  /* BUTTON in tree FILEINFO */
-#define UID              53  /* FTEXT in tree FILEINFO */
-#define GID              54  /* FTEXT in tree FILEINFO */
+#define MATCHBOX         11  /* BOX in tree FILEINFO */
+#define NSMATCH          12  /* FTEXT in tree FILEINFO */
+#define MATCH1           13  /* FTEXT in tree FILEINFO */
+#define ISMATCH          14  /* FTEXT in tree FILEINFO */
+#define FLCLSIZ          15  /* FTEXT in tree FILEINFO */
+#define FLNAMBOX         16  /* IBOX in tree FILEINFO */
+#define FLT1             17  /* STRING in tree FILEINFO */
+#define FLPATH           18  /* FTEXT in tree FILEINFO */
+#define FLT2             19  /* STRING in tree FILEINFO */
+#define FLNAME           20  /* FTEXT in tree FILEINFO */
+#define TDTIME           21  /* STRING in tree FILEINFO */
+#define FLDATE           22  /* FTEXT in tree FILEINFO */
+#define FLTIME           23  /* FTEXT in tree FILEINFO */
+#define FLFOLBOX         24  /* IBOX in tree FILEINFO */
+#define FLFOLDER         25  /* FTEXT in tree FILEINFO */
+#define FLFILES          26  /* FTEXT in tree FILEINFO */
+#define FLLABBOX         27  /* IBOX in tree FILEINFO */
+#define FLDRIVE          28  /* TEXT in tree FILEINFO */
+#define FLLABEL          29  /* FTEXT in tree FILEINFO */
+#define FLSPABOX         32  /* IBOX in tree FILEINFO */
+#define FLSPACE          33  /* FTEXT in tree FILEINFO */
+#define FLFREE           34  /* FTEXT in tree FILEINFO */
+#define FLLIBOX          35  /* IBOX in tree FILEINFO */
+#define FLTGNAME         36  /* FTEXT in tree FILEINFO */
+#define RIGHTBOX         38  /* IBOX in tree FILEINFO */
+#define GID              40  /* FTEXT in tree FILEINFO */
+#define UID              41  /* FTEXT in tree FILEINFO */
+#define OWNR             42  /* BUTTON in tree FILEINFO */
+#define OWNW             43  /* BUTTON in tree FILEINFO */
+#define OWNX             44  /* BUTTON in tree FILEINFO */
+#define OWNS             45  /* BUTTON in tree FILEINFO */
+#define GRPR             46  /* BUTTON in tree FILEINFO */
+#define GRPW             47  /* BUTTON in tree FILEINFO */
+#define GRPX             48  /* BUTTON in tree FILEINFO */
+#define GRPS             49  /* BUTTON in tree FILEINFO */
+#define WRLR             50  /* BUTTON in tree FILEINFO */
+#define WRLW             51  /* BUTTON in tree FILEINFO */
+#define WRLX             52  /* BUTTON in tree FILEINFO */
+#define WRLS             53  /* BUTTON in tree FILEINFO */
+#define PFBOX            54  /* IBOX in tree FILEINFO */
+#define PFLAGS           55  /* TEXT in tree FILEINFO */
+#define PMEM             58  /* TEXT in tree FILEINFO */
+#define FLALL            59  /* BUTTON in tree FILEINFO */
+#define FLOK             60  /* BUTTON in tree FILEINFO */
+#define FLSKIP           61  /* BUTTON in tree FILEINFO */
+#define FLABORT          62  /* BUTTON in tree FILEINFO */
+#define FOPWITH          63  /* TEXT in tree FILEINFO */
+#define FOPWTXT          64  /* STRING in tree FILEINFO */
 
 #define COPYINFO         7   /* Form/Dialog-box */
 #define COPYBOX          0   /* BOX in tree COPYINFO */
@@ -182,9 +200,9 @@
 #define CCHATTR          8   /* BUTTON in tree COPYINFO */
 #define CIFILES          10  /* STRING in tree COPYINFO */
 #define CINFBOX          12  /* BOX in tree COPYINFO */
-#define NFOLDERS         13  /* FTEXT in tree COPYINFO */
-#define NFILES           14  /* FTEXT in tree COPYINFO */
-#define NBYTES           15  /* FTEXT in tree COPYINFO */
+#define NFOLDERS         13  /* TEXT in tree COPYINFO */
+#define NFILES           14  /* TEXT in tree COPYINFO */
+#define NBYTES           15  /* TEXT in tree COPYINFO */
 #define CNAMBOX          16  /* BOX in tree COPYINFO */
 #define CPFOLDER         17  /* FTEXT in tree COPYINFO */
 #define CPFILE           18  /* FTEXT in tree COPYINFO */
@@ -202,13 +220,12 @@
 #define RNMTITLE         1   /* STRING in tree NAMECONF */
 #define NCT1             3   /* STRING in tree NAMECONF */
 #define NCT2             4   /* STRING in tree NAMECONF */
-#define NCBBOX           5   /* IBOX in tree NAMECONF */
-#define NCOK             6   /* BUTTON in tree NAMECONF */
+#define OLDNAME          5   /* FTEXT in tree NAMECONF */
+#define NEWNAME          6   /* FTEXT in tree NAMECONF */
 #define NCALL            7   /* BUTTON in tree NAMECONF */
-#define NCSKIP           8   /* BUTTON in tree NAMECONF */
-#define NCABORT          9   /* BUTTON in tree NAMECONF */
-#define OLDNAME          10  /* FTEXT in tree NAMECONF */
-#define NEWNAME          11  /* FTEXT in tree NAMECONF */
+#define NCOK             8   /* BUTTON in tree NAMECONF */
+#define NCSKIP           9   /* BUTTON in tree NAMECONF */
+#define NCABORT          10  /* BUTTON in tree NAMECONF */
 
 #define SETMASK          9   /* Form/Dialog-box */
 #define DTSMASK          1   /* STRING in tree SETMASK */
@@ -229,23 +246,22 @@
 #define FTADD            17  /* BUTTON in tree SETMASK */
 #define FTCHANGE         18  /* BUTTON in tree SETMASK */
 #define FTDELETE         19  /* BUTTON in tree SETMASK */
-#define OBOX             20  /* IBOX in tree SETMASK */
-#define PGATT            21  /* IBOX in tree SETMASK */
-#define PKEY             22  /* BUTTON in tree SETMASK */
-#define PSTDERR          23  /* BUTTON in tree SETMASK */
-#define MSKATT           24  /* IBOX in tree SETMASK */
-#define MSKHID           25  /* BUTTON in tree SETMASK */
-#define MSKSYS           26  /* BUTTON in tree SETMASK */
-#define MSKDIR           27  /* BUTTON in tree SETMASK */
-#define MSKPAR           28  /* BUTTON in tree SETMASK */
-#define ICATT            29  /* IBOX in tree SETMASK */
-#define ITFILES          30  /* BUTTON in tree SETMASK */
-#define ITFOLDER         31  /* BUTTON in tree SETMASK */
-#define OKXBOX           32  /* IBOX in tree SETMASK */
-#define FTOK             33  /* BUTTON in tree SETMASK */
-#define FTCANCEL         34  /* BUTTON in tree SETMASK */
-#define FTTEXT           35  /* STRING in tree SETMASK */
-#define FILETYPE         36  /* FTEXT in tree SETMASK */
+#define FTTEXT           20  /* STRING in tree SETMASK */
+#define FILETYPE         21  /* FTEXT in tree SETMASK */
+#define FTCANCEL         22  /* BUTTON in tree SETMASK */
+#define FTOK             23  /* BUTTON in tree SETMASK */
+#define ICATT            24  /* IBOX in tree SETMASK */
+#define ITFILES          25  /* BUTTON in tree SETMASK */
+#define ITFOLDER         26  /* BUTTON in tree SETMASK */
+#define ITPROGRA         27  /* BUTTON in tree SETMASK */
+#define MSKATT           28  /* IBOX in tree SETMASK */
+#define MSKHID           29  /* BUTTON in tree SETMASK */
+#define MSKSYS           30  /* BUTTON in tree SETMASK */
+#define MSKDIR           31  /* BUTTON in tree SETMASK */
+#define MSKPAR           32  /* BUTTON in tree SETMASK */
+#define PGATT            33  /* IBOX in tree SETMASK */
+#define PKEY             34  /* BUTTON in tree SETMASK */
+#define PSTDERR          35  /* BUTTON in tree SETMASK */
 
 #define OPTIONS          10  /* Form/Dialog-box */
 #define OPTPAR1          4   /* IBOX in tree OPTIONS */
@@ -267,8 +283,8 @@
 #define ADDPTYPE         11  /* Form/Dialog-box */
 #define APTITLE          1   /* STRING in tree ADDPTYPE */
 #define APTPAR1          3   /* BUTTON in tree ADDPTYPE */
-#define ATPRG            4   /* BUTTON in tree ADDPTYPE */
-#define ATWINDOW         5   /* BUTTON in tree ADDPTYPE */
+#define ATWINDOW         4   /* BUTTON in tree ADDPTYPE */
+#define ATPRG            5   /* BUTTON in tree ADDPTYPE */
 #define ATFILE           6   /* BUTTON in tree ADDPTYPE */
 #define APTPAR2          7   /* BUTTON in tree ADDPTYPE */
 #define APGEM            8   /* BUTTON in tree ADDPTYPE */
@@ -276,12 +292,13 @@
 #define APACC            10  /* BUTTON in tree ADDPTYPE */
 #define APTOS            11  /* BUTTON in tree ADDPTYPE */
 #define APTTP            12  /* BUTTON in tree ADDPTYPE */
-#define APTOK            14  /* BUTTON in tree ADDPTYPE */
-#define PTTEXT           16  /* STRING in tree ADDPTYPE */
-#define PRGNAME          17  /* FTEXT in tree ADDPTYPE */
-#define ATARGV           18  /* BUTTON in tree ADDPTYPE */
-#define ATSINGLE         19  /* BUTTON in tree ADDPTYPE */
-#define MEMLIM           20  /* FTEXT in tree ADDPTYPE */
+#define PTTEXT           13  /* STRING in tree ADDPTYPE */
+#define PRGNAME          14  /* FTEXT in tree ADDPTYPE */
+#define ATARGV           15  /* BUTTON in tree ADDPTYPE */
+#define ATSINGLE         16  /* BUTTON in tree ADDPTYPE */
+#define MEMLIM           17  /* FTEXT in tree ADDPTYPE */
+#define ATBACKG          18  /* BUTTON in tree ADDPTYPE */
+#define APTOK            19  /* BUTTON in tree ADDPTYPE */
 
 #define VIEWMENU         12  /* Menu-tree */
 #define VMVIEW           3   /* TITLE in tree VIEWMENU */
@@ -325,46 +342,49 @@
 #define WDFSIZE          17  /* BUTTON in tree WDFONT */
 #define WDFSUP           18  /* BOXCHAR in tree WDFONT */
 #define WDFTEXT          20  /* BUTTON in tree WDFONT */
+#define WDFCDOWN         22  /* BOXCHAR in tree WDFONT */
+#define WDFCOL           23  /* BOX in tree WDFONT */
+#define WDFCUP           24  /* BOXCHAR in tree WDFONT */
 
 #define FLOPPY           16  /* Form/Dialog-box */
 #define FLTITLE          1   /* STRING in tree FLOPPY */
 #define FSRCDRV          3   /* FTEXT in tree FLOPPY */
 #define FTGTDRV          4   /* FTEXT in tree FLOPPY */
 #define FFTYPE           5   /* BUTTON in tree FLOPPY */
-#define FPAR1            6   /* IBOX in tree FLOPPY */
-#define FSSIDED          7   /* BUTTON in tree FLOPPY */
-#define FDSIDED          8   /* BUTTON in tree FLOPPY */
-#define FHSIDED          9   /* BUTTON in tree FLOPPY */
-#define FESIDED          10  /* BUTTON in tree FLOPPY */
-#define FPAR2            11  /* BUTTON in tree FLOPPY */
-#define FPAR3            12  /* IBOX in tree FLOPPY */
-#define FSIDES           13  /* FTEXT in tree FLOPPY */
-#define FTRACKS          14  /* FTEXT in tree FLOPPY */
-#define FSECTORS         15  /* FTEXT in tree FLOPPY */
-#define FDIRSIZE         16  /* FTEXT in tree FLOPPY */
-#define FLOT1            17  /* TEXT in tree FLOPPY */
-#define FMTCANC          18  /* BUTTON in tree FLOPPY */
-#define FMTOK            19  /* BUTTON in tree FLOPPY */
-#define FLABEL           20  /* FTEXT in tree FLOPPY */
-#define PROGRBOX         21  /* BOX in tree FLOPPY */
-#define FPROGRES         22  /* FTEXT in tree FLOPPY */
+#define FSSIDED          6   /* BUTTON in tree FLOPPY */
+#define FDSIDED          7   /* BUTTON in tree FLOPPY */
+#define FHSIDED          8   /* BUTTON in tree FLOPPY */
+#define FESIDED          9   /* BUTTON in tree FLOPPY */
+#define FPAR2            10  /* BUTTON in tree FLOPPY */
+#define FPAR3            11  /* IBOX in tree FLOPPY */
+#define FSIDES           12  /* FTEXT in tree FLOPPY */
+#define FTRACKS          13  /* FTEXT in tree FLOPPY */
+#define FSECTORS         14  /* FTEXT in tree FLOPPY */
+#define FDIRSIZE         15  /* FTEXT in tree FLOPPY */
+#define FLOT1            16  /* TEXT in tree FLOPPY */
+#define FMTCANC          17  /* BUTTON in tree FLOPPY */
+#define FMTOK            18  /* BUTTON in tree FLOPPY */
+#define FLABEL           19  /* FTEXT in tree FLOPPY */
+#define PROGRBOX         20  /* BOX in tree FLOPPY */
+#define FPROGRES         21  /* FTEXT in tree FLOPPY */
 
 #define VOPTIONS         17  /* Form/Dialog-box */
-#define VREZOL           4   /* IBOX in tree VOPTIONS */
-#define VSTLOW           5   /* BUTTON in tree VOPTIONS */
-#define VTTLOW           6   /* BUTTON in tree VOPTIONS */
-#define VSTMED           7   /* BUTTON in tree VOPTIONS */
+#define VREZOL           3   /* BUTTON in tree VOPTIONS */
+#define VSTLOW           4   /* BUTTON in tree VOPTIONS */
+#define VSTMED           5   /* BUTTON in tree VOPTIONS */
+#define VSTHIGH          6   /* BUTTON in tree VOPTIONS */
+#define VTTLOW           7   /* BUTTON in tree VOPTIONS */
 #define VTTMED           8   /* BUTTON in tree VOPTIONS */
-#define VSTHIGH          9   /* BUTTON in tree VOPTIONS */
-#define VTTHIGH          10  /* BUTTON in tree VOPTIONS */
-#define SVCOLORS         12  /* BUTTON in tree VOPTIONS */
-#define VBLITTER         13  /* BUTTON in tree VOPTIONS */
-#define VOVERSCN         14  /* BUTTON in tree VOPTIONS */
-#define FCOLBOX          15  /* BOX in tree VOPTIONS */
-#define VNCOL            16  /* BUTTON in tree VOPTIONS */
-#define VNCOLDN          17  /* BOXCHAR in tree VOPTIONS */
-#define VNCOLUP          18  /* BOXCHAR in tree VOPTIONS */
-#define VIDOK            21  /* BUTTON in tree VOPTIONS */
+#define VTTHIGH          9   /* BUTTON in tree VOPTIONS */
+#define SVCOLORS         11  /* BUTTON in tree VOPTIONS */
+#define VBLITTER         12  /* BUTTON in tree VOPTIONS */
+#define VOVERSCN         13  /* BUTTON in tree VOPTIONS */
+#define FCOLBOX          14  /* BOX in tree VOPTIONS */
+#define VNCOL            15  /* BUTTON in tree VOPTIONS */
+#define VNCOLDN          16  /* BOXCHAR in tree VOPTIONS */
+#define VNCOLUP          17  /* BOXCHAR in tree VOPTIONS */
+#define VIDCANC          19  /* BUTTON in tree VOPTIONS */
+#define VIDOK            20  /* BUTTON in tree VOPTIONS */
 
 #define ADDFTYPE         18  /* Form/Dialog-box */
 #define FTYTITLE         1   /* STRING in tree ADDFTYPE */
@@ -396,6 +416,7 @@
 #define IGNCASE          11  /* BUTTON in tree SEARCH */
 #define SOK              12  /* BUTTON in tree SEARCH */
 #define SCANCEL          13  /* BUTTON in tree SEARCH */
+#define SKIPSUB          14  /* BUTTON in tree SEARCH */
 
 #define SPECAPP          21  /* Form/Dialog-box */
 #define ISSPEC           3   /* IBOX in tree SPECAPP */
@@ -431,9 +452,9 @@
 #define CFILE2           6   /* FTEXT in tree COMPARE */
 #define CMPIBOX          9   /* BOX in tree COMPARE */
 #define COFFSET          10  /* FTEXT in tree COMPARE */
-#define DTEXT1           11  /* FTEXT in tree COMPARE */
-#define DTEXT2           12  /* FTEXT in tree COMPARE */
-#define COMPWIN          13  /* FTEXT in tree COMPARE */
+#define DTEXT1           11  /* TEXT in tree COMPARE */
+#define DTEXT2           12  /* TEXT in tree COMPARE */
+#define COMPWIN          15  /* FTEXT in tree COMPARE */
 
 #define DTADDMSK         0   /* Free String */
 
@@ -609,172 +630,190 @@
 
 #define MFSELERR         86  /* Free String */
 
-#define MGEMBACK         87  /* Free String */
+#define MICNOPEN         87  /* Free String */
 
-#define MICNOPEN         88  /* Free String */
+#define MTMICONS         88  /* Free String */
 
-#define MMULITEM         89  /* Free String */
+#define APPNOEXT         89  /* Free String */
 
-#define MTMICONS         90  /* Free String */
+#define APPNODD          90  /* Free String */
 
-#define APPNOEXT         91  /* Free String */
+#define MDRVEXIS         91  /* Free String */
 
-#define APPNODD          92  /* Free String */
+#define MNOROOT          92  /* Free String */
 
-#define MDRVEXIS         93  /* Free String */
+#define MDIRTBIG         93  /* Free String */
 
-#define MNOROOT          94  /* Free String */
+#define MDEXISTS         94  /* Free String */
 
-#define MDIRTBIG         95  /* Free String */
+#define MTMWIND          95  /* Free String */
 
-#define MDEXISTS         96  /* Free String */
+#define MFNEMPTY         96  /* Free String */
 
-#define MTMWIND          97  /* Free String */
+#define MCOPYSLF         97  /* Free String */
 
-#define MFNEMPTY         98  /* Free String */
+#define MVALIDCF         98  /* Free String */
 
-#define MCOPYSLF         99  /* Free String */
+#define BADCFG           99  /* Free String */
 
-#define MVALIDCF         100 /* Free String */
+#define TFRVAL           100 /* Free String */
 
-#define BADCFG           101 /* Free String */
+#define MCOMPOK          101 /* Free String */
 
-#define TFRVAL           102 /* Free String */
+#define DTFONSEL         102 /* Free String */
 
-#define MCOMPOK          103 /* Free String */
+#define DTNEWDIR         103 /* Free String */
 
-#define DTFONSEL         104 /* Free String */
+#define DTOPENIT         104 /* Free String */
 
-#define DTNEWDIR         105 /* Free String */
+#define MNOITEM          105 /* Free String */
 
-#define DTOPENIT         106 /* Free String */
+#define TDONTEDI         106 /* Free String */
 
-#define MNOITEM          107 /* Free String */
+#define TNOLOCK          107 /* Free String */
 
-#define TDONTEDI         108 /* Free String */
+#define DTFIINF          108 /* Free String */
 
-#define TNOLOCK          109 /* Free String */
+#define DTFOINF          109 /* Free String */
 
-#define DTFIINF          110 /* Free String */
+#define DTDRINF          110 /* Free String */
 
-#define DTFOINF          111 /* Free String */
+#define TCRETIM          111 /* Free String */
 
-#define DTDRINF          112 /* Free String */
+#define TACCTIM          112 /* Free String */
 
-#define TCRETIM          113 /* Free String */
+#define TNOEDIT          113 /* Free String */
 
-#define TACCTIM          114 /* Free String */
+#define DTAFONT          114 /* Free String */
 
-#define TNOEDIT          115 /* Free String */
+#define DTNEWLNK         115 /* Free String */
 
-#define DTAFONT          116 /* Free String */
+#define TLINKTO          116 /* Free String */
 
-#define TFSOPEN          117 /* Free String */
+#define DTLIINF          117 /* Free String */
 
-#define DTNEWLNK         118 /* Free String */
+#define TNOTGT           118 /* Free String */
 
-#define TLINKTO          119 /* Free String */
+#define DTUPDAT          119 /* Free String */
 
-#define DTLIINF          120 /* Free String */
+#define DTRESTO          120 /* Free String */
 
-#define TNOTGT           121 /* Free String */
+#define SNFILES          121 /* Free String */
 
-#define DTUPDAT          122 /* Free String */
+#define SFILES           122 /* Free String */
 
-#define DTRESTO          123 /* Free String */
+#define SMULTI           123 /* Free String */
 
-#define SNFILES          124 /* Free String */
+#define DWTITLE          124 /* Free String */
 
-#define SFILES           125 /* Free String */
+#define MENUREG          125 /* Free String */
 
-#define SMULTI           126 /* Free String */
+#define DTSELAPP         126 /* Free String */
 
-#define DWTITLE          127 /* Free String */
+#define CANCTXT          127 /* Free String */
 
-#define MENUREG          128 /* Free String */
+#define MSRFINI          128 /* Free String */
 
-#define DTSELAPP         129 /* Free String */
+#define FSPRINT          129 /* Free String */
 
-#define CANCTXT          130 /* Free String */
+#define TFALLOW          130 /* Free String */
 
-#define MSRFINI          131 /* Free String */
+#define TFALMED          131 /* Free String */
 
-#define FSPRINT          132 /* Free String */
+#define TINTERL          132 /* Free String */
 
-#define TFALLOW          133 /* Free String */
+#define MRESTLOW         133 /* Free String */
 
-#define TFALMED          134 /* Free String */
+#define MICNFRD          134 /* Free String */
 
-#define TINTERL          135 /* Free String */
+#define MVDIERR          135 /* Free String */
 
-#define MRESTLOW         136 /* Free String */
+#define MDUPAPP          136 /* Free String */
 
-#define MICNFRD          137 /* Free String */
+#define MFAILPRG         137 /* Free String */
 
-#define MVDIERR          138 /* Free String */
+#define RESERVE2         138 /* Free String */
 
-#define MREMICNS         139 /* Free String */
+#define MICNFND          139 /* Free String */
 
-#define MDUPAPP          140 /* Free String */
+#define DTDEVINF         140 /* Free String */
 
-#define MFAILPRG         141 /* Free String */
+#define DTPIPINF         141 /* Free String */
 
-#define RESERVE2         142 /* Free String */
+#define DTMEMINF         142 /* Free String */
 
-#define RESERVE3         143 /* Free String */
+#define DTPRGINF         143 /* Free String */
 
-#define MICNFND          144 /* Free String */
+#define MGEMBACK         144 /* Free String */
 
-#define ALOADCFG         145 /* Alert-string */
+#define PFFLOAD          145 /* Free String */
 
-#define ASAVECFG         146 /* Alert-string */
+#define PFALOAD          146 /* Free String */
 
-#define APRGNFND         147 /* Alert-string */
+#define PFAMEM           147 /* Free String */
 
-#define AAPPNFND         148 /* Alert-string */
+#define PPPRIVAT         148 /* Free String */
 
-#define AILLCOPY         149 /* Alert-string */
+#define PPGLOBAL         149 /* Free String */
 
-#define AILLDEST         150 /* Alert-string */
+#define PPSUPER          150 /* Free String */
 
-#define ANOCOPY          151 /* Alert-string */
+#define PPREAD           151 /* Free String */
 
-#define ANODRAGP         152 /* Alert-string */
+#define PPSHARE          152 /* Free String */
 
-#define ANOPRINT         153 /* Alert-string */
+#define FSTLANY          153 /* Free String */
 
-#define AICNNFND         154 /* Alert-string */
+#define TDOPEN           154 /* Free String */
 
-#define APRNRESP         155 /* Alert-string */
+#define ALOADCFG         155 /* Alert-string */
 
-#define AERADISK         156 /* Alert-string */
+#define APRGNFND         156 /* Alert-string */
 
-#define AFMTERR          157 /* Alert-string */
+#define AAPPNFND         157 /* Alert-string */
 
-#define AERRACC          158 /* Alert-string */
+#define AILLCOPY         158 /* Alert-string */
 
-#define ALRTQUIT         159 /* Alert-string */
+#define AILLDEST         159 /* Alert-string */
 
-#define ADUPKEY          160 /* Alert-string */
+#define ANOCOPY          160 /* Alert-string */
 
-#define AABOOP           161 /* Alert-string */
+#define ANODRAGP         161 /* Alert-string */
 
-#define AGENALRT         162 /* Alert-string */
+#define ANOPRINT         162 /* Alert-string */
 
-#define AFILEDEF         163 /* Alert-string */
+#define APRNRESP         163 /* Alert-string */
 
-#define AGFALERT         164 /* Alert-string */
+#define AERADISK         164 /* Alert-string */
 
-#define AUNKRTYP         165 /* Alert-string */
+#define AFMTERR          165 /* Alert-string */
 
-#define AVALIDCF         166 /* Alert-string */
+#define AERRACC          166 /* Alert-string */
 
-#define ADUPFLG          167 /* Alert-string */
+#define ALRTQUIT         167 /* Alert-string */
 
-#define AWOPERR          168 /* Alert-string */
+#define ADUPKEY          168 /* Alert-string */
 
-#define ARESCH           169 /* Alert-string */
+#define AABOOP           169 /* Alert-string */
 
-#define AFABORT          170 /* Alert-string */
+#define AGENALRT         170 /* Alert-string */
 
-#define AQUERY           171 /* Alert-string */
+#define AFILEDEF         171 /* Alert-string */
+
+#define AGFALERT         172 /* Alert-string */
+
+#define AUNKRTYP         173 /* Alert-string */
+
+#define AVALIDCF         174 /* Alert-string */
+
+#define ADUPFLG          175 /* Alert-string */
+
+#define AWOPERR          176 /* Alert-string */
+
+#define ARESCH           177 /* Alert-string */
+
+#define AFABORT          178 /* Alert-string */
+
+#define AQUERY           179 /* Alert-string */
+
+#define AREMICNS         180 /* Alert-string */

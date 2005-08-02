@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -63,20 +63,16 @@
 #define WMINW 14 /* minimum window width (in character cell units) */
 #define WMINH 4	 /* minimum window height (in character cell units) */
 
-static boolean in_window(WINDOW *w, int x, int y);
-extern int appl_control(int ap_id, int what, void *out);
+extern boolean 
+	wd_sel_enable;
 
-void wd_printtext(WINDOW *w);
+extern int 
+	aes_wfunc,
+	aes_ctrl; /* this should probably be in xdialog.h */
 
-extern boolean wd_sel_enable;
-extern int aes_ctrl; /* this should probably be in xdialog.h */
-
-char floppy;
-boolean wclose = FALSE;
-
-SEL_INFO selection;
-
-extern FONT txt_font, dir_font;
+extern FONT 
+	txt_font, 
+	dir_font;
 
 extern WINFO 
 	textwindows[MAXWINDOWS],
@@ -86,6 +82,9 @@ extern RECT
 	dmax,		/* maximum window size */
 	tmax;		/* maximum window size */
 
+extern OBJECT 
+	*icons;
+
 #if _OVSCAN	
 extern long
 	over;		/* identification of overscan type */
@@ -93,24 +92,36 @@ extern int
 	ovrstat;	/* state of overscan */
 #endif
 
-static void desel_old(void);
+char 
+	floppy;
 
-extern OBJECT *icons;
-void icw_draw(WINDOW *w);
-RECT icwsize;
-extern int aes_wfunc;
+RECT 
+	icwsize;
 
 boolean 
+	wclose = FALSE,
 	can_touch,
 	can_iconify; 
 
 
-NEWSINFO1 thisw;
-SINFO2 that;
+SEL_INFO
+	selection;
 
-FONT *cfg_font;
+NEWSINFO1 
+	thisw;
 
+SINFO2 
+	that;
+
+FONT 
+	*cfg_font;
+
+extern int appl_control(int ap_id, int what, void *out);
+void wd_printtext(WINDOW *w);
+static void desel_old(void);
 static void wd_type_hndlmenu(WINDOW *w, int title, int item);
+static void icw_draw(WINDOW *w);
+static boolean in_window(WINDOW *w, int x, int y);
 
 WD_FUNC wd_type_functions =
 {
@@ -144,6 +155,8 @@ CfgEntry fnt_table[] =
 	{CFG_BEG},
 	{CFG_D,   0, "iden", &thisw.font.id		},
 	{CFG_D,   0, "size", &thisw.font.size	},
+	{CFG_D,   0, "fcol", &thisw.font.colour	},
+	{CFG_D,   0, "feff", &thisw.font.effects},
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -178,18 +191,20 @@ CfgEntry positions_table[] =
 
 CfgNest cfg_wdfont
 {
+	thisw.font.size = 0;
+
 	if ( io == CFG_SAVE )
-	{
-		thisw.font.id = cfg_font->id;
-		thisw.font.size = cfg_font->size;
-	}
+		thisw.font = *cfg_font;
 
 	*error = handle_cfg(file, fnt_table, lvl, CFGEMP, io, NULL, NULL );
 
 	if ( io == CFG_LOAD )
 	{
-		if ( (*error == 0) && thisw.font.size )
+		if ( (*error == 0) && thisw.font.size ) 
+		{
+			*cfg_font = thisw.font;
 			fnt_setfont(thisw.font.id, thisw.font.size, cfg_font);
+		}
 	}
 }
 
@@ -223,18 +238,18 @@ void moff_mouse(void)
 
 
 /*
- * Write window text in transparent mode
+ * Write window text in transparent mode at location (x,y)
  */
 
 void w_transptext( int x, int y, char *text)
 {
-	vswr_mode(vdi_handle, MD_TRANS); 
+	xd_vswr_trans_mode(); 
 	v_gtext(vdi_handle, x, y, text);
 }
 
 
 /*
- * Is an item some kind of a file (i.e. a file or a program?)
+ * Is a window item some kind of a file (i.e. a file or a program?)
  */
 
 boolean isfileprog(ITMTYPE type)
@@ -268,7 +283,7 @@ static void wrect_in_screen(RECT *info, boolean normalsize)
 
 	if (normalsize )
 	{	
-		/* Note: do not use max() here */
+		/* Note: do not use max() here, code would be longer */
 		
 		if (info->w < WMINW)
 			info->w = WMINW;
@@ -282,7 +297,7 @@ static void wrect_in_screen(RECT *info, boolean normalsize)
  * Check if a window is in the screen 
  */
 
-void wd_in_screen ( WINFO *info ) 
+void wd_in_screen( WINFO *info ) 
 {
 	boolean normalsize = TRUE;
 
@@ -345,12 +360,16 @@ CfgNest positions
 		for (i = 0; i < MAXWINDOWS; i++)
 		{
 			thisw.i = i;
+
 			memcpy(&thisw.x, &(w->x), s); /* copy all in one row */
 	
-			/* don't save iconified size of noniconified windows */
+			/* 
+			 * In order to save on size of configuration file,
+			 * don't save iconified size of noniconified windows 
+			 */
 
 			if (!(w->flags.iconified))
-				memset(&(thisw.ix), 0, sizeof(RECT)); 
+				memclr(&(thisw.ix), sizeof(RECT)); 
 
 			*error = CfgSave(file, positions_table, lvl, CFGEMP);
 
@@ -364,7 +383,7 @@ CfgNest positions
 	{
 		/* Load data... */
 
-		memset(&thisw.ix, 0, s);
+		memclr(&thisw.ix, s);
 
 		*error = CfgLoad(file, positions_table, MAX_KEYLEN, lvl);
 		
@@ -422,10 +441,9 @@ static void menu_checkone(int n, int obj, int i)
  * that there are exactly five sorting options. 
  */
 
-
 static void wd_set_sort(int type)
 {
-	int i = 1 - (type >>4);
+	int i = 1 - (type >> 4);
 	menu_checkone( 5, MSNAME, (type & ~WD_REVSORT) );
 	menu_checkone( 1, MREVS,  i);
 
@@ -434,15 +452,15 @@ static void wd_set_sort(int type)
 
 /* 
  * Check/mark (or otherwise) menu items for showing directory info fields 
- * It is assumed that these are in fixed order: MSHSIZ, MSHDAT, MSHTIM, MSHATT;
- * check it with order of WD_SHSIZ, WD_SHDAT, WD_SHTIM, WD_SHATT
+ * It is assumed that these are in fixed order: MSHSIZ, MSHDAT, MSHTIM, MSHATT, MSHOWN;
+ * check it with order of WD_SHSIZ, WD_SHDAT, WD_SHTIM, WD_SHATT, WD_SHOWN
  */
 
 static void wd_set_fields( int fields )
 {
 	int i;
 
-	for ( i = 0; i < 4; i++ )
+	for ( i = 0; i < 5; i++ )
 		menu_icheck(menu, MSHSIZ + i, ( (fields & (WD_SHSIZ << i) ) ? 1 : 0));
 }
 
@@ -466,7 +484,7 @@ static void wd_set_mode(int mode)
 
 
 /*
- * Count open windows
+ * Count open windows (text, directory or accessory)
  */
 
 int wd_wcount(void)
@@ -476,7 +494,8 @@ int wd_wcount(void)
 
 	while (h)
 	{
-		n++;
+		if (h->xw_type == DIR_WIND || h->xw_type == TEXT_WIND || h->xw_type == ACC_WIND)
+			n++;
 		h = h->xw_next;
 	}
 
@@ -486,16 +505,105 @@ int wd_wcount(void)
 
 /*
  * Note the first selected item in a window.
- * Attention: the list is deallocated here!
+ * Attention: the item list is deallocated here!
  */
 
-void wd_iselection(WINDOW *w, int *list, int n)
+void wd_iselection(WINDOW *w, int n, int *list)
 {
-	selection.w = (n > 0) ? w : NULL;
-	selection.selected = (n == 1) ? list[0] : -1;
-	selection.n = n;
+	selection.w = NULL;
+	selection.selected = -1;
+	selection.n = 0;
+
+	if(w)
+	{
+		if(n > 0)
+		{
+			selection.n = n;
+			selection.w = w;
+			if (n == 1)
+				selection.selected = list[0];
+		}
+	}
 	free(list);
 }
+
+
+#if _MINT_
+/* 
+ * Top the specified application
+ * This works without any open windows, but unfortunately
+ * not in all AESses. Will be ok in N.AES, XaAES, Magic 
+ */
+
+void wd_top_app(int apid)
+{
+	if(naes || aes_ctrl) 
+		appl_control(apid, 12, NULL);
+	else 
+		wind_set(-1, WF_TOP, apid);
+}
+#endif
+
+
+/*
+ * Save the id of the top window (code=0) or restore it (code=1).
+ * To be used when opening dialogs asked for by the clients of the 
+ * AV or the FONT protocol. This should prevent TeraDesk from remaining
+ * topped in a multitasking environment, after closing the dialog.
+ * Probably relevant only in multitasking environment.
+ * Note: this is not exactly right- if there are no open windows,
+ * problems may be encountered.
+ *
+ */
+
+#if _MINT_
+void wd_restoretop(int code, int *whandle, int *wap_id)
+{
+	int p2, p3, p4;
+
+	if(mint || geneva)
+	{
+		if(code == 0)
+		{
+			/* 
+			 * Memorize which window is currently topped 
+			 * Note: wind_get(, WF_TOP,...) is supposed to
+			 * return ap_id of the owner in p2, but this does not
+			 * seem to work, thence another call to get it.
+			 * If failed, set *wap_id to -1;
+			 */
+
+			*wap_id = -1;
+/* maybe there is no need ???
+			if((aes_wfunc & 17) == 17) /* WF_TOP and WF_OWNER supported ? */ 
+*/
+				if(wind_get(0, WF_TOP, whandle, &p2, &p3, &p4))
+					if(!wind_get( *whandle, WF_OWNER, wap_id, &p2, &p3, &p4))
+						*wap_id = -1;
+		}
+		else
+		{
+			/* 
+			 * Send a message to top the memorized window, but 
+			 * do not send to itself- TeraDesk is already topped
+			 * Do this only if data are valid.
+			 */
+
+			if (*wap_id >= 0 && *wap_id != ap_id)
+			{
+				WINDOW w;
+				w.xw_handle = *whandle;
+				w.xw_ap_id = *wap_id;
+				xw_send(&w, WM_TOPPED);
+			}
+
+			/* Just in case... */
+
+			wd_top_app(av_current);
+		}
+	}
+}
+#endif
 
 /********************************************************************
  *																	*
@@ -516,18 +624,16 @@ void itm_set_menu(WINDOW *w)
 		*wtop;				/* pointer to top window */
 
 	int 
+		topicf = 0,			/* nonzero if top window is iconified */
 		n = 0,				/* number of selected items */
 	    *list = NULL,		/* pointer to a list of selected items */
-		wtype = 0,			/* type of selection window */
 		wtoptype = 0,		/* type of the topped window */
 		nwin = 0,			/* number of open windows */
 	    i = 0;				/* counter */
 
 	boolean 
 		nonsel,				/* true if nothing selected and dir/text topped */
-		topicf = FALSE,		/* true if top window is iconified */
 		showinfo = FALSE,	/* true if show info is enabled */
-	    ch_icon = FALSE,	/* true if chenge icon is enabled */
 	    enab = FALSE,		/* flag for enabling diverse options */
 	    enab2 = FALSE;		/* flag for enabling diverse options */
 
@@ -541,27 +647,24 @@ void itm_set_menu(WINDOW *w)
 
 	/*
 	 * Does this (selection) window exist at all, and is there a list 
-	 * of selected items? Beware: it is possible that 'n' and 'list' do -not- 
-	 * be initialized here at all! (if the condition becomes false sooner)
+	 * of selected items? If the window does not exist, locally zero
+	 * the pointer to it.
 	 */
 
-	if (w == NULL || xw_exist(w) == FALSE || itm_list(w, &n, &list) == FALSE)
+	if(!itm_list(w, &n, &list))
 		w = NULL;
 
 	/* 
-	 * Find out the types of this (selection) window and the top window.
-	 * Also find if these windows are iconified and how many exist
+	 * Find out the type of the top window.
+	 * Also find if windows are iconified and how many exist
 	 */
-
-	if (w)
-		wtype = xw_type(w);
 
 	wtop = xw_top();
 
 	if ( wtop )
 	{
 		wtoptype = xw_type(wtop);
-		topicf =  (can_iconify) ? wtop->xw_iflag : FALSE; 
+		topicf =  (can_iconify) ? (wtop->xw_xflags & XWF_ICN) : 0; 
 	}
 
 	nwin = wd_wcount();
@@ -569,23 +672,20 @@ void itm_set_menu(WINDOW *w)
 
 	/*
 	 * Scan the list of selected items. If any of them is NOT a printer,
-	 * trashcan or parent dir, enable show info and change icon.
+	 * trashcan or parent dir, enable show info.
 	 * In fact this enables change icon always?
 	 * What remains: ITM_FILE, ITM_PROGRAM, ITM_DRIVE, ITM_LINK, ITM_NOTUSED
 	 */
 
-	while ( (i < n) &&  !( showinfo || ch_icon ) )
+	while(i < n)
 	{
 		type = itm_type(w, list[i++]);
-		if 
-		(
-			(type != ITM_PRINTER) && 
-		    (type != ITM_TRASH) && 
-		    (type != ITM_PREVDIR)
-		)
-			showinfo = TRUE;
 
-		ch_icon = TRUE;
+		if (!trash_or_print(type) && (type != ITM_PREVDIR))
+		{
+			showinfo = TRUE;
+			break;
+		}
 	}
 
 	/* 
@@ -603,10 +703,7 @@ void itm_set_menu(WINDOW *w)
 	}
 
 	menu_ienable(menu, MSHOWINF, showinfo);
-
-	/* Enable search only if show info is enabled and something is selected */
-
-	menu_ienable(menu, MSEARCH, (showinfo && (n > 0) ) ? 1 : 0);
+	menu_ienable(menu, MSEARCH, showinfo);
 
 	/* 
 	 * New dir is OK only if a dir window is topped and not iconified, 
@@ -702,6 +799,7 @@ void itm_set_menu(WINDOW *w)
 
 	menu_ienable(menu, MCLOSE, nwin);
 	menu_ienable(menu, MCLOSEW, nwin);
+	menu_ienable(menu, MCLOSALL, nwin);
 
 	/* Enable duplication of dir and text windows */
 
@@ -742,7 +840,7 @@ void itm_set_menu(WINDOW *w)
 		char *fullname = itm_fullname ( w, list[0] );
 		strsncpy ( drive, fullname , sizeof(drive) );
 		free(fullname);
-		drive[0] &= 0xDF; /* to uppercase */
+		drive[0] &= 0x5F; /* to uppercase */
 		if (   ( drive[0] >= 'A' )
 		    && ( drive[0] <= 'B' )
 		    && ( drive[1] == ':' )
@@ -760,13 +858,9 @@ void itm_set_menu(WINDOW *w)
 	menu_ienable(menu, MFFORMAT, enab );
 #endif
 
-	/* Enable removal of desk icons */
+	/* Notify the first selected item */
 
-	menu_ienable(menu, MREMICON, ((ch_icon) && (wtype == DESK_WIND)) ? 1 : 0 );
-
-	/* How many items were selected */
-
-	wd_iselection(w, list, n);
+	wd_iselection(w, n, list); /* attention: list deallocated */
 }
 
 
@@ -777,14 +871,10 @@ void itm_set_menu(WINDOW *w)
 
 void wd_setselection(WINDOW *w)
 {
-	int
-		n,
-		*list = NULL;
+	int n, *list;
 
-	if ( w == NULL || xw_exist(w) == FALSE || itm_list(w, &n, &list) == FALSE )
-		n = 0;
-
-	wd_iselection(w, list, n);
+	itm_list(w, &n, &list);		/* note: allocate list, or set to null */
+	wd_iselection(w, n, list);	/* note: deallocate list */
 }
 
 
@@ -806,8 +896,11 @@ void wd_deselect_all(void)
 	}
 
 	((ITM_WINDOW *) desk_window)->itm_func->itm_select(desk_window, -1, 0, TRUE);
-	wd_setselection(NULL); 
-}
+	wd_setselection(NULL);
+
+	selection.w = NULL;
+	selection.n = 0;
+ }
 
 
 /* 
@@ -922,10 +1015,10 @@ void wd_update_drv(int drive)
 
 	while (w)
 	{
-		thefunc = ((ITM_WINDOW *)w)->itm_func;
-
 		if (xw_type(w) == DIR_WIND)
 		{
+			thefunc = ((ITM_WINDOW *)w)->itm_func;
+
 			if (drive == -1)
 				/* update all */
 				thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
@@ -933,19 +1026,17 @@ void wd_update_drv(int drive)
 			{			
 				const char *path = thefunc->wd_path(w);
 
-				boolean goodpath = (((path[0] & 0xDF - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
+				boolean goodpath = (((path[0] & 0x5F - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
 #if _MINT_
 				if (mint)
 				{
-					/* What about drives V, W, X, Y, Z below ??? */
-
-					if ((drive == ('U' - 'A')) && goodpath )
+					if ((drive == ('U' - 'A')) && goodpath ) /* this is for U drive */
 						thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
 					else
 					{
 						XATTR attr;
-	
-						if ((x_attr(0, path, &attr) == 0) && (attr.dev == drive)) /* follow the link */
+
+						if ((x_attr(0, FS_LFN, path, &attr) == 0) && (attr.dev == drive)) /* follow the link */
 							thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
 					}
 				}
@@ -966,14 +1057,17 @@ void wd_update_drv(int drive)
 
 
 /*
- * Close a directory, text or accessory window
+ * Close a directory, text or accessory window.
+ * Note: take cara not to attempt to use it on desk window
  */
 
 void wd_type_close( WINDOW *w, int mode)
 {
+	int wt = xw_type(w);
+
 	/* Act according to window type */
 
-	if (xw_type(w) == ACC_WIND)
+	if (wt == ACC_WIND)
 		va_close(w);
 	else
 	{
@@ -982,7 +1076,7 @@ void wd_type_close( WINDOW *w, int mode)
 		if (!wclose)
 			((TYP_WINDOW *)w)->winfo->flags.fulled = 0;
 
-		if (xw_type(w) == TEXT_WIND)
+		if (wt == TEXT_WIND)
 			txt_closed(w);
 		else
 			dir_close(w, mode);
@@ -1007,15 +1101,14 @@ static void wd_type_hndlmenu(WINDOW *w, int title, int item)
 
 void wd_del_all(void)
 {
-	WINDOW *w = xw_last();
+	WINDOW *prev, *w = xw_last();
 
 	while (w)
 	{
+		prev = w->xw_prev;
 		if ( w->xw_type != ACC_WIND )
-		{
-			wd_type_close(w, 1);
-			w = w->xw_prev;
-		}
+			wd_type_close(w, 1);		
+		w = prev;
 	}
 }
 
@@ -1073,7 +1166,10 @@ static void wd_mode(int mode)
 								
 				if ( mode )	
 				{
-					/* This can take a long time, change mouse form to busy */
+					/* 
+					 * Icon mode; find appropriate icons.
+					 * This can take a long time, change mouse form to busy 
+					 */
 
 					hourglass_mouse();
 					dw = (DIR_WINDOW *)w;
@@ -1081,7 +1177,7 @@ static void wd_mode(int mode)
 					for ( i = 0; i < dw->nfiles; i++ )
 					{
 						NDTA *d = (*dw->buffer)[i];
-						d->icon = icnt_geticon( d->name, d->tgt_type, d->link );
+						d->icon = icnt_geticon( d->name, d->item_type, d->tgt_type, d->link );
 					}
 
 					arrow_mouse();
@@ -1122,7 +1218,7 @@ static void wd_arr(void)
 
 		if ( xw_type(w) == DIR_WIND )
 			dir_disp_mode(w);
-		w = xw_next(w);
+		w = w->xw_next;
 	}
 }
 
@@ -1224,26 +1320,35 @@ static void wd_printtext(WINDOW *w)
  * Handle some of the main menu activities 
  * (the rest is covered in main.c).
  * Checking of window existence is not needed in some cases, because
- * those menu items would have been already disabled otherwise 
+ * those menu items would have been already disabled otherwise.
+ * See itm_set_menu()
  */
 
 void wd_hndlmenu(int item, int keystate)
 {
+
+	ITMTYPE 
+		itype = ITM_NOTUSED;
+
 	WINDOW 
 		*w, 			/* pointer to the window in which a selection is made */
+		*ww,			/* pointer a real or simulated window to search in or show info of */
 		*wtop;			/* pointer to the top window */
 
 	int 
+		i,				/* aux. counter */
 		n = 0,			/* number of items selected */ 
 		*list = NULL,	/* pointer to a list of selected items indices */
-		wtoptype = 0, 	/* type of the top window */
-		object;			/* object index */
+		wtoptype = 0; 	/* type of the top window */
 
-	char
+	char			
+		*thename = NULL,
 		*thepath = NULL,/* aux. path */
 		*toppath = NULL;/* path of the topped window */
 
+
 	w = selection.w;
+	ww = w;
 
 	/* Take the opportunity to update window order */
 
@@ -1256,35 +1361,71 @@ void wd_hndlmenu(int item, int keystate)
 	switch (item)
 	{
 	case MOPEN:
-		object = selection.selected;
-		if (w && (object >= 0))
+		if(itm_list(w, &n, &list))
 		{
-			if (itm_open(w, object, keystate))
-				itm_select(w, object, 2, TRUE);
-			wd_setselection(w); 
+			int k, delayt;
+			ITMTYPE it;
+
+			for(i = 0; i < n; i++ )
+			{
+				delayt = 0;
+				k = keystate;
+				it = itm_type(w, list[i]);
+
+				/* Provision for multiple openings... */
+
+				if (n > 1)
+				{
+					wd_drawall();
+
+					if(it == ITM_FOLDER || it == ITM_DRIVE || it == ITM_PREVDIR)
+						k |= K_ALT; /* open directories in new windows */
+					else if (it != ITM_FILE || app_find(itm_name(w, list[i])) != NULL )
+						delayt = 2000; /* a program or a file assigned to a program */
+				}
+
+				if (itm_open(w, list[i], k))
+				{
+					/* 
+					 * In single-TOS, can't deselect after a program
+					 * because windows will have been reopened
+					 */
+
+					if(selection.w)
+						itm_select(w, list[i], 2, TRUE); /* deselect this item */
+				}
+
+				/* Wait some time for programs to settle */
+
+				wait(delayt);
+			}
 		}
 		else
 			item_open( NULL, 0, 0, NULL, NULL );	/* If nothing else is selected, open form to enter item specification */
+
 		break;
 	case MSHOWINF:
+	case MSEARCH:
 	{
-		WINDOW *ww = NULL;
-		char *thename; 
-
-		if ( w )
-			ww = w;
-		else
+		if ( w == NULL )
 		{
-			/* Nothing is selected, info on the top window  */
+			/* Nothing is selected, info on the disk of the top window  */
 
-			ITMTYPE itype = ITM_NOTUSED;
 			const char *thisname;
 
  			if ( wtoptype == DIR_WIND )
 			{			
 				if ( (thepath = strdup(wd_toppath()) ) != NULL )
 				{
-					thepath[3] = 0;
+					/* 
+					 * Note: if the next line is removed, and
+					 * item type is set to ITM_FOLDER, then
+					 * info on the current directory will be shown
+					 * instead on the drive
+					 */
+
+					if(item == MSHOWINF)
+						thepath[3] = 0;
 					thename = ".";
 					itype = ITM_DRIVE;
 				}
@@ -1303,9 +1444,12 @@ void wd_hndlmenu(int item, int keystate)
 			if ( itype )
 				dir_simw(&((DIR_WINDOW *)ww), thepath, thename, itype, 0, 0);
 		}
-		
-		if ( ww && itm_list(ww, &n, &list) )
-			((ITM_WINDOW *)ww)->itm_func->itm_showinfo(ww, n, list, NULL);
+
+		if(itm_list(ww, &n, &list))
+		{
+			if ( item == MSHOWINF || !app_specstart( AT_SRCH, ww, list, n, 0 ) )
+				item_showinfo(ww, n, list, (item == MSHOWINF) ? FALSE : TRUE);
+		}
 
 		free(thepath);
 	}
@@ -1316,23 +1460,20 @@ void wd_hndlmenu(int item, int keystate)
 		if 
 		(
 			mint && 
-			(w != NULL) && 
 			(itm_list(w, &n, &list)) && 
 			(n == 1) &&
 			(wtoptype == DIR_WIND) &&
-			(((DIR_WINDOW *)wtop)->fs_type == 0)
+			((( (DIR_WINDOW *)wtop)->fs_type & FS_LNK) != 0)
 		)
 		{
 			/*
 			 * Create a link.
-			 * It is assumed here that if fs is not TOS, links can always
-			 * be created in it- which in fact may not always be true!!!
 			 * Note: with a change in dir_newlink and the resource file
 			 * (add Abort & Skip buttons) this can easily be modified
 			 * to handle more than one item at a time.
 			 */
 
-			if ( (thepath == itm_fullname(w, list[0])) != NULL)
+			if ( (thepath = itm_fullname(w, list[0])) != NULL)
 			{
 				dir_newlink(wtop, thepath);
 				free(thepath);
@@ -1345,17 +1486,9 @@ void wd_hndlmenu(int item, int keystate)
 			if ( n == 0 && wtoptype == DIR_WIND )
 				dir_newfolder(wtop);
 		break;
-	case MSEARCH:
-		if (itm_list(w, &n, &list))
-		{
-			if ( !app_specstart( AT_SRCH, w, list, n, 0 ) )
-				((ITM_WINDOW *) w)->itm_func->itm_showinfo(w, n, list, TRUE);
-		}
-		break;
 	case MCOMPARE:
-		if (w && xw_exist(w))
-			itm_list(w, &n, &list);
-		compare_files(w, n, list); /* Only items #0 and #1 */
+		itm_list(w, &n, &list);
+		compare_files(w, n, list); /* Only items #0 and #1 from the list */
 		break;
 	case MDELETE:
 		if (itm_list(w, &n, &list))
@@ -1363,11 +1496,10 @@ void wd_hndlmenu(int item, int keystate)
 		break;
 	case MPRINT:
 		printmode = PM_TXT;
-		if (w)
+		if (itm_list(w, &n, &list))
 		{
-			if (itm_list(w, &n, &list))
-				/* Print selected items */
-				itmlist_op(w, n, list, NULL, CMD_PRINT);
+			/* Print selected items */
+			itmlist_op(w, n, list, NULL, CMD_PRINT);
 		}
 		else if ( wtop )
 		{
@@ -1428,16 +1560,28 @@ void wd_hndlmenu(int item, int keystate)
 		options.sort ^= WD_REVSORT;
 		wd_sort(options.sort);
 		break;
-	case MSHSIZ: /* now beware of the order of cases vs flag values */
+	case MSHSIZ: /* beware of the order of cases vs flag values */
 	case MSHDAT:
 	case MSHTIM:
 	case MSHATT:
+	case MSHOWN:
 		options.fields ^= (WD_SHSIZ << (item - MSHSIZ));
 		wd_fields();
 		break;
 	case MCLOSE:
+		i = 0;
+		goto closeit;
 	case MCLOSEW:
-		wd_type_close(wtop, (item == MCLOSEW) ? 1 : 0 );
+	case MCLOSALL:
+		i = 1;
+		closeit:;
+		while(wtop && (xw_type(wtop) != DESK_WIND))
+		{
+			wd_type_close(wtop, i);
+			if (item != MCLOSALL)
+				break;
+			wtop = xw_top();
+		}
 		break;
 	case MDUPLIC:
 		toppath = strdup(wd_path(wtop));
@@ -1459,7 +1603,20 @@ void wd_hndlmenu(int item, int keystate)
 		break;
 	case MCYCLE:
 		xw_cycle();
-		break;         
+		break;     
+	case MIDSKICN:
+		itm_list(w, &n, &list); /* any items selected ? */
+
+		if(n > 0 && w->xw_type == DESK_WIND)
+			dsk_chngicon(n, list, TRUE);
+		else 
+			dsk_insticon(w, n, list);
+
+		break;
+
+	case MIWDICN:
+		icnt_settypes();
+		break;
 	}
 
 	free(list);
@@ -1473,6 +1630,60 @@ void wd_hndlmenu(int item, int keystate)
  *																	*
  ********************************************************************/
 
+extern FONT dir_font;
+extern FONT txt_font;
+
+/*
+ * Create some reasonable default window sizes and positions.
+ * Each new window of a type will generally be located a little bit
+ * to the right and down.
+ */
+
+static void wd_defsize(int type)
+{
+	WINFO *wi;
+	int i;
+
+	for (i = 0; i < MAXWINDOWS; i++)
+	{
+		int x0, x1, y0, y1, w1, w2, w3, h1, h2;
+
+		if (type == TEXT_WIND)
+		{
+			wi = &textwindows[i];
+			txt_font = def_font;
+			x0 = 16;
+			x1 = i;
+			y0 = 8;
+			y1 = i * 2;
+			w1 = 7;
+			w3 = i + i % 2;
+			h1 = 4;
+		}
+		else
+		{
+			wi = &dirwindows[i];
+			dir_font = def_font;
+			x0 = 64;
+			x1 = i * 2;
+			y0 = 20;
+			y1 = i; 
+			w1 = 5;
+			w3 = i * 2;
+			h1 = 5;
+		}
+
+		w2 = 10;
+		h2 = 10;
+
+		wi->x = x0 + x1 * screen_info.fnt_w + screen_info.dsk.x;
+		wi->y = y0 + y1 * screen_info.fnt_h + screen_info.dsk.y;
+		wi->w = screen_info.dsk.w * w1 / (w2 * screen_info.fnt_w) + w3; 	/* in char cell units */
+		wi->h = screen_info.dsk.h  * h1 / (h2 * screen_info.fnt_h);			/* in char cell units */
+	}
+}
+
+
 void wd_default(void)
 {
 	wd_deselect_all();
@@ -1482,13 +1693,13 @@ void wd_default(void)
 	wd_set_sort(options.sort);
 	menu_icheck(menu, MAARNG, (int)options.aarr);
 	wd_set_fields(options.fields);
-
-	dir_default();
-	txt_default();
+	wd_defsize(TEXT_WIND);
+	wd_defsize(DIR_WIND);
 }
 
+
 /* 
- * Determine maximum window sizes
+ * Determine maximum permitted window sizes
  */
 
 void wd_sizes(void)
@@ -1528,6 +1739,13 @@ void wd_sizes(void)
 }
 
 
+void wd_noselection(void)
+{
+	selection.w = NULL;
+	selection.selected = -1;
+	selection.n = 0;
+}
+
 /*
  * Initialize windows data
  */
@@ -1536,9 +1754,7 @@ void wd_init(void)
 {
 	/* Nothing is selected */
 
-	selection.w = NULL;
-	selection.selected = -1;
-	selection.n = 0;
+	wd_noselection();
 
 	/* Determine default windows sizes */
 
@@ -1556,8 +1772,6 @@ void wd_init(void)
 boolean wd_type_setfont(int title)
 {
 	int 
-		oldid,		/* id. of font before change */
-		oldsize,	/* size of font before change */
 		i;			/* counter */
 
 	RECT 
@@ -1578,10 +1792,7 @@ boolean wd_type_setfont(int title)
 		wd = &textwindows[0];
 	}
 
-	oldid = the_font->id;
-	oldsize = the_font->size;
-
-	if ( fnt_dialog(title, the_font, FALSE) && (the_font->id != oldid || the_font->size != oldsize) )
+	if ( fnt_dialog(title, the_font, FALSE) )
 	{
 		for (i = 0; i < MAXWINDOWS; i++)
 		{
@@ -1709,7 +1920,7 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork)
 	if ( work.h > dtmax->h)
 		work.h = dtmax->h;
 
-	if ( !(w->xw_iflag) )
+	if ( (w->xw_xflags & XWF_ICN) == 0 )
 	{
 		work.w = max(work.w, WMINW * fw);
 		work.h = max(work.h, WMINH * fh);
@@ -1759,7 +1970,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 		iswork = FALSE;
 
 	int 
-		ch, cw, ll;
+		ch, cw;
 
 
 	if ( wtype == TEXT_WIND )
@@ -1780,7 +1991,8 @@ void wd_calcsize(WINFO *w, RECT *size)
 	{
 		/* Adjust size of a fulled window- no more than needed */
 
-		ll = tw->nlines;
+		long ll = tw->nlines;
+
 		iswork = TRUE;
 
 		/* 
@@ -1805,7 +2017,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 			/* 
 			 * Add some empty lines to fulled directory directory windows
 			 * This will make draging of items into windows more comfortable. 
-			 * Add two lines in text mode, or one icon row.
+			 * Add two lines in text mode, or one row in icons mode.
 			 */
 
 			if (wtype == DIR_WIND)
@@ -1818,7 +2030,9 @@ void wd_calcsize(WINFO *w, RECT *size)
 				}
 			}
 
-			def.h = ll * ch;
+			/* Window outside size must not exceed max integer */
+
+			def.h = lmin(32700, ll * ch);
 		}
 
 		wd_wsize(tw, &def, size, iswork);
@@ -1872,6 +2086,7 @@ int wd_checkcreate(int errcode)
 
 	return error;
 }
+
 
 /* 
  * Merge of txt_redraw and do_redraw functions for text and dir windows 
@@ -1974,9 +2189,9 @@ void wd_type_draw(TYP_WINDOW *w, boolean message)
 {
 	RECT area;
 
-	xw_getsize((WINDOW *) w, &area);
+	xw_getsize((WINDOW *)w, &area);
 	if (message)
-		xw_send_redraw((WINDOW *) w, &area);
+		xw_send_redraw((WINDOW *)w, &area);
 	else
 		wd_type_redraw((WINDOW *) w, &area);
 }
@@ -2014,7 +2229,7 @@ void wd_drawall(void)
 
 
 /*
- * Button event handler voor tekst & dir windows.
+ * Button event handler for tekst & dir windows.
  *
  * Parameters:
  *
@@ -2028,14 +2243,13 @@ void wd_drawall(void)
 
 void wd_type_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate)
 {
-	if ( xw_type(w) == TEXT_WIND )
-		return;
-	wd_hndlbutton(w, x, y, n, button_state, keystate);
+	if ( xw_type(w) == DIR_WIND )
+		wd_hndlbutton(w, x, y, n, button_state, keystate);
 }
 
 
 /* 
- * Window topped handler for dir and textwindow 
+ * Window topped handler for dir and text window 
  */
 
 void wd_type_topped (WINDOW *w)
@@ -2051,15 +2265,49 @@ void wd_type_bottomed(WINDOW *w)
 
 
 /*
- * Set window title
+ * Set window title. For the sake of size optimization, 
+ * also set window sliders.
  */
 
-void wd_type_title(WINDOW *w)
+void wd_type_title(TYP_WINDOW *w)
 {
-	if (xw_type(w) == TEXT_WIND )
-		txt_title( (TXT_WINDOW *)w );
+	int d, columns;
+	char *fulltitle;
+
+	if(xd_aes4_0)
+	{
+		/* 
+		 * aes_hor3d is usually either 0 or 2 pixels;
+		 * line below increases d by about 1 character if there is nonzero
+		 * aes_hor3d
+		 */
+
+		d = 5 + aes_hor3d / 2;
+	}
 	else
-		dir_title( (DIR_WINDOW *)w );
+	{
+		/* For old single-TOS AES this is always sufficient */
+
+		d = 3;
+	}
+
+	/* Calculate available title width (in characters) */
+
+	columns = min( w->scolumns - d, (int)sizeof(w->title) );
+
+	if(xw_type(w) == TEXT_WIND)
+		fulltitle = strdup(((TXT_WINDOW *)w)->name);
+	else
+		fulltitle = fn_make_path(((DIR_WINDOW *)w)->path, ((DIR_WINDOW *)w)->fspec);
+
+	/* Set window */
+
+	if(fulltitle)
+		cramped_name(fulltitle, w->title, columns);
+
+	free(fulltitle);
+	xw_set((WINDOW *)w, WF_NAME, w->title);
+	set_sliders(w);
 }
 
 
@@ -2075,7 +2323,6 @@ void wd_type_title(WINDOW *w)
 void wd_type_fulled(WINDOW *w, int mbshift)
 {
 	WINFO *winfo = ((TYP_WINDOW *)w)->winfo; 
-
 	boolean f = (( mbshift & ( 0x03 ) ) != 0 );
 
 
@@ -2095,9 +2342,9 @@ void wd_type_fulled(WINDOW *w, int mbshift)
 
 	wd_adapt(w);
 
-	/* Set window title, depending on available window width */
+	/* Set window title (and sliders), depending on window size */
 
-	wd_type_title(w);
+	wd_type_title((TYP_WINDOW *)w);
 }
 
 
@@ -2229,7 +2476,9 @@ void wd_type_moved(WINDOW *w, RECT *newpos)
 
 void wd_type_sized(WINDOW *w, RECT *newsize)
 {
-	RECT area;
+	RECT 
+		area;
+
 	int 
 		dc,
 		old_w, 
@@ -2262,8 +2511,7 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 			wd_type_draw((TYP_WINDOW *) w, TRUE);
 	}
 
-	wd_type_title(w);
-	set_sliders((TYP_WINDOW *)w);
+	wd_type_title((TYP_WINDOW *)w);
 }
 
 
@@ -2605,7 +2853,7 @@ void w_scroll(TYP_WINDOW *w, int type)
 
 	moff_mouse();
 
-	set_txt_default(the_font->id, the_font->size);
+	set_txt_default(the_font);
 
 	/* Traverse all rectangles */
 
@@ -2657,7 +2905,6 @@ void w_scroll(TYP_WINDOW *w, int type)
 					nc++;
 			}
 
-
 			/* 
 			 * Part of the window which is not scrolled out
 			 * is moved by the right amount in the appropriate direction
@@ -2705,18 +2952,23 @@ void w_scroll(TYP_WINDOW *w, int type)
 
 
 /*
- * Adapt window size, e.g. when fulled or with resolution change
+ * Adapt window size, e.g. when fulled or with resolution change.
+ * Return TRUE if adaptation performed (correct window type)
+ * if returned TRUE, routine set_sliders() should be called next.
  */
 
-void wd_adapt(WINDOW *w)
+boolean wd_adapt(WINDOW *w)
 {
 	RECT size;
-	if (xw_type(w) != ACC_WIND )
+
+	if (xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND)
 	{
 		wd_calcsize(((TYP_WINDOW *) w)->winfo, &size);
 		xw_setsize(w, &size);
-		set_sliders((TYP_WINDOW *)w); 
+		return TRUE;
 	}
+	
+	return FALSE;
 }
 
 
@@ -2797,7 +3049,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		if ( wt == DIR_WIND )
 		{
 			force_mediach(((DIR_WINDOW *) w)->path);
-			dir_refresh_wd((DIR_WINDOW *) w);
+			dir_refresh_wd((DIR_WINDOW *)w);
 		}
 		else
 		{
@@ -2934,11 +3186,12 @@ CfgNest open_config
 {
 	WINDOW *w;
 
+/* there is no need, after all
 
 	/* VA-client ACC windows would spoil the sequece, remove them now */
 
 	va_delall(-1);
-
+*/
 	w = xw_last();
 	*error = 0;
 
@@ -2964,8 +3217,6 @@ CfgNest open_config
 					default:
 						break;
 				}
-
-				/* There will be no acc windows by now */
 
 				if (wclose)
 					wd_type_close(w, 1);
@@ -3003,11 +3254,14 @@ boolean wd_tmpcls(void)
 {
 	int error;
 
-	/* Deselect anything that was selected in windows */
+	/* 
+	 * Deselect anything that was selected in windows. 
+	 * This will also set selection.w to NULL and selection.n to 0
+	 */
 
 	wd_deselect_all();
 
-	/* Attemptt to open a 'memory file' (set level-1 here) */
+	/* Attempt to open a 'memory file' (set level-1 here) */
 
 	if ((mem_file = x_fmemopen(O_DENYRW | O_RDWR, &error)) != NULL)
 	{
@@ -3021,7 +3275,7 @@ boolean wd_tmpcls(void)
 	 * open for later rereading
 	 */
 
-	if (error != 0) 
+	if (error < 0) 
 	{
 		if (mem_file != NULL)
 			x_fclose(mem_file);
@@ -3044,19 +3298,20 @@ extern int chklevel;
 
 void wd_reopen(void)
 {
-	int error;
-	long offset;
+	int error = EINVFN;
 
 	chklevel = 0;
 
 	/* Rewind the "file", then read from it (use level -1 here) */
 
-	if ((offset = x_fseek(mem_file, 0L, 0)) >= 0)
+	if(mem_file)
+	{
+		mem_file->read = 0;
 		error = CfgLoad(mem_file, reopen_table, MAX_KEYLEN, -1); 
-	else
-		error = (int) offset;
 
-	x_fclose(mem_file);
+		x_fclose(mem_file);
+	}
+
 	xform_error(error); /* will ignore error >= 0 */
 }
 
@@ -3092,6 +3347,7 @@ boolean itm_state(WINDOW *w, int item)
  * (because this routine may be called for text windows in itm_set_menu)
  */
 
+
 ITMTYPE itm_type(WINDOW *w, int item)
 {
 	ITMTYPE type;
@@ -3101,15 +3357,16 @@ ITMTYPE itm_type(WINDOW *w, int item)
 
 	type = (((ITM_WINDOW *) w)->itm_func->itm_type) (w, item);
 
+/* no need anymore ?
 	if ((type == ITM_FILE) && prg_isprogram(itm_name(w, item)))
 		type = ITM_PROGRAM;
-
+*/
 	return type;
 }
 
 
 /*
- * Deternine the type of an item in a dirextory window, but if
+ * Determine the type of an item in a window, but if
  * the item is a link, follow it to the target
  */
 
@@ -3117,21 +3374,32 @@ ITMTYPE itm_tgttype(WINDOW *w, int item)
 {
 	ITMTYPE 
 		type;
-	
+/* not needed all of this ?	
 	char
 		*name, 
-		*tgtname = NULL;
+		*tgtname /* not needed = NULL */;
+*/
 
 	if ( xw_type(w) == TEXT_WIND )
 		return ITM_NOTUSED;
 
 	type = (((ITM_WINDOW *) w)->itm_func->itm_tgttype) (w, item);
 
+/* maybe not needed either ?
+
 	if ( itm_islink(w, item, FALSE) )
 	{
 		tgtname = itm_tgtname(w, item);
 		name = fn_get_name((const char *)tgtname);
+
+		if ((type == ITM_FILE) && prg_isprogram((const char *)name))
+			type = ITM_PROGRAM;
+
+		free(tgtname);
 	}
+*/
+
+/* not needed anymore
 	else
 		name = (char *)itm_name(w, item);
 
@@ -3139,6 +3407,8 @@ ITMTYPE itm_tgttype(WINDOW *w, int item)
 		type = ITM_PROGRAM;
 
 	free(tgtname);
+*/
+
 	return type;
 }
 
@@ -3189,8 +3459,8 @@ char *itm_tgtname(WINDOW *w, int item)
 #if _MINT_
 	if ( itm_islink(w, item, FALSE) )
 	{
-		thename = x_fllink(fullname);
-		free(fullname);
+		thename = x_fllink(fullname); 	/* allocate new space */
+		free(fullname);					/* free old space */
 	}
 	else
 #endif
@@ -3237,6 +3507,14 @@ boolean itm_open(WINDOW *w, int item, int kstate)
 	return (((ITM_WINDOW *) w)->itm_func->itm_open) (w, item, kstate);
 }
 
+/*
+ * Funktie voor het selecteren van een item in een window.
+ * mode = 0: selecteer selected en deselecteer de rest.
+ * mode = 1: inverteer de status van selected.
+ * mode = 2: deselecteer selected.
+ * mode = 3: selecteer selected.
+ * mode = 4: select all  
+ */
 
 void itm_select(WINDOW *w, int selected, int mode, boolean draw)
 {
@@ -3263,12 +3541,20 @@ boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, 
  * Return a list of items selected in a window.
  * This routine will return FALSE and a NULL list pointer
  * if no list has been created.
- * If list acclocaton fails, an alert will be generated.
+ * If list allocation fails, an alert will be generated.
+ * Note: XWF_SIM flag is set in dir_simw() to mark a simulated window;
+ * it is checked here because xw_exist does not recognize
+ * simulated windows
  */
 
 boolean itm_list(WINDOW *w, int *n, int **list)
 {
-	if (xw_type(w) == TEXT_WIND)
+	if
+	(
+		w == NULL || 
+		(!xw_exist(w) && (w->xw_xflags & XWF_SIM) == 0) || 
+		xw_type(w) == TEXT_WIND
+	)
 	{
 		*list = NULL;
 		*n = 0;
@@ -3295,10 +3581,17 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 		if ((dobject != -1) && (itm_tgttype(dw, dobject) == ITM_FILE))
 			dobject = -1;
 
-		/* Perform window-type-specific item-copy operation */
+		/* 
+		 * Perform window-type-specific item-copy operation.
+		 * Beware that a deselection after the operation can not be done
+		 * if the windows have been closed meanwhile, as in single-TOS
+		 * when starting a program by copying/dragging objects to it.
+		 * If windows have been closed, selection.w is NULL
+		 */
 
 		if (((ITM_WINDOW *)dw)->itm_func->itm_copy(dw, dobject, sw, n, list, icnlist, x, y, kstate))
-			itm_select(sw, -1, 0, va_reply ? FALSE : TRUE);
+			if(selection.w)
+				itm_select(sw, -1, 0, va_reply ? FALSE : TRUE);
 
 		return TRUE;
 	}
@@ -3311,7 +3604,8 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 
 
 /* 
- * Drag & drop items from a list onto a window at position x,y.
+ * Drag & drop items from a list onto a window at position x,y,
+ * using the drag & drop protocol
  */
 
 static boolean itm_drop
@@ -3381,7 +3675,7 @@ static boolean itm_drop
 
 			/* Will the recepient accept data ? */
 
-			reply = ddstry(fd, "ARGS",empty, nsize);
+			reply = ddstry(fd, "ARGS", (char *)empty, nsize);
 
 			/* 
 			 * Do whatever is needed, depending on what is on destination.
@@ -3538,7 +3832,6 @@ static void select_object(WINDOW *w, int object, int mode)
 {
 	if (object < 0)
 		return;
-
 	if (itm_tgttype(w, object) != ITM_FILE)
 		itm_select(w, object, mode, TRUE);
 }
@@ -3615,7 +3908,12 @@ boolean itm_move
 	if ( itm_type(src_wd, src_object) == ITM_PREVDIR )
 	{
 		if (!va_reply)
-			wait_button();
+		{
+			/* Wait for a button click */
+			while
+				(xe_button_state());
+		}
+
 		return result;
 	}
 
@@ -3643,6 +3941,8 @@ boolean itm_move
 	graf_mouse(FLAT_HAND, NULL);
 
 	draw_icns(icnlist, nv, x, y, clip);
+
+	/* Loop until object(s) released at a positon */
 
 	do
 	{
@@ -3764,7 +4064,7 @@ static boolean in_window(WINDOW *w, int x, int y)
 
 /* 
  * Button handling routine. 
- * This is called only in directory and text windows.
+ * This is called in desktop,  directory and text windows.
  * Note: bstate never used in this routine ? 
  */
 
@@ -3783,23 +4083,36 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 		if (n == 2)
 		{
 			itm_select(w, item, 0, TRUE);
-			wait_button();
+
+			/* Wait for a button click */
+
+			while 
+				(xe_button_state());
+
+			/* 
+			 * Note: if itm_open() starts a program in single-tos,
+			 * windows will be closed and reopened, and "w" will no
+			 * longer will be valid. In this case selection.w will be NULL;
+			 * deselect object only if this is not the case
+			 */
 
 			if (itm_open(w, item, kstate))
+			{
+				w = selection.w;
 				itm_select(w, item, 2, TRUE);
+			}
 		}
 		else
 		{
 			if ((m_state == 0) || (itm_state(w, item) == FALSE))
 			{
-				itm_select(w, item, (kstate & 3) ? 1 : 0, TRUE);
+				itm_select(w, item, (kstate & (K_RSHIFT | K_LSHIFT)) ? 1 : 0, TRUE);
 			}
 
 			if ((m_state != 0) && itm_state(w, item))
 				itm_move(w, item, x, y, 0);
 		}
-
-		wd_setselection(selection.w); 
+		wd_setselection(selection.w);
 	}
 	else if (in_window(w, x, y))
 	{
@@ -3811,12 +4124,14 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 			/*  This works only if TeraDesk has open windows ! */
 
 			WINDOW *ww = xw_first();
+			boolean nowin = TRUE;
 
 			while (ww)
 			{
 				if (xw_type(ww) == DIR_WIND || xw_type(ww) == TEXT_WIND )
 				{
 					wd_type_topped(ww);	
+					nowin = FALSE;
 					break;
 				}
 				ww = ww->xw_next;
@@ -3827,17 +4142,12 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 			 * not in all AESses. Will be ok in N.AES, XaAES, Magic 
 			 */
  
-			if (!ww)
-			{
-				if(naes || aes_ctrl) 
-					appl_control(ap_id, 12, NULL);
-				else 
-					wind_set(-1, WF_TOP, ap_id);
-			}
+			if (nowin)
+				wd_top_app(ap_id);
 		}
 #endif
 
-		if (((m_state == 0) || ((kstate & 3) == 0)) && (selection.w == w))
+		if (((m_state == 0) || ((kstate & (K_RSHIFT | K_LSHIFT)) == 0)) && (selection.w == w))
 			itm_select(w, -1, 0, TRUE);
 		if (m_state)
 			itm_rselect(w, x, y);
@@ -3869,7 +4179,7 @@ void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, R
 	obj[0].ob_head = -1;
 	obj[0].ob_tail = -1;
 	obj[0].ob_type = (smode == FALSE) ? G_BOX : G_IBOX;
-	obj[0].ob_flags = NORMAL;
+	obj[0].ob_flags = NONE;
 	obj[0].ob_state = NORMAL;
 	obj[0].ob_spec.obspec.framesize = 0;
 	obj[0].ob_spec.obspec.interiorcol = options.win_color;
@@ -3883,27 +4193,36 @@ void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, R
 
 
 /* 
- * Set one icon object 
+ * Set one icon object.
+ * Note similar object-setting code in add_icon() in icon.c
  */
 
-void set_obji( OBJECT *obj, long i, long n, boolean selected, int icon_no, int obj_x, int obj_y, char *name )
+void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, int obj_x, int obj_y, char *name )
 {
 	OBJECT *obji = &obj[i + 1];
 
 	CICONBLK *cicnblk = (CICONBLK *) &obj[n + 1];
 
+
 	obji->ob_head = -1;
 	obji->ob_tail = -1;
 	obji->ob_type = icons[icon_no].ob_type;
 	obji->ob_flags = NONE;
-	obji->ob_state = (selected == FALSE) ? NORMAL : SELECTED;
-	obji->ob_spec.ciconblk = &cicnblk[i];
+
+	obji->ob_state = (selected) ? SELECTED : NORMAL;
+	if (hidden && (obj[0].ob_spec.obspec.interiorcol == 0) )
+		obji->ob_state |= DISABLED;	/* will this work in all AESes ? */
+	if (link)
+		obji->ob_state |= CHECKED;
+
 	obji->r.x = obj_x;
 	obji->r.y = obj_y;
 	obji->r.w = ICON_W;
 	obji->r.h = ICON_H;
 
+	obji->ob_spec.ciconblk = &cicnblk[i];
 	cicnblk[i] = *icons[icon_no].ob_spec.ciconblk;
+
 	cicnblk[i].monoblk.ib_ptext = name;
 	cicnblk[i].monoblk.ib_char &= 0xFF00;
 	cicnblk[i].monoblk.ib_char |= 0x20;
@@ -3916,7 +4235,7 @@ void set_obji( OBJECT *obj, long i, long n, boolean selected, int icon_no, int o
  * Draw contents of an iconified window 
  */
 
-void icw_draw(WINDOW *w)
+static void icw_draw(WINDOW *w)
 {
 
 	OBJECT *obj;			/* background and icon objects */
@@ -3960,7 +4279,7 @@ void icw_draw(WINDOW *w)
 
 	/* Set icon */
 
-	set_obji( obj, 0L, 1L, FALSE, icon_no, XOFFSET/2, YOFFSET, icname );
+	set_obji( obj, 0L, 1L, FALSE, FALSE, FALSE, icon_no, XOFFSET/2, YOFFSET, icname );
 
 	/* (re)draw it */
 
@@ -3993,8 +4312,10 @@ void wd_type_iconify(WINDOW *w)
 		return;
 
 	/* Remember size of noniconified window */
-
+/*
 	memcpy ( &(wi->ix), &(wi->x), sizeof(RECT) );
+*/
+	*(RECT *)(&(wi->ix)) = *(RECT *)(&(wi->x));
 
 	/* Call function to iconify window */
 
@@ -4002,7 +4323,7 @@ void wd_type_iconify(WINDOW *w)
 
 	/* If window is not open, return */
 
-	if ( w->xw_opened == FALSE )
+	if ( (w->xw_xflags & XWF_OPN) == 0 )
 		return;
 
 	/* Draw contents of iconified window */
@@ -4012,7 +4333,7 @@ void wd_type_iconify(WINDOW *w)
 	/* 
 	 * Set a flag that this is an iconified window;
 	 * note: this information is duplicated by xw_iconify
-	 * in w->xw_iflag, so that xdialog routines know of
+	 * in w->xw_xflags, so that xdialog routines know of
 	 * iconified state. flags.iconified is used for saving
 	 * in .cfg file
 	 */
@@ -4080,7 +4401,7 @@ void wd_iopen ( WINDOW *w, RECT *size )
 #if _MINT_
 	/* 
 	 * In Magic the window should be opened -after- iconifying,
-	 * otherwise it will get the wrong title bar???
+	 * otherwise it will get a wrong title bar???
 	 */
 
 	if (icf && magx)
@@ -4091,11 +4412,11 @@ void wd_iopen ( WINDOW *w, RECT *size )
 	wi->flags.iconified = 0; /* so that wd_calcsize would be correctly done */
 
 	if ( icf )   
-	{		
-		memcpy(&(wi->x), &(wi->ix), sizeof(RECT) );
- 		wd_calcsize ( wi, &nsize );
+	{	
+		*(RECT *)(&(wi->x)) = *(RECT *)(&(wi->ix)); 
+		wd_calcsize ( wi, &nsize );
 		wd_type_iconify(w);
-		memcpy(&(w->xw_nsize), &nsize, sizeof(RECT) );
+		*(RECT *)(&(w->xw_nsize)) = *(RECT *)(&nsize);
 	}
 
 	wi->used = TRUE;

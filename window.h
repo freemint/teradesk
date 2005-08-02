@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -76,7 +76,6 @@ typedef struct
 	boolean (*itm_open) (WINDOW *w, int item, int kstate);
 	boolean (*itm_copy) (WINDOW *dw, int dobject, WINDOW *sw,
 	        int n, int *list, ICND *icns, int x, int y, int kstate);
-	void (*itm_showinfo) (WINDOW *w, int n, int *list, boolean search);
 	void (*itm_select) (WINDOW *w, int selected, int mode, boolean draw);
 	void (*itm_rselect) (WINDOW *w, int x, int y);
 	boolean (*itm_xlist) (WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
@@ -170,12 +169,13 @@ typedef struct winfo
 	TYP_WINDOW *typ_window;
 }WINFO;
 
+/* Note: see window.c; CfgNest positions */
 
 typedef struct
 {
 	int i, x, y, ww, wh, ix, iy, iw, ih;
 	WDFLAGS flags;
-	FDATA font;
+	FONT font;
 	WINFO *windows;
 } NEWSINFO1;
 
@@ -235,6 +235,7 @@ void wd_setselection(WINDOW *w);
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
 void wd_update_drv(int drive);
+void wd_restoretop(int code, int *whandle, int *wap_id);
 
 void wd_hndlbutton(WINDOW *w, int x, int y, int n, int button_state,
 				   int keystate);
@@ -284,6 +285,7 @@ void wd_type_sized(WINDOW *w, RECT *newsize);
 void wd_type_redraw(WINDOW *w, RECT *area);
 void do_redraw(WINDOW *w, RECT *r1);
 
+void wd_type_title(TYP_WINDOW *w);
 void set_hslsize_pos(TYP_WINDOW *w);
 void set_vslsize_pos(TYP_WINDOW *w);
 void set_sliders(TYP_WINDOW *w);
@@ -294,17 +296,16 @@ void w_pageleft(TYP_WINDOW *w);
 void w_pageright(TYP_WINDOW *w);
 void w_scroll(TYP_WINDOW *w, int type); 
 
-void wd_adapt(WINDOW *w);	
+boolean wd_adapt(WINDOW *w);	
 void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch);
 
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
-void set_obji( OBJECT *obj, long i, long n, boolean selected, int icon_no, 
+void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, 
 int obj_x, int obj_y, char *name );
 void wd_type_iconify(WINDOW *w);
 void wd_type_uniconify(WINDOW *w);
 void wd_iopen( WINDOW *w, RECT *size);
 boolean wd_checkopen(int *error);
-void icw_draw (WINDOW *w);
 void wd_in_screen ( WINFO *info );
 long wd_type_slines(TYP_WINDOW *w);
 void wd_drawall(void);

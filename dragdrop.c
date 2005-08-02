@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -219,3 +219,151 @@ void ddclose(int fd)
 	}
 	fd = -1;
 }
+
+
+/* All following code is for the receiver; currently NOT USED
+
+/*
+ * open a drag & drop pipe
+ *
+ * Input Parameters:
+ * ddnam:       the pipe's name (from the last word of
+ *              the AES message)
+ * preferext:   a list of DD_NUMEXTS 4 byte extensions we understand
+ *              these should be listed in order of preference
+ *              if we like fewer than DD_NUMEXTS extensions, the
+ *              list should be padded with 0s
+ *
+ * Output Parameters: none
+ *
+ * Returns:
+ * A (positive) file handle for the drag & drop pipe, on success
+ * -1 if the drag & drop is aborted
+ * A negative error number if an error occurs while opening the
+ * pipe.
+ */
+
+int ddopen(int ddnam, char *preferext)
+{
+	int fd;
+	char outbuf[DD_EXTSIZE + 1];
+
+	pipename[18] = ddnam & 0x00ff;
+	pipename[17] = (ddnam & 0xff00) >> 8;
+
+	fd = Fopen(pipename, 2);
+	if (fd < 0) 
+		return fd;
+
+	outbuf[0] = DD_OK;
+	strncpy(outbuf+1, preferext, DD_EXTSIZE);
+
+	oldpipesig = Psignal(SIGPIPE, SIG_IGN);
+
+	if (Fwrite(fd, (long)DD_EXTSIZE+1, outbuf) != DD_EXTSIZE + 1) 
+	{
+		ddclose(fd);
+		return -1;
+	}
+
+	return fd;
+}
+
+
+/*
+ * ddrtry: get the next header from the drag & drop originator
+ *
+ * Input Parameters:
+ * fd:          the pipe handle returned from ddopen()
+ *
+ * Output Parameters:
+ * name:        a pointer to the name of the drag & drop item
+ *              (note: this area must be at least DD_NAMEMAX bytes long)
+ * whichext:    a pointer to the 4 byte extension
+ * size:        a pointer to the size of the data
+ *
+ * Returns:
+ * 0 on success
+ * -1 if the originator aborts the transfer
+ *
+ * Note: it is the caller's responsibility to actually
+ * send the DD_OK byte to start the transfer, or to
+ * send a DD_NAK, DD_EXT, or DD_LEN reply with ddreply().
+ */
+
+int ddrtry(int fd, char *name, char *whichext, long *size)
+{
+	int hdrlen;
+	int i;
+	char buf[80];
+
+	i = Fread(fd, 2L, &hdrlen);
+
+	if (i != 2)
+		return -1;
+
+	if (hdrlen < 9)       /* this should never happen */
+		return -1;
+
+	i = Fread(fd, 4L, whichext);
+
+	if (i != 4)
+		return -1;
+
+	whichext[4] = 0;
+	i = Fread(fd, 4L, size);
+	if (i != 4)
+		return -1;
+
+	hdrlen -= 8;
+	if (hdrlen > DD_NAMEMAX)
+		i = DD_NAMEMAX;
+	else
+		i = hdrlen;
+
+	if (Fread(fd, (long)i, name) != i) 
+		return -1;
+
+	hdrlen -= i;
+
+	/* skip any extra header */
+
+	while (hdrlen > 80) 
+	{
+		Fread(fd, 80L, buf);
+		hdrlen -= 80;
+	}
+
+	if (hdrlen > 0)
+		Fread(fd, (long)hdrlen, buf);
+
+	return 0;
+}
+
+
+/*
+ * send a 1 byte reply to the drag & drop originator
+ *
+ * Input Parameters:
+ * fd:          file handle returned from ddopen()
+ * ack:         byte to send (e.g. DD_OK)
+ *
+ * Output Parameters:
+ * none
+ *
+ * Returns: 0 on success, -1 on failure
+ * in the latter case the file descriptor is closed
+ */
+
+int ddreply(int fd, int ack)
+{
+	char c = ack;
+
+	if (Fwrite(fd, 1L, &c) != 1L)
+		Fclose(fd);
+
+	return 0;
+}
+
+
+end of currently unused receiver code */

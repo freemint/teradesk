@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,16 +21,44 @@
  */
 
 
-#include <np_aes.h>	
+#include <np_aes.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
+#include <stdarg.h>
 #include <boolean.h>
 #include <ctype.h>
 
+#include "desktop.h"
+#include "desk.h"
+#include "error.h"
+
 
 /*
- * "Write" into a string. 
+ * Duplicate 's', returning an identical malloc'd string.
+ * This is a replacement for the library routine;
+ * it displays an alert if memory can not be allocated.
+ * Also, if the source is NULL, NULL is returned.
+ */
+
+char *strdup(const char *s)
+{
+	size_t l;
+	char *new;
+
+	if ( s == NULL )
+		return NULL;
+
+	l = strlen(s) + 1;
+
+	if ((new = malloc_chk(l)) != NULL)
+		memcpy(new, s, l);
+
+	return new;
+}
+
+
+/*
+ * "Write" into a string. A substitute for the library function.
  * Note: This routine is able to perform only basic formatting,
  * but sufficient for the needs of TeraDesk.
  * Recognized formats are -ONLY- : %d %x %ld %lx %s.
@@ -44,17 +72,17 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 		*s, 
 		*d, 
 		*h, 
-		fill,
-		tmp[16];
+		fill,		/* padding character */
+		tmp[16];	/* temporary buffer */
 
 	boolean 
-		lng, 
+		lng, 	/* true if a numeric variable is of a long type */
 		ready;
 
 	int 
-		radix,
+		radix,	/* decimal or hexadecimal base for numeric output */
 		maxl, 
-		i;
+		i;		/* counter */
 
 	s = (char *) format;
 	d = buffer;
@@ -63,30 +91,42 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 	{
 		if (*s == '%')
 		{
+			/* Beginning of a format specifier detected... */
+
 			s++;
 			lng = ready = FALSE;
 			maxl = 0;
 
-			while (ready == FALSE)
+			while (!ready)
 			{
+				/* What is next */
+
 				switch (*s)
 				{
 				case 's':
+					/* alphanumeric string format */
+
 					h = va_arg(argpoint, char *);
 
 					i = 0;
 					if (maxl == 0 || maxl > 255)
 						maxl = 256 - (int)(d - buffer);	
 
+					/* copy data to output */
+
 					while ((h[i]) && (i < maxl))
 						*d++ = h[i++];
 					ready = TRUE;
 					break;
 				case 'l':
+					/* next numeric output will be of a 'long' variable */
+
 					lng = TRUE;
 					break;
 				case 'd':
 				case 'x':
+					/* decimal or hexadecimal numeric output */
+
 					if ( *s == 'x' )
 					{
 						radix = 16;
@@ -104,17 +144,25 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 
 					h = tmp;
 					i = (int)strlen(tmp);
+
+					/* pad with zeros or blanks */
+
 					if (maxl && i < maxl) /* use maxl for d as well */
 					{
 						i = maxl - i;
 						while (i--)
 							*d++ = fill;
 					}
+
+					/* copy data to output */
+
 					while (*h)
 						*d++ = *h++;
 					ready = TRUE;
 					break;
 				default:
+					/* interpret length specifier if given */
+
 					if (isdigit(*s))
 						maxl = maxl * 10 + (int) (*s - '0');
 					else
@@ -130,7 +178,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 
 	*d = 0;	
 
-	return (int) (d - buffer);
+	return (int)(d - buffer);
 }
 
 
@@ -155,7 +203,7 @@ int vaprintf( int def,const char *string,va_list argpoint )
 {
 	char s[256];
 
-	vsprintf(s,string,argpoint);
+	vsprintf(s, string, argpoint);
 	return form_alert(def,s); 
 }
 

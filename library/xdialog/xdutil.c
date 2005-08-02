@@ -1,7 +1,7 @@
 /* 
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ *                                2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,7 +31,6 @@
 
 #include <stddef.h>
 #include <library.h>
-
 #include "xdialog.h"
 #include "internal.h"
 
@@ -62,8 +61,8 @@ void xd_rect2pxy(RECT *r, int *pxy)
 {
 	pxy[0] = r->x;
 	pxy[1] = r->y;
-	pxy[2] = r->x + r->w - 1;
-	pxy[3] = r->y + r->h - 1;
+	pxy[2] = pxy[0] + r->w - 1;
+	pxy[3] = pxy[1] + r->h - 1;
 }
 
 
@@ -191,6 +190,15 @@ void xd_objrect(OBJECT *tree, int object, RECT *r)
 }
 
 
+/*
+ * Get extended object type
+ */
+
+int xd_xobtype(OBJECT *tree)
+{
+	return ((tree->ob_type >> 8) & 0xFF);
+}
+
 /* 
  * Funktie voor het bepalen van de parent van een object. 
  * find parent of object "object"
@@ -220,20 +228,36 @@ int xd_obj_parent(OBJECT *tree, int object)
 
 
 /* 
- * Funktie voor het bepalen van de geselekteerde radiobutton 
+ * Funktie voor het bepalen van de geselekteerde radiobutton
+ * This function sets one of the radiobutton objects within
+ * a parent object. The argument is the index of the button object
+ * to be set/selected. 
+ * If object == parent, then GET the index of the selected button.
  */
 
-int xd_get_rbutton(OBJECT *tree, int rb_parent)
+int xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
 {
-	int i = tree[rb_parent].ob_head;
+	int i = tree[rb_parent].ob_head;	/* first child of parent */
 	OBJECT *obj;
 
-	while ((i > 0) && (i != rb_parent))
+	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
 		obj = &tree[i];
-
-		if ((obj->ob_state & SELECTED) && (obj->ob_flags & RBUTTON))
-			return i;
+		if (obj->ob_flags & RBUTTON)	/* watch radiobuttons only */
+		{
+			if(object == rb_parent)
+			{
+				if ((obj->ob_state & SELECTED) && (obj->ob_flags & RBUTTON))
+					return i;
+			}
+			else
+			{
+				if (i == object)
+					obj->ob_state |= SELECTED;	/* select this one */
+				else
+					obj->ob_state &= ~SELECTED;	/* deselect others */
+			}
+		}
 
 		i = obj->ob_next;
 	}
@@ -244,9 +268,20 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent)
 
 /* 
  * Funktie voor het bepalen van de geselekteerde radiobutton 
+ * This function returns the index of the selected button object
  */
 
-void xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
+int xd_get_rbutton(OBJECT *tree, int rb_parent)
+{
+	return xd_set_rbutton(tree, rb_parent, rb_parent);
+}
+
+
+/*
+ * Enable or disable all children of the parent
+ */
+
+int xd_set_child(OBJECT *tree, int rb_parent, int enab)
 {
 	int i = tree[rb_parent].ob_head;	/* first child of parent */
 	OBJECT *obj;
@@ -254,16 +289,16 @@ void xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
 	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
 		obj = &tree[i];
-		if (obj->ob_flags & RBUTTON)	/* watch radiobuttons only */
-		{
-			if (i == object)
-				obj->ob_state |= SELECTED;	/* select this one */
-			else
-				obj->ob_state &= ~SELECTED;	/* deselect others */
-		}
+
+		if (enab)
+			obj->ob_state &= ~DISABLED;	/* enable it */
+		else
+			obj->ob_state |= DISABLED;	/* disable it */
 
 		i = obj->ob_next;
 	}
+
+	return 0; /* no use of this, in fact */
 }
 
 
@@ -273,6 +308,9 @@ void xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
  */
 
 /* Use correct types ! */
+
+
+/* Not used anymore; better use xd_get_obspecp()
 
 OBSPEC xd_get_obspec(OBJECT *object)
 {
@@ -289,30 +327,27 @@ OBSPEC xd_get_obspec(OBJECT *object)
 		return object->ob_spec;
 }
 
-
-/* not optimum to use
-
-/*
- * Get a pointer to a text field in an object.
- */
-
-char *xd_ptext(OBJECT *ob)
-{
-	return xd_get_obspec(ob).tedinfo->te_ptext;
-
-}
-
-
-/*
- * Clear a text field
- */
-
-void xd_zerotext(OBJECT *ob)
-{
-	*(xd_ptext(ob)) = 0;
-}
-
 */
+
+
+/* 
+ * Similar to xd_get_obspec(), but return pointer only 
+ */
+
+OBSPEC *xd_get_obspecp(OBJECT *object)
+{
+	if ((object->ob_type & 0xFF) == G_USERDEF)
+	{
+		USERBLK *userblk = object->ob_spec.userblk;
+
+		if (IS_XUSER(userblk))
+			return &(((XUSERBLK *)userblk)->ob_spec);
+		else
+			return (OBSPEC *)&userblk->ub_parm;
+	}
+	else
+		return &(object->ob_spec);
+}
 
 
 /*
@@ -321,23 +356,6 @@ void xd_zerotext(OBJECT *ob)
  */
 
 /* Use correct types ! */
-
-/* Possibly an error; declaration changed to *obspec
-void xd_set_obspec(OBJECT *object, OBSPEC obspec)
-{
-	if ((object->ob_type & 0xFF) == G_USERDEF)
-	{
-		USERBLK *userblk = object->ob_spec.userblk;
-
-		if (IS_XUSER(userblk))
-			((XUSERBLK *)userblk)->ob_spec = obspec;
-		else
-			userblk->ub_parm = *(long *)&obspec;
-	}
-	else
-		object->ob_spec = obspec;
-}
-*/
 
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 {
@@ -353,8 +371,6 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 	else
 		object->ob_spec = *obspec;
 }
-
-
 
 
 /* DjV 074 ---vvv--- */
@@ -374,7 +390,7 @@ int xd_set_tristate(int ob_state, int state)
 
 int xd_is_tristate(OBJECT *object)
 {
-	return ((object->ob_type >> 8) & 0xFF) == XD_RECTBUTTRI;
+	return(xd_xobtype(object) == XD_RECBUTTRI);
 }
 */
 

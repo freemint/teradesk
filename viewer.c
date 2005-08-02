@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -41,7 +41,7 @@
 #include "window.h" /* moved before viewer.h */
 #include "viewer.h"
 #include "file.h"
-#include "sprintf.h"
+#include "stringf.h"
 
 
 #define FWIDTH			256 /* max.possible width of text window in text mode */
@@ -182,7 +182,7 @@ void disp_hex( char *tmp, char *p, long a, long size, boolean toprint )
 	
 	for (i = 5; i >= 0; i--)
 	{
-		tmp[i] = hexdigit((int) h & 0x0F);
+		tmp[i] = hexdigit((int)h & 0x0F);
 		h >>= 4;
 	}
 	tmp[6] = ':';
@@ -464,7 +464,7 @@ void txt_prtlines(TXT_WINDOW *w, RECT *area)
 	long i;
 	RECT work;
 
-	set_txt_default(txt_font.id, txt_font.size);
+	set_txt_default(&txt_font);
 
 	xw_getwork((WINDOW *)w, &work);
 
@@ -576,7 +576,7 @@ static void txt_rem(TXT_WINDOW *w)
 {
 	/* in free() there is a test if address is NULL, no need to check here */
 
-	if (w != NULL )
+	if (w != NULL)
 	{
 		free(w->lines);
 		free(w->ntabs);	
@@ -589,7 +589,6 @@ static void txt_rem(TXT_WINDOW *w)
 /* no need ?
 		w->winfo->flags.iconified = 0;
 */
-
 	}
 }
 
@@ -783,7 +782,7 @@ int read_txtfile
 
 	/* Get file attributes (follow the link in x_attr)  */
 
-	if ((error = (int)x_attr(0, name, &attr)) == 0)
+	if ((error = (int)x_attr(0, FS_INQ, name, &attr)) == 0)
 	{
 		*flength = attr.size;	/* output param. file length */
 
@@ -865,33 +864,6 @@ int read_txtf
 )
 {
 	return read_txtfile( name, buffer, flength, NULL, NULL, NULL );
-}
-
-
-/*
- * Set title to a text window. See also dir_title() in dir.c
- */
-
-void txt_title(TXT_WINDOW *w)
-{
-	int 
-		d = (xd_aes4_0) ? 5 : 3, /* different because of iconify gadget */
-		columns;
-
-	/* 
-	 * How long can the title be? 
-	 * Note: "-d" takes into account window gadgets left/right of the title 
-	 */
-
-	columns = min( w->scolumns - d, (int)sizeof(w->title) );
-
-	/* Cramp it to fit window */
-
-	cramped_name(w->name, w->title, columns);
-
-	/* Set window */
-
-	xw_set((WINDOW *) w, WF_NAME, w->title);
 }
 
 
@@ -984,12 +956,13 @@ int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
 	}
 
 	error = txt_read(w, TRUE);
+
 	if ( error >= 0)
 	{
 		w->px = px;
 		w->py = py;
-		txt_title(w);
-		wd_type_sldraw((TYP_WINDOW *)w, FALSE);
+		wd_type_title((TYP_WINDOW *)w); /* set title AND sliders */
+		wd_type_draw((TYP_WINDOW *)w, FALSE);
 		return TRUE;
 	}
 
@@ -1117,7 +1090,7 @@ void compare_files( WINDOW *w, int n, int *list )
 		else
 			name = strdup(empty);
 
-		cv_fntoform(&compare[CFILE1 + i], name); 
+		cv_fntoform(compare, CFILE1 + i, name); 
 		free(name);
 	}
 
@@ -1329,13 +1302,16 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	w->px = px;
 	w->py = py;
 	w->name = file;
+	w->tabsize = tabsize;
+	w->hexmode = hexmode;
+	w->winfo = info;
+
+/* No need, structure is zeroed in xw_create
 	w->buffer = NULL;
 	w->lines = NULL;
 	w->ntabs = NULL;
 	w->nlines = 0L;
-	w->tabsize = tabsize;
-	w->hexmode = hexmode;
-	w->winfo = info;
+*/
 
 	/* Read text file */
 
@@ -1352,8 +1328,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	else
 	{
 		wd_calcsize(info, &size); 
-		txt_title(w);
-		set_sliders((TYP_WINDOW *)w);
+		wd_type_title((TYP_WINDOW *)w); /* set title AND sliders */
 		wd_iopen((WINDOW *)w, &size); 
 		return (WINDOW *)w;
 	}
@@ -1426,30 +1401,6 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
  *																	*
  ********************************************************************/
 
-/*
- * Calculate default positions and sizes of text windows;
- * windows will be stacked rightwards and downwards
- */
- 
-void txt_default(void)
-{
-	int i;
-	WINFO *textw;
-
-	txt_font = def_font;
-
-	for (i = 0; i < MAXWINDOWS; i++)
-	{
-		textw = &textwindows[i];
-		memset(textw, 0, sizeof(WINFO));
-		textw->x = (i + 1) * screen_info.fnt_w - screen_info.dsk.x;
-		textw->y = screen_info.dsk.y + (i + 1) * screen_info.fnt_h;
-		textw->w = (screen_info.dsk.w * 8) / (10 * screen_info.fnt_w);
-		textw->h = (screen_info.dsk.h * 7) / (10 * screen_info.fnt_h);
-	}
-}
-
-
 /* 
  * Configuration table for one open text window 
  */
@@ -1473,7 +1424,6 @@ static CfgEntry txtw_table[] =
  * Save or load configuration for one open text window 
  */
 
-
 CfgNest text_one
 {
 	if (io == CFG_SAVE)
@@ -1491,14 +1441,14 @@ CfgNest text_one
 		that.px = tw->px;
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
-		that.tabsize = tw->tabsize;
+		that.tabsize = tw->tabsize; 
 		strsncpy(that.path, tw->name, sizeof(that.path));
-	
+			
 		*error = CfgSave(file, txtw_table, lvl, CFGEMP);
 	}
 	else
 	{
-		memset(&that, 0, sizeof(that));
+		memclr(&that, sizeof(that));
 		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl);
 
 		if ( (*error == 0 ) && (that.path[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
@@ -1548,8 +1498,8 @@ CfgNest view_config
 {
 	if ( io == CFG_LOAD )
 	{
-		memset(&thisw, 0, sizeof(thisw));
-		memset(&that, 0, sizeof(that));
+		memclr(&thisw, sizeof(thisw));
+		memclr(&that, sizeof(that));
 	}
 
 	cfg_font = &txt_font;

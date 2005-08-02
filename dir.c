@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,7 +34,7 @@
 
 #include "resource.h"
 #include "desk.h"
-#include "sprintf.h"		/* get rid of stream io */
+#include "stringf.h"		/* get rid of stream io */
 #include "xfilesys.h"
 #include "font.h"
 #include "config.h"
@@ -53,6 +53,8 @@
 #include "icontype.h"
 #include "open.h"
 #include "va.h"
+#include "prgtype.h"
+
 
 /* In algol 68 its so easy.
    ref to row of ref to NDTA
@@ -61,18 +63,19 @@
 
 
 #define TOFFSET			2
-#define ICON_W			80			/* icon width (pixels) */
-#define ICON_H			46			/* icon height (pixels) */
+#define ICON_W			80		/* icon width (pixels) */
+#define ICON_H			46		/* icon height (pixels) */
 
-#define MAXLENGTH		128			/* Maximum length of a filename to display in a window. HR: 128 */
-#define MINLENGTH		12			/* Minimum length of a filename to display in a window. */
-#define ITEMLEN			44			/* Length of a line, without the filename. */
-#define	DRAGLENGTH		16			/* Length of a name rectangle drawn while dragging items (was 12 earlier) */
+#define MAXLENGTH		128		/* Maximum length of a filename to display in a window. HR: 128 */
+#define MINLENGTH		12		/* Minimum length of a filename to display in a window. */
+#define ITEMLEN			44		/* Length of a line, without the filename. */
+#define	DRAGLENGTH		16		/* Length of a name rectangle drawn while dragging items (was 12 earlier) */
 
-#define TOSITEMLEN			51				/* Length of a line. */
-
+#define TOSITEMLEN		51		/* Length of a line. */
 #define SIZELEN 8 /* length of field for file size, i.e. max 99999999 ~100 MB */
 
+
+/* Font effects */
 
 #define bold 1
 #define light 2
@@ -84,9 +87,10 @@
 WINFO dirwindows[MAXWINDOWS]; 
 
 RECT dmax;
-const char *prevdir = "..";
-FONT dir_font;
 
+const char *prevdir = "..";
+
+FONT dir_font;
 
 extern boolean TRACE;
 
@@ -94,23 +98,23 @@ static void dir_closed(WINDOW *w);
 extern boolean prg_isprogram(const char *name);
 
 
-static int		itm_find	(WINDOW *w, int x, int y);
-static boolean	itm_state	(WINDOW *w, int item);
-static ITMTYPE	itm_type	(WINDOW *w, int item);
-static ITMTYPE	itm_tgttype	(WINDOW *w, int item);
-static int		itm_icon	(WINDOW *w, int item);
+static int		dir_find	(WINDOW *w, int x, int y);
+static boolean	dir_state	(WINDOW *w, int item);
+static ITMTYPE	dir_itmtype	(WINDOW *w, int item);
+static ITMTYPE	dir_tgttype	(WINDOW *w, int item);
+static int		dir_icon	(WINDOW *w, int item);
 static const
-       char *	itm_name	(WINDOW *w, int item);
-static char *	itm_fullname(WINDOW *w, int item);
-static int		itm_attrib	(WINDOW *w, int item, int mode, XATTR *attrib);
+       char    *dir_itmname	(WINDOW *w, int item);
+static char    *dir_fullname(WINDOW *w, int item);
+static int		dir_attrib	(WINDOW *w, int item, int mode, XATTR *attrib);
 static boolean	dir_islink	(WINDOW *w, int item);
 
 static boolean	dir_open	(WINDOW *w, int item, int kstate);
-boolean	dir_copy	(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
-static void		itm_select	(WINDOW *w, int selected, int mode, boolean draw);
-static void		itm_rselect	(WINDOW *w, int x, int y);
-static boolean	itm_xlist	(WINDOW *w, int *nselected, int *nvisible, int **sel_list, ICND **icns, int mx, int my);
-static boolean	itm_list	(WINDOW *w, int *n, int **list);
+static boolean	dir_copy	(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
+static void		dir_select	(WINDOW *w, int selected, int mode, boolean draw);
+static void		dir_rselect	(WINDOW *w, int x, int y);
+static boolean	dir_xlist	(WINDOW *w, int *nselected, int *nvisible, int **sel_list, ICND **icns, int mx, int my);
+static boolean	dir_list	(WINDOW *w, int *n, int **list);
 static void		dir_set_update	(WINDOW *w, wd_upd_type type, const char *fname1, const char *fname2);
 static void		dir_do_update	(WINDOW *w);
 static void		dir_newfolder	(WINDOW *w);
@@ -119,22 +123,21 @@ static void		dir_seticons	(WINDOW *w);
 
 static ITMFUNC itm_func =
 {
-	itm_find,					/* itm_find */
-	itm_state,					/* itm_state */
-	itm_type,					/* itm_type */
-	itm_tgttype,				/* target item type */
-	itm_icon,					/* itm_icon */
-	itm_name,					/* itm_name */
-	itm_fullname,				/* itm_fullname */
-	itm_attrib,					/* itm_attrib */
+	dir_find,					/* itm_find */
+	dir_state,					/* itm_state */
+	dir_itmtype,				/* itm_type */
+	dir_tgttype,				/* target item type */
+	dir_icon,					/* itm_icon */
+	dir_itmname,				/* itm_name */
+	dir_fullname,				/* itm_fullname */
+	dir_attrib,					/* itm_attrib */
 	dir_islink,					/* itm_islink */
 	dir_open,					/* itm_open */
 	dir_copy,					/* itm_copy */
-	item_showinfo,				/* itm_showinfo */
-	itm_select,					/* itm_select */
-	itm_rselect,				/* itm_rselect */
-	itm_xlist,					/* itm_xlist */
-	itm_list,					/* itm_list */
+	dir_select,					/* itm_select */
+	dir_rselect,				/* itm_rselect */
+	dir_xlist,					/* itm_xlist */
+	dir_list,					/* itm_list */
 	wd_path,					/* wd_path */
 	dir_set_update,				/* wd_set_update */
 	dir_do_update,				/* wd_do_update */
@@ -153,7 +156,6 @@ typedef int SortProc(NDTA **ee1, NDTA **ee2);
 #define E1E2 NDTA *e1 = *ee1, *e2 = *ee2
  
 /* 
- * Sorteer op zichtbaarheid
  * Sort by visibility
  */
 
@@ -251,7 +253,7 @@ static SortProc sortext
 
 
 /* 
- * Function for sorting a directory by file length 
+ * Function for sorting a directory by file size
  */
 
 static SortProc sortlength
@@ -270,7 +272,7 @@ static SortProc sortlength
 
 
 /* 
- * Function for sorting a directory by file date & time
+ * Function for sorting a directory by object date & time
  */
 
 static SortProc sortdate
@@ -312,7 +314,7 @@ static SortProc unsorted
 
 /*
  * Function for reversing the order of sorted items.
- * This is to be applied after a sorting.
+ * This is to be applied -after- a sorting of any kind if reverse is wanted.
  */
 
 void revord(NDTA **buffer, int n)
@@ -417,45 +419,6 @@ static void dir_info(DIR_WINDOW *w, int n, long bytes)
 }
 
 
-/* 
- * Create the title of a directory window. See also txt_title() in viewer.c
- */
-
-void dir_title(DIR_WINDOW *w)
-{
-	int 
-		d = (xd_aes4_0) ? 5 : 3,
-		columns;
-
-	char
-		*fulltitle;
-
-	/* 
-	 * How long can the title be? 
-	 * Note: "-d" takes into account window gadgets left/right of the title
-	 * but this is only approximate 
-	 */
-
-	columns = min( w->scolumns - d, (int)sizeof(w->title) );
-
-	if (columns > 1)
-	{
-		/* Create path + name */
-
-		fulltitle = fn_make_path(w->path, w->fspec);
-
-		/* Cramp it to fit window */
-
-		cramped_name(fulltitle, w->title, columns);
-		free(fulltitle);
-
-		/* Set window */
-
-		xw_set((WINDOW *) w, WF_NAME, w->title);
-	}
-}
-
-
 /*
  * Release the buffer(s) occupied by directory data
  */
@@ -469,8 +432,9 @@ static void dir_free_buffer(DIR_WINDOW *w)
 	{
 		for (i = 0; i < w->nfiles; i++)
 		{
-			free((*b)[i]);			/* free NDTA + name */
+			free((*b)[i]);		/* free NDTA + name */
 		}
+
 		free(b);				/* free pointer array */
 		w->buffer = NULL;
 	}
@@ -545,14 +509,19 @@ void xattr_to_fattr(XATTR *xattr, FATTR *fattr)
 	fattr->mtime = xattr->mtime;
 	fattr->mdate = xattr->mdate;
 	fattr->attrib = xattr->attr;
+#if _MINT_
+	fattr->gid = xattr->gid;
+	fattr->uid = xattr->uid;
+#endif
 }
 
 
 /* 
- * Funktie voor het copieren van een dta naar de buffer van een window. 
+ * Funktie voor het copieren van een dta naar de buffer van een window.
+ * Parameters fulln and tgt are used only with links 
  */
 
-static int copy_DTA(NDTA **dest, char *name, XATTR *src, XATTR *tgt, int index, bool link)	/* link */
+static int copy_DTA(NDTA **dest, char *fulln, char *name, XATTR *src, XATTR *tgt, int index, bool link)	/* link */
 {
 	long l = strlen(name);
 	NDTA *new;
@@ -569,9 +538,16 @@ static int copy_DTA(NDTA **dest, char *name, XATTR *src, XATTR *tgt, int index, 
 		{
 			new->item_type = ITM_FILE;
 			if ((tgt->mode & S_IFMT) == S_IFDIR)
-				new->tgt_type = (strcmp(name, prevdir) == 0) ? ITM_PREVDIR : ITM_FOLDER;
+				new->tgt_type = (strcmp(fn_get_name(fulln), prevdir) == 0) ? ITM_PREVDIR : ITM_FOLDER;
 			else
-				new->tgt_type = ITM_FILE;
+			{
+				/* Note: this slows down opening of windows */
+
+				if (prg_isproglink(fulln))
+					new->tgt_type = ITM_PROGRAM;
+				else
+					new->tgt_type = ITM_FILE;
+			}
 		}
 		else
 #endif
@@ -579,8 +555,14 @@ static int copy_DTA(NDTA **dest, char *name, XATTR *src, XATTR *tgt, int index, 
 			if ((src->mode & S_IFMT) == S_IFDIR)
 				new->item_type = (strcmp(name, prevdir) == 0) ? ITM_PREVDIR : ITM_FOLDER;
 			else
-				new->item_type = ITM_FILE;
-		
+			{
+				/* Note: This slows down opening of windows !*/
+
+				if(prg_isprogram(name))
+					new->item_type = ITM_PROGRAM;
+				else
+					new->item_type = ITM_FILE;
+			}		
 			new->tgt_type = new->item_type;
 		}
 
@@ -597,7 +579,7 @@ static int copy_DTA(NDTA **dest, char *name, XATTR *src, XATTR *tgt, int index, 
 		 */
 
 		if ( options.mode )	
-			new->icon = icnt_geticon(name, new->tgt_type, new->link);
+			new->icon = icnt_geticon(name, new->item_type, new->tgt_type, new->link);
 
 		new->name = new->alname;		/* the pointer makes it possible to use NDTA in local name space (auto) */
 		strcpy(new->alname, name);
@@ -655,6 +637,7 @@ static int read_dir(DIR_WINDOW *w)
 
 		if (dir)
 		{
+
 #if _MINT_
 			w->fs_type = dir->type;		/* Need to know the filesystem type elsewhere. */
 #endif
@@ -667,8 +650,24 @@ static int read_dir(DIR_WINDOW *w)
 				if (error == 0)
 				{
 					bool link = false;
+					char *fulln = NULL;
 
-					if (n == bufsiz)		/* don't violate allocated amount */
+					/* 
+					 * Note: number of items in a directory must currently
+					 * be limited to int16 values, because routines for
+					 * selection of items return numbers of items as
+					 * short integers!
+					 */
+		
+					if (n > 32766)
+					{
+						alert_iprint(MDIRTBIG); 
+						break;
+					}					
+					
+					/* Bufer space may have to be increased... */
+
+					if (n == bufsiz)		/* don't exceed allocated amount */
 					{
 						/* Allocate a 50% bigger buffer, then copy contents */
 
@@ -676,7 +675,8 @@ static int read_dir(DIR_WINDOW *w)
 
 						/* HR 120803 expand pointer array mildly exponentially */
 
-						bufsiz = 3 * bufsiz / 2;	
+						bufsiz = 3 * bufsiz / 2;
+
 						newb = malloc(bufsiz * sizeof(size_t));
 						if (newb)
 						{
@@ -691,6 +691,7 @@ static int read_dir(DIR_WINDOW *w)
 							alert_iprint(MDIRTBIG); 
 							break;
 						}
+
 					} /* n = bufsiz ? */
 
 #if _MINT_ 		
@@ -703,9 +704,8 @@ static int read_dir(DIR_WINDOW *w)
 						 * links to folders will be sorted among folders, etc.
  						 */
 
-						char *fulln = fn_make_path(dir->path, name);
-						x_attr(0, fulln, &tgtattr); /* follow the link to show attributes */
-						free(fulln);
+						fulln = fn_make_path(dir->path, name);
+						x_attr(0, w->fs_type, fulln, &tgtattr); /* follow the link to show attributes */
 						link = true;
 					}
 					else
@@ -718,7 +718,7 @@ static int read_dir(DIR_WINDOW *w)
 						 * An area is allocated here for a NDTA + a name
 						 * then the area is filled with data
 						 */
-					    error = copy_DTA(*w->buffer + n, name, &attr, &tgtattr, n, link);
+					    error = copy_DTA(*w->buffer + n, fulln, name, &attr, &tgtattr, n, link);
 
 					    /* DO NOT put () around w->buffer + n !!! */
 
@@ -732,6 +732,9 @@ static int read_dir(DIR_WINDOW *w)
 							n++;
 						}
 					}
+
+					free(fulln);
+
 				} /* err = 0 ? */
 			} /* while ... */
 
@@ -775,7 +778,8 @@ static int read_dir(DIR_WINDOW *w)
 
 
 /* 
- * Set information to be displayed in window title and info line
+ * Set information to be displayed in window title and info line.
+ * Also set window sliders
  */
 
 static void dir_setinfo(DIR_WINDOW *w)
@@ -784,8 +788,7 @@ static void dir_setinfo(DIR_WINDOW *w)
 	w->refresh = FALSE;
 	calc_rc((TYP_WINDOW *)w, &(w->xw_work));
 	dir_info(w, 0, 0L);
-	dir_title(w);
-	set_sliders((TYP_WINDOW *)w); 
+	wd_type_title((TYP_WINDOW *)w);
 }
 
 
@@ -804,21 +807,48 @@ static int dir_read(DIR_WINDOW *w)
 
 
 /*
- * Unconditional update of a directory wndow
+ * Aux. function for the two routines further below
  */
 
-void dir_refresh_wd(DIR_WINDOW *w)
+void dir_reread(DIR_WINDOW *w)
 {
 	int error;
 
 	hourglass_mouse();
 	error = dir_read(w);
-	wd_type_nofull((WINDOW *)w);
-	xform_error(error);
 	arrow_mouse();
-
+	xform_error(error);
 	wd_type_draw ((TYP_WINDOW *)w, TRUE );
-	wd_reset((WINDOW *) w);
+}
+
+
+/*
+ * Unconditional update of a directory window
+ */
+
+void dir_refresh_wd(DIR_WINDOW *w)
+{
+	wd_type_nofull((WINDOW *)w);
+	dir_reread(w);
+	wd_reset((WINDOW *)w);
+}
+
+
+/*
+ * Unconditionally update all directory windows.
+ * Don't reset flags
+ */
+
+void dir_refresh_all(void)
+{
+	WINDOW *w = xw_first();
+
+	while(w)
+	{
+		if(w->xw_type == DIR_WIND)
+			dir_reread((DIR_WINDOW *)w);
+		w = w->xw_next;
+	}
 }
 
 
@@ -827,7 +857,7 @@ void dir_refresh_wd(DIR_WINDOW *w)
  * except if the path is that of a root directory
  */
 
-void dir_trim_slash ( char *path )
+void dir_trim_slash( char *path )
 {
 	char 
 		*b = strrchr(path, '\\');
@@ -1015,7 +1045,7 @@ static void dir_seticons(WINDOW *w)
 	for (i = 0; i < n; i++)
 	{
 		b = (*pb)[i];
-		b->icon = icnt_geticon(b->name, b->tgt_type, b->link);
+		b->icon = icnt_geticon(b->name, b->item_type, b->tgt_type, b->link);
 	}
 
 	if (options.mode != TEXTMODE) 
@@ -1040,7 +1070,7 @@ static int dir_makenew(DIR_WINDOW *dw, char *name, char *target)
 
 	if ((button == NEWDIROK) && (*dirname))
 	{
-		cv_formtofn(name, &newfolder[DIRNAME]);
+		cv_formtofn(name, newfolder, DIRNAME);
 
 		/* Is the new name perhaps too long ? */
 
@@ -1049,7 +1079,6 @@ static int dir_makenew(DIR_WINDOW *dw, char *name, char *target)
 			if ((thename = fn_make_path(dw->path, name)) != NULL)
 			{
 				hourglass_mouse();
-
 #if _MINT_			
 				if (target)
 					error = x_mklink(thename, target);
@@ -1088,7 +1117,7 @@ void dir_newfolder(WINDOW *w)
 	LNAME name;	
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
 
-	cv_fntoform(&newfolder[DIRNAME], empty);
+	cv_fntoform(newfolder, DIRNAME, empty);
 	rsc_title(newfolder, NDTITLE, DTNEWDIR);
 	dir_makenew(dw, name, NULL);
 }
@@ -1185,12 +1214,6 @@ void calc_nlines(DIR_WINDOW *dw)
 }
 
 
-/********************************************************************
- *																	*
- * Functions for setting the sliders.								*
- *																	*
- ********************************************************************/
-
 /* 
  * Calculate the length of a line in a window. Returned value
  * depends on filename length and visible directory fields.
@@ -1198,7 +1221,6 @@ void calc_nlines(DIR_WINDOW *dw)
  * in the MiNT version it is the length of the longest filename
  * in the directory. 
  */
-
 
 int linelength(DIR_WINDOW *w)
 {
@@ -1209,17 +1231,17 @@ int linelength(DIR_WINDOW *w)
   
 	/* Determine filename length */
 
-	if (w->fs_type)				/* for TOS (8+3) filesystem */
-		l = 12;					/* length of filename */
+	if ( ((w->fs_type) & FS_LFN) == 0 )	/* for TOS (8+3) filesystem */
+		l = 12;							/* length of filename */
 	else
 		l = minmax(MINLENGTH, w->namelength, MAXLENGTH);
 	
 	/*
 	 * Beside the filename there will always be:
-	 * - 3 spaces for the character used to mark directories 
+	 * + 3 spaces for the character used to mark directories 
 	 *     including a leading space
-	 * - 2 spaces separating filename from the rest
-	 * - 2 additional spaces after each field as separators
+	 * + 2 spaces separating filename from the rest
+	 * + 2 additional spaces after each field as separators
 	 *     (there will be only one space after the last field)
 	 * below should be: f = 5 = 3+2, but for some unclear reason
 	 * hor.slider works better if one char less is specified here;
@@ -1238,20 +1260,22 @@ int linelength(DIR_WINDOW *w)
 	if ( of & WD_SHATT )             		/* attributes: depending on fs */
 	{
 #if _MINT_
-		if ( mint  && ( w->fs_type == 0 )  )
+		if ( (w->fs_type & FS_UID) != 0 )
+		{
 			f += 12;	/* other (i.e.mint) filesystem: attributes use 10 char + 2 sep. */
+		}
 		else
 #endif
-			f += 7;	/* TOS/FAT filesystem: attributes use 5 char + 2 sep. */
+			f += 7;	/* FAT/VFAT filesystem: attributes use 5 char + 2 sep. */
 	} 
-	
+
+#if _MINT_
+	if ((of & WD_SHOWN) && (w->fs_type & FS_UID))
+		f += 11;/* owner and group id: 4 + 1 + 4 + 2 sep. */
+#endif
+
 	return f + l;	
 }
-
-
-/* 
- * Funktie voor het zetten van de grootte van de verticale slider. 
- */
 
 
 /********************************************************************
@@ -1272,7 +1296,6 @@ int linelength(DIR_WINDOW *w)
  * work		- RECT structuur met de grootte van het werkgebied van het
  *			  window.
  */
-
 
 static void dir_comparea(DIR_WINDOW *dw, int item, RECT *r, RECT *work)
 {
@@ -1335,7 +1358,6 @@ static char *timestr(char *tstr, unsigned int time)
  * Result:  - Pointer to the -end- of tstr.
  */
 
-
 static char *datestr(char *tstr, unsigned int date)
 {
 	unsigned int day, mon, year, h;
@@ -1351,6 +1373,32 @@ static char *datestr(char *tstr, unsigned int date)
 	digit(tstr + 6, year);
 	return tstr + 8;
 }
+
+
+#if _MINT_
+
+/* 
+ * Create a string for displaying user/group id (range 0:9999).
+ * Leading zeros are shown; no termination zero byte.
+ * Return pointer to -end- of string.
+ * Hopefully this will be faster than sprintf( ... %i ...)
+ */
+
+static char *uidstr(char *idstr, int id)
+{
+	int i, k = 1000;
+
+	for( i = 0; i < 4; i++ )
+	{
+		idstr[i] = id / k;
+		id -= k * idstr[i];
+		k /= 10;
+		idstr[i] += '0';
+	}
+
+	return idstr + 4;
+}
+#endif
 
 
 /*
@@ -1389,27 +1437,37 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 		i,						/* length counter */ 
 		parent;					/* flag that this is a .. (parent) dir */
 
+
 #if _MINT_
 	static const int 
-		bits[9] = {S_IRUSR,S_IWUSR,S_IXUSR,S_IRGRP,S_IWGRP,S_IXGRP,S_IROTH,S_IWOTH,S_IXOTH};
+		rbits[9] = {S_IRUSR,S_IWUSR,S_IXUSR,S_IRGRP,S_IWGRP,S_IXGRP,S_IROTH,S_IWOTH,S_IXOTH};
 	static const char 
 		fl[9] = {'r', 'w', 'x', 'r', 'w', 'x', 'r', 'w', 'x'};
 #endif
 
-	unsigned int hmode;
+	unsigned int 
+		hmode;
 
 	parent = FALSE;
 
 	if (item < dw->nvisible)
 	{
+
+		/* Beware! must be:
+		 * mark[ITM_FOLDER] = '\007';
+		 * mark[ITM_PREVDIR] = '\007';
+		 * mark[ITM_PROGRAM] = '-';
+		 */
+		static const char mark[9] = {' ',' ',' ',' ','\007','-',' ','\007',' '};
+ 
 		h = (*dw->buffer)[(long)item]; /* file data */
 		hmode = h->attrib.mode & S_IFMT; 
 		d = s; /* beginning of the destination string for the line */
 
-		/* Mark a folder or parent directory */
+		/* Mark a folder or parent directory; also mark programs */
 
 		*d++ = ' ';
-		*d++ = (h->tgt_type == ITM_FOLDER || h->tgt_type == ITM_PREVDIR) ? '\007' : ' '; /* dir mark */
+		*d++ = mark[h->tgt_type];
 		*d++ = ' ';
 
 		p = h->name;
@@ -1423,10 +1481,10 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 		/* Compose the filename */
 
 #if _MINT_
-		if (mint && dw->fs_type == 0)
+		if (dw->fs_type != 0)
 		{
 			/* 
-			 * This is not TOS fs.
+			 * This is not TOS fs. (No need to check for mint)
 			 * Copy the filename. '..' is handled like everything else 
 			 */
 
@@ -1436,7 +1494,7 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 				i++;
 			}
 
-	        FILL_UNTIL(d, i, dw->namelength)
+	        FILL_UNTIL(d, i, minmax(MINLENGTH, dw->namelength, MAXLENGTH))
 		}
 		else
 #endif
@@ -1495,7 +1553,7 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 			{
 				int l;
 				long s = h->attrib.size & 0x7FFFFFFFL;
-				char t[SIZELEN + 2];		/* temporary string */
+				char t[SIZELEN + 4];		/* temporary string */
 
 				/* 
 				 * Note: SIZELEN, if set to "8", permits maximum
@@ -1507,11 +1565,14 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 				 */
 
 				if ( s > 99999999L )
+				{
 					s = s / 1024;
-				ltoa(s, t, 10);
-				if ( s != h->attrib.size )
+					ltoa(s, t, 10);
 					strcat(t, "K");
-
+				}
+				else
+					ltoa(s, t, 10);
+				
 				t[SIZELEN] = 0;      	/* so that it doesn't become too long */
 
 				l = (int)strlen(t);   	/* how long is this string? */
@@ -1573,59 +1634,81 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 
 		if ( of & WD_SHATT )
 		{
-#if _MINT_
-			if (mint && (dw->fs_type == 0))
+			switch(hmode)
 			{
-				/* This is not a FAT filesystem */
-				switch(hmode)
-				{
-					/* these attributes handle type of item  */
-					case S_IFDIR :	/* directory (folder) */
-						*d++ = 'd';
-						break;
-					case S_IFREG :	/* regular file */
-						*d++ = '-';
-						break;
-					case S_IFCHR :	/* BIOS special character file */
-						*d++ = 'c';
-						break;
-					case S_IFIFO :	/* pipe */
-						*d++ = 'p';
-						break;
-					case S_IFLNK :	/* symbolic link */
-						*d++ = 'l';
-						break;
-					case S_IMEM :	/* shared memory or process data */
-						*d++ = 'm';
-						break;
-					default : 
-						*d++ = '?';
-						break;
+				/* these attributes handle diverse item types  */
+				case S_IFDIR :	/* directory (folder) */
+					*d++ = 'd';
+					break;
+				case S_IFREG :	/* regular file */
+					*d++ = '-';
+					break;
+#if _MINT_
+				case S_IFCHR :	/* BIOS special character file */
+					*d++ = 'c';
+					break;
+				case S_IFIFO :	/* pipe */
+					*d++ = 'p';
+					break;
+				case S_IFLNK :	/* symbolic link */
+					*d++ = 'l';
+					break;
+				case S_IMEM :	/* shared memory or process data */
+					*d++ = 'm';
+					break;
+#endif
+				default : 
+					*d++ = '?';
+					break;
 				}
+#if _MINT_
+			if ((dw->fs_type & FS_UID) != 0)
+			{
+				/* This is not a FAT/VFAT filesystem */
+
+				char *r = d;
 
 				/* These handle access rights for owner, group and others */
 	
 				for ( i = 0; i < 9; i++ )
-					*d++ = (h->attrib.mode & bits[i]) ? fl[i] : '-';				
+					*d++ = (h->attrib.mode & rbits[i]) ? fl[i] : '-';				
 
-			} /* mint ? */
+				if(h->attrib.mode & S_ISUID)
+					r[2] = (r[2] == 'x') ? 's' : 'S';
+				if(h->attrib.mode & S_ISGID)
+					r[5] = (r[5] == 'x') ? 's' : 'S';
+				if(h->attrib.mode & S_ISVTX)
+					r[8] = (r[8] == 'x') ? 't' : 'T';
+
+			} /* non-FAT filesystem */
 			else
 #endif
 			{
 				unsigned int aa = h->attrib.attrib;				
 
-				/* This is a FAT filesystem */
+				/* This is a FAT/VFAT filesystem */
 
-				*d++ = (hmode == S_IFDIR) ? 'd' : '-';
-				*d++ = (aa & 0x04) ? 's' : '-';
-				*d++ = (aa & 0x02) ? 'h' : '-';
-				*d++ = (aa & 0x01) ? '-' : 'w';
-				*d++ = (aa & 0x20) ? 'a' : '-';
+				*d++ = (aa & FA_SYSTEM)   ? 's' : '-';
+				*d++ = (aa & FA_HIDDEN)   ? 'h' : '-';
+				*d++ = (aa & FA_READONLY) ? '-' : 'w';
+				*d++ = (aa & FA_ARCHIVE)  ? 'a' : '-';
 			}
 
 			*d++ = ' ';
 			*d++ = ' ';		
 		}
+
+#if _MINT_
+		if (((dw->fs_type & FS_UID) != 0) && (of & WD_SHOWN) )
+		{
+			d = uidstr(d, h->attrib.gid); /* first group id */
+			*d++ = '/';
+			d = uidstr(d, h->attrib.uid); /* then user id */
+
+			*d++ = ' ';
+			*d++ = ' ';
+		}
+#endif
 		
 		/* One of the last two blanks is too much */
 
@@ -1648,8 +1731,10 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
  ********************************************************************/
 
 /*
- * Count how many icons have to be drawn in a window.
- * Note: this may sometime give a larger number than needed.
+ * Tell how many icons have to be drawn in a window.
+ * Note: the routine does not actuallu -count- the icons, 
+ * but calculates their number. This may sometimes give a larger 
+ * number than needed.
  */
 
 long count_ic( DIR_WINDOW *dw, int sl, int lines )
@@ -1658,7 +1743,6 @@ long count_ic( DIR_WINDOW *dw, int sl, int lines )
 	long n, start;
 
 	columns = dw->columns;
-
 	n = columns * lines;
 	start = sl * columns + dw->px;
 
@@ -1689,29 +1773,37 @@ OBJECT *make_tree
 	int 
 		icon_no,
 		j,
-		ci,						/* column in which an icon is drawn */
-		columns = dw->columns, 
+		ci,			/* column in which an icon is drawn */
+		columns, 
 		yoffset, 
 		row;
 
+	boolean
+		hidden;		/* flag for a hidden object */
+
 	long 
-		oi = 0,
-		n, 
+		oi = 0,		/* index of an object in the tree */
+		lo,			/* offset of labels area from root object */
+		n,			/* approximate number of objects to draw */ 
 		start, 
-		i;
+		i;			/* counter */
 
 	OBJECT 
-		*obj;
+		*obj;		/* pointer to the root object */
 
 	NDTA 
-		*h;
+		*h;			/* pointer to directory items */
 
+	INAME
+		*labels;	/* pointers to icons labels */
+
+
+	columns = dw->columns;
 	start = sl * columns + dw->px;
 
 	/* 
 	 * How many icons have to be drawn? 
-	 * This is only an approximate calculation,
-	 * actual number may be lower
+	 * This is only an approximate calculation, actual number may be lower
 	 */
 
 	n = count_ic( dw, sl, lines );
@@ -1719,56 +1811,74 @@ OBJECT *make_tree
 	/* 
 	 * Allocate memory for background and icon objects.
 	 * This may be more than actually needed because maybe
-	 * not all objects will be drawn
+	 * not all objects will be drawn. Fortunately, it will
+	 * soon be released.
 	 */
 
-	if ((obj = malloc_chk((n + 1) * sizeof(OBJECT) + n * sizeof(CICONBLK))) == NULL) /* ciconblk (the largest) */
+	lo = (n + 1) * sizeof(OBJECT) + n * sizeof(CICONBLK);
+/*
+	if ((obj = malloc_chk((n + 1) * sizeof(OBJECT) + n * sizeof(CICONBLK) )) == NULL) /* ciconblk (the largest) */
 		return NULL;
-
-	if ((row = (sl - dw->py) * ICON_H) == 0)
-		yoffset = YOFFSET;
-	else
-		yoffset = 0;
-
-	/* Set background object */
-
-	wd_set_obj0( obj, smode, row, lines, yoffset, work );
-
-	/* Note: this below must agree whith dir_drawsel() */
-
-	for (i = 0; i < n; i++)
+*/
+	if((obj = malloc_chk(lo + n * sizeof(INAME))) != NULL)
 	{
-		boolean selected;
+		labels = (INAME *)((char *)(obj) + lo);
 
-		j = start + i;
-		ci = j % columns;
+		if ((row = (sl - dw->py) * ICON_H) == 0)
+			yoffset = YOFFSET;
+		else
+			yoffset = 0;
 
-		if ( colour_icons || ((ci >= sc) && (ci <= (sc + ncolumns))) )
+		/* Set background object */
+
+		wd_set_obj0( obj, smode, row, lines, yoffset, work );
+
+		/* Note: this below must agree whith dir_drawsel() */
+
+		for (i = 0; i < n; i++)
 		{
-			h = (*dw->buffer)[j];
+			boolean selected;
 
-			icon_no = h->icon;
+			j = start + i;
+			ci = j % columns;
 
-			if (smode)
+			if ( colour_icons || ((ci >= sc) && (ci <= (sc + ncolumns))) )
 			{
-				if (h->selected == h->newstate)
-					continue; /* next loop !!! */
-				selected = h->newstate;
-			}
-			else
-				selected = h->selected;
+				h = (*dw->buffer)[j];
 
-			set_obji
-			( 
-				obj, 
-				oi++,
-				n,
-				selected, 
-				icon_no, 	
-				(ci - dw->px) * ICON_W + XOFFSET,
-				(j / columns - sl) * ICON_H + yoffset,
-				(char *)h->name 
-			);
+				hidden = ((h->attrib.attrib & FA_HIDDEN) != 0);
+				icon_no = h->icon;
+
+				if (smode)
+				{
+					if (h->selected == h->newstate)
+						continue; /* next loop !!! */
+					selected = h->newstate;
+				}
+				else
+					selected = h->selected;
+#if _MINT_
+				cramped_name((char *)h->name, labels[i], sizeof(INAME));
+#else
+				strcpy(labels[i], (char *)h->name); /* shorter, and safe in single-TOS */
+#endif
+				set_obji
+				( 
+					obj, 
+					oi++,
+					n,
+					selected, 
+					hidden,
+					h->link,
+					icon_no, 	
+					(ci - dw->px) * ICON_W + XOFFSET,
+					(j / columns - sl) * ICON_H + yoffset,
+/*
+					(char *)h->name 
+*/
+					labels[i]
+				);
+			}
 		}
 	}
 
@@ -1859,9 +1969,8 @@ static void icn_comparea
  
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 {
-
 	/*
-	 * Don't do anything in iconified window
+	 * Don't do anything in an iconified window
 	 * (and perhaps this is not even needed ?) 
 	 */
 
@@ -1872,11 +1981,10 @@ void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 	{
 		RECT 
 			r, 
-			r2, /* slightly wider than r */
 			in; 
 
-		char 
-			s[256];
+		VLNAME
+			s;
 
 		int 
 			i;
@@ -1885,16 +1993,10 @@ void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 
 		dir_comparea(dw, line, &r, work);
 
-		r2 = r;
-		r2.x -= dir_font.cw;
-		r2.w += 2 * dir_font.cw;
-
-		/* If it can be seen, draw it */
-
-		if (xd_rcintersect(area, &r2, &in))
+		if (xd_rcintersect(area, &r, &in))
 		{
 			NDTA *d;
-			bool link = FALSE;
+			boolean link = FALSE;
 
 			/* Compose a directory line */
 
@@ -1904,7 +2006,7 @@ void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 
 			i = 0;
 			xd_clip_on(&in);
-			pclear(&r2);
+			pclear(&r);
 
 			/* Consider only lines with some text */
 
@@ -1967,7 +2069,7 @@ static void dir_prtlines(DIR_WINDOW *dw, RECT *area, RECT *work)
 {
 	int i;
 
-	set_txt_default(dir_font.id, dir_font.size);
+	set_txt_default(&dir_font);
 
 	for(i = 0; i < dw->rows; i++ )
 		dir_prtcolumns(dw, dw->py + i, area, work);
@@ -1978,7 +2080,7 @@ void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean text, RECT *work)
 {
 	if (text)
 	{
-		pclear(r); 
+		pclear(r);
 		dir_prtlines(dw, r, work);
 	}
 	else
@@ -2058,7 +2160,8 @@ static void dir_rem(DIR_WINDOW *w)
 
 
 /*
- * Either close a directory window completely, or go one level up
+ * Either close a directory window completely, or go one level up.
+ * If mode > 0 window is closed completely.
  */
 
 void dir_close(WINDOW *w, int mode)
@@ -2126,9 +2229,8 @@ static void dir_closed(WINDOW *w)
  * Bij een fout worden deze strings vrijgegeven. 
  */
 
-static WINDOW *dir_do_open(WINFO *info, const char *path,
-						   const char *fspec, int px, int py,
-						   int *error) 
+static WINDOW *dir_do_open
+(WINFO *info, const char *path, const char *fspec, int px, int py, int *error) 
 {
 	DIR_WINDOW *w;
 	RECT size;
@@ -2136,6 +2238,8 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 	WDFLAGS oldflags = info->flags;
 
 	wd_in_screen( info ); /* modify position to come into screen */
+
+	/* Create a window. Note: window structure is completely zeroed here */
 
 	if ((w = (DIR_WINDOW *)xw_create(DIR_WIND, &wd_type_functions, DFLAGS, &dmax,
 									  sizeof(DIR_WINDOW), NULL, &errcode)) == NULL)
@@ -2148,19 +2252,17 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 
 	hourglass_mouse();
 
+	/* Fields not explicitely specified will remain zeroed */
+
 	info->typ_window = (TYP_WINDOW *)w;
 	w->itm_func = &itm_func;
 	w->px = px;
 	w->py = py;
 	w->path = path;
 	w->fspec = fspec;
-	w->buffer = NULL;
-	w->nfiles = 0;
-	w->nvisible = 0;
 	w->winfo = info;
-	w->scolumns = 0;
 
-	/* In order to calculat columns and rows properly... */
+	/* In order to calculate columns and rows properly... */
 
 	info->flags.fulled = 0;
 	info->flags.fullfull = 0;
@@ -2183,14 +2285,14 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
 	{
 		info->flags = oldflags;
 		wd_calcsize(info, &size); 
-		dir_title(w);
-		set_sliders((TYP_WINDOW *)w);
+		wd_type_title((TYP_WINDOW *)w);
 
 		if ( avsetw.flag )
 		{
 			size = avsetw.size;
 			avsetw.flag = FALSE;
 		}
+
 		wd_iopen( (WINDOW *)w, &size); 
 		return (WINDOW *)w;
 	}
@@ -2201,6 +2303,7 @@ static WINDOW *dir_do_open(WINFO *info, const char *path,
  * Create a directory window
  * Note: all elements will be deallocated at window closing,
  * must be kept until then.
+ * In case of an error, path is freed.
  */
 
 boolean dir_add_window
@@ -2249,7 +2352,7 @@ boolean dir_add_window
 		}
 		else
 		{
-			/* Ok, now really we can open the window, in the slot "j" */
+			/* Ok, now really we can open the window, in WINFO slot "j" */
 
 			if ( (w = dir_do_open(&dirwindows[j], path, fspec, 0, 0, &error)) == NULL)
 			{
@@ -2303,7 +2406,7 @@ boolean dir_add_window
 							selection.w = w;
 							selection.selected = i;
 							selection.n = 1; 					
-							itm_select( w, i, 3, TRUE );
+							dir_select( w, i, 3, TRUE );
 							break; /* don't search anymore */
 						}
 					}
@@ -2317,7 +2420,7 @@ boolean dir_add_window
 
 
 /*
- * For the sake of size optimization
+ * For the sake of size optimization, a call with fewer parameters
  */
 
 boolean dir_add_dwindow(const char *path)
@@ -2331,31 +2434,6 @@ boolean dir_add_dwindow(const char *path)
  * Funkties voor het initialisatie, laden en opslaan.				*
  *																	*
  ********************************************************************/
-
-/*
- * Calculate default positions and sizes of directory windows.
- * Windows get stacked rightwards and downwards, starting 
- * from (100,30); they are all of the same size
- */
- 
-void dir_default(void)
-{
-	int i;
-	WINFO *dirw;
-
-	dir_font = def_font;
-
-	for (i = 0; i < MAXWINDOWS; i++)
-	{
-		dirw = &dirwindows[i];
-		memset(dirw, 0, sizeof(WINFO));
-
-		dirw->x = 100 + i * screen_info.fnt_w * 2 - screen_info.dsk.x;
-		dirw->y = 30 + i * screen_info.fnt_h - screen_info.dsk.y;
-		dirw->w = screen_info.dsk.w / (2 * screen_info.fnt_w);
-		dirw->h = (screen_info.dsk.h * 11) / (20 * screen_info.fnt_h + 20 * DELTA);
-	}
-}
 
 
 /*
@@ -2380,6 +2458,8 @@ static CfgEntry dirw_table[] =
  * Load or save one open directory window
  */
 
+TYP_WINDOW *wd_that(WINFO *wi, SINFO2 *that);
+
 CfgNest dir_one
 {
 	if (io == CFG_SAVE)
@@ -2403,7 +2483,7 @@ CfgNest dir_one
 	}
 	else
 	{
-		memset(&that, 0, sizeof(that));
+		memclr(&that, sizeof(that));
 		*error = CfgLoad(file, dirw_table, (int)sizeof(LNAME), lvl); 
 
 		if ( (*error == 0 ) && (that.path[0] == 0 || that.spec[0] == 0 || that.index >= MAXWINDOWS) )
@@ -2438,7 +2518,6 @@ CfgNest dir_one
 				/* If there is an error, display an alert */
 
 				wd_checkopen(error);
-
 			}
 			else
 			{
@@ -2455,8 +2534,8 @@ CfgNest dir_config
 {
 	if ( io == CFG_LOAD )
 	{
-		memset(&thisw, 0, sizeof(thisw));
-		memset(&that, 0, sizeof(that));
+		memclr(&thisw, sizeof(thisw));
+		memclr(&that, sizeof(that));
 	}
 
 	cfg_font = &dir_font;
@@ -2479,7 +2558,7 @@ CfgNest dir_config
  * item is aangeklikt. 
  */
 
-static int itm_find(WINDOW *w, int x, int y)
+static int dir_find(WINDOW *w, int x, int y)
 {
 	int 
 		hx,	
@@ -2507,7 +2586,6 @@ static int itm_find(WINDOW *w, int x, int y)
 	dw = (DIR_WINDOW *)w;
 
 	xw_getwork(w, &work);
-
 	wd_cellsize((TYP_WINDOW *)w, &cw, &ch);
 
 	hx = (x - work.x) / cw;
@@ -2556,9 +2634,9 @@ static int itm_find(WINDOW *w, int x, int y)
  * Funktie die aangeeft of een directory item geselecteerd is. 
  */
 
-static boolean itm_state(WINDOW *w, int item)
+static boolean dir_state(WINDOW *w, int item)
 {
-	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->selected;
+	return (*((DIR_WINDOW *) w)->buffer)[(long)item]->selected;
 }
 
 
@@ -2566,22 +2644,22 @@ static boolean itm_state(WINDOW *w, int item)
  * Funktie die het type van een directory item teruggeeft. 
  */
 
-static ITMTYPE itm_type(WINDOW *w, int item)
+static ITMTYPE dir_itmtype(WINDOW *w, int item)
 {
-	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->item_type;
+	return (*((DIR_WINDOW *) w)->buffer)[(long)item]->item_type;
 }
 
 
 
-static ITMTYPE itm_tgttype(WINDOW *w, int item)
+static ITMTYPE dir_tgttype(WINDOW *w, int item)
 {
-	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->tgt_type;
+	return (*((DIR_WINDOW *) w)->buffer)[(long)item]->tgt_type;
 }
 
 
-static int itm_icon(WINDOW *w, int item)
+static int dir_icon(WINDOW *w, int item)
 {
-	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->icon;
+	return (*((DIR_WINDOW *) w)->buffer)[(long)item]->icon;
 }
 
 
@@ -2589,7 +2667,7 @@ static int itm_icon(WINDOW *w, int item)
  * Funktie die de naam van een directory item teruggeeft. 
  */
 
-static const char *itm_name(WINDOW *w, int item)
+static const char *dir_itmname(WINDOW *w, int item)
 {
 	return (*((DIR_WINDOW *) w)->buffer)[(long) item]->name;
 }
@@ -2600,7 +2678,7 @@ static const char *itm_name(WINDOW *w, int item)
  * Note: this routine allocates space for the fullname string
  */
 
-static char *itm_fullname(WINDOW *w, int item)
+static char *dir_fullname(WINDOW *w, int item)
 {
 	NDTA *itm = (*((DIR_WINDOW *) w)->buffer)[(long) item];
 
@@ -2615,9 +2693,9 @@ static char *itm_fullname(WINDOW *w, int item)
  * Funktie die de dta van een directory item teruggeeft. 
  */
 
-static int itm_attrib(WINDOW *w, int item, int mode, XATTR *attr)
+static int dir_attrib(WINDOW *w, int item, int mode, XATTR *attr)
 {
-	NDTA *itm = (*((DIR_WINDOW *) w)->buffer)[(long) item];
+	NDTA *itm = (*((DIR_WINDOW *)w)->buffer)[(long) item];
 	char *name;
 	int error;
 
@@ -2625,7 +2703,7 @@ static int itm_attrib(WINDOW *w, int item, int mode, XATTR *attr)
 		return error;
 	else
 	{
-		error = (int)x_attr(mode, name, attr);
+		error = (int)x_attr(mode, ((DIR_WINDOW *)w)->fs_type, name, attr);
 		free(name);
 		return error;
 	}
@@ -2680,7 +2758,7 @@ static void dir_setnws(DIR_WINDOW *w, boolean draw)
  * de status veranderd is. 
  * See also dsk_drawsel() ! Functionality is somewhat duplicated
  * for the sake of colour icons when the background object has to be
- * redrawn as well.
+ * redrawn as well. An attempt is made to optimize the drawing for speed.
  */
 
 #define MSEL 8 /* if so many icons change state, draw complete window */
@@ -2693,7 +2771,6 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 
 	xw_getwork((WINDOW *)w, &work);
-
 	wind_update(BEG_UPDATE);
 	moff_mouse();
 
@@ -2702,8 +2779,8 @@ static void dir_drawsel(DIR_WINDOW *w)
 		/* Display as text */
 
 		h = dir_pymax(w);
-
 		xw_getfirst((WINDOW *) w, &r2);
+
 		while (r2.w != 0 && r2.h != 0)
 		{
 			xd_clip_on(&r2);
@@ -2712,7 +2789,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 				NDTA *b =(*pb)[i];
 				if (b->selected != b->newstate)
 				{
-					dir_comparea(w, (int) i, &r1, &work);
+					dir_comparea(w, (int)i, &r1, &work);
 					if (xd_rcintersect(&r1, &r2, &d))
 						invert(&d);
 				}
@@ -2728,7 +2805,6 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 		OBJECT 
 			*tree;
-
 		int 
 			j,
 			j0 = w->py * w->columns + w->px, 
@@ -2826,14 +2902,12 @@ static void dir_drawsel(DIR_WINDOW *w)
  * mode = 4: select all (except parent directory). 
  */
 
-static void itm_select(WINDOW *w, int selected, int mode, boolean draw)
+static void dir_select(WINDOW *w, int selected, int mode, boolean draw)
 {
 	long i, h;
 	RPNDTA *pb;
 
 	/* Don't do anything in iconified window */
-
-	/* why test existence here ? */
 
 	if ( xw_exist(w) && (((TYP_WINDOW *)w)->winfo)->flags.iconified != 0 ) 	
 		return; 
@@ -2847,26 +2921,7 @@ static void itm_select(WINDOW *w, int selected, int mode, boolean draw)
 	for (i = 0; i < h; i++)
 	{
 		NDTA *b = (*pb)[i];
-		boolean *bnewstate = &(b->newstate);
-
-		switch (mode)
-		{
-			case 0:
-				*bnewstate = (i == selected) ? TRUE : FALSE;
-				break;
-			case 1:
-				*bnewstate = b->selected;
-				break;
-			case 2:
-				*bnewstate = (i == selected) ? FALSE : b->selected;
-				break;
-			case 3:
-				*bnewstate = (i == selected) ? TRUE : b->selected;
-				break;
-			case 4:
-				*bnewstate = (b->item_type == ITM_PREVDIR) ? b->selected : TRUE;
-				break;
-		}
+		changestate(mode, &(b->newstate), i, selected, b->selected, (b->item_type == ITM_PREVDIR) ? b->selected : TRUE);
 	}
 
 	if (mode == 1)
@@ -2885,7 +2940,12 @@ static void itm_select(WINDOW *w, int selected, int mode, boolean draw)
  * items visible
  */
 
-static void calc_vitems(DIR_WINDOW *dw, int *s, int *n)
+static void calc_vitems
+(
+	DIR_WINDOW *dw,	/* pointer to window */ 
+	int *s,			/* index of first item */ 
+	int *n			/* number of visible items */
+)
 {
 	int h;
 
@@ -2910,25 +2970,46 @@ static void calc_vitems(DIR_WINDOW *dw, int *s, int *n)
 
 
 /* 
- * Rubberbox funktie met scrolling 
+ * Rubberbox funktie met scrolling.
+ * This is for directory windows only. See also icon.c 
+ * Note1: window can be scrolled in x and y simultaneously
+ * Note2: if set_rect_default() is removed, rubberbox will not be correctly
+ * redrawn when a window is scrolled.
  */
 
 static void rubber_box(DIR_WINDOW *w, RECT *work, int x, int y, RECT *r)
 {
-	int x1 = x, y1 = y, x2 = x, y2 = y, ox = x, oy = y, hy = y;
-	int kstate, h;
-	int deltax, deltay, absdeltax, absdeltay;
-	int scrollx, scrolly, ww, wx = x;
-	boolean released, redraw;
+	int 
+		x1 = x,
+		x2 = x, 
+ 		wx = x,
+		ox = x, 
+		y1 = y,  
+		y2 = y, 
+		oy = y, 
+		hy = y,
+		kstate, 
+		deltax, 
+		deltay, 
+		absdeltax, 
+		absdeltay,
+		scrollx, 
+		scrolly, 
+		rx, 
+		ry;
+
+	boolean 
+		released, 
+		redraw;
 
 
 	wd_cellsize((TYP_WINDOW *)w, &absdeltax, &absdeltay);
 
-	wind_update(BEG_MCTRL);
-	graf_mouse(POINT_HAND, NULL);
-
-	set_rect_default();
+	start_rubberbox();
 	draw_rect(x1, y1, x2, y2);
+
+	rx = work->x + work->w;
+	ry = work->y + work->h;
 
 	do
 	{
@@ -2940,31 +3021,31 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, int x, int y, RECT *r)
 
 		/* Box should not exceed window border */
 
-		x2 = minmax( work->x - 2, x2, work->x + work->w + 2 );
-		y2 = minmax( work->y - 2, y2, work->y + work->h + 2 );
+		x2 = minmax( work->x, x2, rx );
+		y2 = minmax( work->y, y2, ry );
 
-		if ((x2 < work->x) && (w->px > 0) && (x1 < INT_MAX - absdeltax) )
+		if ((x2 <= work->x) && (w->px > 0) && (x1 < INT_MAX - absdeltax) )
 		{
 			redraw = TRUE;
 			scrollx = WA_LFLINE;
 			deltax = absdeltax;
 		}
 
-		if ((y2 < work->y) && (w->py > 0) && (y1 < INT_MAX - absdeltay) )
+		if ((y2 <= work->y) && (w->py > 0) && (y1 < INT_MAX - absdeltay) )
 		{
 			redraw = TRUE;
 			scrolly = WA_UPLINE;
 			deltay = absdeltay;
 		}
 
-		if ((x2 >= work->x + work->w) && ((w->px + w->ncolumns) < w->columns) && (x1 > -INT_MAX + absdeltax) )
+		if ((x2 >= rx) && ((w->px + w->ncolumns) < w->columns) && (x1 > -INT_MAX + absdeltax) )
 		{
 			redraw = TRUE;
 			scrollx = WA_RTLINE;
 			deltax = -absdeltax;
 		}
 
-		if ((y2 >= work->y + work->h) && ((w->py + w->nrows) < w->nlines) && (y1 > -INT_MAX + absdeltay) )
+		if ((y2 >= ry) && ((w->py + w->nrows) < w->nlines) && (y1 > -INT_MAX + absdeltay) )
 		{
 			redraw = TRUE;
 			scrolly = WA_DNLINE;
@@ -2976,46 +3057,35 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, int x, int y, RECT *r)
 
 		if (redraw)
 		{
+/* not needed ?
 			set_rect_default();
+*/
 			draw_rect(wx, hy, ox, oy);
 
 			if (scrollx)
 			{
 				x1 += deltax; 
-				if (x1 < (ww = work->x))
-					wx = ww - 1;
-				else if (x1 > (ww = work->x + work->w))
-					wx = ww;
-				else
-					wx = x1;
-
+				wx = minmax( work->x, x1, rx );
 				w_scroll((TYP_WINDOW *)w, scrollx);
 			}
 
 			if (scrolly)
 			{
 				y1 += deltay;
-
-				if (y1 < (h = work->y))
-					hy = h - 1;
-				else if (y1 > (h = work->y + work->h))
-					hy = h;
-				else
-					hy = y1;
-
+				hy = minmax( work->y, y1, ry );
 				w_scroll((TYP_WINDOW *)w, scrolly);
 			}
 
-			if (released == FALSE)
+			if (!released)
 			{
-				set_rect_default();
+				set_rect_default();			/* this call is needed! */
 				draw_rect(wx, hy, x2, y2); 
 				ox = x2;
 				oy = y2;
 			}
 		}
 	}
-	while (released == FALSE);
+	while (!released);
 
 	rubber_rect(x1, x2, y1, y2, r);
 }
@@ -3027,7 +3097,7 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, int x, int y, RECT *r)
  * Select items catched in a rubberbox.
  */
 
-static void itm_rselect(WINDOW *w, int x, int y)
+static void dir_rselect(WINDOW *w, int x, int y)
 {
 	long 
 		i, h;
@@ -3045,12 +3115,9 @@ static void itm_rselect(WINDOW *w, int x, int y)
 		return;
 
 	xw_getwork(w, &work);
-
 	rubber_box((DIR_WINDOW *) w, &work, x, y, &r1);
 
-
 	h = (long)(((DIR_WINDOW *) w)->nvisible);
-
 	pb = ((DIR_WINDOW *) w)->buffer;
 
 	for (i = 0; i < h; i++ )
@@ -3085,6 +3152,8 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 {
 	RECT ir;
 
+int *icndcoords = &icnd->coords[0];
+
 	if (options.mode == TEXTMODE)
 	{
 		icnd->item = obj;
@@ -3095,17 +3164,16 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 		ir.y -= my;
 		ir.w = DRAGLENGTH * dir_font.cw - 1;
 		ir.h -= 1;
-
-		icnd->coords[0] = ir.x;
-		icnd->coords[1] = ir.y;
-		icnd->coords[2] = ir.x;
-		icnd->coords[3] = ir.y + ir.h;
-		icnd->coords[4] = ir.x + ir.w;
-		icnd->coords[5] = ir.y + ir.h;
-		icnd->coords[6] = ir.x + ir.w;
-		icnd->coords[7] = ir.y;
-		icnd->coords[8] = ir.x + 1;
-		icnd->coords[9] = ir.y;
+		*icndcoords++ = ir.x;
+		*icndcoords++ = ir.y;
+		*icndcoords++ = ir.x;
+		*icndcoords++ = ir.y + ir.h;
+		*icndcoords++ = ir.x + ir.w;
+		*icndcoords++ = icnd->coords[3] /* ir.y + ir.h */ ;
+		*icndcoords++ = icnd->coords[4] /* ir.x + ir.w */ ;
+		*icndcoords++ = ir.y;
+		*icndcoords++ = ir.x + 1;
+		*icndcoords = ir.y;
 	}
 	else
 	{
@@ -3134,24 +3202,7 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 		icnd->m_x = work->x + (s % columns - wd->px) * ICON_W + ICON_W / 2 - mx;
 		icnd->m_y = work->y + (s / columns) * ICON_H + ICON_H / 2 - my;
 
-		icnd->coords[0] = tr.x;
-		icnd->coords[1] = tr.y;
-		icnd->coords[2] = ir.x;
-		icnd->coords[3] = tr.y;
-		icnd->coords[4] = ir.x;
-		icnd->coords[5] = ir.y;
-		icnd->coords[6] = ir.x + ir.w;
-		icnd->coords[7] = ir.y;
-		icnd->coords[8] = ir.x + ir.w;
-		icnd->coords[9] = tr.y;
-		icnd->coords[10] = tr.x + tr.w;
-		icnd->coords[11] = tr.y;
-		icnd->coords[12] = tr.x + tr.w;
-		icnd->coords[13] = tr.y + tr.h;
-		icnd->coords[14] = tr.x;
-		icnd->coords[15] = tr.y + tr.h;
-		icnd->coords[16] = tr.x;
-		icnd->coords[17] = tr.y + 1;
+		icn_coords(icnd->coords, &tr, &ir); 
 	}
 }
 
@@ -3160,6 +3211,8 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
  * Create a list of (visible ?) selected items
  * This routine will return FALSE and a NULL list pointer
  * if no list has been created.
+ * Note: at most 32767 items can be returned because 'nselected'  and
+ * 'nvisible' are 16 bits long
  */
 
 static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_list)
@@ -3169,8 +3222,8 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
 		n = 0, 
 		nv = 0, 
 		*list, 
-		s, 
-		h;
+		s,		/* first visible item */ 
+		h;		/* number of visible items */
 
 	long 
 		i, 
@@ -3190,14 +3243,15 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
 		if ((*d)[i]->selected)
 		{
 			n++;
-			if (((int) i >= s) && ((int) i < h))
+			if (((int)i >= s) && ((int)i < h))
 				nv++;
 		}
 	}
 
 	*nvisible = nv;
+	*nselected = n;
 
-	if ((*nselected = n) == 0)
+	if (n == 0)
 	{
 		*sel_list = NULL;
 		return FALSE;
@@ -3207,15 +3261,17 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
 
 	*sel_list = list;
 
-	if (list == NULL)
-		return FALSE;
-	else
+	if (list != NULL)
 	{
 		for (i = 0; i < m; i++)
+		{
 			if ((*d)[i]->selected)
-				list[j++] = (int) i;
+				list[j++] = (int)i;
+		}
 		return TRUE;
 	}
+
+	return FALSE;
 }
 
 
@@ -3223,7 +3279,7 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
  * Routine voor het maken van een lijst met geselekteerde items. 
  */
 
-static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible,
+static boolean dir_xlist(WINDOW *w, int *nselected, int *nvisible,
 						 int **sel_list, ICND **icns, int mx, int my)
 {
 	int j = 0;
@@ -3246,12 +3302,7 @@ static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible,
 	icnlist = malloc_chk(*nvisible * sizeof(ICND));
 	*icns = icnlist;
 
-	if (icnlist == NULL)
-	{
-		free(*sel_list);
-		return FALSE;
-	}
-	else
+	if (icnlist != NULL)
 	{
 		int s, n, h;
 
@@ -3264,17 +3315,20 @@ static boolean itm_xlist(WINDOW *w, int *nselected, int *nvisible,
 
 		return TRUE;
 	}
+
+	free(*sel_list);
+	return FALSE;
 }
 
 
 /* 
  * Routine voor het maken van een lijst met geseleketeerde items. 
+ * Note: at most 32767 items can be returned because 'n' is 16 bits long
  */
 
-static boolean itm_list(WINDOW *w, int *n, int **list)
+static boolean dir_list(WINDOW *w, int *n, int **list)
 {
 	int dummy;
-
 	return get_list((DIR_WINDOW *)w, n, &dummy, list);
 }
 
@@ -3283,9 +3337,9 @@ static boolean dir_open(WINDOW *w, int item, int kstate)
 {
 	char *newpath;
 
-	if ((itm_type(w, item) == ITM_FOLDER) && ((kstate & 8) == 0))
+	if ((dir_itmtype(w, item) == ITM_FOLDER) && ((kstate & 8) == 0))
 	{
-		if ((newpath = itm_fullname(w, item)) != NULL)
+		if ((newpath = dir_fullname(w, item)) != NULL)
 		{
 			free(((DIR_WINDOW *) w)->path);
 			((DIR_WINDOW *) w)->path = newpath;
@@ -3294,7 +3348,7 @@ static boolean dir_open(WINDOW *w, int item, int kstate)
 
 		return FALSE;
 	}
-	else if ((itm_type(w, item) == ITM_PREVDIR) && ((kstate & 8) == 0))
+	else if ((dir_itmtype(w, item) == ITM_PREVDIR) && ((kstate & 8) == 0))
 	{
 		dir_close(w, 0);
 		return FALSE;
@@ -3304,7 +3358,7 @@ static boolean dir_open(WINDOW *w, int item, int kstate)
 }
 
 
-boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
+static boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 						int *list, ICND *icns, int x, int y, int kstate)
 {
 	return item_copy(dw, dobject, sw, n, list, kstate);
@@ -3317,6 +3371,9 @@ boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
  * which expect an item selected in a directory window.
  * Note: this window will have a NULL pointer to WINFO structure, and so
  * it can be distinguished from a real window.
+ * Also, 'sim window' flag is set.
+ * This routine does -not- allocate or deallocate any memory which
+ * has to be freed later.
  */
 
 void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t size, int attrib)
@@ -3328,38 +3385,40 @@ void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t siz
 		buffer,
 		*pbuffer[1]; 
 
-	memset(&dw, 0, sizeof(DIR_WINDOW));
-	memset(&buffer, 0, sizeof(NDTA));
+	memclr(&dw, sizeof(DIR_WINDOW));
+	memclr(&buffer, sizeof(NDTA));
 
 	((WINDOW *)&dw)->xw_type = DIR_WIND;	/* this is a directory window */
+	((WINDOW *)&dw)->xw_xflags |= XWF_SIM;	/* a simulated one */
 	dw.path = path;							/* path of this dir */
 	dw.itm_func = &itm_func;				/* pointers to specific functions */
 	dw.nfiles = 1;							/* number of files in window */
 	dw.nvisible = 1;						/* one visible item */
 	dw.buffer = &pbuffer;					/* location of NDTA pointer array */
-	*dwa = &dw;								/* DIR_WINDOW address */
+	*dwa = &dw;								/* DIR_WINDOW pointer address */
 
-	pbuffer[0] = &buffer;
+	pbuffer[0] = &buffer;					/* point to buffer */
 
 	buffer.name = name;						/* filename */
 	buffer.item_type = type;				/* type of item in the dir */
 	buffer.attrib.size = size;				/* file size */
 	buffer.attrib.attrib = attrib;			/* file attributes */
 
-	/* Now "select" the object */
+	/* Now "select" the one and only object in this "window" */
 
-	itm_select( (WINDOW *)&dw, 0, 3, FALSE);
+	dir_select( (WINDOW *)&dw, 0, 3, FALSE);
 }
 
 
 /*
  * Try to find what item type should be assigned to a name,
  * so that this item can be opened in the appropriate way.
- * This routine is used only in open.c, and only after
+ * This routine is used in open.c, and only after
  * the target of a possible link has been determined.
+ * It is also used in icon.c
  */
 
-ITMTYPE diritem_type( char *fullname )
+ITMTYPE diritem_type(char *fullname )
 {
 	XATTR attr;
 
@@ -3373,9 +3432,9 @@ ITMTYPE diritem_type( char *fullname )
 	if ( strcmp(fn_get_name(fullname), prevdir) == 0 )
 		return ITM_PREVDIR;
 
-	/* Get info on the object itself, don't follw links */
+	/* Get info on the object itself, don't follow links */
 
-	if ( x_attr(  1, fullname, &attr )  >= 0 )
+	if ( x_attr(  1, FS_INQ, fullname, &attr )  >= 0 )
 	{
 		if ( prg_isprogram(fn_get_name(fullname)) )
 			return ITM_PROGRAM;

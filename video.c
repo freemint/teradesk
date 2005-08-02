@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -43,22 +43,24 @@
 #include "events.h"
 #include "screen.h"
 
-static XDINFO vidinfo;
 
 extern GRECT xd_desk;
+extern int xd_nplanes;
 extern int tos_version;
-
 extern WINDOW *xd_deskwin; 
+extern int aes_version;
 
 int 
 #if _OVSCAN
-	oldstat = -1,   /* previous state of overscan */
+	oldstat = -1,   /* previous state of OVERscan */
 	ovrstat = -1,	/* state of overscan          */
 #endif
 	vprefsold,		/* previous state of voptions */
-	bltstat,		/* presence of blitter        */
+	vdohi,			/* upper word of vdo cookie value */
+	bltstat = 0,	/* presence of blitter        */
 	falmode = 0,	/* falcon video mode		  */
-	currez;  		/* current screen mode        */    
+	fmtype,			/* falcon monitor type: 0=STmon 1=STcol 2=VGA 3=TV */
+	currez;  		/* current res: 0=ST-low 1=ST-med 2=ST-Hi 4=TT-low 6=TT-hi 7=TT-med */    
 
 long
 #if _OVSCAN
@@ -66,32 +68,66 @@ long
 #endif
 	vdo;			/* id. of video hardware- shifter type- see below */
 
-#define ST_VIDEO 	0
-#define STE_VIDEO	1
-#define TT_VIDEO	2
-#define FALC_VIDEO	3
-#define MIL_VIDEO	4
-#define OTH_VIDEO	5
+static boolean
+	st_ste = FALSE,		/* ST or STe */
+	fal_mil = FALSE;	/* Falcon or Milan */
+
+/* These are the shifter types returned from the _VDO cookie */
+
+#define ST_VIDEO 	0x0000
+#define STE_VIDEO	0x0001
+#define TT_VIDEO	0x0002
+#define FAL_VIDEO	0x0003
+#define MIL_VIDEO	0x0004
+#define OTH_VIDEO	0x0005
 
 
-/*
- * Which resolution code is selected by which radiobutton 
+/* 
+ * These are the bitflags of the falcon video mode.
+ * Note: there may already be other definitions in header files 
+ * for these flags 
  */
 
-static const int rmap[10] = {VSTLOW, VSTMED, VSTHIGH, 0, VTTMED, 0, VTTHIGH, VTTLOW, 0, 0};
+#define VM_INQUIRE -1
+#define VM_NPLANES 0x0007
+#define VM_80COL   0x0008
+#define VM_VGAMODE 0x0010
+#define VM_PALMODE 0x0020
+#define VM_OVSCAN  0x0040
+#define VM_STMODE  0x0080
+#define VM_DBLINE  0x0100
+
+/* These are the values for falcon monitor tyoe */
+
+#define MONO_MON	0
+#define STCOL_MON	1
+#define VGA_MON		2
+#define TV_MON		3
+
+/* These are the standard resolution codes as returned by Getrez() */
+
+#define ST_LOWRES	0
+#define ST_MEDRES	1
+#define ST_HIGHRES	2
+#define TT_LOWRES	7
+#define TT_MEDRES	4
+#define TT_HIGHRES	6
+
+/* Which resolution code is selected by which radiobutton */
+
+static const char rmap[10] = {VSTLOW, VSTMED, VSTHIGH, 0, VTTMED, 0, VTTHIGH, VTTLOW, 0, 0};
 
 	
 /* 
  *  Routine get_set_video acquires data on current state of bliter (if any)
  *  and of current resolution, or sets same data
+ *  parameter: 0=get, 1=set, 2=set & change rez
  */
  
-void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
+void get_set_video (int set) 
 {
 	long
-#if _OVSCAN
 		s,						/* superv.stack pointer */
-#endif
 		logb,       			/* logical screen base  */
 		phyb;       			/* physical screen base */
 
@@ -106,11 +142,13 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 		menu_h;
 
 	static const int 
-		std_x[4] = {320, 640, 1280, 0},
-		std_y[4] = {200, 400, 800, 0};
-
-	WINDOW *w;
+		std_x[4] = {320, 640, 1280, 0}, 
+		std_y[4] = {200, 400,  800, 0};
 #endif
+
+	WINDOW 
+		*w;
+
 
 	/* Where is the screen ? */
 
@@ -119,128 +157,194 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 
 	if ( set == 0 )					 /* get data */
 	{
-		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
-		
-		vdo = find_cookie( '_VDO' );
-		
-		/* Try to find out about a couple of overscan types */
-		
-#if _OVSCAN	
-		screen_size ();
+		/* What is the size of the screen ? (call vq_extnd() etc.) */
 
-		if (   ( (over = find_cookie('OVER')) != - 1 )
-		    || ( (over = find_cookie('Lace')) != - 1 ) )
-		{
-			/* There is ST-overscan/lacescan. Set initial values */
+		screen_size();
 
-			if ( ovrstat < 0 )
-			{
-				ov_max_w = max_w;
-				ov_max_h = max_h;
-				menu_h = max_h - screen_info.dsk.h; 
-			}
-
-			/* Detect nonstandard resolution */
-
-			ovrstat = 0;
-			for ( idi = 0; idi < 3; idi++ )
-				if ( max_h > std_y[idi] && max_h < std_y[idi + 1] )
-				{
-					ov_max_w = max_w;
-					ov_max_h = max_h;
-					menu_h = max_h - screen_info.dsk.h;
-					ovrstat = 1;
-					break;
-				}
-
-			if ( ovrstat != 0 )
-				options.vprefs |= VO_OVSCAN;
-			else
-				options.vprefs &= ~VO_OVSCAN;
-		}
-		else
-			over  = 0xffffffffL;
-#endif
-
-		/* Get current blitter state; insert into options  */
-  
-		if ( tos_version >= 0x104 ) 
-			bltstat = Blitmode(-1);   /* Function known only to tos >= 1.4 ? */
-		else
-			bltstat = 0;
-		if ( bltstat & 0x0001 ) 	
-			options.vprefs |= VO_BLITTER; 
-		else
-			options.vprefs &= ~VO_BLITTER;
-    		
-		/* Which is the current standard resolution ? */
+   		/* Which is the current standard resolution ? */
 	
 		currez = (int)xbios(4); /* Getrez() */   	
 		
-		options.vrez = currez; 
+		options.vrez = currez;	/* no use of this, in fact */ 
 
-	}
-	else /* set data (set=1 or set=2) */
-	{	
-		/* Set blitter, if present */
-	
-		if ( bltstat & 0x0002 )
-		{
-			if ( options.vprefs & VO_BLITTER ) 
-				bltstat |= 0x0001;	
-			else
-				bltstat &= ~0x0001;
-			bltstat = Blitmode ( bltstat );
-		}
+		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
 		
-#if _OVSCAN
+		vdo = find_cookie( '_VDO' );
+
+		if ( vdo == -1 )
+			vdo = 0L; 				/* if no cookie, ST will be assumed */
+
+		vdohi = (int)(vdo >> 16);	/* use only the upper word */
+
 		/* 
-		 * Set overscan (Lacescan, in fact)
-		 * that which is below is ok but not enough !!!!
+		 * Note: Currently Falcon and Milan hardware are identically 
+		 * treated (should they be?)
+		 * If this is a Falcon or Milan, in which mode it is ? 
+		 * currez obtained above will be menaingless, it will have
+		 * to be constructed from the mode setting and monitor type.
+		 * It will be used only to set/read radio buttons but ignored
+		 * in actual resolution change
 		 */
 
-		if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.vprefs) & VO_OVSCAN) )
+		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO)
 		{
-			oldstat = ovrstat;
+			fal_mil = TRUE;
+			falmode = (int)xbios(88,-1); 		/* Vsetmode() */
+			fmtype = (int)xbios(89); 			/* mon_type() */
+			bltstat = 0;						/* No ST blitter */
 
-			/* Note: perhaps use Ssystem here when appropriate */
-
-			s = Super (0L);
-			(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
-
-			if ( options.vprefs & VO_OVSCAN )
+			if ( (falmode & VM_STMODE) == 0 )
 			{
-				*acia = 0xD6; /* value for the acia reg- switch overscan ON */
-				ovrstat = 1;
-				max_h = ov_max_h;
-				max_w = ov_max_w;
+				/* ST-compatibility mode OFF */
+
+				if ( (falmode & VM_80COL) == 0 )
+					currez = TT_LOWRES;
+				else
+					currez = TT_MEDRES;
 			}
 			else
 			{
-				*acia = 0x96; /* value for the acia reg- switch overscan OFF */
-				ovrstat = 0;
-				max_w = std_x[idi];
-				max_h = std_y[idi];
+				/* ST-compatibility mode ON */
+
+				if ( (falmode & VM_80COL) == 0 )
+					currez = ST_LOWRES;
+				else
+				{
+					if (xd_nplanes == 1)
+						currez = ST_HIGHRES;
+					else
+						currez = ST_MEDRES;
+				}
 			}
+		}
+		else if (vdohi == ST_VIDEO || vdohi == STE_VIDEO)
+		{
+			st_ste = TRUE;
 
 			/* 
-			 * An attempt to change resolution (to the same one) will 
-			 * provoke Lacescan to adapt 
+			 * Try to find out about a couple of overscan types 
+			 * This can become active only on a ST-type machine
+			 * (should this also be on a TT ?)
+			 */
+		
+#if _OVSCAN	
+	
+			if (   ( (over = find_cookie('OVER')) != - 1 )
+			    || ( (over = find_cookie('Lace')) != - 1 ) )
+			{
+				/* There is ST-overscan/lacescan. Set initial values */
+
+				if ( ovrstat < 0 )
+				{
+					ov_max_w = max_w;
+					ov_max_h = max_h;
+					menu_h = max_h - screen_info.dsk.h; 
+				}
+
+				/* Detect nonstandard overscanned resolution */
+
+				ovrstat = 0;
+				for ( idi = 0; idi < 3; idi++ )
+				{
+					if ( max_h > std_y[idi] && max_h < std_y[idi + 1] )
+					{
+						ov_max_w = max_w;
+						ov_max_h = max_h;
+						menu_h = max_h - screen_info.dsk.h;
+						ovrstat = 1;
+						break;
+					}
+				}	
+
+				if ( ovrstat > 0 )
+					options.vprefs |= VO_OVSCAN; 
+				else	
+					options.vprefs &= ~VO_OVSCAN;
+			}
+			else
+				over  = 0xffffffffL;
+#endif
+			/* Is there a blitter in this machine ? */
+  
+			if ( tos_version >= 0x104 ) 
+				bltstat = Blitmode(-1);   /* Function known only to tos >= 1.4 ? */
+			else
+				bltstat = 0;
+
+			/* Get current blitter state; insert into options  */
+
+			if ( bltstat & 0x0001 ) 	
+				options.vprefs |= VO_BLITTER; 
+			else
+				options.vprefs &= ~VO_BLITTER;
+		}
+	}
+	else /* set data (set=1 or set=2) */
+	{
+		if (st_ste)
+		{
+			/* Set blitter, if present */
+	
+			if ( bltstat & 0x0002 ) /* Get current blitter state; insert into options  */
+ 			{
+				if ( options.vprefs & VO_BLITTER ) 
+					bltstat |= 0x0001;	
+				else
+					bltstat &= ~0x0001;
+				bltstat = Blitmode ( bltstat );
+			}
+		
+#if _OVSCAN
+			/* 
+			 * Set overscan (Lacescan, in fact)
+			 * that which is below is ok but not enough !!!!
 			 */
 
-			screen_info.dsk.w = max_w;
-			screen_info.dsk.h = max_h - menu_h;
-			xd_desk.g_w = max_w;
-			xd_desk.g_h = max_h - menu_h;
-			xd_deskwin->xw_size.w = max_w;
-			xd_deskwin->xw_size.h = max_h;
+			if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.vprefs) & VO_OVSCAN) )
+			{
+				oldstat = ovrstat;
 
-			xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
+				/* Note: perhaps use Ssystem here when appropriate */
 
-			Super ( (void *) s );
-		}	
-			
+				s = Super(0L);
+				(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
+
+				if ( options.vprefs & VO_OVSCAN )
+				{
+					*acia = 0xD6; /* value for the acia reg- switch overscan ON */
+					ovrstat = 1;
+					max_h = ov_max_h;
+					max_w = ov_max_w;
+				}
+				else
+				{
+					*acia = 0x96; /* value for the acia reg- switch overscan OFF */
+					ovrstat = 0;
+					max_w = std_x[idi];
+					max_h = std_y[idi];
+				}
+
+				/* 
+				 * An attempt to change resolution (to the same one) will 
+				 * provoke Lacescan to adapt 
+				 */
+
+				screen_info.dsk.w = max_w;
+				screen_info.dsk.h = max_h - menu_h;
+				xd_desk.g_w = max_w;
+				xd_desk.g_h = max_h - menu_h;
+				xd_deskwin->xw_size.w = max_w;
+				xd_deskwin->xw_size.h = max_h;
+
+				/* Note: return from supervisor before Setscreen()... */
+
+				Super ( (void *)s );
+				xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
+			}			
 #endif
+		}	/* fal_mil ? */
+
+
 		/* 
 		 * Exit with "OK" from the Video options dialog will always cause
 		 * the desktop to be completely regenerated. 
@@ -259,7 +363,8 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 
 			while (w)
 			{
-				wd_adapt(w);
+				if (wd_adapt(w))
+					set_sliders((TYP_WINDOW *)w);
 				w = w->xw_next;
 			}
 
@@ -270,102 +375,171 @@ void get_set_video (int set) /* 0=get, 1=set, 2=set & change rez */
 
 			menu_bar(menu, 0);
 			wind_set(0, WF_NEWDESK, desktop, 0);
-			menu_bar(menu, 1);
+#if _OVSCAN
+			if (ovrstat >= 0)
+				menu_bar(menu, 1);
+#endif
 			dsk_draw();
 			menu_bar(menu, 1);
 
  			wd_drawall();
 		}
-
-		/* Change resolution */
-		/* xbios(...) produces slightly smaller code */
-		
-		if ( set > 1 )
+		else /* Set > 1 */
 		{
-			int ignor;
+			/* Change resolution */
+
+			int 
+#if _MINT_
+				ignor,
+#endif
+				iret, wisgr, wiscr;
+
+			if (fal_mil)
+			{
+				wisgr = falmode;
+				wiscr = 1;
+			}
+			else
+			{
+				wisgr = currez + 2;
+				wiscr = 0;
+			}
 
 			/* 
-			 * This will actually (almost) reset the computer immediately.
-			 * This can be enhanced- include falcon modes, etc. 
+			 * This will actually (almost) reset the computer immediately
+			 * and change the video mode, but this call is recognized only 
+			 * in AES 4. Otherwise it will be ignored. 
+			 * Unfortunately, e.g. TOS 2.06 will return OK in this case,
+			 * but e.g. TOS 4.04 will not, as is proper.
 			 */
 
-			shel_write( SHW_RESCHNG, currez + 2, falmode, (void *)&ignor, NULL );
+			if (aes_version >= 0x340 )
+				/* to be used later   iret = */ shel_write
+				( 
+					SHW_RESCHNG, 
+					wisgr, 
+					wiscr,
+#if _MINT_ 
+					(naes) ? (void *)&ignor :
+#endif 
+					NULL, 
+					NULL 
+				);
 
-			/* If still alive, wait a bit... */
+			/* If still alive, wait a bit for termination message */
 
-			wait(3000);
+			if(wait_to_quit())
+				return;
+	
+			/* 
+			 * If shel_write() did not succeed, attempt to
+			 * change resolution directly. Unfortunately, not all AESes
+			 * return error if shel_write(5,...) above fails...
+			 */
 /*
-			/* this is no good, so disabled for the time being */
-
-			xbios(5, logb, phyb, currez); 	/* same as Setscreen (logb,phyb,currez); */ 
+			if ( iret == 0 )
+			{
+				/* Besides, HOW to do this ? */
+	
+			}
 */
 
-		}
-	}
+		} 	/* set = 1 or 2 */	
+	
+	}		/* set > 0 */
+}
+
+
+/*
+ * Aux. size-optimization routine
+ */
+
+static void vd_setstring(int to, int from)
+{
+	xd_get_obspecp(&vidoptions[to])->free_string = get_freestring(from);
+}
+
+
+/*
+ * Aux. size-optimization routine
+ * parameter toob: index of the last button to be enabled.
+ * Note: buttons must be in sequence: VSTLOW, VSTMED, VSTHIGH, VTTLOW, VTTMED, VTTHIGH
+ */
+
+static void vd_enable_rez(int toob)
+{
+	int i;
+
+	for (i = VSTLOW; i <= toob; i++ )
+		obj_enable(vidoptions[i]);
 }
 
 
 /* 
- * Routine voptions() handles video options dialog 
+ * Routine voptions() handles video options dialog.
+ * Dialog appearance may be different, depending on detected (video) hardware
+ * i.e. there are some Falcon-specific options 
  */ 
 
 int voptions(void)
 {
    	int 
-		button,    /* selected button */
-		newrez,    /* desired resolution   */
-		rimap[16]; /* inverse to rmap */
-	               /* dimensioning will be problematic */
-    	           /* if object indices are large - check in desktop.rsc */
+		rcode = 0,	/* return code of this routine */
+		button,		/* selected button */
+		newrez,		/* desired resolution   */
+		newmode,	/* desired video mode (Falcon) */	
+		rimap[16];	/* inverse to rmap */
+	             	/* dimensioning will be problematic */
+    	           	/* if object indices are large - check in desktop.rsc */
 
+	static const char 
+		npc[] = {0, 0, 1, 0,2, 0,0,0,3, 0,0,0,0,0,0,0,4}; /* = f(np) */
 
-
-
-/* for the next release
-	char 
-		*ap = "\0",		/* to display # of colours */
+	char
+		*ap,		/* to display # of colours */
 		*s = vidoptions[VNCOL].ob_spec.free_string;	/* same */
 	
+	long
+		ncc;
+
 	int
-		nc = xd_ncolors;				/* same */
-*/
- 
+		npmax,				/* max settable number of colour planes */
+		npmin,				/* min settable number of colour planes */
+		npp,				/* previous number of colour planes */
+		np = xd_nplanes;	/* number of colour planes: 1 to 16 */
+
+	boolean
+		editcol = FALSE,	/* permit editting number of colours */
+		qquit = FALSE;
+
+	XDINFO 
+		info;		/* video options dialog */
+
+
+ 	newmode = falmode;
+
 	/* which resolution code is selected by which button */
 
 	rimap[0] = -1; 
-	rimap[VSTLOW]  = 0;
-	rimap[VSTMED]  = 1;
-	rimap[VSTHIGH] = 2;
-	rimap[VTTMED]  = 4;
-	rimap[VTTHIGH] = 6;
-	rimap[VTTLOW]  = 7;
-    
+	rimap[VSTLOW]  = ST_LOWRES;
+	rimap[VSTMED]  = ST_MEDRES;
+	rimap[VSTHIGH] = ST_HIGHRES;
+	rimap[VTTLOW]  = TT_LOWRES;
+ 	rimap[VTTMED]  = TT_MEDRES;
+	rimap[VTTHIGH] = TT_HIGHRES;
+   
 	/* Find current video configuration */
 	
 	get_set_video(0);
 	
 	/* Set radiobutton for current resolution selected */
 	
-	xd_set_rbutton(vidoptions, VREZOL, rmap[currez]);
+	xd_set_rbutton(vidoptions, VREZOL, (int)rmap[currez]);
 
-	switch( (int)vdo )
+	/* Set some hardware-specific dialog elements */
+
+	switch( vdohi )
 	{
-		case TT_VIDEO:
-	
-			if ( currez == 6 )   /* tt-high? disable low and med res */
-			{
-				obj_enable(vidoptions[VTTHIGH]); 
-			}
-			else               /* tt-low/med? disable hi res */
-			{
-				obj_enable(vidoptions[VSTLOW]);
-				obj_enable(vidoptions[VSTMED]);
-		    	obj_enable(vidoptions[VSTHIGH]);
-				obj_enable(vidoptions[VTTLOW]);
-				obj_enable(vidoptions[VTTMED]);
-			}
-			break;
-
 		case ST_VIDEO:
 
 #if _OVSCAN 
@@ -373,121 +547,226 @@ int voptions(void)
   
 			if ( over != 0xffffffffL )
 			{
-				obj_unhide(vidoptions[VOVERSCN]);	
+				obj_enable(vidoptions[VOVERSCN]);	
   				set_opt( vidoptions, options.vprefs, VO_OVSCAN, VOVERSCN ); 
 			}
 #endif
 
 		case STE_VIDEO:
 	   
-			if ( currez == 2 )   /* st-high? disable low and med res */
-			{
+			if ( currez == ST_HIGHRES )   	/* st-high? disable low and med res */
 				obj_enable(vidoptions[VSTHIGH]);
-			}
-			else               /* st-low/med? disable hi res */
+			else               				/* st-low/med? disable hi res */
+				vd_enable_rez(VSTMED);		/* ST-low to ST-med */
+
+			/* Set button for blitter. Practically ST and STE only */
+    
+			if ( bltstat & 0x0002 )		/* blitter is present */
 			{
-				obj_enable(vidoptions[VSTLOW]);
-				obj_enable(vidoptions[VSTMED]);
+				obj_enable(vidoptions[VBLITTER]);
+				set_opt ( vidoptions, options.vprefs, VO_BLITTER, VBLITTER );
 			}
-			break;
-
-		case FALC_VIDEO:
-
-			obj_enable(vidoptions[VSTLOW]);
-			obj_enable(vidoptions[VSTMED]);
-	    	obj_enable(vidoptions[VSTHIGH]);
-			obj_enable(vidoptions[VTTLOW]);
-			obj_enable(vidoptions[VTTMED]);
 
 			break;
+
+		case TT_VIDEO:
+	
+			if ( currez ==TT_HIGHRES )   /* tt-high? disable low and med res */
+				obj_enable(vidoptions[VTTHIGH]); 
+			else               			/* tt-low/med? disable hi res */
+				vd_enable_rez(VTTMED); 	/* ST-Low to TT-Med */
+			break;
+
+		case FAL_VIDEO:
 		case MIL_VIDEO:
 
-			/* ??? Proceed */
+			vd_setstring(VTTLOW, TFALLOW);
+			vd_setstring(VTTMED, TFALMED);
+			vd_setstring(VBLITTER, TINTERL);
+
+			if ( fmtype != MONO_MON )
+			{
+				editcol = TRUE;
+				vd_enable_rez(VTTMED); 				/* ST-Low to TT-Med */
+				obj_disable(vidoptions[VSTHIGH]);	/* except ST-High */
+
+				obj_enable(vidoptions[VBLITTER]); /* double line/interlace */
+				if ( fmtype != VGA_MON )
+					obj_enable(vidoptions[VOVERSCN]);	
+			}
+
+			if (fmtype == MONO_MON || fmtype == VGA_MON) 
+		    	obj_enable(vidoptions[VSTHIGH]);
+
+			/* Display state of overscan and double line/interlace */
+
+			set_opt(vidoptions, newmode, VM_OVSCAN, VOVERSCN);
+			set_opt(vidoptions, newmode, VM_DBLINE, VBLITTER);
+
+			break;
 
 		default:
 
 			/* For the time being, just enable all */
 
-			obj_enable(vidoptions[VSTLOW]);
-			obj_enable(vidoptions[VSTMED]);
-			obj_enable(vidoptions[VSTHIGH]);
-			obj_enable(vidoptions[VTTLOW]);
-			obj_enable(vidoptions[VTTMED]);
-			obj_enable(vidoptions[VTTHIGH]); 
+			vd_enable_rez(VTTHIGH);
 
 			break;
 	}
 
-	/* Set button for blitter */
-    
-	if ( bltstat & 0x0002 )		/* blitter is present */
-	{
-		obj_enable(vidoptions[VBLITTER]);
-		set_opt ( vidoptions, options.vprefs, VO_BLITTER, VBLITTER );
-	}
+	/* Set button for saving the palette */
 
-	/* Palette */
-
-	set_opt ( vidoptions, options.cprefs, SAVE_COLORS, SVCOLORS );
+	set_opt ( vidoptions, options.vprefs, SAVE_COLORS, SVCOLORS );
 	
-	/* Dialog... */
+	/* Open the dialog... */
 	
 	vprefsold = options.vprefs;
 
-/* for the next release
-	if ( nc > 1024 )
-	{
-		nc /= 1024;
-		ap = "K";
-	}
+	xd_open( vidoptions, &info );
 
-	itoa(nc, s, 10);
-	strcat(s, ap);
-*/
+	/* Loop until OK or Cancel */
 
-	/* This will change in a future release ! */
+	do
+	{	
+		/* Redraw display of the current number of colours */
 
-	button = xd_dialog( vidoptions, 0 );
-  
-	/* If selected OK ... */
-  
-	if ( button == VIDOK )
-	{
-	  	/* Set save palette flag */
-    
-		get_opt( vidoptions, &options.cprefs, SAVE_COLORS, SVCOLORS );
-     
-		/* Set blitter, (couldn't have been selected if not present) */
-    
-		get_opt( vidoptions, &options.vprefs, VO_BLITTER, VBLITTER);
-     
-#if _OVSCAN
-		/* Set overscan option (could not have been selected if not present) */
-   
-		get_opt ( vidoptions, &options.vprefs, VO_OVSCAN, VOVERSCN ); 
-#endif
-			
-		/* Change resolution ? */
-     
-		newrez = rimap[xd_get_rbutton(vidoptions, VREZOL)];
+		npmin = 1;
+		npmax = 16;
+		ap = (char *)empty;
+		ncc = 0x00000001L << np;
+		npp = np;
 		
-		get_set_video(1); /* execute settings which do not require a reset */
-
-		/* Will resolution be changed? Display an alert */
-
-		if ( newrez != currez && newrez != -1 )
+		if ( ncc > 1024 )
 		{
-			button = alert_printf(1, ARESCH);
-
-			if ( button == 1 )
-			{
-				currez = newrez;	 	/* new becomes old */
-				return 1;  		 		/* to initiate resolution change */	
-			}			
+			ncc /= 1024;
+			ap = "K";
 		}
-		 
-	}	/* OK button ? */
-  
-	return 0;
+
+		ltoa(ncc, s, 10);
+		strcat(s, ap);
+
+ 		xd_drawthis(&info, VNCOL);
+
+		button = xd_form_do(&info, ROOT);
+
+		/* Which standard mode is currently selected */
+    
+		newrez = rimap[xd_get_rbutton(vidoptions, VREZOL)];
+
+		/* There are some mode dependencies on a Falcon... */
+
+		if (fal_mil)
+		{
+			newmode &= ~(VM_STMODE | VM_80COL | VM_NPLANES);
+			newmode |= (int)(npc[np]);
+
+			if ( newrez <= ST_HIGHRES )
+				newmode |= VM_STMODE;
+			if (newrez != ST_LOWRES && newrez != TT_LOWRES)
+				newmode |= VM_80COL;
+			
+			switch(newrez)
+			{
+				case ST_LOWRES:
+					npmin = 4;
+					npmax = 4;
+					break;
+				case ST_MEDRES:
+					npmin = 2;
+					npmax = 2;
+					break;
+				case ST_HIGHRES:
+					npmin = 1;
+					npmax = 1;
+					break;
+				default:
+				{
+					if (fmtype == VGA_MON)
+					{
+						if ( (newmode & VM_80COL) != 0 )
+							npmax = 8;
+						else
+							npmin = 2;
+					}
+					break;
+				}
+
+			}
+
+			np = minmax(npmin, np, npmax);
+			if ( np != npp ) 
+			{
+				bell();
+				goto next; /* redraw button then loop again */
+			}
+
+			get_opt( vidoptions, &newmode, VM_DBLINE, VBLITTER);
+			get_opt( vidoptions, &newmode, VM_OVSCAN, VOVERSCN);
+		}
+		else if (st_ste)
+		{
+			/* Set blitter, (couldn't have been selected if not present) */
+
+			get_opt( vidoptions, &options.vprefs, VO_BLITTER, VBLITTER);
+#if _OVSCAN
+			/* Set overscan option (could not have been selected if not present) */
+   
+			get_opt ( vidoptions, &options.vprefs, VO_OVSCAN, VOVERSCN ); 
+#endif
+		}
+
+		switch(button)
+		{
+			case VNCOLUP:
+				if ( np < npmax )
+					np <<= 1;
+				break;
+			case VNCOLDN:
+				if ( np > npmin )
+					np >>= 1;
+				break;
+			case VIDOK:
+				qquit = TRUE;
+
+			  	/* Set save palette flag */
+
+				get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
+				get_set_video(1); /* execute settings which do not require a reset */
+
+				/* Will resolution be changed? Display an alert */
+
+				if ( (newrez != currez && newrez != -1) || (newmode != falmode) )
+				{
+					if ( alert_printf(1, ARESCH) == 1 )
+					{
+						currez = newrez;	 	/* new becomes old */
+						falmode = newmode;		/* same */
+						rcode = 1;  		 	/* to initiate resolution change */	
+					}	
+				}
+
+				break;								
+
+			case VIDCANC:
+				options.vprefs = vprefsold;
+				qquit = TRUE;
+				break;
+
+			default:
+				break;
+		}
+
+		next:;
+
+		xd_drawbuttnorm(&info, button);
+
+		if (!editcol)
+			np = npp;
+	}
+	while(!qquit);
+
+	xd_close(&info);
+
+ 	return rcode;
 }
 

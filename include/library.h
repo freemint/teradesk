@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
- *                                           2002, 2003  H. Robbers
- *                                                 2003  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright       1993, 2002  W. Klaren,
+ *                                                 2002, 2003  H. Robbers
+ *                                           2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -42,8 +42,10 @@ long lmin(long x, long y);
 long lmax(long x, long y);
 int lminmax(long lo, long i, long hi);
 void bell(void);
+int touppc(int c);
 void digit(char *s, int x);
 void free_item( void **ptr );
+void *memclr(void *s, size_t len); 
 
 
 /* Funkties voor filenamen */

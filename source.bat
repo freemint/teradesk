@@ -1,6 +1,4 @@
-echo Backup of TeraDesk 3 source files to another directory
-echo (-n = overwrite without confirmation)
-
+echo Copying source files of TeraDesk 3.*                                
 mkdir e:\tera3s\include
 mkdir e:\tera3s\pure_c
 mkdir e:\tera3s\library
@@ -10,9 +8,7 @@ mkdir e:\tera3s\library\multitos
 mkdir e:\tera3s\library\utility
 mkdir e:\tera3s\library\xdialog
 
-e:
-cd terdesk3.40
-
+cd e:\teradesk
 
 copy -n copying      e:\tera3s\
 copy -n readme.txt   e:\tera3s\
@@ -28,6 +24,9 @@ copy -n *.s         e:\tera3s\
 copy -n *.prj       e:\tera3s\
 copy -n desktop.rs* e:\tera3s\
 copy -n *.bat       e:\tera3s\
+
+copy -n .\newicons\icons.rsc  e:\tera3s\
+copy -n .\newicons\cicons.rsc e:\tera3s\
 
 copy -n .\include\*.h e:\tera3s\include\*.h
 
@@ -59,3 +58,4 @@ copy -n .\library\xdialog\*.hlp  e:\tera3s\library\xdialog\*.hlp
 
 copy -n .\pure_c\*.s e:\tera3s\pure_c\*.s
 
+cd e:\teradesk

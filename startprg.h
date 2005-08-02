@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+extern boolean fargv;
+
 void start_prg(const char *fname, const char *cl, const char *path,
-			   ApplType prg, boolean argv, 
-			   boolean single, long limmem, char *localenv, int kstate);
+			   ApplType prg, boolean argv, boolean single, boolean back, 
+               long limmem, char *localenv, int kstate);

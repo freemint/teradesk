@@ -84,6 +84,7 @@ CfgNest va_config;
 extern AVSETW avsetw;
 extern boolean va_reply;
 extern AVTYPE *avclients;
+extern int av_current;
 
 void va_init(void);
 WINDOW *va_accw(void);
@@ -105,3 +106,4 @@ boolean va_add_name(int type, const char *name );
 boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
 boolean va_fontreply(int messid, int dest_ap_id);
 boolean va_pathupdate(const char *path);
+void va_checkclient(void);
