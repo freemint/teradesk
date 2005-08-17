@@ -27,4 +27,5 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link)
 void icnt_settypes(void);
 void icnt_init(void);
 void icnt_default(void);
+void icnt_fix_ictypes(void);
 

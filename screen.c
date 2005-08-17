@@ -82,7 +82,7 @@ void clipdesk_on(void)
 void pclear(RECT *r)
 {
 	boolean doo = options.win_pattern && options.win_color;
-	clr_object( r, (doo) ? options.win_color : 0, (doo) ? options.win_pattern : -1 );
+	clr_object( r, (doo) ? options.win_color : 0, (doo && options.win_pattern < 7) ? options.win_pattern : -1 );
 }
 
 

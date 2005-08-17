@@ -766,54 +766,58 @@
 
 #define TDOPEN           154 /* Free String */
 
-#define ALOADCFG         155 /* Alert-string */
+#define TFNVALID         155 /* Free String */
 
-#define APRGNFND         156 /* Alert-string */
+#define TFNTMPLT         156 /* Free String */
 
-#define AAPPNFND         157 /* Alert-string */
+#define ALOADCFG         157 /* Alert-string */
 
-#define AILLCOPY         158 /* Alert-string */
+#define APRGNFND         158 /* Alert-string */
 
-#define AILLDEST         159 /* Alert-string */
+#define AAPPNFND         159 /* Alert-string */
 
-#define ANOCOPY          160 /* Alert-string */
+#define AILLCOPY         160 /* Alert-string */
 
-#define ANODRAGP         161 /* Alert-string */
+#define AILLDEST         161 /* Alert-string */
 
-#define ANOPRINT         162 /* Alert-string */
+#define ANOCOPY          162 /* Alert-string */
 
-#define APRNRESP         163 /* Alert-string */
+#define ANODRAGP         163 /* Alert-string */
 
-#define AERADISK         164 /* Alert-string */
+#define ANOPRINT         164 /* Alert-string */
 
-#define AFMTERR          165 /* Alert-string */
+#define APRNRESP         165 /* Alert-string */
 
-#define AERRACC          166 /* Alert-string */
+#define AERADISK         166 /* Alert-string */
 
-#define ALRTQUIT         167 /* Alert-string */
+#define AFMTERR          167 /* Alert-string */
 
-#define ADUPKEY          168 /* Alert-string */
+#define AERRACC          168 /* Alert-string */
 
-#define AABOOP           169 /* Alert-string */
+#define ALRTQUIT         169 /* Alert-string */
 
-#define AGENALRT         170 /* Alert-string */
+#define ADUPKEY          170 /* Alert-string */
 
-#define AFILEDEF         171 /* Alert-string */
+#define AABOOP           171 /* Alert-string */
 
-#define AGFALERT         172 /* Alert-string */
+#define AGENALRT         172 /* Alert-string */
 
-#define AUNKRTYP         173 /* Alert-string */
+#define AFILEDEF         173 /* Alert-string */
 
-#define AVALIDCF         174 /* Alert-string */
+#define AGFALERT         174 /* Alert-string */
 
-#define ADUPFLG          175 /* Alert-string */
+#define AUNKRTYP         175 /* Alert-string */
 
-#define AWOPERR          176 /* Alert-string */
+#define AVALIDCF         176 /* Alert-string */
 
-#define ARESCH           177 /* Alert-string */
+#define ADUPFLG          177 /* Alert-string */
 
-#define AFABORT          178 /* Alert-string */
+#define AWOPERR          178 /* Alert-string */
 
-#define AQUERY           179 /* Alert-string */
+#define ARESCH           179 /* Alert-string */
 
-#define AREMICNS         180 /* Alert-string */
+#define AFABORT          180 /* Alert-string */
+
+#define AQUERY           181 /* Alert-string */
+
+#define AREMICNS         182 /* Alert-string */

@@ -67,7 +67,6 @@ extern Options
 char 
 	*defcml = "%f"; /* default command line for programs */
 
-void wd_drawall(void);
 int trash_or_print(ITMTYPE type);
 void fix_prgtype_v360(PRGTYPE *p); /* Compatibility issue; remove after V3.60 */
 
@@ -577,13 +576,14 @@ boolean app_dialog
 				for ( i = 0; i < 7; i++ )
 					set_opt(specapp, appl->flags, AT_EDIT << i, (int)ord[i] );
 
-				button2 = xd_dialog(specapp, ROOT);
+				button2 = chk_xd_dialog(specapp, ROOT);
 
 				if ( button2 == SPECOK )
 				{
 					for ( i = 0; i < 7; i++ )
 						get_opt(specapp, &(appl->flags), AT_EDIT << i, (int)ord[i] );
 				}	
+
 				break;
 			}
 
@@ -1407,7 +1407,7 @@ boolean app_exec
 
 		/* Don't start the application after all */
 
-		if (xd_dialog(getcml, CMDLINE) != CMLOK)
+		if (chk_xd_dialog(getcml, CMDLINE) != CMLOK)
 			goto errexit;
 			
 		/* 

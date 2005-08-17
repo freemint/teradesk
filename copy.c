@@ -1296,7 +1296,7 @@ static int hndl_rename(char *name)
 
 	/* Now do the dialog */
 
-	button = xd_dialog(nameconflict, NEWNAME);
+	button = chk_xd_dialog(nameconflict, NEWNAME);
 
 	set_posmode(oldmode);
 
@@ -1314,7 +1314,7 @@ static int hndl_rename(char *name)
 	}
 	else
 	{
-		if (button == NCABORT)
+		if (button == NCABORT || button < 0)
 			return XABORT;
 		else
 			return XSKIP;

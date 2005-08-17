@@ -163,9 +163,6 @@ static CfgNest				/* Elsewhere defined configuration routines */
 CfgNest
 	dsk_config;
 
-/* Compatibility issue, remove after V3.60 */
-char dummy_helpprg[16];
-
 /* Root level of configuration data */
 
 static const CfgEntry Config_table[] =
@@ -198,11 +195,6 @@ CfgEntry Options_table[] =
 	/* file version */
 	{CFG_X, 0, "infv", &options.version	    }, 		/* file version */
 	/* desktop preferences */
-
-/* Compatibility issue, remove after V3.60 */
-
-	{CFG_S, CFG_INHIB, "help", &dummy_helpprg},		/* name of the help program */
-
 	{CFG_D, 0, "save", &options.sexit		},		/* save desk at exit */
 	{CFG_X, 0, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
 	{CFG_X, 0, "xpre", &options.xprefs		}, 		/* bit flags !!! diverse prefs */
@@ -240,8 +232,6 @@ CfgEntry Options_table[] =
  * match the actual state.
  */
 
-
-static int inhibit; /* receive some compatibility values */
 
 CfgEntry Shortcut_table[] =
 {
@@ -299,7 +289,6 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, 0, "ptyp", &options.kbshort[MPRGOPT		- MFIRST]	},
 	{CFG_X, 0, "dski", &options.kbshort[MIDSKICN	- MFIRST]	},
 	{CFG_X, 0, "wini", &options.kbshort[MIWDICN		- MFIRST]	},
-	{CFG_X, CFG_INHIB, "remi", &inhibit}, /* compatibility issue, remove after V3.7 */
 	{CFG_X, 0, "pref", &options.kbshort[MOPTIONS	- MFIRST]	},
 	{CFG_X, 0, "copt", &options.kbshort[MCOPTS		- MFIRST]	},
 	{CFG_X, 0, "wopt", &options.kbshort[MWDOPT		- MFIRST]	},
@@ -327,6 +316,30 @@ void *malloc_chk(size_t size)
 		xform_error(ENSMEM);
 
 	return address;
+}
+
+
+/*
+ * Display a dialog, but check for errors and display an alert.
+ */
+
+int chk_xd_dialog(OBJECT *tree, int start)
+{
+	int error = xd_dialog(tree, start);
+	xform_error(error);
+	return error;
+}
+
+
+/*
+ * Open a dialog, but check for errors and display an alert
+ */
+
+int chk_xd_open(OBJECT *tree, XDINFO *info)
+{
+	int error = xd_open(tree, info);
+	xform_error(error);
+	return error;
 }
 
 
@@ -366,7 +379,7 @@ static void info(void)
 	rsc_ltoftext(infobox, INFSTMEM, stsize );
 	rsc_ltoftext(infobox, INFTTMEM, ttsize ); 
 
-	xd_dialog(infobox, 0);
+	chk_xd_dialog(infobox, 0);
 }
 
 
@@ -403,35 +416,39 @@ static void showhelp (unsigned int key)
 			info;
 
 		int 
+			error,
 			i = 0, 
 			button;
 
 		obj_unhide(helpno1[HELPOK]);
 		obj_unhide(helpno1[HLPBOX1]);
 
-		xd_open(helpno1, &info);
-
-		do
+		if ((error = xd_open(helpno1, &info)) >= 0)
 		{
-			button = xd_form_do(&info, ROOT);
-			xd_buttnorm(&info, button); 
-			obj_hide(helpno1[hbox[i]]);
+			do
+			{
+				button = xd_form_do(&info, ROOT);
+				xd_buttnorm(&info, button); 
+				obj_hide(helpno1[hbox[i]]);
 
-			/* At i == 2 one must and can exit this way only */
+				/* At i == 2 one must and can exit this way only */
 
-			if ( button == HELPCANC )
-				break;
+				if ( button == HELPCANC )
+					break;
 
-			i++;
+				i++;
 
-			obj_unhide( helpno1[hbox[i]] );
-			if ( i == 2 )
-				obj_hide(helpno1[HELPOK]);
-			xd_drawdeep(&info, ROOT);
+				obj_unhide( helpno1[hbox[i]] );
+				if ( i == 2 )
+					obj_hide(helpno1[HELPOK]);
+				xd_drawdeep(&info, ROOT);
+			}
+			while(TRUE);
+
+			xd_close(&info);
 		}
-		while(TRUE);
-
-		xd_close(&info);
+		else
+			xform_error(error);
 	}
 }
 
@@ -881,7 +898,7 @@ static void copyprefs(void)
 
 	/* The dialog itself */
 
-	button = xd_dialog(copyoptions, 0);
+	button = chk_xd_dialog(copyoptions, 0);
 
 	/* If OK is selected... */
 
@@ -1785,9 +1802,9 @@ int main(void)
 			menu_register(ap_id, get_freestring(MENUREG));
 		}
 
-		/* Initialize x-dialogs */
+		/* Initialize x-dialogs malloc_chk */
 
-		if ((error = init_xdialog(&vdi_handle, malloc, free,
+		if ((error = init_xdialog(&vdi_handle, malloc_chk, free,
 								  get_freestring(DWTITLE), 1, &nfonts)) < 0)
 			xform_error(error);
 		else

@@ -13,7 +13,7 @@
 @{U}Contents                                                      TeraDesk@{u}  
 
 @autorefoff  
-                  User's Manual for TeraDesk V3.60  
+                  User's Manual for TeraDesk V3.61  
                        
              Wout Klaren, Henk Robbers, Djordje Vukovic  
   
@@ -555,7 +555,13 @@ is NOT defined, Tera Desktop will work normally.
 Note that this variable is evaluated only when TeraDesk starts.  Later
 changes to TERAENV will have no effect.
 
-See also: The ARGV protocol  Rendering of dialog objects  
+10. Users are advised to load,  check and save any existing TeraDesk's 
+configuration files.  As the format  of configuration files may change 
+slightly with new releases, by this procedure  they will be kept up to
+date as much as possible.
+
+
+See also: The ARGV Protocol  Rendering of dialog objects  
  
 @endnode  
   
@@ -1632,7 +1638,7 @@ Shown item attributes are marked as follows:
               w        write permission  
               x        execute permission
               
-Group and user id's of  item owner  are shown  as two 4-digit  decimal
+Group and user id's of  item owner  are shown  as two 4-digit  integer
 numbers,  with leading zeros displayed.  This option is not visible in
 single-TOS.                
   
@@ -2076,7 +2082,7 @@ the  desktop  simply by dragging  them  from their directory onto  the
 desktop.  An alternate  method  is  to select one or more  items  in a  
 directory  window  and  then  select  Set desk icons...  In this  case
 The icon selector dialog dialog will open enabling you to change icons
-assignd to selected items.
+assigned to selected items.
 
 When a desktop icon represents  a directory item,  the dialog displays
 an editable text field (see  Scrolled text fields) into which the path
@@ -2550,7 +2556,7 @@ Set applications... dialog.
 Listbox content  is manipulated by five buttons  (Add,  Edit,  Delete,   
 Up-arrow and Down-arrow).   
   
-Add:  opens  a childdialog  to fill-in data  for an item which will be
+Add:  opens a child dialog  to fill-in data  for an item which will be
 added to the list at the highlighted  position. Depending  on the type
 of item being added,  an appropriate dialog is opened.
   
@@ -2665,14 +2671,13 @@ CICONS.RSC  files)  are  shown,  one at a time.  By using  the Up  and
 Down arrows and/or the slider, available icons can be displayed in the
 box. By selecting OK the displayed icon is assigned. 
 
-If the displayed icon is  clicked upon,  it  can be  previewed  in the
-selected state, which can help the user in selecting a convenient icon
-for the desktop.  The icon is displayed  on a background  identical to
-the one  selected for  the  desktop or  the window,  depending  on the
-context.
+If the  displayed icon is  clicked upon,  it  can be previewed  in the
+selected state, which can help the user in choosing a convenient icon.
+The icon is displayed  on a background  identical to  the one selected
+for the desktop or the windows,  depending on whether desktop icons or 
+window icons are being set.
     
-See also:  Set desk icons...  Set window icons...  Remove icons... 
-Supported Protocols
+See also:  Set desk icons...  Set window icons...  Supported Protocols
   
 @endnode  
   
@@ -3481,7 +3486,7 @@ which the ARGV flag is set,  this protocol is used only if the command
 line is longer than 125 characters.
 
 Note that different AESes do not behave identically regarding the ARGV
-protocol,  because of slightly different functionality of shel_write()
+protocol,  because of slightly different behaviour of the shel_write()
 function of the  AES.  Problems may be  encountered  when  passing the 
 parameters (e.g. filenames) which contain spaces, or when passing both
 the parameters and a local environment.

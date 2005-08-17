@@ -478,7 +478,7 @@ static void set_visible(DIR_WINDOW *w)
 		    && (   (oa & FA_SUBDIR) != 0 				/* permit subdirectory */
 		        || (b->attrib.attrib & FA_SUBDIR) == 0 	/* or item is not subdirectory */
 		       )
-		    && (   (oa & FA_PARDIR) != 0 				/* permit parrent dir */  
+		    && (   (oa & FA_PARDIR) != 0 				/* permit parent dir */  
 				|| strcmp(b->name, prevdir) != 0       	/* or item is not parent dir */ 
 		       )
 		    && (   (b->attrib.mode & S_IFMT) == S_IFDIR /* permit directory */
@@ -680,7 +680,10 @@ static int read_dir(DIR_WINDOW *w)
 						newb = malloc(bufsiz * sizeof(size_t));
 						if (newb)
 						{
-							/* Copy to new buffer, free old, point to new */
+							/* 
+							 * Copy to new buffer, free old, point to new;
+							 * this code is smaller than using realloc()
+							 */
 							memcpy(newb, w->buffer, n * sizeof(size_t));
 							free(w->buffer);
 							w->buffer = newb;
@@ -801,23 +804,31 @@ static int dir_read(DIR_WINDOW *w)
 	int error;
 
 	error = read_dir(w);
-	dir_setinfo(w);
+	dir_setinfo(w);			/* line length is calculated here */
 	return error;
 }
 
 
 /*
- * Aux. function for the two routines further below
+ * Aux. function for the two routines further below. This routine
+ * also resets the fulled title if the numbe of items or the length
+ * of the longest name has changed.
  */
 
 void dir_reread(DIR_WINDOW *w)
 {
-	int error;
+	int error, 
+	oldn = w->nvisible, 
+	oldl = w->llength;
 
 	hourglass_mouse();
 	error = dir_read(w);
 	arrow_mouse();
 	xform_error(error);
+
+	if(w->nvisible != oldn || w->llength != oldl)
+		wd_type_nofull((WINDOW *)w);
+
 	wd_type_draw ((TYP_WINDOW *)w, TRUE );
 }
 
@@ -828,7 +839,6 @@ void dir_reread(DIR_WINDOW *w)
 
 void dir_refresh_wd(DIR_WINDOW *w)
 {
-	wd_type_nofull((WINDOW *)w);
 	dir_reread(w);
 	wd_reset((WINDOW *)w);
 }
@@ -1066,7 +1076,7 @@ static int dir_makenew(DIR_WINDOW *dw, char *name, char *target)
 	obj_unhide(newfolder[DIRNAME]);
 	obj_hide(newfolder[OPENNAME]);
 
-	button = xd_dialog(newfolder, DIRNAME);
+	button = chk_xd_dialog(newfolder, DIRNAME);
 
 	if ((button == NEWDIROK) && (*dirname))
 	{
@@ -1816,10 +1826,7 @@ OBJECT *make_tree
 	 */
 
 	lo = (n + 1) * sizeof(OBJECT) + n * sizeof(CICONBLK);
-/*
-	if ((obj = malloc_chk((n + 1) * sizeof(OBJECT) + n * sizeof(CICONBLK) )) == NULL) /* ciconblk (the largest) */
-		return NULL;
-*/
+
 	if((obj = malloc_chk(lo + n * sizeof(INAME))) != NULL)
 	{
 		labels = (INAME *)((char *)(obj) + lo);
@@ -1873,9 +1880,6 @@ OBJECT *make_tree
 					icon_no, 	
 					(ci - dw->px) * ICON_W + XOFFSET,
 					(j / columns - sl) * ICON_H + yoffset,
-/*
-					(char *)h->name 
-*/
 					labels[i]
 				);
 			}
@@ -1979,15 +1983,9 @@ void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work)
 
 	if (options.mode == TEXTMODE)
 	{
-		RECT 
-			r, 
-			in; 
-
-		VLNAME
-			s;
-
-		int 
-			i;
+		RECT r, in; 
+		VLNAME s;
+		int i;
 		
 		/* Compute position of a line */
 
@@ -2234,7 +2232,6 @@ static WINDOW *dir_do_open
 {
 	DIR_WINDOW *w;
 	RECT size;
-	int errcode;
 	WDFLAGS oldflags = info->flags;
 
 	wd_in_screen( info ); /* modify position to come into screen */
@@ -2242,9 +2239,8 @@ static WINDOW *dir_do_open
 	/* Create a window. Note: window structure is completely zeroed here */
 
 	if ((w = (DIR_WINDOW *)xw_create(DIR_WIND, &wd_type_functions, DFLAGS, &dmax,
-									  sizeof(DIR_WINDOW), NULL, &errcode)) == NULL)
+									  sizeof(DIR_WINDOW), NULL, error)) == NULL)
 	{
-		*error = wd_checkcreate(errcode);
 		free(path);
 		free(fspec);
 		return NULL;

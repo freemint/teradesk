@@ -27,6 +27,8 @@
 #include <stdarg.h>
 #include <boolean.h>
 #include <ctype.h>
+#include <vdi.h>
+#include <xdialog.h>
 
 #include "desktop.h"
 #include "desk.h"

@@ -41,20 +41,18 @@
 
 #include "xscncode.h"
 #include "xdialog.h"
-
 #include "internal.h"
 
 int 
 	aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
 	colour_icons = 0,   		/* result of appl_getinfo(2,,,)  */
-	aes_hor3d    = 0,			/* 3d enlargement value */
-	aes_ver3d    = 0,			/* 3d enlargement value */
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
 	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
-	xd_multitos = FALSE,		/* MultiTOS flag, always FALSE   */
 	xd_aes4_0,					/* flag that AES 4 is present    */
 	xd_colaes = 0,				/* more than 4 colours available */
 	xd_has3d = 0,				/* result of appl-getinfo(13...) */
+	aes_hor3d    = 0,			/* 3d enlargement value */
+	aes_ver3d    = 0,			/* 3d enlargement value */
 	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
 	xd_bg_col = WHITE,			/* colour of background object */
 	xd_ind_col = LWHITE,		/* colour of indicator object  */
@@ -1241,14 +1239,11 @@ static int xd_find_cancel(OBJECT *ob)
 
 		/* Consider only normal buttons and buttons with underlined text */
 
-		if (   (   (ob[f].ob_type)           == G_BUTTON
-/*
-		        || (ob[f].ob_type & 0xff00)  == (XD_BUTTON << 8)
-*/
-				|| (xd_xobtype(&ob[f]) == XD_BUTTON)
-		       )
-
-			&& (ob[f].ob_flags & (SELECTABLE | TOUCHEXIT | EXIT)) != 0       )
+		if 
+		(   
+			((ob[f].ob_type) == G_BUTTON || (xd_xobtype(&ob[f]) == XD_BUTTON))
+			&& (ob[f].ob_flags & (SELECTABLE | TOUCHEXIT | EXIT)) != 0 
+		)
 		{
 			/* 
 			 * Attention: no checking of case! 
@@ -1846,7 +1841,8 @@ static int xd_open_wzoom
 		}
 		else
 			dialmode = XD_BUFFERED;
-	}
+
+	} /* XD_WINDOW ? */
 
 
 #ifdef _DOZOOM
@@ -1866,16 +1862,20 @@ static int xd_open_wzoom
 
 		scr_size = xd_initmfdb(&info->drect, &info->mfdb);
 
-/* DjV Beware: no more checking below!!!
-Btw. can this be xd_malloc ???
+		/*
+		 * Note: if xd_malloc were used here, great loss of memory
+		 * would occur in some circumstances. E.g. open a large file
+		 * in a text window, then manipulate some lists in dialogs,
+		 * close dialogs, close text window 
+		 */
 
-		if ((info->mfdb.fd_addr = (void *) Malloc(scr_size)) == NULL)
-			dialmode = XD_NORMAL;
-*/
 		info->mfdb.fd_addr = (void *)Malloc(scr_size);
 
 		if ( info->mfdb.fd_addr == NULL )
+		{
+			xd_wdupdate(END_UPDATE);
 			return XDNSMEM;
+		}
 
 		tree[db].ob_flags &= ~HIDETREE; 
 
@@ -1894,16 +1894,18 @@ Btw. can this be xd_malloc ???
  * tree		- objectboom,
  * info		- bevat informatie over buffer voor scherm en de positie
  *   			  van de dialoogbox.
+ *
+ * Should return negative value in case of failure.
  */
 
 
-void xd_open(OBJECT *tree, XDINFO *info)
+int xd_open(OBJECT *tree, XDINFO *info)
 {
 #ifdef _DOZOOM
 	RECT xywh;
-	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL,   &xywh, TRUE,  NULL);
+	return xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL,   &xywh, TRUE,  NULL);
 #else
-	xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL, NULL);
+	return xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL, NULL);
 #endif
 }
 
@@ -2060,10 +2062,12 @@ int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata)
 	int exit;
 	XDINFO info;
 
-	xd_open(tree, &info);
-	exit = xd_kform_do(&info, start, userfunc, userdata);
-	xd_buttnorm(&info, exit);
-	xd_close(&info);
+	if((exit = xd_open(tree, &info)) >= 0)
+	{
+		exit = xd_kform_do(&info, start, userfunc, userdata);
+		xd_buttnorm(&info, exit);
+		xd_close(&info);
+	}
 	return exit;
 }
 
@@ -2143,7 +2147,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_malloc = malloc;
 	xd_free = free;
 	xd_prgname = prgname;
-	xd_multitos = FALSE;
 #ifdef __PUREC__
 	
 	/* 

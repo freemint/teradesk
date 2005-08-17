@@ -11,9 +11,10 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.42  27-11-04, Copyright 2004  H. Robbers, Dj. Vukovic 
              V3.50  20-02-05, Copyright 2005  H. Robbers, Dj. Vukovic 
              V3.60  02-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
+             V3.61  17-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
  
 
-This  is version 3.60 of the Tera Desktop, a replacement for the builtin TOS 
+This  is version 3.61 of the Tera Desktop, a replacement for the builtin TOS 
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source.  It is published under General Public License (GPL) which means 
 that it  may be  copied  and  modified freely,  providing that  the original 
@@ -93,16 +94,16 @@ New Features in This Version
 ============================ 
  
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the 
-last  released  version (V3.50). Also read the manual TERADESK.HYP (you will 
+last  released  version (3.60). Also, read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information. 
  
-Before installing the new version of TeraDesk,  you are advised to load and 
-then save each TeraDesk  configuration file that you use.  This will update 
-any older versions of the  configuration file(s)  to your  current version. 
-TeraDesk may report errors when reading too old configuration files. It may
+Before installing any  new version of TeraDesk,  you are advised to load and 
+then save each  TeraDesk  configuration file that you use.  This will update 
+any older  versions of the  configuration file(s)  to your  current version. 
+TeraDesk may report errors when reading  too old configuration files. It may
 also be a good idea to make a backup of the current configuration files.
- 
 
+ 
 
 Installation 
 ============ 
@@ -250,6 +251,11 @@ cases,  CICONS.RSC  file  should  be removed, and TeraDesk will fall back to
 monochrome   icons.   Colour  icons  file  can  also  be  removed  in  other 
 environments if there is a need to preserve as much free memory as possible. 
  
+10. Users are advised to load,  check and save  any existing  Tera Desktop's 
+configuration files.  As the  format  of  configuration  files  may   change 
+slightly with  new releases, by this procedure  they will be kept up to date
+as much as possible.
+
  
 Read the hypertext manual for more information. 
  
@@ -322,6 +328,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
  
  
                                             Djordje Vukovic 
-                                            Beograd; August 2nd 2005 
+                                            Beograd; August 17th 2005 
  
  

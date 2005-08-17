@@ -142,6 +142,8 @@ static void
 	**svicntree, 
 	*svicnrshdr;
 
+int
+	sl_noop; /* if 1, do not open icon dialog- it is already open */
 
 static int dsk_hndlkey(WINDOW *w, int dummy_scancode, int dummy_keystate);
 static void dsk_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
@@ -290,6 +292,8 @@ void icn_fix_ictype(void)
 		{
 			if(prg_isproglink(ic->icon_dat.name))
 			{
+				/* This is a program, or a link to one */
+
 				ic->tgt_type = ITM_PROGRAM;
 #if _MINT_
 				if ( !ic->link )
@@ -298,7 +302,10 @@ void icn_fix_ictype(void)
 			}
 			else
 			{
-				ic->tgt_type = ITM_FILE;
+				/* Maybe this was a program once, but now is just a file */
+
+				if(ic->tgt_type == ITM_PROGRAM)
+					ic->tgt_type = ITM_FILE;
 				ic->item_type = ITM_FILE;
 			}
 		}
@@ -1172,7 +1179,7 @@ static void icn_set_update(WINDOW *w, wd_upd_type type, const char *fname1, cons
 }
 
 
-static void icn_do_update(WINDOW *w)
+static void dsk_do_update(void)
 {
 	int i;
 	ICON *icn = desk_icons;
@@ -1197,11 +1204,25 @@ static void icn_do_update(WINDOW *w)
 }
 
 
+/*
+ * Item function, must have WINDOW * as argument
+ */
+
+static void icn_do_update(WINDOW *w)
+{
+	dsk_do_update();
+}
+
+
 /********************************************************************
  *																	*
  * Funktie voor het openen van iconen.								*
  *																	*
  ********************************************************************/
+
+/*
+ * Open an object represented by a desktop icon
+ */
 
 static boolean icn_open(WINDOW *w, int item, int kstate)
 {
@@ -1210,10 +1231,14 @@ static boolean icn_open(WINDOW *w, int item, int kstate)
 
 	if (isfile(type))
 	{
+		/* If the selected object can be opened... */
+
 		int button;
 
 		if (x_exist(icn->icon_dat.name, EX_FILE | EX_DIR) == FALSE)
 		{
+			/* File does not exist */
+
 			if ((button = alert_printf(1, AAPPNFND, icn->label)) == 3)
 				return FALSE;
 
@@ -1223,8 +1248,10 @@ static boolean icn_open(WINDOW *w, int item, int kstate)
 				return FALSE;
 			}
 
-			if((button = chng_icon(item)) == CHNICNOK || button == CHICNRM)
-				icn_do_update(desk_window);
+			sl_noop = 0;
+			button = chng_icon(item);
+			xd_close(&icd_info);
+			dsk_do_update();
 
 			if(button != CHNICNOK)
 				return FALSE;
@@ -1676,10 +1703,6 @@ void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
  * This routine may open, but never closes the icon selector dialog.
  */
 
-int 
-	sl_noop = 0;		/* Control opening and closing in multiple use */
-
-
 int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpatt, int bckcol)
 {
 	int 
@@ -1872,7 +1895,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 
 			}
 		}
-		else
+		else /* (n <= 0) */
 		{
 			*dirname = 0;
 			xd_set_child(addicon, ICBTNS, 1);
@@ -1903,7 +1926,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 			else
 				*drvid = 0;
 
-			if(itype == ITM_FILE)
+			if(itype == ITM_FILE) /* file or folder or program or link */
 			{
 				itype = icd_itm_type;
 				ifname = strdup(dirname);
@@ -1921,7 +1944,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 				*drvid & 0x5F, 
 				x, y, 
 				FALSE,
-				ifname
+				ifname /* deallocated inside if add_icon fails */
 			);
 
 			if(icnind < 0)
@@ -1935,7 +1958,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 	} /* loop */
 
 	xd_close(&icd_info);
-	icn_do_update(desk_window);
+	dsk_do_update();
 	obj_unhide(addicon[CHICNRM]);
 }
 
@@ -2029,7 +2052,7 @@ static int chng_icon(int object)
 
 				/* Note: must not clear the filename */
 
-				if(*dirname && (new = strdup(dirname)) != 0)
+				if(*dirname && (new = strdup(dirname)) != NULL)
 				{
 					icn_set_name(icn, new);
 					icn->item_type = icd_itm_type;
@@ -2149,6 +2172,11 @@ static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 			{
 				item = list[i];
 
+				/* 
+				 * Note: name will be deallocated in add_icon() if it fails;
+				 * Otherwise it must be kept; add_icon just uses the pointer
+				 */
+
 				if ((fname = itm_fullname(sw, item)) != NULL)
 				{
 					boolean link  = itm_islink(sw, item, TRUE);
@@ -2160,7 +2188,6 @@ static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 					icon = icnt_geticon( nameonly, type, ttype, link );
 					add_icon(type, ttype, link, icon, tolabel, 0, ix, iy, TRUE, fname);
 					incr_pos(&ix, &iy); 
-					free(fname);
 				}
 				else
 					return FALSE;
@@ -2634,7 +2661,7 @@ void dsk_default(void)
 
 
 /* 
- * Change a desktop icon (or more of them).
+ * Change a desktop icon (or more than one of them).
  * This routine should be activated only if n > 0.
  * The routine also handles removal of a whole group of icons
  * without opening the dialog, if dialog == FALSE.
@@ -2666,7 +2693,7 @@ void dsk_chngicon(int n, int *list, boolean dialog)
 	 * redraw affected icons. 
 	 */
 
-	icn_do_update(desk_window);
+	dsk_do_update();
 }
 
 
@@ -2681,7 +2708,8 @@ int limcolor(int col)
 
 
 /*
- * Limit a pattern index to one among the first 8 
+ * Limit a pattern index to one among the first 8 because patterns
+ * specified in OBSPEC are limited to 3-bit indexes.
  */
 
 int limpattern(int pat)
@@ -2752,7 +2780,6 @@ void dsk_options(void)
 		pattern = wdoptions[DSKPAT].ob_spec.obspec.fillpattern;
 		wcolor = wdoptions[WINPAT].ob_spec.obspec.interiorcol; 
 		wpattern = wdoptions[WINPAT].ob_spec.obspec.fillpattern;
-
 		button = arrow_form_do( &info, &oldbutton );
 
 		switch (button)

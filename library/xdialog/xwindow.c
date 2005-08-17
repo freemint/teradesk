@@ -535,7 +535,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
-	/* If no meny, or iconifid window, return */
+	/* If no meny, or if window is iconified, return */
 
 	if (menu == NULL || ((w->xw_xflags & XWF_ICN) != 0) )
 		return FALSE;
@@ -1463,18 +1463,11 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 
 /*
  * Function for closing the desktop window.
+ * Note that xd_free must permit free(NULL)
  */
 
 void xw_close_desk(void)
 {
-/* can be simpler, because AHCM permits free(NULL)
-
-	if (desktop != NULL)
-	{
-		(*xd_free)(desktop);
-		desktop = NULL;
-	}
-*/
 	(*xd_free)(desktop);
 	desktop = NULL;
 }

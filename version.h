@@ -25,7 +25,7 @@
 
 #define MIN_VERSION		0x0310		/* min. acceptabe version id. of inf file */	 
 
-#define INFO_VERSION	"Tera Desktop V3.60  02-08-2005"
+#define INFO_VERSION	"Tera Desktop V3.61  17-08-2005"
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"
 #define INFO_OTHER "1991-1994, 2002-2005"
 

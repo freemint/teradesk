@@ -27,6 +27,8 @@
 #include <string.h>
 #include <tos.h>
 #include <boolean.h>
+#include <vdi.h>
+#include <xdialog.h>
 
 #include "desktop.h"
 #include "environm.h"

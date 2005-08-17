@@ -550,7 +550,7 @@ static void txt_tabsize(TXT_WINDOW *w)
 
 	itoa(w->tabsize, vtabsize, 10);
 
-	if (xd_dialog(stabsize, VTABSIZE) == STOK)
+	if (chk_xd_dialog(stabsize, VTABSIZE) == STOK)
 	{
 		if ((w->tabsize = atoi(vtabsize)) < 1)
 			w->tabsize = 1;
@@ -792,7 +792,7 @@ int read_txtfile
 		{
 			/* Allocate buffer for complete file; read file into it  */
 		
-			if ((*buffer = malloc(*flength + 4L)) == NULL)		
+			if ((*buffer = malloc(*flength + 4L)) == NULL)
 				error = ENSMEM;
 			else
 			{
@@ -887,10 +887,6 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 
 	error = read_txtfile(w->name, &(w->buffer), &(w->size), &(w->tlines), &(w->lines), &(w->ntabs) );
 
-	/* Determine text width */
-
-	w->twidth = txt_width(w, 0);
-
 	arrow_mouse();
 
 	if (error != 0)
@@ -900,6 +896,8 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 	}
 	else
 	{
+		w->twidth = txt_width(w, 0);
+
 		if (setmode)
 		{
 			char *b;
@@ -1243,10 +1241,14 @@ void compare_files( WINDOW *w, int n, int *list )
 
 			} /* error ? */
 			else
+			{
 
 				/* Something went wrong while reading the files */
 
+				arrow_mouse();
 				xform_error(error);
+				button = COMPCANC;
+			}
 		} 
 		else
 			error = 1; /* in order not to show alert below */
@@ -1286,14 +1288,12 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 {
 	TXT_WINDOW *w;
 	RECT size;
-	int errcode;
 
 	wd_in_screen( info );
 
 	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &wd_type_functions, TFLAGS, &tmax,
-									 sizeof(TXT_WINDOW), viewmenu, &errcode)) == NULL)
+									 sizeof(TXT_WINDOW), viewmenu, error)) == NULL)
 	{
-		*error = wd_checkcreate(errcode);
 		free(file);
 		return NULL;
 	}
@@ -1305,13 +1305,6 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	w->tabsize = tabsize;
 	w->hexmode = hexmode;
 	w->winfo = info;
-
-/* No need, structure is zeroed in xw_create
-	w->buffer = NULL;
-	w->lines = NULL;
-	w->ntabs = NULL;
-	w->nlines = 0L;
-*/
 
 	/* Read text file */
 

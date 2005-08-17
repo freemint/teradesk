@@ -74,6 +74,14 @@ extern XDINFO
 extern int 
 	sl_noop;
 
+/*
+ * Note: Indexes below must agree with the order of radiobuttons
+ * for selecting icon group in the dialog 
+ */
+
+#define FILE_LIST 	0	/* index for files icons list in iconlists[] */
+#define FOLD_LIST	1	/* index for folders icons list in iconlists [] */
+#define PROG_LIST	2	/* index for programs icons list in iconlists [] */ 
 
 /*
  * Copy icon-file assignment data to another location 
@@ -165,10 +173,10 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link)
 
 	/* 
 	 * Find a related icon, depending on item type (folder/file/program) 
-	 * Links ara handled in a somewhat dirty (but efficient) way
+	 * Links are handled in a somewhat dirty (but efficient) way
 	 */
 
-	again:;
+	again:; /* if item is a link, return here to check target */
 
 	switch(thetype)
 	{
@@ -276,11 +284,6 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 	button = icn_dialog(&sl_info, &theic, ICNTYPE, options.win_pattern, options.win_color);
 	xd_close(&icd_info);
 
-/* maybe not needed
-	obj_hide(addicon[ICSHFLD]); 
-	obj_hide(addicon[ICSHFIL]);
-	obj_hide(addicon[ICSHPRG]);
-*/
 	cv_formtofn(thename, addicon, ICNTYPE);
 
 	/* Button is OK but check for duplicate assignment, then set what needed */
@@ -363,9 +366,9 @@ void icnt_settypes(void)
 
 void icnt_init(void)
 {
-	iconlists[0] = NULL;
-	iconlists[1] = NULL;
-	iconlists[2] = NULL;
+	iconlists[FILE_LIST] = NULL;
+	iconlists[FOLD_LIST] = NULL;
+	iconlists[PROG_LIST] = NULL;
 }
 
 
@@ -378,22 +381,9 @@ static void rem_all_icontypes(void)
 	lsrem_three((LSTYPE **)iconlists, lsrem);
 }
 
-/*
- * Set up some predefined lists of icons-files and icons-folders assignments.
- * This can be tricky: Lists of assignments are searched from the first
- * towards the last item. If the most general wildcards such as "*" and "*.*" 
- * are defined among the first ones, other matches later in the list will 
- * never be found. So, at the least, the most general wildcards should be
- * placed near the end of the list, if at all. Anyway, this can lead to
- * a confusion, so perhaps it is best to disable all of these predefined
- * icontypes which were set below; Teradesk anyway assigns some default
- * icons in such cases. To enable all below set ENABLE_PREDEFIC to 1.
- */
 
-#define ENABLE_PREDEFIC 0
+/* This routine is not currenclty used in TeraDesk
 
-
-#if ENABLE_PREDEFIC
 /*
  * Add an icon assignment into the list, explicitely giving parameters
  */
@@ -421,40 +411,69 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 
 	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), END, copy_icntype );
 }
-#endif
 
+*/
+
+
+/*
+ * Set default icon assignment: no icontypes
+ */
 
 void icnt_default(void)
 {
-#if ENABLE_PREDEFIC
-
-	INAME iname; 
-	int ilist[3];
-#endif
-
 	rem_all_icontypes();
+}
 
 
-#if ENABLE_PREDEFIC
+/*
+ * Move an icontype assignment from one group list to another.
+ * If assignment to the new list fails, old assignment is not removed.
+ */
 
-	ilist[0] = 	rsrc_icon_rscid ( FOINAME, iname ); /*   *              */
-	ilist[1] =	rsrc_icon_rscid ( FIINAME, iname ); /*   *.*            */
-#if _PREDEF
-	ilist[2] =	rsrc_icon_rscid ( APINAME, iname );  /*   PRG, APP, TOS  */
-#endif
+static void icnt_move(int to, int from, ICONTYPE *it)
+{
+	if
+	(
+		lsadd
+		(
+			(LSTYPE **)(&iconlists[to]),
+			sizeof(ICONTYPE),
+			(LSTYPE *)it,
+			END,
+			copy_icntype
+   		) != NULL
+	) 
+		lsrem((LSTYPE **)(&iconlists[from]), (LSTYPE *)it);
+}
 
-	itadd_one(&iconlists[1], (char *)presets[0],  ilist[0]);	/*	*		*/ 
-	itadd_one(&iconlists[0], (char *)presets[1],  ilist[1]);	/* 	*.*		*/
-#if _PREDEF
-	itadd_one(&iconlists[2], (char *)presets[2], ilist[2]);	/*	*.PRG	*/
-	itadd_one(&iconlists[2], (char *)presets[3], ilist[2]);	/*	*.APP	*/
-	itadd_one(&iconlists[2], (char *)presets[4], ilist[2]);	/*	*.GTP	*/
-	itadd_one(&iconlists[2], (char *)presets[5], ilist[2]);	/*	*.TOS	*/
-#endif
 
-#endif /* ENABLE_PREFEDIC */
+/*
+ * Move program icons from/to files or programs group, depending on whether
+ * their name mask is currently that of a program or a file
+ */
 
+void icnt_fix_ictypes(void)
+{
+	ICONTYPE *it, *next;
 
+	it = iconlists[FILE_LIST];
+	while(it)
+	{
+
+		next = it->next;
+		if(prg_isprogram(it->type))
+			icnt_move( PROG_LIST, FILE_LIST, it);
+		it = next;
+	}
+
+	it = iconlists[PROG_LIST];
+	while(it)
+	{
+		next = it->next;
+		if(!prg_isprogram(it->type))
+			icnt_move(FILE_LIST, PROG_LIST, it);
+		it = next;
+	}
 }
 
 
@@ -520,11 +539,7 @@ static CfgNest one_itype
 				(
 					lsadd
 					(
-						/* Compatibility issue, modify after V3.60 */
-/*	
 						(LSTYPE **)ppthis,
-*/
-prg_isprogram(iwork.type) ? (LSTYPE **)(&iconlists[2]) : (LSTYPE **)ppthis,
 						sizeof(ICONTYPE),
 						(LSTYPE *)&iwork,
 						END,
@@ -630,6 +645,7 @@ static CfgEntry icontypes_table[] =
 CfgNest icnt_config
 {
 	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
+	icnt_fix_ictypes(); /* Compatibility issue, may be removed after V3.60 */
 }
 
 

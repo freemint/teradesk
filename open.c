@@ -103,7 +103,14 @@ int open_dialog(void)
  * may contain a command line, if not NULL
  */
 
-boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thecommand)
+boolean item_open
+(
+	WINDOW *inw, 		/* window in which the selection is made */
+	int initem,			/* ordinal of the selected item from the window */ 
+	int kstate,			/* keyboard state while opening the item */ 
+	char *theitem, 		/* explicitely specified full item name */
+	char *thecommand	/* command line if theitem is a program */
+)
 {
 	char
 
@@ -144,11 +151,9 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 	if ( inw && !theitem )
 	{
 		/* 
-		 * An item is specified by selection in a window;
-		 * get its full name
+		 * An item is specified by selection in a window; get its full name
+		 * Note: it is possible that 'realname' be NULL (for trashcan, printer...) 
 		 */
-
-		/* Note: it is possible that 'realname' be NULL (for trashcan, printer...) */
 
 		realname = itm_tgtname(inw, initem);
 
@@ -176,7 +181,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 			obj_hide(newfolder[DIRNAME]);
 			obj_unhide(newfolder[OPENNAME]);
 			xd_init_shift(&newfolder[OPENNAME], openline);
-			button = xd_dialog( newfolder, ROOT );
+			button = chk_xd_dialog( newfolder, ROOT );
 		}
 
 		/* Note: theitem must come first below */
@@ -225,7 +230,7 @@ boolean item_open(WINDOW *inw, int initem, int kstate, char *theitem, char *thec
 #endif
 					strupr(openline);
 
-				/* Is this name (path) too long? */
+				/* Is this name (path) too long?  */
 
 				if ( strlen(openline) >= PATH_MAX )
 				{

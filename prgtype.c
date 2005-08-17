@@ -42,6 +42,7 @@
 #include "font.h"
 #include "window.h"
 #include "icon.h"
+#include "icontype.h"
 
 #define END			32767
 
@@ -129,9 +130,12 @@ boolean prg_isproglink(const char *fname)
 {
 	boolean p = FALSE;
 	char *tgtname = x_fllink((char *)fname);
+
 	if (tgtname)
 		p = prg_isprogram(fn_get_name(tgtname));
+
 	free(tgtname);
+
 	return p;
 }
 
@@ -345,12 +349,9 @@ void prg_setprefs(void)
 	{
 		get_opt(setmask, &options.xprefs, TOS_KEY, PKEY);
 		get_opt(setmask, &options.xprefs, TOS_STDERR, PSTDERR);
-		icn_fix_ictype();
-
-/* not needed ?
-		wd_seticons();
-*/
-		dir_refresh_all();
+		icn_fix_ictype(); 	/* modify types of desktop icons */
+		icnt_fix_ictypes();	/* move program icons to appropriate group */
+		dir_refresh_all();	/* modify window icons */
 	}
 }
 
@@ -460,15 +461,18 @@ static CfgNest one_ptype
 
 				/* Add a program type into the list */
 
-				if ( 
-					lsadd(  (LSTYPE **)&prgtypes, 
-		            		sizeof(pwork), 
-		            		(LSTYPE *)&pwork, 
-		            		END, 
-		            		copy_prgtype
-				  		) == NULL
-					)
-						*error = ENOMSG;
+				if
+				( 
+					lsadd
+					(  
+						(LSTYPE **)&prgtypes, 
+		            	sizeof(pwork), 
+		            	(LSTYPE *)&pwork, 
+		            	END, 
+		            	copy_prgtype
+				  	) == NULL
+				)
+					*error = ENOMSG;
 			}
 		}
 	}

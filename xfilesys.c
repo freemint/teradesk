@@ -29,6 +29,8 @@
 #include <boolean.h>
 #include <library.h>
 #include <mint.h>
+#include <vdi.h>
+#include <xdialog.h>
 
 #include "desktop.h"
 #include "desk.h"
@@ -877,7 +879,7 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 	{
 		/*
 		 * File system with long filenames. Mint (or Magic) is surely present.
-		 * Use Dxreaddir instead of Dreaddir, handle links correctly.
+		 * Use Dxreaddir, not Dreaddir, in order to handle links correctly.
 		 */
 
 		long error, rep;
@@ -1019,7 +1021,7 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 #if _MINT_
 	if ((fs_type & FS_UID) == 0 )
 	{
-		/* This is a filesystem without user rights; fix some */
+		/* This is a filesystem without user rights; imagine some */
 
 		xattr->mode |= (S_IRUSR | S_IRGRP | S_IROTH);
 
@@ -1029,7 +1031,8 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		/* 
 		 * Information about execute rights need not be always
 		 * set; only for file copy. As it happens, in all such
-		 * cases, fs_type parameter will always contain a FS_INQ 
+		 * cases, fs_type parameter will always contain a FS_INQ
+		 * (more-less by accident, but convenient). 
 		 */
 
 		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(name))

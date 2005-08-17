@@ -528,6 +528,14 @@ void wd_iselection(WINDOW *w, int n, int *list)
 }
 
 
+void wd_noselection(void)
+{
+	selection.w = NULL;
+	selection.selected = -1;
+	selection.n = 0;
+}
+
+
 #if _MINT_
 /* 
  * Top the specified application
@@ -874,7 +882,7 @@ void wd_setselection(WINDOW *w)
 	int n, *list;
 
 	itm_list(w, &n, &list);		/* note: allocate list, or set to null */
-	wd_iselection(w, n, list);	/* note: deallocate list */
+	wd_iselection(w, n, list);	/* note: also deallocates list */
 }
 
 
@@ -1407,6 +1415,8 @@ void wd_hndlmenu(int item, int keystate)
 	case MSHOWINF:
 	case MSEARCH:
 	{
+		*spattfld = 0;
+
 		if ( w == NULL )
 		{
 			/* Nothing is selected, info on the disk of the top window  */
@@ -1435,6 +1445,8 @@ void wd_hndlmenu(int item, int keystate)
 				thisname = ((TXT_WINDOW *)wtop)->name;
 				thepath = fn_get_path( thisname );
 				thename = fn_get_name( thisname );
+				cv_fntoform(searching, SMASK, thename);	/* name mask in the dialog */
+
 				if (thepath)
 					itype = ITM_FILE;
 				else
@@ -1445,10 +1457,15 @@ void wd_hndlmenu(int item, int keystate)
 				dir_simw(&((DIR_WINDOW *)ww), thepath, thename, itype, 0, 0);
 		}
 
+		/* Perform search and/or show information */
+
 		if(itm_list(ww, &n, &list))
 		{
 			if ( item == MSHOWINF || !app_specstart( AT_SRCH, ww, list, n, 0 ) )
 				item_showinfo(ww, n, list, (item == MSHOWINF) ? FALSE : TRUE);
+
+			if(w == NULL) /* deselect all in a simulated window */
+				wd_noselection();
 		}
 
 		free(thepath);
@@ -1738,13 +1755,6 @@ void wd_sizes(void)
 	can_iconify = aes_wfunc & 128; 
 }
 
-
-void wd_noselection(void)
-{
-	selection.w = NULL;
-	selection.selected = -1;
-	selection.n = 0;
-}
 
 /*
  * Initialize windows data
@@ -2064,31 +2074,6 @@ void wd_calcsize(WINFO *w, RECT *size)
 
 
 /* 
- * Check success of creation of a directory or text window
- */
-
-int wd_checkcreate(int errcode)
-{
-	int error;
-
-	switch(errcode)
-	{
-		case XDNSMEM:
-			error = ENSMEM;
-			break;
-		case XDNMWINDOWS:
-			alert_iprint(MTMWIND);
-			error = ENOMSG;
-			break;
-		default:
-			error = ERROR;
-	}
-
-	return error;
-}
-
-
-/* 
  * Merge of txt_redraw and do_redraw functions for text and dir windows 
  */
 
@@ -2214,15 +2199,26 @@ void wd_type_sldraw(TYP_WINDOW *w, boolean message)
 
 void wd_drawall(void)
 {
-	int wtype;
-	
 	WINDOW *w = xw_first();
 
 	while (w)
 	{
-		wtype = xw_type(w);
-		if (wtype == DIR_WIND || wtype == TEXT_WIND)
-			wd_type_sldraw((TYP_WINDOW *)w, FALSE);
+		/* 
+		 * Note: windows below dialogs do not get redrawn nicely
+		 * if wd_type_draw() is called with message=FALSE
+		 * (as in earlier versions of this file)
+		 */
+
+		switch( xw_type(w))
+		{
+			case DIR_WIND:
+			case TEXT_WIND:
+				set_sliders((TYP_WINDOW *)w);
+			case DESK_WIND:
+			case ACC_WIND:
+				wd_type_draw((TYP_WINDOW *)w, TRUE);
+		}
+
 		w = w->xw_next;
 	}
 }
@@ -2266,7 +2262,8 @@ void wd_type_bottomed(WINDOW *w)
 
 /*
  * Set window title. For the sake of size optimization, 
- * also set window sliders.
+ * also set window sliders, because that routine was always 
+ * (except in one place once) called immediately after setting the title.
  */
 
 void wd_type_title(TYP_WINDOW *w)

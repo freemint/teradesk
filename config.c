@@ -28,6 +28,8 @@
 #include <string.h>
 #include <np_aes.h>
 #include <library.h>
+#include <vdi.h> /* only because of xdialog.h */
+#include <xdialog.h>
 
 #include "desktop.h"
 #include "boolean.h"

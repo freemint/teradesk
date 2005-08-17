@@ -22,7 +22,7 @@
 
 /* -1 t/m -1023 TOS fout codes */
 
-#define ERROR               -1
+#define GERROR              -1
 #define DRIVE_NOT_READY     -2
 #define UNKNOWN_CMD         -3
 #define CRC_ERROR           -4
@@ -84,6 +84,8 @@
 
 /* -4096 t/m 6120 fouten in Xdialog bibliotheek */
 
-#define _XDVDI		-4096		/* Geen vdi handle meer beschikbaar */
+#define XDVDI		-4096		/* Geen vdi handle meer beschikbaar */
+#define XDNMWINDOWS -4097		/* no more windows available */
+
 
 int xerror( int toserror );

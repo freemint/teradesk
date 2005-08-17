@@ -445,6 +445,7 @@ static void do_fd_button
 		case WDFSDOWN:
 			if (fbl->cursize > 0)
 				fbl->cursize = fbl->cursize - 1;
+			break;
 		case WDFCUP:
 			fbl->colour += 1;
 			break;

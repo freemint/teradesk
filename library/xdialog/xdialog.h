@@ -33,11 +33,12 @@
  #include "xwindow.h"
 #endif
 
-/* Errorcodes. */
+/* Errorcodes. Take care to use same values as in XERROR.H */
 
-#define XDVDI			1		/* Geen vdi handle meer beschikbaar. */
-#define XDNMWINDOWS		2		/* Geen windows meer. */
-#define XDNSMEM			3		/* Niet voldoende geheugen. */
+#define ENSMEM		-39			/* From xerror.h */
+#define XDVDI		-4096		/* Geen vdi handle meer beschikbaar. */
+#define XDNMWINDOWS -4097		/* Geen windows meer. */
+#define XDNSMEM		ENSMEM		/* Niet voldoende geheugen. */
 
 /* key-status constants */
 
@@ -169,7 +170,7 @@ extern int
 
 /* Funkties voor het openen en sluiten van een dialoog */
 
-void xd_open(OBJECT *tree, XDINFO *info);
+int xd_open(OBJECT *tree, XDINFO *info);
 void xd_close(XDINFO *info);
 void xd_enable_menu(int state);
 
@@ -199,7 +200,7 @@ int xd_dialog(OBJECT *tree, int start);
 
 /* Funkties voor initialisatie van een resource. */
 
-int xd_gaddr(int type, int index, void *addr);
+int xd_gaddr(int index, void *addr);
 void xd_fixtree(OBJECT *tree);
 void xd_set_userobjects(OBJECT *tree);
 char *xd_set_srcl_text(OBJECT *tree, int item, char *txt);

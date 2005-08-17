@@ -68,9 +68,19 @@ extern char
 	*cpfile,
 	*cpfolder,
 	*cfile1,
-	*cfile2;
+	*cfile2
+#if _EDITLABELS
+#if _MINT_
+	,
+	*lblvalid,
+	*lbltmplt
+#endif
+#endif
+	;
 
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);
 void rsc_ltoftext(OBJECT *tree, int object, long value);
+void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt);
+void rsc_tostmplt(TEDINFO *ted);

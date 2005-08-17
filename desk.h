@@ -248,6 +248,8 @@ char *ltoa(long value, char *string, int radix);
 
 long btst(long x, int bit);
 void *malloc_chk(size_t size);
+int chk_xd_dialog(OBJECT *tree, int start);
+int chk_xd_open(OBJECT *tree, XDINFO *info);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 
 void get_opt(OBJECT *tree, int *flags, int opt, int button );
 char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */

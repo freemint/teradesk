@@ -368,20 +368,9 @@ void get_set_video (int set)
 				w = w->xw_next;
 			}
 
-			/* 
-			 * Regenerate desktop; doesn't do well with overscan
-			 * unless menu_bar() is done twice ???
-			 */
-
 			menu_bar(menu, 0);
-			wind_set(0, WF_NEWDESK, desktop, 0);
-#if _OVSCAN
-			if (ovrstat >= 0)
-				menu_bar(menu, 1);
-#endif
-			dsk_draw();
+			regen_desktop(desktop);
 			menu_bar(menu, 1);
-
  			wd_drawall();
 		}
 		else /* Set > 1 */

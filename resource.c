@@ -70,33 +70,41 @@ OBJECT *menu,
 	   *compare;
 
 char
-	 *dirname, /* should not be removed for the time being */
-	 *openline,/* specification for open- must not be reused */
-	 *oldname, /* must stay */
-	 *newname, /* must stay */
-	 *tgname,
-	 *envline,
-	 *finame,
-	 *flname,
-	 *cmdline,	
-	 *applcmd,
-	 *spattfld,
-	 *drvid,
-	 *iconlabel,
-	 *cpfile,
-	 *cpfolder,
-	 *cfile1,
-	 *cfile2;
+	*dirname, /* should not be removed for the time being */
+	*openline,/* specification for open- must not be reused */
+	*oldname, /* must stay */
+	*newname, /* must stay */
+	*tgname,
+	*envline,
+	*finame,
+	*flname,
+	*cmdline,	
+	*applcmd,
+	*spattfld,
+	*drvid,
+	*iconlabel,
+	*cpfile,
+	*cpfolder,
+	*cfile1,
+	*cfile2
+#if _EDITLABELS
+#if _MINT_
+	,
+	*lblvalid,
+	*lbltmplt
+#endif
+#endif
+	;
 
-	LNAME				/* scrolled text fields for file/folder/path names */
-		envlinetxt,
-		tgnametxt,
-		dirnametxt,
-		flnametxt,
-		opentxt,
-		cmdlinetxt,
-		cfile1txt,
-		cfile2txt;
+LNAME				/* scrolled text fields for file/folder/path names */
+	envlinetxt,
+	tgnametxt,
+	dirnametxt,
+	flnametxt,
+	opentxt,
+	cmdlinetxt,
+	cfile1txt,
+	cfile2txt;
 
 
 extern int 
@@ -325,6 +333,40 @@ static void rsc_fixmenus(void)
 
 
 /*
+ * Change validation and template strings. Space for both has
+ * already to be allocated and of sufficient size.
+ * Note: it seems that new strings must actually be copied to the old
+ * locations, if just pointers are changed it won't work correctly.
+ */
+
+void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
+{
+	strcpy(ted->te_pvalid, valid);
+	strcpy(ted->te_ptmplt, tmplt);
+	ted->te_tmplen = strlen(tmplt) + 1;
+	ted->te_txtlen = strlen(valid) + 1;
+	ted->te_ptext[ted->te_txtlen] = 0;
+}
+
+
+
+#if _EDITLABELS
+
+/*
+ * Fix template and validation string for a field converted
+ * to 8+3 filename form. New validation and template are
+ * taken from the resource.
+ */
+
+void rsc_tostmplt(TEDINFO *ted)
+{
+	rsc_fixtmplt(ted, get_freestring(TFNVALID), get_freestring(TFNTMPLT));
+}
+
+#endif
+
+
+/*
  * Convert a scrolled text field to a normal G_FTEXT suitable for a filename 
  * in 8+3 format (always exactly 12 characters long). The routine is to be 
  * used when the OS does not support long filenames. 
@@ -365,20 +407,13 @@ static char *tos_fnform( OBJECT *tree, int object, int just )
 	obj->ob_spec.tedinfo = ted;
 	obj->ob_flags |= 0x400; /* set to background for gray text background */
 
-	/* 
-	 * Change validation and template strings; 
-	 * It is assumed that the original (scrolled text) strings are 
-	 * always longer than the new ones, so the same locations are used.
-	 * The remaining old string space is currently wasted !
-	 * as validation and template are short anyway, it doesn't matter much.
-	 * the only really wasted space is for the string itself (about 110 bytes)
-	 */
+	/* Change validation and template strings */
 
-	strcpy(ted->te_pvalid, "FFFFFFFFFFF");
-	strcpy(ted->te_ptmplt, "________.___");
-
-	ted->te_tmplen = 12;
-	ted->te_txtlen = 12; /* includes zero term. byte */
+#if _EDITLABELS
+	rsc_tostmplt(ted);
+#else
+	rsc_fixtmplt(ted, get_freestring(TFNVALID), get_freestring(TFNTMPLT));
+#endif
 
 	return ted->te_ptext;
 }
@@ -386,7 +421,7 @@ static char *tos_fnform( OBJECT *tree, int object, int just )
 
 /*
  * Decode (hexadecimal) information on OS / AES version for the infobox
- * This will work correctly only on a three-digit number.
+ * This will work correctly only on a three-digit hexadecimal number.
  */
 
 static void show_os( OBJECT *obj, int v )
@@ -397,37 +432,39 @@ static void show_os( OBJECT *obj, int v )
 
 /* 
  * Initialize the resource structures. All used dialogs should be set here. 
+ * Also fix positions, object types, object sizes and whatever, depending
+ * on the capabilities of the AES and the screen resolution.
  */
 
 void rsc_init(void)
 {
 	int i, v3d2 = 2 * aes_ver3d + 1;
 
-	xd_gaddr(R_TREE, MENU, &menu);
-	xd_gaddr(R_TREE, OPTIONS, &setprefs);
-	xd_gaddr(R_TREE, ADDPTYPE, &addprgtype);
-	xd_gaddr(R_TREE, NEWDIR, &newfolder);
-	xd_gaddr(R_TREE, GETCML, &getcml);
-	xd_gaddr(R_TREE, FILEINFO, &fileinfo);
-	xd_gaddr(R_TREE, INFOBOX, &infobox);
-	xd_gaddr(R_TREE, ADDICON, &addicon);
-	xd_gaddr(R_TREE, NAMECONF, &nameconflict);
-	xd_gaddr(R_TREE, COPYINFO, &copyinfo);
-	xd_gaddr(R_TREE, SETMASK, &setmask);
-	xd_gaddr(R_TREE, APPLIKAT, &applikation);
-	xd_gaddr(R_TREE, VIEWMENU, &viewmenu);
-	xd_gaddr(R_TREE, STABSIZE, &stabsize);
-	xd_gaddr(R_TREE, WOPTIONS, &wdoptions);
-	xd_gaddr(R_TREE, WDFONT, &wdfont);
-	xd_gaddr(R_TREE, HELP1, &helpno1);
-	xd_gaddr(R_TREE, FLOPPY, &fmtfloppy);
-	xd_gaddr(R_TREE, VOPTIONS, &vidoptions);
-	xd_gaddr(R_TREE, COPTIONS, &copyoptions);
-	xd_gaddr(R_TREE, ADDFTYPE, &ftydialog);	
-	xd_gaddr(R_TREE, SEARCH, &searching);
-	xd_gaddr(R_TREE, SPECAPP, &specapp);
-	xd_gaddr(R_TREE, OPENW, &openw);
-	xd_gaddr(R_TREE, COMPARE, &compare);
+	xd_gaddr(MENU, &menu);
+	xd_gaddr(OPTIONS, &setprefs);
+	xd_gaddr(ADDPTYPE, &addprgtype);
+	xd_gaddr(NEWDIR, &newfolder);
+	xd_gaddr(GETCML, &getcml);
+	xd_gaddr(FILEINFO, &fileinfo);
+	xd_gaddr(INFOBOX, &infobox);
+	xd_gaddr(ADDICON, &addicon);
+	xd_gaddr(NAMECONF, &nameconflict);
+	xd_gaddr(COPYINFO, &copyinfo);
+	xd_gaddr(SETMASK, &setmask);
+	xd_gaddr(APPLIKAT, &applikation);
+	xd_gaddr(VIEWMENU, &viewmenu);
+	xd_gaddr(STABSIZE, &stabsize);
+	xd_gaddr(WOPTIONS, &wdoptions);
+	xd_gaddr(WDFONT, &wdfont);
+	xd_gaddr(HELP1, &helpno1);
+	xd_gaddr(FLOPPY, &fmtfloppy);
+	xd_gaddr(VOPTIONS, &vidoptions);
+	xd_gaddr(COPTIONS, &copyoptions);
+	xd_gaddr(ADDFTYPE, &ftydialog);	
+	xd_gaddr(SEARCH, &searching);
+	xd_gaddr(SPECAPP, &specapp);
+	xd_gaddr(OPENW, &openw);
+	xd_gaddr(COMPARE, &compare);
 
 	/*  
 	 * Handle pointers for scrolling editable texts. 
@@ -464,7 +501,7 @@ void rsc_init(void)
 	 * Note: rsc_xalign and rsc_yalign below change the dimensions
 	 * of dialog items so that they do not overlap with adjacent items;
 	 * this is supposed to prevent overlapping of scrolling arrow buttons
-	 * with scrolled-item fields.
+	 * with scrolled-item fields when 3D-enlargements exist.
 	 */
 
 	rsc_xalign(wdoptions, DSKPDOWN, DSKPUP, DSKPAT);
@@ -510,7 +547,7 @@ void rsc_init(void)
 	}		
 
 	/*
-	 * If neither mint nor magic is present, set validation strings for
+	 * If neither Mint nor Magic is present, set validation strings for
 	 * all file/filetype input fields to (automatically convert to) uppercase
 	 * and modify their length to 12 characters (8+3 format).
 	 * note: for scrolled text fields it is currently sufficient to put just
@@ -550,6 +587,23 @@ void rsc_init(void)
 		rsc_title(copyinfo, CIFILES, SFILES);
 	}
 
+#if _EDITLABELS
+#if _MINT_
+
+	/* 
+	 * Copy original validation strings for volume labels
+	 * No action is taken if memory allocation fails here;
+	 * hopefully failure will not occur, as this is done 
+	 * only at startup of TeraDesk
+	 */
+
+	lblvalid = strdup((char *)fileinfo[FLLABEL].ob_spec.tedinfo->te_pvalid);
+	lbltmplt = strdup((char *)fileinfo[FLLABEL].ob_spec.tedinfo->te_ptmplt);
+#endif
+#else
+		tos_fnform(fileinfo, FLLABEL, -1);
+#endif
+
 	*drvid = 0;
 	*iconlabel = 0;
 
@@ -579,7 +633,7 @@ void rsc_title(OBJECT *tree, int object, int title)
 {
 	OBSPEC s;
 
-	xd_gaddr(R_STRING, title, &s);
+	rsrc_gaddr(R_STRING, title, &s);
 	xd_set_obspec(tree + object, &s); 
 }
 

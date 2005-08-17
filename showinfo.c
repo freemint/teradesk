@@ -81,7 +81,7 @@ static int
 	search_hidate;	/* high end of file/folder date for search, inclusive */
 
 static size_t
-	search_length;	/* length of string to search for */
+	search_length;	/* length of the string being searched for */
 
 static char 
 	*search_txt,		/* string to search for (directly in dialog field) */
@@ -233,8 +233,7 @@ static int search_dialog(void)
 
 	/* Clear all fields */
 
-	*spattfld = 0;		/* name mask in the dialog */
-	*search_txt = 0;	/* string pattern in the dialog */	
+	*search_txt = 0;				/* string pattern in the dialog */	
 	*(searching[SLOSIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHISIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SLODATE].ob_spec.tedinfo->te_ptext) = 0;
@@ -383,7 +382,7 @@ boolean searched_found
 		fl;				/* length of the file just read */
 
 	int 
-		error;			/* error code */
+		error = 0;		/* error code */
 
 
 	/* Nothing found yet */
@@ -484,7 +483,7 @@ boolean searched_found
 							/* 
 							 * Free pointers to finds if nothing found 
 							 * (otherwise they will be neeed later)
-							 * Ftee the file buffer too.
+							 * Free the file buffer too.
 							 */
 
 							if ( search_nsm == 0 )
@@ -497,6 +496,7 @@ boolean searched_found
 
 					} /* no error ? */
 
+					xform_error(error);
 					free(fpath);
   
 				} 	/* search string specified ? */
@@ -737,8 +737,10 @@ int object_info
 	SNAME 
 		dskl;			/* disk label */
 
+#if _EDITLABELS
 	TEDINFO
 		*lblted = fileinfo[FLLABEL].ob_spec.tedinfo;
+#endif
 
 	/* In which filesystem does this item reside */
 
@@ -849,13 +851,12 @@ int object_info
 					jf;
 	
 				*pflags = 0;
+				*pprot = 0;
 
-				flg = x_pflags((char *)oldname);
-
-				if(flg >= 0)
+				if((flg = x_pflags((char *)oldname)) >= 0)
 				{
 					/* 
-					 * Note: strings must be in a sequence
+					 * Note: strings must be in the correct sequence
 					 * for the following code to work
 					 */
 
@@ -871,7 +872,7 @@ int object_info
 						strcat(pprot, get_freestring(PPSHARE));
 				}
 				else
-					return (int)flg;
+					alert_iprint(TPLFMT);
 
 				obj_unhide(fileinfo[PFBOX]);
 			}
@@ -894,7 +895,11 @@ int object_info
 					thetitle = DTMEMINF;
 					break;
 				default:
+
 				{
+#else
+			{
+#endif
 					char *appname = app_find_name(fname);
 
 					if(appname && *search_pattern == 0)
@@ -905,10 +910,12 @@ int object_info
 					}
 
 					thetitle = DTFIINF;
+#if _MINT_
 					break;
 				}
-			}
 #endif
+			}
+
 			settitle:;
 
 			rsc_title(fileinfo, FLTITLE, thetitle);
@@ -971,6 +978,7 @@ int object_info
 				fileinfo[FLLABEL].ob_flags |= EDITABLE;
 #endif
 #endif
+
 			drive = (oldname[0] & 0x5F) - 'A';
 
 			if (check_drive( drive ) != FALSE)
@@ -989,19 +997,14 @@ int object_info
 					fbytes = diskinfo.b_free * clsize;
 					tbytes = diskinfo.b_total * clsize;
 
+#if _EDITLABELS
 #if _MINT_
 					if((fs_type & FS_UID) != 0)
-					{
-						strcpy(lblted->te_ptmplt, "____________");
-						lblted->te_txtlen = 13;
-					}
+						rsc_fixtmplt(lblted, lblvalid, lbltmplt);
 					else
 #endif
-					{
-						strcpy(lblted->te_ptmplt, "________.___");
-						lblted->te_txtlen = 12;
-					}
-
+						rsc_tostmplt(lblted);
+#endif
 					cv_fntoform(fileinfo, FLLABEL, dskl);
 
 					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
@@ -1390,7 +1393,7 @@ void item_showinfo
 	*search_pattern = 0;
 	nofound = FALSE;
 
-	/* Open a dialog to input search pattern */
+	/* Open a dialog to input search parameters */
 
 	if ( search && search_dialog() != SOK )
 		return;
@@ -1461,6 +1464,7 @@ void item_showinfo
 		itmlist_op(w, ntouch, &list[i], NULL, CMD_TOUCH);
 		if ( xw_type(w) == DIR_WIND )
 			dir_refresh_wd((DIR_WINDOW *)w);
+
 		can_touch = FALSE;
 	}
 	else

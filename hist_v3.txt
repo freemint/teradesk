@@ -2,6 +2,62 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                               2002, 2003, 2004, 2005  Dj. Vukovic.
 
+
+Version 3.61
+------------
+- Some noncritical configuration-file-compatibility code removed; if 
+  configuration files OLDER than V3.60 are loaded, warnings may appear
+  (to be ignored).
+
+- When programtype name masks are added or removed, any matching window
+  icons now change group (Programs vs. Files) automatically, in style with
+  behaviour of desktop icons which automatically change their item types.
+
+- Moved alternate validation and template strings for some editable dialog 
+  fields (for filenames, when switching from LFN to 8+3) from the code to 
+  the resource file, so they would be easier to manipulate. This may be
+  needed if the user wishes to relax validation of filenames in single-TOS;
+  with the validation string currently being set to FFFFFFFFFFF, some 
+  filenames which are not exactly legal, like "ST-GUIDE", can not be entered
+  in the dialogs; to relax validation, TFNVALID string in DESKTOP.RSC
+  should be changed to e.g. XXXXXXXXXXX or XXXXXXXXFFF
+
+- Fixed a bug which caused font colour to change when font size was 
+  increased in the font-selector dialog.
+
+- Fixed a bug which corrupted the screen because of improperly closed
+  icon selector dialog when locating (re)moved objects associated with
+  desktop icons.
+
+- Fixed some bugs related to Info... and Search... functions:
+  . Corrected behaviour of Search... and Info... after searching in a file
+    displayed in a topped text window.
+  . Fixed a bug which could crash the Single-TOS version of TeraDesk in
+    the Info... dialog.
+  . Corrected behaviour when attempting to read header flags from an
+    invalid program file.
+
+- Fixed a bug which disabled setting of "solid colour" (other than white)
+  window background.
+
+- Fixed a case of using a deallocated memory block when dragging objects
+  from a directory window to the desktop; this error caused object path+name
+  to be lost sometimes, and could crash TeraDesk. Users should beware that
+  ANY ICONS CREATED IN V3.60 by dragging objects from directory windows
+  to the desktop can have corrupt object path information.
+
+- Fixed incorrect behaviour and possible crash after attempting to read 
+  files (to display, search or compare) too big for available memory.
+
+- Partially corrected behaviour when attempting to open a dialog with
+  insufficient memory available (more to do for the next release).
+
+- Corrected unnecessary reset of 'fulled' state after some updates of
+  directory windows.
+
+- Corrected some mistakes in the hypertext manual.
+  
+    
 Version 3.60
 ------------
 

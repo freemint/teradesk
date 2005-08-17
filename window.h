@@ -265,7 +265,6 @@ boolean wd_type_setfont(int title);
 void calc_rc(TYP_WINDOW *w, RECT *work); 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork); 
 void wd_calcsize(WINFO *w, RECT *size); 
-int wd_checkcreate(int code);
 
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
 void wd_type_hndlbutton(WINDOW *w, int x, int y, int n,

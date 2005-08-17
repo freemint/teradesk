@@ -37,7 +37,7 @@ desktop.prg				; with _MINT_=1  for all systems
 .C [-D_MORE_AV=1] 		; 0 for Single-TOS-only desktop
 
 
-; Disk-volume label editing feature is disabled ror the rime being,
+; Disk-volume label editing feature is disabled ror the time being,
 ; as it does not behave consistently in Mint vs. Magic and may be
 ; confusing.
 
@@ -102,7 +102,9 @@ desktop.prg				; with _MINT_=1  for all systems
 .C [-DAES_RECT=1]
 
 
-; This is for debugging during development. TERADESK.LOG will be created
+; This is for debugging during development. TERADESK.LOG will be created.
+; Note that the content of the log file is not defined; the developer may
+; add specific code as needed.
 
 .C [-D_LOGFILE=0]
 

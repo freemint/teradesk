@@ -1942,7 +1942,7 @@ void xd_set_userobjects(OBJECT *tree)
 	xd_objdata = data;
 	c_ub = (USERBLK *) &data[1];
 
-	/* Scan all objects in the resource */
+	/* Scan all objects in the resource to find the appropriate one */
 
 	for (;;)
 	{
@@ -1954,7 +1954,7 @@ void xd_set_userobjects(OBJECT *tree)
 		if (xd_is_xtndelement(etype) && ((c_obj->ob_type & 0xFF) != G_USERDEF))
 		{
 			/*
-			 * It looks like AESses are not consistent in treating progdef objects 
+			 * It looks like AESes are not consistent in treating progdef objects 
 			 * if they are flagged as "indicator" or "activator"; some seem to 
 			 * draw 3d effect anyway (AES4.1, NAES), and some do not (Geneva?). 
 			 * Therefore, those flags are here saved in the extended userblock  
@@ -2097,14 +2097,15 @@ void xd_set_userobjects(OBJECT *tree)
 
 
 /* 
- * Obtain address of an object of a certain type 
+ * Obtain address of an object of an object from the R_TREE group
+ * Call this routine only once for each object 
  */
 
-int xd_gaddr(int type, int index, void *addr)
+int xd_gaddr(int index, void *addr)
 {
 	int result;
 
-	if (((result = rsrc_gaddr(type, index, addr)) != 0) && (type == R_TREE))
+	if ((result = rsrc_gaddr(R_TREE, index, addr)) != 0) 
 		xd_set_userobjects(*(OBJECT **) addr);
 
 	return result;

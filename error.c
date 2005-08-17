@@ -40,7 +40,7 @@
 char *get_freestring( int stringid )
 {
 	OBSPEC s;
-	xd_gaddr(R_STRING, stringid, &s);
+	rsrc_gaddr(R_STRING, stringid, &s);
 	return s.free_string;
 }
 
@@ -95,6 +95,12 @@ char *get_message(int error)
 		break;
 	case ECOMTL:
 		msg = TCMDTLNG;
+		break;
+	case XDNMWINDOWS:
+		msg = MTMWIND;
+		break;
+	case XDVDI:
+		msg = MVDIERR;
 		break;
 	default:
 		s = get_freestring(TERROR);
@@ -198,7 +204,7 @@ void xform_error(int error)
 {
 	/* Hopefully this optimization will work OK, hard to test it all now */
 
-	if ( error == _XDVDI )
+	if ( error == XDVDI )
 		alert_abort( MVDIERR );	/* because of another icon here */
 	else
 		if (error < 0 && error != ENOMSG)

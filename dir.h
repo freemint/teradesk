@@ -117,6 +117,7 @@ void dir_sort(WINDOW *w, int sort);
 void dir_line(DIR_WINDOW *dw, char *s, int item);
 void dir_disp_mode(WINDOW *w);
 void dir_newdir( DIR_WINDOW *w );
+void dir_reread( DIR_WINDOW *w );
 
 void calc_nlines(DIR_WINDOW *w);		
 int linelength(DIR_WINDOW *w);

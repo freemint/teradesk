@@ -22,11 +22,8 @@
 
 #define MFINDS 999  /* max. number of found instances of searched-for string */
 
-
 void item_showinfo(WINDOW *w, int n, int *list, boolean search); 
 void closeinfo (void);
 int si_drive(const char *path);
-
-
 int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *attr);
 boolean searched_found( char *path, char *name, XATTR *attr);
