@@ -23,7 +23,7 @@
 
 
 #define MARGIN			2        
-#define HEXLEN			74 + MARGIN 
+#define HEXLEN			75 + MARGIN 
 #define SUBST_DISP		127 /* DEL char, usually represented by a triangle */
 
 

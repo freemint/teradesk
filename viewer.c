@@ -54,7 +54,7 @@ WINFO textwindows[MAXWINDOWS];
 RECT tmax;
 FONT txt_font;
 
-static int displen;
+static int displen = -1;
 
 static void set_menu(TXT_WINDOW *w);
 static void txt_closed(WINDOW *w);
@@ -85,7 +85,7 @@ static long txt_nlines(TXT_WINDOW *w)
  * Determine width of a text window; depending on whether the display is
  * in hex mode or text mode, it will be either a fixed value or a value
  * determined from the longest line in the text. Line lengths are calculated
- * from differences between pointers on line beginnings
+ * from differences between pointers to line beginnings
  * (returned width will never be more than FWIDTH).
  */
 
@@ -125,7 +125,7 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 		 * but not more than FWIDTH characters 
 		 */
 
-		mw = lminmax(1L, mw, FWIDTH);
+		mw = lminmax(16L, mw, FWIDTH);
 
 		return (int)mw;
 	}
@@ -151,7 +151,7 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 
 static char hexdigit(int x)
 {
-	return (x <= 9) ? x + '0' : x + 'A' - 10;
+	return (x <= 9) ? x + '0' : x + ('A' - 10);
 }
 
 
@@ -160,7 +160,9 @@ static char hexdigit(int x)
  * tmp = output buffer tmp[HEXLEN + 2] with data in hex mode
  * p = pointer to the beginning of the 16-byte line of text 
  * a = index of 1st byte of the line from the file beginning
- * size =  file size 
+ * size =  file size.
+ * Note: offset from file beginning will not be displayed correctly
+ * for files larger than 256MB.
  */
 
 void disp_hex( char *tmp, char *p, long a, long size, boolean toprint )
@@ -169,48 +171,53 @@ void disp_hex( char *tmp, char *p, long a, long size, boolean toprint )
 		h = a;
 
 	int 
-		i,
-		j;
+		i;
+
+	char
+		*tmpj,
+		pi;
 
 	if (a >= size )
 	{
-		tmp[0] = 0;
+		*tmp = 0;
 		return;
 	}
 
 	/* tmp[0] to tmp[6] display line offset from file beginning */
 	
-	for (i = 5; i >= 0; i--)
+	tmp[7] = ':';
+	
+	for (i = 6; i >= 0; i--)
 	{
-		tmp[i] = hexdigit((int)h & 0x0F);
+		tmp[i] = hexdigit((int)(h & 0x0F));
 		h >>= 4;
 	}
-	tmp[6] = ':';
 
-	/* Hexadecimal (in h) and ASCII (in 57+i) representation of 16 bytes */
+	/* Hexadecimal (in h) and ASCII (in 58+i) representation of 16 bytes */
 
 	for (i = 0; i < 16; i++)
 	{
-		j = 7 + i * 3;
-		tmp[j] = ' ';
+		tmpj = &tmp[8 + i * 3];
+		*tmpj++ = ' ';
+
 		if ((a + (long)i) < size)
 		{
-			tmp[j + 1] = hexdigit((p[i] >> 4) & 0x0F);
-			tmp[j + 2] = hexdigit(p[i] & 0x0F);
-			tmp[57 + i] = ( (p[i] == 0) || ((toprint == TRUE) && (p[i] < ' ')) )  ? '.' : p[i];
+			pi = p[i];
+			*tmpj++ = hexdigit((int)((pi >> 4) & 0x0F));
+			*tmpj = hexdigit((int)(pi & 0x0F));
+			tmp[58 + i] = ( (pi == 0) || ((toprint == TRUE) && (pi < ' ')) )  ? '.' : pi;
 		}
 		else
 		{
-			tmp[j + 1]  = ' ';
-			tmp[j + 2]  = ' ';
-			tmp[57 + i] = ' ';
+			*tmpj++  = ' ';
+			*tmpj  = ' ';
+			tmp[58 + i] = ' ';
 		}
 	}
 
-	tmp[55] = ' ';
 	tmp[56] = ' ';
-	tmp[73] = 0;
-
+	tmp[57] = ' ';
+	tmp[74] = 0;
 }
 
 
@@ -749,12 +756,12 @@ extern long
  * Load a text file for the purpose of displaying in a window, 
  * or for the purpose of searching to find a string in the file
  * or for any other purpose where found convenient.
- * Function returns error code, if there is any.
+ * Function returns error code, if there is any, or 0 for OK.
  * If parameter "tlines" is NULL, it is assumed that the routine will
  * be used for non-display purpose; then lines and tabs will not be 
  * counted and set.
- * Note: for safety reasons, the routine allocates several bytes more than
- * needed.
+ * Note: for safety reasons, the routine allocates several bytes 
+ * more than needed.
  */
 
 int read_txtfile
@@ -904,7 +911,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 			int i, e, n = 0;
 
 			b = w->buffer;
-			e = (int) lmin(w->size, 256L); /* longest possible line */
+			e = (int)lmin(w->size, 256L); /* longest possible line */
 
 			for (i = 0; i < e; i++)
 			{
@@ -912,7 +919,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 					n++;
 			}
 
-			n = (n * 100) / e;
+			n = (n * 100) / (e + 1); /* e can be 0 */
 
 			if (n > ASCII_PERC)
 				w->hexmode = 0;
@@ -978,8 +985,10 @@ long compare_buf( char *buf1, char*buf2, long len )
 	long i;
 
 	for ( i = 0; i < len; i++ )
+	{
 		if ( buf1[i] != buf2[i] )
 			return i;
+	}
 
 	return len;
 }
@@ -989,7 +998,8 @@ long compare_buf( char *buf1, char*buf2, long len )
  * Copy a number of bytes from source to destination, starting from
  * index "pos", substituting all nulls with something else; 
  * Not more than displen bytes will be copied, or less if buffer end 
- * is encountered first. Add a 0 char at the end.
+ * is encountered first. Add a 0 char at the end. In order for all this
+ * to work, 'displen' must first be given a positive value.
  *
  * Note 1: "pos" should never be larger than "length" !!!! no checking done !
  * ("length" is length from the beginning of source, not counted from "pos").
@@ -999,15 +1009,17 @@ long compare_buf( char *buf1, char*buf2, long len )
 
 static void copy_unnull( char *dest, char *source, long length, long pos )
 {
-	long i, n;
+	int i, n;
 
-	char *d = dest;
+	char
+		*s = source + pos, 
+		*d = dest;
 
-	n = lmin( length - pos, (long)displen );
+	n = (int)lmin( length - pos, (long)displen );
 
 	for ( i = 0; i < n; i++ )
 	{
-		*d = source[i + pos];
+		*d = *s++;
 
 		/* Some characters can't be printed; substitute them */
 
@@ -1026,7 +1038,7 @@ static void copy_unnull( char *dest, char *source, long length, long pos )
  * Note: both files are completely read into memory 
  * (can be inconvenient for large files).
  * 
- * This routine attemts to compare files with some intelligence: 
+ * This routine attempts to compare files with some intelligence: 
  * if a difference is found, the routine tries to resynchronize the
  * contents of the files after a difference. 
  */
@@ -1034,7 +1046,7 @@ static void copy_unnull( char *dest, char *source, long length, long pos )
 void compare_files( WINDOW *w, int n, int *list )
 {
 	char 
-		*name,				/* name of the file */
+		*name,				/* name(s) of the file(s) */
 		*buf1 = NULL,		/* buffer for file #1   */
 		*buf2 = NULL;		/* buffer for file #2   */
 
@@ -1065,9 +1077,14 @@ void compare_files( WINDOW *w, int n, int *list )
 		info;				/* dialog info structure */
 
 
-	/* Set initial values for some dialog elements */
+	/* 
+	 * Set initial values for some dialog elements. Length of display is 
+	 * determined only in the first call, when the display contains the
+	 * model from the resource file.
+	 */
 
-	displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_pvalid);
+	if(displen < 0)
+		displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_ptext);
 
 	compare[CFILE1].ob_flags |= EDITABLE;
 	compare[CFILE2].ob_flags |= EDITABLE;
@@ -1102,7 +1119,7 @@ void compare_files( WINDOW *w, int n, int *list )
 
 		if (button == COMPOK)
 		{
-			/* Match-window width */
+			/* Take match-window width from the dialog */
 
 			sw = atoi(compare[COMPWIN].ob_spec.tedinfo->te_ptext);
 			swx2 = 2 * sw - 1;
@@ -1137,8 +1154,7 @@ void compare_files( WINDOW *w, int n, int *list )
 
 			/* Read the files into respective buffers */
 
-			error = read_txtf( cfile1, &buf1, &size1 );
-			if ( error == 0 )
+			if ( (error = read_txtf( cfile1, &buf1, &size1 ) ) == 0 )
 				error = read_txtf( cfile2, &buf2, &size2 );
 
 			/* All ok, now start comparing */
@@ -1195,7 +1211,7 @@ void compare_files( WINDOW *w, int n, int *list )
 							xd_drawdeep(&info, CMPIBOX);
 							button = xd_form_do_draw(&info);
 
-							/* Stop further comparison ? */
+							/* Stop further comparison ? */ 
 
 							if ( button == COMPCANC ) 
 								break;
@@ -1298,6 +1314,8 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 		return NULL;
 	}
 
+	/* Note: complete window structure are set to zero in xw_create */
+
 	info->typ_window = (TYP_WINDOW *)w; 
 	w->px = px;
 	w->py = py;
@@ -1356,9 +1374,7 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 	}
 
 #if _SHOWFIND	
-	/* 
-	 * If there was a search for a string, position sliders to show string 
-	 */
+	/* If there was a search for a string, position sliders to show string */
 
 	if ( search_nsm > 0 )
 	{

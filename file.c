@@ -443,17 +443,15 @@ void get_fsel
 		*c,			/* pointer to aft part of the string */
 		*cc,		/* copy of the above */
 		*path,		/* path obtained */
-		*title,		/* Selector title */
-		*defext;	/* default file extension */
+		*title;		/* Selector title */
 
 	LNAME
 		name;		/* name obtained */
 
 
-	defext = fsdefext;
 	title = get_freestring(FSTLANY);
 	name[0] = 0;
-	path = xfileselector( defext, name, title ); /* path is allocated here */
+	path = xfileselector( fsdefext, name, title ); /* path is allocated here */
 
 	/* Some fileselectors do not redraw what was below them... */
 

@@ -1156,35 +1156,45 @@ char *xfileselector(const char *path, char *name, const char *label)
 
 	strcpy(buffer, path);
 
-	/* A call to a file selector MUST be surrounded by wind_update() */
+	/* Correct file specification for the more primitive selectors */
 
-	wind_update(BEG_UPDATE);
-
-	/* 
-	 * In fact there should be a check here if an alternative file selector
-	 * is installed, in such case the extended file-selector call can be used
-	 * although TOS is older than 1.04
-	 */
-
-	if ( tos_version >= 0x104 )
-		error = fsel_exinput(buffer, name, &button, (char *) label);
-	else
-		error = fsel_input(buffer, name, &button);
-
-	wind_update(END_UPDATE);
-
-	if ((error == 0) || (button == 0))
+	if((error = _fullname(buffer)) != 0)
 	{
-		if (error == 0)
-			alert_printf(1, MFSELERR);
-	}
-	else
-	{
-		if ((error = _fullname(buffer)) == 0)
-			return buffer;
-
 		xform_error(error);
 	}
+	else
+	{
+		/* A call to a file selector MUST be surrounded by wind_update() */
+
+		wind_update(BEG_UPDATE);
+
+		/* 
+		 * In fact there should be a check here if an alternative file selector
+		 * is installed, in such case the extended file-selector call can be used
+		 * although TOS is older than 1.04
+		 */
+
+		if ( tos_version >= 0x104 )
+			error = fsel_exinput(buffer, name, &button, (char *) label);
+		else
+			error = fsel_input(buffer, name, &button);
+
+		wind_update(END_UPDATE);
+
+		if ((error == 0) || (button == 0))
+		{
+			if (error == 0)
+				alert_printf(1, MFSELERR);
+		}
+		else
+		{
+			if ((error = _fullname(buffer)) == 0)
+				return buffer;
+
+			xform_error(error);
+		}
+	}
+
 	free(buffer);
 	return NULL;
 }

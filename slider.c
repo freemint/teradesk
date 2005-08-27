@@ -51,7 +51,7 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 
 	sl->line = ((sl->n < slines) || (sl->line < 0)) ? 0 : min(sl->line, sl->n - slines);
 
-	/* Determine slider size. Minimum size is equal to font height */
+	/* Determine slider size. Minimum size is equal to character height */
 
 	if (sl->n > slines)
 	{
@@ -331,8 +331,6 @@ void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 		xd_drawdeep(info, FTSPAR);
 	}
 }
-
-
 
 
 /*

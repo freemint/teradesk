@@ -2,6 +2,24 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                               2002, 2003, 2004, 2005  Dj. Vukovic.
 
+Version 3.62
+------------
+- Added one hex digit to display of line offset in text windows in
+  hexadecimal mode. Offset could not be displayed properly for files
+  larger than 16MB. Now this limit has been increased to 256MB which should
+  probably be enough for any practical purpose.
+
+- Some small code optimizations related to display in text windows.
+
+- Fixed a bug which disabled display of differing file contents in Compare... 
+
+- Corrected default file specification in fileselector invoked from
+  scrolled text fields for the sake of some pedantic fileselectors.
+
+- Corrected and somewhat optimized enabling/disabling of some menu items.
+
+- Corrections made and some paragraphs rephrased in the hypertext manual.
+
 
 Version 3.61
 ------------

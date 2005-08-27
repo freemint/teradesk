@@ -81,7 +81,7 @@ int open_dialog(void)
 			break;
 		case OWUSE:
 			log_shortname(fwork.filetype, awork.name);
-			app_install(LS_SELA); /* selitem is nonzero only if successful here */
+			app_install(LS_SELA); /* selitem is nonnull only if successful here */
 			if (!selitem)
 				button = 0;			
 		default:

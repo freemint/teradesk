@@ -648,12 +648,13 @@ void rsc_title(OBJECT *tree, int object, int title)
  * tree		- object tree.
  * object	- index of formatted text field.
  * value	- value to convert.
- *
- * Note: a good validation string must exist for the field, 
- * it is used to determine field length
- * Note: it would be possible to use strcpyj() but there would be
- * almost no gain in size.
  * This routine works with G_TEXT and G_FTEXT objects.
+ * Note1: a good validation string must exist for the G_FTEXT field, 
+ * it is used to determine field length
+ * Length of a G_TEXT field is ignored. Care should be taken not to
+ * try to write too many bytes.
+ * Note2: it would be possible to use strcpyj() but there would be
+ * almost no gain in size.
  */
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)

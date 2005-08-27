@@ -265,8 +265,8 @@ boolean isfileprog(ITMTYPE type)
  * Ensure that a loaded window is in the screen in case of a resolution change 
  * (or if these data were loaded from a human-edited configuration file)
  * and that it has a certain minimum size.
- * Note: windows can't go off the left and upper edges.
- * Note2: width and height are in character cell units, x and y in pixels!
+ * Note 1: windows can't go off the left and upper edges.
+ * Note 2: width and height are in character cell units, x and y in pixels!
  */
 
 static void wrect_in_screen(RECT *info, boolean normalsize)
@@ -484,7 +484,9 @@ static void wd_set_mode(int mode)
 
 
 /*
- * Count open windows (text, directory or accessory)
+ * Count open windows (text, directory or accessory type)
+ * Note: this routine relies on definitions of DIR_WIND, TEXT_WIND and ACC_WIND
+ * being in a sequence.
  */
 
 int wd_wcount(void)
@@ -494,7 +496,7 @@ int wd_wcount(void)
 
 	while (h)
 	{
-		if (h->xw_type == DIR_WIND || h->xw_type == TEXT_WIND || h->xw_type == ACC_WIND)
+		if (xw_type(h) >= DIR_WIND && xw_type(h) <= ACC_WIND)
 			n++;
 		h = h->xw_next;
 	}
@@ -540,7 +542,7 @@ void wd_noselection(void)
 /* 
  * Top the specified application
  * This works without any open windows, but unfortunately
- * not in all AESses. Will be ok in N.AES, XaAES, Magic 
+ * not in all AESses. Will be ok in N.AES, XaAES and Magic 
  */
 
 void wd_top_app(int apid)
@@ -578,7 +580,8 @@ void wd_restoretop(int code, int *whandle, int *wap_id)
 			 * Note: wind_get(, WF_TOP,...) is supposed to
 			 * return ap_id of the owner in p2, but this does not
 			 * seem to work, thence another call to get it.
-			 * If failed, set *wap_id to -1;
+			 * If failed, set *wap_id to -1; Data in p2 to p4 is
+			 * returned but currently ignored.
 			 */
 
 			*wap_id = -1;
@@ -758,7 +761,7 @@ void itm_set_menu(WINDOW *w)
 	 */
 
 	if ( nonsel && !topicf )
-		enab2 = 1;
+		enab2 = TRUE;
   
 	/*
 	 * Enable delete only if there are only files, programs and 
@@ -770,32 +773,32 @@ void itm_set_menu(WINDOW *w)
 	menu_ienable(menu, MDELETE, enab);
 	menu_ienable(menu, MPRINT, enab2);
 
-	/* Item type is the type of the first item in the list of selected ones */
-
-	if (n >= 1)
-		type = itm_type(w, list[0]);
-	if (n >= 2)
-		type2 = itm_type(w, list[1]);
-
-	/* Compare will be enabled only if there are only one or two files selected */
-
-	if ( (n == 1 || n == 2) && isfileprog(type) && isfileprog(type2) )
-	{
-		enab = TRUE;
-		if ( type == ITM_PROGRAM )
-			enab2 = TRUE;
-	}
-	else
-	{
-		enab = FALSE;
-		enab2 = FALSE;
-	}
+	/* Determine enabling states for Compare, Programtype and App menu items */
 
 	if (n == 0)
 	{
 		enab = TRUE;
 		enab2 = TRUE;
 	}
+	else
+	{
+		enab = FALSE;
+		enab2 = FALSE;
+
+		type = itm_type(w, list[0]);
+
+		if (n >= 2)
+			type2 = itm_type(w, list[1]);
+
+		if ( (n < 3) && isfileprog(type) && isfileprog(type2) )
+		{
+			enab = TRUE;
+			if ( type == ITM_PROGRAM )
+				enab2 = TRUE;
+		}
+	}
+
+	/* Compare will be enabled only if there are only one or two files selected */
 
 	menu_ienable(menu, MCOMPARE, enab );
 
@@ -849,12 +852,14 @@ void itm_set_menu(WINDOW *w)
 		strsncpy ( drive, fullname , sizeof(drive) );
 		free(fullname);
 		drive[0] &= 0x5F; /* to uppercase */
-		if (   ( drive[0] >= 'A' )
-		    && ( drive[0] <= 'B' )
-		    && ( drive[1] == ':' )
-		   )
+		if 
+		(   
+			   ( drive[0] >= 'A' )
+			&& ( drive[0] <= 'B' )
+			&& ( drive[1] == ':' )
+		)
 		{  
-			floppy = drive[0];      /* i.e. floppy= 65dec or 66dec */
+			floppy = drive[0];      /* i.e. floppy= 65dec (A) or 66dec (B) */
 			enab = TRUE;
 		}  
 	}
@@ -1114,7 +1119,7 @@ void wd_del_all(void)
 	while (w)
 	{
 		prev = w->xw_prev;
-		if ( w->xw_type != ACC_WIND )
+		if ( xw_type(w) != ACC_WIND )
 			wd_type_close(w, 1);		
 		w = prev;
 	}

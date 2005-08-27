@@ -12,9 +12,10 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.50  20-02-05, Copyright 2005  H. Robbers, Dj. Vukovic 
              V3.60  02-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
              V3.61  17-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
+             V3.62  27-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
  
 
-This  is version 3.61 of the Tera Desktop, a replacement for the builtin TOS 
+This  is version 3.62 of the Tera Desktop, a replacement for the builtin TOS 
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source.  It is published under General Public License (GPL) which means 
 that it  may be  copied  and  modified freely,  providing that  the original 
@@ -328,6 +329,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
  
  
                                             Djordje Vukovic 
-                                            Beograd; August 17th 2005 
+                                            Beograd; August 27th 2005 
  
  

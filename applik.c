@@ -788,7 +788,7 @@ static LS_FUNC aplist_func =
  * Handle installing, editing and removing applications.
  * If "Install Applicaton" menu is selected without any program file being
  * selected in a dir window, a dialog is shown with a list of installed
- * applications, and options to add,remove or edit them, for which 
+ * applications, and options to add, remove or edit them, for which 
  * another dialog is opened.
  * If installation is to be done upon an applicaton selected in a dir window,
  * a dialog opens for directly setting application parameters.
@@ -824,7 +824,7 @@ void app_install(int use)
 
 	list_edit( &aplist_func, (LSTYPE **)(&applikations), 1, sizeof(APPLINFO), (LSTYPE *)&awork, theuse); 
 
-	rsc_title(setmask, FTTEXT, TAPP ); 
+	rsc_title(setmask, FTTEXT, TAPP); 
 	obj_hide(setmask[FILETYPE]);
 	obj_hide(setmask[FTTEXT]);
 }

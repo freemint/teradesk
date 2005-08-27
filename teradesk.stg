@@ -13,7 +13,7 @@
 @{U}Contents                                                      TeraDesk@{u}  
 
 @autorefoff  
-                  User's Manual for TeraDesk V3.61  
+                  User's Manual for TeraDesk V3.62  
                        
              Wout Klaren, Henk Robbers, Djordje Vukovic  
   
@@ -2618,11 +2618,11 @@ Each  program  that  makes  use  of  ancillary files, like resource or
 configuration  files,  must  be able to find these files in a specific 
 directory. This mode defines where this directory can be obtained. 
   
-    Window   the directory of the top window of TeraDesk  
+    Window   the directory of the top window of Tera Desktop  
     Program  directory from which the program is started  
     File     path of the first filename parameter in the command line  
   
-Compliance of the program with the ARGV protocol can be set:                                        TeraDesk@{u}  
+Compliance of the program to the ARGV protocol can be specified:  
   
 The number of characters  which specify  the parameters in the command
 line is limited to 125 in the standard desktop but Tera Desktop allows

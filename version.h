@@ -21,11 +21,11 @@
  */
 
 
-#define CFG_VERSION		0x0360		/* current version id. of inf file */ 
+#define CFG_VERSION		0x0362		/* current version id. of inf file */ 
 
 #define MIN_VERSION		0x0310		/* min. acceptabe version id. of inf file */	 
 
-#define INFO_VERSION	"Tera Desktop V3.61  17-08-2005"
+#define INFO_VERSION	"Tera Desktop V3.62  27-08-2005"
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"
 #define INFO_OTHER "1991-1994, 2002-2005"
 
