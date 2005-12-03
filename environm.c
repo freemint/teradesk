@@ -61,70 +61,6 @@ long envlen(void)
 
 
 /*
- * Find an environmental variable in the string contaning all variables
- */
-
-static char *findvar(const char *var)
-{
-	char *p, *p0;
-	long l;
-	boolean found = FALSE;
-
-	l = strlen(var);
-	p0 = _BasPag->p_env;
-	p = p0;
-
-	/* 
-	 * Find an "=" then retrace by "l" and compare name 
-	 * Note: this may not work correctly with the variables
-	 * which have the same trailing substrings (e.g. PERA= and OPERA=) !!!
-	 * So it is checked whether this string is at the beginning or there
-	 * is an empty space before it.
-	 */
-
-	while ((*p) && !found)
-	{
-		if ((p[l] == '=') && (strncmp(p, var, l) == 0) && ( (p == p0) || (p[-1] <= ' ') ) )
-			found = TRUE;
-		else
-			while (*p++);
-	}
-	return (found) ? p : NULL;
-}
-
-
-/*
- * Get the value of an environmental variable.
- * This routine is also able to find the value of 
- * (the 1st part of) ARGV, i.e. if the first character  
- * following a '=' is '\0', then the next character is pointed to.
- */
-
-char *getenv(const char *var)
-{
-	char *p;
-
-	/* Variable not found */
-
-	if ((p = findvar(var)) == NULL)
-		return NULL;
-
-	/* Find the character following the next "=" */
-
-	p = strchr(p, '=') + 1;
-
-	if (*p == 0)
-	{
-		if (p[1] == 0)
-			return p;
-		if (strchr(p + 1, '=') == NULL)
-			return p + 1;
-	}
-	return p;
-}
-
-
-/*
  * Add new environment variable before or after the old ones.
  * where=1: add before old environment; where =2: add after old environment. 
  * Return NULL if memory allocation failed.
@@ -187,16 +123,28 @@ char *new_env
 
 /*
  * Clear (unset) ARGV environmental variable in the environment string
- * for TeraDesk itself: put a 0 instead of "A" in "ARGV".
- * (is the program's environment string always allowed to write into ???)
+ * for TeraDesk itself: put a 0 instead of "A" in "ARGV". As there is
+ * already a 0 in fronto of "ARGV", now there will be two consecutive 0s
+ * which will mean the end of the environment area (ARGV should always
+ * be the last variable in the pool).
+ * But is the program's environment string always allowed to write into ???
  */
 
 void clr_argv(void) 
 {
 	char *p;
 
-	if ((p = findvar("ARGV")) != NULL)
-		*p = 0;
+	/* Find the location for the value of ARGV, then retrace until "ARGV=" found */
+
+	if((p = getenv("ARGV")) != NULL)
+	{
+		while(strstr(p, "ARGV=") == NULL)
+		{
+			p--;
+		}
+		
+		*p = '\0';	/* Destroy ARGV, this is now end of environment */
+	}
 }
 
 
@@ -208,6 +156,9 @@ void clr_argv(void)
  * Result: pointer to new environment or NULL if an error occured.
  * Also return final string size in "size"
  * Created environment string (and size) includes two trailing zeros.
+ * Arguments containing spaces are expected to be quoted using either the
+ * single-quote or the double-quote characters. Quotes in the string are
+ * expected to be doubled.
  */
 
 char *make_argv_env
@@ -221,6 +172,7 @@ char *make_argv_env
 		argvl = 0;			/* Size of allocated space */
 
 	char 
+		fqc = 0,			/* quote character */
 		h, 					/* Location in command line string */
 		*d, 				/* Current location in output string */
 		*envp;				/* String being built */
@@ -228,12 +180,15 @@ char *make_argv_env
 	const char
 		*name = "ARGV=", 	/* name of ARGV variable */
 		*s;					/* current location in input strings */
-
-	boolean 
-		q = FALSE;			/* quoting flag */
-
 	
-	/* Length of command line + two trailing zeros */
+		boolean 
+			q = FALSE;		/* quoting flag */
+
+	/* 
+	 * Length of command line + two trailing zeros. If the command line
+	 * contains quotes, this length will be longer than necessary
+	 * because the quotes will in fact be removed from the string
+	 */
 
 	argvl = strlen(cmdline) + 2L; 
 
@@ -247,7 +202,11 @@ char *make_argv_env
 	
 	*size = 0;
 
-	/* Allocate new environment space */
+	/* 
+	 * Allocate new environment space. Note that if the command line
+	 * contains quotes, this allocation may be somewhat larger than 
+	 * necessary because quotes will be removed from the string
+	 */
 
 	if ((envp = malloc_chk(argvl)) != NULL)
 	{
@@ -262,7 +221,8 @@ char *make_argv_env
 				*d++ = *s++;
 			*d++ = 0;				/* Delimiting zero  after ARGV= */
 
-			/* Add program name. */
+
+			/* Add program name and a zero after it */
 
 			s = program;
 			while (*s)
@@ -271,11 +231,16 @@ char *make_argv_env
 		}
 
 		/* 
-		 * Add the command line (or the environment string)
-		 * Strip spaces and insert zeros instead, except if spaces are quoted 
+		 * Add the command line (or an environment string)
+		 * Strip spaces and insert zeros instead, except if spaces are quoted.
+		 * Note: quoted strings will be unquoted here: quotes will not be
+		 * passed because, in ARGV, arguments -can- contain spaces. 
+		 * Code below attempts to parse a possible mixture of single-
+		 * or double quotes
 		 */
 
 		s = cmdline;
+
 		while ((h = *s++) != 0)
 		{
 			if ((h == ' ') && !q )
@@ -286,24 +251,37 @@ char *make_argv_env
 				while (*s == ' ')
 					s++;
 			}
-			else if (h == 34 || h == 39) /* 34= double quote, 39=single quote */
+
+			/* Is this a quote character (see also va_start_prg() in va.c) */
+
+
+			else if ((h == fqc) || (!fqc && (h == 39 || h == 34))) /* 34= double quote, 39=single quote */
 			{
 				/* two consequtive quotes mean that one is part of the string */
 
-				if (*s == 34 || *s == 39)
-					*d++ = *s++;
+				if (*s == h)
+					*d++ = *s++;	/* transfer quote as part of the string */
 				else
-					q = !q;
+				{
+					fqc = 0;		/* reset quote character, just in case */
+
+					if(!q)
+						fqc = h;	/* First encountered quote character */
+
+					q = !q;			/* start or end the quote */
+				}
 			}
 			else
 				*d++ = h;
 		}
 
 		*d++ = 0; /* first trailing zero  */
+
 		*d = 0;	  /* second trailing zero */
 
-		*size = (d - envp + 1L);
+		/* This is the actual length of the environment string */
 
+		*size = (d - envp + 1L);
 	}
 
 	return envp;

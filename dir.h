@@ -47,8 +47,8 @@ typedef struct
 	char alname[];		/* to be allocated together with NDTA */
 } NDTA;
 
-/* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
+/* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
 typedef NDTA *RPNDTA[];			/* () ref NDTA */ /* array of pointers */
 
@@ -57,13 +57,13 @@ typedef struct
 	ITM_INTVARS;			/* Interne variabelen bibliotheek. */
 	WD_VARS;				/* other common header data */
 
-	struct winfo *winfo;	/* pointer to WINFO structure. */
-
 	/* three window-type structures are identical up to this point */
 
-	char info[60];			/* info line of window */
-
-	const char *path;		/* Path of directory window */
+#if _MINT_
+	char info[210];			/* info line of window */
+#else
+	char info[80];			/* info line of window */
+#endif
 	const char *fspec;		/* filename mask for the window */
 
 	int fs_type;			/* We need to know the filesystem type for formatting purposes. */
@@ -72,6 +72,7 @@ typedef struct
 	int nselected;			/* number of selected items in directory */
 	long usedbytes;			/* total size of files in the dir. */
 	long visbytes;			/* total size of visible files */
+	long selbytes;			/* total size of selected items */
 	int namelength;			/* length of longest name in the directory */
 	int llength;			/* length of a directory line in text mode */
 	int dcolumns;			/* number of directory columns in text mode */
@@ -107,13 +108,16 @@ CfgNest dir_one;
 
 boolean dir_add_window(const char *path, const char *thespec, const char *name);
 boolean dir_add_dwindow(const char *path);
+boolean dir_onalt(int key, WINDOW *w);
 void dir_close(WINDOW *w, int mode);
 
 const char *dir_path(WINDOW *w);
 void dir_filemask(DIR_WINDOW *w);
 void dir_newfolder(WINDOW *w);
 void dir_sort(WINDOW *w, int sort);
+void dir_autoselect(DIR_WINDOW *w);
 
+void dir_briefline(char *tstr, XATTR *att);
 void dir_line(DIR_WINDOW *dw, char *s, int item);
 void dir_disp_mode(WINDOW *w);
 void dir_newdir( DIR_WINDOW *w );
@@ -122,6 +126,7 @@ void dir_reread( DIR_WINDOW *w );
 void calc_nlines(DIR_WINDOW *w);		
 int linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
+void dir_info(DIR_WINDOW *w);
 			
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
 void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean text, RECT *work); 

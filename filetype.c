@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,6 +28,7 @@
 #include <library.h>
 #include <xdialog.h>
 #include <mint.h>
+#include <limits.h>
 
 #include "resource.h" /* includes desktop.h */
 #include "desk.h"
@@ -53,11 +54,12 @@ FTYPE
  * in filetype.c, prgtype.c and icontype.c, 
  * so they are here defined once for all
  * Note: items [0] and [1] MUST be * and *.*; they will be used
- * as default filename extensions in mint and singletos.
+ * as default filename extensions in mint and singleTOS.
+ * Items [10] and [11] are used in the autolocator.
  */
 
 const char 
-	*presets[10] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG" };
+	*presets[12] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG", ".*", "\0" };
 
 const char 
 	fas[] = {FA_READONLY, FA_ARCHIVE, FA_HIDDEN, FA_SYSTEM, FA_SUBDIR, FA_PARDIR};
@@ -99,7 +101,7 @@ static FTYPE *ftadd_one(char *filetype)
 */
 #endif
 
-	return (FTYPE *)lsadd( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), END, copy_ftype); 
+	return (FTYPE *)lsadd( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), INT_MAX, copy_ftype); 
 }
 
 
@@ -122,6 +124,7 @@ static void ftype_info
 {
 	if ( !(use & LS_SELA) )
 		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, NULL );
+
 	return;
 }
 
@@ -178,39 +181,42 @@ static boolean filetype_dialog
 
 	/* Open the dialog, then loop until stop */
 
-	xd_open(ftydialog, &info);
-
-	while (!stop)
+	if(chk_xd_open(ftydialog, &info) >= 0)
 	{
-		button = xd_form_do( &info, ROOT );
-
-		if ( button == FTYPEOK )
+		while (!stop)
 		{
-			/* 
-			 * If selected OK, check if this filetype has not already
-			 * been entered in this list
-			 */
+			button = xd_form_do( &info, ROOT );
 
-			SNAME ftxt;
-
-			cv_formtofn( ftxt, ftydialog, FTYPE0);
-
-			if ( *ftxt != 0 )
+			if ( button == FTYPEOK )
 			{
-				if ( check_dup((LSTYPE **)list, ftxt, pos ) )
+				/* 
+				 * If selected OK, check if this filetype has not already
+				 * been entered in this list
+				 */
+
+				SNAME ftxt;
+
+				cv_formtofn( ftxt, ftydialog, FTYPE0);
+
+				if ( *ftxt != 0 )
 				{
-					strcpy(ft->filetype, ftxt);
-					stop = TRUE;
-					stat = TRUE;
+					if ( check_dup((LSTYPE **)list, ftxt, pos ) )
+					{
+						strcpy(ft->filetype, ftxt);
+						stop = TRUE;
+						stat = TRUE;
+					}
 				}
 			}
-		}
-		else
-			stop = TRUE;
+			else
+				stop = TRUE;
 
-		xd_drawbuttnorm(&info, button);
+			xd_drawbuttnorm(&info, button);
+		}
+
+		xd_close(&info);
 	}
-	xd_close(&info);
+
 	return stat;
 }
 
@@ -221,6 +227,9 @@ static boolean filetype_dialog
  * hierin het nieuwe masker staan. Als het resultaat TRUE is, dan
  * is op OK gedrukt, als het resultaat FALSE is, dan is op Cancel
  * gedrukt, of er is een fout opgetreden.
+ *
+ * mask = old filemask or NULL if new mask not to be set
+ * return: new filemask or NULL if not set.
  */
 
 char *wd_filemask(const char *mask) 
@@ -492,7 +501,7 @@ CfgNest one_ftype
 						(LSTYPE **)ffthis,
 		    			sizeof(FTYPE),
 		               	(LSTYPE *)&fwork,
-		               	END,
+		               	INT_MAX,
 		               	copy_ftype
 					) == NULL
 				)
@@ -527,7 +536,6 @@ CfgNest ft_config
 
 	fthis = filetypes;
 	ffthis = &filetypes;
-
 	ft_table[0].s = fff; 
 	filetypes_table[0].s = "filetypes";
 	filetypes_table[2].s = fff;

@@ -119,7 +119,7 @@ void strip_name(char *to, const char *from)
  * a name should become e.g: c:\s...ng\foo.bar; 
  * s = source, t=target, ww= available target length
  * Note 1: "ww" accomodates the termination byte as well
- * Note 2: it is assumed that nonblank bart of the source will never 
+ * Note 2: it is assumed that nonblank part of the source will never 
  * be longer than 255 bytes; there is no length checking.
  */
 

@@ -23,9 +23,16 @@
 
 CfgNest icnt_config;
 
-int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link);
+int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type);
 void icnt_settypes(void);
 void icnt_init(void);
+void rem_all_icontypes(void);
+
+#if __USE_MACROS
+#define icnt_default rem_all_icontypes
+#else
 void icnt_default(void);
+#endif
+
 void icnt_fix_ictypes(void);
 

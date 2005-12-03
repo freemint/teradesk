@@ -42,10 +42,14 @@ char *fn_make_path(const char *path, const char *name);
 char *fn_make_newname(const char *oldname, const char *newname);
 
 void getroot(char *root);
+boolean isdisk(const char *path);
 boolean isroot(const char *path);
-char *getdir(int *error);
 int chdir(const char *path);
-
+#if __USE_MACROS
+#define getdir(x) x_getpath(0, x)
+#else
+char *getdir(int *error);
+#endif
 
 int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, boolean search);
 

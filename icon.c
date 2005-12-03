@@ -105,8 +105,6 @@ OBJECT
 	*desktop;
 
 static int 
-	icon_width, 
-	icon_height, 
 	m_icnx, 
 	m_icny, 
 	max_icons;
@@ -145,10 +143,10 @@ static void
 int
 	sl_noop; /* if 1, do not open icon dialog- it is already open */
 
+int arrow_form_do ( XDINFO *info, int *oldbutton ); 
 static int dsk_hndlkey(WINDOW *w, int dummy_scancode, int dummy_keystate);
 static void dsk_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
 static void dsk_top(WINDOW *w);
-int arrow_form_do ( XDINFO *info, int *oldbutton ); 
 static void incr_pos(int *x, int *y);
 static void dsk_diskicons(int *x, int *y, int ic, char *name);
 static int chng_icon(int object);
@@ -223,7 +221,7 @@ static ITMFUNC itm_func =
  * Mouse form (like a small icon) for placing a desktop icon
  */
 
-MFORM icnm =
+static const MFORM icnm =
 {
  8, 8, 1, 1, 0,
  0x1FF8, 0x1008, 0x1008, 0x1008, 0x1008, 0x1008, 0x1008, 0x1008,
@@ -255,8 +253,7 @@ void dsk_draw(void)
 
 
 /*
- * Determine whether an icon item is a 
- * file/folder/program/link or not
+ * Determine whether an icon item is a file/folder/program/link or not
  */
 
 boolean isfile(ITMTYPE type)
@@ -277,7 +274,7 @@ boolean isfile(ITMTYPE type)
 /*
  * Set desktop icon type correctly for executable files (programs).
  * This is needed after changes in the list of executable filetypes.
- * It is also used to fix compatibility issues for config. files
+ * Also used to fix compatibility issues for configuration files
  * earlier than V3.60
  */
 
@@ -288,8 +285,12 @@ void icn_fix_ictype(void)
 
 	for( i = 0; i < max_icons; i++ )
 	{
-		if(isfileprog(ic->item_type)) /* ITM_FILE or ITM_PROGRAM */
+		/* Is this either ITM_FILE or ITM_PROGRAM (not a folder) ? */
+
+		if(isfileprog(ic->item_type)) 
 		{
+			/* Is this or the target item an executable file type ? */
+
 			if(prg_isproglink(ic->icon_dat.name))
 			{
 				/* This is a program, or a link to one */
@@ -304,8 +305,7 @@ void icn_fix_ictype(void)
 			{
 				/* Maybe this was a program once, but now is just a file */
 
-				if(ic->tgt_type == ITM_PROGRAM)
-					ic->tgt_type = ITM_FILE;
+				ic->tgt_type = ITM_FILE;
 				ic->item_type = ITM_FILE;
 			}
 		}
@@ -476,7 +476,7 @@ static void dsk_drawsel(void)
 
 				if ( colour_icons )
 				{
-					/* For colour icons draw each icon separately, with background */
+					/* Draw each colour icon separately, -with background- */
 
 					desktop[0].ob_type = G_BOX;
 					redraw_desk(&c);
@@ -527,7 +527,7 @@ static void dsk_drawsel(void)
 
 /*
  * Compute rubberbox rectangle. 
- * Beware of unsymmetrical wind_update()
+ * Beware of asymmetrical wind_update()
  */
 
 void rubber_rect(int x1, int x2, int y1, int y2, RECT *r)
@@ -563,7 +563,7 @@ void rubber_rect(int x1, int x2, int y1, int y2, RECT *r)
 
 /*
  * A size-saving aux. function for setting-up rubberbax draw.
- * Beware of assymetrical wind_update()
+ * Beware of asymmetrical wind_update()
  */
 
 void start_rubberbox(void)
@@ -622,10 +622,10 @@ static void rubber_box(int x, int y, RECT *r)
 
 /*
  * Change the selection state of some items
- * mode = 0: selecteer selected en deselecteer de rest.
- * mode = 1: inverteer de status van selected.
- * mode = 2: deselecteer selected.
- * mode = 3: selecteer selected.
+ * mode = 0: select selected and deselect the rest.
+ * mode = 1: invert the status of selected.
+ * mode = 2: deselect selected.
+ * mode = 3: select selected.
  * mode = 4: select all (maybe)
  * External consideration is needed for mode 4
  */
@@ -726,6 +726,7 @@ static void icn_rselect(WINDOW *w, int x, int y)
 
 		icn++;
 	}
+
 	dsk_drawsel();
 	dsk_setnws();
 }
@@ -798,7 +799,12 @@ static char *icn_name(WINDOW *w, int icon)
 {
 	ICON *icn = &desk_icons[icon];
 
-	static char name[16]; /* must exist after return from this function */
+	/* 
+	 * "name" must exist after return from this function and be 
+	 * sufficiently long to accomodate string MDRVNAME + drive letter
+	 */
+	
+	static char name[16]; 
 
 	if (isfile(icn->item_type))
 		/* this is a file, folder, program or link- treat as a file(name) */
@@ -812,9 +818,9 @@ static char *icn_name(WINDOW *w, int icon)
 			sprintf(name, get_freestring(MDRVNAME), (char)icn->icon_dat.drv);
 			return name;
 		}
-		else
-			return NULL;
 	}
+
+	return NULL;
 }
 
 
@@ -849,7 +855,8 @@ int icn_iconid(const char *name)
 /*
  * Get fullname of an object to which the icon has been assigned.
  * When an item can not have a name, or there is an error, return NULL
- * (i.e. only files, folders, programs and disk volumes can have fullnames) 
+ * (i.e. only files, folders, programs and disk volumes can have fullnames).
+ * This routine allocates space for the name. 
  */
 
 static char *icn_fullname(WINDOW *w, int icon)
@@ -857,18 +864,13 @@ static char *icn_fullname(WINDOW *w, int icon)
 	ICON *icn = &desk_icons[icon];
 	char *s;
 
-	/* This should not be necessary, in fact */
-
-	if (!isfile(icn->item_type) && (icn->item_type != ITM_DRIVE))
-		return NULL;
-
 	if (icn->item_type == ITM_DRIVE)
 	{
 		if ((s = strdup(adrive)) != NULL)
 			s[0] = icn->icon_dat.drv;
 	}
 	else
-		s = strdup(icn->icon_dat.name);
+		s = (isfile(icn->item_type)) ? strdup(icn->icon_dat.name) : NULL;
 
 	return s;
 }
@@ -880,16 +882,12 @@ static char *icn_fullname(WINDOW *w, int icon)
 
 static int icn_attrib(WINDOW *w, int icon, int mode, XATTR *attr)
 {
-	int error;
 	ICON *icn = &desk_icons[icon];
 
 	if (isfile(icn->item_type))
-	{
-		error = (int)x_attr(mode, FS_INQ, icn->icon_dat.name, attr);
-		return error;
-	}
-	else
-		return 0;
+		return (int)x_attr(mode, FS_INQ, icn->icon_dat.name, attr);
+
+	return 0;
 }
 
 
@@ -957,7 +955,8 @@ static void get_icnd(int object, ICND *icnd, int mx, int my)
 /*
  * Create a list of selected icon items.
  * This routine will return FALSE and a NULL list pointer
- * if no list has been created
+ * if no list has been created. It can return FALSE even if
+ * there are selected items (if list allocation failed).
  */
 
 static boolean icn_list(WINDOW *w, int *nselected, int **sel_list)
@@ -969,6 +968,8 @@ static boolean icn_list(WINDOW *w, int *nselected, int **sel_list)
 	for (i = 0; i < max_icons; i++)
 		if ((desk_icons[i].item_type != ITM_NOTUSED) && desk_icons[i].selected )
 			n++;
+
+	/* If nothing is selected, return FALSE */
 
 	if ((*nselected = n) == 0)
 	{
@@ -1081,6 +1082,7 @@ static int icn_find(WINDOW *w, int x, int y)
 					object = i - 1;
 			}
 		}
+
 		i = de->ob_next;
 	}
 	return object;
@@ -1262,14 +1264,6 @@ static boolean icn_open(WINDOW *w, int item, int kstate)
 }
 
 
-/********************************************************************
- *																	*
- * Funkties voor het verwijderen en toevoegen van iconen.			*
- * HR 151102: locate icons in resource by name, not by index		*
- *																	*
- ********************************************************************/
-
-
 /*
  * Provide index of the default icon for the specified item type.
  * First try a default icon according to item type;
@@ -1359,11 +1353,10 @@ int rsrc_icon(const char *name)
 
 
 /* 
- * This routine gets icon id and name from language-dependent name 
- * as defined in desktop.rsc. 
- * The routine is used for some basic icon types which should
- * always exist in the icon resource file 
- * (floppy, disk, file, folder, etc)
+ * This routine gets icon id and name from language-dependent name as 
+ * defined in desktop.rsc. The routine is used for some basic icon types 
+ * which should always exist in the icon resource file (floppy, disk, file, 
+ * folder, etc)
  *  
  * id           = index of icon name string in DESKTOP.RSC (e.g. HDINAME, FINAME...)
  * name         = returned icon name from DESKTOP.RSC
@@ -1409,9 +1402,26 @@ static void icn_disklabel(int drive, char *ilabel)
 } 
 
 
+/* 
+ * An aux. size-reducing function which initializes some object data
+ * mostly for icon objects.
+ */
+
+void init_obj(OBJECT *obj, int otype)
+{
+	obj->ob_next = -1;
+	obj->ob_head = -1;
+	obj->ob_tail = -1;
+	obj->ob_flags = NONE;
+	obj->ob_state = NORMAL;
+	obj->ob_type = otype;
+	obj->r.w = ICON_W;
+	obj->r.h = ICON_H;
+}
+
+
 /*
- * Add an icon onto the desktop
- * Return index of the icon in desk_icons[].
+ * Add an icon onto the desktop; return index of the icon in desk_icons[].
  * Note1: in case of an error, fname will be deallocated.
  * Note2: see similar object-setting code in set_obji() in windows.c
  */
@@ -1476,22 +1486,17 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 	icn->selected = FALSE;
 	icn->update = ICN_NO_UPDATE;
 
-	deskto->ob_head = -1;
-	deskto->ob_tail = -1;
-	deskto->ob_type = icons[icon_no].ob_type;
-	deskto->ob_flags = NONE;
-	deskto->ob_state = NORMAL;
+	init_obj(deskto, icons[icon_no].ob_type);
+	if(link)
+		deskto->ob_state |= CHECKED;
 
 /* better not until background is correctly handled in AESes
 	if (isfile(type) && x_attr(1, FS_INQ, fname, &attr) >= 0 && ((attr.attr & FA_HIDDEN) != 0 ))
 		deskto->ob_state |= DISABLED;
 */
 
-	deskto->r.x = ix * icon_width;
-	deskto->r.y = iy * icon_height;
-	deskto->r.w = ICON_W;
-	deskto->r.h = ICON_H;
-
+	deskto->r.x = ix * ICON_W;
+	deskto->r.y = iy * ICON_H;
 	deskto->ob_spec.ciconblk = h;
 	*h = *icons[icon_no].ob_spec.ciconblk;
 
@@ -1565,12 +1570,12 @@ static int add_devicon(ITMTYPE type, int icon, const char *text, int ch, int x, 
 
 static void comp_icnxy(int mx, int my, int *x, int *y)
 {
-	/* Note: do not use min() here */
+	/* Note: do not use min() here, this is shorter */
 
-	*x = (mx - screen_info.dsk.x) / icon_width;
+	*x = (mx - screen_info.dsk.x) / ICON_W;
 	if (*x > m_icnx)
 		*x = m_icnx;
-	*y = (my - screen_info.dsk.y) / icon_height;
+	*y = (my - screen_info.dsk.y) / ICON_H;
 	if (*y > m_icny)
 		*y = m_icny;
 }
@@ -1672,21 +1677,22 @@ void icn_sl_init(int line, SLIDER *sl)
 
 void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
 {
-	OBJECT *h1, *ic;
+	OBJECT *h1, *ic = icons + slider->line;
 
-	ic = icons + slider->line;
 	h1 = addicon + ICONDATA;
 	h1->ob_type = ic->ob_type;
 	h1->ob_spec = ic->ob_spec;
 
 	/* Center the icon image in the background box */
 
-	h1->r.x = (addicon[ICONBACK].r.w - ic->r.w) / 2;
-	h1->r.y = (addicon[ICONBACK].r.h - ic->r.h) / 2;
+	h1->r.x = (addicon[ICONBACK].r.w - ic->r.w ) / 2;
+	h1->r.y = (addicon[ICONBACK].r.h - ic->r.h ) / 2;
+	h1->r.w = ic->r.w;
+	h1->r.h = ic->r.h;
 
 	/* 
-	 * In low resolutions, move the icon object a little bit upwards 
-	 * (otherwise it goes out of the box)
+	 * In low resolutions, move the icon object for a little bit,  
+	 * otherwise it goes out of the background box (why?)
 	 */
 
 	if(screen_info.dsk.h < 300)
@@ -1774,19 +1780,20 @@ int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpatt, int bck
 		}
 		else if( button == CHNICNOK && *dirname )
 		{
-			char *tgtname = x_fllink(dirname);
 			icd_islink = FALSE;
-			icd_tgt_type = ITM_NOTUSED;
-
-			if((icd_itm_type  = diritem_type(dirname)) != ITM_NOTUSED)
+			icd_itm_type  = diritem_type(dirname);
+			icd_tgt_type = icd_itm_type;
+#if _MINT_
+			if(mint && (icd_itm_type != ITM_NOTUSED))
 			{
-				icd_tgt_type = diritem_type(tgtname);
-				if (strcmp(dirname, tgtname) != 0)
+				VLNAME tgtname;
+				if(x_rdlink(sizeof(VLNAME), (char *)(&tgtname), (const char *)dirname) == 0)
+				{
 					icd_islink = TRUE;
+					icd_tgt_type = diritem_type(tgtname);
+				}
 			}
-
-			free(tgtname);
-
+#endif
 			if(icd_tgt_type == ITM_NOTUSED)
 			{
 				xd_buttnorm(&icd_info, button);
@@ -1825,7 +1832,7 @@ static void icn_hidesome(void)
 
 
 /* 
- * Install one or more desktop icons
+ * Manually install one or more desktop icons
  */
 
 void dsk_insticon(WINDOW *w, int n, int *list)
@@ -1861,6 +1868,8 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 
 	sl_noop = 0;
 
+	options.cprefs &= ~CF_FOLL;
+
 	while( (i < nn) && (button != CHNICNAB) )
 	{
 		*drvid = 0;
@@ -1870,29 +1879,40 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 
 		if(n > 0)
 		{
-			if((name = itm_fullname(w, list[i])) != NULL)
+			ITMTYPE ttype;
+			boolean link;
+			int item;
+
+			if((item = list[i]) < 0)
+				break;
+
+#if _MINT_
+			reread:;
+
+			if(mint)
 			{
-				ITMTYPE ttype = itm_tgttype(w, list[i]);
-				itype = itm_type(w, list[i]);
+				set_opt(addicon, options.cprefs, CF_FOLL, IFOLLNK);
+				obj_unhide(addicon[IFOLLNK]);
+			}
+#endif
+			ttype = itm_tgttype(w, item);
+
+			itm_follow(w, item, &link, (char **)(&name), &itype);
+
+			if(name == NULL)
+			{
+				xform_error(ENSMEM);
+				break; /* go to update */
+			}
+			else
+			{
  				nameonly = fn_get_name(name);
 				cramped_name(nameonly, iconlabel, (int)sizeof(INAME));
-				icon_no = icnt_geticon
-				(
-					nameonly, 
-					itype, 
-					ttype, 
-					itm_islink(w, list[i], TRUE)
-				);
+				icon_no = icnt_geticon( nameonly, itype, ttype );
 				strsncpy(dirname, name, sizeof(LNAME));
 				button = AFILE;
 				startobj = IFNAME;
 				free(name); /* name is not needed anymore */
-			}
-			else
-			{
-				xform_error(ENSMEM);
-				break; /* go to update */
-
 			}
 		}
 		else /* (n <= 0) */
@@ -1908,6 +1928,19 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 		xd_set_rbutton(addicon, ICBTNS, button);
 
 		button = icn_dialog(&sl_info, &icon_no, startobj, options.dsk_pattern, options.dsk_color);
+
+#if_MINT_
+		if(button == IFOLLNK)
+		{
+			/* 
+			 * If state of the  'follow link' has changed, return to the
+			 * beginning and redisplay the dialog.
+			 */
+
+			options.cprefs ^= CF_FOLL;
+			goto reread;
+		}
+#endif
 
 		if (button == CHNICNOK)
 		{
@@ -1960,6 +1993,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 	xd_close(&icd_info);
 	dsk_do_update();
 	obj_unhide(addicon[CHICNRM]);
+	obj_hide(addicon[IFOLLNK]);
 }
 
 
@@ -2081,17 +2115,20 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 	{
 		obj = icns[i].item;
 		erase_icon(obj);
-		x = (mx + icns[i].m_x - screen_info.dsk.x) / icon_width;
-		y = (my + icns[i].m_y - screen_info.dsk.y) / icon_height;
-		/* Note: do not use min() here */
+		x = (mx + icns[i].m_x - screen_info.dsk.x) / ICON_W;
+		y = (my + icns[i].m_y - screen_info.dsk.y) / ICON_H;
+
+		/* Note: do not use min() here, this is shorter */
 		if ( x > m_icnx )
 			x = m_icnx;
 		if ( y > m_icny )
 			y = m_icny;
+
 		desk_icons[obj].x = x;
 		desk_icons[obj].y = y;
-		desktop[obj + 1].r.x = x * icon_width;
-		desktop[obj + 1].r.y = y * icon_height;
+		desktop[obj + 1].r.x = x * ICON_W;
+		desktop[obj + 1].r.y = y * ICON_H;
+
 		draw_icon(obj);
 	}
 }
@@ -2164,33 +2201,44 @@ static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 			int item, ix, iy, icon;
 			ITMTYPE type, ttype;
 			INAME tolabel;
+			boolean link;
 			const char *fname, *nameonly;
 
 			comp_icnxy(x, y, &ix, &iy);
 
+			/* 
+			 * Note: currently it is not possible to follow links.
+			 * A dialog could be opened here to enable it.
+			 * If the user wishes to follow the links when installing
+			 * desktop icons, he should 'Set desk icons...'
+			 */
+
+			options.cprefs &= ~CF_FOLL;
+
 			for(i = 0; i < n; i++)
 			{
-				item = list[i];
+				if((item = list[i]) == -1)
+					return FALSE;
+
+				ttype = itm_tgttype(sw, item);
+
+				itm_follow(sw, item, &link, (char **)(&fname), &type);
 
 				/* 
 				 * Note: name will be deallocated in add_icon() if it fails;
 				 * Otherwise it must be kept; add_icon just uses the pointer
 				 */
 
-				if ((fname = itm_fullname(sw, item)) != NULL)
+				if(fname == NULL)
+					return FALSE;
+				else
 				{
-					boolean link  = itm_islink(sw, item, TRUE);
-
-					type = itm_type(sw, item);
-					ttype = itm_tgttype(sw, item);
 					nameonly = fn_get_name(fname);
 					cramped_name( nameonly, tolabel, (int)sizeof(INAME) );
-					icon = icnt_geticon( nameonly, type, ttype, link );
+					icon = icnt_geticon(nameonly, type, ttype);
 					add_icon(type, ttype, link, icon, tolabel, 0, ix, iy, TRUE, fname);
 					incr_pos(&ix, &iy); 
 				}
-				else
-					return FALSE;
 			}
 
 			return TRUE;
@@ -2526,24 +2574,8 @@ boolean dsk_init(void)
 		return FALSE;
 	}
 
-	/*  
-	 *  When using nonstandard resolutions (i.e. like with overscan)
-	 *  unpleasant effects occured in prev.versions- icon positions shifted;
-	 *  as a brute-force fix: always replaced calculated icon width and height
-	 *  with initial values- in standard resolutions the result should probably
-	 *  be the same anyway. Perhaps overscan software should be looked into,
-	 *  as it does not properly inform GEM of the change (can it?)
-	 */
- 
-	icon_width  = ICON_W; 
-	icon_height = ICON_H; 
+	init_obj(&desktop[0], G_BOX);
 
-	desktop[0].ob_next = -1;
-	desktop[0].ob_head = -1;
-	desktop[0].ob_tail = -1;
-	desktop[0].ob_type = G_BOX;
-	desktop[0].ob_flags = NONE;
-	desktop[0].ob_state = NORMAL;
 	desktop[0].ob_spec.obspec.framesize = 0;
 	desktop[0].ob_spec.obspec.textmode = 1;
 	desktop[0].r = screen_info.dsk;
@@ -2763,89 +2795,105 @@ void dsk_options(void)
 		stop = FALSE, 
 		draw = FALSE;
 
+	char
+		*tabsize = wdoptions[TABSIZE].ob_spec.tedinfo->te_ptext;
+
+
 	/* Initial states */
 	
 	wdoptions[DSKPAT].ob_spec.obspec.fillpattern = limpattern((int)options.dsk_pattern);
 	wdoptions[DSKPAT].ob_spec.obspec.interiorcol = limcolor((int)options.dsk_color) ;
 	wdoptions[WINPAT].ob_spec.obspec.fillpattern = limpattern((int)options.win_pattern);
 	wdoptions[WINPAT].ob_spec.obspec.interiorcol = limcolor( (int)options.win_color);
+	itoa(options.tabsize, tabsize, 10);	
+	set_opt( wdoptions, options.sexit, SAVE_WIN, SOPEN);
 
 	/* Open the dialog */
 
-	xd_open(wdoptions, &info);
-
-	while (!stop)
+	if(chk_xd_open(wdoptions, &info) >= 0)
 	{
-		color = wdoptions[DSKPAT].ob_spec.obspec.interiorcol;
-		pattern = wdoptions[DSKPAT].ob_spec.obspec.fillpattern;
-		wcolor = wdoptions[WINPAT].ob_spec.obspec.interiorcol; 
-		wpattern = wdoptions[WINPAT].ob_spec.obspec.fillpattern;
-		button = arrow_form_do( &info, &oldbutton );
-
-		switch (button)
+		while (!stop)
 		{
-		case WOVIEWER:
-		case WODIR:
-			if ( wd_type_setfont( (button == WOVIEWER) ? DTVFONT : DTDFONT) )
-				ok = TRUE;
-			break;
-		case DSKCUP:
-			color += 2;
-		case DSKCDOWN:
-			color--;
-			set_selcol(&info, DSKPAT, color);
-			break;
-		case DSKPUP:
-			pattern += 2;
-		case DSKPDOWN:
-			pattern--;
-			set_selpat(&info, DSKPAT, pattern);
-			break;
-		case WINCUP:
-			wcolor += 2;
-		case WINCDOWN:
-			wcolor--;
-			set_selcol(&info, WINPAT, wcolor);
-			break;
-		case WINPUP:
-			wpattern += 2;
-		case WINPDOWN:
-			wpattern--;
-			set_selpat(&info, WINPAT, wpattern);
-			break;
-		case WOPTOK:
-			if ((options.dsk_pattern != (unsigned char)pattern) ||
-				(options.dsk_color != (unsigned char)color))
+			color = wdoptions[DSKPAT].ob_spec.obspec.interiorcol;
+			pattern = wdoptions[DSKPAT].ob_spec.obspec.fillpattern;
+			wcolor = wdoptions[WINPAT].ob_spec.obspec.interiorcol; 
+			wpattern = wdoptions[WINPAT].ob_spec.obspec.fillpattern;
+			button = arrow_form_do( &info, &oldbutton );
+
+			switch (button)
 			{
-				set_dsk_background(pattern, color);
-				draw = TRUE;
+			case WOVIEWER:
+			case WODIR:
+				if ( wd_type_setfont( (button == WOVIEWER) ? DTVFONT : DTDFONT) )
+					ok = TRUE;
+				break;
+			case DSKCUP:
+				color += 2;
+			case DSKCDOWN:
+				color--;
+				set_selcol(&info, DSKPAT, color);
+				break;
+			case DSKPUP:
+				pattern += 2;
+			case DSKPDOWN:
+				pattern--;
+				set_selpat(&info, DSKPAT, pattern);
+				break;
+			case WINCUP:
+				wcolor += 2;
+			case WINCDOWN:
+				wcolor--;
+				set_selcol(&info, WINPAT, wcolor);
+				break;
+			case WINPUP:
+				wpattern += 2;
+			case WINPDOWN:
+				wpattern--;
+				set_selpat(&info, WINPAT, wpattern);
+				break;
+			case WOPTOK:
+				/* Desktop pattern & colour */	
+
+				if ((options.dsk_pattern != (unsigned char)pattern) ||
+					(options.dsk_color != (unsigned char)color))
+				{
+					set_dsk_background(pattern, color);
+					draw = TRUE;
+				}
+
+				/* window pattern & colour */
+
+				if ((options.win_pattern != (unsigned char)wpattern) ||
+					(options.win_color != (unsigned char)wcolor))
+				{
+					options.win_pattern= (unsigned char)wpattern;
+					options.win_color= (unsigned char)wcolor; 
+					ok = TRUE;
+				}		
+
+				/* Tab size */
+
+				if ((options.tabsize = atoi(tabsize)) < 1)
+					options.tabsize = 1;
+				
+				/* Save open windows? */
+
+				get_opt(wdoptions, (int *)&options.sexit, SAVE_WIN, SOPEN);
+
+			default:
+				stop = TRUE;
+				break;
 			}
-
-			/* window pattern & colour */
-
-			if ((options.win_pattern != (unsigned char)wpattern) ||
-				(options.win_color != (unsigned char)wcolor))
-			{
-				options.win_pattern= (unsigned char)wpattern;
-				options.win_color= (unsigned char)wcolor; 
-				ok = TRUE;
-			}						
-		default:
-			stop = TRUE;
-			break;
 		}
+
+		xd_buttnorm(&info, button);
+		xd_close(&info);
+
+		/* Updates must not be done before the dialogs are closed */
+
+		if (draw)
+			redraw_desk(&screen_info.dsk);
+		if (ok)
+			wd_drawall();
 	}
-
-	xd_buttnorm(&info, button);
-	xd_close(&info);
-
-	/* Updates must not be done before the dialogs are closed */
-
-	if (draw)
-		redraw_desk(&screen_info.dsk);
-	if (ok)
-		wd_drawall();
 }
-
-
-

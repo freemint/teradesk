@@ -66,3 +66,153 @@ char *strcpyj(char *d, const char *s, size_t len)
 }
 */
 
+
+
+/*
+ * Calculate minimum safe buffer length for a name containing
+ * quotes or spaces which will have to be quoted.
+ * Space calculated here may be a little longer than actually needed,
+ * depending on which quotes are used, and also three bytes reserve
+ * is included here.
+ */
+
+size_t strlenq(const char *name)
+{
+	size_t l = 3;
+	char *p = (char *)name;
+	int q = 0;
+
+	while(*p)
+	{
+		l++;
+
+		if(*p == ' ')
+			q = 1;					/* quote if space found */
+
+		if(*p == 34 || *p == 39)
+		{
+			q = 1;					/* quote if embedded quote found */
+			l++;					/* and it has to be doubled */
+		}
+
+		p++; /* don't put this in the 'if' above ! */
+	}
+
+	if(q)
+		l += 2;						/* add two for enclosing quotes */
+
+	return l;						/* return string length */
+}
+
+
+/*
+ * Copy a string to destination. If it contains embedded blanks,
+ * put it between quotes, using character qc. If it contains quotes, 
+ * double them. This routine returns a pointer to the -end- of 
+ * the string (to the null termination byte after it)
+ */
+
+char *strcpyq(char *d, const char *s, char qc)
+{
+	char q = 0;
+
+	/* If there are embedded blanks or quotes, start quoting */
+
+	if(strchr(s, ' ') || strchr(s, 34) || strchr(s, 39) )
+	{
+		*d++ = qc;
+		q = 1; 
+	}
+
+	/* Transfer all characters; double any embedded quote */
+
+	while(*s)
+	{
+		*d++ = *s;
+		if(*s == qc)
+			*d++ = qc;
+		s++;
+	}
+
+	/* If quoting has been started, finish it (unquote) */
+
+	if(q)
+		*d++ = qc;
+
+	/* Add a zero termination byte */
+
+	*d = 0;
+
+	return d;
+}
+
+
+/*
+ * Copy a string from s to d substituting the quotes character if 
+ * necessary. Return a pointer to the -end- of string.
+ * This function will e.g. convert a string containing items
+ * between single-quotes into a string containing items between
+ * double quotes - or v.v. Any appearance of the char qc between quotes
+ * will be doubled.
+ */
+
+char *strcpyrq(char *d, const char *s, char qc)
+{
+	char
+		q = 0,				/* nonzero if quoting in effect */
+		fqc = 0,			/* first encountered quote character */
+ 		*p = (char *)s,		/* a location in source string */
+		*t = d;				/* a location in destination string */
+
+
+	while(*p)
+	{
+		if( ((*p == fqc) || (!fqc && (*p == 39 || *p == 34))) && p[1] != *p)
+		{
+			/* This is one quote character; start or end quoting */
+
+			fqc = 0;
+
+			if(!q)
+				fqc = *p;
+
+			q = !q;
+			*t = qc;
+		}
+		else
+		{
+			/* 
+			 * this may be one single/double quote enclosed in 
+			 * different (double/single) quotes 
+			 * or a duplicated current quote character
+			 */
+
+			if(q)
+			{
+				if(*p == qc && p[1] != qc)
+					*t++ = qc;
+
+				/* or a doubled quote */
+
+				if(*p == fqc && p[1] == fqc)
+				{
+					if(fqc == qc)
+						*t++ = qc;
+
+					p++;			
+				}
+			}
+
+			/* or any other character... */
+
+			*t = *p;
+		} 
+
+		p++;
+		t++;
+	}
+
+	*t = 0;
+
+	return t;
+}

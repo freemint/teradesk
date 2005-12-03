@@ -1799,9 +1799,6 @@ static int xd_open_wzoom
 			{
 				xw_set(w, WF_NAME, (title) ? title : xd_prgname);
 
-/* not here also for normal dial. ?
-				xw_open(w, &wsize);
-*/
 				info->window = w;
 
 				if ( funcs )

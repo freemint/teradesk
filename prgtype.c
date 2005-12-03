@@ -28,6 +28,7 @@
 #include <library.h>
 #include <xdialog.h>
 #include <mint.h>
+#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -44,7 +45,6 @@
 #include "icon.h"
 #include "icontype.h"
 
-#define END			32767
 
 
 PRGTYPE
@@ -90,7 +90,7 @@ void prg_info
 		/* If program type not defined or name not given: default */
 
 		pt->appl_type = PGEM;	/* GEM program */
-		pt->flags = PD_PDIR;
+		pt->flags = PD_PDIR;	/* Default directory is program directory */
 		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
 	return;
@@ -164,7 +164,7 @@ static PRGTYPE *ptadd_one
 	pwork.flags = flags;
 	pwork.limmem = limmem;
 
-	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), END, copy_prgtype );
+	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), INT_MAX, copy_prgtype );
 }
 
 
@@ -200,20 +200,16 @@ boolean prgtype_dialog
 		stop = FALSE;	/* loop until true */
 
 	int 
-		lbl,			/* text "filetype" of "application" */
-		title,			/* resoruce index of title to be used for dialog */
-		button;			/* code of pressed button */
+		lbl,				/* text "filetype" of "application" */
+		title = DTADDPRG,	/* resource index of title to be used for dialog */
+		button;				/* code of pressed button */
 
 
 	/* Determine which title to put on dialog, depending on use */
 
 	lbl = TFTYPE;
 
-	if ( !(use & LS_EDIT) )
-	{
-		title = DTADDPRG;
-	}
-	else
+	if ((use & LS_EDIT) != 0)
 	{
 		if ( use & LS_APPL )
 		{
@@ -222,9 +218,7 @@ boolean prgtype_dialog
 			lbl = TAPP;
 		}
 		else
-		{
 			title = DTEDTPRG;
-		}
 	}
 
  	rsc_title(addprgtype, APTITLE, title);
@@ -240,7 +234,6 @@ boolean prgtype_dialog
 		APTPAR1,
 		(pt->flags & (PD_PDIR | PD_PPAR)) / PD_PDIR + ATWINDOW
 	);
-
 
 	set_opt(addprgtype, pt->flags, PT_ARGV, ATARGV);
 	set_opt(addprgtype, pt->flags, PT_BACK, ATBACKG);
@@ -261,48 +254,50 @@ boolean prgtype_dialog
 	
 	/* Open the dialog, then loop until exit button */
 
-	xd_open( addprgtype, &info );
-
-	while ( !stop )
+	if(chk_xd_open( addprgtype, &info ) >= 0)
 	{
-		button = xd_form_do( &info, ROOT );
+		while ( !stop )
+		{
+			button = xd_form_do( &info, ROOT );
 
-		/* If ok, and there is a filetype, and is not a duplicate entry */
+			/* If ok, and there is a filetype, and is not a duplicate entry */
 
-		if ( (button == APTOK) )
-		{	
-			SNAME thename;
+			if ( (button == APTOK) )
+			{	
+				SNAME thename;
 
-			cv_formtofn(thename, addprgtype, PRGNAME);
+				cv_formtofn(thename, addprgtype, PRGNAME);
  			
-			if ( strlen(thename) != 0 )
-			{
-				if (check_dup((LSTYPE **)list, thename, pos) ) 
+				if ( strlen(thename) != 0 )
 				{
-					/* Get all data back from the dialog */
+					if (check_dup((LSTYPE **)list, thename, pos) ) 
+					{
+						/* Get all data back from the dialog */
 
-					pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
-					pt->flags = (xd_get_rbutton(addprgtype, APTPAR1) - ATWINDOW) * PD_PDIR;
+						pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
+						pt->flags = (xd_get_rbutton(addprgtype, APTPAR1) - ATWINDOW) * PD_PDIR;
 
-					get_opt(addprgtype, &pt->flags, PT_BACK, ATBACKG);
-					get_opt(addprgtype, &pt->flags, PT_ARGV, ATARGV);
-					get_opt(addprgtype, &pt->flags, PT_SING, ATSINGLE);
+						get_opt(addprgtype, &pt->flags, PT_BACK, ATBACKG);
+						get_opt(addprgtype, &pt->flags, PT_ARGV, ATARGV);
+						get_opt(addprgtype, &pt->flags, PT_SING, ATSINGLE);
 
-					strcpy( pt->name, thename);
+						strcpy( pt->name, thename);
 #if _MINT_
-					pt->limmem = 1024L * atol(addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext);
+						pt->limmem = 1024L * atol(addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext);
 #endif
-					stat = TRUE;
-					stop = TRUE;
+						stat = TRUE;
+						stop = TRUE;
+					}
 				}
 			}
-		}
-		else
-			stop = TRUE;
+			else
+				stop = TRUE;
 
-		xd_drawbuttnorm(&info, button);
+			xd_drawbuttnorm(&info, button);
+		}
+		xd_close(&info);
 	}
-	xd_close(&info);
+
 	addprgtype[PRGNAME].ob_flags |= EDITABLE;
 	return stat;
 }
@@ -375,8 +370,8 @@ void prg_init(void)
 
 void prg_default(void)
 {
-	static const ApplType pt[]={PGEM,PGEM,PGTP,PTOS,PTTP,PACC};
-	static const int dd[]={PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
+	static const ApplType pt[] = {PGEM,PGEM,PGTP,PTOS,PTTP,PACC};
+	static const int dd[] = {PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
 	int i;
 
 	rem_all_prgtypes();
@@ -405,20 +400,6 @@ CfgEntry prg_table[] =
 	{CFG_END},
 	{CFG_LAST}
 };
-
-
-/* 
- * Fix a configuration file compatibility issue, remove after V3.60 
- */
-
-void fix_prgtype_v360(PRGTYPE *p)
-{
-	if ((p->flags & PT_PDIR) != 0 )
-	{
-		p->flags |= PD_PDIR;
-		p->flags &= ~PT_PDIR;
-	}
-}
 
 
 /*
@@ -457,8 +438,6 @@ static CfgNest one_ptype
 				*error = EFRVAL;		
 			else
 			{
-				fix_prgtype_v360(&pwork); /* Compatibility issue, remove after V3.60 */
-
 				/* Add a program type into the list */
 
 				if
@@ -468,7 +447,7 @@ static CfgNest one_ptype
 						(LSTYPE **)&prgtypes, 
 		            	sizeof(pwork), 
 		            	(LSTYPE *)&pwork, 
-		            	END, 
+		            	INT_MAX, 
 		            	copy_prgtype
 				  	) == NULL
 				)
@@ -503,7 +482,5 @@ CfgNest prg_config
 	prg_table[2].flag = 0;
 
 	*error = handle_cfg(file, prgty_table, lvl, CFGEMP, io, rem_all_prgtypes, prg_default);
-
-	icn_fix_ictype(); /* compatibility issue; remove after V3.60 */
 } 
 

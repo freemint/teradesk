@@ -28,6 +28,7 @@
 #include <xdialog.h>
 #include <mint.h>
 #include <library.h>
+#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -43,8 +44,6 @@
 #include "icon.h"
 #include "icontype.h"
 #include "filetype.h" 
-
-#define END			32767
 
 
 typedef struct icontype
@@ -163,17 +162,20 @@ static void icnt_info
 
 /*  
  * Find icons in the icons resource file by name, not index.
+ * If icontype is not equal to icon target type, link is assumed.
  */
 
-int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link)
+int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
 {
 	int icon, deficon, i;
-	boolean more = TRUE;
+	boolean more = (type != tgt_type && tgt_type != ITM_NOTUSED);
 	ITMTYPE thetype = type;
 
 	/* 
 	 * Find a related icon, depending on item type (folder/file/program) 
-	 * Links are handled in a somewhat dirty (but efficient) way
+	 * Links are handled in a somewhat dirty (but efficient) way:
+	 * if icon for the specified name is not found, change item type
+	 * to target item type and try again.
 	 */
 
 	again:; /* if item is a link, return here to check target */
@@ -196,9 +198,9 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type, boolean link)
 
 	if ((icon = find_icon(name, iconlists[i])) < 0)
 	{
-		/* Specific icon not found */
+		/* Specific icon not found, but this is a link */
 
-		if(link && more)
+		if(more)
 		{
 			/* Go back and find default icon for this item type */
 
@@ -362,7 +364,9 @@ void icnt_settypes(void)
 }
 
 
-/* Initiate (empty) lists of assigned files, folders and programs */
+/* 
+ * Initiate (empty) lists of assigned files, folders and programs
+ */
 
 void icnt_init(void)
 {
@@ -376,16 +380,16 @@ void icnt_init(void)
  * Clear all icontypes (files, folders and programs)
  */
 
-static void rem_all_icontypes(void)
+void rem_all_icontypes(void)
 {
 	lsrem_three((LSTYPE **)iconlists, lsrem);
 }
 
 
-/* This routine is not currenclty used in TeraDesk
+/* This routine is not currently used in TeraDesk
 
 /*
- * Add an icon assignment into the list, explicitely giving parameters
+ * Add an icon assignment into the list, explicitely giving parameters.
  */
 
 static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
@@ -409,11 +413,14 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 
 	/* Add that to list */
 
-	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), END, copy_icntype );
+	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), INT_MAX, copy_icntype );
 }
 
 */
 
+
+
+#if !__USE_MACROS
 
 /*
  * Set default icon assignment: no icontypes
@@ -423,6 +430,8 @@ void icnt_default(void)
 {
 	rem_all_icontypes();
 }
+
+#endif
 
 
 /*
@@ -439,7 +448,7 @@ static void icnt_move(int to, int from, ICONTYPE *it)
 			(LSTYPE **)(&iconlists[to]),
 			sizeof(ICONTYPE),
 			(LSTYPE *)it,
-			END,
+			INT_MAX,
 			copy_icntype
    		) != NULL
 	) 
@@ -459,7 +468,6 @@ void icnt_fix_ictypes(void)
 	it = iconlists[FILE_LIST];
 	while(it)
 	{
-
 		next = it->next;
 		if(prg_isprogram(it->type))
 			icnt_move( PROG_LIST, FILE_LIST, it);
@@ -542,7 +550,7 @@ static CfgNest one_itype
 						(LSTYPE **)ppthis,
 						sizeof(ICONTYPE),
 						(LSTYPE *)&iwork,
-						END,
+						INT_MAX,
 						copy_icntype
 			      	) == NULL
 				)
@@ -645,7 +653,10 @@ static CfgEntry icontypes_table[] =
 CfgNest icnt_config
 {
 	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
+
+/* OK; removed
 	icnt_fix_ictypes(); /* Compatibility issue, may be removed after V3.60 */
+*/
 }
 
 

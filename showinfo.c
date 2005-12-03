@@ -28,6 +28,7 @@
 #include <library.h>
 #include <mint.h>
 #include <xdialog.h>
+#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -245,72 +246,75 @@ static int search_dialog(void)
 
 	/* Open the dialog */
 
-	xd_open(searching, &info);
-
-	/* Edit data */
-
-	while (button != SOK && button != SCANCEL)
+	if(chk_xd_open(searching, &info) >= 0)
 	{
-		/* Wait for the appropriate button */
 
-		button = xd_form_do_draw(&info);
+		/* Edit data */
 
-		if ( button == SOK )
+		while (button != SOK && button != SCANCEL)
 		{
-			/* 
-			 * OK, get data out of dialog, but check it.
-			 * Directory names will be searched for only if size range is not set
-			 * and search string is not set
-			 */
+			/* Wait for the appropriate button */
 
-			cv_formtofn( search_pattern, searching, SMASK );
-			search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
-			search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
-			if ( search_hisize == 0L )
+			button = xd_form_do_draw(&info);
+
+			if ( button == SOK )
 			{
-				search_hisize = 0x7FFFFFFFL; /* a very large size */
-				if (search_losize == 0)
-					nodirs = FALSE;
-			}				
-			search_lodate = cv_formtod(searching[SLODATE].ob_spec.tedinfo->te_ptext);
-			search_hidate = cv_formtod(searching[SHIDATE].ob_spec.tedinfo->te_ptext);
-			if ( search_hidate == 0 )
-				search_hidate = 32671; 	     /* a very late date  */
+				/* 
+				 * OK, get data out of dialog, but check it.
+				 * Directory names will be searched for only if size range is not set
+				 * and search string is not set
+				 */
 
-			search_length = strlen(search_txt);
-			if (search_length > 0)
-				nodirs = TRUE;
+				cv_formtofn( search_pattern, searching, SMASK );
+				search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
+				search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
+				if ( search_hisize == 0L )
+				{
+					search_hisize = 0x7FFFFFFFL; /* a very large size */
+					if (search_losize == 0)
+						nodirs = FALSE;
+				}				
+				search_lodate = cv_formtod(searching[SLODATE].ob_spec.tedinfo->te_ptext);
+				search_hidate = cv_formtod(searching[SHIDATE].ob_spec.tedinfo->te_ptext);
+				if ( search_hidate == 0 )
+					search_hidate = 32671; 	     /* a very late date  */
 
-			/* Check if parameters entered have sensible values */
+				search_length = strlen(search_txt);
+				if (search_length > 0)
+					nodirs = TRUE;
 
-			if 
-			(  
-				*search_pattern == 0 ||			 /* must have a pattern */
-				search_lodate == -1  ||			 /* valid low date      */ 
-				search_hidate == -1  ||			 /* valid high date     */
-				search_hidate < search_lodate || /* valid date range    */
-				search_hisize < search_losize	 /* valid size range    */ 
-			)
-			{
-				alert_iprint(MINVSRCH);
-				button = 0;
-			}
-			else
-			{
-				/* OK, can commence search */
+				/* Check if parameters entered have sensible values */
 
-				nofound = TRUE;
-				get_opt( searching, &options.xprefs, S_IGNCASE, IGNCASE ); 
-				get_opt( searching, &options.xprefs, S_SKIPSUB, SKIPSUB ); 	
-				if ( *search_txt != 0 ) /* search for a string */
-					obj_unhide(fileinfo[MATCHBOX]);
-			}
-		} 		/* ok? */
-	} 			/* while */
+				if 
+				(  
+					*search_pattern == 0 ||			 /* must have a pattern */
+					search_lodate == -1  ||			 /* valid low date      */ 
+					search_hidate == -1  ||			 /* valid high date     */
+					search_hidate < search_lodate || /* valid date range    */
+					search_hisize < search_losize	 /* valid size range    */ 
+				)
+				{
+					alert_iprint(MINVSRCH);
+					button = 0;
+				}
+				else
+				{
+					/* OK, can commence search */
 
-	/* Close the dialog */
+					nofound = TRUE;
+					get_opt( searching, &options.xprefs, S_IGNCASE, IGNCASE ); 
+					get_opt( searching, &options.xprefs, S_SKIPSUB, SKIPSUB ); 	
+					if ( *search_txt != 0 ) /* search for a string */
+						obj_unhide(fileinfo[MATCHBOX]);
+				}
+			} 		/* ok? */
+		} 			/* while */
 
-	xd_close( &info );
+		/* Close the dialog */
+
+		xd_close( &info );
+	}
+
 	return button;
 }
 
@@ -772,6 +776,8 @@ int object_info
 
 		if ( (mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0 )
 			attrib |= FA_READONLY;
+		else
+			attrib &= ~FA_READONLY;
 #endif
 	}
 
@@ -978,7 +984,6 @@ int object_info
 				fileinfo[FLLABEL].ob_flags |= EDITABLE;
 #endif
 #endif
-
 			drive = (oldname[0] & 0x5F) - 'A';
 
 			if (check_drive( drive ) != FALSE)
@@ -990,12 +995,9 @@ int object_info
 				if (error == 0)
 				{
 					long 
-						fbytes,
-						tbytes,
-						clsize  = diskinfo.b_secsiz * diskinfo.b_clsiz;
-
-					fbytes = diskinfo.b_free * clsize;
-					tbytes = diskinfo.b_total * clsize;
+						fbytes = diskinfo.b_free,	/* number of free bytes */
+						tbytes = diskinfo.b_total,	/* total number of bytes */
+						clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
 
 #if _EDITLABELS
 #if _MINT_
@@ -1006,6 +1008,28 @@ int object_info
 						rsc_tostmplt(lblted);
 #endif
 					cv_fntoform(fileinfo, FLLABEL, dskl);
+
+					/* 
+					 * Make some arrangements for partitions larger
+					 * than 2GB, which can not be normally displayed
+					 * because sizes do not fit into 32-bit integers.
+					 * In such cases display data in kilobytes.
+					 * See rsc_ltoftext() for meaning of negative parameters.
+					 * This is probably relevant only in non-TOS fs
+					 * i.e. mint or magic would have to be present,
+					 * and so it can be excluded for the single-TOS version
+					 */
+#if _MINT_
+					if( tbytes > LONG_MAX / clsize )
+					{
+						fbytes = (fbytes * -10) / 1024;
+						tbytes = (tbytes * -10) / 1024;
+						nbytes = (((diskinfo.b_total - diskinfo.b_free) * -10) / 1024 ) * clsize;
+					}
+
+#endif
+					tbytes *= clsize;
+					fbytes *= clsize;
 
 					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
 					rsc_ltoftext(fileinfo, FLFILES, nfiles);
@@ -1285,7 +1309,6 @@ int object_info
 #endif
 
 #endif
-
 					qquit = TRUE;
 				}
 
@@ -1421,7 +1444,7 @@ void item_showinfo
 				else
 				{
 #if _MINT_
-					if ( itm_islink(w, item, FALSE) )
+					if ( itm_islink(w, item) )
 						type = ITM_LINK;
 #endif
 					if (type == ITM_DRIVE)
@@ -1461,7 +1484,7 @@ void item_showinfo
 	{
 		int ntouch = n - i;
 
-		itmlist_op(w, ntouch, &list[i], NULL, CMD_TOUCH);
+		itmlist_wop(w, ntouch, &list[i], CMD_TOUCH);
 		if ( xw_type(w) == DIR_WIND )
 			dir_refresh_wd((DIR_WINDOW *)w);
 
@@ -1482,7 +1505,6 @@ void item_showinfo
 #endif
 
 	arrow_mouse (); 
-
 }
 
 

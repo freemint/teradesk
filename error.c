@@ -52,7 +52,7 @@ char *get_freestring( int stringid )
 
 char *get_message(int error)
 {
-	static char buffer[48], *s;
+	static char buffer[80], *s;
 	int msg;
 
 	switch (error)

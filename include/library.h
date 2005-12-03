@@ -30,10 +30,13 @@ typedef struct
 	long value;
 } COOKIE;
 
-/* Some general-purpose functions */
+/* Some general-purpose string-manipulation functions */
 
 char *strsncpy(char *dst, const char *src, size_t len);	
 char *strcpyj(char *dst, const char *src, size_t len);
+char *strcpyq(char *d, const char *s, char qc);
+char *strcpyrq(char *d, const char *s, char qc);
+size_t strlenq(const char *name);
 
 int min(int x, int y);
 int max(int x, int y);

@@ -27,7 +27,6 @@ typedef struct ftype
 	struct ftype *next;
 } FTYPE;
 
-#define END 32767
 
 extern CfgEntry 
 	ft_table[],

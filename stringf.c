@@ -65,6 +65,7 @@ char *strdup(const char *s)
  * but sufficient for the needs of TeraDesk.
  * Recognized formats are -ONLY- : %d %x %ld %lx %s.
  * Maximum width of NUMERIC output should not exceed 15 characters.
+ * Maximum width of TEXT output should not exceed 255 characters.
  * Width specifier is supported. Output is a null-terminated string.
  */
 
@@ -120,11 +121,13 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 						*d++ = h[i++];
 					ready = TRUE;
 					break;
+
 				case 'l':
 					/* next numeric output will be of a 'long' variable */
 
 					lng = TRUE;
 					break;
+
 				case 'd':
 				case 'x':
 					/* decimal or hexadecimal numeric output */
@@ -162,6 +165,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 						*d++ = *h++;
 					ready = TRUE;
 					break;
+
 				default:
 					/* interpret length specifier if given */
 
@@ -201,16 +205,16 @@ int sprintf(char *buffer, const char *format,...)
 }
 
 
-int vaprintf( int def,const char *string,va_list argpoint )
+int vaprintf( int def, const char *string, va_list argpoint )
 {
 	char s[256];
 
 	vsprintf(s, string, argpoint);
-	return form_alert(def,s); 
+	return form_alert(def, s); 
 }
 
 
-int aprintf( int def,const char *string, ... )
+int aprintf( int def, const char *string, ... )
 {
 	va_list argpoint;
 	int button;

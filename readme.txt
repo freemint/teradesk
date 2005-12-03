@@ -13,9 +13,10 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991, 1992, 1993, 1994, 1995 W. Klaren.
              V3.60  02-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
              V3.61  17-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
              V3.62  27-08-05, Copyright 2005  H. Robbers, Dj. Vukovic 
+             V3.70  03-12-05, Copyright 2005  H. Robbers, Dj. Vukovic 
  
 
-This  is version 3.62 of the Tera Desktop, a replacement for the builtin TOS 
+This  is version 3.70 of the Tera Desktop, a replacement for the builtin TOS 
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and 
 Open Source.  It is published under General Public License (GPL) which means 
 that it  may be  copied  and  modified freely,  providing that  the original 
@@ -95,7 +96,7 @@ New Features in This Version
 ============================ 
  
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the 
-last  released  version (3.60). Also, read the manual TERADESK.HYP (you will 
+last  released  version (3.62). Also, read the manual TERADESK.HYP (you will 
 need ST-Guide for this) for more detailed information. 
  
 Before installing any  new version of TeraDesk,  you are advised to load and 
@@ -119,7 +120,7 @@ directory of a disk volume/partition.
 TeraDesk: 
    
        DESKTOP.PRG  (if  you  intend  to use multitasking)  OR    
-       DESKTOS.PRG  (if you  will  work  in  Single-TOS  only)     
+       DESKTOS.PRG  (if you  will  work in  Single-TOS  ONLY)     
        DESKTOP.RSC     
        ICONS.RSC    (if you will use monochrome icons) AND/OR   
        CICONS.RSC   (if your AES can support colour icons)    
@@ -128,15 +129,17 @@ Note  that  DESKTOP.PRG  will  work  in single-TOS as well; DESKTOS.PRG just
 saves  a  few  kilobytes  of  memory  by  not  containing code which is only 
 relevant  in  multitasking  environments,  and  by having a somewhat limited 
 support of the AV-protocol  (AV-protocol functions  not likely to be used in
-Single-TOS are removed). 
+Single-TOS are removed). Beware that the single-TOS version may not properly
+interpret some configuration files created in the multitasking version, e.g.
+if they contain any references to symbolic links or long filenames.
  
 If  only  DESKTOS.PRG  is to be used, it may be renamed to DESKTOP.PRG after 
-copying,  but  this is needed only if some accessory which is an AV-protocol 
-client will be used. 
+copying,  but this is  not required;  the program will  regiser itself  with
+the AES as "DESKTOP" anyway. 
  
 You  can  (but  need  not) also copy into this folder the files TERADESK.INF 
 and  TERADESK.PAL  from  the  \EXAMPLES  folder.  Note,  however, that these 
-example  configuration  files  are set for one particular configuration, and 
+example configuration files  are set for one hypothetical configuration, and 
 may  not  be  appropriate  for your setup (Tera Desktop will attempt to obey 
 everything  specified  in the configuration files, no matter what the actual 
 environment is). 
@@ -247,8 +250,8 @@ TeraDesk  tries  to  load  the colour icon file CICONS.RSC. If this file can
 not be found, TeraDesk falls back to monochrome icons file ICONS.RSC. 
  
 Some  versions  of  AES  (e.g.  Geneva  4)  declare themselves as capable of 
-handling  colour icons, but that doesn't seem to work with TeraDesk. In such 
-cases,  CICONS.RSC  file  should  be removed, and TeraDesk will fall back to 
+handling  colour icons, but fail to  work with  Tera Desktop. In such cases, 
+CICONS.RSC  file  should   be  removed,  and  TeraDesk  will  fall  back  to 
 monochrome   icons.   Colour  icons  file  can  also  be  removed  in  other 
 environments if there is a need to preserve as much free memory as possible. 
  
@@ -269,13 +272,20 @@ Some Possible Future Developments
   speed. 
  
 - Use of  advanced features  of the AHCM package to further improve handling 
-  of memory allocation. 
+  of memory allocation when large blocks are allocated (e.g. when reading
+  files). 
  
-- Improvement of the algorithm for file copying when floppies are involved. 
+- Improvement of the algorithm for file copying when floppies are involved.
+
+- Check whether the limits of 32767 selected items and 2GB total byte count
+  may present a problems on higher-end systems, and correct that if
+  possible. 
   
 - Complete compliance to the AV-protocol and Drag & Drop protocol. 
  
 - Better handling of memory-limit and no-multitask options.
+
+- Capability to change video mode in any AES.
 
 - Capability to show a 'tree view' window of all drives. 
  
@@ -295,14 +305,7 @@ Some Very Unlikely To Happen Future Developments
   a completely  nonfunctional feature,  which  would increase  program  size
   unacceptably.  Besides,  personally, I think that  background pictures are
   in fact distracting to the user and  a waste of system resources. However,
-  an  independent  utiltiy  (AUTO folder program + accessory)  was  reported
-  to be able to add background pictures to any desktop. Also, MyAES has this
-  feature.
-
-- There are NO plans  to  add  autoselecting  to  directory windows  (unless
-  someday  the above-mentioned  fileselector  is  implemented).  This  would
-  conflict  with the implementation of keyboard shortcuts (and much else) in
-  TeraDesk.  
+  MyAES has this feature and, an maybe XaAES can get it too.
 
  
 
@@ -329,6 +332,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
  
  
                                             Djordje Vukovic 
-                                            Beograd; August 27th 2005 
+                                            Beograd; December 3rd 2005 
  
  

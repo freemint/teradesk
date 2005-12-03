@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"  
 @database "User Manual for TeraDesk"  
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  
-@$VER: August 2005  
+@$VER: December 2005  
 @width 70  
 @default Main  
   
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}  
 
 @autorefoff  
-                  User's Manual for TeraDesk V3.62  
+                User's Manual for Tera Desktop V3.70  
                        
              Wout Klaren, Henk Robbers, Djordje Vukovic  
   
-                             August 2005  
+                           December 2005  
                             
 @autorefon  
 
@@ -28,7 +28,7 @@
     5  Icons and Objects 
     6  Symbolic Links
     7  TeraDesk Windows  
-    8  Configuration files  
+    8  Configuration Files  
     9  Supported Protocols  
    10  Acknowledgements  
   
@@ -91,8 +91,7 @@ and  Djordje Vukovic, comprising a number of new features.
 Versions  3.* are the result of continued cooperation of H.Robbers and  
 Dj.Vukovic;  they are a significant  further improvement of TeraDesk's  
 functionality, the program having undergone an extensive redesign.  
-  
-  
+    
 The program may  be  copied and distributed freely  provided  that the 
 terms of the GPL (see accompanying file COPYING) are respected. If the  
 program is  distributed  by a PD library,  only the  costs of the disk
@@ -102,7 +101,7 @@ Tera Desktop files (included in the binary distribution) are:
   
              COPYING          Copy of the GPL  
              DESKTOP.PRG      The Tera Desktop program  
-             DESKTOS.PRG      Reduced version for single TOS only  
+             DESKTOS.PRG      Smaller version for single TOS ONLY  
              DESKTOP.RSC      English resource file  
              DESKTOP.RSD      English resource definitions file  
              ICONS.RSC        Monochrome icons resource file  
@@ -115,7 +114,7 @@ Tera Desktop files (included in the binary distribution) are:
              TERADESK.PAL     Sample palette file 
 
 There also exists  a source distribution  which contains  the complete
-source tree of TeraDesk, to be compiled and linked with PureC 1.1
+source tree of Tera Desktop, to be compiled and linked with PureC 1.1
  
 @endnode  
   
@@ -147,7 +146,7 @@ source tree of TeraDesk, to be compiled and linked with PureC 1.1
   
 @{U}1.2.1  Hardware requirements                                  TeraDesk@{u}  
   
-Tera Desktop  can  be  used on any Atari ST series  computer and their  
+Tera Desktop  can be  used on any Atari ST series  computer  and their  
 offspring, TT, Falcon, Hades, Milan or emulators. It uses about 200 to 
 300 KB of memory (depending on the complexity of configuration). 
 
@@ -159,11 +158,11 @@ use of one is strongly recommended.  On machines without  a hard disk,
 but with enough memory,  a reset-proof RAM-disk can be used to contain
 TeraDesk files, which will speed statup considerably.  
 
-It should be noted that Tera Desktop is not  well optimized for use on
-machines with only one floppy drive and no hard disk.  File copying in 
-TeraDesk is done file-by-file, which, when copying files from one disk
-to another on a computer with only one drive,  will mean a lot of disk 
-swapping. 
+It should be noted that Tera Desktop is not  well optimized, regarding
+file operations, for use on machines with only one floppy drive and no
+hard disk.  File copying in TeraDesk is done file-by-file, which, when
+copying files from one floppy disk to another  on a computer with only
+one disk drive, can mean a lot of disk swapping. 
 
 Tera Desktop has not been tested with ROM-port cartridges which behave
 as drive 'c' (lowercase C). It can be expected that such 'drive'  will 
@@ -276,10 +275,16 @@ XaAES or MyAES), occasional unwanted behaviour  may occur  because  of
 some features of these AESes  which are not yet fully functional. Such
 issues usually get resolved with new releases of the AESes.
 
-If TeraDesk is used on an emulator,  some of its  functionality may be
+If TeraDesk is used  on an emulator,  some of its functionality may be
 lost because of sometimes incomplete emulation. Such cases may include
 e.g. not recognizing certain keyboard key codes,  or not being able to 
 show directories in 'unsorted' order.
+
+Users should beware  that  the current version of  Tera Desktop  has a
+limitation that the number  of items in a directory,  or the number of
+selected items in a directory tree  should not exceed 32767,  and that
+total size of items in a directory or in a selection should not exceed 
+2GB. 
  
 See also  Screen resolutions  
   
@@ -398,7 +403,7 @@ root directory of a disk volume.
 2. Copy into this folder the files:  
   
        DESKTOP.PRG  (if  you  intend  to use multitasking)  OR   
-       DESKTOS.PRG  (if you  will  work  in  Single-TOS  only)    
+       DESKTOS.PRG  (if you  will  work  in  Single-TOS  ONLY)    
        DESKTOP.RSC    
        ICONS.RSC    (if you will use monochrome icons) AND/OR  
        CICONS.RSC   (if your AES can support colour icons)   
@@ -407,15 +412,18 @@ Note  that  DESKTOP.PRG  will  work in single-TOS as well; DESKTOS.PRG
 just  saves  a  few  kilobytes of memory  by not containing code which 
 is not relevant in  Single-TOS environment,  and by  having a somewhat 
 limited support for The AV Protocol  (AV-protocol functions not likely
-to be used in Single-TOS are removed). 
+to be used in  Single-TOS  are removed).  Beware that  the  single-TOS 
+version may not properly interpret some configuration files created in
+the  multitasking  version, e.g. if they  contain  any  references  to 
+Symbolic Links.
 
 If only DESKTOS.PRG is  to be used,  it may be renamed to  DESKTOP.PRG 
-after copying,  but this is required only if  AV-protocol clients will 
-be used.
+after copying,  but this  is not required.  The program will  register 
+itself with the AES as "DESKTOP" anyway. 
   
 You can  (but need not) also copy  into this folder  the configuration 
 files TERADESK.INF and  TERADESK.PAL  from the  \EXAMPLES folder. Note
-that these files  are set  for one particular computer  configuration, 
+that these files are set for one hypothetical computer  configuration, 
 and may not  be appropriate for your setup  (Tera Desktop will attempt 
 to  obey all that is  specified  in the configuration file,  no matter 
 what the  actual  environment is,  e.g. the example  TERADESK.INF  has 
@@ -454,7 +462,7 @@ it  to the trash bin. The created  .INF file  will have  the format of
 TeraDesk 3.0 and there will be a couple  of warnings about  some minor
 differences when it is read by a newer version of TeraDesk. 
 
-See also  Configuration files  for more details.  
+See also  Configuration Files  for more details.  
   
 CFG2INF.PRG utility is not supported by the source code after TeraDesk 
 Version 3.01.
@@ -518,11 +526,11 @@ shell specified in  this directive,  but will use  its  default shell
 only by editing MAGIC.RAM.
   
 7. Some versions of AES (e.g. Geneva 4) declare themselves  as capable
-of handling colour  icons, but that capability  doesn't seem  to work. 
-In such cases,  CICONS.RSC  file should be removed, and  TeraDesk will 
-fall back to  monochrome icons.  Colour icons file can also be removed 
-in other  environments  if there  is a need  to preserve  as much free 
-memory as possible.
+of handling colour  icons, but fail to work with Tera Desktop. In such
+cases, CICONS.RSC file should be removed, and  TeraDesk will fall back
+to  monochrome icons.  Colour icons file can also be removed  in other
+environments  if there  is a need  to preserve  as much free memory as
+possible.
 
 8. The icon files supplied contain basic sets of icons only. Users are
 encouraged to create  their own, more extensive, icon files.  They can  
@@ -541,7 +549,7 @@ present in the icons resource file(s):
 See also  The icons files.
 
 9. Some aspects of Tera Desktop's  behaviour can be  (or may be in the
-future) controlled  through the environment variable  TERAENV,  mostly
+future) controlled  through the  environment variable TERAENV,  mostly
 because they have to be set before any configuration files are loaded. 
 The value  of  TERAENV  variable  should consist  of  uppercase-letter 
 flags. Currently, only flags 'A' and 'D' can be used, as in:
@@ -594,15 +602,15 @@ desktop as described  in the  user manual supplied  with the computer.
 Tera Desktop attempts to follow, within reason, the conventions set by
 the built-in TOS desktop.
   
-2. We  shall often mention the  procedure of 'Selecting' an object. By 
-this  we  mean the act of placing the mouse on the object and clicking 
-the  left  button  once.  The  display  of the Object should change to 
+2. The  procedure of 'Selecting' an object will often be mentioned. By 
+this is meant  the act of placing the mouse on the object and clicking 
+the  left button  once.  The display  of the Object  should  change to 
 reverse  video, or, if the object is represented by an animated colour 
 icon,  to the 'selected' form of the icon. Many icons and some objects 
 in  dialog  boxes can also be selected by pressing certain keys or key 
 combinations.  
  
-If  you  select a second object while the first is still selected, the 
+If you select  more objects  while the first  is still  selected,  the 
 first  is  deselected  -  UNLESS  you  held  down  [Shift]  key  while 
 selecting them; in that way you can select several objects. 
   
@@ -613,12 +621,17 @@ you  can enclose other objects. When you release the mouse button, all
 the  enclosed  objects  are selected. Note that all the objects in the 
 box  are  selected,  even though not all are visible. This is relevant 
 if you scroll the contents of a window at the same time.  
+
+Objects in a topped  directory window  can also be selected  using the 
+@{autoselector link "Directory windows"}:  as the user starts typing object names on the keyboard,
+items with names  conforming  to the pattern  <typed characters>*.* or
+(depending on context) <typed characters>.* or <typed characters>* are
+automatically selected in the window. See Directory windows. 
  
 3. We shall also refer to 'Opening' a file.  This generally means that 
 you  place  the  mouse  cursor on the file (in a directory) and double 
 click  with  the  left mouse button. Files can also be opened by first 
-selecting  them,  and  then  selecting  'Open' from the '@{'File' link "Menu title: File"}' 
-menu.  
+selecting them, and then selecting Open... from the @{File link "Menu title: File"} menu.  
  
 4. We  shall  refer to keys  with square brackets enclosing the symbol 
 written on the key itself. e.g. [Return], [Q] etc. 
@@ -703,7 +716,7 @@ extension,  anything you enter in the parameter dialog box is ignored.
 Conversely  a GTP or TTP type program which has not been provided with  
 the parameters it expects, may not work properly.  
   
-See also:  Set applications...  Set program types...  
+See also:  Set applications...  Set program types...  Open...
 The program type dialog  The command line dialog
   
 @endnode  
@@ -722,7 +735,7 @@ There  are  several  ways  in  which  you  can invoke (run, execute) a
 program both from the standard desktop and from Tera Desktop.  
   
 1.  Perhaps the most common method of starting a program is to open it 
-by  double  clicking  on  its  name  or  icon in a directory window. A 
+by double clicking on its name or icon in one of  Directory windows. A 
 parameter dialog box is displayed for GTP and TTP files. 
   
 2.  Another method is to set up an icon for the program on the desktop 
@@ -767,12 +780,13 @@ resolves this issue in the following way:
 - If the selected program/application  is already running, then:
   . If a document is selected, as in methods #5 and #6 above, its name
     is always sent to the already-running application.
-  . In all other cases  Tera Desktop  asks  whether  to start  another
-    instance of  the same application.  If a confirmatory  response is
-    given,  a new insance  of the application  will be started and any
-    parameters present  will be sent to it.  If a negative response is
-    given,  any parameters  existing will  be  passed  to  the running
-    application.
+  . In all other cases,  and also if a document  has been dragged to a
+    program icon (as in method #6 above) while holding the [Alternate]
+    key pressed, Tera Desktop asks  whether to start  another instance
+    of the same application.  If a confirmatory response  is given,  a
+    new instance of the application will be started and any parameters
+    present  will be sent to it.  If a negative response is given, any
+    parameters existing will be passed to the running application.
                                             
 See also  Set applications...
   
@@ -902,18 +916,18 @@ command line parameters  are sent to an  already-running  program; see
 Running a program). If more than one object is selected,  and TeraDesk
 operates in single-TOS,  no more items will be opened  after a program
 is started. In a multitasking environment there is a delay of a couple 
-of seconds  between each being started,  to allow  the started program 
-to configure itself, shrink used memory, etc.
+of seconds  between each program being started,  to allow  the started
+one to configure itself, shrink used memory, etc.
 
 If the object  is a file,  and  that filetype  has been  assigned as a  
 document type  to an application, that application is started, and the  
 selected file is opened, as above.  If the  appropriate application is
 already running,  an attempt  is  first  made  to send the filename to 
-that application using the VA_START message.
+that application using the VA_START message (see The AV protocol).
         
 If the object is a symbolic link,  it is always followed to the target
 object,  and the action  appropriate  for the target is commenced,  as 
-above. 
+above (see Symbolic Links). 
 
 If the object is neither a program nor a file  which has been assigned 
 to an application, a dialog with opening options is displayed:  
@@ -936,15 +950,15 @@ to an application, a dialog with opening options is displayed:
   either  by single-clicking  upon an application  in the listbox, and
   then by clicking 'OK' or by double-clicking upon  an application, in
   which case the dialog is immediately closed.  If the  setup for  the 
-  selected  application  is edited,  the  object's file(type)  can  be 
-  assigned as a documenttype for this application,  in which case this
-  file type  will  in  the future  always  be opened  with  the chosen 
-  application. 
+  selected  application  is edited,  the  object's name or type can be 
+  assigned as a documenttype for this application  (object's name will
+  be preset in the dialog),  in which case this  file type will in the
+  future  always  be opened  with  the chosen application. 
 
 The dialog  with opening options also appears if  an object is  opened 
 while holding the [Alternate] key pressed. 
 
-  If no objects  are selected,  a dialog opens  in which  the path and   
+If no objects  are  selected,  a dialog opens  in  which  the path and   
 name of the object can be entered in the '@{"scrolled editable field" link "Scrolled text fields"}'. TeraDesk tries to divine the type of the   
 item  so  specified:  a  file,  a folder, an application or a document  
 assigned  to an application, and acts accordingly, as presented above.  
@@ -958,6 +972,12 @@ a selection. A double click by mouse has the same effect.
 Name of the last object opened and the trailing command  are preserved 
 in the dialog between calls of this dialog,  until another application
 has been activated.  
+
+If object name or  any of the parameters  in the command line contains 
+spaces, that name/parameter should be entered between a pair of single
+or  double quotes  (the ' or "  characters).  If a  command line is to 
+contain the quote character, two consecutive quotes should be entered.
+   
 
 @endnode  
   
@@ -1021,7 +1041,7 @@ link will in fact be deleted and a new one created.
 volume  label,  the  number  of files and folders on it, the number of  
 used  and  available bytes, the total free space on it and the cluster  
 size  will be displayed. If the disk is empty, it is possible that the  
-total  space  and  the  free space will be different; this is due to a  
+total space  and  the free space  will be different;  this is due to a  
 bug in TOS.  
   
 5.  If  no  object  has  been  selected,  Tera Desktop   will  display 
@@ -1080,7 +1100,11 @@ By  selecting  this  item  you  can  name  and  create  a  new  folder
 single object is selected when this menu item is activated, a symbolic
 link to the selected object will be  created in the current directory.
 Note that the latter option  will be enabled only  if the  file system 
-and the operating system support symbolic links. 
+and the operating system support Symbolic Links. 
+
+When creating symbolic links, TeraDesk will offer a name for the link
+in the form Link_to_<selected object name>; the user can edit this to
+his liking.
   
 See also:  Scrolled text fields  Symbolic Links  
   
@@ -1102,7 +1126,7 @@ Tera Desktop  has the capability   to compare  contents of files. When
 this menu  item  is selected,  a dialog appears  in which the user can 
 enter the names of two  files to  be  compared. If  this  menu item is 
 selected  when  either  one  or  two files  are  already  selected  in 
-directory windows,  the names of those files will  be entered into the 
+Directory windows,  the names of those files will  be entered into the 
 dialog automatically. 
 
 If [Insert] key is  pressed while  the cursor is  in any  of  the  two 
@@ -1178,7 +1202,7 @@ If a match is found the Info... dialog is opened showing specification
 of  the  found  object.  If  a  search  string has been  entered, file
 contents surrounding the found string are displayed;  to  save  space,
 the  string  itself  is replaced by [...]  so that more  of  the  text
-preceding  and  following the string can be displayed. Note  that some
+preceding  and following  the string can be displayed.  Note that some
 characters  which  would  corrupt  the  formatting   of the  displayed
 text are replaced by a substitute- the [Del] character  which  in most 
 fonts is represented by a small triangle.  
@@ -1248,10 +1272,10 @@ appear in which additional printing options may be set:
 In the current version of Tera Desktop,  all printing  is done through 
 GEMDOS, using the Cprnout() function.
    
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
-in this TOS version.  In that case it will be available only through a
-keyboard shortcut.
+in this  TOS version.  In that case it will be  available only through
+Keyboard shortcuts.
 
 See also:  TOS Version compatibility  Screen resolutions
   
@@ -1269,19 +1293,25 @@ See also:  TOS Version compatibility  Screen resolutions
   
 @{U}4.2.7  Delete...                                              TeraDesk@{u}  
   
-If  anything  that is a real file or folder is selected, this menu can  
-be used to delete the selected items.  Note that write-protected items  
-can not be deleted (see Info...).
+If  anything  that is a folder, a file or a symbolic link is selected,
+this menu can  be used to delete the selected items. Note that write-
+protected items  can not be deleted  until  the protection is removed
+(see Info...).
 
-If a symbolic link is selected,  either the link itself or  the target
-object can be deleted.  
+In the Copy and print... options  dialog  the user can  set  whether a
+confirmation dialog  will appear  when a delete  is attempted.
+
+If a  symbolic link  is selected  for deletion  (see  Symbolic Links),  
+either the link itself or both the link and  the referenced object can
+be deleted,  depending on  the state of the  'Follow links'  option in
+The copy info dialog: if it is set,  both the selected  symbolic links 
+and the referenced objects will be deleted;  otherwise, only the links
+will be deleted (option is available only in Mint and Magic). 
   
-You can modify the behaviour of the operation in the Copy and print...   
-options dialog-  set whether  a confirmation dialog  will appear  when
-a delete  is attempted,  and whether  the links  themselves  should be 
-deleted or followed to the referenced items. 
+The effect of  Delete...  action is identical to dragging the selected
+objects to the trashcan.
  
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
@@ -1329,17 +1359,17 @@ sides, tracks and sectors.  Beware that this checkout may prevent copy
 of some  specially formatted  floppy disks which  may not  have proper
 boot sectors.
   
-For copying, a buffer of the size specified in Copy and print...  will
-be used.  
+A buffer of the size specified in  Copy and print...  will be used for
+copying.  
   
 If  this  operation  is  used  in a multitasking environment  (Mint or 
-Magic),  an attempt  is made  to lock the  floppy drive  device before 
+Magic),  an attempt  is made  to lock the  floppy drive device  before 
 commencing copying. 
   
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 of the menu size in this TOS version.  However,  in such cases  it can
-still be accessed through a keyboard shortcut.
+still be accessed through Keyboard shortcuts.
 
 See also:  TOS Version compatibility  Screen resolutions
 
@@ -1373,11 +1403,11 @@ The dialog offers a number of formatting options:
   will modify the basic format  (editable only after  selectig a basic
   format):  
   
-    number of sides  
-    number of tracks  
-    number of sectors per tracks  
-    root directory size  
-    volume label  
+    .number of sides  
+    .number of tracks  
+    .number of sectors per tracks  
+    .root directory size  
+    .volume label  
       
 If  format operation  is used  in a multitasking environment  (Mint or 
 Magic),  an attempt  is made  to lock  the floppy drive device  before 
@@ -1464,15 +1494,22 @@ folders and files in a directory are displayed in a window.
   
 @{U}4.3.1  Show as icons                                          TeraDesk@{u}  
   
-When this option is ticked, files and folders in directory windows are
+When this option is ticked, files and folders in Directory windows are
 shown as icons. When the option is not ticked, they are shown as text. 
   
+In icon mode, names of all directory icons will be cramped  to no more
+than 12 characters (maximum length of icon labels).  Icons of 'hidden'
+items  will be shown faded  (for the time being  only if  white window
+background is selected).  Icons of Symbolic Links  will be marked with
+a "check" mark.
+
 In  text mode,  item size in bytes, the creation date and time and the 
 file attributes or access rights can be shown beside the file name. 
   
-Which of the  above optional  items  are  shown is  determined  by the 
-Show options in this menu. 
-  
+Which of these optional information items are  shown is determined  by
+the Show options in this menu. 
+
+See also: The icon selector dialog  Set window icons...  
 @endnode  
   
 
@@ -1488,7 +1525,7 @@ Show options in this menu.
 @{U}4.3.2  Auto arrange                                           TeraDesk@{u}  
   
 When this option  is selected,  TeraDesk will  attempt to optimize the 
-use of screen area when displaying directory windows. This means that:
+use of screen area when displaying Directory windows. This means that:
 
 - In text mode (see Show as icons) the directories may be displayed in 
   one or several  columns,  depending on  screen width  and the length
@@ -1500,7 +1537,7 @@ use of screen area when displaying directory windows. This means that:
   
 - In icon mode the directories are displayed with icons rearranged  to
   fit the current  widths  of  the windows.  Horizontal  scrolling  of
-  the windows is not possible, nor needed.
+  the windows is neiher possible, nor needed.
   
 When this options is deselected:
 
@@ -1548,11 +1585,13 @@ first the largest and newest files. See also  Reverse order.
 If  you  select  'View unsorted',  items are displayed in the order in 
 which  they were stored on the disk; note that this is not necessarily 
 the  same as  the order of  their creation,  but  depends also  on the 
-history of additions and deletions in the particular directory. 
+history of additions and deletions in the particular directory. Beware
+that this option may not work in some filesystems, or when TeraDesk is
+used on some emulators.
   
 The mode selected applies to all open windows.  
 
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, 'View unsorted'  menu item may not be visible, because of the 
 limitations in this TOS version. 
 
@@ -1572,7 +1611,7 @@ See also:  TOS Version compatibility  Screen resolutions
   
 @{U}4.3.4  Reverse order                                          TeraDesk@{u}  
   
-Normally,  items in directory windows of  TeraDesk  are sorted  in the 
+Normally,  items in Directory windows of  TeraDesk  are sorted  in the 
 ascending order,  with all subfolders of the displayed directory being
 displayed first. If 'Reverse order' option  is checked  this behaviour
 will be reversed.  This also applies to subfolders which will be shown
@@ -1580,7 +1619,7 @@ at the end of the list of visible items.
     
 The mode selected applies to all open windows.  
 
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, 'Reverse order'  menu item may not be visible, because of the 
 limitations in this TOS version. 
 
@@ -1610,16 +1649,16 @@ ticked.
          4.   Show attributes
          5.   Show owner  
   
-Selection applies to all open directory windows.  
+Selection applies to all open Directory windows.  
   
 Size is shown in bytes. 
 
-Date is shown in dd-mm-yy (day, month, year) format.
+Date is shown in the 'dd-mm-yy' (day, month, year) format.
 
-Shown item attributes are marked as follows:  
+Shown item attributes are marked by single characters as follows:  
   
-              d        directory  
               -        permission not granted or attribute not set.  
+              d        directory  
   
             For TOS (FAT) file system(s):  
 
@@ -1642,10 +1681,10 @@ Group and user id's of  item owner  are shown  as two 4-digit  integer
 numbers,  with leading zeros displayed.  This option is not visible in
 single-TOS.                
   
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0,  these  menu  items   may not  be  visible,  because  of  the 
 limitations in this TOS version.  In that case they are still settable
-through keyboard shortcuts.
+through Keyboard shortcuts.
 
 See also:  TOS Version compatibility  Screen resolutions
 
@@ -1674,7 +1713,14 @@ existing mask or add a new one to the list. See The listbox dialog.
   
 The  selected  mask  ONLY  applies  to  the directory window  that was 
 current (topped) when this item was selected.  See also  Conventions.
- 
+
+If a mask is not set for some directory window, Tera Desktop will use
+the default mask. In Single-TOS, the default catch-all mask is '*.*';
+in multi-tasking environments with looser restrictions on names it is
+just '*'. An explicitely set mask for a directory window can be reset
+to default  by clearing  the editable  field  in the dialog  and then 
+clicking 'OK'.
+
 Alongside a name mask, four other masking options can be chosen.  
   
      Hidden              show hidden files  
@@ -1682,12 +1728,15 @@ Alongside a name mask, four other masking options can be chosen.
      Subfolders          show subfolders  
      Parent              show the .. (parent) virtual folder  
        
-These selections are global, i.e. they apply to ALL directory windows.
+These selections are global, i.e. they apply to ALL Directory windows.
 
 A complete filename can be specified  for the mask as well,  either by
 entering it manually, or by selecting a name in a directory window and
 then opening this dialog.
        
+Beside the name mask, one can use  the autoselector in order to locate
+items in a directory window. See also: Conventions  Directory windows
+  
 @endnode  
  
  
@@ -1819,12 +1868,12 @@ move or delete the windows which cover it.
 
 If an application has  signed-on itself as an  AV-protocol client,  it
 may include its windows in the  TeraDesk's  list  of windows;  in such 
-cases, the 'Cycle windows' command  applies to the client's windows as 
+cases, the windows cycling command  applies to the client's windows as 
 well. Note that some AV-protocol clients send ^W as a simulation  of a
 keyboard shortcut command to cycle windows.  This originated  from the
-Gemini desktop which uses  ^W as the shortcut for  'Cycle windows' but
+Gemini desktop which uses  ^W as the shortcut  for cycling windows but
 is not  very suitable for  an  environment with  configurable keyboard 
-commands and may interfere with other defined keyboard shortcuts. 
+commands and may interfere with other defined Keyboard shortcuts. 
  
 See also  Supported Protocols
 
@@ -1902,24 +1951,38 @@ them from the name and location of a file selected in a window, are:
   The  symbols  %f, %n and %p have  a special meaning  when entered in 
   the command line: 
   
-  %f - This is replaced by the path  (including drive, directory and 
-  name) of the application file.  
+  %f - This is replaced by the full path  (including drive, directory 
+       and file name) to the application document's file(s).  
   
   %F - Same as %f, however file names are converted to lower case.  
 
-  %n - This is replaced by the application document's file name.  
+  %n - This is replaced by the document file name(s) only.  
   
   %N - Same as %n, however file names are converted to lower case.  
   
-  %p - This is replaced by the application document's path.  
+  %p - This is replaced by the application documents' path(s).  
   
-  %P - Same as %p, however path names are converted to lower case.  
+  %P - Same as %p, however path names are converted to lower case. 
+  
+  In most cases, only one of these symbols  should be specified in the
+  command  line;  it will  be  applied  to  all  the names  passed  as
+  parameters to the application.  If more  than one  control symbol is
+  placed in the command line, each of them will be applied  to all the
+  names passed as parameters.  
+  
+  If any of the parameters  in the command line contains spaces,  that
+  parameter  should be  entered between   a pair of  single  or double 
+  quotes  (the ' or " characters).  If the command line  is to contain 
+  the quote character, two consecutive quotes should be entered.
    
 - Local environment string  to be  passed to the application:
   Several environment variables can be specified in this string, using
-  the format:  VAR1=VAL1 VAR2=VAL2  etc.  i.e.  assignments  separated
-  by blanks but without  blanks around '='.  Note that this capability
-  may not be functional in an identical way in all AESes.
+  the format:  VAR1=VAL1 VAR2=VAL2  etc.  i.e.  assignments  should be
+  separated by blanks but without  blanks  around '='.  Note that this
+  capability may not work in an identical way in all AESes.
+  
+  Enviroment variables  containing  spaces or  quote characters should
+  be  specified using the same rules as used for the command lines.
   
 - Function key upon which the application can be started:  
   Numbers  1 to 10 correspond the the [F1] to [F10] keys  and 11 to 20 
@@ -1936,11 +1999,12 @@ them from the name and location of a file selected in a window, are:
   . Shutdown            (more than one application can be marked)
   . Resolution change   (only one application can be marked)
   . File search         (only one application can be marked)
+  . File comparing      (only one application can be marked)
   . Floppy format       (only one application can be marked)
   
   Applications specified for viewer, shutdown, resolution change, file
-  search and floppy format will,  if specified,  substitute TeraDesk's 
-  internal routines.
+  search,  file comparing  and floppy formatting  will,  if specified,  
+  substitute TeraDesk's internal routines.
   
   Applications flagged as 'Autostart' are executed  automatically when
   TeraDesk starts.  There is  a delay of  a couple of seconds  between
@@ -1971,12 +2035,6 @@ them from the name and location of a file selected in a window, are:
   program  and  at  the same time  pass  the  name  of the application 
   document to the program as a parameter. You do this by  double click
   on an application document whose file name matches the mask. 
-  
-  This  can be very  useful  and  save much time if, for instance, the 
-  program  is an editor.  Just opening a document file will enable you
-  to edit the document without the necessity of having to double click
-  on the program and then enter the document file name by hand or from
-  the file selector. 
   
   It is important to note that a file matching the mask on the list of 
   any of the programs cannot be printed or displayed  on the screen by 
@@ -2025,7 +2083,7 @@ If you add  or edit a name mask,  The program type dialog box  will be
 shown in which you must define the file type and and other information
 for the program type being defined. 
   
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
@@ -2082,11 +2140,12 @@ the  desktop  simply by dragging  them  from their directory onto  the
 desktop.  An alternate  method  is  to select one or more  items  in a  
 directory  window  and  then  select  Set desk icons...  In this  case
 The icon selector dialog dialog will open enabling you to change icons
-assigned to selected items.
+assigned by default to selected items.
 
-When a desktop icon represents  a directory item,  the dialog displays
-an editable text field (see  Scrolled text fields) into which the path
-to the item corresponding to the icon can be entered. 
+When a symbolic link is  selected  (see  Symbolic Links),  the desktop
+icon to be created can represent either the link itself, or the object
+it is referencing, dpending on the state of the  'Follow links' option
+in the dialog (available only in Mint or Magic).
 
 The default form of a  desktop icon is decided  by Tera Desktop  which 
 determines it according to item nature. If a  window icon  has already
@@ -2095,6 +2154,10 @@ Subsequent changing  of window icon assignments  will not affect icons
 already placed  on the  desktop.  Subsequent changing of  desktop icon
 assignments will not affect window icon assignments either.
                                                                                  
+When a desktop icon represents  a directory item,  the dialog displays
+an editable text field (see  Scrolled text fields) into which the path
+to the item corresponding to the icon can be entered. 
+
 When a  disk-type icon  is placed  on the desktop  without  specifying
 its label,  TeraDesk tries to read  the volume label for the specified
 partition, and, if it succeeds, sets this text as the icon label.
@@ -2112,7 +2175,7 @@ delete the selected items.  If 'Remove' is chosen, the selected  icons
 will be removed. If 'Delete' is chosen, actual directory items will be
 deleted. 
 
-See  The icon selector dialog
+See also: The icon selector dialog  Set window icons...  Show as icons
 
 @endnode  
   
@@ -2131,7 +2194,7 @@ See  The icon selector dialog
   
 With  this  menu  item you can determine the way files and folders are 
 displayed  when they are represented  as icons (see  Show as icons) in 
-directory windows.  
+Directory windows.  
  
 When  you select it, The listbox dialog is displayed. One of the three
 window icon lists  can be  selected  for viewing  or editing: 'Files',
@@ -2153,7 +2216,7 @@ appear (icon group will be set according to item type). This gives you
 a chance to assign icons in a way similar to that  existing in the TOS
 desktop.  Only one item at a time can be handled this way.
 
-See  The icon selector dialog
+See: The icon selector dialog  Set desktop icons...  Show as icons
   
 @endnode  
 
@@ -2171,8 +2234,12 @@ See  The icon selector dialog
   
 @{U}4.5.5  Desk preferences...                                    TeraDesk@{u}  
   
+  
+This dialog enables the user to adjust  some options which affect the 
+overall look of Tera Desktop: 
+ 
 - Set the dialog box display mode:  
-  Dialog boxes  can be drawn in  one of  two modes.  Each mode has its 
+  Dialog boxes  can be drawn in  one of  two modes. Each mode has its 
   advantages:  
   
      1. Flying (or buffered) mode:  
@@ -2219,12 +2286,10 @@ See  The icon selector dialog
   Atari keyboards,  some key combinations  can not be differentiated  
   from some others, and some will be recognized as illegal.   
   
-- Set the default tabsize:  
-  
-  The number of blank column  produced in a text window  when a 'Tab'  
-  is encountered.  This is the global setting;  Tab size for each of   
-  the Text windows can be set in the menu of that window.  
-  
+- Set the automatic desktop saving option:
+  If this option is selected,  TeraDesk  will save its configuration
+  upon each exit from the program by the Quit/Shutdown menu action.
+ 
 @endnode  
   
   
@@ -2252,11 +2317,10 @@ box is displayed. In this you can:
   
 4. Toggle confirmation of print operations.  
 
-5. Set whether links whould be followed  in copy and delete operations 
-   or  whether  the  operations  should  be  performed  on  the  links
-   themselves. 
-  
-6. Control whether The copy info dialog will appear.  
+5. Control whether The copy info dialog will appear. 
+
+6. Control whether selected items remain selected after a  copy action
+   is finished. 
   
 7. Control the printing  of headers  and separators  before/after each
    item being printed  
@@ -2307,16 +2371,25 @@ or view windows.  You must  first select  'Directory  font' or 'Viewer
 font'.  The font selector dialog  will appear to choose  desired font,
 its size and colour. Currently, only monospaced fonts are considered. 
 
+6. Specify the size of tabs when text is displayed in Text windows.
+
+7. Set whether open windows are to be saved in the configuration file.
+
 Number of available patterns is limited to eight. There is no limit on
 the number of colours,  but selection will be limited to the number of
 colours available in the current video mode. In order for the patterns
 to be visible in the selector boxes,  colours other than white must be
 selected.
 
-If you  are  running TeraDesk in low or medium  screen resolution  and
+Tab size field permits setting of the number of blank column  produced
+in  Text windows  when a  <TAB>  character is  encountered.  This is a 
+global setting;  Tab size for each of the  text windows can be  set in 
+the menu of that window.  
+ 
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this  TOS version.  However, in that case  it can still  be reached 
-through keyboard shortcut.
+through Keyboard shortcuts.
 
 See also:  TOS Version compatibility  Screen resolutions  
   
@@ -2360,7 +2433,7 @@ and the OS on which TeraDesk is running.
        palette  without  restoring it  at exit.  If  this  options  is
        selected, the palette is also saved to a file  TERADESK.PAL  or
        restored from this file whenever a configuration file is saved/
-       restored. See Configuration files.  
+       restored. See Configuration Files.  
   
     2. Toggle a switch to activate/deactivate the blitter chip. If the  
        blitter chip is  not available, this  option  is  disabled. The 
@@ -2393,7 +2466,7 @@ corruption which  might have been caused by a misbehaving program.  As
 in such cases  this dialog may not  be properly displayed,  typing the
 key sequence [Keyboard shortcut][Return] will have the same effect.
 
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
@@ -2424,8 +2497,19 @@ the configuration file of TeraDesk is TERADESK.INF;  depending  on the
 settings  made in  Video options... dialog, palette file  TERADESK.PAL
 may also be loaded automatically.  
 
-See also:  Save settings  Save settings as...  Configuration files
-  
+If a single file is selected in a  directory window or on the desktop,
+when activating  Load settings...  TeraDesk immediately loads the file
+without opening the file selector.
+
+If TeraDesk  (DESKTOP.PRG)  itself  is installed  in  TeraDesk  as the 
+application for TERADESK.INF and similar files  (e.g. TERA*.INF), then
+such a configuration file can be double-clicked upon  in order to load
+it.  If DESKTOS.PRG  is used,  DESKTOP.PRG has  to be installed as the 
+application anyway (not DESKTOS.PRG).
+
+See also:  Save settings  Save settings as...  Configuration Files
+Set applications... 
+
 @endnode  
   
 
@@ -2442,11 +2526,11 @@ See also:  Save settings  Save settings as...  Configuration files
 @{U}4.5.10  Save settings                                       TeraDesk@{u}  
   
 If  you select  this menu item,  you can save all the current settings 
-to a file call TERADESK.INF and, optionally,  save the current palette 
+to a file named TERADESK.INF and, optionally, save the current palette 
 to a file  named  TERADESK.PAL;  this is similar to the 'Save desktop'
 function in the standard desktop. 
 
-See also: Load settings...  Save settings as...  Configuration files
+See also: Load settings...  Save settings as...  Configuration Files
   
 @endnode  
   
@@ -2467,21 +2551,22 @@ See also: Load settings...  Save settings as...  Configuration files
 If  you select this menu option you can save the current settings in a 
 file  whose  name  you  can  choose.  In this way you can have several 
 files with different settings,  perhaps to suit different resolutions,
-operating systems, work environments, etc.
+operating systems, work environments, etc.  Beware that, upon startup,
+TeraDesk always loads the file named TERADESK.INF, if it can be found.
 
 The file selector is displayed for you to enter the file name.
 
 Beware that the palette is always stored in a file named TERADESK.PAL,
 regardless of the name of the configuration file. 
   
-See also:  Save settings  Load settings...  Configuration files 
+See also:  Save settings  Load settings...  Configuration Files 
 
-If you  are  running TeraDesk in low or medium  screen resolution  and
+If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible, because of the limitations
 in this TOS version. 
 
 See also:  TOS Version compatibility  Screen resolutions
-Load settings...  Configuration files  
+Load settings...  Configuration Files  
  
 @endnode  
   
@@ -2512,15 +2597,23 @@ drive   letter,   i.e.   A   to   P   or   A   to   Z).  Pressing  the
 [Alternate][Shift][?]  combination will open the root directory of the 
 specified disk volume in the existing top window. 
   
+Pressing the [Help] key invokes a  Help dialog with brief explanations 
+of basic keyboard commands.
+
 If  [Shift][Help] key combination is pressed, TeraDesk will attempt to 
 call or start the  hypertext-viewer accessory or program (usually this
 would be ST-Guide),  if any  is installed  as  the application for the
 *.HYP filetype. The installed program should recognize the syntax used
 by ST-Guide (Tera Desktop's help is opened as "*:\TERADESK.HYP").
 
-Pressing  [Help]  key  invokes a Help dialog  with brief  explanations 
-of basic keyboard commands. 
-  
+[Undo] key can be used to deselect all objects selected on the desktop
+or in the directory windows.
+
+There is also a number of keyboard shortcuts  available which  produce 
+effects specific to certain window types. See TeraDesk Windows.
+ 
+See also: Conventions  Dragging Objects
+
 @endnode  
 
 
@@ -2612,11 +2705,11 @@ There are 5 modes:
   
 See also  Types of program files  
   
-The current directory mode can also be set:  
+The default directory for the program or program type can also be set:  
   
 Each  program  that  makes  use  of  ancillary files, like resource or 
 configuration  files,  must  be able to find these files in a specific 
-directory. This mode defines where this directory can be obtained. 
+directory. This option defines where this directory is located: 
   
     Window   the directory of the top window of Tera Desktop  
     Program  directory from which the program is started  
@@ -2720,29 +2813,38 @@ receiving the FONT_SELECT message. See The FONT Protocol
   
 If  a selection is made in the  Copy and print... options dialog  that 
 some  file  operations  should  be  confirmed,  Copy info dialog  will 
-appear. 
+appear whenever such an operation is attempted. 
   
-It  shows  the  numbers of folders and files on which the operation is 
-to  be  performed,  the  initial  source path and, if appropriate, the 
-destination path. 
+This dialog displays  the numbers of  folders and files  on which  the
+operation is to be performed,  the initial  source  path (of the first
+selected item) and, if appropriate, the  destination path. 
   
-For copy, touch and move/rename  operations, two checkbox buttons  are 
+For copy, touch and move/rename operations, three checkbox buttons are 
 shown in the dialog:  
   
-- Change date and time  
+- Renew date and time  
 - Reset attributes (and access rights)  
+- Follow links (for copy, move/rename and delete operations)
   
-If  'Change date and time'   is  set,  all files acted upon  will have 
-their date and time stamp  changed to current values  (or, in the case 
-of 'touch' operation, to values specified in Info... dialog). 
+If 'Renew date and time' is set, all files acted upon  will have their
+date and time  stamp  changed to current values (system date and time)
+or, in the case of  'touch' operation, to values specified in  Info...
+dialog). 
   
 If  'Reset attributes' is  set, attributes  (read-only,  system, etc.) 
-or access rights  (read, write...) of  all files  acted  upon  will be 
-reset to  normal values   (or, in the case of a 'touch'  operation, to
+or access rights  (read, write...) of  all items  acted  upon  will be 
+reset to  default values  (or, in the case of a 'touch'  operation, to
 values specified in Info... dialog).
 
-For print operations,  three radio-buttons and a checkbox will appear,
-permitting the user to set some printing options; see Print...
+If 'Follow links' is set, selected Symbolic Links  will be followed to 
+their referenced objects and they will be copied/moved/deleted instead
+of the links themselves  (except in deletion,  which will  remove both 
+the referenced objects and the links).  This option is  available only
+in Mint and Magic.
+  
+This dialog  can also appear  to confirm printing operations.  In such
+case,  three radio-buttons and a checkbox will appear,  permitting the
+user to set some printing options; see Print...
 
 See also:  Info...  Copy and print...
   
@@ -2782,12 +2884,18 @@ enter  the  required  parameters.  If  the  program  is  activated  by
 dragging  a  file  onto  the  program  name or icon, this box will not 
 appear. 
   
-The command line is entered through a scrolled text field. 
+The command line  is entered  through  a scrolled text field.  Maximum
+length of the command line is thus limited to about 130 characters.
 
 If [Insert] key is pressed  while the cursor is  in the editable field
 in the dialog,  the file selector will appear which can be  of help in 
 entering the data if it contains a file or folder name. A double click 
 by mouse has the same effect.
+
+If object name or  any of the parameters  in the command line contains 
+spaces, that name/parameter should be entered between a pair of single
+or double quotes  (the ' or " characters).  If the command line  is to
+contain the quote character, two consecutive quotes should be entered.
 
 If the same  .TTP or a .GTP program is started several times in a row,
 the command line is preserved (until the name of the program changes). 
@@ -2811,7 +2919,7 @@ of  a  dialog  text  field  is  limited  by  dialog  size  and  screen
 resolution. 
   
 To  overcome  this  difficulty a new object type has been implemented: 
-input  field which is able to receive more characters then can be made 
+input field  which is able to receive more characters then can be made 
 visible.  Whether  parts of the text are invisible is indicated by the 
 characters  '<' and '>' appearing around the field. Use the [Left] and 
 [Right]  cursor  keys  to scroll back and forth in the fields. In this 
@@ -2825,7 +2933,7 @@ effect.
 Dialog  fields  referring  to  file  names  will  have  a  8+3 form if 
 TeraDesk  is  run  in  an environment which does not support long file 
 names.  In  the  opposite  case  (i.e. if Mint or MagiC are detected), 
-filename forms will be longer and of the scrolled text field type. 
+filename forms will be longer and of the Scrolled text field type. 
   
 Scrolled-text fields appear in the following dialogs:  
   
@@ -2855,10 +2963,10 @@ display  them on the screen,  the  following approach  is adopted:  An
 inquiry is made  to the AES whether WHITEBAK flag in the resource file
 is supported;  if it is, TeraDesk  assumes that the  AES can  draw all 
 those  objects, and  lets  the AES do that.  In  the   opposite  case,
-TeraDesk  draws the objects. A positive side of this approach is  that
+TeraDesk  draws the objects.  A positive side  of the latter  is  that
 the appearance of those objects in TeraDesk  is in  style with objects
 drawn  by  the  AES in  other applications.  A negative  side  is that
-some objects  drawn by some  AESes look uglier than they  would be had
+some objects  drawn by some  AESes look uglier than they would be, had
 TeraDesk drawn  them.  Another  drawback  is  that  e.g. Geneva  marks 
 relevant objects  in  a different  way  than e.g. Magic or N.AES; that
 is not recognized by TeraDesk and so these capabilities of  Geneva are 
@@ -2989,7 +3097,7 @@ resource file is used.
   
 @{U}5.3  Opening objects and icons                                TeraDesk@{u}  
   
-An  object  in  a  directory window or on the desktop can be opened by 
+An object  in a directory window  or  on the desktop  can be opened by 
 double  clicking  on  it or by first selecting it and using the 'Open' 
 item in the 'File' menu. 
   
@@ -3015,7 +3123,7 @@ topmost window on the desktop.
 If  the  folder is represented by an icon on the desktop, a new window 
 containing its directory will be opened. 
   
-If  the  folder  is in a directory window, the contents of that window 
+If  the folder  is in a directory window,  the contents of that window 
 will  be replaced by the directory of the folder, as with the standard 
 desktop.  If  [Alternate]  is held down as the folder is opened, a new 
 window containing its directory will be opened. 
@@ -3055,7 +3163,7 @@ parameter.
   
   - If you opt to cancel the action, you return to the Tera Desktop.  
   
-See also:  Keyboard shortcuts  Menu title: File  Open...  
+See also:  Conventions  Keyboard shortcuts  Menu title: File  Open...  
   
 @endnode  
   
@@ -3096,7 +3204,8 @@ For the next three destinations, the source can only be a file:
 4. File -> Program  
   
 The  program  is  started  and  the name of the file passed to it as a 
-parameter (which it may ignore if it is not of GTP or TTP type). 
+parameter  (which may be ignored if the started program is not  of GTP 
+or TTP type). 
   
 5. File -> Printer  
   
@@ -3139,7 +3248,7 @@ If  the  source object was already on the desktop, it will be moved to
 a  new  position  defined  by  the  mouse position when the button was 
 released. 
   
-If  the  source object  was  in a directory window, the object will be 
+If  the source object  was  in a directory window,  the object will be 
 installed  on the desktop as an icon. Once so installed it can be used 
 as if it were in a window. 
  
@@ -3186,7 +3295,7 @@ See also  Copy and print...
   
 @{U}6  Symbolic Links                                             TeraDesk@{u}  
 
-Symbolic links are  special  files  which contain pointers to files or 
+Symbolic links are  special files  which contain pointers  to files or 
 folders which may be located  elsewhere on a disk drive. They  are not
 supported by all versions of the operationg system or the file system.
 (i.e. you have to use Mint or Magic in order to exploit symbolic links
@@ -3201,7 +3310,17 @@ Symbolic links  are deleted just like normal files and  folders.  Note
 that when a link is  deleted the object it  is referencing (target) is
 NOT deleted.  During copying and moving, links  are copied/moved,  not
 the  actual objects they are referencing.  However, this behaviour can
-be modified by checking 'Follow links' in Copy and print...
+be modified by setting 'Follow links'  in  The copy info dialog and in 
+the Set Desk icons dialog. If this option is selected,  the operations
+are  executed  on  the  referenced  objects,  not  the  links  (except 
+deleting, which removes both the referenced objects and the links).
+
+User should beware that  'Follow links'  option is  limited to objects 
+directly selected in a directory window  or on the desktop.  Any links
+in the subdirectories  of a  selected object  are manipulated as links
+(that  is,  they  are  never  followed  to  the  referenced  objects); 
+Othwerwise,  uncontrolled file operations and endless recursions might
+occur.
 
 Information on symbolic links can be read through the  Info... dialog.
 It will permit renaming  of the link  or changing  of the path  to the
@@ -3209,17 +3328,21 @@ object it  is referencing  (changing the path to the  target object in
 fact amounts to deleting the link and creating a new one).
 
 When an object  which is  a symbolic link is 'opened', the path to the 
-target is followed to establish what type  of the object it is  (file,
-folder or program). Appropriate action is then taken. 
+referenced object is followed to establish what type  of the object it
+is  (file, folder or program). Appropriate action is then taken. 
 
 When an object which is a link is passed as an argument  to a program,
-the path to the target is followed  so that the  real object name will
-always be passed. 
+the path to the referenced object is followed  so that the real object
+name will always be passed. 
 
 Note that in the current  version  of TeraDesk  this  may  not  always
 work consistently, e.g. if an object is  opened in  a folder  which is
 open in an object which  is a link to  a folder,  the  real path  will
 not be passed.
+
+Have also in mind that,  generally, Tera Desktop may in some cases get
+confused by symbolic links  referencing  symbolic links.  Creation and 
+manipulation of such objects should be avoided.
 
 When a symbolic link contains only the name of  the referenced object,
 TeraDesk will supply the path of the link itself  (and append the name
@@ -3249,12 +3372,22 @@ pressing various keys; these produce specific effects:
   
 [Shift] [Clr Home] Jump to bottom of window  
   
-[<user defined shortcut>]  Close window  
+[<user defined shortcut>]  Close window
+
+[<user defined shortcut>]  Close all windows
+
+[<user defined shortcut>]  Cycle open windows
+
+[<user defined shortcut>]  Duplicate the top window  
   
 [Cursor (arrow)]  These keys scroll the window in the direction of the 
-arrow.  If the Shift key is pressed at the same time as the arrow key, 
+arrow.  If a [Shift] key is pressed at the same time as the arrow key, 
 the  window  scroll  over  a whole page, otherwise by a single line or 
-column.  
+column. On systems using a PC keyboard, [Page up] and [Page down] keys
+have the same effect as [Shift][Cursor up] and [Shift][Cursor down].
+
+There is also a number of other keyboard commands  which are  specific
+to Directory windows or Text windows. 
  
 It  is  possible  to  'iconify'  the windows of TeraDesk in the  AESes 
 which  support that operation  (i.e. which are  AES 4  compatible). An
@@ -3283,6 +3416,8 @@ extents of the displayed material (such as window sizing, font change,
 icon/text mode change, etc.)  will reset  the  'fulled'  state  of the 
 window  and the  next click  on the  'Fuller'  will  again  cause  the
 window to be fulled to a size appropriate for the new content.
+
+See also: Keyboard shortcuts  Dragging Objects   Menus and Dialogs
   
 @endnode  
   
@@ -3303,17 +3438,47 @@ icon mode (see Show as icons).
 In text mode,  all folder names in a directory windows are preceded by
 a  special character (the 'fuller' mark), same as in the  built-in TOS
 desktop. Names of all executable files are preceded by a '-'. 
-  
+
+An  autoselector  feature is available in  directory windows;  objects
+in windows can be automatically selected when parts of their names are 
+typed on the keyboard.  Objects are selected if they conform to one of 
+the following patterns:
+
+  <typed characters>*.* (in FAT filesystem with 8+3 names only) 
+  <typed characters>.*  (in FAT filesystem with 8+3 names only)
+  <typed characters>*  
+
+As typing  characters  on  the  keyboard  may  also be  interpreted as  
+activating  a menu item  via a keyboard  shortcut,  possible conflicts
+with single-key  menu shortcuts are resolved in the following way:
+
+ - If there are no single-key menu shortcuts defined  (except [Tab] or
+   [Delete], which are permitted), autoselector is always active.
+   
+ - If single-key menu shortcuts had been defined,  autoselecor must be 
+   toggled on/off using the [Insert] key. This action disables/enables
+   the keyboard menu shortcuts in alternation with the autoselector.
+
+ - [Return] key can be used  to open the objects selected  through the
+   autoselector, because the keyboard shortcut normally assigned to
+   Open... function mey be temporarily disabled while the autoselector
+   is active. 
+     
+Autoselector is reset upon each change of the top window, or upon each 
+loading the configuration file,  or whenever [Insert]  key is pressed.
+One can use the  [Backspace]  key to delete the last character entered
+into autoselector.
+ 
 Pressing [Esc] key causes  the directory of the  top window to be read
 again and window contents to be refreshed.
 
 Files and folders dragged to a directory windows will be either copied
 or moved to that directory,  depending on the keyboard key  being held
-pressed during the operation. 
+during the operation. See Dragging Objects.
    
 Directory  windows  can  be controlled to some extent through menus or 
-keyboard  shortcuts.  See  also:  Menu title: File,  Menu title: View, 
-Keyboard shortcuts 
+keyboard  shortcuts.   See  also:  Menu title: File   Menu title: View 
+Keyboard shortcuts  Conventions
   
 @endnode  
   
@@ -3341,7 +3506,7 @@ click-down rather than a drop-down menu.
   
 The  first item, 'Tabsize' , shows a dialog box when selected. In this 
 you  can  set  the  tab size; the number of columns skipped when a Tab 
-symbol is encountered in the text. 
+symbol is encountered in the text.
   
 The second,  'Hexmode',  enables  you to toggle between ASCII mode and 
 Hex mode. When 'Hexmode' is ticked, the file is shown in hex mode. 
@@ -3349,7 +3514,7 @@ Hex mode. When 'Hexmode' is ticked, the file is shown in hex mode.
 Certain keyboard keys,  beside  those already mentioned,  have special 
 effects an a text window:  
   
-Pressing the [Space] key causes scrolling to to next page.  
+Pressing the [Space] key causes scrolling to the next page.  
   
 Pressing the [Return] key causes scrolling to the next line.  
 
@@ -3360,25 +3525,34 @@ Dragging a -single- file  to a text window will cause  the contents of
 the window to be replaced with  the contents of the dragged file (this
 can be faster than opening a new text window). 
   
-See also:  Menu title: File  Keyboard shortcuts  
+See also:  Menu title: File  Keyboard shortcuts  Window options  
   
 @endnode  
   
-@node "Configuration files"  
+@node "Configuration Files"  
 @toc "Main"  
 @image udo_fo.img 1  
    Contents  
   
-@{U}8 Configuration files                                         TeraDesk@{u}  
+@{U}8 Configuration Files                                         TeraDesk@{u}  
   
-TeraDesk 3.* can use two configuration files:  
+By default, TeraDesk 3.* uses two configuration files:  
   
 TERADESK.INF holds the complete configuration of the Desktop.  
 TERADESK.PAL holds the colour palette.  
+
+Users can  load and save  configuration files  (but not palette files) 
+with other names  using the  Load settings...  and Save settings as... 
+menu actons. 
+
+When started, Tera Desktop searches for the default configuration file
+TERADESK.INF  first  in  the  current  directory,  then  in  the  root 
+directory,  then in the directories specified by the  PATH environment
+variable, and then in the directory of the (Tera Desktop) program.
   
 The configuration files of TeraDesk V3.* are in plain ASCII text form.
 Information in the files is divided  into blocks which  are  delimited
-by { } parentheses and identified by keywords, e.g:
+by { } parentheses and identified by keywords, for example:
 
   icon=
   {
@@ -3400,12 +3574,12 @@ terminated   by  <LF>   only   (this  can  be  easily  changed  during
 compilation  of the  program).  However, TeraDesk will not complain of 
 <CR><LF> line termination either. 
 
-Although the configration files of TeraDesk 3.* are  in the text form, 
-they are NOT intended to be edited by hand, although it is possible to 
-do so. Text form of the configuration files is  a  consequence  of the 
-implementation of the 'keyword  =  value'  concept which makes it much 
-easier to test  file contents  and  to maintain compatibility  between 
-upgrades.  Editing  configuration  files  by  hand,  unless  you  know 
+The configration files  of TeraDesk 3.* are in the text form, but they
+are NOT intended to be  edited by hand,  although it is possible to do
+so.  Text form  of  the  configuration files is  a  consequence  of an 
+implementation of the 'keyword  =  value'  concept which  enables easy 
+testing  of  file contents  and  maintaining of compatibility  between 
+upgrades. Editing of configuration files  by  hand,  unless  you  know 
 -exactly-  what  you  are  doing, can cause undesired effects, or even 
 crash TeraDesk.
 
@@ -3461,7 +3635,7 @@ In  GEMDOS the length of a command line is limited  to 125 characters.
 The ARGV protocol  makes  much longer command lines possible.  This is
 done by passing the parameters through the ARGV environment variable. 
   
-A disadvantage  of the  protocol is  that many programs do not support 
+A disadvantage  of the protocol is  that many programs  do not support 
 such long command lines and may  even crash.  For this reason TeraDesk 
 enables you to switch the protocol on and off  in  Set applications...
 and Set program types...  
@@ -3471,24 +3645,27 @@ protocol:
   
 1. Install  programs  which  do not support the ARGV separately  using 
 the  'Set program types...' menu item.  Enter their  full names in the 
-list  of program mask but switch off the ARGV protocol for them.  Make 
+list of file types  and switch off the  ARGV protocol  for them.  Make 
 sure  you enter their names nearer to the top of the programtypes list 
-than any masks which they might match. 
+than any other name masks which they might match. 
   
 2. Do the reverse of 1:  Switch off the ARGV protocol for all programs 
 but enter the names of those that do separately. 
   
-Another  possibility is to install them  as applications with the ARGV 
-protocol switched off. 
+Yet another possibility  is to  install them  as applications with the 
+ARGV protocol switched off. 
 
 For program files  which  are  not installed as applications,  but for 
-which the ARGV flag is set,  this protocol is used only if the command
-line is longer than 125 characters.
+which the ARGV flag is set  (i.e. it is set for the respective program
+type),  this protocol is used only  if the command line is longer than
+125 characters.  Otherwise, the default  command-passing mechanism  of
+the operating system is used.
 
 Note that different AESes do not behave identically regarding the ARGV
-protocol,  because of slightly different behaviour of the shel_write()
-function of the  AES.  Problems may be  encountered  when  passing the 
-parameters (e.g. filenames) which contain spaces, or when passing both
+protocol,  and the  passing of  command lines  generally,  because  of 
+slightly different behaviour of  shel_write() function in those AESes.
+Problems may be  encountered  when passing  the parameters  (e.g. file 
+names) which contain spaces or quote characters,  or when passing both
 the parameters and a local environment.
 
 Functionality of the  ARGV protocol in Tera Desktop can be modified by
@@ -3496,14 +3673,12 @@ specifying the flag "A" in the environment variable TERAENV, such as:
 
     TERAENV=A
 
-which will force Tera Desktop to build a local environment  string and 
-append the ARGV variable whenever starting a program which understands
-ARGV,  regardless of the length of the command line and  bypassing the
-mechanism in shel_write(). This may help if problems are encounetered.
+which will force Tera Desktop  to bypass the ARGV-composing  mechanism
+in shel_write() and to build a local environment string  with the ARGV 
+variable appended  whenever starting a program which understands ARGV,
+regardless   of the length  of the  command line.  This  may  help  if
+problems are encounetered.
 
-Alternatively,  one may try  to specify  a  local environment  for the
-problematic  application  (the variable in  the  environment  does not 
-matter, anything may be specified, e.g. XXX=YYY).
 
 @endnode  
   
@@ -3515,7 +3690,6 @@ matter, anything may be specified, e.g. XXX=YYY).
       Supported Protocols   
 
 @{U}9.2  The AV Protocol                                          TeraDesk@{u}  
-
 
 This  (first developed  for use with  Gemini desktop)  allows  certain
 blocks  of  information  to  be  passed  between  concurrently running
@@ -3543,7 +3717,7 @@ VA_START/AV_STARTED:        Pass parameters to the client.  AV_STARTED
                             reply is ignored.
 
 AV_ASKFILEFONT/VA_FILEFONT: Ask the server about  the current font for
-                            the directory windows
+                            the Directory windows
 
 AV_ASKCONFONT/VA_CONFONT:   Ask the server  about  the current console
                             window font.  Currently  TeraDesk  replies
@@ -3606,7 +3780,7 @@ AV_COPYFILE/VA_FILECOPIED   Tell the server  to  copy  some files.  In
                             is not  fully compliant to specifications: 
                             symbolic links can not be created.
                              
-VA_PATH_UPDATE              Inform clients of a change  in a directory 
+VA_PATH_UPDATE              Inform clients of a change in a directory. 
                             In the  current implementation  the server 
                             does  not send  this  information  to  the 
                             client to which  some  other  reply  is in 
@@ -3649,7 +3823,7 @@ run into problems  with some AV-protocol clients,  and  fail with  the
 a fault of a  badly programmed  AV-protocol client.  In  some cases it 
 can be  cured  if  the memory-protection flag  in  the header   of the  
 offending AV-protocol-client is set to  'readable'  or  (if it doesn't 
-help)  to  'supervisor'  or  'global'.  Examples  of  such  cases  are 
+help)  to  'supervisor'  or  'global'.  Examples of  such programs are 
 ST-Guide and aMail.
 
 Note that the nature of the  AV-protocol is  such that  the  AV-server

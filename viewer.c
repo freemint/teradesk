@@ -74,10 +74,7 @@ static void txt_hndlmenu(WINDOW *w, int title, int item);
 
 static long txt_nlines(TXT_WINDOW *w)
 {
-	if (w->hexmode)
-		return ( (w->size + 15L) / 16 );
-	else
-		return w->tlines;
+	return   (w->hexmode) ? ((w->size + 15L) / 16) : w->tlines;
 }
 
 
@@ -103,7 +100,7 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 	 * To each line length is added the total length of tab substitutes.
 	 */
 
-	if ( hexmode == 1)
+	if (hexmode == 1)
 		return HEXLEN + 1;	/* fixed window width in hex mode */
 	else
 	{
@@ -572,6 +569,18 @@ static void txt_tabsize(TXT_WINDOW *w)
 }
 
 
+/*
+ * Aux. size-saving function- free some allocations related to text windows
+ */
+
+static void txt_free(TXT_WINDOW *w)
+{
+		free(w->lines);
+		free(w->ntabs);	
+		free(w->buffer);
+}
+
+
 /********************************************************************
  *																	*
  * Funktie voor het vrijgeven van al het geheugen gebruikt door een	*
@@ -581,21 +590,13 @@ static void txt_tabsize(TXT_WINDOW *w)
 
 static void txt_rem(TXT_WINDOW *w)
 {
-	/* in free() there is a test if address is NULL, no need to check here */
-
 	if (w != NULL)
 	{
-		free(w->lines);
-		free(w->ntabs);	
-		free(w->buffer);
-		free(w->name);
+		txt_free(w);
+		free(w->path);
 
 		w->winfo->used = FALSE;
 		w->winfo->typ_window = NULL; 
-
-/* no need ?
-		w->winfo->flags.iconified = 0;
-*/
 	}
 }
 
@@ -726,7 +727,9 @@ static void set_lines(char *buffer, char **lines, int *ntabs, long length)
 
 /*
  * Check if a character is printable.
- * This is a (sort of) substitute for the more-primitive Pure-C function.
+ * This is a (sort of) substitute for the more-primitive Pure-C function isprint().
+ * BEWARE that this function accepts an extended range of characters
+ * compared to isprint(); 
  * 
  * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf> and 'ÿ'
  * Also, characters higher than 127 (c < 0) are assumed to be printable
@@ -736,7 +739,7 @@ static void set_lines(char *buffer, char **lines, int *ntabs, long length)
  * In that case check c > 127 instead of c < 0 
  */
 
-static boolean isascii(char c)
+static boolean isxprint(char c)
 {
 	if (((c >= ' ') && (c <= '~')) || (c == '\t') || (c == '\r') ||
 		(c == '\n') || (c == 'ÿ') || (c < 0) )
@@ -751,6 +754,7 @@ extern long
 	search_nsm,
 	find_offset;
 #endif
+
 
 /*
  * Load a text file for the purpose of displaying in a window, 
@@ -892,7 +896,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 
 	/* Read complete file */
 
-	error = read_txtfile(w->name, &(w->buffer), &(w->size), &(w->tlines), &(w->lines), &(w->ntabs) );
+	error = read_txtfile(w->path, &(w->buffer), &(w->size), &(w->tlines), &(w->lines), &(w->ntabs) );
 
 	arrow_mouse();
 
@@ -915,7 +919,7 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 
 			for (i = 0; i < e; i++)
 			{
-				if ( isascii(b[i]) )
+				if ( isxprint(b[i]) )
 					n++;
 			}
 
@@ -949,15 +953,12 @@ int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
 {
 	int error;
 
-
-	free( w->buffer );
-	free( w->lines );
-	free( w->ntabs );
+	txt_free(w);
 
 	if (name)
 	{
-		free( w->name );
-		w->name = name;
+		free( w->path );
+		w->path = name;
 	}
 
 	error = txt_read(w, TRUE);
@@ -1111,177 +1112,178 @@ void compare_files( WINDOW *w, int n, int *list )
 
 	/* Open the dialog, then loop while needed */
 
-	xd_open(compare, &info);
-
-	do
+	if(chk_xd_open(compare, &info) >= 0)
 	{
-		button = xd_form_do_draw(&info);
-
-		if (button == COMPOK)
+		do
 		{
-			/* Take match-window width from the dialog */
+			button = xd_form_do_draw(&info);
 
-			sw = atoi(compare[COMPWIN].ob_spec.tedinfo->te_ptext);
-			swx2 = 2 * sw - 1;
-
-			/* File names and window width must be given properly */
-
-			strip_name(cfile1, cfile1);
-			strip_name(cfile2, cfile2);
-
-			if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw <= 0 )
+			if (button == COMPOK)
 			{
-				alert_iprint(MINVSRCH);
-				continue;
-			}
+				/* Take match-window width from the dialog */
 
-			options.cwin = sw;
+				sw = atoi(compare[COMPWIN].ob_spec.tedinfo->te_ptext);
+				swx2 = 2 * sw - 1;
 
-			/* Fields are not editable anymore */
+				/* File names and window width must be given properly */
 
-			compare[CFILE1].ob_flags &= ~EDITABLE;
-			compare[CFILE2].ob_flags &= ~EDITABLE;
-			compare[COMPWIN].ob_flags &= ~EDITABLE;
+				strip_name(cfile1, cfile1);
+				strip_name(cfile2, cfile2);
 
-			/* A file need not be compared to itself */
-
-			if ( strcmp(cfile1, cfile2) == 0 )
-				break;
-
-			/* Start real work */
-
-			hourglass_mouse(); /* this will take some time... */
-
-			/* Read the files into respective buffers */
-
-			if ( (error = read_txtf( cfile1, &buf1, &size1 ) ) == 0 )
-				error = read_txtf( cfile2, &buf2, &size2 );
-
-			/* All ok, now start comparing */
-
-			if ( error == 0 )
-			{
-				/* Current indices: at the beginning(s) */
-
-				i1 = 0; 
-				i2 = 0;
-
-				/* Scan until the end of the shorter file */
-
-				while ( (i1 < size1) && (i2 < size2) )
+				if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw <= 0 )
 				{
-					/* How many bytes to compare and not exceed the ends */
+					alert_iprint(MINVSRCH);
+					continue;
+				}
 
-					nc = lmin( (size1 - i1), (size2 - i2) );
+				options.cwin = sw;
 
-					/* How many bytes are equal ? Move to end of that */
+				/* Fields are not editable anymore */
 
-					in = compare_buf(&buf1[i1], &buf2[i2], nc);
+				compare[CFILE1].ob_flags &= ~EDITABLE;
+				compare[CFILE2].ob_flags &= ~EDITABLE;
+				compare[COMPWIN].ob_flags &= ~EDITABLE;
 
-					i1n = i1 + in;
-					i2n = i2 + in;
+				/* A file need not be compared to itself */
 
-					/* If a difference is found before file ends, report */
+				if ( strcmp(cfile1, cfile2) == 0 )
+					break;
 
-					if ( (in < nc) || ((in >= nc) && ( (i1n < size1) || (i2n < size2) ))  )
+				/* Start real work */
+
+				hourglass_mouse(); /* this will take some time... */
+
+				/* Read the files into respective buffers */
+
+				if ( (error = read_txtf( cfile1, &buf1, &size1 ) ) == 0 )
+					error = read_txtf( cfile2, &buf2, &size2 );
+
+				/* All ok, now start comparing */
+
+				if ( error == 0 )
+				{
+					/* Current indices: at the beginning(s) */
+
+					i1 = 0; 
+					i2 = 0;
+
+					/* Scan until the end of the shorter file */
+
+					while ( (i1 < size1) && (i2 < size2) )
 					{
-						/* 
-						 * If there is a difference, display strings;
-						 * Do so also if files have different lengths
-						 * and the end of one is reached
-						 */
+						/* How many bytes to compare and not exceed the ends */
 
-						if ( sync || (in > swx2) )
+						nc = lmin( (size1 - i1), (size2 - i2) );
+
+						/* How many bytes are equal ? Move to end of that */
+
+						in = compare_buf(&buf1[i1], &buf2[i2], nc);
+
+						i1n = i1 + in;
+						i2n = i2 + in;
+
+						/* If a difference is found before file ends, report */
+
+						if ( (in < nc) || ((in >= nc) && ( (i1n < size1) || (i2n < size2) ))  )
 						{
-							arrow_mouse();
-							sync = FALSE;	
-							diff = TRUE;
-
-							i1 = i1n;
-							i2 = i2n;
-							i2o = i2;
-
-							/* Prepare something to display */
-
-							copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1 );
-							copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2 );
-							rsc_ltoftext(compare, COFFSET, i1 );
-
-							obj_unhide(compare[CMPIBOX]);
-							xd_drawdeep(&info, CMPIBOX);
-							button = xd_form_do_draw(&info);
-
-							/* Stop further comparison ? */ 
-
-							if ( button == COMPCANC ) 
-								break;
-
-							hourglass_mouse();
-
 							/* 
-							 * Advance a little further and try to resync;
-							 * it is reasonable that this advance stays
-							 * inside the displayed area, but need not
-							 * be so (i.e. is optimum that sw is half of
-							 * display length)
+							 * If there is a difference, display strings;
+							 * Do so also if files have different lengths
+							 * and the end of one is reached
 							 */
 
-							i1 += sw; 
-							ii = 0;
+							if ( sync || (in > swx2) )
+							{
+								arrow_mouse();
+								sync = FALSE;	
+								diff = TRUE;
+
+								i1 = i1n;
+								i2 = i2n;
+								i2o = i2;
+
+								/* Prepare something to display */
+
+								copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1 );
+								copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2 );
+								rsc_ltoftext(compare, COFFSET, i1 );
+
+								obj_unhide(compare[CMPIBOX]);
+								xd_drawdeep(&info, CMPIBOX);
+								button = xd_form_do_draw(&info);
+
+								/* Stop further comparison ? */ 
+
+								if ( button == COMPCANC ) 
+									break;
+
+								hourglass_mouse();
+
+								/* 
+								 * Advance a little further and try to resync;
+								 * it is reasonable that this advance stays
+								 * inside the displayed area, but need not
+								 * be so (i.e. is optimum that sw is half of
+								 * display length)
+								 */
+
+								i1 += sw; 
+								ii = 0;
+							}
+							else
+							{
+								ii++;
+								if ( ii == swx2 )
+								{
+									sync = TRUE;
+									i2 = i2o;
+								}
+							}
 						}
 						else
 						{
-							ii++;
-							if ( ii == swx2 )
-							{
-								sync = TRUE;
-								i2 = i2o;
-							}
+							i1 = i1n;
+							i2 = i2n;
+							sync = TRUE;
 						}
-					}
-					else
-					{
-						i1 = i1n;
-						i2 = i2n;
-						sync = TRUE;
-					}
 
-					if ( sync )
-						i1++;
-					i2++;
+						if ( sync )
+							i1++;
+						i2++;
 
-				} /* while */
+					} /* while */
 
-				arrow_mouse();
-				break;
+					arrow_mouse();
+					break;
 
-			} /* error ? */
+				} /* error ? */
+				else
+				{
+
+					/* Something went wrong while reading the files */
+
+					arrow_mouse();
+					xform_error(error);
+					button = COMPCANC;
+				}
+			} 
 			else
-			{
-
-				/* Something went wrong while reading the files */
-
-				arrow_mouse();
-				xform_error(error);
-				button = COMPCANC;
-			}
+				error = 1; /* in order not to show alert below */
 		} 
-		else
-			error = 1; /* in order not to show alert below */
-	} 
-	while(button != COMPCANC);
+		while(button != COMPCANC);
 
-	/* Close the dialog */
+		/* Close the dialog */
 
-	xd_close(&info);
+		xd_close(&info);
 
-	free(buf1);
-	free(buf2);
+		free(buf1);
+		free(buf2);
 
-	/* Display info if files are identical */
+		/* Display info if files are identical */
 
-	if ( !diff && (error == 0) ) 
-		alert_iprint(MCOMPOK);
+		if ( !diff && (error == 0) ) 
+			alert_iprint(MCOMPOK);
+	}
 }
 
 
@@ -1319,7 +1321,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	info->typ_window = (TYP_WINDOW *)w; 
 	w->px = px;
 	w->py = py;
-	w->name = file;
+	w->path = (char *)file;
 	w->tabsize = tabsize;
 	w->hexmode = hexmode;
 	w->winfo = info;
@@ -1451,7 +1453,7 @@ CfgNest text_one
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
 		that.tabsize = tw->tabsize; 
-		strsncpy(that.path, tw->name, sizeof(that.path));
+		strsncpy(that.path, tw->path, sizeof(that.path));
 			
 		*error = CfgSave(file, txtw_table, lvl, CFGEMP);
 	}

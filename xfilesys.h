@@ -69,6 +69,7 @@
 #define FS_LFN 0x0001	/* supports long filenames */
 #define FS_LNK 0x0002	/* supports symbolic links */
 #define FS_UID 0x0004	/* supports user/group IDs */
+#define FS_CSE 0x0008	/* supports case-sensitive names */
 #define FS_ANY 0x000f	/* bitmask for all */
 #define FS_INQ 0x0100	/* inquire about the filesystem */
 
@@ -100,6 +101,7 @@ enum
 	DP_SENSITIVE   = 0,
 	DP_NOSENSITIVE,
 	DP_SAVE_ONLY,
+	DP_LINKS = 1,
 	DP_TRUNC      = 5,
 	DP_CASE,
 	DP_MODE,

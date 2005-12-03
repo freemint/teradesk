@@ -21,7 +21,6 @@
  */
 
 
-char *getenv(const char *var);
 char *new_env(const char *newvar, size_t size, int where, size_t *newsize);
 long envlen(void);
 void clr_argv(void);

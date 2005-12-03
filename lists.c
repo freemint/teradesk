@@ -28,6 +28,7 @@
 #include <xdialog.h>
 #include <mint.h>
 #include <library.h>
+#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -327,7 +328,7 @@ boolean copy_all
 
 	while (p)  
 	{
-		if ( lsadd( copy, size, p, END, copyf ) == NULL )
+		if ( lsadd( copy, size, p, INT_MAX, copyf ) == NULL )
 			return FALSE; 
 		p = p->next;
 	}
@@ -338,7 +339,7 @@ boolean copy_all
 
 /*  
  * Count items in a list; return number of items;
- * hopefully there will never be more than 32767 items :)
+ * hopefully there will never be more than 32767 (INT_MAX) items :)
  * (there is no check for overflow anywhere)
  */
 
@@ -593,7 +594,11 @@ int list_edit
 
 		ls_sl_init( cnt_types(list), set_selector, &sl_info, list); 
 
-		xd_open( setmask, &info );
+		if(chk_xd_open( setmask, &info ) < 0)
+		{
+			lsrem_three(clist, lsfunc->lsrem);
+			return FTCANCEL;
+		}
 	}
 
 	/* Loop until told otherwise */
@@ -654,14 +659,14 @@ int list_edit
 
 				/* Open the appropriate dialog */
 
-				if (lsfunc->ls_dialog(list, END, lwork, luse | LS_ADD ) == TRUE)
+				if (lsfunc->ls_dialog(list, INT_MAX, lwork, luse | LS_ADD ) == TRUE)
 				{
 					/* Addition accepted */
 
 					if ( wsel )
 					{
 						/* if from a window, exit after finished */
-						pos = END;
+						pos = INT_MAX;
 						button = FTOK;
 					}
 					else

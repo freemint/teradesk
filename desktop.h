@@ -115,6 +115,7 @@
 #define ICSHFIL          31  /* STRING in tree ADDICON */
 #define ICSHFLD          32  /* STRING in tree ADDICON */
 #define ICSHPRG          33  /* STRING in tree ADDICON */
+#define IFOLLNK          34  /* BUTTON in tree ADDICON */
 
 #define APPLIKAT         5   /* Form/Dialog-box */
 #define APDTITLE         1   /* STRING in tree APPLIKAT */
@@ -215,6 +216,7 @@
 #define PRTXT            26  /* BUTTON in tree COPYINFO */
 #define PRHEX            27  /* BUTTON in tree COPYINFO */
 #define CPRFILE          29  /* BUTTON in tree COPYINFO */
+#define CFOLLNK          30  /* BUTTON in tree COPYINFO */
 
 #define NAMECONF         8   /* Form/Dialog-box */
 #define RNMTITLE         1   /* STRING in tree NAMECONF */
@@ -226,6 +228,8 @@
 #define NCOK             8   /* BUTTON in tree NAMECONF */
 #define NCSKIP           9   /* BUTTON in tree NAMECONF */
 #define NCABORT          10  /* BUTTON in tree NAMECONF */
+#define NCNINFO          11  /* TEXT in tree NAMECONF */
+#define NCCINFO          12  /* TEXT in tree NAMECONF */
 
 #define SETMASK          9   /* Form/Dialog-box */
 #define DTSMASK          1   /* STRING in tree SETMASK */
@@ -277,8 +281,7 @@
 #define OPTMNEXT         16  /* BOXCHAR in tree OPTIONS */
 #define OPTMPREV         17  /* BOXCHAR in tree OPTIONS */
 #define OPTMTEXT         18  /* BUTTON in tree OPTIONS */
-#define TABSIZE          19  /* FTEXT in tree OPTIONS */
-#define SEXIT            20  /* BUTTON in tree OPTIONS */
+#define SEXIT            19  /* BUTTON in tree OPTIONS */
 
 #define ADDPTYPE         11  /* Form/Dialog-box */
 #define APTITLE          1   /* STRING in tree ADDPTYPE */
@@ -323,6 +326,8 @@
 #define WINPUP           18  /* BOXCHAR in tree WOPTIONS */
 #define WINCDOWN         19  /* BOXCHAR in tree WOPTIONS */
 #define WINCUP           20  /* BOXCHAR in tree WOPTIONS */
+#define TABSIZE          21  /* FTEXT in tree WOPTIONS */
+#define SOPEN            22  /* BUTTON in tree WOPTIONS */
 
 #define WDFONT           15  /* Form/Dialog-box */
 #define WDFTITLE         1   /* STRING in tree WDFONT */
@@ -397,8 +402,8 @@
 #define COVERW           5   /* BUTTON in tree COPTIONS */
 #define CDEL             6   /* BUTTON in tree COPTIONS */
 #define CPRINT           7   /* BUTTON in tree COPTIONS */
-#define CFOLLNK          8   /* BUTTON in tree COPTIONS */
-#define CSHOWD           9   /* BUTTON in tree COPTIONS */
+#define CSHOWD           8   /* BUTTON in tree COPTIONS */
+#define CKEEPS           9   /* BUTTON in tree COPTIONS */
 #define CPPHEAD          10  /* BUTTON in tree COPTIONS */
 #define COPTOK           12  /* BUTTON in tree COPTIONS */
 #define COPYBUF          13  /* FTEXT in tree COPTIONS */
@@ -426,8 +431,8 @@
 #define ISSHUT           7   /* BUTTON in tree SPECAPP */
 #define ISVIDE           8   /* BUTTON in tree SPECAPP */
 #define ISSRCH           9   /* BUTTON in tree SPECAPP */
-#define ISFRMT           10  /* BUTTON in tree SPECAPP */
-#define RESERVE1         11  /* BUTTON in tree SPECAPP */
+#define ISCOMP           10  /* BUTTON in tree SPECAPP */
+#define ISFRMT           11  /* BUTTON in tree SPECAPP */
 #define SPECOK           13  /* BUTTON in tree SPECAPP */
 
 #define OPENW            22  /* Form/Dialog-box */
@@ -443,7 +448,8 @@
 #define HELPCANC         4   /* BUTTON in tree HELP1 */
 #define HLPBOX1          5   /* BOX in tree HELP1 */
 #define HLPBOX2          18  /* BOX in tree HELP1 */
-#define HLPBOX3          30  /* BOX in tree HELP1 */
+#define HLPBOX3          29  /* BOX in tree HELP1 */
+#define HLPBOX4          38  /* BOX in tree HELP1 */
 
 #define COMPARE          24  /* Form/Dialog-box */
 #define COMPCANC         3   /* BUTTON in tree COMPARE */
@@ -770,54 +776,56 @@
 
 #define TFNTMPLT         156 /* Free String */
 
-#define ALOADCFG         157 /* Alert-string */
+#define TBYTES           157 /* Free String */
 
-#define APRGNFND         158 /* Alert-string */
+#define ALOADCFG         158 /* Alert-string */
 
-#define AAPPNFND         159 /* Alert-string */
+#define APRGNFND         159 /* Alert-string */
 
-#define AILLCOPY         160 /* Alert-string */
+#define AAPPNFND         160 /* Alert-string */
 
-#define AILLDEST         161 /* Alert-string */
+#define AILLCOPY         161 /* Alert-string */
 
-#define ANOCOPY          162 /* Alert-string */
+#define AILLDEST         162 /* Alert-string */
 
-#define ANODRAGP         163 /* Alert-string */
+#define ANOCOPY          163 /* Alert-string */
 
-#define ANOPRINT         164 /* Alert-string */
+#define ANODRAGP         164 /* Alert-string */
 
-#define APRNRESP         165 /* Alert-string */
+#define ANOPRINT         165 /* Alert-string */
 
-#define AERADISK         166 /* Alert-string */
+#define APRNRESP         166 /* Alert-string */
 
-#define AFMTERR          167 /* Alert-string */
+#define AERADISK         167 /* Alert-string */
 
-#define AERRACC          168 /* Alert-string */
+#define AFMTERR          168 /* Alert-string */
 
-#define ALRTQUIT         169 /* Alert-string */
+#define AERRACC          169 /* Alert-string */
 
-#define ADUPKEY          170 /* Alert-string */
+#define ALRTQUIT         170 /* Alert-string */
 
-#define AABOOP           171 /* Alert-string */
+#define ADUPKEY          171 /* Alert-string */
 
-#define AGENALRT         172 /* Alert-string */
+#define AABOOP           172 /* Alert-string */
 
-#define AFILEDEF         173 /* Alert-string */
+#define AGENALRT         173 /* Alert-string */
 
-#define AGFALERT         174 /* Alert-string */
+#define AFILEDEF         174 /* Alert-string */
 
-#define AUNKRTYP         175 /* Alert-string */
+#define AGFALERT         175 /* Alert-string */
 
-#define AVALIDCF         176 /* Alert-string */
+#define AUNKRTYP         176 /* Alert-string */
 
-#define ADUPFLG          177 /* Alert-string */
+#define AVALIDCF         177 /* Alert-string */
 
-#define AWOPERR          178 /* Alert-string */
+#define ADUPFLG          178 /* Alert-string */
 
-#define ARESCH           179 /* Alert-string */
+#define AWOPERR          179 /* Alert-string */
 
-#define AFABORT          180 /* Alert-string */
+#define ARESCH           180 /* Alert-string */
 
-#define AQUERY           181 /* Alert-string */
+#define AFABORT          181 /* Alert-string */
 
-#define AREMICNS         182 /* Alert-string */
+#define AQUERY           182 /* Alert-string */
+
+#define AREMICNS         183 /* Alert-string */

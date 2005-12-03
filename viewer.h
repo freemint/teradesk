@@ -31,27 +31,25 @@
  * For structure compatibility reasons XW_INTVARS was substituted
  * by ITM_INTVARS (larger); it's a tradeoff for reusing a number of
  * routines
+ * Note: take care of compatibility between 
+ * TXT_WINDOW, DIR_WINDOW, TYP_WINDOW
  */
 
-/* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
 typedef struct
 {
 	ITM_INTVARS;				/* Interne variabelen bibliotheek. */
 	WD_VARS;					/* other common header data */
 
-	struct winfo *winfo;		/* pointer naar WINFO structuur. */
-
 	/* three window-type structures are identical up to this point */
 
 	int tabsize;
-	const char *name;
 	char *buffer;				/* buffer met de tekst */
 	long size;					/* aantal bytes in de tekst */
 	int twidth;					/* text width incl. tab substitutes */
 	long tlines;				/* aantal regels in de tekst */
 	char **lines;				/* lijst met pointers naar het begin van alle tekstregels */
-	int *ntabs;				/* tabs per lines */
+	int *ntabs;					/* tabs per lines */
 	unsigned int hexmode : 1;	/* Hexmode flag. */
 
 } TXT_WINDOW;

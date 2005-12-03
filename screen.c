@@ -160,7 +160,6 @@ void invert(RECT *r)
 
 
 /* 
- * Funktie vooor het verschuiven van een deel van het scherm. 
  * Move a part of the screen to a new location.
  */
 
@@ -177,7 +176,6 @@ void move_screen(RECT *dest, RECT *src)
 
 
 /* 
- * Funktie voor het initialiseren van het vdi. 
  * Set default text attributes from font data 
  * for subsequent writings to the screen.
  * Note: effects are currently ignored, always set to 0
@@ -194,8 +192,6 @@ void set_txt_default(FONT *f)
 	vst_alignment(vdi_handle, 0, 5, &dummy, &dummy);
 	vst_point(vdi_handle, f->size, &dummy, &dummy, &dummy, &dummy);
 	vst_effects(vdi_handle, 0);
-
-
 }
 
 
@@ -277,6 +273,7 @@ static CfgEntry palette_table[] =
 	{CFG_ENDG},
 	{CFG_LAST}
 };
+
 
 static CfgEntry colour_table[] =
 {

@@ -109,8 +109,8 @@ char *fn_last_backsl(const char *fname)
 
 
 /* 
- * This routine returns a pointer to the beginning of the name proper in
- * an existing fullname string. If there is no backslash in the
+ * This routine returns a pointer to the beginning of the name proper
+ * in an existing fullname string. If there is no backslash in the
  * name, it returns pointer to the beginning of the string.
  * If the fullname string does not exist, returns NULL.
  * It doesn't allocate any memory for the name. 
@@ -132,8 +132,8 @@ char *fn_get_name(const char *path)
 
 
 /* 
- * Extract the path part of a full name. Space is allocated for 
- * the extracted path here
+ * Extract the path part of a full name. 
+ * Space is allocated for the extracted path here
  */
 
 char *fn_get_path(const char *path)
@@ -188,10 +188,8 @@ char *fn_make_path(const char *path, const char *name)
 
 
 /* 
- * Geef een pointer terug op een met malloc gereserveerd stuk
- * geheugen, waarin het path van oldname is samengevoegd met
- * newnameen. 
- * Compose a new name from old fullname and a new name.
+ * Compose a new name from old fullname "oldname" and a new name "newname".
+ * I.e. concatenate the new name and the old path.
  * Space is allocated for the result.
  */
 
@@ -213,7 +211,6 @@ char *fn_make_newname(const char *oldname, const char *newname)
 	backsl = fn_last_backsl(oldname);
 
 	l = backsl - (char *)oldname;			/* length of the path part */
-
 	tl = l + strlen(newname) + 2L;			/* total new length */
 
 	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
@@ -240,63 +237,42 @@ char *fn_make_newname(const char *oldname, const char *newname)
 }
 
 
-/* This routine is not currently used anywhere in TeraDesk
-
 /* 
- * Strip filename (or path+filename) "fname" 
- * to get (path+)filename "name"  and extension "ext" 
+ * Check if the beginning of a path is a valid disk name
+ * This routine does -not- trim leading blanks.
+ * Acceptable forms: X:<0> or X:\<0>
  */
 
-static void split_name(char *name, char *ext, const char *fname)
+boolean isdisk(const char *path)
 {
-	char *s, *d, *e;
+	char *p = (char *)path;
 
-	e = fn_last_backsl(fname); 
+	/*
+	 * If address exists, index 0 can be examined
+	 * If char at index 0 is not 0, index 1 can be examined
+	 * If that is not 0, index 2 can be examined
+	 */
 
-	if ((e = strchr(e, '.')) == NULL)
-	{
-		strcpy(name, fname);
-		*ext = 0;
-	}
-	else
-	{
-		s = (char *) fname;
-		d = name;
+	/*                 [0]       [1]             [2]            [2]     */
 
-		while (s != e)
-			*d++ = *s++;
-		*d = 0;
-
-		strcpy(ext, e + 1);
-	}
+	if( p && isalpha(*(p++)) && *(p++) == ':' && (*p == '\\' || *p == '\0') )
+		return TRUE;
+	
+	return FALSE;
 }
-
-*/
-
 
 
 /* 
- * Check if path is to a root directory on drive.
- * This is determined only by analyzing the name.
- * No check of the actual directory is made. 
+ * Check if a path is to a root directory on drive. This is determined only 
+ * by analyzing the name. No check of the actual directory is made. 
  */
 
 boolean isroot(const char *path)
 {
 	char *d = nonwhite((char *)path);
 
-	long l = strlen(d);
-
-	if ( l < 2 || l > 3 )
-		return FALSE;
-
-	l--;
-
-	if (d[l] == '\\')
-		l--;
-
-	if (d[l] == ':' && l == 1 )
-		return TRUE;
+	if( isdisk(d) && (d[2] == '\0' || d[3] == '\0') )
+		return TRUE; 
 
 	return FALSE;
 }
@@ -344,7 +320,7 @@ char *locate(const char *name, int type)
 
 	defext = (type >= L_LOADCFG) ? cfgext : fsdefext;
 
-/* Currently not used
+/* Currently not used anywhere in TeraDesk
 
 	if (type == L_FOLDER)
 	{
@@ -522,6 +498,8 @@ void getroot(char *root)
 }
 
 
+#if !__USE_MACROS
+
 /* 
  * Get name (i.e. path + name) of the current directory 
  */
@@ -531,6 +509,7 @@ char *getdir(int *error)
 	return x_getpath(0, error);
 }
 
+#endif
 
 /* 
  * Change current directory to "path" 
@@ -539,15 +518,13 @@ char *getdir(int *error)
 int chdir(const char *path)
 {
 	int error;
-	char *h;
-	char d;
+	char *h = (char *)path;
 
 
-	h = (char *)path;
-
-	if (*path && ((d = path[0] & 0x5F) >= 'A') && (d <= 'Z') && (path[1] == ':'))
+	if(isdisk(path))
 	{
-		x_setdrv(d - 'A');
+		x_setdrv((path[0] & 0x5F) - 'A');
+
 		h = (char *)path + 2;
 		if (*h == 0)
 			h = (char *)bslash;
@@ -740,8 +717,9 @@ void force_mediach(const char *path)
 {
 	int drive, p = *path;
 
-	if ((p == 0) || !(isalpha(p) && path[1] == ':')) /* Valid path */
+	if(!isdisk(path))
 		return;
+
 	drive = tolower(p) - 'a';
 
 #if _MINT_
@@ -831,20 +809,24 @@ static void cv_tos_form2fn(char *dest, const char *source)
 		*d = dest;
 
 	while ((*s != 0) && (s - source < 8))
+	{
 		if (*s != ' ')
 			*d++ = *s++;
 		else
 			s++;
+	}
 
 	if (*s)
 	{
 		*d++ = '.';
 
 		while (*s != 0)
+		{
 			if (*s != ' ')
 				*d++ = *s++;
 			else
 				s++;
+		}
 	}
 
 	*d = 0;
@@ -856,7 +838,7 @@ static void cv_tos_form2fn(char *dest, const char *source)
  * Fit a (possibly long) filename or path into a form (dialog) field
  * Note: now it is assumed that if the field is 12 characters long,
  * then it will be for a 8+3 format (see also routine tos_fnform in resource.c)
- * Note: if the name is too long, it will be trimmed 
+ * Note: if the name is too long, it will be trimmed.
  */
 
 void cv_fntoform(OBJECT *tree, int object, const char *src)

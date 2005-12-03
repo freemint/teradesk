@@ -32,6 +32,9 @@ extern INAME iname;
 extern boolean noicons;
 extern XDINFO icd_info;
 
+
+void init_obj(OBJECT *obj, int otype);
+
 boolean dsk_init(void);
 int dsk_load(XFILE *file);
 void dsk_default(void);

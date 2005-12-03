@@ -1440,6 +1440,7 @@ static int cdecl ub_title(PARMBLK *pb)
  * Code for (not) drawing a rectangle for an unknown object type
  */
 
+/*
 static int cdecl ub_unknown(PARMBLK *pb)
 {
 /* this would be a mistake anyway, so why draw anything at all ?
@@ -1459,6 +1460,8 @@ static int cdecl ub_unknown(PARMBLK *pb)
 */
 	return 0;
 }
+*/
+
 
 /********************************************************************
  *																	*
@@ -2057,16 +2060,21 @@ void xd_set_userobjects(OBJECT *tree)
 			case XD_FONTTEXT:
 				/* 
 				 * Sample text in font selector dialog;
-				 * ub_unknown is rplaced later by a pointer to
+				 * ub_unknown is replaced later by a pointer to
 				 * actual code
 				 */
+/*
 				c_code = ub_unknown; 
+*/
+c_code = ub_drag;
 				break;
+/*
 			default:
 				/* Yet unknown userdef; this should never happen! */
 				c_code = ub_unknown;
 				xuserblk = FALSE;
 				break;
+*/
 			}
 
 			if (c_code)	

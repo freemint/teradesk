@@ -85,6 +85,7 @@ extern AVSETW avsetw;
 extern boolean va_reply;
 extern AVTYPE *avclients;
 extern int av_current;
+extern const char *thisapp;
 
 void va_init(void);
 WINDOW *va_accw(void);
@@ -93,7 +94,7 @@ void rem_all_avstat(void);
 
 #if __USE_MACROS
 #define vastat_default rem_all_avstat
-#define va_close(w)  xw_closedelete(w)
+#define va_close  xw_closedelete
 #else
 void vastat_default(void);
 void va_close(WINDOW *w);

@@ -207,4 +207,4 @@ pcstdlib.lib
 pctoslib.lib
 pcgemlib.lib
 
-;pcextlib.lib ; needed for debugging only
+;pcextlib.lib ; may be needed for debugging only

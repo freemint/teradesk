@@ -84,7 +84,7 @@ int
 	aes_version,	/* detected version of AES; interpret in hex format */
 	ap_id,			/* application id. of this program (TeraDesk) */
 	vdi_handle, 	/* current VDI station handle   */
-	max_w,			/* screen width in pixel units */ 
+	max_w,			/* screen width in pixel units  */ 
 	max_h,			/* screen height in pixel units */ 
 	nfonts;			/* number of available fonts    */
 
@@ -138,6 +138,9 @@ const char
 	*bslash = "\\",		/* often used string */
 	*adrive = "A:\\";	/* often used string */
 
+boolean
+	onekey_shorts;
+
 /*
  * Below is supposed to be the only text embedded in the code:
  * information (in several languages) that a resource file 
@@ -170,7 +173,7 @@ static const CfgEntry Config_table[] =
 	{CFG_NEST, 0, "options",	 opt_config	 },
 	{CFG_NEST, 0, "shortcuts",	 short_config},
 	{CFG_NEST, 0, "filetypes",	 ft_config	 },
-	{CFG_NEST, 0, "apptypes",    prg_config	 },
+	{CFG_NEST, 0, "apptypes",    prg_config	 }, /* must be before icons and apps */
 	{CFG_NEST, 0, "icontypes",	 icnt_config },
 	{CFG_NEST, 0, "deskicons",	 dsk_config	 },
 	{CFG_NEST, 0, "applications",app_config	 },
@@ -195,7 +198,7 @@ CfgEntry Options_table[] =
 	/* file version */
 	{CFG_X, 0, "infv", &options.version	    }, 		/* file version */
 	/* desktop preferences */
-	{CFG_D, 0, "save", &options.sexit		},		/* save desk at exit */
+	{CFG_X, 0, "save", &options.sexit		},		/* what to save at exit */
 	{CFG_X, 0, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
 	{CFG_X, 0, "xpre", &options.xprefs		}, 		/* bit flags !!! diverse prefs */
 	/* Copy preferences */
@@ -332,7 +335,8 @@ int chk_xd_dialog(OBJECT *tree, int start)
 
 
 /*
- * Open a dialog, but check for errors and display an alert
+ * Open a dialog, but check for errors and display an alert.
+ * In some dialogs it is not convenient to use this routine :(
  */
 
 int chk_xd_open(OBJECT *tree, XDINFO *info)
@@ -399,7 +403,7 @@ static void info(void)
 static void showhelp (unsigned int key) 		
 {		
 	static const char 
-		hbox[] = {HLPBOX1, HLPBOX2, HLPBOX3};
+		hbox[] = {HLPBOX1, HLPBOX2, HLPBOX3, HLPBOX4};
 
 	if ( key & XD_SHIFT )
 	{
@@ -416,14 +420,13 @@ static void showhelp (unsigned int key)
 			info;
 
 		int 
-			error,
 			i = 0, 
 			button;
 
 		obj_unhide(helpno1[HELPOK]);
 		obj_unhide(helpno1[HLPBOX1]);
 
-		if ((error = xd_open(helpno1, &info)) >= 0)
+		if (chk_xd_open(helpno1, &info) >=0)
 		{
 			do
 			{
@@ -431,7 +434,7 @@ static void showhelp (unsigned int key)
 				xd_buttnorm(&info, button); 
 				obj_hide(helpno1[hbox[i]]);
 
-				/* At i == 2 one must and can exit this way only */
+				/* At i == 3 one must and can exit this way only */	
 
 				if ( button == HELPCANC )
 					break;
@@ -439,16 +442,14 @@ static void showhelp (unsigned int key)
 				i++;
 
 				obj_unhide( helpno1[hbox[i]] );
-				if ( i == 2 )
+				if ( i == 3 )
 					obj_hide(helpno1[HELPOK]);
 				xd_drawdeep(&info, ROOT);
 			}
 			while(TRUE);
 
 			xd_close(&info);
-		}
-		else
-			xform_error(error);
+		} /* open ? */
 	}
 }
 
@@ -510,43 +511,41 @@ static void disp_short
 	int left		/* left-justify and 0-terminate string if true */
 )
 {
-	int i, j;		/* counters */
+	char *strp = &string[3];
 
-	i = 3;			/* position of the leftmost character in the shortcut text */
-
-	switch ( kbshort & 0xFF )
+	switch ( kbshort & 0x00FF )
 	{
-		case 0x08: 				/* Backspace */
-			string[i--] = 'S';
-			string[i--] = 'B';
+		case BACKSPC: 
+			*strp-- = 'S';
+			*strp-- = 'B';
 			break;
-		case 0x09: 				/* Tab    */
-			string[i--] = 'B';
-			string[i--] = 'A';
-			string[i--] = 'T';
+		case TAB: 
+			*strp-- = 'B';
+			*strp-- = 'A';
+			*strp-- = 'T';
 			break;
-		case 0x20: 				/* Space  */
-			string[i--] = 'P';
-			string[i--] = 'S';
+		case SPACE: 
+			*strp-- = 'P';
+			*strp-- = 'S';
 			break;
-		case 0x7F: 				/* Delete */
-			string[i--] = 'L';
-			string[i--] = 'E';
-			string[i--] = 'D';
+		case DELETE: 
+			*strp-- = 'L';
+			*strp-- = 'E';
+			*strp-- = 'D';
 			break;
 		default:				/* Other  */
 			if ( kbshort != 0 ) 
-				string[i--] =  (char)(kbshort & 0xFF);
+				*strp-- =  (char)(kbshort & 0x00FF);
 			break; 	
 	}
 	
 	if ( kbshort & XD_CTRL )	/* Preceded by ^ ? */
-		string[i--] = '^';		
+		*strp-- = '^';		
+
+	while(strp >= string)
+		*strp-- = ' ';
 	
-	for ( j = i; j >= 0; j-- )	/* fill blanks to the left */
-		string[j] = ' ';	 
-	
-	if ( i >= 0 && left )		/* if needed- left justify, terminate with 0 */
+	if (left )		/* if needed- left justify, terminate with 0 */
 	{
 		string[4] = 0;
 		strip_name( string, string );
@@ -570,15 +569,24 @@ static void ins_shorts(void)
 	char
 		*where; /* address of location of shortcut in a menu string */
 
+	onekey_shorts = FALSE;
+
 	for ( menui = MFIRST; menui <= MLAST; menui++ ) 		/* for each menu item */
 	{
 		if ( menu[menui].ob_type == G_STRING )		 		/* which is a string... */
 		{
 			if ( menu[menui].ob_spec.free_string[1] == ' ') /* and not a separator line */
 			{
+				int shortcut = options.kbshort[menui - MFIRST];
+
+				if(shortcut == BACKSPC || (shortcut >= ' ' && shortcut <= '~') )
+					onekey_shorts = TRUE;
+
 				lm = (int)strlen(menu[menui].ob_spec.free_string); /* includes trailing spaces */
 				where = menu[menui].ob_spec.free_string + (long)(lm - 5);
-				disp_short( where, options.kbshort[menui - MFIRST], FALSE);
+
+				disp_short( where, shortcut, FALSE);
+
 			} 		/* ' ' ? 			*/
 		}			/* string ? 		*/
 		else
@@ -682,11 +690,10 @@ static void setpreferences(void)
 
 	unsigned int 
 		*tmpmi,
-		tmp[NITEM+2];		/* temporary kbd shortcuts (until OK'd) */
+		tmp[NITEM + 2];		/* temporary kbd shortcuts (until OK'd) */
 
 	char 
-		aux[5],				/* temp. buffer for string manipulation */
-		*tabsize = setprefs[TABSIZE].ob_spec.tedinfo->te_ptext;
+		aux[5];				/* temp. buffer for string manipulation */
 
 	XDINFO 
 		prefinfo;
@@ -696,9 +703,7 @@ static void setpreferences(void)
 
 	xd_set_rbutton(setprefs, OPTPAR2, (options.dial_mode & DIALPOS_MODE) ? DMOUSE : DCENTER);
 	xd_set_rbutton(setprefs, OPTPAR1, DBUFFERD + (options.dial_mode & DIAL_MODE) - 1);
-	set_opt( setprefs, options.sexit, 1, SEXIT);
-
-	itoa(options.tabsize, tabsize, 10);	
+	set_opt( setprefs, options.sexit, SAVE_CFG, SEXIT);
 
 	lf = (int)strlen(setprefs[OPTMTEXT].ob_spec.free_string); /* get length of space for displaying menu items */
 
@@ -706,169 +711,167 @@ static void setpreferences(void)
 
 	memcpy( &tmp[0], &options.kbshort[0], (NITEM + 1) * sizeof(int) );
 
-	xd_open(setprefs, &prefinfo);	/* Open dialog; then loop until OK or Cancel */
-
-	/* 
-	 * Handle setting of keyboard shortcuts; note: because of limitations in
-	 * keyboard scancodes, distinction of some key combinations is impossible
-	 */
-
-	while ( button != OPTOK && button != OPTCANC )
+	if(chk_xd_open(setprefs, &prefinfo) >= 0)	/* Open dialog; then loop until OK or Cancel */
 	{
-		/* Display text of current menu item */
+		/* 
+		 * Handle setting of keyboard shortcuts; note: because of limitations in
+		 * keyboard scancodes, distinction of some key combinations is impossible
+		 */
 
-		mi = menui - MFIRST;
-		tmpmi = &tmp[mi];
-
-		if ( redraw )
+		while ( button != OPTOK && button != OPTCANC )
 		{
-			lm = (int)strlen(menu[menui].ob_spec.free_string); /* How long? Assumed always to be lm > 5 */
+			/* Display text of current menu item */
 
-			/* Copy menu text to dialog, remove shortcut text */
+			mi = menui - MFIRST;
+			tmpmi = &tmp[mi];
 
-			strncpy 
-			( 
-				setprefs[OPTMTEXT].ob_spec.free_string,
-				menu[menui].ob_spec.free_string + 1L,
-				min(lm, lf) - 1
-			);
-
-			for ( i= min(lf, lm - 6); i < lf; i++ ) 
-				setprefs[OPTMTEXT].ob_spec.free_string[i] = ' '; 
-
-			/* Display defined shortcut in ASCII form */
-
-			disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, *tmpmi, TRUE );
-        
-			xd_drawthis( &prefinfo, OPTMTEXT );
-			xd_drawthis( &prefinfo, OPTKKEY );
-			redraw = FALSE;
-		}
-
-		do 		/* again: */
-		{
-			button = arrow_form_do ( &prefinfo, &oldbutton ); 
-
-			/* Interpret shortcut from the dialog */
-
-			strip_name( aux, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
-			strcpy ( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, aux );
-			
-			i = (int)strlen( aux ); 
-			*tmpmi = 0;
-
-			switch ( i )
+			if ( redraw )
 			{
-				case 0:						/* nothing defined */
-					break;
-				case 1:						/* single-character shortcut */
-					*tmpmi = aux[0] & 0x00FF;
-					break;
-				case 2:						/* two-character ^something shortcut */
-					if 
-					(    
-						(aux[0] == '^')  &&
-					    ( 
-							((aux[1] >= 'A') && (aux[1] <= 'Z')) || 
-							( (aux[i] & 0x80) != 0 )
+				lm = (int)strlen(menu[menui].ob_spec.free_string); /* How long? Assumed always to be lm > 5 */
+
+				/* Copy menu text to dialog, remove shortcut text */
+
+				strncpy 
+				( 
+					setprefs[OPTMTEXT].ob_spec.free_string,
+					menu[menui].ob_spec.free_string + 1L,
+					min(lm, lf) - 1
+				);
+
+				for ( i= min(lf, lm - 6); i < lf; i++ ) 
+					setprefs[OPTMTEXT].ob_spec.free_string[i] = ' '; 
+
+				/* Display defined shortcut in ASCII form */
+
+				disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, *tmpmi, TRUE );
+        
+				xd_drawthis( &prefinfo, OPTMTEXT );
+				xd_drawthis( &prefinfo, OPTKKEY );
+				redraw = FALSE;
+			}
+
+			do 		/* again: */
+			{
+				button = arrow_form_do ( &prefinfo, &oldbutton ); 
+
+				/* Interpret shortcut from the dialog */
+
+				strip_name( aux, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
+				strcpy ( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, aux );
+			
+				i = (int)strlen( aux ); 
+				*tmpmi = 0;
+
+				switch ( i )
+				{
+					case 0:						/* nothing defined */
+						break;
+					case 1:						/* single-character shortcut */
+						*tmpmi = aux[0] & 0x00FF;
+						break;
+					case 2:						/* two-character ^something shortcut */
+						if 
+						(    
+							(aux[0] == '^')  &&
+						    ( 
+								((aux[1] >= 'A') && (aux[1] <= 'Z')) || 
+								( (aux[i] & 0x80) != 0 )
+							)
 						)
-					)
-						*tmpmi = (aux[1] & 0x00FF) | XD_CTRL;
-					else
-						*tmpmi = XD_CTRL;  /* illegal/ignored menu object */
-					break;	
-				default:					/* longer shortcuts */
-					if ( aux[0] == '^' )
-					{
-						*tmpmi = XD_CTRL;
-						aux[0] = ' ';
-						strip_name( aux, aux );
-					}
-					if ( strcmp( aux, "BS" ) == 0 )
-						*tmpmi |= BACKSPC;
-					else if ( strcmp( aux, "TAB" ) == 0 )
-						*tmpmi |= TAB;
-					else if ( strcmp( aux, "SP" ) == 0 )
-						*tmpmi |= SPACE;
-					else if ( strcmp( aux, "DEL" ) == 0 )
-						*tmpmi |= DELETE;
-					else
-						*tmpmi = XD_SCANCODE; /* use this to mark invalid */
+							*tmpmi = (aux[1] & 0x00FF) | XD_CTRL;
+						else
+							*tmpmi = XD_CTRL;  /* illegal/ignored menu object */
+						break;	
+					default:					/* longer shortcuts */
+						if ( aux[0] == '^' )
+						{
+							*tmpmi = XD_CTRL;
+							aux[0] = ' ';
+							strip_name( aux, aux );
+						}
+						if ( strcmp( aux, "BS" ) == 0 )
+							*tmpmi |= BACKSPC;
+						else if ( strcmp( aux, "TAB" ) == 0 )
+							*tmpmi |= TAB;
+						else if ( strcmp( aux, "SP" ) == 0 )
+							*tmpmi |= SPACE;
+						else if ( strcmp( aux, "DEL" ) == 0 )
+							*tmpmi |= DELETE;
+						else
+							*tmpmi = XD_SCANCODE; /* use this to mark invalid */
+						break;
+				}
+			}
+			while (check_key(button, mi, tmp));	
+
+			/* 
+			 * Only menu items which lay between MFIRST and MLAST are considered;
+			 * if menu structure is changed, this interval should be redefined too;
+			 * only those menu items with a space in the second char position
+			 * are considered; other items are assumed not to be valid menu texts
+			 * note: below will crash in the (ridiculous) situation when the
+			 * first or the last menu item is not a good text
+			 */
+
+			switch ( button )
+			{
+				case OPTMPREV:
+					while ( menui > MFIRST && menu[--menui].ob_type != G_STRING);
+					if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
+						menui--;
+					redraw = TRUE;
+					break;
+				case OPTMNEXT:
+					while ( menui < MLAST && menu[++menui].ob_type != G_STRING);
+					if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
+						menui++;
+					redraw = TRUE;
+					break;
+				case OPTKCLR:
+					memclr( &tmp[0], (NITEM + 2) * sizeof(int) );
+					redraw = TRUE;
+					break;
+				default:
 					break;
 			}
-		}
-		while (check_key(button, mi, tmp));
+		} /* while... */
 
-		/* 
-		 * Only menu items which lay between MFIRST and MLAST are considered;
-		 * if menu structure is changed, this interval should be redefined too;
-		 * only those menu items with a space in the second char position
-		 * are considered; other items are assumed not to be valid menu texts
-		 * note: below will crash in the (ridiculous) situation when the
-		 * first or the last menu item is not a good text
-		 */
+		/* Here we come only with OK or Cancel */
 
-		switch ( button )
+		xd_buttnorm( &prefinfo, button);
+		xd_close(&prefinfo);
+
+		if (button == OPTOK)
 		{
-			case OPTMPREV:
-				while ( menui > MFIRST && menu[--menui].ob_type != G_STRING);
-				if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
-					menui--;
-				redraw = TRUE;
-				break;
-			case OPTMNEXT:
-				while ( menui < MLAST && menu[++menui].ob_type != G_STRING);
-				if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
-					menui++;
-				redraw = TRUE;
-				break;
-			case OPTKCLR:
-				memclr( &tmp[0], (NITEM + 2) * sizeof(int) );
-				redraw = TRUE;
-				break;
-			default:
-				break;
-		}
-	} /* while... */
+			int posmode = XD_CENTERED;
 
-	/* Here we come only with OK or Cancel */
+			/* 
+			 * Move kbd. shortcuts into permanent storage,
+			 * then insert them into menu texts
+			 */
 
-	xd_buttnorm( &prefinfo, button);
-	xd_close(&prefinfo);
+			memcpy( &options.kbshort[0], &tmp[0], (NITEM + 1) * sizeof(int) );
 
-	if (button == OPTOK)
-	{
-		int posmode = XD_CENTERED;
+			ins_shorts();
 
-		/* 
-		 * Move kbd. shortcuts into permanent storage,
-		 * then insert them into menu texts
-		 */
+			/* Get and then set dialog display mode */
 
-		memcpy( &options.kbshort[0], &tmp[0], (NITEM + 1) * sizeof(int) );
+			options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DBUFFERD + 1;
 
-		ins_shorts();
+			if (xd_get_rbutton(setprefs, OPTPAR2) == DMOUSE)
+			{
+				options.dial_mode |= DIALPOS_MODE;	
+				posmode = XD_MOUSE;
+			}
+			else
+				options.dial_mode &= ~DIALPOS_MODE;
 
-		/* Get and then set dialog display mode */
-
-		options.dial_mode = xd_get_rbutton(setprefs, OPTPAR1) - DBUFFERD + 1;
-
-		if (xd_get_rbutton(setprefs, OPTPAR2) == DMOUSE)
-		{
-			options.dial_mode |= DIALPOS_MODE;	
-			posmode = XD_MOUSE;
-		}
-		else
-			options.dial_mode &= ~DIALPOS_MODE;
-
-		get_opt(setprefs, &options.sexit, 1, SEXIT);
+			get_opt(setprefs, (int *)(&options.sexit), SAVE_CFG, SEXIT);
  
-		if ((options.tabsize = atoi(tabsize)) < 1)
-			options.tabsize = 1;
-
-		set_dialmode();
-		xd_setposmode(posmode);
-	}
+			set_dialmode();
+			xd_setposmode(posmode);
+		}
+	}		/* open ? */
 }
 
 
@@ -883,7 +886,7 @@ static void copyprefs(void)
 		button;
 
 	static const int 
-		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_FOLL, CF_SHOWD, P_HEADER};
+		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_SHOWD, CF_KEEPS, P_HEADER};
  
 	char 
 		*copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
@@ -938,7 +941,8 @@ static void opt_default(void)
 	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
 	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT | WD_SHOWN;    
 	options.plinelen = DEF_PLINE; 							
-	options.attribs = FA_SUBDIR | FA_SYSTEM;					
+	options.attribs = FA_SUBDIR | FA_SYSTEM;
+	options.sexit = SAVE_WIN;					
 #endif
 	options.mode = TEXTMODE;
 	options.aarr = 1;										    
@@ -970,7 +974,7 @@ static void short_default(void)
 	options.kbshort[MPRINT - MFIRST] =   XD_CTRL | 'P';
 	options.kbshort[MSELALL - MFIRST] =  XD_CTRL | 'A';
 	options.kbshort[MQUIT - MFIRST] =    XD_CTRL | 'Q';
-	options.kbshort[MDELETE - MFIRST] =  XD_CTRL | 0x7f; 	/* ^DEL */
+	options.kbshort[MDELETE - MFIRST] =  XD_CTRL | DELETE;
 	options.kbshort[MSAVESET - MFIRST] = XD_CTRL | 'S';
 	options.kbshort[MCYCLE - MFIRST] =   XD_CTRL | 'W';
 #endif
@@ -983,28 +987,30 @@ static void short_default(void)
  * Read configuration from the configuration file 
  */
 
-static void load_options(void)
+static int load_options(void)
 {
 	int error = 0;
 
-
+	autoloc_off();
 	noicons = FALSE;			/* so that missing ones be reported */
 
 	error = handle_cfgfile(infname, Config_table, infide, CFG_LOAD); 
 
-	/* If there was an error when loading options, set default values */
+	/* 
+	 * If there was an error when loading options, load defaults.
+	 */
 
 	if (error != 0)
 	{
 		opt_default();		/* options */
+		wd_default();		/* windows */
+		dsk_default();		/* desktop */
 		get_set_video(1);	/* set video */
 		short_default();	/* kbd shortcuts */
 		ft_default();		/* filetypes */
 		prg_default();		/* programtypes */
 		icnt_default();		/* icontypes */
-		dsk_default();		/* desktop */
 		app_default();		/* applications */
-		wd_default();		/* windows */
 		vastat_default();	/* AV status strings */
 	}
 
@@ -1012,6 +1018,8 @@ static void load_options(void)
 
 	xd_setposmode((options.dial_mode & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
 	set_dialmode();
+
+	return error;
 }
 
 
@@ -1043,8 +1051,8 @@ static CfgNest opt_config
 		{
 			/* 
 			 * Check some critical values against limits; if not checked and
-			 * some illegal value happens to be in the file, these variables
-			 * may crash the program or have other ugly consequences
+			 * some illegal value happened to be in the file, these variables
+			 * might crash the program or have other ugly consequences
 			 */
 
 			if ( options.plinelen < MIN_PLINE ) /* probably not entered in the dialog */
@@ -1056,7 +1064,6 @@ static CfgNest opt_config
 				|| (options.sort & ~WD_REVSORT) > WD_NOSORT
 				|| options.plinelen > MAX_PLINE
 				|| options.max_dir < 32 
-				|| options.max_dir > 4096
 				|| (options.dial_mode & DIAL_MODE) > XD_WINDOW
 				|| options.vrez > 7 
 			)
@@ -1074,7 +1081,12 @@ static CfgNest opt_config
 				/* Currently it makes no sense NOT to confirm touch */
 
 				options.cprefs |= CF_TOUCH;
-				options.cprefs &= ~(CF_CTIME | CF_CATTR);
+				options.cprefs &= ~(CF_CTIME | CF_CATTR);	
+
+				/* Compatibility issue in V3.63/V3.70; remove in the next version */
+
+				if(options.version < 0x0363)
+					options.sexit |= SAVE_WIN;
 
 				/* If all is OK so far, start setting TeraDesk */
 
@@ -1155,18 +1167,24 @@ static void save_options_as(void)
 
 
 /* 
- * Load configuration from an explicitely specified config file 
+ * Load configuration from an explicitely specified config file.
+ * If this does not succeed attempt to recover previous state.
  */
 
-static void load_settings(void)
+void load_settings(char *newinfname)
 {
-	char *newinfname;
-
-	if ((newinfname = locate(infname, L_LOADCFG)) != NULL)
+	if (newinfname)
 	{
-		free(infname);
+		char *oldinfname = infname;
 		infname = newinfname;
-		load_options();
+		if(load_options() != 0 && oldinfname)
+		{
+			free(infname);
+			infname = oldinfname;
+			load_options();
+		}
+		else
+			free(oldinfname);
 	}
 }
 
@@ -1204,7 +1222,6 @@ boolean find_cfgfiles(char **cfgname, boolean report)
 
 /*
  * Initiation function (reading configuraton, defaults, etc.).
- *
  * Result: TRUE if OK.
  */
 
@@ -1237,6 +1254,19 @@ static boolean init(void)
 	wd_init();				/* windows        */
 
 	menu_bar(menu, 1);
+
+	/* 
+	 * Force the name of the single-tasking program to DESKTOP 
+	 * this call to menu_register() is documented only of AES4
+	 * but in fact works in all Atari AESes.
+	 * Must come after menu_bar()
+	 */
+
+#if _MINT_
+	/* no need to do anything here ? */
+#else
+	menu_register(-1, thisapp);
+#endif
 
 	/* Set a default path. Ignore errors */
 
@@ -1274,7 +1304,7 @@ static void init_vdi(void)
 
 
 /*
- * Allocate a globally readable buffer for data exchange
+ * Allocate a globally readable buffer for data exchange (e.g. AV-protocol)
  */
 
 static int alloc_global_memory(void)
@@ -1293,10 +1323,10 @@ static int alloc_global_memory(void)
 #endif
 		0x03;
 
-	/* Note: Mint or Magic can always handle Alt/TT-RAM */
+	/* Note: Mint or Magic can always handle Alt/TT-RAM, I suppose? */
 
 #if _MINT_
-	if ( mint || (tos_version >= 0x206) ) /* Was magic instead of Mint here */
+	if ( mint || (tos_version >= 0x206) )
 #else
 	if ( tos_version >= 0x206 )
 #endif
@@ -1360,9 +1390,6 @@ fprintf(logfile,"\n  hndlmenu MQUIT");
 		case MSAVESET:
 			save_options();
 			break;
-		case MLOADOPT:
-			load_settings();
-			break;
 		case MSAVEAS:
 			save_options_as();
 			break;
@@ -1405,7 +1432,7 @@ int scansh ( int key, int kstate )
 {
 	int 
 		a = touppc(key & 0xFF),
-		h = key & 0x80;
+		h = key & 0x80; 		/* upper half of the 255-characters set */
 
 	if ( kstate == K_CTRL ) 				/* ctrl          */	
 	{
@@ -1429,25 +1456,34 @@ int scansh ( int key, int kstate )
  * Handle keyboard commands 
  */
 
+boolean dir_onalt(int key, WINDOW *w);
+
 static void hndlkey(int key, int kstate)
 {
 	int i = 0, k;
 	unsigned int uk = (unsigned int)key;
 	APPLINFO *appl;
-	int title; 				/* rsc index of current menu title */
+	int title; 					/* rsc index of current menu title */
 
 #if _LOGFILE
 fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 #endif
 
+	/* [Help] key ? */
+
 	if ( uk  == HELP || uk == SHIFT_HELP )
 		showhelp(uk);
+
+	if(uk == UNDO)
+		wd_deselect_all();
 
 	k = key & ~XD_CTRL; 
 
 	if ((( uk >= 0x803B) && ( uk <= 0x8044)) ||
 		(( uk >= 0x8154) && ( uk <= 0x815D)))
 	{
+		/* Function key ? */
+
 		k &= 0xFF;
 		k = (k >= 0x54) ? (k - 0x54 + 11) : (k - 0x3B + 1);
 
@@ -1469,35 +1505,17 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 			i++;
 		}
 
-		/* Handle various user-defined keyboard shortcuts */
+		/* Handle keyboard shortcuts or opening root directories */
 
 		if ( options.kbshort[i] == k )
 		{
 			menu_tnormal(menu, title, 0 );
-#if _LOGFILE
-fprintf(logfile,"\n hndlkey->hndlmenu %i",i);
-#endif
 			hndlmenu( title, i + MFIRST, kstate );
 		}
 		else
 		{
-			i = 0;
-			if ((key >= ALT_A) && (key <= ALT_Z))
-			{
-				/* Handle keys which open windows on drives (Alt-A to Alt-Z) */
-
-				i = key - (XD_ALT | 'A');
-				if (check_drive(i))
-				{
-					char *path;
-
-					if ((path = strdup(adrive)) != NULL)
-					{
-						path[0] = (char) i + 'A';
-						dir_add_dwindow(path);
-					}
-				}
-			}
+			if(dir_onalt(key, NULL))
+				autoloc_off();
 		}
 	}
 }
@@ -1517,7 +1535,7 @@ fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exi
 #endif
 
 	if (   
-			( message[0] >= AV_PROTOKOLL && message[0] <= VA_HIGH ) || 
+			( message[0] >= AV_PROTOKOLL && message[0] < VA_HIGH ) || 
 			( message[0] >= FONT_CHANGED && message[0] <= FONT_ACK )
 	   )
 	{
@@ -1791,7 +1809,7 @@ int main(void)
 		/* 
 		 * The resource file has been loaded.
 		 * Inform AES of TeraDesk's capabilities regarding messages 
-		 * (should it be version 0x340, 0x399 or 0x400 here ?)
+		 * (should here be version 0x340, 0x399 or 0x400 ?)
 		 */
 
 		if ( aes_version >= 0x399 ) 
@@ -1875,7 +1893,7 @@ int main(void)
 								va_checkclient();	/* remove nonexistent clients */
 								va_delall(-1);		/* remove remaining pseudowindows  */
 
-								if (options.sexit)	/* save config */
+								if ((options.sexit & SAVE_CFG) != 0)	/* save config */
 									save_options();
 
 								wd_del_all();		/* remove windows        */
@@ -1954,7 +1972,7 @@ int main(void)
 
 		/* 
 		 * If a shutdown was initiated but no termination message received,
-		 * and also if this is not a resolution change, teraDesk must
+		 * and also if this is not a resolution change, TeraDesk must
 		 * kill the system on its own. So perform a reset
 		 */
 

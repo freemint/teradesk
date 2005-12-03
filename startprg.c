@@ -76,12 +76,9 @@ static void set_title(char *title)
 	OBJECT dsktitle;
 	TEDINFO ttd;
 
-	dsktitle.ob_next = -1;
-	dsktitle.ob_head = -1;
-	dsktitle.ob_tail = -1;
-	dsktitle.ob_type = G_BOXTEXT;
+	init_obj(&dsktitle, G_BOXTEXT);
 	dsktitle.ob_flags = LASTOB;
-	dsktitle.ob_state = NORMAL;
+
 	dsktitle.ob_spec.tedinfo = &ttd;
 	dsktitle.r.x = 0;
 	dsktitle.r.y = 0;
@@ -126,21 +123,6 @@ static void remove_critic(void)
 {
 	Setexc(0x101, (void (*)()) old_critic);
 }
-
-/* not used anymore
-
-/* 
- * Copy a command line, including the length information;
- * This routine copies the complete buffer, not only
- * up to string terminator
- */
-
-static void copy_cmd(COMMAND *d, COMMAND *s)
-{
-	*d = *s;
-}
-
-*/
 
 
 /* 
@@ -222,11 +204,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 		menu_bar(menu, 0);
 		strcpy(pinfo.name, name);
-/*
-		copy_cmd(&pinfo.cml, cml);
-*/
 		pinfo.cml = *cml;
-
 		pinfo.envp = envp;
 		pinfo.appl_type = appl_type;
 		pinfo.new = TRUE;
@@ -302,9 +280,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			sim_click(); 
 
 			/* Start a program using Pexec */
-/*
-fprintf(logfile,"\n EXEC");
-*/
+
 			error = (int)x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
 
 			if (aptype == 0)
@@ -340,17 +316,8 @@ fprintf(logfile,"\n EXEC");
 
 				if (strcmp(cmd, pinfo.name) && cmd[0])
 				{
-/*
-					static LNAME name;
-					strcpy(name, cmd);
-					pinfo.name = name;
-*/
 					strcpy(pinfo.name, cmd);
-/*
-					copy_cmd(&pinfo.cml, (COMMAND *)tail);
-*/
 					pinfo.cml = *(COMMAND *)tail;
-
 					pinfo.envp = NULL;
 					pinfo.appl_type = 1;	/* Moet verbeterd worden. */
 					pinfo.new = TRUE;
@@ -539,9 +506,13 @@ void start_prg
 	 * to local environment
 	 */
 
+/* it seems better to always add ARGV to the environment
+
 #if _MINT_
-	catargv = catargv && ( fargv || (mint && !magx && !geneva && doenv) || !(mint || geneva) ); 
+	catargv = catargv && ( fargv || magx || (mint /* && !magx */  && !geneva && doenv) || !(mint || geneva) ); 
 #endif
+
+*/
 
 	/* 
 	 * Create a new environment string, by concatenating the
@@ -777,9 +748,19 @@ void start_prg
 			p[2] = NULL;						/* value for Prenice()            */
 			p[3] = prgpath;						/* pointer to default directory   */
 			p[4] = (doenv) ? buildenv : NULL;	/* pointer to environment string  */
+
+			/* Magic specifies the use of ARGV differenlty than other AESes */
 		
 			if ( magx )
-				(char)cmdline[0] = 255;  /* So Magic will provide ARGV if needed */
+			{
+				if(doargv)
+				{
+					if(catargv)
+						(char)cmdline[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+					else
+						(char)cmdline[0] = 255; /* Magic will do ARGV only if needeed */
+				}
+			}
 			else
 			{
 				if ( doargv && !catargv )

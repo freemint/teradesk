@@ -122,10 +122,9 @@ static void draw_sample(RECT *r, RECT *c, char *text, FONTBLOCK *fbl, int sel)
 		pclear(r); /* to show window colour and pattern */
 
 	fbl->id = fbl->fd[fbl->font].id;
+
 	set_txt_default((FONT *)(&fbl->id));
-
 	fnt_point(fbl->fsize, &fbl->chw, &fbl->chh);
-
 	vqt_extent(vdi_handle, text, extent);
 
 	tr.w = extent[2] - extent[0];
@@ -151,7 +150,9 @@ static int cdecl draw_text(PARMBLK *pb)
 {
 	FONTBLOCK *thefbl = (FONTBLOCK *)(((XUSERBLK *)(pb->pb_parm))->other);
 	char *thetext = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+
 	draw_sample(&pb->r, &pb->c, thetext, thefbl, (pb->pb_currstate & SELECTED));
+
 	return 0;
 }
 
@@ -219,7 +220,7 @@ static void set_theselector
 
 		if (i + slider->line >= nnf)
 		{
-/*
+/* no need?
 			o->ob_spec.tedinfo->te_ptext = "                ";
 */
 			*o->ob_spec.tedinfo->te_ptext = 0;
@@ -320,6 +321,7 @@ static int get_size(FONTBLOCK *fbl)
 
 	itoa(fbl->fsizes[min], wdfont[WDFSIZE].ob_spec.free_string, 10);
 	fbl->nfsizes = n;
+
 	return min;
 }
 
@@ -456,9 +458,12 @@ static void do_fd_button
 
 
 	fbl->fsize = fbl->fsizes[fbl->cursize];
+
 	itoa(fbl->fsize, wdfont[WDFSIZE].ob_spec.free_string, 10);
 	wdfont[WDFCOL].ob_spec.obspec.interiorcol = limcolor(fbl->colour);
+
 	fbl->colour = wdfont[WDFCOL].ob_spec.obspec.interiorcol;
+
 	xd_drawthis(info, WDFCOL);
 	xd_drawthis(info, WDFTEXT);
 	xd_drawthis(info, WDFSIZE);
@@ -535,35 +540,37 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 
 	/* Open the dialog */
 
-	xd_open(wdfont, &info);
-
-	/* Loop until told to exit */
-
-	while (!stop)
+	if(chk_xd_open(wdfont, &info) >= 0)
 	{
-		button = sl_form_do(wdfont, 0, &sl_info, &info) & 0x7FFF;
+		/* Loop until told to exit */
 
-		switch(button)
+		while (!stop)
 		{
-			case WDFOK:
-				if ((fbl.fd[fbl.font].id != wd_font->id) || (fbl.fsize != wd_font->size) || (fbl.colour != wd_font->colour) )
-				{
-					fbl.id = fbl.fd[fbl.font].id;
-					*wd_font = *(FONT *)(&fbl.id);
-					ok = TRUE;
-				}
+			button = sl_form_do(wdfont, 0, &sl_info, &info) & 0x7FFF;
 
-			case WDFCANC:
-				stop = TRUE;
-				break;
-			default:
-				do_fd_button(&info, &sl_info, &fbl, button);
-				break;
+			switch(button)
+			{
+				case WDFOK:
+					if ((fbl.fd[fbl.font].id != wd_font->id) || (fbl.fsize != wd_font->size) || (fbl.colour != wd_font->colour) )
+					{
+						fbl.id = fbl.fd[fbl.font].id;
+						*wd_font = *(FONT *)(&fbl.id);
+						ok = TRUE;
+					}
+
+				case WDFCANC:
+					stop = TRUE;
+					break;
+				default:
+					do_fd_button(&info, &sl_info, &fbl, button);
+					break;
+			}
 		}
+
+		xd_buttnorm(&info, button);
+		xd_close(&info);
 	}
 
-	xd_buttnorm(&info, button);
-	xd_close(&info);
 	free(fbl.fd);
 	wdfopen = FALSE;
 

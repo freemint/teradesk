@@ -112,11 +112,13 @@ typedef struct
 
 typedef struct
 {
-	unsigned int fulled : 1;
-	unsigned int iconified: 1; 
-	unsigned int fullfull: 1;
-	unsigned int resvd: 13; 
+	unsigned int fulled : 1;		/* window fulled */
+	unsigned int iconified: 1;		/* window iconified */ 
+	unsigned int fullfull: 1;		/* window very much fulled */
+	unsigned int setmask: 1;		/* non-default filename mask */
+	unsigned int resvd: 12;			/* currently unused */ 
 } WDFLAGS;
+
 
 
 /*
@@ -125,34 +127,26 @@ typedef struct
 
 #define WD_VARS 	int scolumns;  \
 					int rows;	   \
-					int columns;   	/* number of columns in window content (chars or icons) */ \
-					long nrows;	   	/* visible height (lines) */  \
-					int ncolumns;  	/* visible width (chars) */   \
-					int px;        	/* h.slider position  */ \
-					long py;       	/* v.slider position  */ \
-					long nlines;   	/* total number of lines in window content (lines or icons) */ \
-					char title[80]	/* window title */
+					int columns;   		/* number of columns in window content (chars or icons) */ \
+					long nrows;	   		/* visible height (lines) */  \
+					int ncolumns;  		/* visible width (chars) */   \
+					int px;        		/* h.slider position  */ \
+					long py;       		/* v.slider position  */ \
+					long nlines;   		/* total number of lines in window content (lines or icons) */ \
+					char title[80];		/* window title */ \
+					char *path;			/* name of directory or file */ \
+	struct winfo *winfo
 
 /*
  * Identical part of DIR_WINDOW and TXT_WINDOW structures
+ * Note: take care of compatibility between these window types
  */
-
-
-/* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
 typedef struct
 {
 	ITM_INTVARS;				/* Interne variabelen bibliotheek. */
 	WD_VARS;					/* other common header data */
-	struct winfo *winfo;
-
-	/* 
-	 * three window-type structures are identical up to this point:
-	 * DIR_WINDOW, TXT_WINDOW and TYP_WINDOW
-	 */
-
 }TYP_WINDOW;
-
 
 typedef struct winfo
 {
@@ -168,6 +162,8 @@ typedef struct winfo
 	boolean used;
 	TYP_WINDOW *typ_window;
 }WINFO;
+
+
 
 /* Note: see window.c; CfgNest positions */
 
@@ -200,6 +196,15 @@ extern NEWSINFO1 thisw;
 extern SINFO2 that;
 extern SEL_INFO selection;
 
+extern boolean autoloc;
+
+#if _MINT_
+extern LNAME automask; /* to compose the autolocator mask */
+#else
+extern SNAME automask; /* to compose the autolocator mask */
+#endif
+
+
 extern CfgEntry 
 	fnt_table[],
 	positions_table[],
@@ -213,6 +218,7 @@ CfgNest positions;
 CfgNest cfg_wdfont;
 CfgNest wd_config;
 
+void autoloc_off(void);
 int itm_find(WINDOW *w, int x, int y);
 boolean itm_state(WINDOW *w, int item);
 ITMTYPE itm_type(WINDOW *w, int item);
@@ -222,7 +228,8 @@ const char *itm_name(WINDOW *w, int item);
 char *itm_fullname(WINDOW *w, int item);
 char *itm_tgtname(WINDOW *w, int item);
 int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib);
-boolean itm_islink(WINDOW *w, int item, boolean cond);
+boolean itm_islink(WINDOW *w, int item);
+boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *type);
 boolean itm_open(WINDOW *w, int item, int kstate);
 
 void itm_select(WINDOW *w, int selected, int mode, boolean draw);
@@ -252,7 +259,12 @@ void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
 
 void wd_sizes(void);
+#if __USE_MACROS
+#define wd_init wd_default
+#else
 void wd_init(void);
+#endif
+
 void wd_default(void);
 int wd_load(XFILE *file);
 
@@ -282,7 +294,6 @@ void wd_type_vslider(WINDOW *w, int newpos);
 void wd_type_moved(WINDOW *w, RECT *newpos);
 void wd_type_sized(WINDOW *w, RECT *newsize);
 void wd_type_redraw(WINDOW *w, RECT *area);
-void do_redraw(WINDOW *w, RECT *r1);
 
 void wd_type_title(TYP_WINDOW *w);
 void set_hslsize_pos(TYP_WINDOW *w);

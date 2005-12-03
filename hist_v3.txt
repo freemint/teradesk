@@ -2,6 +2,168 @@ Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
                                           2002, 2003  H. Robbers.
                               2002, 2003, 2004, 2005  Dj. Vukovic.
 
+Version 3.70
+------------
+- In order to reduce program size, removed some code which handled 
+  compatibility with earlier versions of configuration files. Oldest entirely 
+  acceptable version of configuration file is now 3.60; some portions of 
+  older configuration files may not be interpreted correctly by TeraDesk 
+  (see also remarks for previous releases in the history file).
+
+- Autoselector feature is available- a way was found to add it with
+  little cost in program size: directory items can be automatically
+  selected as their names are typed on the keyboard. As this may collide
+  with single-key keyboard shortcuts, the conflict is resolved in the 
+  following way:
+  .If there are no single-key keyboard shortcuts defined, autoselector is 
+   always active. It is reset by the [Insert] key and the last character
+   typed is deleted by the [Backspace] key.
+  .If single-key keyboard shortcuts (other than [Tab] or [Delete]) are 
+   defined, autoselector must be toggled on/off by the [Insert] key, which 
+   also temporarily deactivates/activates keyboard menu shortcuts.
+  .Autoselector is reset upon each change of the topped window, and also
+   upon any directory refresh.
+  .Items selected in the autoselector can be opened by pressing the [Return]
+   key (because the keyboard shortcut assigned to 'Open' may be temporarily
+   disabled by the autoselector; this is also a concession to compatibility
+   with other desktops). 
+
+  This feature, being new in TeraDesk, probably still needs some refinement. 
+
+- Selected items can be deselected by the [Undo] key.
+
+- File sizes and creation dates/times are shown in the name-conflict dialog.
+
+- Improved manipulation with TeraDesk's configuration files:
+  .If TeraDesk itself is installed in TeraDesk as the application for 
+   TERADESK.INF or similar files (e.g. T*.INF), then it can load a 
+   configuration file being double-clicked upon in a directory window or
+   on the desktop. If DESKTOS.PRG is used, DESKTOP.PRG has still to be 
+   installed as the application (not DESKTOS.PRG).
+  .If a TeraDesk's configuration file is selected in a directory window or
+   on the desktop, then, upon activating 'Load settings...' menu item, 
+   TeraDesk immediately loads that file without opening the file selector.
+  .Improved restoring of correct state in case of attempting to load a
+   corrupted configuration file. If a good configuration file has been 
+   previously loaded after TeraDesk has been started, settings are restored
+   from that file.
+
+- Strings written to a configuration file (command lines for applications,
+  icon labels, etc.) can now contain the "@" character.
+
+- External application can be specified for file comparing through
+  'Set special use'.
+
+- A new option added to Window options dialog, enabling the user to select 
+  whether open windows will be saved in the configuration file (some users,
+  including myself, prefer to always start with a clean desktop). 
+
+- Open and saved directory windows for which filename masks have not been 
+  explicitely set now reload with the filemasks default for the current 
+  operating system type (i.e. "*.*" in single-TOS or Geneva, "*" in 
+  Mint/Magic). This makes it easier to use the same configuration files both
+  in single-TOS and multitasking environment. A mask for an open directory 
+  window is reset to default as above if the editable field 'File type:' is 
+  cleared in the Set Name Mask dialog and then 'OK' is clicked. This is now 
+  more similar  to the behaviour of the original TOS desktop. 
+  Note: explicitely set "*.*" or "*" mask is not treated as a default one.
+
+- Single-TOS version of TeraDesk now always registers with AES as "DESKTOP";
+  there is no need anymore to rename DESKTOS.PRG to DESKTOP.PRG in order for
+  the AV-protocol to work with single-TOS version of TeraDesk (assuming the
+  environment variable AVSERVER=DESKTOP is defined). This may simplify 
+  making multiple boot configurations.
+
+- Rearranged and updated the Help dialog.
+
+- 'Follow links' checkbox button moved from Copy and Print options to more 
+  logical places in the Copy confirmation dialog and Set desktop icon
+  dialog, where the state of this option can be more easily monitored.
+  'Follow links' option can be made active only for a single (batch) 
+  operation.
+
+- 'Tab size' editable field moved from 'Desk preferences' dialog to a more 
+  logical place in Window options dialog. 
+
+- Improved handling of filenames and other parameters containing spaces and
+  quote characters:
+   . Names containing quotes can be handled now in the AV- and ARGV-protocols,
+     and command lines for installed applications.  
+   . IUtems can be quoted by either single or double quotes.
+   . Improved parsing of mixed single- and double-quotes in command lines.
+   . Improved working of the ARGV protocol in Magic.
+   . Corrected unwanted truncation of command line parameters after unused 
+     filename placeholders (%f, %n, %p) in command lines.
+
+- Improved detection of filesystem capabilities (long names, symbolic links, 
+  attributes).
+
+- Changed display of window title for iconified windows; item name/path
+  is now shown in icon label (longer string available than in window
+  title).
+
+- Corrected display of partition size and free space for partitions larger
+  than 2GB (32-bit long integer limit) in Show info...  However, TeraDesk 
+  will still incorrectly display total size of files in folders or during 
+  file operations if size exceeds 2GB, and also other unpredictable 
+  behaviour may occur in such cases. This is probably relevant only in a 
+  multitasking environment and non-TOS/FAT filesystems.             
+
+- Corrected counting of files and folders regarding global mask setttings
+  (i.e. hidden and system items) for Show info... and file operations. 
+  Now such items are always counted even if they are not visible, because
+  file operations (copy, delete...) are executed upon them anyway. It
+  should be noted that the info line in a directory window displays the
+  count of visible items only, which is affected by the name mask as well.
+
+- Corrected inconsistent following of symbolic links when doing file 
+  copy/delete/touch operations. Now, only links directly selected in a 
+  directory window or on the desktop are followed when 'Follow links' 
+  option is selected. Any links in the subdirectories of a selected item 
+  are always worked upon as links. 
+
+- Fixed inconsistent deselection in directory windows after copy operations;
+  items were sometimes deselected and sometimes were not. As the erroneous
+  behaviour (keeping items selected) in fact turned out to be quite useful,
+  a new option was added to 'Copy and Print....' dialog: 'Keep selection'.
+  If it is ON, selected items will remain selected after all copy/move
+  or drag-to-desktop operations. This is handy for multiple actions upon 
+  same items.
+
+- Fixed a bug which corrupted drag&drop and some VA messages if more than
+  one name was passed.
+
+- Fixed several errors which, together, sometimes disabled 'touching' files 
+  in subdirectories and prevented resetting of 'archived' attribute on files
+  in FAT partitions.
+
+- Fixed a bug which sometimes disabled unprotecting of readonly files and
+  generally caused inappropriate 'Access denied' alerts, e.g. when renaming
+  directories, etc.
+
+- Fixed needless interrogation of drive A: in some file operations 
+  (was manifested in Mint and Magic only).
+
+- Reenabled the use of DEL character as a keyboad shortcut; this has been 
+  accidenatlly lost since V3.50 so that only ^DEL could be recognized.
+
+- Corrected an instance of 'This application is already running' alert
+  appearing when an object is dragged onto an icon of an already running
+  application (the alert should not have appeared in that case). In order
+  to increase flexibility, this  behaviour is modifiable by pressing the 
+  [Alternate] key.
+
+- Better handling of failures to open dialogs (when there is insufficent 
+  memory or too many windows, etc.).
+
+- Corrected a mistake in a validation string for 8+3 filenames in DESKTOP.RSC
+
+- Several optimizations and simplifications made in the code.
+
+- Some corrections, updates and additional links made in the hypertext 
+  manual.
+
+
 Version 3.62
 ------------
 - Added one hex digit to display of line offset in text windows in

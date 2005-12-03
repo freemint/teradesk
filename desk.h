@@ -67,27 +67,30 @@
 
 /* Copy and print options */
 
-#define CF_COPY			0x0001	/* confirm copy             */
-#define CF_DEL			0x0002	/* confirm delete           */
-#define CF_OVERW		0x0004	/* confirm overwrite        */
-#define CF_PRINT		0x0008 	/* confirm print            */
-#define CF_TOUCH		0x0010  /* confitm touch (not used) */
-								/* unused 0x0020 0x0040     */
+#define CF_COPY			0x0001	/* confirm copy              */
+#define CF_DEL			0x0002	/* confirm delete            */
+#define CF_OVERW		0x0004	/* confirm overwrite         */
+#define CF_PRINT		0x0008 	/* confirm print             */
+#define CF_TOUCH		0x0010  /* confirm touch (not used)  */
+#define CF_KEEPS		0x0020	/* keep selection after copy */
+								/* unused 0x0040     */
 #define P_GDOS			0x0080	/* use GDOS device for printing; currently NOT used */
-								/* unused 0x0010 0x0020 0x0040 */
+								/* unused 0x0020 0x0040 */
 #define CF_CTIME		0x0400	/* change date & time */
 #define CF_CATTR		0x0800  /* change file attributes */
 #define CF_SHOWD		0x1000 	/* always show dialog */
 #define P_HEADER		0x2000	/* print header and formfeed */
 #define CF_FOLL			0x4000	/* follow links */
 
-/* Other diverse options */
+/* Other diverse dialog options */
 
 #define DIALPOS_MODE	0x0040	/* OFF = mouse, ON = center    */
-#define DIAL_MODE   	0x0003  /* 0x0001 = flying, 0x0002 = windowed */
+#define DIAL_MODE   	0x0003  /* 0x0001 = XD_BUFFERED (flying), 0x0002 = XD_WINDOW */
 
 #define TEXTMODE		0		/* display directory as text */
 #define ICONMODE		1		/* display directory as icons */
+
+/* These options are for menu items */
 
 #define WD_SORT_NAME	0x00	/* sort directory by file name  */
 #define WD_SORT_EXT		0x01	/* sort directory by file type  */
@@ -111,11 +114,16 @@
 							/* unused: 0x0004 0x0008 0x0010 0x0020 0x0040 0x0080 */
 #define SAVE_COLORS	0x0100	/* save palette */
 
+/* Saving options */
+
+#define SAVE_CFG	0x0001	/* Save configuration at exit */
+#define SAVE_WIN	0x0002	/* Save open windows at exit */
+
 /* Option bitflags for other diverse settings */
 
 #define S_IGNCASE	0x0001	/* Ignore string case when searching */
 #define S_SKIPSUB	0x0002	/* Skip subdirectories when searching */
-							/* unused 0x0004 0x0008   */
+							/* Unused: 0x0002, 0x0004 */
 #define TOS_KEY		0x0020	/* 0 = continue, 1 = wait */
 #define TOS_STDERR	0x0200	/* 0 = no redirection, 1 = redirect handle 2 to 1. */
 
@@ -155,7 +163,7 @@ typedef struct
 	int cprefs;					/* copy prefs: CF_COPY|CF_DEL|CF_OVERW|CF_PRINT|CF_TOUCH|CF_CTIME|CF_CATTR|CF_SHOWD|P_HEADER|CF_FOLL */
 	int xprefs;					/* more preferences: S_IGNCASE | S_SKIPSUB | TOS_KEY | TOS_STDERR  */
 	unsigned int dial_mode;		/* dialog mode (window/flying) */
-	int sexit;					/* save desk on exit */
+	unsigned int sexit;			/* save on exit */
 	int kbshort[NITEM + 2];		/* keyboard shortcuts */
 
 	/* Sizes */

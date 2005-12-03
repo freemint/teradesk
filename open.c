@@ -67,29 +67,31 @@ int open_dialog(void)
 		thebutton,
 		button = 0; /* assuming that no button will ever have index 0 */
 
-	xd_open(openw, &owinfo);
-	button = xd_form_do (&owinfo, ROOT);
-	thebutton = button;
-
-	switch(button)
+	if(chk_xd_open(openw, &owinfo) >= 0)
 	{
-		case OWRUN:
-			prg_info(NULL, empty, 0, (PRGTYPE *)&awork);
-			log_shortname(awork.shname, awork.name);
-			if (!prgtype_dialog(NULL, 0, (PRGTYPE *)&awork, LS_APPL | LS_EDIT))
-				button = 0;
-			break;
-		case OWUSE:
-			log_shortname(fwork.filetype, awork.name);
-			app_install(LS_SELA); /* selitem is nonnull only if successful here */
-			if (!selitem)
-				button = 0;			
-		default:
-			break;
-	}
+		button = xd_form_do (&owinfo, ROOT);
+		thebutton = button;
 
-	xd_buttnorm(&owinfo, thebutton);
-	xd_close(&owinfo);
+		switch(button)
+		{
+			case OWRUN:
+				prg_info(NULL, empty, 0, (PRGTYPE *)&awork);
+				log_shortname(awork.shname, awork.name);
+				if (!prgtype_dialog(NULL, 0, (PRGTYPE *)&awork, LS_APPL | LS_EDIT))
+					button = 0;
+				break;
+			case OWUSE:
+				log_shortname(fwork.filetype, awork.name);
+				app_install(LS_SELA); /* selitem is nonnull only if successful here */
+				if (!selitem)
+					button = 0;			
+			default:
+				break;
+		}
+
+		xd_buttnorm(&owinfo, thebutton);
+		xd_close(&owinfo);
+	}
 
 	return button;
 }
@@ -144,6 +146,8 @@ boolean item_open
 	int 
 		item = initem;	/* "item", locally (i.e. maybe changed) */
 
+
+	autoloc_off();
 
 	if ( (kstate & K_ALT) != 0 )
 		alternate = TRUE;
@@ -332,6 +336,7 @@ boolean item_open
 			}
 			else
 				deselect = FALSE;
+
 			break;
 
 		case ITM_PREVDIR:
@@ -342,6 +347,7 @@ boolean item_open
 				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;
+
 			break;
 
 		case ITM_FOLDER:
@@ -352,6 +358,7 @@ boolean item_open
 				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;
+
 			break;
 
 		case ITM_PROGRAM:
@@ -413,6 +420,7 @@ boolean item_open
 				}
 				free(awork.name);
 			}
+
 			onfile = FALSE;
 			break;
 
@@ -425,5 +433,3 @@ boolean item_open
 
 	return deselect;
 }
-
-

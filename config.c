@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ *                         2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -81,7 +81,7 @@ int
  */
 
 static const char 
-/*
+/* 
 	eol[3] = {'\r','\n', 0}; /* <cr> <lf> */
 */
 	eol[3] = {'\n', 0, 0};   /* <lf>      */
@@ -91,18 +91,14 @@ static const char
  * Substitute all "%" in a string with  "$" ?? 
  */
 
-static boolean no_percent(char *s)
+static void no_percent(char *s)
 {
-	bool perc = false;
-
 	while (*s)
 	{
-		perc = (*s == '%');
-		if (perc)
+		if (*s == '%');
 			*s = '$';
 		s++;
 	}
-	return perc;
 }
 
  
@@ -229,7 +225,8 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 		level = level0 + 1,
 		error = 0;
 
-	char 
+	char 		
+		ts[MAX_CFGLINE],	 /* temporary */
 		fmt[2 * MAX_KEYLEN]; /* "2 *" because of "end..." */
 
 	while( (tab->type) && (error >= 0) )
@@ -277,16 +274,24 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						case CFG_S:
 						{
 							/* Write string value */
-							char *ss = (char *)tab->a;
+							char
+								*tp = ts, 
+								*ss = (char *)tab->a;
+
 							if (*ss || emp)
 							{
 								while(*ss)
 								{
+									if (*ss == '@')
+										*tp++ = *ss;
 									if (*ss == ' ')
 										*ss = '@';
-									ss++;
+									*tp++ = *ss++;						
 								}
-								error = fprintf_wtab(fp, lvl, fmt, tab->a);
+
+								*tp = 0;
+
+								error = fprintf_wtab(fp, lvl, fmt, ts);
 							}
 							break;
 						}
@@ -331,7 +336,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						}
 						default:
 						{
-							/* Remove any format specifier and write as string */
+							/* Remove any format specifier and write as a string */
 
 							no_percent(fmt);		/* safety check */
 							error = fprintf_wtab(fp, lvl, fmt  );
@@ -408,16 +413,22 @@ static char *nocomment( char *f )
 
 static void cfgcpy(char *d, char *s, int x)
 {
-	while ( 				/* loop until: */     
-			x > 0			/* character count */
-			&& *s != ' '	/* blank */
-			&& *s != '\t'	/* tab */
-			&& *s != ';'	/* comment */
-			&& *s != 0		/* end of string */
-		  )
+	while 
+	( 					/* loop until: */     
+		x > 0			/* character count */
+		&& *s != ' '	/* blank */
+		&& *s != '\t'	/* tab */
+		&& *s != ';'	/* comment */
+		&& *s != 0		/* end of string */
+	)
 	{
 		if (*s == '@') 
-			*s = ' ';
+		{
+			if(s[1] == *s)
+				s++;
+			else
+				*s = ' ';
+		}
 
 		*d++ = *s++; 
 		x--;
@@ -683,6 +694,7 @@ int handle_cfg
 		(*initial_setup)(void) = ini,
 		(*default_setup)(void) = def;
 
+
 	if ( io == CFG_SAVE )
 	{
 		/* 
@@ -701,7 +713,7 @@ int handle_cfg
 		 * usually clear all existing entries 
 		 */
 
-		if ( ini )
+		if (ini)
 			initial_setup();
 
 		error = CfgLoad( fp, cfgtab, MAX_KEYLEN, level );
@@ -710,11 +722,13 @@ int handle_cfg
 		{
 		    alert_printf(1, ALOADCFG, cname, get_message(error));
 
-			/* In case of error, again perform initial, then default setup */
+			/* 
+			 * In case of error, again perform default setup 
+			 * It always contain initial setup as well
+			 */
 
-			if ( ini )
-				initial_setup();
-			default_setup();
+			if(def)
+				default_setup();
 		}
 	}
 

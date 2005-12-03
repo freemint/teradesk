@@ -90,7 +90,7 @@ char *x_makepath(const char *path, const char *name, int *error)
 	if ((p = malloc(strlen(path) + strlen(name) + 2L)) != NULL)
 	{
 		*error = 0;
-		make_path(p, (char *) path, (char *) name);
+		make_path(p, (char *)path, (char *)name);
 	}
 	else
 		*error = ENSMEM;
@@ -108,32 +108,33 @@ char *x_makepath(const char *path, const char *name, int *error)
 boolean x_exist(const char *file, int flags)
 {
 	XATTR attr;
-	int type, theflag;
-
+	unsigned int itype;
+	int theflag;
 
 #if _MINT_
-	if ( x_attr( (flags & EX_LINK) ? 1 : 0, FS_LFN, file,  &attr) != 0 )
+	if ( x_attr( (flags & EX_LINK) ? 1 : 0, FS_INQ, file,  &attr) < 0 )
 #else
-	if (x_attr(0, FS_LFN, file, &attr) != 0) 
+	if (x_attr(1, FS_INQ, file, &attr) < 0) 
 #endif
+	{
 		return FALSE; /* x_attr can't find target */
+	}
 	else
 	{
-		type = attr.mode & S_IFMT;
+		itype = attr.mode & S_IFMT;
 
-		switch(type)
+		switch(itype)
 		{
 			case S_IFDIR:
 				theflag = EX_DIR;
 				break;
-			case S_IFREG:
-				theflag = EX_FILE;
-				break;
-#if _MINT
+#if _MINT_
 			case S_IFLNK:
 				theflag = EX_LINK;
 				break;
 #endif
+			default:
+				theflag = EX_FILE;
 		}
 
 		if ( (flags & theflag) == 0 )
@@ -297,6 +298,9 @@ int x_rmdir(const char *path)
 
 int x_mklink(const char *newname, const char *oldname)
 {
+	if(x_exist(newname, EX_LINK))
+		return EACCDN;
+
 	return xerror( (int)Fsymlink( (char *)oldname, (char *)newname ) );
 }
 
@@ -541,11 +545,19 @@ int x_unlink(const char *file)
 
 int x_fattrib(const char *file, XATTR *attr)
 {
-	int 
-		error = xerror((int)Fattrib(file, 1, attr->attr));
+	int
+#if _MINT_
+		mode,
+#endif
+		mask = (FA_READONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE),
+		error;
+
+	if((attr->mode & S_IFMT) == S_IFDIR)
+		mask |= FA_SUBDIR;
+
+	error = xerror((int)Fattrib(file, 1, (attr->attr & mask) ));
 
 #if _MINT_
-	int
 		mode = attr->mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
 
 	if(mint)
@@ -705,6 +717,7 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
  * 0x0001: long file names are possible
  * 0x0002: symbolic links are possible
  * 0x0004: access rights and user/group IDs are possible.
+ * 0x0008: case-sensitive names are possible
  * If neither mint or magic are present, always return 0. 
  * If the inquiry is about the contents of a folder specified
  * then 'path' should be terminated by a '\'
@@ -730,13 +743,17 @@ int x_inq_xfs(const char *path)
 
 		/* 
 		 * If information can not be returned, results will be < 0, then
-		 * treat as if there are no valid fields
+		 * treat as if there are no fields set.
 		 */
 
 		if ( m < 0 )
 			m = 0;
 		if ( x < 0 )
 			x = 0;
+		if (c < 0 )
+			c = 0;
+		if ( t < 0)
+			t = 0;
 
 		/* 
 		 * If (m & 0x1FF00), nine access rights bits are valid mode fields
@@ -746,23 +763,23 @@ int x_inq_xfs(const char *path)
 		if ((m & 0x0001FF00L) != 0 && (x & 0x00000030L) != 0 )
 			retcode |= FS_UID;
 
-		/* Are link itemtypes valid ? */
-
-		if ( (m & 0x01000000L) != 0 )
-			retcode |= FS_LNK;
-
 		/*  
 		 * DP_NOSENSITIVE = 1 = not sensitive, converted to uppercase
 		 * DP_DOSTRUNC = 2 = file names truncated to 8+3
 		 */
 
-		if (c >= 0 && t >= 0 && !(c == DP_NOSENSITIVE && t == DP_DOSTRUNC))
-			retcode |= FS_LFN;
+		if(c !=  DP_NOSENSITIVE)
+		{
+			retcode |= FS_CSE;
 
-		/* 
-		 * Generally, retcode will contain FS_LFN | FS_LNK (0x0003) for LFN+links, 
-		 * and FS_UID (0x0004) for user access rights 
-		 */
+			if(t != DP_DOSTRUNC)
+				retcode |= FS_LFN;
+		}
+
+		/* Are link itemtypes valid ?  */
+
+		if ( (m & 0x01000000L) != 0 )
+			retcode |= FS_LNK;
 	}
 #endif
 
@@ -785,7 +802,7 @@ XDIR *x_opendir(const char *path, int *error)
 	{
 		dir->path = (char *)path;
 
-		strsncpy(p, path, sizeof(VLNAME)-1L);
+		strsncpy(p, path, sizeof(VLNAME) - 1L);
 		if (*(p + strlen(p) - 1) != '\\')
 			strcat(p, bslash);
 
@@ -807,7 +824,7 @@ XDIR *x_opendir(const char *path, int *error)
 		}
 		else
 		{
-			/* File system with long filenames */
+			/* File system with long filenames or other extensions */
 	
 			if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
 			{
@@ -835,6 +852,7 @@ XDIR *x_opendir(const char *path, int *error)
 long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib) 
 {
 	static char fspec[260];
+	long result;
 
 	/* Prepare some pointer to return in case any error occurs later */
 
@@ -864,15 +882,12 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 				error = EFNTL;
 			else
 			{
-#if _MINT_
-				if ( mint ) 				/* no need to waste time otherwise */
-					strupr(dir->data.gdata.dta.d_fname); /* arrogant MiNT tampering with filenames. */
-#endif
 				*buffer = dir->data.gdata.dta.d_fname; 
 				dta_to_xattr(&dir->data.gdata.dta, attrib);
 			}
 		}
-		return (long) error;
+
+		result = (long)error;
 	}
 #if _MINT_
 	else
@@ -894,9 +909,15 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 		if ( n[0] == '.' && n[1] != '.' )
 			attrib->attr |= FA_HIDDEN;
 
-		return x_retresult(error);
+		result = x_retresult(error);
 	}
+
+	if ( mint && ((dir->type & FS_CSE) == 0)) /* no need to waste time otherwise */
+		strupr(dir->data.gdata.dta.d_fname); /* arrogant MiNT tampering with filenames. */
+
 #endif /* _MINT_ */
+
+	return result;
 }
 
 
@@ -967,7 +988,7 @@ long x_closedir(XDIR *dir)
 /* 
  * Read file atttributes (in the extended sense) 
  * mode=0: follow link; 1: attribute of the link itself
- * fs_type contains bitflags ( see x_inq_xfs() ):
+ * parameter fs_type contains bitflags ( see x_inq_xfs() ):
  * FS_TOS = 0x0000 : TOS filesystem
  * FS_LFN = 0x0001 : has long filenames
  * FS_LNK = 0x0002 : has links
@@ -986,18 +1007,26 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 	if (mint && ((fs_type & FS_ANY) != 0) )
 	{
 		/* 
-		 * Not FAT filesystem.
+		 * This is not a FAT filesystem.
 		 * Attempt to set some sensible file attributes 
 		 * from access rights and filename. If noone has
 		 * write permission, set READONLY attribute;
 		 * If the name begins with a dot, set HIDDEN attribute.
+		 * It seems that Fxattr() does not set all of xattr->mode (???)
+		 * therefore it is here set to 0 prior to inquiry
 		 */
+
+		xattr->mode = 0;
 
 		result = x_retresult(Fxattr(flag, name, xattr));
 
 		if ( (result >= 0) && ((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0))
+		{
 			if((xattr->mode & S_IFMT)  != S_IFLNK)
 				xattr->attr |= FA_READONLY;
+			else
+				xattr->attr &= ~FA_READONLY;
+		}
 
 		if( name[0] == '.' && name[1] != '.' )
 			xattr->attr |= FA_HIDDEN;			
@@ -1388,7 +1417,7 @@ int x_fclose(XFILE *file)
 }
 
 
-/* This routine (a pair to x_fwrite) is never used in TeraDesk
+/* This routine (a pair with x_fwrite) is never used in TeraDesk
 
 /* 
  * Read file contents (not more than "length" bytes)

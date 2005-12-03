@@ -60,5 +60,6 @@ void upd_copyname(const char *dest, const char *path, const char *name);
 int copy_error(int error, const char *name, int function);
 
 boolean itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
-int touch_file( const char *fullname, DOSTIME *time, XATTR *attr, boolean link );
+boolean itmlist_wop(WINDOW *w, int n, int *list, int function);
+int touch_file( const char *fullname, DOSTIME *time, XATTR *attr, boolean link);
 int frename(const char *oldfname, const char *newfname, XATTR *attr);

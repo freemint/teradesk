@@ -353,11 +353,11 @@ void get_set_video (int set)
 
 		if ( set == 1 )
 		{
-			/* Calculate window sizes */
+			/* Calculate window sizes to fit the screen */
 
 			wd_sizes();
 
-			/* Change window sizes to fit screen */
+			/* Change window sizes to fit the screen */
 
 			w = xw_first();
 
@@ -371,7 +371,7 @@ void get_set_video (int set)
 			menu_bar(menu, 0);
 			regen_desktop(desktop);
 			menu_bar(menu, 1);
- 			wd_drawall();
+			wd_drawall();
 		}
 		else /* Set > 1 */
 		{
@@ -381,7 +381,9 @@ void get_set_video (int set)
 #if _MINT_
 				ignor,
 #endif
-				iret, wisgr, wiscr;
+				/* iret, currently not used */
+
+				wisgr, wiscr;
 
 			if (fal_mil)
 			{
@@ -425,7 +427,8 @@ void get_set_video (int set)
 			 * change resolution directly. Unfortunately, not all AESes
 			 * return error if shel_write(5,...) above fails...
 			 */
-/*
+
+/* this does not work for the time being
 			if ( iret == 0 )
 			{
 				/* Besides, HOW to do this ? */
@@ -611,150 +614,151 @@ int voptions(void)
 	
 	vprefsold = options.vprefs;
 
-	xd_open( vidoptions, &info );
+	if(chk_xd_open( vidoptions, &info ) >= 0)
+	{
+		/* Loop until OK or Cancel */
 
-	/* Loop until OK or Cancel */
+		do
+		{	
+			/* Redraw display of the current number of colours */
 
-	do
-	{	
-		/* Redraw display of the current number of colours */
-
-		npmin = 1;
-		npmax = 16;
-		ap = (char *)empty;
-		ncc = 0x00000001L << np;
-		npp = np;
+			npmin = 1;
+			npmax = 16;
+			ap = (char *)empty;
+			ncc = 0x00000001L << np;
+			npp = np;
 		
-		if ( ncc > 1024 )
-		{
-			ncc /= 1024;
-			ap = "K";
-		}
+			if ( ncc > 1024 )
+			{
+				ncc /= 1024;
+				ap = "K";
+			}
 
-		ltoa(ncc, s, 10);
-		strcat(s, ap);
+			ltoa(ncc, s, 10);
+			strcat(s, ap);
 
- 		xd_drawthis(&info, VNCOL);
+ 			xd_drawthis(&info, VNCOL);
 
-		button = xd_form_do(&info, ROOT);
+			button = xd_form_do(&info, ROOT);
 
-		/* Which standard mode is currently selected */
+			/* Which standard mode is currently selected */
     
-		newrez = rimap[xd_get_rbutton(vidoptions, VREZOL)];
+			newrez = rimap[xd_get_rbutton(vidoptions, VREZOL)];
 
-		/* There are some mode dependencies on a Falcon... */
+			/* There are some mode dependencies on a Falcon... */
 
-		if (fal_mil)
-		{
-			newmode &= ~(VM_STMODE | VM_80COL | VM_NPLANES);
-			newmode |= (int)(npc[np]);
+			if (fal_mil)
+			{
+				newmode &= ~(VM_STMODE | VM_80COL | VM_NPLANES);
+				newmode |= (int)(npc[np]);
 
-			if ( newrez <= ST_HIGHRES )
-				newmode |= VM_STMODE;
-			if (newrez != ST_LOWRES && newrez != TT_LOWRES)
-				newmode |= VM_80COL;
+				if ( newrez <= ST_HIGHRES )
+					newmode |= VM_STMODE;
+				if (newrez != ST_LOWRES && newrez != TT_LOWRES)
+					newmode |= VM_80COL;
 			
-			switch(newrez)
-			{
-				case ST_LOWRES:
-					npmin = 4;
-					npmax = 4;
-					break;
-				case ST_MEDRES:
-					npmin = 2;
-					npmax = 2;
-					break;
-				case ST_HIGHRES:
-					npmin = 1;
-					npmax = 1;
-					break;
-				default:
+				switch(newrez)
 				{
-					if (fmtype == VGA_MON)
+					case ST_LOWRES:
+						npmin = 4;
+						npmax = 4;
+						break;
+					case ST_MEDRES:
+						npmin = 2;
+						npmax = 2;
+						break;
+					case ST_HIGHRES:
+						npmin = 1;
+						npmax = 1;
+						break;
+					default:
 					{
-						if ( (newmode & VM_80COL) != 0 )
-							npmax = 8;
-						else
-							npmin = 2;
+						if (fmtype == VGA_MON)
+						{
+							if ( (newmode & VM_80COL) != 0 )
+								npmax = 8;
+							else
+								npmin = 2;
+						}
+						break;
 					}
-					break;
+
 				}
 
-			}
-
-			np = minmax(npmin, np, npmax);
-			if ( np != npp ) 
-			{
-				bell();
-				goto next; /* redraw button then loop again */
-			}
-
-			get_opt( vidoptions, &newmode, VM_DBLINE, VBLITTER);
-			get_opt( vidoptions, &newmode, VM_OVSCAN, VOVERSCN);
-		}
-		else if (st_ste)
-		{
-			/* Set blitter, (couldn't have been selected if not present) */
-
-			get_opt( vidoptions, &options.vprefs, VO_BLITTER, VBLITTER);
-#if _OVSCAN
-			/* Set overscan option (could not have been selected if not present) */
-   
-			get_opt ( vidoptions, &options.vprefs, VO_OVSCAN, VOVERSCN ); 
-#endif
-		}
-
-		switch(button)
-		{
-			case VNCOLUP:
-				if ( np < npmax )
-					np <<= 1;
-				break;
-			case VNCOLDN:
-				if ( np > npmin )
-					np >>= 1;
-				break;
-			case VIDOK:
-				qquit = TRUE;
-
-			  	/* Set save palette flag */
-
-				get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
-				get_set_video(1); /* execute settings which do not require a reset */
-
-				/* Will resolution be changed? Display an alert */
-
-				if ( (newrez != currez && newrez != -1) || (newmode != falmode) )
+				np = minmax(npmin, np, npmax);
+				if ( np != npp ) 
 				{
-					if ( alert_printf(1, ARESCH) == 1 )
-					{
-						currez = newrez;	 	/* new becomes old */
-						falmode = newmode;		/* same */
-						rcode = 1;  		 	/* to initiate resolution change */	
-					}	
+					bell();
+					goto next; /* redraw button then loop again */
 				}
 
-				break;								
+				get_opt( vidoptions, &newmode, VM_DBLINE, VBLITTER);
+				get_opt( vidoptions, &newmode, VM_OVSCAN, VOVERSCN);
+			}
+			else if (st_ste)
+			{
+				/* Set blitter, (couldn't have been selected if not present) */
 
-			case VIDCANC:
-				options.vprefs = vprefsold;
-				qquit = TRUE;
-				break;
+				get_opt( vidoptions, &options.vprefs, VO_BLITTER, VBLITTER);
+#if _OVSCAN
+				/* Set overscan option (could not have been selected if not present) */
+   
+				get_opt ( vidoptions, &options.vprefs, VO_OVSCAN, VOVERSCN ); 
+#endif
+			}
 
-			default:
-				break;
+			switch(button)
+			{
+				case VNCOLUP:
+					if ( np < npmax )
+						np <<= 1;
+					break;
+				case VNCOLDN:
+					if ( np > npmin )
+						np >>= 1;
+					break;
+				case VIDOK:
+					qquit = TRUE;
+
+				  	/* Set save palette flag */
+
+					get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
+					get_set_video(1); /* execute settings which do not require a reset */
+
+					/* Will resolution be changed? Display an alert */
+
+					if ( (newrez != currez && newrez != -1) || (newmode != falmode) )
+					{
+						if ( alert_printf(1, ARESCH) == 1 )
+						{
+							currez = newrez;	 	/* new becomes old */
+							falmode = newmode;		/* same */
+							rcode = 1;  		 	/* to initiate resolution change */	
+						}	
+					}
+
+					break;								
+
+				case VIDCANC:
+					options.vprefs = vprefsold;
+					qquit = TRUE;
+					break;
+
+				default:
+					break;
+			}
+
+			next:;
+
+			xd_drawbuttnorm(&info, button);
+
+			if (!editcol)
+				np = npp;
 		}
+		while(!qquit);
 
-		next:;
-
-		xd_drawbuttnorm(&info, button);
-
-		if (!editcol)
-			np = npp;
+		xd_close(&info);
 	}
-	while(!qquit);
-
-	xd_close(&info);
 
  	return rcode;
 }

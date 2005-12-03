@@ -312,13 +312,6 @@ static void rsc_fixmenus(void)
 	}
 #endif
 
-	/* 'Show owner' is shown in mint only; otherwise deleted */
-
-#if _MINT_
-	if (!mint)
-		mn_del(MNVIEWBX, MSHOWN);
-#endif
-
 	/* Move some menu boxes left to fit the screen (if needed) */
 
 	set_menubox(MNVIEWBX);
@@ -585,6 +578,14 @@ void rsc_init(void)
 		 */
 
 		rsc_title(copyinfo, CIFILES, SFILES);
+
+		/* Modify size, position or visibility of some objects */
+
+		addicon[CHNBUTT].r.y -= addicon[CHNBUTT].r.h;
+		addicon[ADDBUTT].r.y -= addicon[CHNBUTT].r.h;
+		addicon[0].r.h -= addicon[CHNBUTT].r.h;
+
+		mn_del(MNVIEWBX, MSHOWN);
 	}
 
 #if _EDITLABELS
@@ -655,27 +656,34 @@ void rsc_title(OBJECT *tree, int object, int title)
  * try to write too many bytes.
  * Note2: it would be possible to use strcpyj() but there would be
  * almost no gain in size.
+ * If a negative number is entered, the last character will be
+ * substituted with a 'K'
  */
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
 {
-	long l2;
-	char s[16], *p;
-	OBJECT *ob = tree + object;
-	TEDINFO *ti;
+	long 
+		l2;
 
-	ti = xd_get_obspecp(ob)->tedinfo;
-	p = ti->te_ptext;
-	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
+	OBJECT 
+		*ob = tree + object;
+
+	TEDINFO 
+		*ti = xd_get_obspecp(ob)->tedinfo;
+
+	char 
+		s[16], 
+		*p = ti->te_ptext;
+
+	ltoa((value < 0) ? -value : value, s, 10);			/* Convert value to ASCII, decimal. */
 
 	l2 = strlen(s);				/* Length of the number as string.  */
 
     if((ob->ob_type & 0xFF) == G_FTEXT)
 	{
-		long i, l1;
-
-		i = 0;
-		l1 = strlen(ti->te_pvalid);	/* Length of the text field.   */
+		long 
+			i = 0, 
+			l1 = strlen(ti->te_pvalid);	/* Length of the text field.   */
 
 		while (i < (l1 - l2))
 		{
@@ -685,5 +693,8 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 	}
 
 	strsncpy(p, s, l2 + 1);		/* Copy number. */
+
+	if(value < 0)
+		*(p + l2 - 1) = 'K';
 }
 

@@ -61,13 +61,15 @@ void sl_set_slider(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	}
 	else
 		sh = tree[sparent].r.h;
+	
+	/* Compensation for 3D effects */
 
 	tree[sl->slider].r.h = sh - 2 * aes_ver3d;
 
 	/* Determine slider position */
 
 	s = sl->n - slines;
-	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long) (tree[sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
+	tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long)(tree[sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
 
 	if (info)
 		xd_drawdeep(info, sparent);
@@ -179,21 +181,17 @@ static void do_bar(OBJECT *tree, SLIDER *sl, XDINFO *info)
 	{
 		old = sl->line;
 
-		/* Note: do not use min() and max() here; code would be longer */
-
 		if (my < oy)
 		{
 			sl->line -= slines;
-			if (sl->line < 0)
-				sl->line = 0;
 		}
 		else
 		{
 			sl->line += slines;
 			maxi = sl->n - slines;
-			if (sl->line > maxi)
-				sl->line = maxi;
 		}
+
+		sl->line = minmax(0, sl->line, maxi);
 
 		if (sl->line != old)
 		{
@@ -311,16 +309,16 @@ void set_selector(SLIDER *slider, boolean draw, XDINFO *info)
 {
 	int i;
 	LSTYPE *f;
-	OBJECT *o;
+	OBJECT *ob;
 
 	for (i = 0; i < NLINES; i++)
 	{
-		o = &setmask[FTYPE1 + i];
+		ob = &setmask[FTYPE1 + i];
 
 		if ((f = get_item( slider->list, i + slider->line)) == NULL)
-			*o->ob_spec.tedinfo->te_ptext = 0;
+			*ob->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(o, 0, f->filetype );
+			cv_fntoform(ob, 0, f->filetype );
 	}
 
 	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */

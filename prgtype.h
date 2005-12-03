@@ -44,8 +44,8 @@ typedef struct prgtype
 #define AT_SRCH 0x0080	/* set as file search app */
 #define AT_FFMT 0x0100	/* set as floppy format application */
 #define AT_VIEW 0x0200	/* set as viewer */
-#define AT_CONS 0x0400	/* set as console placeholder */
-#define AT_RES1 0x0800	/* placeholder */
+#define AT_COMP 0x0400	/* set as file compare app */
+#define AT_CONS 0x0800	/* set as console (placeholder) */
 #define AT_RES2 0x1000	/* placeholder */
 #define PD_PDIR 0x2000	/* Program directory is the default */
 #define PD_PPAR 0x4000	/* First parameter directory is the default */

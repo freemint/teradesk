@@ -78,6 +78,9 @@ int
 extern FONT 
 	dir_font;				/* data for the font used in directories */
 
+extern char
+	*infname;				/* name of TeraDesk's inf file */
+	
 AVTYPE 
 	avwork,					/* work area for editing AV-clients data */
 	*avclients;				/* List of signed-on AV-clients */
@@ -89,7 +92,10 @@ static AVSTAT
 AVSETW
 	avsetw;					/* size for the next window */
 
-static const char 
+static const char
+	qc = 39;				/* single-quote character */
+
+const char
 	*thisapp = "DESKTOP ";	/* AV-protocol name of this application */
 
 extern boolean
@@ -116,6 +122,7 @@ static const int answertypes[]=
 
 static void copy_avstat( AVSTAT *t, AVSTAT *s);
 static void rem_avstat(AVSTAT **list, AVSTAT *t);
+void load_settings(char *newinfname);
 
 
 /*
@@ -263,9 +270,8 @@ static LS_FUNC avslist_func =	/* for the list of status strings */
 /*
  * Check for existing AV-clients.
  * Maybe some of the signed-on AV-clients has crashed or illegally exited
- * without signing-off;
- * So its windows and data generally have to be removed.
- * In such cases, messages should not be sent to the clients,
+ * without signing-off, and so its windows and data generally have to be
+ * removed. In such cases, messages should not be sent to those clients,
  * because they do not in fact exist anymore.
  * Run this function at some convenient moments, such as program startup
  */
@@ -315,6 +321,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 		i, 				/* counter */
 		va_answer[8],	/* local answer-message buffer */
 		dest_ap_id;		/* ap_id of the application parameters are sent to */
+
 
 	/* 
 	 * Use this opportunity to check for existing AV-clients.
@@ -408,7 +415,9 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 		if ( ap_id == dest_ap_id && strcmp(prgname, thisapp) != 0 ) /* should this fix CAB ? */
 			return FALSE;
 
-		strcpy(global_memory, cmdline);
+		/* Double quotes must be converted to single quotes */
+
+		strcpyrq(global_memory, (char *)cmdline, qc);
 
 		va_clranswer(va_answer);
 
@@ -481,8 +490,8 @@ boolean va_fontreply(int messid, int dest_ap_id)
 
 /*
  * Add a name to a reply string for an AV-client. If the name contains
- * spaces, it will be quoted with single quotes ('). 
- * Currently, names conatining quotes are not supported. 
+ * spaces, it will be quoted with single quotes ('). If te name contais
+ * the single-quote chracter, it will be doubled.
  * This routine is also used to create a list of names to be sent
  * to an application using the Drag & drop protocol
  */
@@ -490,55 +499,50 @@ boolean va_fontreply(int messid, int dest_ap_id)
 boolean va_add_name(int type, const char *name)
 {
 	long 
-		l = strlen(name),				/* name length */
 		g = strlen(global_memory);		/* cumulative string length */
-
-	boolean
-		q = FALSE;						/* True if name is to be quoted */
 
 
 	/* 
 	 * Check for available space in the global buffer:
-	 * Must fit: existing string, the name, one blank, two quotes, 
-	 * a backslash and a terminating 0
+	 * Must fit: existing string, the name (maybe quoted), a blank 
+	 * a backslash and a terminating 0. 3 bytes are added in strlenq.
 	 */
 
-	if ( g + l + 5 > GLOBAL_MEM_SIZE )
+	if ( g + strlenq(name) > GLOBAL_MEM_SIZE )
 	{
 		alert_iprint(TFNTLNG);		
 		return FALSE;
 	}	
 	else
 	{
+		char 
+			*pd;
+
 		/* Add a blank before the name, but not before the first one */
 
 		if ( *global_memory != 0 )
 			strcat(global_memory, " ");
 
-		/* Need to quote ? Yes, if there are embedded blanks in the name */
+		pd = global_memory + strlen(global_memory);
 
-		if ( strchr(name, ' ') )
+		/* Add the name, quoting it if necessary */
+
+		pd = strcpyq(pd, name, qc);
+
+		/* Add a trailing backslash to folder names */
+
+		if(*name && (type == ITM_FOLDER || type == ITM_PREVDIR))
 		{
-			strcat(global_memory, "'");
-			q = TRUE;
+			if(*(pd - 1) == qc)
+			{
+				*(pd - 1) = '\\';
+				*pd++ = qc;
+			}
+			else
+				*pd++ = '\\';
+
+			*pd = '\0';
 		}
-
-		/* 
-		 * Concatenate the name. If names containing quotes are to be
-		 * supported some day, this will have to be done differently
-		 */
-
-		strcat(global_memory, name);
-
-		/* Add a trailing backslash if needed */
-
-		if ( type == (int)ITM_FOLDER )
-			strcat(global_memory, bslash);
-
-		/* Unquote ? (q is reset on the next call of this routine) */
-
-		if (q)
-			strcat(global_memory, "'");
 	}
 	return TRUE;
 }
@@ -733,9 +737,12 @@ void handle_av_protocol(const int *message)
 	av_current = message[1];					/* who sent the message (its ap_id) */
 	theclient = va_findclient(av_current);		/* are there any data for it */
 
-	/* Ignore unknown clients, except if they are signing-on, or ask for a font */
+	/* 
+	 * Ignore unknown clients, except if they are signing-on, 
+	 * or ask for a font, or inf-file is sent to TeraDesk
+	 */
 
-	if( message[0] != AV_PROTOKOLL && message[0] != FONT_SELECT && !theclient )
+	if( !(message[0] == AV_PROTOKOLL || message[0] == FONT_SELECT || message[0] == VA_START || theclient) )
 		return;
 
 	switch(message[0])
@@ -782,7 +789,6 @@ void handle_av_protocol(const int *message)
 						AA_ACCWIND | 
 						AA_EXIT |
 #if _MORE_AV
-
 						AA_SRV_QUOTING |
 
 						AA_STATUS |
@@ -837,6 +843,17 @@ void handle_av_protocol(const int *message)
 		reply = FALSE;
 		break;
 
+	case VA_START:
+
+		/* 
+		 * TeraDesk can understand about inf files being sent to it.
+		 * There is no point in sending the reply message back to itself
+		 * because AV_STARTED is ignored anyway.
+		 */
+		 
+		reply = FALSE;
+		load_settings(strdup(*(char **)(message + 3))); 
+		break;
 	case AV_ACCWINDOPEN:
 
 		/* 
@@ -1117,7 +1134,7 @@ void handle_av_protocol(const int *message)
 					*cs, *cq, 		/* position of the next " " and "'" */
 					*pp = NULL;		/* position of the next name */
 
-				boolean q = FALSE;	/* true if name quoted */
+				boolean q = FALSE;	/* true if name is quoted */
 
 				ITMTYPE itype;		/* type of the item */
 				DIR_WINDOW *ww;		/* pointer to the simulated window */
@@ -1129,15 +1146,21 @@ void handle_av_protocol(const int *message)
 
 				while(stat && p && *p)
 				{
-					if (*p == 39) 	/* single quote */
+					/* Attempt to extract item name (possibly quoted) */
+
+					if (*p == qc && *(p + 1) != qc) /* single quote, but not doubled */
 					{
-						p++;		/* character after the quote */
-						q = TRUE;
+						p++;		/* move to the character after the quote */
+						q = TRUE;	/* quoting has been started */
 					}
 
 					strip_name(p, p);		/* strip leading/trailing blanks */
+					cq = p;
 
-					cq = strchr(p, 39);  	/* next quote (unquote) */
+					while((cq = strchr(cq, qc)) != NULL && *(cq + 1) == qc)
+					{
+						cq += 2;		
+					}
 
 					if ( q && cq )			/* quoted and unquote exists ? */
 						*cq++ = 0;			/* terminate string at quote */
@@ -1203,7 +1226,7 @@ void handle_av_protocol(const int *message)
 						}
 						case AV_DELFILE:
 							answer[0] = VA_FILEDELETED;
-							stat = (int)itmlist_op((WINDOW *)ww, 1, &list, NULL, CMD_DELETE);
+							stat = (int)itmlist_wop((WINDOW *)ww, 1, &list, CMD_DELETE);
 							break;
 						case AV_FILEINFO:
 							answer[0] = VA_FILECHANGED;

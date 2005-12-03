@@ -80,7 +80,7 @@ void free_item( void **ptr )
 
 int touppc(int c)
 {
-	if ( (c & 0x7F) > '?' )
+	if ( (c & 0x7F) > '?' && c != 0x7F)
 		return c & 0xDF;
 	else
 		return c;
