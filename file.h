@@ -35,21 +35,17 @@ extern char *fsdefext;
 #define L_SAVECFG	4	/* save configuration */
 #define L_PRINTF	5	/* print file */
 
+int make_path( char *name,const char *path,const char *fname );
+void split_path( char *path,char *fname,const char *name );
 void path_to_disp(char *path);
 char *fn_get_name(const char *path);
 char *fn_get_path(const char *path);
 char *fn_make_path(const char *path, const char *name);
-char *fn_make_newname(const char *oldname, const char *newname);
+char *fn_make_newname(const char *oldn, const char *newn);
 
-void getroot(char *root);
 boolean isdisk(const char *path);
 boolean isroot(const char *path);
 int chdir(const char *path);
-#if __USE_MACROS
-#define getdir(x) x_getpath(0, x)
-#else
-char *getdir(int *error);
-#endif
 
 int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, boolean search);
 

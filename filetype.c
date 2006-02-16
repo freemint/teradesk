@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -94,14 +94,14 @@ static FTYPE *ftadd_one(char *filetype)
 	 * Currently disabled, i.e. always uppercase
 	 */
 
+/* Better let the user decide
 #if _MINT_
-/*
+
 	if ( mint && !magic )
 		strlwr(fwork.filetype);
-*/
 #endif
-
-	return (FTYPE *)lsadd( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), INT_MAX, copy_ftype); 
+*/
+	return (FTYPE *)lsadd_end( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), copy_ftype); 
 }
 
 
@@ -122,8 +122,10 @@ static void ftype_info
 	FTYPE *ft 			/* output information */
 )
 {
+	/* Note: earlier, copy function was not specified below */
+
 	if ( !(use & LS_SELA) )
-		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, NULL );
+		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, copy_ftype );
 
 	return;
 }
@@ -135,7 +137,7 @@ static void ftype_info
 
 static void rem_all_filetypes(void)
 {
-	lsrem_all( (LSTYPE **)(&filetypes), lsrem ); 
+	lsrem_all_one( (LSTYPE **)(&filetypes)); 
 }
 
 
@@ -176,7 +178,6 @@ static boolean filetype_dialog
 		title = (use & LS_FMSK) ? DTADDMSK : DTADDDT;
 
 	rsc_title(ftydialog, FTYTITLE, title); 
-
 	cv_fntoform(ftydialog, FTYPE0, ft->filetype);
 
 	/* Open the dialog, then loop until stop */
@@ -287,6 +288,9 @@ char *ft_dialog
 	static const char 
 		ois[] = {0, 0, MSKHID, MSKSYS, MSKDIR, MSKPAR};
 
+	static const int
+		items[] = {MSKATT, FILETYPE, FTTEXT, 0};
+
 	/* 
 	 * If necessary, save the previous state of this dialog's root object
 	 * in order to return to proper state after a recursive call
@@ -353,16 +357,15 @@ char *ft_dialog
 
 		default:
 			break;
+
 	}
 
 	/* Edit the filemasks list: add/delete/change entry */
 
 	button = list_edit( &ftlist_func, (LSTYPE **)(flist), 1, sizeof(FTYPE), (LSTYPE *)(&fwork), luse);
 
-	obj_hide(setmask[MSKATT]);
-	obj_hide(setmask[FILETYPE]);
-	obj_hide(setmask[FTTEXT]);
-
+	rsc_hidemany(setmask, items);
+	
 	if ( button == FTOK )
 	{
 		/* If changes are accepted... */
@@ -423,20 +426,23 @@ void ft_default(void)
 	rem_all_filetypes();
 
 	/* 
-	 * Note 1: first two masks must be set in order to show anything in windows 
+	 * Note 1: first two masks ("*" and "*.*") must be set in order to 
+	 * show anything in windows 
 	 * Note 2: ftadd_one can be used with explicitely entered name, too:
 	 * e.g. ftadd_one("*.C");
 	 */
-
-	ftadd_one((char *)presets[0]);	/* 		* 		*/			
-	ftadd_one((char *)presets[1]);	/* 		*.*		*/
 
 #if _PREDEF
 
 	/* Note: for upper/lowercase match see routine ftadd_one */
 
-	for ( i = 2; i < 10; i++ )
+	for ( i = 0; i < 10; i++ )
 		ftadd_one((char *)presets[i]);
+#else
+
+	ftadd_one((char *)presets[0]);	/* 		* 		*/			
+	ftadd_one((char *)presets[1]);	/* 		*.*		*/
+
 #endif
 }
 
@@ -485,8 +491,7 @@ CfgNest one_ftype
 		/* Load data; one filetype */
 
 		memclr( &fwork, sizeof(FTYPE) ); /* must set ALL of .filetype to 0 !!! */
-
-		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME) - 1, lvl); 
+		*error = CfgLoad(file, ft_table, (int)sizeof(SNAME), lvl); 
 
 		if (*error == 0 )
 		{
@@ -496,12 +501,11 @@ CfgNest one_ftype
 			{
 				if 
 				(
-					lsadd
+					lsadd_end
 					(  
 						(LSTYPE **)ffthis,
 		    			sizeof(FTYPE),
 		               	(LSTYPE *)&fwork,
-		               	INT_MAX,
 		               	copy_ftype
 					) == NULL
 				)

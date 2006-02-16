@@ -66,7 +66,6 @@ void prg_init(void);
 void prg_default(void);
 
 boolean prg_isprogram(const char *name);
-boolean prg_isproglink(const char *fname);
 void sim_click(void);
 
 

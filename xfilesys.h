@@ -177,6 +177,7 @@ typedef struct
 int x_checkname(const char *path, const char *name);
 char *x_makepath(const char *path, const char *name, int *error);
 boolean x_exist(const char *file, int flags);
+boolean x_netob(const char *name);
 char *x_fullname(const char *file, int *error);
 
 /* Directory funkties */
@@ -185,7 +186,7 @@ int x_setpath(const char *path);
 char *x_getpath(int drive, int *error);
 int x_mkdir(const char *path);
 int x_rmdir(const char *path);
-int x_mklink(const char *newname, const char *oldname);
+int x_mklink(const char *linkname, const char *refname);
 int x_rdlink( int tgtsize, char *tgt, const char *linkname );
 char *x_pathlink( char *tgtname, char *linkname );
 char *x_fllink( char *linkname );
@@ -197,7 +198,7 @@ int x_putlabel(int drive, char *label);
 
 /* File funkties */
 
-int x_rename(const char *oldname, const char *newname);
+int x_rename(const char *oldn, const char *newn);
 int x_unlink(const char *file);
 int x_fattrib(const char *file, XATTR *attr);
 int x_datime(DOSTIME *time, int handle, int wflag);

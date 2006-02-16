@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -238,6 +238,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			set_title(fn_get_name(pinfo.name));
 
 			/* Why is this ? */
+
 /* try without 
 {
 			appl_exit();
@@ -309,7 +310,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			}
 
 			{
-				LNAME cmd;
+				VLNAME cmd; /* maybe LNAME is enough ? */
 				char tail[128];
 
 				shel_read(cmd, tail);
@@ -337,6 +338,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 						error = EPTHTL;
 						pinfo.new = FALSE;
 					}
+
 					free(h);
 				}
 				else
@@ -421,14 +423,11 @@ void sim_click(void)
 		if ( twt != DIR_WIND && twt != TEXT_WIND )
 			appl_tplay( (void *)(&p), 2, 4 );
 
+		xd_clrevents(&events);
 		events.ev_mflags = MU_BUTTON | MU_TIMER;
 		events.ev_mbclicks = 0x102;
 		events.ev_mbmask = 3;
-		events.ev_mbstate = 0;
-		events.ev_mm1flags = 0;
-		events.ev_mm2flags = 0;
 		events.ev_mtlocount = 100;
-		events.ev_mthicount = 0;
 
 		xe_xmulti(&events); 
 	}
@@ -450,7 +449,7 @@ void sim_click(void)
 void start_prg
 (
 	const char *fname,		/* path+filename of program */ 
-	const char *cmdline,	/* command line (first byte is length) */
+	const char *cmdl,		/* command line (first byte is length) */
 	const char *path,		/* default directory for this program */
 	ApplType prg,			/* application type */
 	boolean argv,			/* if true, use argv protocol */
@@ -470,13 +469,19 @@ void start_prg
 		newenvl = 0;						/* length of environment string */
 
 	char 
+		*pp,								/* temporary allocation */
+		*olddir = NULL,						/* previous default directory */
 		*buildenv = NULL,					/* this env. will be passed */
 		*tmpenv = NULL;						/* points to temp. env. string */
 
+	VLNAME
+		prgpath;							/* Default directory for this program */
+
 	boolean 
-		doenv = FALSE,						/* process local environment */
-		doargv = FALSE,						/* process ARGV */
-		catargv;							/* append ARGV to local environmen */
+		stask = TRUE,						/* TRUE if singletasking mode */
+		doenv = FALSE,						/* TRUE to process local environment */
+		doargv = FALSE,						/* TRUE to process ARGV */
+		catargv;							/* TRUE to append ARGV to local environmen */
 
 
 	/* Determine program type */
@@ -557,7 +562,7 @@ void start_prg
 			const char *envp = buildenv; 
 
 			doenv = TRUE;
-			tmpenv = make_argv_env(fname, cmdline + 1, &envl);
+			tmpenv = make_argv_env(fname, cmdl + 1, &envl);
 			buildenv = malloc_chk(newenvl + envl + 2L); /* +2L probably not needed here */
 
 			if ( !(tmpenv && buildenv) )
@@ -573,22 +578,72 @@ void start_prg
 		}
 	}
 
-#if _MINT_ 
+	/* In what manner will this program be started?
+	 * This is experimental and most probably is a bad thing to do, but better
+	 * than nothing: until starting of a non-multitsking app is coded properly (if ever), 
+	 * launch it as if it were a single-tasking system. This applies to Magic only
+	 * (geneva takes care of the issue by itself), and, in fact, seems to work
+	 * (more-less). At least programs like DynaCADD and old 1stWord are running
+	 * properly with it, probably mostly because of changing the default directory.
+	 * However, memory limit for such application is not applicable, then.
+	 */
 
-/*
- * This is experimental and most probably is a bad thing to do, but better
- * than nothing: until starting of a non-multitsking app is coded properly (if ever), 
- * launch it as if it were a single-tasking system. This applies to Magic only
- * (geneva takes care of the issue by itself), and, in fact, seems to work
- * (more-less). At least programs like DynaCADD and old 1stWord are running
- * properly with it, probably mostly because of changing the default directory.
- * However, memory limit for such application is not applicable, then.
- */
-
-	if (   ( single && magx )
-	    || ( _GemParBlk.glob.count != -1 && !magx )
-	   )
+#if _MINT_
+	stask = ( single && magx ) || ( _GemParBlk.glob.count != -1 && !magx );
 #endif
+
+	/* 
+	 * Find the default directory for this program.
+	 * This path will have the trailing backslash only if it is
+	 * to a root directory. Then, if it is not single-TOS, add the
+	 * backslash if it is not there. 
+	 */
+
+	if((pp = fn_get_path((path) ? path : fname)) != NULL)
+	{
+		/* A backslash may have to be concatenated, so copy the string */
+
+		strsncpy(prgpath, pp, sizeof(VLNAME) - 1);
+		free(pp);
+
+		/* Now concatenate the backslash. Must do so for Geneva at least */
+
+		if(!stask)
+		{
+			pp = strrchr(prgpath,'\\');
+			if(!pp || (pp && pp[1] != '\0'))
+				strcat(prgpath, bslash);
+		}
+
+		if
+		(
+			stask
+#if _MINT_
+			|| magx
+#endif
+		)
+		{
+			hourglass_mouse();
+			olddir = x_getpath(0, &error);
+
+			if(olddir)
+				error = chdir(prgpath);
+
+			arrow_mouse();
+
+			if(error)
+			{
+				xform_error(error);
+				goto errexit;
+			}
+		}
+	}
+	else
+		goto errexit;
+
+	/* See note above about singletasking ! */
+
+	if(stask)
 	{
 		/* 
 		 * AES is not multitasking, use Pexec() to start program,
@@ -596,7 +651,6 @@ void start_prg
 		 */
 
 		COMMAND cl;
-		char *prgpath, *olddir;
 		boolean background = back;
 
 		/* Background program is activated if [Control] is pressed */
@@ -620,76 +674,32 @@ void start_prg
 			goto errexit;
 		}
 
-		/* Make a copy of cmdline. Never more than 125 characters */
+		/* Make a copy of cmdl. Never more than 125 characters */
 
 		memclr(cl.command_tail, sizeof(cl.command_tail));
-		strsncpy(cl.command_tail, cmdline + 1, 126); /* "126" includes zero termination byte */
-		cl.length = *cmdline; /* value in the first byte */
+		strsncpy(cl.command_tail, cmdl + 1, 126); /* "126" includes zero termination byte */
+		cl.length = *cmdl; /* value in the first byte */
 
 		if ( doargv )
 			cl.length = 127; /* signalizes that ARGV is used */
 
-		/* 
-		 * Do something only if filename of program is specified;
-		 * (fn_get_path extracts the path from a full filename and
-		 * allocates a string for this path)
-		 */
-
-		if ((prgpath = fn_get_path(fname)) != NULL)
+		if ( background )
 		{
-			/* 
-			 * Find and remember current default directory, 
-			 * if OK, then change to one specified for this program
-			 */
-
-			if ((olddir = getdir(&error)) != NULL)
-			{
-				/* 
-				 * If path is not given, directory of the program
-				 * will be set as current directory;
-				 * otherwise "path" will be set as current directory
-				 */
-
-				hourglass_mouse(); 
-				error = chdir((path == NULL) ? prgpath : path);
-				arrow_mouse();
-
-				if (error == 0)
-				{
-					/*
-					 * All is well so far; now start a background program
-					 * in mint, or else start a single-task program	
-					 */
-
-					if ( background )
-					{
 #if _MINT_
-						error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
+			error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
 #endif
-						error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
-					}
-					else
-						error = exec_com(fname, &cl, buildenv, appl_type);
-				}
-
-				/* Return to old default directory */
-
-				hourglass_mouse();
-				chdir(olddir);
-				free(olddir);
-				arrow_mouse();
-			}
-
-			/* Free string space which was allocated for program path */
-
-			free(prgpath);
+			error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
 		}
+		else
+			error = exec_com(fname, &cl, buildenv, appl_type);
 
 		/* Fix a TOS bug */
 
 		sim_click();
- 
-		xform_error(error); /* Will ignore rrror >= 0 */
+
+		/* Report errors */
+
+ 		xform_error(error); /* Will ignore rrror >= 0 */
 	}
 #if _MINT_
 	else
@@ -710,8 +720,6 @@ void start_prg
 
 			int mode;			/* launch mode */
 			void *p[5];			/* parameters for the extended call */
-			char *h;			/* pointer to the last backslash */
-			VLNAME prgpath;		/* program path */
 
 			/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
 
@@ -727,27 +735,16 @@ void start_prg
 			if ( doenv ) 
 				mode |= SHW_XMDENV;
 
-			/* Use the appropriate path */
+			/* 
+			 * Set pointers for extended mode. It seems that Magic will ignore
+			 * the pointer for the default directory
+			 */
 
-			if (path == NULL)
-			{
-				strcpy(prgpath, fname);
-				if ((h = strrchr(prgpath, '\\')) != NULL)
-					h[1] = 0;
-			}
-			else
-			{
-				strcpy(prgpath, path);
-				strcat(prgpath, bslash);		/* Necessary for Geneva. */
-			}
-	
-			/* Set pointers for extended mode */
-
-			p[0] = fname;						/* pointer to name                */
-			(long)p[1] = limmem;				/* value for Psetlimit()          */
-			p[2] = NULL;						/* value for Prenice()            */
-			p[3] = prgpath;						/* pointer to default directory   */
-			p[4] = (doenv) ? buildenv : NULL;	/* pointer to environment string  */
+			p[0] = fname;			/* pointer to name                */
+			(long)p[1] = limmem;	/* value for Psetlimit()          */
+			p[2] = NULL;			/* value for Prenice()            */
+			p[3] = prgpath;			/* pointer to default directory   */
+			p[4] = buildenv;		/* pointer to environment string  */
 
 			/* Magic specifies the use of ARGV differenlty than other AESes */
 		
@@ -756,16 +753,16 @@ void start_prg
 				if(doargv)
 				{
 					if(catargv)
-						(char)cmdline[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+						(char)cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
 					else
-						(char)cmdline[0] = 255; /* Magic will do ARGV only if needeed */
+						(char)cmdl[0] = 255; /* Magic will do ARGV only if needeed */
 				}
 			}
 			else
 			{
 				if ( doargv && !catargv )
 				{
-					(char)cmdline[0] = 127; /* this signals the use of ARGV */
+					(char)cmdl[0] = 127; /* this signals the use of ARGV */
 					wiscr = 1;
 				}
 				else
@@ -775,7 +772,7 @@ void start_prg
 
 			/* Start a program using shel_write */
 
-			error = shel_write(mode, appl_type, wiscr, (char *)p, (char *)cmdline);
+			error = shel_write(mode, appl_type, wiscr, (char *)p, (char *)cmdl);
 		}
 
 		/* 
@@ -792,8 +789,14 @@ void start_prg
 
 	errexit:;
 
+	if(olddir)
+	{
+		hourglass_mouse();
+		chdir(olddir);
+		free(olddir);
+		arrow_mouse();
+	}
+
 	free(tmpenv);
 	free(buildenv);
 }
-
-

@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,10 +34,10 @@
 
 /* 
  * Maximum size of scrolled editable text should be a little less
- * than the size of LNAME
+ * than the size of VLNAME
  */
 
-#define XD_MAX_SCRLED 131	/* must be LNAME -1 */
+#define XD_MAX_SCRLED sizeof(VLNAME) - 1
 
 /* Vlaggen voor xd_form_button() */
 
@@ -144,7 +144,7 @@ extern void xd_cursor_off(XDINFO *info);
 extern int xd_hndlmessage(int *message, int flag);
 extern int xd_scan_messages(int flag, int *mes);
 extern void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags);
-extern XDINFO *xd_find_dialog(WINDOW *w, int flag);
+extern XDINFO *xd_find_dialog(WINDOW *w);
 extern int xd_form_button(XDINFO *info, int object, int clicks, int *result);
 extern int xd_find_obj(OBJECT *tree, int start, int which);
 extern void xd_edit_init(XDINFO *info, int object, int curx);

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -30,7 +30,7 @@
 #include <library.h>
 #include <internal.h>
 
-#include "desktop.h"
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
@@ -38,6 +38,11 @@
 #include "font.h"
 #include "screen.h"
 #include "window.h"
+
+
+int palsize = 0;	/* new (as read from the file) palette size */
+int *palette = 0; 	/* Pointer to current palette */
+
 
 
 /*
@@ -205,6 +210,8 @@ int *get_colors(void)
 {
 	int i, *colors, *h;
 
+	palsize = xd_ncolors;
+
 	if ((colors = malloc((long)xd_ncolors * 3L * sizeof(int))) != NULL)
 	{
 		h = colors;
@@ -228,7 +235,7 @@ void set_colors(int *colors)
 {
 	int i, *h = colors;
 
-	for (i = 0; i < xd_ncolors; i++)
+	for (i = 0; i < palsize; i++)
 	{
 		vs_color(vdi_handle, i, h);
 		h += 3;
@@ -250,9 +257,6 @@ typedef struct rgb
 }RGB;
 
 RGB cwork;
-
-int palsize = 0;	/* new (as read from the file) palette size */
-int *palette = 0; 	/* Pointer to current palette */
 
 CfgNest rgb_config, pal_config;
 
@@ -294,6 +298,7 @@ static CfgNest rgb_config
 {
 	int 
 		i,
+		nc = min(xd_ncolors, palsize),
 		*thecolor = palette;
 
 	if ( io == CFG_SAVE )
@@ -322,7 +327,7 @@ static CfgNest rgb_config
 
 		*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl);
 
-		if ( (*error == 0) && (cwork.ind < palsize) )
+		if ( (*error == 0) && (cwork.ind < nc) )
 		{
 			int *p = &cwork.red;
 
@@ -343,7 +348,6 @@ static CfgNest rgb_config
 static CfgNest pal_config
 {
 	palette = get_colors();
-	palsize = xd_ncolors;
 	cwork.ind = 0;
 
 	/* 

@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
- *                                                     2002, 2003 H. Robbers,
- *                                               2003, 2004, 2005 Dj. Vukovic
+ * Utility functions for Teradesk. Copyright (c)       1993, 1994, 2002 W. Klaren,
+ *                                                           2002, 2003 H. Robbers,
+ *                                               2003, 2004, 2005, 2006 Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -33,10 +33,6 @@
 void digit(char *s, int x)
 {
 	x = x % 100;
-/*
-	s[0] = x / 10 + '0';
-	s[1] = x % 10 + '0';
-*/
 	s[0] = x / 10;
 	s[1] = x - 10 * s[0] + '0'; /* is this faster than % ? */
 	s[0] += '0';
@@ -50,26 +46,6 @@ void digit(char *s, int x)
 void bell(void)
 {
 	Bconout(2, 7);
-}
-
-
-/* 
- * Free memory allocated to an item and set pointer to NULL 
- * (because in several places action is dependent on whether 
- * the pointer is NULL when memory is not allocated).
- * BUT: advantage of using this function is dubious;
- * little, if anything at all, is gained in code size; probably makes
- * sense to use it only if areas pointed to from structures are 
- * freed and set to null.
- */
-
-void free_item( void **ptr )
-{
-	if ( *ptr != 0L )
-	{
-		free(*ptr);
-		*ptr = 0L;
-	}
 }
 
 

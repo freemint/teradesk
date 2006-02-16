@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                      2003, 2004  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993,       1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                      2003, 2004, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -45,8 +45,7 @@
 
 int __xd_hndlkey(WINDOW *w, int key, int kstate)
 {
-	int next_obj, nkeys, kr;
-	int cont, key_handled = TRUE;
+	int next_obj, nkeys, kr, cont, key_handled = TRUE;
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 	KINFO *kinfo;
 	OBJECT *tree = info->tree;
@@ -66,16 +65,12 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 	}
 
 	if (cont)
-	{
-		if (next_obj != 0)
-			xd_edit_init(info, next_obj, -1);
-		xd_wdupdate(END_UPDATE);
-	}
-	else
-	{
-		xd_wdupdate(END_UPDATE);
+		xd_edit_init(info, next_obj, -1);
+
+	xd_wdupdate(END_UPDATE);
+
+	if(!cont)
 		info->func->dialbutton(info, next_obj);
-	}
 
 	return key_handled;
 }
@@ -89,8 +84,7 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
-	int next_obj, cmode;
-	int cont;
+	int next_obj, cmode, cont;
 
 
 	if ((next_obj = objc_find(info->tree, ROOT, MAX_DEPTH, x, y)) != -1)
@@ -100,17 +94,13 @@ void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 		if ((cont = xd_form_button(info, next_obj, n, &next_obj)) != FALSE)
 			cmode = x;
 
-		if (cont)
-		{
-			if (next_obj != 0)
-				xd_edit_init(info, next_obj, cmode);
-			xd_wdupdate(END_UPDATE);
-		}
-		else
-		{
-			xd_wdupdate(END_UPDATE);
+		if(cont)
+			xd_edit_init(info, next_obj, cmode);
+
+		xd_wdupdate(END_UPDATE);
+
+		if(!cont)
 			info->func->dialbutton(info, next_obj);
-		}
 	}
 }
 
@@ -140,6 +130,8 @@ void __xd_closed(WINDOW *w, int mode)
 }
 
 
+/* Currently there are no menus in nonmodal dialogs in TeraDesk
+
 /*
  * Funktie die wordt aangeroepen als een menu van de niet-modale
  * dialoogbox geselekteerd is.
@@ -151,6 +143,8 @@ void __xd_hndlmenu(WINDOW *w, int title, int item)
 
 	info->func->dialmenu(info, title, item);
 }
+
+*/
 
 
 /*

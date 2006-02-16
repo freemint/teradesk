@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -70,23 +70,13 @@ OBJECT *menu,
 	   *compare;
 
 char
-	*dirname, /* should not be removed for the time being */
-	*openline,/* specification for open- must not be reused */
 	*oldname, /* must stay */
 	*newname, /* must stay */
-	*tgname,
-	*envline,
-	*finame,
-	*flname,
-	*cmdline,	
-	*applcmd,
-	*spattfld,
-	*drvid,
-	*iconlabel,
-	*cpfile,
-	*cpfolder,
 	*cfile1,
-	*cfile2
+	*cfile2,
+	*tgname,
+	*drvid,
+	*iconlabel
 #if _EDITLABELS
 #if _MINT_
 	,
@@ -96,20 +86,32 @@ char
 #endif
 	;
 
-LNAME				/* scrolled text fields for file/folder/path names */
-	envlinetxt,
-	tgnametxt,
-	dirnametxt,
-	flnametxt,
-	opentxt,
-	cmdlinetxt,
-	cfile1txt,
-	cfile2txt;
+VLNAME				/* scrolled text fields for file/folder/path names */
+	openline,       /* specification for open- must not be reused */
+	flname,
+	cmdline,
+	ttpline,
+	dirname,
+	envline;
 
 
 extern int 
 	tos_version,	/* tos version, hex encoded */ 
 	aes_version;	/* aes version, hex encoded */
+
+
+/*
+ * Hide some dialog objects
+ * List of items must terminate with a 0
+ */
+
+void rsc_hidemany(OBJECT *tree, int *items)
+{
+	while(*items)
+	{
+		obj_hide(tree[*items++]);
+	}
+}
 
 
 /*
@@ -431,7 +433,16 @@ static void show_os( OBJECT *obj, int v )
 
 void rsc_init(void)
 {
-	int i, v3d2 = 2 * aes_ver3d + 1;
+	int 
+		i, 
+		v3d2 = 2 * aes_ver3d + 1;
+
+	static const char /* Beware: indices must be below 127 */ 
+		xleft[] = {DSKPDOWN, DSKCDOWN, WINPDOWN, WINCDOWN},
+		xitem[] = {DSKPUP, DSKCUP, WINPUP, WINCUP},
+		xright[] = {DSKPAT, DSKPAT, WINPAT, WINPAT};
+
+	/* Get pointers to dialog trees in the resource */
 
 	xd_gaddr(MENU, &menu);
 	xd_gaddr(OPTIONS, &setprefs);
@@ -460,30 +471,28 @@ void rsc_init(void)
 	xd_gaddr(COMPARE, &compare);
 
 	/*  
-	 * Handle pointers for scrolling editable texts. 
+	 * Define buffers for scrolling editable texts in dialogs. 
 	 * Some strings are reused to save space. 
 	 */ 
 
-	dirname = xd_set_srcl_text(newfolder,    DIRNAME,  dirnametxt );
-	openline = xd_set_srcl_text(newfolder,   OPENNAME, opentxt );		/* a command, i.e. very long */
-	oldname = xd_set_srcl_text(nameconflict, OLDNAME,  dirnametxt );
-	newname = xd_set_srcl_text(nameconflict, NEWNAME,  flnametxt );
-	flname  = xd_set_srcl_text(fileinfo,     FLNAME,   flnametxt  );
-	tgname  = xd_set_srcl_text(fileinfo,     FLTGNAME, tgnametxt  );
-	cmdline = xd_set_srcl_text(getcml,       CMDLINE,  cmdlinetxt );	 /* a command, i.e. very long */
-	          xd_set_srcl_text(applikation,  APNAME,   flnametxt );	
-	          xd_set_srcl_text(applikation,  APPATH,   dirnametxt );
-	          xd_set_srcl_text(addicon,      IFNAME,   dirnametxt );
-	cfile1 =  xd_set_srcl_text(compare, CFILE1, cfile1txt);
-	cfile2 =  xd_set_srcl_text(compare, CFILE2, cfile2txt);	
-	applcmd  = xd_set_srcl_text(applikation, APCMLINE, cmdlinetxt); /* a command, i.e. long */
-	envline  = xd_set_srcl_text(applikation, APLENV,   envlinetxt );
-	spattfld = xd_set_srcl_text(searching,   SMASK,    dirnametxt ); 
+	oldname = xd_set_srcl_text(nameconflict, OLDNAME,  dirname  );	/* may be converted to 8+3 */
+	newname = xd_set_srcl_text(nameconflict, NEWNAME,  flname   );	/* may be converted to 8+3 */
+	tgname =  xd_set_srcl_text(fileinfo,     FLTGNAME, dirname  );	/* always a long name */
+	          xd_set_srcl_text(fileinfo,     FLNAME,   flname   );	/* may be converted to 8+3 */
+	          xd_set_srcl_text(newfolder,    OPENNAME, openline );	/* a command, i.e. very long */
+	          xd_set_srcl_text(newfolder,    DIRNAME,  dirname  );
+	          xd_set_srcl_text(getcml,       CMDLINE,  ttpline  );	/* a command, i.e. very long */
+			  xd_set_srcl_text(applikation,  APCMLINE, cmdline  );	/* a command, i.e. long */
+	          xd_set_srcl_text(applikation,  APNAME,   flname   );	/* may be converted to 8+3 */	
+	          xd_set_srcl_text(applikation,  APPATH,   dirname  );
+	          xd_set_srcl_text(applikation,  APLENV,   envline  );	/* always long */
+	          xd_set_srcl_text(searching,    SMASK,    dirname  ); 	/* may be converted to 8+3 */
+	          xd_set_srcl_text(addicon,      IFNAME,   dirname  );
+	cfile1 =  xd_set_srcl_text(compare,      CFILE1,   dirname  );	/* always complete path, i.e. long */
+	cfile2 =  xd_set_srcl_text(compare,      CFILE2,   flname   );	/* always cmplete path, i.e. long */	
 
-	/* Pointers to some other texts */
+	/* Pointers to some other often-used texts */
 
-	cpfile = copyinfo[CPFILE].ob_spec.tedinfo->te_ptext;
-	cpfolder = copyinfo[CPFOLDER].ob_spec.tedinfo->te_ptext;
 	drvid = addicon[DRIVEID].ob_spec.tedinfo->te_ptext;
 	iconlabel = addicon[ICNLABEL].ob_spec.tedinfo->te_ptext;
 
@@ -497,16 +506,15 @@ void rsc_init(void)
 	 * with scrolled-item fields when 3D-enlargements exist.
 	 */
 
-	rsc_xalign(wdoptions, DSKPDOWN, DSKPUP, DSKPAT);
-	rsc_xalign(wdoptions, DSKCDOWN, DSKCUP, DSKPAT);
-	rsc_xalign(wdoptions, WINPDOWN, WINPUP, WINPAT);
-	rsc_xalign(wdoptions, WINCDOWN, WINCUP, WINPAT);
 	rsc_xalign(wdfont, WDFSUP, WDFSDOWN, WDFSIZE);
 	rsc_xalign(wdfont, WDFCDOWN, WDFCUP, WDFCOL);
 	rsc_xalign(vidoptions, VNCOLDN, VNCOLUP, VNCOL);
 	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
 
-	addicon[ICONBACK].r.w = addicon[ICSELBOX].r.w - addicon[ICNUP].r.w - 2 * aes_hor3d - 1;
+	for(i = 0; i < 4; i++)
+	{
+		rsc_xalign(wdoptions, (int)xleft[i], (int)xitem[i], (int)xright[i]);
+	}
 
 	wdoptions[DSKCUP].r.y   += v3d2;
 	wdoptions[DSKCDOWN].r.y += v3d2;
@@ -514,6 +522,8 @@ void rsc_init(void)
 	wdoptions[WINCDOWN].r.y += v3d2;
 	wdoptions[DSKPAT].r.h   += v3d2;
 	wdoptions[WINPAT].r.h   += v3d2;
+
+	addicon[ICONBACK].r.w = addicon[ICSELBOX].r.w - addicon[ICNUP].r.w - 2 * aes_hor3d - 1;
 
 	rsc_yalign(addicon, ICNUP, ICNDWN, ICPARENT);
 	rsc_yalign(setmask, FTUP, FTDOWN, FTSPAR);
@@ -551,6 +561,8 @@ void rsc_init(void)
 	if ( !mint )
 #endif
 	{
+		/* These are SNAMEs */
+
 		tos_fnform( addicon, ICNTYPE, 3 );
 		tos_fnform( addprgtype, PRGNAME, 3 );
 		tos_fnform( ftydialog, FTYPE0, -1);
@@ -558,6 +570,8 @@ void rsc_init(void)
 	
 		for ( i = 0; i < NLINES; i++ )
 			tos_fnform( setmask, FTYPE1 + i, 3 );
+
+		/* These are VLNAMEs */
 
 		tos_fnform(fileinfo, FLNAME, -1);
 		tos_fnform(copyinfo, CPFILE, -1);
@@ -608,7 +622,7 @@ void rsc_init(void)
 	*drvid = 0;
 	*iconlabel = 0;
 
-	/* Fill-in constant part of info-box dialog */
+	/* Fill-in the constant part of the info-box dialog */
 
 #if _MINT_
 	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(SMULTI);

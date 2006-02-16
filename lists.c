@@ -43,6 +43,7 @@
 #include "window.h"
 #include "xscncode.h"
 
+void log_shortname( char *dest, char* appname );
 
 LSTYPE *selitem;
 
@@ -71,9 +72,13 @@ boolean find_wild
 	void 
 		(*copyf)( LSTYPE *t, LSTYPE *s ) = copy_func;
 
+	boolean
+		result = FALSE;
+
+
 	if ( name )
 	{					
-		/* Find the last occurence of "\" */
+		/* Find the last occurence of "\" and the name after it */
 
 		filename = fn_get_name((const char *)name);
 
@@ -85,24 +90,23 @@ boolean find_wild
 
 			if (cmp_wildcard(filename, p->filetype))
 			{
-				/* Copy all data, using appropriate routine, then copy name */
+				/* Copy all data, using appropriate routine */
 
-				if ( copy_func != NULL )
-					copyf( work, p );
-				strsncpy (work->filetype, filename, sizeof(SNAME));
-				return TRUE;
+				copyf( work, p );
+				result = TRUE; /* Found in the list! */
+				break;
 			}
 			p = p->next;
 		}
 
-		/* Not found in the list; just copy the name */
+		/* Copy the name in any case, but beware of the length */
 
-		strsncpy (work->filetype, filename, sizeof(SNAME));
+		log_shortname(work->filetype, filename);
 	}
 	else
 		work->filetype[0] = 0;	/* if nonexistent, clear the name */
 
-	return FALSE;
+	return result;
 }
 
 
@@ -152,11 +156,10 @@ LSTYPE *get_item
 
 /*
  * Get from a list the pointer to an item specified by its name or name+path,
- * name possibly containing wildcards; for the search, name string is
- * stripped of its path component; this routine is NOT usable 
- * for applications list, only for filetypes, programtypes 
- * and icontypes (applications are searched for by their full name).
- * Also used for the list of AV-protocol clients.
+ * for the search, name string is stripped of its path component;
+ * this routine is NOT usable for applications list, only for filetypes, 
+ * programtypes  and icontypes (applications are searched for by their 
+ * full name). Also used for the list of AV-protocol clients.
  * In parameter "pos" return also the index of this item in the list
  * or -1 if not found
  */
@@ -166,16 +169,22 @@ LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
 	LSTYPE 
 		*f = *list;		/* pointer to current list item */   
 
+	char
+		*n;
+
 	*pos = -1;
 
 	if (name == NULL)
 		return NULL;
 
+	n = fn_get_name(name);
+
 	while (f)
 	{
 		*pos = *pos + 1;
-		if ( cmp_wildcard( f->filetype, fn_get_name(name) ) )
+		if(strcmp(n, f->filetype) == 0)
 			return f;
+
 		f = f->next;
 	}
 
@@ -249,7 +258,22 @@ void lsrem_all
 }
 
 
-/* Add an item into a list; return pointer to this item */
+/*
+ * A shorter form of the above, uses lsrem() only
+ */
+
+void lsrem_all_one
+(
+	LSTYPE **list	/* pointer to list to work on */ 
+)
+{
+	lsrem_all(list, lsrem);
+}
+
+
+/* 
+ * Add an item into a list; return pointer to this item 
+ */
 
 LSTYPE *lsadd 
 ( 
@@ -306,6 +330,22 @@ LSTYPE *lsadd
 }
 
 
+/*
+ * A shorter form of the above; add at end of the list only
+ */
+
+LSTYPE *lsadd_end 
+( 
+	LSTYPE **list,	/* pointer to the list into which the item is added */ 
+	size_t size,	/* size of item */ 
+	LSTYPE *pt, 	/* pointer to work (edit) area of item data to be added */
+	void *copy_func	/* pointer to a function which copies the data of specific kind */ 
+)
+{
+	return lsadd(list, size, pt, INT_MAX, copy_func);
+}
+
+
 /* Copy a filetype, programtype, icontype or applications list into another */
 
 boolean copy_all
@@ -328,7 +368,7 @@ boolean copy_all
 
 	while (p)  
 	{
-		if ( lsadd( copy, size, p, INT_MAX, copyf ) == NULL )
+		if ( lsadd_end( copy, size, p, copyf ) == NULL )
 			return FALSE; 
 		p = p->next;
 	}
@@ -359,7 +399,7 @@ int cnt_types (LSTYPE **list)
 
 
 /*
- * Check list for duplicate entries, return true if OK 
+ * Check a list for duplicate entries, return true if OK 
  * (i.e. duplicate not found)
  * If list = NULL, do not check but always return true 
  *
@@ -412,16 +452,30 @@ boolean check_dup
 
 
 /*
- * A size-saving aux. function
+ * A size-saving aux. function; remove three lists
  */
 
 void lsrem_three(LSTYPE **clist, void *remfunc)
 {
-	int i;
+	/* Note: this is shorter than a loop */
 
-	for( i = 0; i < 3; i++)
-			lsrem_all(&clist[i], remfunc);
+	lsrem_all(&clist[0], remfunc);
+	lsrem_all(&clist[1], remfunc);
+	lsrem_all(&clist[2], remfunc);
 }
+
+
+/*
+ * Aux. routine for resizing the setmask dialog
+ */
+
+static void resize_dialog(int dh)
+{
+	setmask[0].r.h += dh;
+	setmask[FTOK].r.y += dh;
+	setmask[FTCANCEL].r.y += dh;
+}
+
 
 /* 
  * Manipulate dialog(s) for handling filetype, icon, programtype, 
@@ -478,9 +532,11 @@ int list_edit
 
 	int 
 		i,					/* counter */
+		dh = 0,				/* amount of dialog resizing */
 		pos = -1,			/* index of item in the list */
+		pos0,				/* similar to that */
 		luse,				/* local copy of use parameter */
-		button,				/* index of pressed button */
+		button = FTCANCEL,	/* index of pressed button */
 		wsel,				/* true if item selected in a dir window */
 		item;				/* index of item selected in a dir window */
 
@@ -490,6 +546,15 @@ int list_edit
 	ITMTYPE
 		itype;				/* item type */
 
+
+	/* In some cases make the dialog a bit smaller */
+
+	if(use & LS_APPL)
+	{
+		dh = setmask[FTCHANGE].r.y - setmask[FTADD].r.y;
+		resize_dialog(-dh);
+	}
+
 	/* 
 	 * Has this routine been called to operate on a selection 
 	 * in a window (or desktop), or just called from the menu?
@@ -497,10 +562,9 @@ int list_edit
 
 	if
 	( 
-		( (use & LS_SELA) == 0 )           		&&  
 		( (w = selection.w) != NULL ) 			&& 
 		( (item = selection.selected) >= 0 )    &&
-		( ( use & LS_DOCT ) == 0 ) 				&&
+		( ( use & (LS_DOCT | LS_SELA) ) == 0 ) 	&&
 		( ( itype = itm_tgttype(w, item) ) != ITM_DRIVE )
 	)
 	{
@@ -530,7 +594,7 @@ int list_edit
 					list = &lists[2];
 					break;
 				default:
-					return FALSE;
+					goto exitnow;
 			}
 		}
 		else
@@ -541,18 +605,18 @@ int list_edit
 
 		luse = luse | LS_WSEL;
 
-		/* 
+		/*
 		 * Create full name; pname is allocated here, has to be free'd later.
 		 * Some special considerations so that icons can be assigned to ".."
 		 */
 
 		if( ( (luse & LS_ICNT) != 0) && (itype == ITM_PREVDIR) )
-			pname = strdup("..");
+			pname = strdup(prevdir);
 		else
 			pname = itm_fullname(w,item);
 
 		if(pname == NULL)
-			return FTCANCEL;
+			goto exitnow;
 
 		/* Is this item already in the list? */
 
@@ -586,7 +650,7 @@ int list_edit
 		if ( !copyok )
 		{
 			lsrem_three(clist, lsfunc->lsrem);
-			return FTCANCEL;
+			goto exitnow;
 		}
 
 		list = &clist[0]; /* always start from the first list */
@@ -633,6 +697,13 @@ int list_edit
 			button &= 0x7FFF;
 		}
 
+		/*
+		 * Note: all references to pos0 further down in the code
+		 * were earlier replaced by find_selected() + sl_info.line
+		 */
+
+		pos0 = find_selected() + sl_info.line;
+
 		/* Act upon a pressed button */
 
 		switch (button)
@@ -677,7 +748,8 @@ int list_edit
 						 * it can't be counted, but need to set slider
 						 * properly, therefore cnt_types()+1 below
 						 */
-						pos = find_selected() + sl_info.line;
+
+						pos = pos0;
 						sl_info.n = cnt_types(list) + 1;
 						redraw = TRUE;
 						sl_set_slider(setmask, &sl_info, &info); 
@@ -686,6 +758,11 @@ int list_edit
 					/* Add an item to the temporary list here */
 
 					curitm = lsadd( list, size, lwork, pos, lsfunc->lscopy );
+
+					/* Maybe it didn't succeed ? */
+
+					if(curitm == NULL)
+						button = FTCANCEL;
 
 				} /* ls_dialog ? */
 				break;
@@ -698,8 +775,7 @@ int list_edit
 		 	 	 * if item is selected in a window 
 		 		 */
 
-				pos = find_selected() + sl_info.line;
-
+				pos = pos0;
 				if ((curitm = get_item(list, pos)) != NULL)
 				{
 					lsfunc->lsrem(list, curitm);
@@ -716,7 +792,7 @@ int list_edit
 				if (!wsel)
 				{
 					/* if from the menu */
-					pos = find_selected() + sl_info.line;
+					pos = pos0;
 					curitm = get_item(list, pos);
 				}
 
@@ -743,8 +819,7 @@ int list_edit
 
 				/* Move an item up in the list, unless it is the first one */
 
-				pos = find_selected() + sl_info.line;
-
+				pos = pos0;
 				if (pos > 0 && (curitm = get_item(list, pos)) != NULL)
 				{
 					anitem = get_item(list, pos - 1);
@@ -768,8 +843,7 @@ int list_edit
 
 				/* Move an item down in the list, unless it is the last one */
 
-				pos = find_selected() + sl_info.line;
-
+				pos = pos0;
 				if ( (pos < (sl_info.n - 1)) && (curitm = get_item(list, pos)) != NULL)
 				{
 
@@ -813,7 +887,8 @@ int list_edit
 						button = FTOK;
 					}
 
-					pos = find_selected() + sl_info.line;
+					pos = pos0;
+
 				}
 
 				break;
@@ -918,6 +993,9 @@ int list_edit
 
 		xd_close(&info);
 	}
+
+	exitnow:;
+	resize_dialog(dh);
 
 	/* Return last (exit) button code */
 

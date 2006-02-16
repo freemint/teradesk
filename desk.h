@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren.
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -49,9 +49,9 @@
  */
 
 #if _MORE_AV
-#define GLOBAL_MEM_SIZE 2048L
+#define GLOBAL_MEM_SIZE sizeof(XLNAME)
 #else
-#define GLOBAL_MEM_SIZE	1024L
+#define GLOBAL_MEM_SIZE	sizeof(XLNAME) / 2
 #endif
 
 /* Maximum number of Teradesk's windows of one type */
@@ -213,14 +213,6 @@ typedef struct
 } SCRINFO;
 
 
-/* Strings of specific lengths for icon labels, file types, etc. */
-
-typedef char INAME[13];	  /* Icon name/label length */
-typedef char SNAME[18];   /* filetype mask; must be compatible with (longer than) dialog field width */
-typedef char LNAME[132];  /* filename or path   */
-typedef char VLNAME[256]; /* a very long string */
-
-
 extern Options options;
 extern SCRINFO screen_info;
 extern RECT *sdsk;	/* directly point to part of scree_info */
@@ -236,7 +228,8 @@ extern char
 extern const char
 		*empty,
 		*bslash,
-		*adrive;
+		*adrive,
+		*prevdir;
 
 /* Flags to show a specific OS or AES type (detected from cookies) */
 

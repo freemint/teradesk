@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                                     2002, 2003  H. Robbers,
- *                                                     2003, 2004  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                                           2002, 2003  H. Robbers,
+ *                                                     2003, 2004, 2005  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -39,6 +39,8 @@ char *strsncpy(char *dst, const char *src, size_t len)
 
 
 /*
+
+/*
  * Copy a string 's' and right-justify in a field 'd' with length 'len'. 
  * Termination zero byte is added -after- length 'len'.
  * Length of 's' must not be grater than 'len'.
@@ -48,7 +50,6 @@ char *strsncpy(char *dst, const char *src, size_t len)
  * Therefore this code is commented out
  */
 
-/*
 char *strcpyj(char *d, const char *s, size_t len)
 {
 	size_t l, b;
@@ -65,7 +66,6 @@ char *strcpyj(char *d, const char *s, size_t len)
 	return d;
 }
 */
-
 
 
 /*
@@ -89,7 +89,7 @@ size_t strlenq(const char *name)
 		if(*p == ' ')
 			q = 1;					/* quote if space found */
 
-		if(*p == 34 || *p == 39)
+		if(*p == 39 || *p == 34)
 		{
 			q = 1;					/* quote if embedded quote found */
 			l++;					/* and it has to be doubled */
@@ -167,6 +167,7 @@ char *strcpyrq(char *d, const char *s, char qc)
 
 	while(*p)
 	{
+
 		if( ((*p == fqc) || (!fqc && (*p == 39 || *p == 34))) && p[1] != *p)
 		{
 			/* This is one quote character; start or end quoting */

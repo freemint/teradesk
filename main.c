@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren. 
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren. 
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,6 +28,7 @@
 #include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <tos.h>
 #include <vdi.h>
 #include <boolean.h>
@@ -136,7 +137,8 @@ static const char
 const char
 	*empty = "\0",		/* often used string */
 	*bslash = "\\",		/* often used string */
-	*adrive = "A:\\";	/* often used string */
+	*adrive = "A:\\",	/* often used string */
+	*prevdir = "..";	/* often used string */
 
 boolean
 	onekey_shorts;
@@ -157,7 +159,8 @@ static XDEVENT
 	loopevents;		/* events awaited for in the main loop */
 
 
-void Shutdown(long mode);
+void
+	Shutdown(long mode);
 
 static CfgNest				/* Elsewhere defined configuration routines */ 
 	opt_config, 
@@ -407,7 +410,7 @@ static void showhelp (unsigned int key)
 
 	if ( key & XD_SHIFT )
 	{
-		APPLINFO *helpprg = app_find("*.HYP");
+		APPLINFO *helpprg = app_find("*.HYP", FALSE);
 		if(helpprg)
 		{
 			onfile = TRUE;
@@ -595,39 +598,6 @@ static void ins_shorts(void)
 }
 
 
-/* 
- * Check for duplicate or invalid keys in menu shortcuts.
- */
-
-static boolean check_key(int button, int i, unsigned int *tmp)
-{
-	if ( button != OPTCANC && button != OPTKCLR )
-	{
-		int j;
-		unsigned int *tmpi = &tmp[i];
-
-		/* Note: this tests tmp[i] many times repeatedly, but who cares */
-
-		for ( j = 0; j <= NITEM; j++ ) 
-		{
-			/* XD_ALT below in order to skip items related to menu boxes */
-			if (   ( ( (*tmpi & XD_SCANCODE) != 0 ) && ( (*tmpi & 0xFF) < 128) )
-		    	|| (   (*tmpi & ~XD_ALT) != 0 && (i != j) && *tmpi == tmp[j] ) /* duplicate */
-				|| *tmpi == (XD_CTRL | BACKSPC) /* ^BS illegal, can't differentiate */
-				|| *tmpi == (XD_CTRL | TAB)	 	/* ^TAB illegal, can't differentiate */
-				|| *tmpi == SPACE				/* SPACE illegal, because used to scroll viewer window */
-				|| *tmpi == XD_CTRL				/* ^ only, illegal */
-		       )
-			{
-				alert_printf ( 1, ADUPKEY, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
-				return TRUE;
-			}
-		}
-	}
-	return FALSE;
-}
-
-
 /*
  * routine arrow_form_do handles some redraws related to xd_form_do()
  * which are needed to create the effect of a pressed (3d) arrow button
@@ -686,7 +656,7 @@ static void setpreferences(void)
 		redraw = TRUE,		/* true if to redraw menu item and key def */
 		lm,					/* length of text field in current menu item */
 		lf,					/* length of form for menu item text */
-		i;					/* counters */
+		i, j;				/* counters */
 
 	unsigned int 
 		*tmpmi,
@@ -698,6 +668,9 @@ static void setpreferences(void)
 	XDINFO 
 		prefinfo;
  
+	boolean
+		shok;				/* TRUE if a shortcut is acceptable */
+
 
 	/*  Set state of radio buttons and checkbox button(s) */
 
@@ -716,6 +689,9 @@ static void setpreferences(void)
 		/* 
 		 * Handle setting of keyboard shortcuts; note: because of limitations in
 		 * keyboard scancodes, distinction of some key combinations is impossible
+		 * Because of that, e.g. ^ESC, ^BS and ^TAB are not permitted.
+		 * Also, characters like SP and CR which are used for other purposes
+		 * are not permitted as shortcuts.
 		 */
 
 		while ( button != OPTOK && button != OPTCANC )
@@ -744,14 +720,15 @@ static void setpreferences(void)
 				/* Display defined shortcut in ASCII form */
 
 				disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, *tmpmi, TRUE );
-        
-				xd_drawthis( &prefinfo, OPTMTEXT );
+        		xd_drawthis( &prefinfo, OPTMTEXT );
 				xd_drawthis( &prefinfo, OPTKKEY );
 				redraw = FALSE;
 			}
 
 			do 		/* again: */
 			{
+				shok = TRUE;
+
 				button = arrow_form_do ( &prefinfo, &oldbutton ); 
 
 				/* Interpret shortcut from the dialog */
@@ -769,16 +746,22 @@ static void setpreferences(void)
 					case 1:						/* single-character shortcut */
 						*tmpmi = aux[0] & 0x00FF;
 						break;
-					case 2:						/* two-character ^something shortcut */
+					case 2:						/* two-character ^something shortcut or BS */
 						if 
 						(    
 							(aux[0] == '^')  &&
 						    ( 
-								((aux[1] >= 'A') && (aux[1] <= 'Z')) || 
+								isupper((int)aux[1]) ||
+								isdigit((int)aux[1]) ||
+/* is this an error?
 								( (aux[i] & 0x80) != 0 )
+*/
+								( (aux[1] & 0x80) != 0 )
 							)
 						)
 							*tmpmi = (aux[1] & 0x00FF) | XD_CTRL;
+						else if (strcmp(aux, "BS") == 0)	/* BS */
+							*tmpmi = BACKSPC;
 						else
 							*tmpmi = XD_CTRL;  /* illegal/ignored menu object */
 						break;	
@@ -788,21 +771,46 @@ static void setpreferences(void)
 							*tmpmi = XD_CTRL;
 							aux[0] = ' ';
 							strip_name( aux, aux );
+
+							if ( strcmp( aux, "SP") == 0 )		/* ^SP */
+								*tmpmi |= SPACE;
 						}
-						if ( strcmp( aux, "BS" ) == 0 )
-							*tmpmi |= BACKSPC;
-						else if ( strcmp( aux, "TAB" ) == 0 )
-							*tmpmi |= TAB;
-						else if ( strcmp( aux, "SP" ) == 0 )
-							*tmpmi |= SPACE;
-						else if ( strcmp( aux, "DEL" ) == 0 )
-							*tmpmi |= DELETE;
 						else
-							*tmpmi = XD_SCANCODE; /* use this to mark invalid */
-						break;
+						{
+							if ( strcmp( aux, "TAB") == 0 )		/* TAB */
+								*tmpmi = TAB;
+						}
+
+						if ( strcmp( aux, "DEL" ) == 0 )		/* DEL & ^DEL */
+							*tmpmi |= DELETE;
+
+						if(*tmpmi == 0)
+							*tmpmi = XD_CTRL;
+				}
+
+				/* Now check for duplicate keys */
+
+				if( button != OPTCANC && button != OPTKCLR )
+				{
+					/* Note: this tests tmp[mi] many times repeatedly, but who cares */
+
+					for ( j = 0; j <= NITEM; j++ ) 
+					{
+						/* XD_ALT below in order to skip items related to menu boxes */
+						if (   ( ( (*tmpmi & XD_SCANCODE) != 0 ) && ( (*tmpmi & 0xFF) < 128) )
+					    	|| (   (*tmpmi & ~XD_ALT) != 0 && (mi != j) && *tmpmi == tmp[j] ) /* duplicate */
+							|| *tmpmi == XD_CTRL				/* ^ only, illegal */
+					       )
+						{
+							alert_printf ( 1, ADUPKEY, setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext );
+							shok = FALSE;
+							break;				
+						}
+					}
 				}
 			}
-			while (check_key(button, mi, tmp));	
+
+			while(!shok);
 
 			/* 
 			 * Only menu items which lay between MFIRST and MLAST are considered;
@@ -1029,7 +1037,6 @@ static int load_options(void)
 
 static CfgNest opt_config
 {
-
 	if (io == CFG_SAVE)
 	{
 		/* Save options */
@@ -1173,7 +1180,7 @@ static void save_options_as(void)
 
 void load_settings(char *newinfname)
 {
-	if (newinfname)
+	if (newinfname && *newinfname && !x_checkname(newinfname, empty))
 	{
 		char *oldinfname = infname;
 		infname = newinfname;
@@ -1394,7 +1401,7 @@ fprintf(logfile,"\n  hndlmenu MQUIT");
 			save_options_as();
 			break;
 		case MAPPLIK:
-			app_install(LS_APPL);
+			app_install(LS_APPL, &applikations);
 			break;
 		case MCOPTS:
 			copyprefs();
@@ -1434,15 +1441,20 @@ int scansh ( int key, int kstate )
 		a = touppc(key & 0xFF),
 		h = key & 0x80; 		/* upper half of the 255-characters set */
 
-	if ( kstate == K_CTRL ) 				/* ctrl          */	
+	if( key & XD_SCANCODE)
+		return -1;
+	else if ( kstate == K_CTRL ) 			/* Ctrl...       */	
 	{
-		if ( a == SPACE || a == ESCAPE )	/* ^SP ^ESC      */
+		if ( a == SPACE )					/* ^SP           */
 			a |= XD_CTRL;
 		else if ( a == 0x1f ) 				/* ^DEL          */
 			a |= ( XD_CTRL | 0x60 );
+
+		else if (0x30 <= a && a < 0x40 )	/* ^1 to ^9      */
+			a |= ( XD_CTRL | 0x30 );			
 		else  if (!h) 						/* ^A ... ^\     */
 			a |= ( XD_CTRL | 0x40 );
-		else
+		else								/* Above 127     */
 			a |= XD_CTRL;
 	}
 	else if ( kstate > (K_RSHIFT | K_LSHIFT) || key < 0 ) 		/* everything but shift or plain */
@@ -1601,24 +1613,18 @@ static void evntloop(void)
 {
 	int event;
 
-	loopevents.ev_mflags = EVNT_FLAGS;
 
 	/*
-	 * Set-up parameters for waiting on anevent.
+	 * Set-up parameters for waiting on an event.
 	 * Note: right mouse button has the effect of:
 	 * [ left button doubleclick + right button pressed ]
 	 * (also convenient for activating programs in a non-selected window)
 	 */
 
+	xd_clrevents(&loopevents);
+	loopevents.ev_mflags = EVNT_FLAGS;
 	loopevents.ev_mbclicks = 0x102;
 	loopevents.ev_mbmask = 3;
-	loopevents.ev_mbstate = 0;
-
-	loopevents.ev_mm1flags = 0;
-	loopevents.ev_mm2flags = 0;
-
-	/* loopevents.ev_mtlocount = 0; see below */
-	loopevents.ev_mthicount = 0;
 
 	while (!quit)
 	{
@@ -1676,6 +1682,7 @@ static void evntloop(void)
 		 * (lockup of TeraDesk after live moving) 	
 		 * It is not a essential function. 
 		 */
+
 		clr_key_buf();		
 
 		/* Process any recieved messages */
@@ -1692,36 +1699,41 @@ static void evntloop(void)
 		if (event & MU_KEYBD)
 			hndlkey(loopevents.xd_keycode, loopevents.ev_mmokstate);
 	}
-
 }
 
 
 /*
  * Set shutting = true and return TRUE 
- * if AP_TERM was received within 3 seconds
- * after starting this routine
+ * if AP_TERM is received within 3 seconds after starting this routine.
+ * If another message is received in that time, wait 3 seconds more.
+ * (no other action is performed for other messages).
+ * Theoretically this may get into an endless loop if some application
+ * starts sending messages endlessly
  */
 
 boolean wait_to_quit(void)
 {
 	int event = 0;
 
+	xd_clrevents(&loopevents);
+
 	loopevents.ev_mflags = MU_TIMER | MU_MESAG;
-	loopevents.ev_mbstate = 0;
-	loopevents.ev_mm1flags = 0;
-	loopevents.ev_mm2flags = 0;
 	loopevents.ev_mtlocount = 3000; /* 3 seconds */
-	loopevents.ev_mthicount = 0;
 
-	event = xe_xmulti(&loopevents);
-
-	if((event & MU_MESAG)  && (loopevents.ev_mmgpbuf[0] == AP_TERM))
+	do
 	{
-		shutting = TRUE;
-		return TRUE;
-	}
+		event = xe_xmulti(&loopevents);
 
-	return FALSE;
+		if((event & MU_MESAG)  && (loopevents.ev_mmgpbuf[0] == AP_TERM))
+		{
+			shutting = TRUE;
+			return TRUE;
+		}
+
+		if((event & MU_TIMER))
+			return FALSE;
+	}
+	while(TRUE);
 }
 
 
@@ -1741,6 +1753,7 @@ int main(void)
 	 *
 	 * Currently used:
 	 * D = always draw userdef objects, regardless of AES capabiliites
+	 * A = enforce use of ARGV protocol in passing commands
 	 */
 
 	if ( (teraenv = getenv("TERAENV")) == NULL )
@@ -1764,6 +1777,8 @@ int main(void)
 #if _MINT_
 
 	have_ssystem = (Ssystem(-1, 0L, 0L) == 0);		/* use Ssystem where possible */
+
+	/* Attempt to divine from cookies the version of TOS and AES */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
@@ -1958,13 +1973,15 @@ int main(void)
 			 * Tell all GEM applications which would understand it to end.
 			 * This was supposed to be done also before resolution change,
 			 * but it was found out that Magic and XaAES do not react to
-			 * it properly: magic just restarts the desktop and XaAES goes
+			 * it properly: Magic just restarts the desktop and XaAES goes
 			 * to shutdown. Therefore it is not done now for resolution change.
 			 */
-
+#if _MINT_
 			int ignor = 0;
-
-			quit = shel_write( SHW_SHUTDOWN, 2, 0, (void *)&ignor, NULL ); 	/* complete shutdown */
+			quit = shel_write( SHW_SHUTDOWN, 2, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
+#else
+			quit = shel_write( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
+#endif
 			wait_to_quit();	/* for three seconds */
 		}
 
@@ -1983,15 +2000,14 @@ int main(void)
 			 * Note: maybe use Ssystem here as well, when appropriate?
 			 */
 
-			long (*rv)();				/* reset vector */
+			long (*rv)();		/* reset vector */
 
 #if _MINT_
-			if ( mint && !magx ) /* has no effect in Magic?? */
-			{
-				Shutdown(2L);	/* restart */ 
-				wait(1000);
-			}
+			Shutdown(2L);		/* Ignored if unrecognized */ 
+			wait(1000);
 #endif
+			/* This will execute only without Mint... */
+
 			Super ( 0L );	/* Get into supervisor; old stack won't be needed again */
 			memval = 0L;	/* Spoil some variables to cause a reset */ 				
 			memval2 = 0L;	/* same... */
@@ -2014,4 +2030,35 @@ int main(void)
 /* That's all ! */
 
 
+/* 
+ * This routine displays the incrementation of the 200Hz timer;
+ * it is to be used only for evaluation of the duration of some
+ * operations during development
+ */
 
+/* 
+
+long show_timer(int mode)
+{
+	static long t0, t1;
+	long old = Super(0);
+
+	t1 = *(long *)(0x4ba);
+	if(mode == 0)
+	{
+		t0 = t1;
+		t1 = 0;
+	}
+	else
+	{
+		t1 -= t0;				
+	}
+
+	Super((void *)old);
+
+	printf("\n T:%ld", t1);
+
+	return t1;
+}
+
+*/

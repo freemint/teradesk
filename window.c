@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -26,6 +26,7 @@
 #include <tos.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
@@ -95,6 +96,10 @@ extern int
 extern boolean
 	onekey_shorts;	/* true if single-key menu shortcuts exist */
 
+extern FONT 
+	dir_font,
+	txt_font;
+
 char 
 	floppy;
 
@@ -131,13 +136,12 @@ SNAME automask = {0};	/* no need for long names in single-TOS */
 static size_t 
 	aml = 0;			/* length of string in automask */
 
-static 
-	XFILE *mem_file;	/* for saving temporarily closed windows */
+static XFILE 
+	*mem_file;			/* for saving temporarily closed windows */
 
 
 int appl_control(int ap_id, int what, void *out);
 void load_settings(char *newinfname);
-void wd_printtext(WINDOW *w);
 static void desel_old(void);
 static void itm_selall(WINDOW *w);
 static void wd_type_hndlmenu(WINDOW *w, int title, int item);
@@ -589,7 +593,7 @@ void wd_top_app(int apid)
  * To be used when opening dialogs asked for by the clients of the 
  * AV or the FONT protocol. This should prevent TeraDesk from remaining
  * topped in a multitasking environment, after closing the dialog.
- * Probably relevant only in multitasking environment.
+ * Probably relevant only in multitasking.
  * Note: this is not exactly right- if there are no open windows,
  * problems may be encountered.
  *
@@ -711,23 +715,8 @@ void itm_set_menu(WINDOW *w)
 	nwin = wd_wcount();
 	nonsel = ( !n && (wtoptype == DIR_WIND || wtoptype == TEXT_WIND) );
 
-	/*
-	 * Scan the list of selected items. If any of them is NOT a printer,
-	 * trashcan or parent dir, enable show info.
-	 * In fact this enables change icon always?
-	 * What remains: ITM_FILE, ITM_PROGRAM, ITM_DRIVE, ITM_LINK, ITM_NOTUSED
-	 */
-
-	while(i < n)
-	{
-		type = itm_type(w, list[i++]);
-
-		if (!trash_or_print(type) && (type != ITM_PREVDIR))
-		{
-			showinfo = TRUE;
-			break;
-		}
-	}
+	if(n > 0)
+		showinfo = TRUE;
 
 	/* 
 	 * Enable show info even if there is no selection, but top window
@@ -800,7 +789,7 @@ void itm_set_menu(WINDOW *w)
 	 * or a window is open (to print directory or text)
 	 */
 
-	menu_ienable(menu, MDELETE, enab);
+	menu_ienable(menu, MDELETE, enab && (n > 0));
 	menu_ienable(menu, MPRINT, enab2);
 
 	/* Determine enabling states for Compare, Programtype and App menu items */
@@ -828,7 +817,7 @@ void itm_set_menu(WINDOW *w)
 		}
 	}
 
-	/* Compare will be enabled only if there are only one or two files selected */
+	/* Compare will be enabled only if there are not more than two files selected */
 
 	menu_ienable(menu, MCOMPARE, enab );
 
@@ -1333,39 +1322,26 @@ void wd_seticons(void)
 
 
 /*
- * Print contents of fhe file which is in the topped text window "w". 
- * Simulate enough of a dir window to use existing routine(s)
- * in order to manage printing complete with print-confirmation
- * dialog, etc.
+ * Sometimes it is convenient to fake that the file in a topped text window
+ * is selected in a directory window. Path must be kept to be deallocated
+ * after later operations.
  */
 
-static void wd_printtext(WINDOW *w)
+static void wd_ontext(WINDOW *ww, char **thepath)
 {
-	DIR_WINDOW 
-		*dw;		/* simulated dir window with one file selected */
+	char
+		*thisname = ((TXT_WINDOW *)xw_top())->path,
+		*thename;
 
-	TXT_WINDOW 
-		*tw	= (TXT_WINDOW *)w; /* cast of the topped window */ 
+	*thepath = fn_get_path( thisname );
 
-	LNAME
-		filename,	/* name of the text file in wndow  */ 
-		path;		/* path of the text file in window */
-
-	int 
-		list = 0; 	/* list of the ordinals of files to print- just one file */
-
-
-	/* Divide name into filename proper and path */
-
-	split_path(path, filename, tw->path); 
-
-	/* Simulate that this file is selected in a dir window */
-
-	dir_simw(&dw, path, filename, ITM_FILE, tw->size, FA_ARCHIVE );
-
-	/* Use an existing routine to print a file selected in dir window */
-
-	itmlist_wop( (WINDOW *)dw, dw->nfiles, &list, CMD_PRINT);
+	if (*thepath)
+	{
+		thename = fn_get_name( thisname );
+		dir_simw((DIR_WINDOW *)ww, *thepath, thename, ITM_FILE, (size_t)1, 0);
+	}
+	else
+		xform_error(ENSMEM);
 }
 
 
@@ -1379,9 +1355,8 @@ static void wd_printtext(WINDOW *w)
 
 void wd_hndlmenu(int item, int keystate)
 {
-
-	ITMTYPE 
-		itype = ITM_NOTUSED;
+	DIR_WINDOW
+		simw;			/* space for a simulated dir window */
 
 	WINDOW 
 		*w, 			/* pointer to the window in which a selection is made */
@@ -1395,7 +1370,6 @@ void wd_hndlmenu(int item, int keystate)
 		wtoptype = 0; 	/* type of the top window */
 
 	char			
-		*thename = NULL,
 		*thepath = NULL,/* aux. path */
 		*toppath = NULL;/* path of the topped window */
 
@@ -1436,7 +1410,7 @@ void wd_hndlmenu(int item, int keystate)
 
 					if(it == ITM_FOLDER || it == ITM_DRIVE || it == ITM_PREVDIR)
 						k |= K_ALT; /* open directories in new windows */
-					else if (it != ITM_FILE || app_find(itm_name(w, list[i])) != NULL )
+					else if (it != ITM_FILE || app_find(itm_name(w, list[i]), TRUE) != NULL )
 						delayt = 2000; /* a program or a file assigned to a program */
 				}
 
@@ -1457,19 +1431,20 @@ void wd_hndlmenu(int item, int keystate)
 			}
 		}
 		else
-			item_open( NULL, 0, 0, NULL, NULL );	/* If nothing else is selected, open form to enter item specification */
-
+			/* 
+			 * If nothing is selected, open the dialog to enter 
+			 * item specification 
+			 */
+			item_open( NULL, 0, 0, NULL, NULL );	
 		break;
 	case MSHOWINF:
 	case MSEARCH:
 	{
-		*spattfld = 0;
+		*dirname = 0; /* this is the buffer for the search pattern */
 
-		if ( w == NULL )
+		if (w == NULL && wtop)
 		{
 			/* Nothing is selected, info on the disk of the top window  */
-
-			const char *thisname;
 
  			if ( wtoptype == DIR_WIND )
 			{			
@@ -1484,29 +1459,21 @@ void wd_hndlmenu(int item, int keystate)
 
 					if(item == MSHOWINF)
 						thepath[3] = 0;
-					thename = ".";
-					itype = ITM_DRIVE;
+
+					ww = (WINDOW *)&simw;
+					dir_simw(&simw, thepath, ".", ITM_DRIVE, 0, 0);
 				}
 			}
 			else if ( wtoptype == TEXT_WIND )
 			{
-				thisname = ((TXT_WINDOW *)wtop)->path;
-				thepath = fn_get_path( thisname );
-				thename = fn_get_name( thisname );
-
-				if (thepath)
-					itype = ITM_FILE;
-				else
-					xform_error(ENSMEM);
+				ww = (WINDOW *)&simw;
+				wd_ontext(ww, &thepath);
 			}
-
-			if ( itype )
-				dir_simw(&((DIR_WINDOW *)ww), thepath, thename, itype, 0, 0);
 		}
 
 		/* Perform search and/or show information */
 
-		if(n || itm_list(ww, &n, &list)) 
+		if(n || (thepath && itm_list(ww, &n, &list))) 
 		{
 			if(n == 1 && itm_type(ww, list[0]) == ITM_FILE)
 				cv_fntoform(searching, SMASK, itm_name(ww, list[0]));
@@ -1553,44 +1520,68 @@ void wd_hndlmenu(int item, int keystate)
 				dir_newfolder(wtop);
 		break;
 	case MCOMPARE:
-		if (n && !app_specstart( AT_COMP, ww, list, n, 0 ) )
-			compare_files(w, n, list); /* Only items #0 and #1 from the list */
+		if(w == NULL && wtoptype == TEXT_WIND)
+		{
+			ww = (WINDOW *)&simw;
+			wd_ontext(ww, &thepath);
+		}
+
+		itm_list(ww, &n, &list);
+
+		if ( !app_specstart( AT_COMP, ww, list, n, 0 ) )
+			compare_files(ww, n, list); /* Only items #0 and #1 from the list */
+
+		if(w == NULL) /* deselect all in a simulated window */
+			wd_noselection();
+
+		free(thepath);
 		break;
 	case MDELETE:
 		if(n)
 			itmlist_wop(w, n, list, CMD_DELETE);
 		break;
 	case MPRINT:
+	{
+		int cmd = CMD_PRINT;
+
 		printmode = PM_TXT;
-		if(n)
-		{
-			/* Print selected items */
-			itmlist_wop(w, n, list, CMD_PRINT);
-		}
-		else if ( wtop )
+
+		if(w == NULL && wtop)
 		{
 			/* Nothing selected, print directory or contents of text window */
 
 			if ( wtoptype == DIR_WIND )
 			{
-				/* Select everything in this window */
+					/* Select everything in this window */
 
-				itm_selall(wtop);
-				if ( itm_list(wtop, &n, &list) ) /* there is no list in w */
-					itmlist_wop( wtop, n, list, CMD_PRINTDIR); 
-				wd_deselect_all();
-/* no need
-				dir_refresh_wd((DIR_WINDOW *)wtop);
-*/
+				cmd = CMD_PRINTDIR;
+				ww = wtop;
+				itm_selall(ww);
 			}
 			else if ( wtoptype == TEXT_WIND )
 			{
 				if ( ((TXT_WINDOW *)wtop)->hexmode )
 					printmode = PM_HEX;
-				wd_printtext(wtop);
+				ww = (WINDOW *)&simw;
+				wd_ontext(ww, &thepath);
 			}
 		}
+
+
+		if(n || ((thepath || (wtoptype == DIR_WIND)) && itm_list(ww, &n, &list))) 
+		{
+			itmlist_wop( ww, n, list, cmd); 
+			if(cmd == CMD_PRINTDIR || w == NULL)
+				wd_deselect_all();
+/* no need?
+			if(w == NULL) /* deselect all in a simulated window */
+				wd_noselection();
+*/
+		}
+
+		free(thepath);
 		break;
+	}
 #if MFFORMAT
 	case MFCOPY:
 		formatfloppy(floppy, FALSE);
@@ -1696,9 +1687,6 @@ void wd_hndlmenu(int item, int keystate)
  * and saving about windows.										*
  *																	*
  ********************************************************************/
-
-extern FONT dir_font;
-extern FONT txt_font;
 
 /*
  * Create some reasonable default window sizes and positions.
@@ -2302,10 +2290,6 @@ void wd_type_topped (WINDOW *w)
 {
 	autoloc_off();
 	xw_set(w, WF_TOP);
-/*
-	if(xw_type(w) == DIR_WIND && *(((DIR_WINDOW *)w)->info + 1) == '(' )
-		dir_info((DIR_WINDOW *)w);
-*/
 }
 
 
@@ -2534,7 +2518,13 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 		old_h;
 
 	if ( xw_type(w) == DIR_WIND)
+	{
 		dc = ((DIR_WINDOW *)w)->dcolumns;
+
+		if(((DIR_WINDOW *)w)->par_itm > 0)
+			((DIR_WINDOW *)w)->par_itm = -((DIR_WINDOW *)w)->par_itm;
+	}
+
 
 	xw_getwork(w, &area);
 
@@ -2553,9 +2543,6 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 	{
 		calc_nlines((DIR_WINDOW *)w);
 
-/* this was not good enough for XaAES  
-		if ((area.w < old_w || area.h < old_h) && options.mode != TEXTMODE)
-*/
 		if ((area.w != old_w || area.h != old_h) && (options.mode != TEXTMODE || dc != ((DIR_WINDOW *)w)->dcolumns) )
 			wd_type_draw((TYP_WINDOW *) w, TRUE);
 	}
@@ -3076,8 +3063,10 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		w_scroll(tyw, act);
 		break;
 	case SPACE:
-		if ( wt != TEXT_WIND )
+		if ( wt == DIR_WIND )
 		{
+			if(autoloc)
+				goto thedefault;
 			result = 0;
 			break;
 		}
@@ -3127,6 +3116,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 			*automask = 0;
 		}
 	default:
+		thedefault:;
 		if ( !(autoloc && onekey_shorts) && scansh( scancode, keystate ) == options.kbshort[MCLOSEW-MFIRST] )
 			wd_type_close(w, 1);
 		else
@@ -3173,7 +3163,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 						
 						automask[aml] = 0;
 
-						/* Is this a 8+3 FAT filesystem? */
+						/* Are long names possible or is this a 8+3 FAT filesystem? */
 #if _MINT_
 						if((x_inq_xfs(((DIR_WINDOW *)w)->path) & FS_LFN) == 0)
 #endif
@@ -3183,6 +3173,8 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 							 * (append either "*.*" or ".*" or "*")
 							 */
 
+							if(key == SPACE)
+								key = 0;
 							key = touppc(key);
 							dot = strchr(automask,'.');
 
@@ -3503,18 +3495,10 @@ boolean itm_state(WINDOW *w, int item)
 
 ITMTYPE itm_type(WINDOW *w, int item)
 {
-	ITMTYPE type;
-
 	if ( xw_type(w) == TEXT_WIND )
 		return ITM_NOTUSED;
 
-	type = (((ITM_WINDOW *) w)->itm_func->itm_type) (w, item);
-
-/* no need anymore ?
-	if ((type == ITM_FILE) && prg_isprogram(itm_name(w, item)))
-		type = ITM_PROGRAM;
-*/
-	return type;
+	return (((ITM_WINDOW *) w)->itm_func->itm_type) (w, item);
 }
 
 
@@ -3620,7 +3604,7 @@ boolean itm_islink(WINDOW *w, int item)
 /*
  * Is the object a link and should it be followed?
  * If so, this routine resets 'link' to FALSE.
- * Use the opportunity to find target object's fullname
+ * Use the opportunity to find target object's fullname.
  */
 
 boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *type)
@@ -3631,9 +3615,11 @@ boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *typ
 	if (ll && ((options.cprefs & CF_FOLL) != 0))
 	{
 		*link = FALSE;
-		*name = itm_tgtname(w, item);
 		*type = itm_tgttype(w, item);
-		return TRUE;
+		*name = itm_tgtname(w, item);
+
+		if(*type != ITM_NETOB)	/* Don't follow to net objects */
+			return TRUE;
 	}
 	else
 #else
@@ -3643,8 +3629,9 @@ boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *typ
 		*link = ll;
 		*name = itm_fullname(w, item);
 		*type = itm_type(w, item);
-		return FALSE;
 	}
+
+	return FALSE;
 }
 
 
@@ -3699,8 +3686,7 @@ boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, 
  * if no list has been created.
  * If list allocation fails, an alert will be generated.
  * Note: XWF_SIM flag is set in dir_simw() to mark a simulated window;
- * it is checked here because xw_exist does not recognize
- * simulated windows
+ * it is checked here because xw_exist does not recognize simulated windows
  */
 
 boolean itm_list(WINDOW *w, int *n, int **list)
@@ -3749,7 +3735,6 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 		{
 			if(selection.w && (va_reply || ((options.cprefs & CF_KEEPS) == 0) ) )
 				itm_select(sw, -1, 0, va_reply ? FALSE : TRUE);
-
 		}
 
 		return TRUE;
@@ -3766,7 +3751,7 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
  * Drag & drop items from a list onto a window at position x,y,
  * using the drag & drop protocol. This routine does something useful
  * only in the multitasking version; otherwise, it just returns 
- * an error.
+ * an error. It should be called only if destination window is not TeraDesk's
  */
 
 static boolean itm_drop
@@ -3796,9 +3781,9 @@ static boolean itm_drop
 	if ( (hdl = wind_find(x,y)) > 0)
 		wind_get(hdl, WF_OWNER, &apid); 
 
-	/* Drag & drop is possible only in mint or magic (what about geneva 6?) */
+	/* Drag & drop is possible only in Mint or Magic (what about geneva 6?) */
 
-	if (mint && apid > 0)
+	if (mint && apid >= 0) /* was 'apid > 0' earlier */
 	{
 		char ddsexts[34];
 		long nsize = 0;
@@ -3809,7 +3794,7 @@ static boolean itm_drop
 
 		for ( i = 0; i < n; i++ )
 		{
-			if ( (item = list[i]) == -1 )
+			if ( (item = list[i]) < 0 )
 				continue;
 
 			path=itm_fullname(w, item);
@@ -3824,7 +3809,7 @@ static boolean itm_drop
 			free (path);
 		}
 
-		nsize = strlen(global_memory);
+		nsize = (long)strlen(global_memory);
 
 		/* Create a drag&drop pipe; if successful, continue */
 
@@ -3909,10 +3894,12 @@ static void get_minmax(ICND *icns, int n, int *clip)
 		{
 			if ((i == 0) && (j == 0))
 			{
-				clip[0] = icnd->coords[0];
-				clip[1] = icnd->coords[1];
-				clip[2] = clip[0];
-				clip[3] = clip[1];
+				int *cp = clip;
+
+				*cp++ = icnd->coords[0];
+				*cp++ = icnd->coords[1];
+				*cp++ = clip[0];
+				*cp   = clip[1];
 			}
 			else
 			{
@@ -3991,7 +3978,9 @@ static void desel_old(void)
 }
 
 
-/* mode = 2 - deselecteren, mode = 3 - selecteren */
+/*
+ * mode = 2 - deselecteren, mode = 3 - selecteren 
+ */
 
 static void select_object(WINDOW *w, int object, int mode)
 {

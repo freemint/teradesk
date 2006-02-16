@@ -1,7 +1,7 @@
 /* 
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                2003, 2004, 2005  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -59,14 +59,18 @@ int xw_dosend = 1;					/* if 0, xw_send is disabled */
 
 void xw_send(WINDOW *w, int messid)
 {
-	int message[8];
-
 	if(xw_dosend)
 	{
-		memclr(message, (size_t)16 );
-		message[0] = messid;
-		message[1] = aes_pid;
-		message[3] = w->xw_handle;
+		int message[8], *mp = message;
+
+		*mp++ = messid;
+		*mp++ = aes_pid;
+		*mp++ = 0;
+		*mp++ = w->xw_handle;
+		*mp++ = 0;
+		*mp++ = 0;
+		*mp++ = 0;
+		*mp = 0;
 		appl_write(w->xw_ap_id, 16, message);
 	}
 }
@@ -92,13 +96,6 @@ void xw_send_redraw(WINDOW *w, RECT *area)
 	*messagep++ = aes_pid;
 	*messagep++ = 0;
 	*messagep++ = w->xw_handle;
-
-/* can be simpler
-	*messagep++ = area->x;
-	*messagep++ = area->y;
-	*messagep++ = area->w;
-	*messagep   = area->h;
-*/
 	*(RECT *)(messagep) = *area;	
 
 	appl_write(aes_pid, 16, message);
@@ -284,7 +281,7 @@ WINDOW *xw_last(void)
 
 
 /*
- * Note that a window is the top one.
+ * Notify that a window is the top one.
  * Nothing is done if the window is already topped.
  */
 
@@ -535,7 +532,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	int stop, draw;
 	MFDB bmfdb, smfdb;
 
-	/* If no meny, or if window is iconified, return */
+	/* If no menu, or if window is iconified, return */
 
 	if (menu == NULL || ((w->xw_xflags & XWF_ICN) != 0) )
 		return FALSE;
@@ -652,6 +649,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 					pxy[1] = 0;
 					pxy[2] = box.w - 1;
 					pxy[3] = box.h - 1;
+
 					xd_rect2pxy(&box, &pxy[4]);
 					smfdb.fd_addr = NULL;
 					xw_copy_screen(&smfdb, &bmfdb, pxy);
@@ -860,11 +858,13 @@ int xw_hndlkey(int scancode, int keystate)
 void xw_iconify(WINDOW *w, int width, int height)
 {
 	/* Remember size and position of window in normal state */
-
+/*
 	w->xw_nsize.x = w->xw_size.x; 
 	w->xw_nsize.y = w->xw_size.y; 
 	w->xw_nsize.w = w->xw_size.w;
 	w->xw_nsize.h = w->xw_size.h;
+*/
+	*(RECT *)(&(w->xw_nsize.x)) = *(RECT *)(&(w->xw_size.x));
 
 	/* 
 	 * Set window to iconified state; note that this function
@@ -884,7 +884,7 @@ void xw_iconify(WINDOW *w, int width, int height)
 
 void xw_uniconify(WINDOW *w)
 {
-	wind_set(w->xw_handle,WF_UNICONIFY,w->xw_nsize.x,w->xw_nsize.y,w->xw_nsize.w,w->xw_nsize.h);
+	wind_set(w->xw_handle, WF_UNICONIFY, w->xw_nsize.x, w->xw_nsize.y, w->xw_nsize.w, w->xw_nsize.h);
 
 	w->xw_xflags &= ~XWF_ICN;
 }
@@ -900,65 +900,93 @@ void xw_uniconify(WINDOW *w)
 
 int xw_hndlmessage(int *message)
 {
-	WD_FUNC *func;
-	WINDOW *w;
+	WD_FUNC *func, *wwfunc;
+	WINDOW *w, *ww;
+	int *m4 = &message[4];
 
-	/* Process only messages in this range */
 
-	if ((message[0] < WM_REDRAW) || (message[0] > WM_UNICONIFY) )
+	/* Process only messages in the known range, and in an existing window */
+
+	if 
+	(
+		(message[0] < WM_REDRAW) || 
+		(message[0] > WM_UNICONIFY) ||
+		((w = xw_hfind(message[3])) == NULL)
+	)
 		return FALSE;
 
-	/* An existing window must be specified in this message */
+	/* If a windowed dialog is opened, override the topping function */
 
-	if ((w = xw_hfind(message[3])) == NULL)
-		return FALSE;
 
-	/* Which functions apply to this window */
+	ww = w;
+
+	if(xd_dialogs && !( xd_nmdialogs && w == xd_nmdialogs->window ))
+		ww = xd_dialogs->window;
+
+	/* 
+	 * Which functions apply to this window ? 
+	 * In some cases it is necessary to check if the function is
+	 * defined at all
+	 */
 
 	func = w->xw_func;
-	
+	wwfunc = ww->xw_func;
+
 	/* Do what is needed */
 
 	switch (message[0])
 	{
 	case WM_REDRAW:
-		xw_redraw_menu(w, w->xw_bar, (RECT *)&message[4]);
-		func->wd_redraw(w, (RECT *)&message[4]);
-		break;
-	case WM_TOPPED:
-		func->wd_topped(w);
+		xw_redraw_menu(w, w->xw_bar, (RECT *)m4);
+		func->wd_redraw(w, (RECT *)m4);
 		break;
 	case WM_CLOSED:
+		if(xd_dialogs)
+		{
+			if(w != xd_dialogs->window)
+			{
+				bell();
+				xw_set(xd_dialogs->window, WF_TOP);
+			}
+			else
+				return FALSE; /* closer in dialog window handled differently */
+		}	
 		func->wd_closed(w, 0);
 		break;
 	case WM_FULLED:
 		func->wd_fulled(w, xe_mbshift);
 		break;
 	case WM_ARROWED:
-		func->wd_arrowed(w, message[4]);
+		if(func->wd_arrowed)
+			func->wd_arrowed(w, *m4);
 		break;
 	case WM_HSLID:
-		func->wd_hslider(w, message[4]);
+		func->wd_hslider(w, *m4);
 		break;
 	case WM_VSLID:
-		func->wd_vslider(w, message[4]);
+		func->wd_vslider(w, *m4);
 		break;
 	case WM_SIZED:
-		func->wd_sized(w, (RECT *)&message[4]);
+		func->wd_sized(w, (RECT *)m4);
 		break;
 	case WM_MOVED:
-		func->wd_moved(w, (RECT *)&message[4]);
+		func->wd_moved(w, (RECT *)m4);
+		break;
+	case WM_TOPPED:
+		if(wwfunc->wd_topped)
+			wwfunc->wd_topped(ww);
 		break;
 	case WM_NEWTOP:
-		if (func->wd_newtop != 0L)
-			func->wd_newtop(w);
+		if(wwfunc->wd_newtop)
+			wwfunc->wd_newtop(ww);
 		break;
 	case WM_ONTOP:
 	case WM_UNTOPPED:
-		xw_top(); /* just note the new top window ? */
+		xw_top(); /* just find the new top window ? */
 		break;
 	case WM_BOTTOMED:
-		func->wd_bottomed(w);
+		if(func->wd_bottomed)
+			func->wd_bottomed(w);
 		break;
 	case WM_ICONIFY:
 		func->wd_iconify(w);
@@ -1020,6 +1048,8 @@ void xw_set(WINDOW *w, int field,...)
 
 /*
  * Set window size (short call)
+ * This routine also makes a wind_get() to get new size 
+ * of the work area
  */
 
 void xw_setsize(WINDOW *w, RECT *size)
@@ -1055,13 +1085,14 @@ static unsigned const char xw_get_argtab[] =
  * WF_NEXTXYWH, WF_FULLXYWH, WF_PREVXYWH, WF_WORKXYWH en WF_CURRXYWH
  * moet als parameter een pointer naar RECT structuur worden
  * opgegeven, in plaats van vier pointers naar integers.
+ * Beware that, if window handle is not 0, this function just returns
+ * data from the buffer and does not make any inquiry to the AES.
  */
 
 void xw_get(WINDOW *w, int field,...)
 {
 	RECT *r;
-	int *parm[4], dummy;
-	/* register - not needed in PureC ? */ int i, parms, handle;
+	int *parm[4], dummy, i, parms, handle;
 	va_list p;
 
 	va_start(p, field);
@@ -1071,31 +1102,31 @@ void xw_get(WINDOW *w, int field,...)
 	switch (field)
 	{
 	case WF_WORKXYWH:
-		if (handle == 0)
-			goto getrect;
-
-		r = va_arg(p, RECT *);
-		*r = w->xw_work;
-
-		if (w->xw_menu != NULL)
+		if (handle != 0)
 		{
-			int height = w->xw_menu[w->xw_bar].ob_height + 1;
+			r = va_arg(p, RECT *);
+			*r = w->xw_work;
 
-			r->y += height;
-			r->h -= height;
+			if (w->xw_menu != NULL)
+			{
+				int height = w->xw_menu[w->xw_bar].ob_height + 1;
+
+				r->y += height;
+				r->h -= height;
+			}
+			break;
 		}
-		break;
 	case WF_CURRXYWH:
-		if (handle == 0)
-			goto getrect;
-		r = va_arg(p, RECT *);
-		*r = w->xw_size;
-		break;
+		if (handle != 0)
+		{
+			r = va_arg(p, RECT *);
+			*r = w->xw_size;
+			break;
+		}
 	case WF_FIRSTXYWH:
 	case WF_NEXTXYWH:
 	case WF_FULLXYWH:
 	case WF_PREVXYWH:
-	  getrect:
 		r = va_arg(p, RECT *);
 		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 		break;
@@ -1120,7 +1151,10 @@ void xw_get(WINDOW *w, int field,...)
 /*
  * Shorter form of xw_get to obtain WF_WORKXYWH
  * and save some bytes at an expense in speed.
- * This is the most often form of xw_get in TeraDesk
+ * This is the most often form of xw_get in TeraDesk.
+ * Beware that, if window handle is not 0, this routine does not
+ * make any inquiry from the AES but just copies the data from
+ * the window structure (height may be modified by the window menu height).
  */
 
 void xw_getwork(WINDOW *w, RECT *size)
@@ -1130,7 +1164,8 @@ void xw_getwork(WINDOW *w, RECT *size)
 
 
 /*
- * Similar to above, but obtain WF_FIRSTXYWH
+ * Similar to above, but obtain WF_FIRSTXYWH; this routine -does-
+ * make an inquiry to the AES.
  */
 
 void xw_getfirst(WINDOW *w, RECT *size)
@@ -1170,16 +1205,11 @@ void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output,
 
 		height = menu[bar].ob_height + 1;
 
-		if (w_ctype == WC_WORK)
-		{
-			output->y += height;
-			output->h -= height;
-		}
-		else
-		{
-			output->y -= height;
-			output->h += height;
-		}
+		if(w_ctype != WC_WORK)
+			height = -height;
+
+		output->y += height;
+		output->h -= height;
 	}
 }
 
@@ -1312,6 +1342,7 @@ void xw_open(WINDOW *w, RECT *size)
 {
 	wind_open(w->xw_handle, size->x, size->y, size->w, size->h);
 	w->xw_size = *size;
+
 	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
 			 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
 
@@ -1434,28 +1465,27 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 		return NULL;
 	}
 
+	/* All items not explicitely specified below are zeroed */
+
 	memclr(w, wd_struct_size);
 
-	w->xw_handle = 0;
 	w->xw_type = type;
 	w->xw_xflags |= XWF_OPN;
-	w->xw_flags = 0;
 	w->xw_func = functions;
-	w->xw_menu = NULL;
 
 	desktop = w;
 	xd_deskwin = w; /* globally available */
-
-	w->xw_prev = NULL;
-	w->xw_next = NULL;
 
 	*error = 0;
 
 	xw_getwork(NULL, &w->xw_size);
 	w->xw_work = w->xw_size;
 
+/* In TeraDesk, the topping function is not defined for the desktop window
+
 	if ((windows == NULL) && (w->xw_func->wd_top != 0L))
 		w->xw_func->wd_top(w);
+*/
 
 	return w;
 }

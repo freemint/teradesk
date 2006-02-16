@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -27,6 +27,7 @@
 #include <time.h>
 #include <tos.h>
 #include <vdi.h>
+#include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
 #include <mint.h>
@@ -54,6 +55,9 @@
 XATTR pattr;				/* item attributes */
 XFILE *printfile = NULL;	/* print file; if NULL print to port */
 int printmode;				/* text, hex, raw */
+
+
+int trash_or_print(ITMTYPE type);
 
 
 /*
@@ -310,19 +314,15 @@ static int print_file(WINDOW *w, int item)
 boolean check_print(WINDOW *w, int n, int *list)
 {
 	int mes, i;
+	ITMTYPE type;
 
 	for (i = 0; i < n; i++)
 	{
 		mes = 0;
+		type = itm_type(w, list[i]); 
 
-		switch (itm_type(w, list[i]))
+		switch (type)
 		{
-			case ITM_TRASH:
-				mes = MTRASHCN;
-				break;
-			case ITM_PRINTER:
-				mes = MPRINTER;
-				break;
 			case ITM_DRIVE:
 				mes = MDRIVE;
 				break;
@@ -331,12 +331,13 @@ boolean check_print(WINDOW *w, int n, int *list)
 				mes = MFOLDER;
 				break;
 			default:
+				mes = trash_or_print(type);
 				break;
 		}
 
 		if (mes)
 		{
-			alert_printf(1, ANOPRINT, get_freestring(mes));
+			alert_cantdo(mes, MNOPRINT);
 			return FALSE;
 		}
 	}
@@ -381,8 +382,8 @@ boolean print_list
 	XATTR
 		attr;		/* Enhanced file attributes information */
 
-	char
-		dline[256];	/* sufficiently long string for a complete directory line */
+	XLNAME
+		dline;		/* sufficiently long string for a complete directory line */
 
 	boolean
 		noerror = TRUE;		/* true if there is no error */
@@ -392,8 +393,8 @@ boolean print_list
 
 	if ( function == CMD_PRINTDIR && (options.cprefs & P_HEADER) )
 	{
-		strcpy ( dline, get_freestring(TDIROF) ); 		/* Get "Directory of " string */
-		strcpy(&dline[strlen(dline)], ((DIR_WINDOW *)w)->title);
+		strcpy ( dline, get_freestring(TDIROF) ); 	/* Get "Directory of " string */
+		strcat(dline, ((DIR_WINDOW *)w)->title);	/* Append window title */
 
 		if ( (noerror = !print_line(dline) ) == TRUE )
 			noerror = !print_eol();
@@ -406,7 +407,7 @@ boolean print_list
 
 	for (i = 0; i < n; i++)
 	{
-		if ((item = list[i]) == -1)
+		if ((item = list[i]) < 0)
 			continue;
 
 		name = itm_name(w, item);

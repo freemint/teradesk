@@ -27,6 +27,7 @@
 #include <np_aes.h>
 #include <vdi.h>
 #include <error.h>
+#include <library.h>
 #include <xdialog.h>
 #include <boolean.h>
 
@@ -74,12 +75,13 @@ static boolean
 
 /* These are the shifter types returned from the _VDO cookie */
 
-#define ST_VIDEO 	0x0000
-#define STE_VIDEO	0x0001
-#define TT_VIDEO	0x0002
-#define FAL_VIDEO	0x0003
-#define MIL_VIDEO	0x0004
-#define OTH_VIDEO	0x0005
+#define ST_VIDEO 	0x0000	/* ST, MegaST */
+#define STE_VIDEO	0x0001	/* STe, megaSTe */
+#define TT_VIDEO	0x0002	/* TT */
+#define FAL_VIDEO	0x0003	/* Falcon */
+#define MIL_VIDEO	0x0004	/* Milan */
+#define ARA_VIDEO	0x0005	/* Aranym ? */
+#define OTH_VIDEO	0x0006	/* Other; unknown */
 
 
 /* 
@@ -178,7 +180,7 @@ void get_set_video (int set)
 
 		/* 
 		 * Note: Currently Falcon and Milan hardware are identically 
-		 * treated (should they be?)
+		 * treated (should they be?). Same for Aranym.
 		 * If this is a Falcon or Milan, in which mode it is ? 
 		 * currez obtained above will be menaingless, it will have
 		 * to be constructed from the mode setting and monitor type.
@@ -186,7 +188,7 @@ void get_set_video (int set)
 		 * in actual resolution change
 		 */
 
-		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO)
+		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO || vdohi == ARA_VIDEO)
 		{
 			fal_mil = TRUE;
 			falmode = (int)xbios(88,-1); 		/* Vsetmode() */
@@ -372,6 +374,7 @@ void get_set_video (int set)
 			regen_desktop(desktop);
 			menu_bar(menu, 1);
 			wd_drawall();
+			arrow_mouse();
 		}
 		else /* Set > 1 */
 		{
@@ -571,6 +574,7 @@ int voptions(void)
 
 		case FAL_VIDEO:
 		case MIL_VIDEO:
+		case ARA_VIDEO:
 
 			vd_setstring(VTTLOW, TFALLOW);
 			vd_setstring(VTTMED, TFALMED);

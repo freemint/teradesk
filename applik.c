@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -29,6 +29,7 @@
 #include <vdi.h>
 #include <boolean.h>
 #include <mint.h>
+#include <library.h>
 #include <xdialog.h>
 #include <internal.h>
 #include <limits.h>
@@ -73,6 +74,12 @@ static SNAME
 
 static const char
 	qc = 34; 		/* double quote */
+
+static boolean
+	nodocs = FALSE;	/* to copy documenttypes when copying apps */
+
+int
+	naap;			/* number of apps assigned to a filetype */
 
 int trash_or_print(ITMTYPE type);
 
@@ -149,7 +156,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 
 		/* Remove associated documenttypes */
 
-		lsrem_all((LSTYPE **)(&(f->filetypes)), lsrem); /* deallocate list of documenttypes */
+		lsrem_all_one((LSTYPE **)(&(f->filetypes))); /* deallocate list of documenttypes */
 		free(f);
 	}
 }
@@ -158,35 +165,39 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 /*
  * Copy an application definition from one location to another;
  * Space for both has to be already allocated (size of APPLINFO); 
- * for name, commandline, environment and documenttypes, 
- * memory is allocated here.  
+ * for name, commandline, environment and documenttypes, memory is allocated.  
+ * This routine actually copies the list of associated filetypes,
+ * as well as the other strings (i.e. it doesn't just copy pointers).
+ * If 'nodocs' is true, documenttypes, command line and environment are not copied.
+ * Note: NULL pointers are checked for in strdup() and returned
  */
  
 static void copy_app( APPLINFO *t, APPLINFO *s )
 {
-	APPLINFO *next = t->next;
-	memclr(t, sizeof(APPLINFO) );
-	t->next = next;
-
 	copy_prgtype ( (PRGTYPE *)t, (PRGTYPE *)s );
-
-	t->fkey = s->fkey;
-
-	/* Note: NULL pointers are checked for in strdup() and returned */
-
 	t->name = strdup(s->name);
-	t->cmdline = strdup(s->cmdline);
-	t->localenv = strdup(s->localenv);
+	t->fkey = s->fkey;
+	t->cmdline = NULL;
+	t->localenv = NULL;
+	t->filetypes = NULL;
 
-	/* Note: copying below will commence even if allocation above failed ! */
+	if(nodocs)
+		return;
 
-	copy_all ( (LSTYPE **)(&(t->filetypes)), (LSTYPE **)(&(s->filetypes)), sizeof(FTYPE), copy_ftype);
+	/* Note: If lsadd() fails, cmdline and localenv will remain orphaned */
+
+	if(t->name)
+	{
+		t->cmdline = strdup(s->cmdline);
+		t->localenv = strdup(s->localenv);
+		copy_all ( (LSTYPE **)(&(t->filetypes)), (LSTYPE **)(&(s->filetypes)), sizeof(FTYPE), copy_ftype);
+	}
 }
 
 
 /*
  * Find (or create!) information about an application in a list;
- * input: filename ;
+ * input: filename
  * output: APPLINFO data structure
  * if filetype has not been defined, default values are set
  */
@@ -242,9 +253,6 @@ void appinfo_info
 /*
  * Check duplicate application assignment; this routine differs
  * from check_dup in lists.c in that the full app path+name is compared.
- * Perhaps this routine should be improved to check for duplicate
- * documenttype assignments (one document should not be assigned
- * to several applications)
  */
 
 boolean check_dup_app( APPLINFO **list, APPLINFO *appl, int pos )
@@ -427,18 +435,10 @@ void app_update(wd_upd_type type, const char *fname1, const char *fname2)
 }
 
 
-/********************************************************************
- *																	*
- * Hulpfunkties voor install_appl()									*
- *																	*
- ********************************************************************/
-
-
 /* 
- * Create "short" name of an application; it will be used
- * for informational purposes in dialogs opened to edit
- * documenttypes and application type, and in some alerts.
- * "dest" must be allocated beforehand.
+ * Create a "short" name of an application; it will be used for informational
+ * purposes in dialogs opened to edit documenttypes and application type, and 
+ * in some alerts. "dest" must be allocated beforehand.
  */ 
 
 void log_shortname( char *dest, char *appname )
@@ -450,7 +450,7 @@ void log_shortname( char *dest, char *appname )
 	if (appname == NULL)
 		return;
 	
-	n = fn_get_name(appname);
+	n = fn_get_name(appname);	/* find name proper in the full name */
 
 #if _MINT_
 	if (mint)
@@ -488,7 +488,7 @@ boolean app_dialog
 		stat = FALSE, 
 		qquit = FALSE;		/* true when ok to exit loop */
 
-	LNAME
+	VLNAME
 		thisname,			/* name of the current application */
 		thispath;			/* path of the current application */
 
@@ -507,6 +507,9 @@ boolean app_dialog
 	static const char 
 		ord[] = {ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW, ISCOMP};
 
+
+	*thispath = 0;
+	*thisname = 0;
 
 	/* 
 	 * Set dialog title(s); create copy of filetypes list if needed 
@@ -537,13 +540,20 @@ boolean app_dialog
 	 * in order to display path separately
 	 */
 
-	split_path( thispath, thisname, appl->name );
-	cv_fntoform(applikation, APNAME, thisname);
+	if(*(appl->name))
+	{
+		int error = x_checkname(appl->name, NULL);
+		xform_error(error);
+		if(!error)
+			split_path( thispath, thisname, appl->name );
+	}
+
+	cv_fntoform(applikation, APNAME, thisname); /* xd_init_shift() inside */
 	cv_fntoform(applikation, APPATH, thispath);
-	strsncpy(applcmd, appl->cmdline, XD_MAX_SCRLED); 
-	xd_init_shift(&applikation[APCMLINE], applcmd);
-	strsncpy(envline, appl->localenv, XD_MAX_SCRLED);
+	strsncpy(envline, appl->localenv, sizeof(VLNAME));
 	xd_init_shift(&applikation[APLENV], envline); 
+	strsncpy(cmdline, appl->cmdline, sizeof(VLNAME)); 
+	xd_init_shift(&applikation[APCMLINE], cmdline);
 
 	/* Display alerts if strings were too long */
 
@@ -583,24 +593,22 @@ boolean app_dialog
 				 * Adjust limit value of i in two loops below
 				 * to be equal to number of checkboxes in the dialog (currently 7)
 				 */
+				for ( i = 0; i < 8; i++ )
+					set_opt(specapp, appl->flags, AT_EDIT << i, (int)ord[i] );
+
+				button2 = chk_xd_dialog(specapp, ROOT);
+
+				if ( button2 == SPECOK )
 				{
 					for ( i = 0; i < 8; i++ )
-						set_opt(specapp, appl->flags, AT_EDIT << i, (int)ord[i] );
+						get_opt(specapp, &(appl->flags), AT_EDIT << i, (int)ord[i] );
+				}	
 
-					button2 = chk_xd_dialog(specapp, ROOT);
-
-					if ( button2 == SPECOK )
-					{
-						for ( i = 0; i < 8; i++ )
-							get_opt(specapp, &(appl->flags), AT_EDIT << i, (int)ord[i] );
-					}	
-
-					break;
-				}
+				break;
 
 			case APPFTYPE:
-
-				/* Set associated document types; 
+				/*
+				 * Set associated document types; 
 				 * must recreate dialog title afterwards because the same
 				 * dialog is used
 				 */
@@ -609,8 +617,7 @@ boolean app_dialog
 				rsc_title(setmask, DTSMASK, title);
 				break;
 
-			case APPPTYPE:
-			
+			case APPPTYPE:			
 				/* 
 				 * Define application execution parameters (program type)
 				 * note: default values have already been set 
@@ -620,7 +627,6 @@ boolean app_dialog
 				break;
 
 			case APOK:
-
 				/* 
 				 * Changes are accepted, do everything needed to exit dialog
  				 * First, check for duplicate app installation 
@@ -642,8 +648,8 @@ boolean app_dialog
 					break;
 
 				/* 
-				 * Build full application full name again, because
-				 * it might have been changed by editing. 
+				 * Build full application name again,
+				 * because it might have been changed by editing. 
 				 * Use "thispath" and "thisname" as they are not needed anymore.
 				 * Note that actual file is NOT renamed, just 
 				 * the entry in the applications list, but a check is made
@@ -656,13 +662,17 @@ boolean app_dialog
 					break;
 				}
 
-				make_path( thispath, thispath, thisname );
+				if (make_path( thispath, thispath, thisname ) != 0)
+				{
+					alert_iprint(TPTHTLNG);
+					break;
+				}
 
 				/* Does this application file exist at all ? */
 
 				if ( !x_exist(thispath, EX_FILE) )
 				{
-					alert_printf(1, APRGNFND, appl->shname );
+					alert_printf(1, APRGNFND, appl->shname);
 					break;
 				}
 
@@ -687,9 +697,9 @@ boolean app_dialog
 				 * allocate a new one 
 				 */
 			 
-				if ( (strcmp(applcmd, appl->cmdline) != 0) )
+				if ( (strcmp(cmdline, appl->cmdline) != 0) )
 				{
-					if ((newcmd = strdup(applcmd)) != NULL)
+					if ((newcmd = strdup(cmdline)) != NULL)
 					{
 						free(appl->cmdline);
 						appl->cmdline = newcmd;
@@ -718,7 +728,9 @@ boolean app_dialog
 				 * clear the copy. Note: currently there is no check
 				 * whether the same documenttype has been assigned to another
 				 * application, it is only checked (in ft_dialog) whether 
-				 * there are duplicate documenttypes set for this application
+				 * there are duplicate documenttypes set for this application.
+				 * Anyway, it is possible to assign one documenttype to
+				 * several applications.
 				 */	
 
 				if ( newlist != list )
@@ -731,14 +743,14 @@ boolean app_dialog
 					 * in ft_dialog
 					 */
 
-					lsrem_all((LSTYPE **)(&appl->filetypes), lsrem);
+					lsrem_all_one((LSTYPE **)(&appl->filetypes));
 					appl->filetypes = newlist;
 				}
 				else
 				{
 					/* there has been no changes, destroy copy of list */
 
-					lsrem_all((LSTYPE **)(&list), lsrem);
+					lsrem_all_one((LSTYPE **)(&list));
 				}
 
 				/* Set also the f-key. (remove all other assignments of this key) */
@@ -761,7 +773,7 @@ boolean app_dialog
 
 				/* Copy of documenttype list has to be destroyed */
 
-				lsrem_all((LSTYPE **)(&newlist), lsrem);
+				lsrem_all_one((LSTYPE **)(&newlist));
 				qquit = TRUE;
 				break;
 			}
@@ -787,17 +799,17 @@ boolean app_dialog
 #pragma warn -sus
 static LS_FUNC aplist_func =
 {
-	copy_app,
-	rem_appl,
-	appinfo_info,
-	find_appl,
-	app_dialog
+	copy_app,		/* lscopy */
+	rem_appl,		/* lsrem */
+	appinfo_info,	/* lsitem */
+	find_appl,		/* lsfinditem */
+	app_dialog		/* ls_dialog */
 };
 #pragma warn .sus
 
 
 /* 
- * Handle installing, editing and removing applications.
+ * Handle installing, editing, selecting and removing applications.
  * If "Install Applicaton" menu is selected without any program file being
  * selected in a dir window, a dialog is shown with a list of installed
  * applications, and options to add, remove or edit them, for which 
@@ -806,7 +818,7 @@ static LS_FUNC aplist_func =
  * a dialog opens for directly setting application parameters.
  */
 
-void app_install(int use)
+void app_install(int use, APPLINFO **applist)
 {
 	int
 		title, 
@@ -834,7 +846,7 @@ void app_install(int use)
 	 * so there is nothing to do after that
 	 */
 
-	list_edit( &aplist_func, (LSTYPE **)(&applikations), 1, sizeof(APPLINFO), (LSTYPE *)&awork, theuse); 
+	list_edit( &aplist_func, (LSTYPE **)applist, 1, sizeof(APPLINFO), (LSTYPE *)&awork, theuse); 
 
 	rsc_title(setmask, FTTEXT, TAPP); 
 	obj_hide(setmask[FILETYPE]);
@@ -844,36 +856,95 @@ void app_install(int use)
 
 /* 
  * Find installed application which is specified for "file" filetype.
- * Return pointer to information block for that app. 
+ * Return pointer to information block for that app.
+ * If more than one application us specified for the filetype,
+ * the listbox dialog is opened so that the application can be selected.
  */
 
-APPLINFO *app_find(const char *file)
+APPLINFO *app_find(const char *file, boolean dial)
 {
-	APPLINFO *h = applikations;
-	FTYPE *t;
+	APPLINFO 
+		*h = applikations, 
+		*d = NULL;	/* temporary list of assigned apps */
+
+	FTYPE 
+		*t;			/* list of documenttypes */
+
+	naap = 0;		/* number of assigned apps */
+	selitem = NULL;	/* nothing found yet */
+	nodocs = TRUE;	/* do not copy documenttypes */
+
+	/* Find all applications associated with this filetype; form a list */
 
 	while (h)
 	{
 		t = h->filetypes;
 		while (t)
 		{
-			if (cmp_wildcard(file, t->filetype)) 
-				return h;
+			if (cmp_wildcard(file, t->filetype))
+			{
+				if(!selitem)
+					(APPLINFO *)selitem = h;	/* First associated one */
+
+				if
+				(
+					lsadd_end
+					( 
+						(LSTYPE **)&d, 
+						sizeof(awork), 
+						(LSTYPE *)h, 
+						copy_app 
+					) == NULL 
+				)
+					goto nomore;
+
+				naap++;
+				break; /* stop scanning documenttypes for this app */
+			}
 			t = t->next;
 		}
 		h = h->next;
 	}
-	return NULL;
+
+	nomore:;
+
+	/* If more than one app found, open the dialog, but disable editing */
+
+	if(naap > 1 && dial)
+	{
+		obj_disable(setmask[FTADD]);
+		obj_disable(setmask[FTDELETE]);
+		obj_disable(setmask[FTCHANGE]); 
+
+		app_install(LS_SELA, &d); /* returns pointer to selected app in selitem */
+
+		obj_enable(setmask[FTADD]);
+		obj_enable(setmask[FTDELETE]);
+		obj_enable(setmask[FTCHANGE]); 
+
+		/* Now find (by name) the selected application in the original list */
+
+		if(selitem)
+			(APPLINFO *)selitem = find_appl(&applikations, ((APPLINFO *)selitem)->name, NULL);
+	}
+
+	/* Remove temporary list of applications */
+
+	lsrem_all((LSTYPE **)&d, rem_appl);
+	nodocs = FALSE;
+	return (APPLINFO *)selitem;
 }
 
 
 /*
- * Find the (short) name of the application assiciated with a filename
+ * Find the (short) name of the first application associated with a filename
  */
 
 char *app_find_name(const char *fname)
 {
-	APPLINFO *theapp = app_find(fname);
+	APPLINFO *theapp;
+
+	theapp = app_find(fname, FALSE);
 
 	if (theapp)
 		return theapp->shname;
@@ -935,69 +1006,44 @@ static char *requote_cmd(char *cmd)
 static char *app_build_cml
 (
 	const char *format,	/* (Template for) the command lint */
-	WINDOW *w,			/* Windoe where the selection is made */
+	WINDOW *w,			/* Window where the selection is made */
 	int *sellist,		/* List of selected items */
-	int n				/* NUmber of selected items */
+	int n				/* Number of selected items */
 )
 {
 	char 
-		h, 
-		hh,
+		h, 					/* pointer to a character in command format */
+		hh,					/* lowercase of the above */
 		*d,					/* pointer to a position in 'build' */
-		*tmp,
+		*tmp,				/* pointer to a temporary storage */
 		*build = NULL,		/* buffer for building the command name */
 		*realname = NULL,	/* name to be used- either item name or link target */
-		*fullname = NULL,	/* full name of the item */
 		*qformat;			/* requoted command line */
 
 	int 
-		i, 			/* item counter */
-		error = -1,	/* anything */
-		mes,
-		item;
-
-	long
-		ml;			/*needed buffer length for the command line */
-
-	ITMTYPE 
-		type;		/* item type */
+		i, 					/* item counter */
+		error = -1,			/* anything */
+		mes,				/* message identification */
+		item;				/* item index */
 
 
-	/* Convert any qoutes in the command line to double quotes */
+
+	/* Convert any quotes in the command line to double quotes */
 
 	if((qformat = requote_cmd((char *)format)) != NULL)
 	{
-		const char *c = qformat;
-
-		/* 
-		 * Dimension and create a temporary buffer: dimension of the
-		 * command line template + each name (possibly quoted)
-	 	 * + a space after each name
-		 */
-
-		ml = strlen(qformat) + 3;
-
-		for(i = 0; i < n; i++)
-		{
-			tmp = itm_fullname(w, sellist[i]);
-
-			if(tmp)
-				ml += strlenq(tmp);
-			else
-				goto error_exit2;
-
-			free(tmp);
-		}
+		const char *c = qformat;	/* pointer to a position in qformat */
+		ITMTYPE type;				/* current item type */
+		long ml;					/*needed buffer length for the command line */
 
 		/* 
 		 * Allocate a little more memory, because a couple of characters
-		 * may be added to the command line 
+		 * may be added to the command line on each name 
 		 */
 
-		if ( (build = malloc_chk(ml + 8)) == NULL )
+		ml = (n + 2) * sizeof(VLNAME);
+		if ( (build = malloc_chk(ml)) == NULL )
 			goto error_exit2; 
-
-		/* Keep the first byte of the command line for length information */
 
 		d = build;
 
@@ -1030,72 +1076,67 @@ static char *app_build_cml
 							item = sellist[i];
 							type = itm_type(w, item);
 
-							if ((mes = trash_or_print(type)) != 0)
+							if (type != ITM_NETOB && (mes = trash_or_print(type)) != 0)
 							{
-								if (alert_printf(1, ANODRAGP, get_freestring(mes)) == 1)
-									continue;
-								else
-									goto error_exit2;
+								alert_cantdo(mes, MNODRAGP);
+								continue;
 							}
 							else
 							{
-								/* 
-								 * Always separate arguments by blanks 
-								 * (except the first one) 
-								 */	
+								char *np;
 
-								if (i != 0)
+								/* separate arguments by blanks */	
+
+								if (i)
 									*d++ = ' ';
 
-								/* Get the full name of an item (allocate fullname) */
+								/* Get the full real name of an item (allocate) */
 
-								if ((fullname = itm_fullname(w, item)) == NULL)
+								if ((realname = itm_tgtname(w, item)) == NULL)
 									goto error_exit2;
 
+								tmp = realname;	/* for hh == 'f' or hh == 'p' */
+
+								np = fn_get_name(realname);
+
 								/* 
-								 * Is this, maybe, a link?
-								 * Item can be a link; if so, resolve it;
-								 * if it is not a link, the name will be copied
+								 * Note: if %n is specified and realname is
+								 * a root path, an empty string will be set
 								 */
 
-								if ((realname = x_fllink(fullname)) == NULL)	
-									goto error_exit2;			
-							
-								if ((hh == 'f') || (type == ITM_DRIVE)) /* fullname */
-								{
-									tmp = realname;
-								}
-								else if ( hh == 'n' )	/* name only */
-								{
-									tmp = fn_get_name(realname);
-								}
-								else if ( hh == 'p' )	/* path only */
-								{
-									tmp = realname;
-									*fn_get_name(realname) = 0;
-								}
+								if(hh == 'n')
+									tmp = np;
+								if(hh == 'p')
+									*np = 0;
 
 								/* (now tmp points to a position in realname) */
 
 								if (isupper(h))
 									strlwr(tmp);
 
+								/* Would the command be too long ? */
+
+								if(strlenq(tmp) + strlen(build) >= ml)
+								{
+									xform_error ( ECOMTL ); 
+									goto error_exit2;
+								}
+							
 								d = strcpyq(d, tmp, qc);
 
 								/* This frees the area that tmp points to */
 
-								free(fullname);
 								free(realname);
+								realname = NULL;
 							}
-						}
+						} /* for... */
 					}
 					else
 					{
 						/* must get rid of blanks after %f, etc. */
 						while (*c == ' ')
 							c++;
-					}
-						
+					}						
 				}
 				else  /* neither %f nor %n nor %p */
 				{
@@ -1112,29 +1153,29 @@ static char *app_build_cml
 
 		*d++ = 0;
 
-		/* Everything is OK, copy to destination */
+		/* Everything is OK, copy to destination as much as is needed */
 
 		tmp = strdup( build );
 		error = 0;
 	}
  
+	/* Come here at end or with errors */
+
 	error_exit2:;
+
+	/* Free whatever was temporarily allocated */
 
 	free(build);
 	free(qformat);
-
-	if(error == 0)
-		return tmp;
-
-	free(fullname);
 	free(realname);
-	return NULL;
+
+	return (error == 0) ?  tmp : NULL;
 }
 
 
 /* 
- * Attempt to extract a valid path from the commandline.
- * Return pointer to a string containing the path.
+ * Attempt to extract a valid path from a command line.
+ * Return pointer to a new string containing this path.
  * Memory is allocated in this routine.
  * If a string resembling a path is not found, return NULL
  */
@@ -1179,7 +1220,7 @@ static char *app_parpath(char *cmline)
 
 		/* Toggle quoting */
 
-		if ((*p == fqc) || (!fqc && (*p == 34 || *p == 39)) && p[1] != *p)
+		if ((*p == fqc) || (!fqc && (*p == 39 || *p == 34)) && p[1] != *p)
 		{
 			/* This is a single quote */
 
@@ -1250,7 +1291,7 @@ boolean app_exec
 		result = FALSE;			/* return result */
 
 	ApplType 
-		appl_type;				/* Type of program */
+		appl_type;				/* Type of program (GEM or not) */
 
 	PRGTYPE
 		*thework;				/* pointer to edit area for program type */
@@ -1325,7 +1366,7 @@ boolean app_exec
 		 * locate it or to remove it. 
 		 */
 
-		if (!x_exist(name, EX_FILE))
+		if (name && !x_exist(name, EX_FILE))
 		{
 			char *fullname;
 			int button;
@@ -1336,12 +1377,7 @@ boolean app_exec
 			if (button > 1)						/* remove or cancel */
 				goto errexit;
 
-			/* 
-			 * Locate the file using file selector.
-			 * Note: instead of "fullname" there was "newname" above, but 
-			 * that seems wrong, as newname (global) should always have pointed
-			 * to an editable field in nameconflict dialog
-			 */
+			/* Locate the file using file selector */
 
 			if ((fullname = locate(name, L_PROGRAM)) == NULL)
 				goto errexit;
@@ -1373,9 +1409,16 @@ boolean app_exec
 
 	/* Set some program-type details as proper boolean values */
 
-	argv = ((thework->flags & PT_ARGV) != 0) ? TRUE : FALSE;
-	single = ((thework->flags & PT_SING) != 0) ? TRUE : FALSE;
-	back = ((thework->flags & PT_BACK) != 0) ? TRUE : FALSE; 
+	argv = FALSE;
+	single = FALSE;
+	back = FALSE;
+
+	if((thework->flags & PT_ARGV) != 0)
+		argv = TRUE;
+	if ((thework->flags & PT_SING) != 0)
+		single = TRUE;
+	if((thework->flags & PT_BACK) != 0)
+		back = TRUE;
 
 	limmem = thework->limmem;
 	appl_type = thework->appl_type;
@@ -1400,7 +1443,7 @@ boolean app_exec
 
 		if ( *prevcall == 0 || strcmp( thiscall, prevcall ) != 0 )
 		{
-			*cmdline = 0;	/* clear the dialog field */
+			*ttpline = 0;	/* clear the dialog field */
 			strcpy( prevcall, thiscall );
 		}
 
@@ -1410,11 +1453,11 @@ boolean app_exec
 			goto errexit;
 			
 		/* 
-		 * Cmdline below is from the dialog. Copy any possible length,
+		 * Ttpline below is from the dialog. Copy any possible length,
 		 * and put command line length (or 127) into first byte
 		 */
 
-		if((thecommand = requote_cmd(cmdline)) == NULL)
+		if((thecommand = requote_cmd(ttpline)) == NULL)
 			goto errexit;
 	}
 	else if(n == -1)
@@ -1422,7 +1465,7 @@ boolean app_exec
 		if((thecommand = requote_cmd((char *)sellist)) == NULL)
 			goto errexit;
 
-		prevcall[0] = 0;
+		*prevcall = 0;
 	}
 	else
 	{
@@ -1435,7 +1478,7 @@ boolean app_exec
 		if ((thecommand = app_build_cml(cl_format, w, sellist, n)) == NULL)
 			goto errexit;
 
-		prevcall[0] = 0;
+		*prevcall = 0;
 	}
 
 	/* Set the appropriate default directory */
@@ -1512,7 +1555,7 @@ boolean app_exec
  ********************************************************************/
 
 /* 
- * Initialize applications list 
+ * Initialize the list of installed applications 
  */
 
 void app_init(void)
@@ -1526,8 +1569,7 @@ void app_init(void)
 
 
 /* 
- * Remove all applications from the list 
- *
+ * Remove all applications from the list.
  * Note: recursive calls occur here: 
  * app_default-->rem_all-->rem_appl-->rem_all-->rem
  */
@@ -1593,7 +1635,7 @@ static CfgNest this_atype
 
 static void rem_all_doctypes(void)
 {
-	lsrem_all((LSTYPE **)(&awork.filetypes), lsrem);
+	lsrem_all_one((LSTYPE **)(&awork.filetypes));
 }
 
 
@@ -1669,7 +1711,7 @@ static CfgNest one_app
 		memclr(&this, sizeof(this));
 		memclr(&awork, sizeof(awork));
 
-		*error = CfgLoad(file, app_table, (int)sizeof(LNAME), lvl); 
+		*error = CfgLoad(file, app_table, (int)sizeof(VLNAME), lvl); 
 
 		if ( *error == 0 )				/* got one ? */
 		{
@@ -1677,6 +1719,8 @@ static CfgNest one_app
 				*error = EFRVAL;
 			else
 			{
+				/* For awork, strings are just pointed to, not copied */
+
 				awork.name = (char *)&this.name;
 				awork.cmdline = (char *)&this.cmdline;
 				awork.localenv = (char *)&this.localenv;
@@ -1701,21 +1745,25 @@ static CfgNest one_app
 
 				unset_fkey(&applikations, awork.fkey );
 
-				/* Add this application to list */
+				/* 
+				 * Add this application to list. Note that there is
+				 * a flaw in the code here: if lsadd_end() fails because 
+				 * of insufficient memory, command line and environment
+				 * for the new item may remain allocated and lost
+				 */
 
 				if 
 				( 
-					lsadd
+					lsadd_end
 					( 
 						(LSTYPE **)&applikations, 
 						sizeof(awork), 
 						(LSTYPE *)&awork, 
-						INT_MAX, 
 						copy_app 
 					) == NULL 
 				)
 				{
-					lsrem_all((LSTYPE **)(&awork.filetypes), lsrem);
+					lsrem_all_one((LSTYPE **)(&awork.filetypes));
 					*error = ENOMSG;
 				}
 			}
@@ -1749,12 +1797,12 @@ CfgNest app_config
 
 
 /*
- * Start applications with a special use.
+ * Start applications marked for a special use.
  * It can be: an editor, an autostart, a shutdown application, etc.
  * There can be only one editor, but several startup or
  * shutdown applications. 
  * There is a delay of 1 or 2 seconds between autostart apps
- * but a delay of 10 seconds between shutdown apps.
+ * but a delay of 6 seconds between shutdown apps.
  * 
  * Note: this routine can be improved, to better handle
  * simultaneous or sequential launch of applications.
@@ -1767,23 +1815,19 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 {
 	APPLINFO *app = applikations;
 
-	int	n = 0, delayt;
+	int	n = 0, delayt = 1000;
 
 	if ( (flags & AT_SHUT) || (flags & AT_VIDE) )
-		delayt = 10000;
-	else
-	{
+		delayt = 6000;
 #if _MINT_
+	else
 		if ( mint || geneva )
 			delayt = 2000;
-		else
 #endif
-			delayt = 1000;
-	}
 
 	while (app != NULL)
 	{
-		if ( ( app->flags & flags) != NULL )
+		if ( ( app->flags & flags) != NULL ) /* correct type of application ? */
 		{
 			/* Delay a little bit before the next application */
 
@@ -1794,11 +1838,6 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 			/* Start a marked application */
 
 			app_exec(NULL, app, w, list, nn, kstate);
-
-			/* Some types should not be multiply defined- exit after the first one */
-
-			if ( (flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW | AT_COMP) ) != 0 )
-				break;
 		}
 		app = app->next;
 	}

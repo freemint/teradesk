@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright       1993, 2002  W. Klaren,
- *                                                 2002, 2003  H. Robbers
- *                                           2003, 2004, 2005  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright             1993, 2002  W. Klaren,
+ *                                                       2002, 2003  H. Robbers
+ *                                           2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,9 +20,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef __LIBRARY__
+
+#define __LIBRARY__
+
 #ifndef _BOOLEAN_
 #include <boolean.h>
 #endif
+
+/* Strings of specific lengths for icon labels, file types, etc. */
+
+typedef char INAME[13];	  /* Icon name/label length */
+typedef char SNAME[18];   /* filetype mask; must be compatible with (longer than) dialog field width */
+typedef char LNAME[128];  /* filename */
+typedef char VLNAME[256]; /* a very long string e.g. a path */
+typedef char XLNAME[2048];/* an extremely long name or other string */
 
 typedef struct
 {
@@ -47,14 +59,11 @@ int lminmax(long lo, long i, long hi);
 void bell(void);
 int touppc(int c);
 void digit(char *s, int x);
-void free_item( void **ptr );
 void *memclr(void *s, size_t len); 
 
 
 /* Funkties voor filenamen */
 
-void make_path( char *name,const char *path,const char *fname );
-void split_path( char *path,char *fname,const char *name );
 void strip_name (char *dst, const char *src);
 void cramped_name(const char *s, char *t, int w);
 
@@ -70,3 +79,6 @@ int aprintf( int def,const char *string, ... );
 /* Funkties voor het bepalen van de TOS-versie */
 
 int get_tosversion( void );
+
+
+#endif

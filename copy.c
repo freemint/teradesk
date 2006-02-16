@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,6 +31,7 @@
 #include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
+#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -147,7 +148,7 @@ void upd_copyinfo(long folders, long files, long bytes)
 /*
  * Open the dialog showing information during copying, moving, printing... 
  */
- 
+
 int open_cfdialog(long folders, long files, long bytes, int function) 
 {
 	int 
@@ -156,17 +157,14 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 		button, 
 		title;
 
+	static const int 
+		items[] = {PSETBOX,CSETBOX,CPT3,CPDEST,CFOLLNK,CPRFILE,0};
+
 	sd = 0;
 
 	/* Set default visibility and state of some objects */
 
-	obj_hide(copyinfo[PSETBOX]);
-	obj_hide(copyinfo[CSETBOX]);
-	obj_hide(copyinfo[CPT3]);
-	obj_hide(copyinfo[CPDEST]);
-	obj_hide(copyinfo[CFOLLNK]);
-	obj_hide(copyinfo[CPRFILE]);
-
+	rsc_hidemany(copyinfo, items);
 	xd_set_rbutton(copyinfo, PSETBOX, PRTXT + printmode);
 
 	/* 
@@ -340,6 +338,7 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean 
 {
 	COPYDATA *new;
 	int error = 0;
+
 
 	if ((new = malloc(sizeof(COPYDATA))) == NULL)
 		error = ENSMEM;
@@ -591,7 +590,7 @@ int cnt_items
 
 static int dir_error(int error, const char *file)
 {
-	return xhndl_error(MEREADDR, error, file);
+	return xhndl_error(MESHOWIF, error, file);
 }
 
 
@@ -649,6 +648,16 @@ static boolean count_items
 
 	while ((i < n) && ok)
 	{
+		/* Restore all indexes to positive values */
+
+		if(list[i] < 0)
+		{
+			if(list[i] == INT_MIN)
+				list[i] = 0;
+			else
+				list[i] = - list[i];
+		}
+
 		item = list[i];
 		error = 0;
 
@@ -674,7 +683,7 @@ static boolean count_items
 			}
 			else
 			{
-				list[i] = -1;
+				list[i] = -1; /* will  later become -list[i] */
 				goto next; /* dirty, dirty :) */
 			}
 #endif
@@ -682,13 +691,13 @@ static boolean count_items
 
 		if (isfileprog(type) || link) 
 		{
-			if ((error = itm_attrib(w, item, (link) ? 1 : 0, &attr)) == 0)
+			if ((error = itm_attrib(w, item, (link || (type == ITM_NETOB)) ? 1 : 0, &attr)) == 0)
 			{
 				*files += 1;
 				*bytes += attr.size;
 			}
 			else
-				list[i] = -1;
+				list[i] = -1; /* will later become -list[i] */
 		}
 		else
 		{
@@ -703,7 +712,7 @@ static boolean count_items
 						*bytes += length;
 					}
 					else
-						list[i] = -1;
+						list[i] = -1; /* will later becme -list[i] */
 				}
 				else
 					if ( function == CMD_PRINTDIR )
@@ -713,11 +722,15 @@ static boolean count_items
 			else
 				ok = FALSE;
 		}
+
 #if _MINT_
 		next:;
 #endif
 		if (error != 0)
 		{
+			if( item == 0 && (list[i] == -1) )
+				list[i] = INT_MIN;
+
 			if (dir_error(error, itm_name(w, item)) != XERROR)
 				ok = FALSE;
 		}
@@ -856,10 +869,6 @@ static int linkcopy(const char *sname, const char *dname, XATTR *src_attrib, DOS
 int copy_error(int error, const char *name, int function)
 {
 	int msg, irc;
-	SNAME shortname;
-
-
-	cramped_name( name, shortname, (int)sizeof(SNAME) );
 
 	switch(function)	
 	{
@@ -873,7 +882,7 @@ int copy_error(int error, const char *name, int function)
 			msg = MECOPY;
 			break;
 		case CMD_TOUCH:
-			msg = METOUCH;
+			msg = MESHOWIF;
 			break;
 		default:
 			msg = 0;
@@ -882,7 +891,7 @@ int copy_error(int error, const char *name, int function)
 	/* a table would have been even better above ! */
 
 	arrow_mouse();
-	irc = xhndl_error(msg, error, shortname);
+	irc = xhndl_error(msg, error, name);
 	hourglass_mouse();
 	return irc;
 }
@@ -917,14 +926,14 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 	{
 		item = list[i];
 
-		/* Note: nothing will be dchecked if dest is NULL */
+		/* Note: nothing will be checked if dest is NULL */
 
 		if ((((type = itm_type(w, item)) == ITM_FOLDER) || (type == ITM_DRIVE)) && (dest != NULL))
 		{
 			/* Note: space for path allocated here */
 			if ((path = itm_fullname(w, item)) != NULL)
 			{
-				l = strlen(path);
+				l = (long)strlen(path);
 				if ((strncmp(path, dest, l) == 0) &&
 					(((type != ITM_DRIVE) && ((dest[l] == '\\') || (dest[l] == 0))) ||
 					 ((type == ITM_DRIVE) && (dest[l] != 0))))
@@ -940,11 +949,11 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 		}
 		else
 		{
-			/* Can't copy the trashcan or the printer */
+			/* Can't copy the trashcan or the printer (or unknown or network object) */
 
 			if ((mes = trash_or_print(type)) != 0)
 			{
-				alert_printf(1, ANOCOPY, get_freestring(mes));
+				alert_cantdo(mes, MNOCOPY);
 				result = FALSE;
 			}
 		}
@@ -994,6 +1003,9 @@ static int _rename(char *old, int function, XATTR *attr)
 	/* Get new name from the dialog */
 
 	cv_formtofn(newfname, nameconflict, OLDNAME);
+
+	if(x_checkname(empty, newfname)) /* too long? */
+		return XFATAL;
 
 	/* Extract old name only without path */
 
@@ -1071,6 +1083,7 @@ int set_posmode(int mode)
 static void redraw_after(void)
 {
 	wd_drawall();
+
 	if (cfdial_open)
 		xd_drawdeep(&cfdial, ROOT);
 }
@@ -1951,27 +1964,26 @@ static boolean copy_list
 
 	/* Initial destination name */
 
-
 	upd_copyname(dest, NULL, NULL);
 
 	/* For each item in the list... */
 
 	for (i = 0; i < n; i++)
 	{
-		int fa; /* 0=object atributes, 1=link target attributes */
+		int fa = 0; /* 0=target atributes, 1=link/object attributes */
 
-		if ((item = list[i]) == -1)
+		if ((item = list[i]) < 0)
 			continue;
 
-		if(itm_follow(w, item, &link, (char **)(&path), &type))
-			fa = 0;
-		else
+		if(!itm_follow(w, item, &link, (char **)(&path), &type))
 		{
-			fa = 1;
 #if _MINT_
 			if(link)
 				type = ITM_LINK;
+
+			if(type != ITM_NETOB)
 #endif
+				fa = 1;
 		}
 
 		if (path == NULL) 
@@ -2309,15 +2321,17 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 		link; 
 
 
+	/* Loop for each item in the list... */
+
 	for (i = 0; i < n; i++)
 	{
-		if ((item = list[i]) == -1)
+		if ((item = list[i]) < 0)
 			continue;
 #if _MINT_
 		llink = itm_islink(w, item);
 #endif
 		if(itm_follow(w, item, &link, (char **)(&path), &type))
-			fa = 0;
+			fa = 0; 
 		else
 		{
 			fa = 1;
@@ -2336,10 +2350,10 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 			/* 
 			 * If the object is not a link or if a link has been followed
-			 * to the referenced object, delete object...
+			 * to the referenced object, delete (referenced) object...
 			 */
 
-			if(!link)
+			if(!link && type != ITM_NETOB)
 #endif
 			{
 				if(isfileprog(type) || type == ITM_LINK)
@@ -2457,7 +2471,8 @@ boolean itmlist_op
 		bytes;			/* number of bytes to do   */
 
 	int 
-		button;			/* button code */
+		itm0,				/* first item in the list */
+		button = COPYCAN;	/* button code */
 
 	boolean 
 		result = FALSE, 
@@ -2467,6 +2482,11 @@ boolean itmlist_op
 		anypath[6],		/* Dummy destination path when it does not matter */
 		*spath;			/* initial source path */
 
+
+	/* Save the index of the first item in the list (may become -1 later) */
+
+	if(n)
+		itm0 = list[0];
 
 	/* The confirmation dialog is currently closed */
 
@@ -2520,7 +2540,7 @@ boolean itmlist_op
 	}
 
 	if ( !result ) 
-		return FALSE;
+		goto forcexit;
 
 	/* 
 	 * Count the items to work upon. Are there any at all? 
@@ -2534,7 +2554,7 @@ boolean itmlist_op
 
 	if (cont)
 	{
-		ITMTYPE itype0 = itm_type(w, list[0]);
+		ITMTYPE itype0 = itm_type(w, itm0);
 
 		/* 
 		 * Remember operation date and time, in case it is needed to
@@ -2554,9 +2574,9 @@ boolean itmlist_op
 
 		/* Find path of the first source (or its full name if it is a folder) */
 
-		spath = itm_fullname(w, list[0]);
+		spath = itm_fullname(w, itm0);
 		if ( spath == NULL )
-			return FALSE;
+			goto forcexit;
 
 		/* Always provide some destination path */
 
@@ -2570,11 +2590,11 @@ boolean itmlist_op
 
 		if ( isfileprog( itype0) )
 		{
-			cv_fntoform( copyinfo, CPFILE, itm_name( w, list[0] ) );
+			cv_fntoform( copyinfo, CPFILE, itm_name( w, itm0 ) );
 			path_to_disp(spath);
 		}
 		else
-			*cpfile = 0;
+			*(copyinfo[CPFILE].ob_spec.tedinfo->te_ptext) = 0;
 		
 		/* Show initial source and destination paths */
 		
@@ -2659,36 +2679,30 @@ boolean itmlist_op
 
 			arrow_mouse();
 		}
-		
-		forcexit:;
-
-
-/* There is no need to do this
-		/* 
-		 * Currently "change time" and "change attributes" are active 
-		 * for a single operation only; so, reset again. Same with
-		 * 'Follow links' 
- 		 */
-
-		options.cprefs &= ~(CF_CTIME | CF_CATTR | CF_FOLL);
-*/
-
-		/* 
-		 * Close the information/confirmation dialog if it was open;
-		 * then update windows
-		 */
-
-		close_cfdialog(button);
-		wd_do_update();
 	}
+
+	forcexit:;
+
+	/* 
+	 * Close the information/confirmation dialog if it was open;
+	 * then update windows if necessary.
+	 */
+
+	close_cfdialog(button);
+	if(cont)
+		wd_do_update();
+
+	restoremode = FALSE;
+	updatemode = FALSE;
 
 	return result;
 }
 
 
 /* 
- * A shorter form of the above. Some bytes of program size will be 
- * saved (about 30) with a small penalty in speed.
+ * A shorter form of the above, to be used when there is no destination.
+ * Some bytes of program size will be saved (about 30) with a small penalty 
+ * in speed.
  */
 
 boolean itmlist_wop(WINDOW *w, int n, int *list, int function)

@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren
- *                                           2002, 2003  H. Robbers,
- *                                           2003, 2004  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright             1993, 2002  W. Klaren
+ *                                                       2002, 2003  H. Robbers,
+ *                                           2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,59 +26,6 @@
 #include <library.h>
 
 
-/* 
- * Concatenate a path+filename string "name" from a path "path"
- * and a filename "fname"; Add a "\" between the path and
- * the name if needed.
- * Space for resultant string has to be allocated before the call
- * Note: "name" and "path" can be at the same location
- */
-
-void make_path( char *name, const char *path, const char *fname )
-{
-	long l;
-
-	strcpy(name, path);
-	l = strlen(name);
-	if (l && (name[l - 1] != '\\'))
-		name[l++] = '\\';
-	strcpy(name + l, fname);
-}
-
-
-/*
- * Split a full (file)name (path+filename) into "path" and "fname" parts.
- * Space for path and fname has to be allocated beforehand.
- * Path is always finished with a "\"
- */
-
-void split_path( char *path, char *fname, const char *name )
-{
-	char *backsl;
-
-	backsl = strrchr(name,'\\');
-	if (backsl == NULL)
-	{
-		*path = 0;
-		strcpy(fname, name); /* no path, there is just filename */
-	}
-	else
-	{
-		strcpy(fname, backsl + 1);
-		if (backsl == name)
-			strcpy(path, "\\");
-		else
-		{
-			long l = (backsl - (char *)name);
-
-			strsncpy(path, name, l + 1);		/* secure copy */
-			if ((l == 2) && (path[1] == ':'))
-				strcat(path, "\\");
-		}
-	}
-}
-
-
 /********************************************************************
  *																	*
  * Hulpfunkties voor dialoogboxen.									*
@@ -93,6 +40,7 @@ void split_path( char *path, char *fname, const char *name )
  * which must already exist. The source is left unchanged. 
  * Note1: only spaces are considered, not tabs, etc.
  * Note2: destination can be at the same address as the source.
+ * Note3: At most sizeof(XLNAME) - 1 characters will be considered
  */
 
 void strip_name(char *to, const char *from)
@@ -103,11 +51,16 @@ void strip_name(char *to, const char *from)
 
 	if (*from)									/* if not empty string... */
 	{
+		size_t nc = 1;
+
 		while (*last == ' ')					/* last nonblank */
 			last--;
 
-		while (from <= last)					/* now copy */
+		while (from <= last && nc < sizeof(XLNAME))	/* now copy */
+		{
+			nc++;
 			*to++ = *from++;
+		}
 	}
 
 	*to = 0;									/* terminate with a null */
@@ -119,15 +72,17 @@ void strip_name(char *to, const char *from)
  * a name should become e.g: c:\s...ng\foo.bar; 
  * s = source, t=target, ww= available target length
  * Note 1: "ww" accomodates the termination byte as well
- * Note 2: it is assumed that nonblank part of the source will never 
- * be longer than 255 bytes; there is no length checking.
+ * Note 2: At most sizeof(XLNAME) - 1 characters will be considered
  */
+
 
 void cramped_name(const char *s, char *t, int ww)
 {
 	char 
-		*p = t, 	/* pointer to a location in target string  */
-		ts[256];	/* temporary storage for the stripped name */
+		*p = t; 	/* pointer to a location in target string  */
+
+	XLNAME
+		ts;			/* temporary storage for the stripped name */
 
 	int
 		l,			/* input string length */ 

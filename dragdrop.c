@@ -60,9 +60,10 @@ static void  *oldpipesig;
 int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
 {
 	int 
-		fd,		/* pipe handle */ 
+		fd,			/* pipe handle */ 
 		i,
-		msg[8];	/* message buffer */
+		msg[8],		/* message buffer */
+		*mp = msg;	/* pointer to */
 
 	long 
 		fd_mask;
@@ -101,14 +102,15 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 	/* Construct and send the AES message to destination app */
 
-	msg[0] = AP_DRAGDROP;
-	msg[1] = spid;
-	msg[2] = 0;
-	msg[3] = winid;
-	msg[4] = msx;
-	msg[5] = msy;
-	msg[6] = kstate;
-	msg[7] = ( ( ((int)pipename[17]) << 8) + pipename[18] );
+	*mp++ = AP_DRAGDROP;
+	*mp++ = spid;
+	*mp++ = 0;
+	*mp++ = winid;
+	*mp++ = msx;
+	*mp++ = msy;
+	*mp++ = kstate;
+	*mp   = ( ( ((int)pipename[17]) << 8) + pipename[18] );
+
 	i = appl_write(dpid, 16, msg);
 
 	if (i == 0)
@@ -178,7 +180,7 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
-	hdrlen = 9 + strlen(name); /* in Magic docs it is 8 + ... */
+	hdrlen = 9 + (int)strlen(name); /* in Magic docs it is 8 + ... */
 
 	i = (int)Fwrite(fd, 2L, &hdrlen);	/* send header length */
 

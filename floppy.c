@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -90,7 +90,7 @@ void prdisp
 
 
 /*
- * Convert two consecutive bytes to an integer
+ * Convert two consecutive bytes to a short integer
  * (but the bytes are in the wrong order: low byte on lower address)
  */
 
@@ -213,6 +213,29 @@ void formatfloppy
     
 	static unsigned char
 		fat0;			/* first byte of each FAT */
+
+	static const unsigned char 
+		hdr[]=			/* MS-DOS compatible header */
+		{
+			0xeb,	/*  [0] */
+			0x34,	/*  [1] maybe should be 0x3c for HD floppy? */
+			0x90,	/*  [2] */
+			'I',	/*  [3] OEM code (5 chars) */
+			'B',	/*  [4] OEM */
+			'M',	/*  [5] OEM */
+			' ',	/*  [6] OEM */
+			' ',	/*  [7] OEM */
+			0,		/*  [8] placeholder for serial */
+			0,		/*  [9] ditto */
+			0,		/*[0xa] ditto */
+			0,		/*[0xb] */
+			0,		/*[0xc] */
+			0x02,	/*[0xd] sectors per cluster */
+			0x01,	/*[0xe] reserved sectors */
+			0,		/*[0xf] number of FATs */
+			0x02	/*[0x10]number of FATs */
+		};
+
  
 	/* 
 	 * Allocate some memory, but at least 40KB; 
@@ -366,8 +389,6 @@ void formatfloppy
 					default:			/* no change */
    	       			break;       
 				} /* switch */
-
-
 			}  /* format ? */
    
   			/* Update displayed params regarding selected or found format */
@@ -504,22 +525,12 @@ void formatfloppy
        
 					/* Create a MS-DOS-compatible header */
 
-					sect0[0] = 0xeb;
-					sect0[1] = 0x34;    /* maybe put here 0x3c for hd ? */
-					sect0[2] = 0x90;
-					sect0[3] = 'I';		/* OEM code (5 chars) */
-					sect0[4] = 'B';
-					sect0[5] = 'M';
-					sect0[6] = ' ';
-					sect0[7] = ' ';
+					memcpy(sect0, hdr, 17);
 
 					serial = xbios(17);	 			  /* random serial number */					  										/* produce random number */
 					memcpy(&sect0[0x08], &serial, 3); /* turned around, but doesn't matter */
                               
 					sect0[0x0c] = (char)(tbps >> 8); /* bytes/128 per sector */
-			       	sect0[0x0d] = 0x02;            /* sectors per cluster */
-					sect0[0x0e] = 0x01;            /* reserved sectors    */
-					sect0[0x10] = 0x02;            /* number of FATS      */
 
 					cctoi(&sect0[0x11], (unsigned char *)(&dirsize));
 

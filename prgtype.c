@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren.
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -101,14 +101,14 @@ void prg_info
  * Check if filename is to be considered as that of a program;
  * return true if name matches one of the masks defined
  * for executable files (programs)
+ * Note: use of find_lsitem() here would bring a minor saving in
+ * size 916 bytes) but would slow the program down.
  */
 
 boolean prg_isprogram(const char *fname)
 {
-	PRGTYPE *p;
+	PRGTYPE *p = prgtypes;
 	char *name = fn_get_name(fname);
-
-	p = prgtypes;
 
 	while (p)
 	{
@@ -122,49 +122,34 @@ boolean prg_isprogram(const char *fname)
 
 
 /*
- * Check if a link points to a program.
- * It can be used on real filenames as well.
- */
-
-boolean prg_isproglink(const char *fname)
-{
-	boolean p = FALSE;
-	char *tgtname = x_fllink((char *)fname);
-
-	if (tgtname)
-		p = prg_isprogram(fn_get_name(tgtname));
-
-	free(tgtname);
-
-	return p;
-}
-
-
-/*
  * Add one program filetype to end of list, explicitely specifying 
- * each parameter; If mint is active, set name to lowercase
+ * each parameter; If mint is active, maybe set name to lowercase?
  */
 
 static PRGTYPE *ptadd_one
 (
 	char *filetype,		/* pointer to filetype mask */
 	int type, 			/* program type */
-	int flags,
+	int flags,			/* program usage flags */
 	long limmem			/* memory limit for this program type */
 )
 {
 	strsncpy ( (char *)pwork.name, filetype, sizeof(SNAME) );
+
+/* Better let the user decide whether to do this
 
 #if _MINT_
 	if ( mint && !magx )
 		strlwr(pwork.name);
 #endif
 
+*/
+
 	pwork.appl_type = type;
 	pwork.flags = flags;
 	pwork.limmem = limmem;
 
-	return (PRGTYPE *)lsadd( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), INT_MAX, copy_prgtype );
+	return (PRGTYPE *)lsadd_end( (LSTYPE **)(&prgtypes), sizeof(PRGTYPE), (LSTYPE *)(&pwork), copy_prgtype );
 }
 
 
@@ -174,7 +159,7 @@ static PRGTYPE *ptadd_one
 
 static void rem_all_prgtypes(void)
 {
-	lsrem_all( (LSTYPE **)(&prgtypes), lsrem );
+	lsrem_all_one( (LSTYPE **)(&prgtypes) );
 }
 
 
@@ -365,23 +350,24 @@ void prg_init(void)
 
 
 /* 
- * Set default predefined program file types 
+ * Set default predefined program file types.
+ * In Mint or Magic, accessory is also a program type. 
  */
 
 void prg_default(void)
 {
-	static const ApplType pt[] = {PGEM,PGEM,PGTP,PTOS,PTTP,PACC};
+	static const ApplType pt[] = {PGEM, PGEM, PGTP, PTOS, PTTP, PACC};
 	static const int dd[] = {PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
 	int i;
 
 	rem_all_prgtypes();
 
 #if _MINT_
-	for(i = 2; i < 8; i++)
+	for(i = 0; i < 6; i++)
 #else
-	for(i = 2; i < 7; i++)
+	for(i = 0; i < 5; i++)
 #endif
-		ptadd_one((char *)presets[i], pt[i - 2], dd[i - 2], 0L);
+		ptadd_one((char *)presets[i + 2], pt[i], dd[i], 0L);
 }
 
 
@@ -430,7 +416,7 @@ static CfgNest one_ptype
 	{
 		memclr(&pwork, sizeof(pwork));
 
-		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME) - 1, lvl); 
+		*error = CfgLoad(file, prg_table, (int)sizeof(SNAME), lvl); 
 
 		if (*error == 0 )
 		{
@@ -442,12 +428,11 @@ static CfgNest one_ptype
 
 				if
 				( 
-					lsadd
+					lsadd_end
 					(  
 						(LSTYPE **)&prgtypes, 
 		            	sizeof(pwork), 
 		            	(LSTYPE *)&pwork, 
-		            	INT_MAX, 
 		            	copy_prgtype
 				  	) == NULL
 				)

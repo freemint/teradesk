@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -164,7 +164,7 @@ void clr_argv(void)
 char *make_argv_env
 (
 	const char *program,	/* program name */ 
-	const char *cmdline,	/* command line or an environment string */ 
+	const char *cmdl,		/* command line or an environment string */ 
 	size_t *size			/* resultant size of the string */
 )
 {
@@ -174,7 +174,6 @@ char *make_argv_env
 	char 
 		fqc = 0,			/* quote character */
 		h, 					/* Location in command line string */
-		*d, 				/* Current location in output string */
 		*envp;				/* String being built */
 
 	const char
@@ -190,7 +189,7 @@ char *make_argv_env
 	 * because the quotes will in fact be removed from the string
 	 */
 
-	argvl = strlen(cmdline) + 2L; 
+	argvl = strlen(cmdl) + 2L; 
 
 	/* 
 	 * Length of "ARGV=" + length of program name + zero byte after "="
@@ -210,7 +209,7 @@ char *make_argv_env
 
 	if ((envp = malloc_chk(argvl)) != NULL)
 	{
-		d = envp;
+		char *d = envp; /* current location in the string */
 
 		if ( program )
 		{
@@ -239,7 +238,7 @@ char *make_argv_env
 		 * or double quotes
 		 */
 
-		s = cmdline;
+		s = cmdl;
 
 		while ((h = *s++) != 0)
 		{
@@ -253,7 +252,6 @@ char *make_argv_env
 			}
 
 			/* Is this a quote character (see also va_start_prg() in va.c) */
-
 
 			else if ((h == fqc) || (!fqc && (h == 39 || h == 34))) /* 34= double quote, 39=single quote */
 			{
@@ -276,7 +274,6 @@ char *make_argv_env
 		}
 
 		*d++ = 0; /* first trailing zero  */
-
 		*d = 0;	  /* second trailing zero */
 
 		/* This is the actual length of the environment string */

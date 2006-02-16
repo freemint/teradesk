@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -101,10 +101,13 @@ static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
  * Note: this function searches for an icon sequentially through a list.
  * On a low-end Atari, finding icons near the end of a large list can take
  * noticeable time. Routine cmp_wildcards() is rather slow.
+ * Use of find_lsitem() here does not bring any reduction in size,
+ * but slows things even further.
  */
 
 static int find_icon(const char *name, ICONTYPE *list)
 {
+
 	ICONTYPE *p = list;
 
 	while (p)
@@ -114,6 +117,7 @@ static int find_icon(const char *name, ICONTYPE *list)
 
 		p = p->next;
 	}
+
 	return -1;
 }
 
@@ -239,6 +243,9 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 	SNAME 
 		thename;
 
+	static const int 
+		items1[] = {ICSHFIL,ICSHFLD,ICSHPRG,0},
+		items2[] = {CHNBUTT,ICBTNS,DRIVEID,ICNLABEL,INAMBOX,0};
 
 	/* Which title to use? */
 
@@ -249,9 +256,7 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 	/* Files list or folders or programs list? */
 
-	obj_hide(addicon[ICSHFIL]);
-	obj_hide(addicon[ICSHFLD]);
-	obj_hide(addicon[ICSHPRG]);
+	rsc_hidemany(addicon, items1);
 
 	switch( use & (LS_FIIC | LS_FOIC | LS_PRIC) )
 	{
@@ -273,14 +278,11 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 	/* Set some fields as visible or invisible */
 
-	obj_hide(addicon[CHNBUTT]);
-	obj_hide(addicon[ICBTNS]);
-	obj_hide(addicon[DRIVEID]);
-	obj_hide(addicon[ICNLABEL]); 
+	rsc_hidemany(addicon, items2);
+
 	obj_unhide(addicon[ICNTYPE]);
 	obj_unhide(addicon[ICNTYPT]);
 	obj_unhide(addicon[ADDBUTT]);
-	obj_hide(addicon[INAMBOX]);
 
 	sl_noop = 0;
 	button = icn_dialog(&sl_info, &theic, ICNTYPE, options.win_pattern, options.win_color);
@@ -398,10 +400,12 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 
 	strsncpy ( (char *)iwork.type, filetype, sizeof(iwork.type) );
 
+/* Let the user decide 
 #if _MINT_
 	if ( mint && !magic )
 		strlwr(iwork.type);
 #endif
+*/
 
 	/* Index of that icon in (c)icons.rsc */
 
@@ -413,7 +417,7 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 
 	/* Add that to list */
 
-	return (ICONTYPE *)lsadd( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), INT_MAX, copy_icntype );
+	return (ICONTYPE *)lsadd_end( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), copy_icntype );
 }
 
 */
@@ -443,12 +447,11 @@ static void icnt_move(int to, int from, ICONTYPE *it)
 {
 	if
 	(
-		lsadd
+		lsadd_end
 		(
 			(LSTYPE **)(&iconlists[to]),
 			sizeof(ICONTYPE),
 			(LSTYPE *)it,
-			INT_MAX,
 			copy_icntype
    		) != NULL
 	) 
@@ -530,7 +533,7 @@ static CfgNest one_itype
 
 		/* Load configuration data for one icontype */
 
-		*error = CfgLoad(file, icnt_table, (int)sizeof(SNAME) - 1, lvl); 
+		*error = CfgLoad(file, icnt_table, (int)sizeof(SNAME), lvl); 
 
 		/* Add to the list */
 
@@ -545,12 +548,11 @@ static CfgNest one_itype
 
 				if 
 				(
-					lsadd
+					lsadd_end
 					(
 						(LSTYPE **)ppthis,
 						sizeof(ICONTYPE),
 						(LSTYPE *)&iwork,
-						INT_MAX,
 						copy_icntype
 			      	) == NULL
 				)
@@ -582,7 +584,7 @@ static CfgEntry icngrp_table[] =
 static CfgNest icngrp_cfg
 {
 	if ( io == CFG_LOAD )
-		lsrem_all((LSTYPE **)(*ppthis), lsrem);
+		lsrem_all_one((LSTYPE **)(*ppthis));
 
 	*error = handle_cfg(file, icngrp_table, lvl, (CFGEMP | ((pthis) ? 0 : CFGSKIP)), io, NULL, NULL);
 }
@@ -653,10 +655,6 @@ static CfgEntry icontypes_table[] =
 CfgNest icnt_config
 {
 	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
-
-/* OK; removed
-	icnt_fix_ictypes(); /* Compatibility issue, may be removed after V3.60 */
-*/
 }
 
 

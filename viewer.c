@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -38,14 +38,13 @@
 #include "xfilesys.h"
 #include "config.h"
 #include "screen.h"
-#include "window.h" /* moved before viewer.h */
+#include "window.h"
 #include "viewer.h"
 #include "file.h"
 #include "stringf.h"
 
 
 #define FWIDTH			256 /* max.possible width of text window in text mode */
-
 
 #define ASCII_PERC		80
 
@@ -60,13 +59,6 @@ static void set_menu(TXT_WINDOW *w);
 static void txt_closed(WINDOW *w);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
 
-
-
-/********************************************************************
- *																	*
- * Hulpfuncties.													*
- *																	*
- ********************************************************************/
 
 /*
  * Determine number of lines in a text window
@@ -304,10 +296,11 @@ static int txt_line
 						*d++ = ' ';
 					cnt++;
 				}
-				while ((( cnt % tabsize) != 0) && (cnt < m));
+				while (((cnt % tabsize) != 0) && (cnt < m));
 
 				continue;
 			}
+
 			if ( cnt  >= wpxm ) /* if righter than left edge... */
 				*d++ = ch;		/* set that character */
 
@@ -395,10 +388,9 @@ static void txt_prtchar(TXT_WINDOW *w, int column, int nc, long line, RECT *area
 	int len, c;
 	char s[FWIDTH];
 
+
 	c = column - w->px;
-
 	len = txt_line(w, s, line);
-
 	txt_comparea(w, line, len, &r, work);
 	r.x += c * txt_font.cw;
 	r.w = nc * txt_font.cw;
@@ -527,6 +519,7 @@ static void set_menu(TXT_WINDOW *w)
 
 static void txt_mode(TXT_WINDOW *w)
 {
+
 	if (w->hexmode == 0)
 		w->hexmode = 1;		/* switch to hex mode */
 	else
@@ -581,12 +574,9 @@ static void txt_free(TXT_WINDOW *w)
 }
 
 
-/********************************************************************
- *																	*
- * Funktie voor het vrijgeven van al het geheugen gebruikt door een	*
- * tekstwindow.														*
- *																	*
- ********************************************************************/
+/*
+ * Remove a text window
+ */
 
 static void txt_rem(TXT_WINDOW *w)
 {
@@ -599,13 +589,6 @@ static void txt_rem(TXT_WINDOW *w)
 		w->winfo->typ_window = NULL; 
 	}
 }
-
-
-/********************************************************************
- *																	*
- * 'Object' functies voor tekstwindows.								*
- *																	*
- ********************************************************************/
 
 
 /*
@@ -727,7 +710,7 @@ static void set_lines(char *buffer, char **lines, int *ntabs, long length)
 
 /*
  * Check if a character is printable.
- * This is a (sort of) substitute for the more-primitive Pure-C function isprint().
+ * This is a (sort of) substitute for the simpler Pure-C function isprint().
  * BEWARE that this function accepts an extended range of characters
  * compared to isprint(); 
  * 
@@ -864,7 +847,7 @@ int read_txtfile
 
 
 /*
- * A shorter form of the above
+ * A shorter form of the above, with smaller number of arguments.
  */
 
 int read_txtf
@@ -1316,7 +1299,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 		return NULL;
 	}
 
-	/* Note: complete window structure are set to zero in xw_create */
+	/* Note: complete window structure content set to zeros in xw_create */
 
 	info->typ_window = (TYP_WINDOW *)w; 
 	w->px = px;
@@ -1460,7 +1443,7 @@ CfgNest text_one
 	else
 	{
 		memclr(&that, sizeof(that));
-		*error = CfgLoad(file, txtw_table, (int)sizeof(LNAME), lvl);
+		*error = CfgLoad(file, txtw_table, (int)sizeof(VLNAME), lvl);
 
 		if ( (*error == 0 ) && (that.path[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
 			*error = EFRVAL;

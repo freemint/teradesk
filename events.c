@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c)         1993, 1994, 2002  W. Klaren,
+ *                                       2002, 2003  H. Robbers,
+ *                           2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -39,15 +39,11 @@ static int event(int evflags, int mstate, int *key)
 	XDEVENT events;
 	int result;
 
-
+	xd_clrevents(&events);
 	events.ev_mflags = MU_TIMER | evflags;
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
 	events.ev_mbstate = mstate;
-	events.ev_mm1flags = 0;
-	events.ev_mm2flags = 0;
-	events.ev_mtlocount = 0;
-	events.ev_mthicount = 0;
 
 	do
 	{
@@ -169,6 +165,8 @@ int clr_msg_buf(void)
  * messages and also AP_TERM and SH_WDRAW.
  * If a message is recived which terminates the desktop (i.e. AP_TERM)
  * then TRUE will be returned, as if OK was selected. 
+ * Beware that using this routine in some loop may slow down time-critical
+ * operations noticeably
  */
 
 boolean escape_abort( boolean hndl_msg )

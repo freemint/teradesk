@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c)        1993, 1994, 2002  W. Klaren,
+ *                                      2002, 2003  H. Robbers,
+ *                          2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -22,6 +22,7 @@
 
 
 #include "desktop.h"
+
 
 extern	OBJECT 
 	*menu,
@@ -52,23 +53,13 @@ extern	OBJECT
 	*compare;
 
 extern char 
-	*dirname,
-	*openline,
 	*oldname,
 	*newname,
-	*tgname,
-	*envline,
-	*finame,
-	*flname,
-	*cmdline,
-	*applcmd,
-	*spattfld,	
-	*drvid,
-	*iconlabel,
-	*cpfile,
-	*cpfolder,
 	*cfile1,
-	*cfile2
+	*cfile2,
+	*tgname,
+	*drvid,
+	*iconlabel
 #if _EDITLABELS
 #if _MINT_
 	,
@@ -78,9 +69,17 @@ extern char
 #endif
 	;
 
+extern VLNAME
+	openline,
+	flname,
+	cmdline,
+	ttpline,
+	dirname,
+	envline;
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, int object, int title);
 void rsc_ltoftext(OBJECT *tree, int object, long value);
 void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt);
 void rsc_tostmplt(TEDINFO *ted);
+void rsc_hidemany(OBJECT *tree, int *items);

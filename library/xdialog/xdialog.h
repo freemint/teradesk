@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                2003, 2004, 2005  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -262,6 +262,7 @@ void xd_clip_off(void);
 
 /* Event funkties */
 
+void xd_clrevents(XDEVENT *ev);
 int xe_keycode(int scancode, int kstate);
 int xe_xmulti(XDEVENT *events);
 int xe_button_state(void);

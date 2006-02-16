@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <vdi.h>
 #include <xdialog.h> 
+#include <library.h>
 
 #include "desktop.h"
 #include "error.h"
@@ -47,12 +48,14 @@ char *get_freestring( int stringid )
 
 /* 
  * Retrieve a text string related to some errors, identified by error code.
- * Anything undefined is "TOS error #%d" 
+ * Anything undefined is "TOS error #%d".
+ * Beware that in such a case the resulting string should not be longer 
+ * than 39 characters. There is no checking of buffer overflow!
  */
 
 char *get_message(int error)
 {
-	static char buffer[80], *s;
+	static char buffer[40];
 	int msg;
 
 	switch (error)
@@ -60,6 +63,8 @@ char *get_message(int error)
 	case EFILNF:
 		msg = TFILNF;
 		break;
+	case DRIVE_NOT_READY:
+	case EDRIVE:
 	case EPTHNF:
 		msg = TPATHNF;
 		break;
@@ -103,13 +108,11 @@ char *get_message(int error)
 		msg = MVDIERR;
 		break;
 	default:
-		s = get_freestring(TERROR);
-		sprintf(buffer, s, error);
+		sprintf(buffer, get_freestring(TERROR), error);
 		return buffer;
 	}
-	s = get_freestring(msg);
-
-	return s;
+	
+	return get_freestring(msg);
 }
 
 
@@ -165,7 +168,18 @@ int alert_printf(int def, int message,...)
 
 void alert_iprint( int message )
 {
-	alert_printf( 1, AGENALRT, get_freestring( message ) );
+	alert_printf( 1, AGENALRT, get_freestring(message) );
+}
+
+
+/*
+ * Display an alert generally corresponding to an inability
+ * to perform an operation. Form: <object type> can not be <operation>.
+ */
+
+void alert_cantdo(int msg1, int msg2)
+{
+	alert_printf(1, ACANTDO, get_freestring(msg1), get_freestring(msg2));
 }
 
 
@@ -177,7 +191,7 @@ void alert_iprint( int message )
 
 void alert_abort( int message )
 {
-	alert_printf( 1, AFABORT, get_freestring( message ) );
+	alert_printf( 1, AFABORT, get_freestring(message) );
 }
 
 
@@ -188,7 +202,7 @@ void alert_abort( int message )
 
 int alert_query( int message )
 {
-	return alert_printf( 1, AQUERY, get_freestring( message ) );
+	return alert_printf( 1, AQUERY, get_freestring(message) );
 }
 
 
@@ -230,7 +244,7 @@ void hndl_error(int message, int error)
  * display an alert box (" ! " icon) for some file-related errors;
  * earlier, "msg" identified the alert-box form,
  * now it idenifies the first message text in AGFALERT alert box.
- * The alert box first displayes text "msg", then "file", then
+ * The alert box first displays text "msg", then "file", then
  * the text associated to error code "error".
  */
 
@@ -240,6 +254,10 @@ int xhndl_error(int msg, int error, const char *file)
 		button = 0, 
 		txtid = 0;
 
+	char 
+		shnam[30];
+
+	cramped_name(file, shnam, sizeof(shnam));
 
 	if ((error >= XFATAL) && (error <= XERROR))
 		return error;
@@ -263,7 +281,7 @@ int xhndl_error(int msg, int error, const char *file)
 				(
 					1, AGFALERT, 
 					get_freestring(msg), 
-					file, 
+					shnam, 
 					get_message(error), 
 					get_freestring(txtid)
 				);
@@ -272,6 +290,5 @@ int xhndl_error(int msg, int error, const char *file)
 		}
 	}
 }
-
 
 

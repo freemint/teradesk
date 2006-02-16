@@ -1,6 +1,149 @@
-Tera Desktop. Copyright 1991, 1992, 1993, 1994, 1995  W. Klaren.
-                                          2002, 2003  H. Robbers.
-                              2002, 2003, 2004, 2005  Dj. Vukovic.
+Tera Desktop. Copyright  1991, 1992, 1993, 1994, 1995  W. Klaren.
+                                           2002, 2003  H. Robbers.
+                         2002, 2003, 2004, 2005, 2006  Dj. Vukovic.
+
+
+Version 3.80 (provisionally named V3.71 during development)
+-----------------------------------------------------------
+- Improved handling of cases where one filetype is assigned to more than 
+  one application. Earlier versions of TeraDesk just ignored multiple 
+  assignments; now, a dialog is shown when a multiply-associated file(type) 
+  is to be opened, permitting the user to select among the assigned 
+  applications (editing of application parameters in the displayed list 
+  is not possible).
+
+- When a symbolic link is created (by selecting an object and activating
+  New... menu item), name of the referenced object is shown in the dialog 
+  and can be edited, as well as the name of the link itself.
+
+- Objects on a network, to be accessed via the http, ftp or mail protocols, 
+  can be specified as referenced objects in symbolic links. Such a symbolic 
+  link can not be directly created (though it could be made so, with a 
+  network-access application supplying the necessary information through 
+  AV_COPYFILE message); instead, a link to an existing file should be 
+  created and then edited (see above) so as to point to the desired object. 
+  Referenced objects should have names beginning with one of the following 
+  prefixes: http:, ftp: or mailto:; 'Follow links' option is ignored for 
+  such symbolic links. 
+
+- Objects on a network, as above, can be specified in desktop icons. 
+  Icon type 'File/Folder' should be selected in the Set desk icons... 
+  dialog and then 'Path' field edited to point to the desired object. This 
+  option works in single-TOS as well. The feature exists in parallel with 
+  the capability to create desktop icons for symbolic links pointing to 
+  network objects, as above.
+
+- Network objects, as above, can be assigned as 'document types' to 
+  applications. Name masks like e.g.  http:*,  http://*, http://*.htm etc.
+  should be specified in Mint or Magic. Supported prefixes are currently
+  http, ftp and mailto (case insensitive). In single-TOS, because of 
+  name limitations, these masks should be specified as e.g. HTTP*.*, etc.
+
+- Network objects with names matching 'document types' specified as above 
+  can be opened from the 'Open...' dialog; the appropriate application will 
+  be started, or, if it is already running, a VA_START command will be sent
+  to it. 
+
+- When returning from a subfolder in a directory window, window sliders
+  are now set to previous positions in the parent directory. If the window 
+  has been resized while in the subfolder, sliders are set so as to show 
+  the subfolder item which has just been closed.
+
+- Improved detection of filesystem capabilities regarding long filenames.
+
+- Changed algorithm for wildcard matching so that some long names are better
+  matched, e.g. those containing multiple periods (dots).
+
+- Space characters (<SP>) can be typed in the autoselector when long 
+  filenames are available- this did not work in the previous version.
+
+- Fixed a problem of typing certain characters in dialog fields on German
+  keyboard, and also fixed some other related problems in dialogs.
+
+- Enabled the use of ^0 to ^9 and <BS> as keyboard shortcuts. Also disabled
+  possibly dangerous wrong recognition of some key combinations (e.g. ^- was
+  recognized as ^<DEL>, ^<Left> as ^S, etc.).
+
+- Fixed a bug which disabled manipulation of TeraDesk's nonmodal font 
+  selector if any other dialog was opened (however, it is still not 
+  possible to open more than one instance of font selector at a time).
+
+- [Shift][Tab] can be used to move the cursor up/back in dialogs.
+
+- Made some other adjustments to make TeraDesk partially compatible with
+  the new keyboard-navigation feature of XaAES, but only for the menu and 
+  the editable fields (at least for the time being; this is more-less limited
+  to correctly setting the focus). Anyway, dialog buttons can be directly
+  activated in TeraDesk from the keyboard by Alt+letter combinations.
+ 
+- A small improvement made in the shutdown procedure (unwanted messages are 
+  ignored while a shutdown is in progress).
+
+- Fixed the problem of VA_START routine not finding already running
+  applications in Magic, if applications' names were specified in lowercase.
+
+- Fixed the problem of editable dialog fields for paths being shorter than 
+  maximum permitted path length.
+
+- Disabled entering of full paths through the fileselector activated from
+  editable text fields in cases where names only were expected, and v.v.
+
+- Fixed the problem of not being able to read extremely long directory
+  window paths that could be previously saved to the configuration file.
+
+- Fixed several cases of possible buffer overflows when manipulating
+  extremely long paths.
+
+- Plugged a couple of memory leaks in the AV-protocol and application-
+  startup routines.
+
+- Fixed a bug which could crash TeraDesk if palette loaded from the file
+  had more colours than the current palette.
+
+- Fixed a freeze that could sometimes occur if file operation on a single 
+  item failed (dialog could not be closed).
+
+- Fixed a bug which caused improper execution of some operations from the
+  'File' menu upon the file in the top text window.
+
+- Fixed boring multiple interrogation attempts on ejected removable drives;
+  a bug related to this problem crashed TeraDesk in Magic.  
+
+- Corrected setting of default directory when starting a program in Magic
+  (some applications could not find their files).
+ 
+- Corrected a very old (V2.* ?) but hitherto unnoticed bug which could crash
+  TeraDesk when unexpected AES messages (e.g. WM_ARROWED, when using a 
+  wheeled mouse in XaAES) were received in windowed dialogs.
+
+- Corrected display of object size in the name-conflict dialog when copying 
+  folders.
+
+- Corected the content in the dialog when name mask, program type or 
+  icon type dialog is opened when a file/folder is selected.
+
+- Made a number of optimisations and rearrangements in order to keep program
+  size down.
+
+- Updated the hypertext manual; also added some previously missing 
+  information about older items.
+
+- A note to translators of the resource file: in order to make the
+  resource file of V3.70 compatible to the new version, the following 
+  changes have to be made in DESKTOP.RSC/DESKTOP.RSD:
+  . 'Cancel' button in NEWDIR tree named NEWDIRC.
+  . 'Name:' string in NEWDIR tree copied to a new string positioned two 
+    text lines lower; the text changed from 'Name:' to 'To:'; new text 
+    named NEWDIRTO and hidden. 
+  . 'Cancel' button in COPYINFO tree named 'COPYCAN'.
+  . Strings METOUCH, MEREADDR and MICNOPEN deleted.
+  . Alerts ANOCOPY, ANODRAGP and ANOPRINT deleted.
+  . New trees (strings) MUNKNOWN, MNETOB, MNOCOPY, MNOPRINT,
+    MNODRAGP, MNOOPEN and (alert) ACANTDO added.
+  . Wording of several texts slightly changed, which probably doesn't
+    matter much in a translation.
+  . ob_flags for some scrolled-text FTEXT objects changed (bits 14 and 15).
+
 
 Version 3.70
 ------------

@@ -49,7 +49,8 @@ typedef enum
 	ITM_PROGRAM,
 	ITM_FILE,
 	ITM_PREVDIR,
-	ITM_LINK		/* only for showing object info !!!! */
+	ITM_LINK,		/* only for showing object info !!!! */
+	ITM_NETOB		/* network object ( http:// or ftp:// or mailto: ) */
 } ITMTYPE;
 
 /* Update type */
@@ -185,7 +186,7 @@ typedef struct
 		tabsize;
 	long
 		py; 
-	LNAME 
+	VLNAME 
 		path, 
 		spec;
 	WINDOW 

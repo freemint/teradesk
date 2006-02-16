@@ -35,22 +35,6 @@
 #include "internal.h"
 
 
-/* Currently not used anywhere in TeraDesk
-
-/*
- * If a rectangle has a nonzero size, return 1, otherwise 0
- */
-
-int xd_isrect(RECT *r)
-{
-	if (r->w != 0 && r->h != 0)
-		return 1;
-	else
-		return 0;
-}
-
-*/
-
 
 /* 
  * Funktie voor het omzetten van een RECT structuur naar een pxy array. 
@@ -308,26 +292,6 @@ int xd_set_child(OBJECT *tree, int rb_parent, int enab)
  */
 
 /* Use correct types ! */
-
-
-/* Not used anymore; better use xd_get_obspecp()
-
-OBSPEC xd_get_obspec(OBJECT *object)
-{
-	if ((object->ob_type & 0xFF) == G_USERDEF)
-	{
-		USERBLK *userblk = object->ob_spec.userblk;
-
-		if (IS_XUSER(userblk))
-			return ((XUSERBLK *)userblk)->ob_spec;
-		else
-			return *(OBSPEC *)&userblk->ub_parm;
-	}
-	else
-		return object->ob_spec;
-}
-
-*/
 
 
 /* 

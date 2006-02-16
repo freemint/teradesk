@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -74,7 +74,7 @@ typedef struct
 	int icon_index;
 	boolean selected;
 	boolean newstate;
-	INAME label; /* label of assigned icon */ 
+	INAME label; 		/* label of assigned icon */ 
 	union
 	{
 		int drv;
@@ -82,14 +82,14 @@ typedef struct
 	} icon_dat;
 	icn_upd_type update;
 	INAME icon_name;	/* name of icon in resource */ 
-} ICON;
+} ICON;					/* Data for one desktop icon */
 
 
 typedef struct
 {
 	ICON ic;
-	LNAME name;
-} ICONINFO;
+	VLNAME name;
+} ICONINFO;			
 
 
 typedef struct
@@ -98,7 +98,7 @@ typedef struct
 } DSK_WINDOW;
 
 static ICON 
-	*desk_icons;
+	*desk_icons;	/* An array of desktop ICONs */
 
 OBJECT 
 	*icons,	/* use rsrc_load for icons. */
@@ -121,7 +121,7 @@ extern int
 
 int 
 	*icon_data, 
-	n_icons;
+	n_icons;	/* number of icons in the icons file */
 
 WINDOW 
 	*desk_window;
@@ -156,21 +156,21 @@ static WD_FUNC dsk_functions =
 {
 	dsk_hndlkey,
 	wd_hndlbutton,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L,
-	0L 
+	0L,				/* redraw */
+	0L,				/* topped */
+	0L,				/* bottomed */
+	0L,				/* newtop */
+	0L,				/* closed */
+	0L,				/* fulled */
+	0L,				/* arrowed */
+	0L,				/* hslid */
+	0L,				/* vslid */
+	0L,				/* sized */
+	0L,				/* moved */
+	0L,				/* hndlmenu */
+	0L,				/* top */
+	0L,				/* iconify */
+	0L 				/* uniconify */
 };
 
 static int icn_find(WINDOW *w, int x, int y);
@@ -272,8 +272,23 @@ boolean isfile(ITMTYPE type)
 
 
 /*
- * Set desktop icon type correctly for executable files (programs).
- * This is needed after changes in the list of executable filetypes.
+ * Similar to above, but include network objects
+ */
+
+static boolean isfilenet(ITMTYPE type)
+{
+	if(isfile(type) || type == ITM_NETOB)
+		return TRUE;
+
+	return FALSE;
+}
+
+
+/*
+ * Set desktop icon type correctly for executable files (programs)
+ * and also for network objects.
+ * This is needed after changes in the list of executable filetypes,
+ * or after a link is made to reference a network object.
  * Also used to fix compatibility issues for configuration files
  * earlier than V3.60
  */
@@ -287,14 +302,22 @@ void icn_fix_ictype(void)
 	{
 		/* Is this either ITM_FILE or ITM_PROGRAM (not a folder) ? */
 
-		if(isfileprog(ic->item_type)) 
+		if(isfileprog(ic->item_type))
 		{
+			char *tgtname = x_fllink((char *)(ic->icon_dat.name));
+
 			/* Is this or the target item an executable file type ? */
 
-			if(prg_isproglink(ic->icon_dat.name))
+#if _MINT_
+			if(ic->link && x_netob(tgtname))
 			{
-				/* This is a program, or a link to one */
-
+				ic->item_type = ITM_FILE;
+				ic->tgt_type = ITM_NETOB;
+			}
+			else 
+#endif
+			if(prg_isprogram(fn_get_name(tgtname)))
+			{
 				ic->tgt_type = ITM_PROGRAM;
 #if _MINT_
 				if ( !ic->link )
@@ -305,9 +328,11 @@ void icn_fix_ictype(void)
 			{
 				/* Maybe this was a program once, but now is just a file */
 
-				ic->tgt_type = ITM_FILE;
 				ic->item_type = ITM_FILE;
+				ic->tgt_type = ITM_FILE;
 			}
+
+			free(tgtname);
 		}
 
 		ic++;
@@ -316,8 +341,7 @@ void icn_fix_ictype(void)
 
 
 /* 
- * Redraw icons which may be partially obscured
- * by other objects
+ * Redraw icons which may be partially obscured by other objects
  */
 
 void draw_icrects( WINDOW *w, OBJECT *tree, RECT *r1)
@@ -514,10 +538,12 @@ static void dsk_drawsel(void)
 	/* Set temporarily hidden icons to visible again */
 
 	icn = desk_icons;
+
 	for (i = 0; i < max_icons; i++)
 	{
 		if (icn->selected == icn->newstate)
 			obj_unhide(desktop[i + 1]);
+
 		icn++;
 	}
 
@@ -526,8 +552,7 @@ static void dsk_drawsel(void)
 
 
 /*
- * Compute rubberbox rectangle. 
- * Beware of asymmetrical wind_update()
+ * Compute rubberbox rectangle. Beware of asymmetrical wind_update()
  */
 
 void rubber_rect(int x1, int x2, int y1, int y2, RECT *r)
@@ -562,7 +587,7 @@ void rubber_rect(int x1, int x2, int y1, int y2, RECT *r)
 
 
 /*
- * A size-saving aux. function for setting-up rubberbax draw.
+ * A size-saving aux. function for setting-up rubberbox drawing
  * Beware of asymmetrical wind_update()
  */
 
@@ -687,7 +712,7 @@ static void icn_rselect(WINDOW *w, int x, int y)
 	int i;
 	RECT r1, r2;
 	ICONBLK *monoblk;
-	boolean *newstate, sel;
+	boolean sel;
 	OBJECT *deskto;
 
 	ICON *icn = desk_icons;
@@ -696,7 +721,6 @@ static void icn_rselect(WINDOW *w, int x, int y)
 
 	for (i = 0; i < max_icons; i++)
 	{
-		newstate = &(icn->newstate);
 		sel = icn->selected;
 		deskto = &desktop[i + 1];
 
@@ -710,7 +734,7 @@ static void icn_rselect(WINDOW *w, int x, int y)
 			r2.h = monoblk->ic.h;
 
 			if (rc_intersect2(&r1, &r2))
-				*newstate = (sel) ? FALSE : TRUE;
+				icn->newstate = !sel;
 			else
 			{
 				r2.x = desktop[0].r.x + deskto->r.x + monoblk->tx.x;
@@ -718,9 +742,9 @@ static void icn_rselect(WINDOW *w, int x, int y)
 				r2.w = monoblk->tx.w;
 				r2.h = monoblk->tx.h;
 				if (rc_intersect2(&r1, &r2))
-					*newstate = (sel) ? FALSE : TRUE;
+					icn->newstate = !sel;
 				else
-					*newstate = sel;
+					icn->newstate = sel;
 			}
 		}
 
@@ -804,7 +828,7 @@ static char *icn_name(WINDOW *w, int icon)
 	 * sufficiently long to accomodate string MDRVNAME + drive letter
 	 */
 	
-	static char name[16]; 
+	static char name[20]; 
 
 	if (isfile(icn->item_type))
 		/* this is a file, folder, program or link- treat as a file(name) */
@@ -818,6 +842,8 @@ static char *icn_name(WINDOW *w, int icon)
 			sprintf(name, get_freestring(MDRVNAME), (char)icn->icon_dat.drv);
 			return name;
 		}
+		else if(icn->item_type == ITM_NETOB)
+			return (char *)(icn->icon_dat.name);
 	}
 
 	return NULL;
@@ -870,7 +896,7 @@ static char *icn_fullname(WINDOW *w, int icon)
 			s[0] = icn->icon_dat.drv;
 	}
 	else
-		s = (isfile(icn->item_type)) ? strdup(icn->icon_dat.name) : NULL;
+		s = (isfilenet(icn->item_type)) ? strdup(icn->icon_dat.name) : NULL;
 
 	return s;
 }
@@ -1117,7 +1143,7 @@ void remove_icon(int object, boolean draw)
 	free(desktop[object + 1].ob_spec.ciconblk);	
 	objc_delete(desktop, object + 1);
 
-	if (isfile(type))
+	if (isfilenet(type))
 		free(desk_icons[object].icon_dat.name);
 
 	desk_icons[object].item_type = ITM_NOTUSED;
@@ -1132,8 +1158,12 @@ void remove_icon(int object, boolean draw)
 
 static void icn_set_name(ICON *icn, char *newiname)
 {
-	if (strncmp(icn->label, fn_get_name(icn->icon_dat.name), 12) == 0)
+	/* If label is same as (old) item name, copy new name */
+
+	if (!x_netob(icn->icon_dat.name) && strncmp(icn->label, fn_get_name(icn->icon_dat.name), 12) == 0)
 		strsncpy(icn->label, fn_get_name(newiname), sizeof(icn->label));
+
+	/* If name has changed, deallocate old name string, use new one */
 
 	if(strcmp(icn->icon_dat.name, newiname) != 0)
 	{
@@ -1153,7 +1183,7 @@ static void icn_set_update(WINDOW *w, wd_upd_type type, const char *fname1, cons
 
 	for (i = 0; i < max_icons; i++)
 	{
-		if (isfile(icon->item_type))
+		if (isfilenet(icon->item_type))
 		{
 			if (strcmp(icon->icon_dat.name, fname1) == 0)
 			{
@@ -1231,15 +1261,16 @@ static boolean icn_open(WINDOW *w, int item, int kstate)
 	ICON *icn = &desk_icons[item];
 	ITMTYPE type = icn->item_type;
 
-	if (isfile(type))
+
+	if (isfilenet(type)) /* file, folder, program or link ? */
 	{
 		/* If the selected object can be opened... */
 
 		int button;
 
-		if (x_exist(icn->icon_dat.name, EX_FILE | EX_DIR) == FALSE)
+		if (icn->tgt_type != ITM_NETOB && !x_exist(icn->icon_dat.name, EX_FILE | EX_DIR))
 		{
-			/* File does not exist */
+			/* Object does not exist */
 
 			if ((button = alert_printf(1, AAPPNFND, icn->label)) == 3)
 				return FALSE;
@@ -1297,6 +1328,7 @@ int default_icon(ITMTYPE type)
 			break;
 		case ITM_LINK:
 		case ITM_FILE:
+		case ITM_NETOB:
 			it = FIINAME;
 			break;
 		case ITM_TRASH:
@@ -1389,7 +1421,8 @@ int rsrc_icon_rscid ( int id, char *name )
 /*
  * Find disk volume label in order to insert it as icon label
  * if that is not specified. Don't do that for floppies, as most likely
- * they will not be in the drive.
+ * they will not be in the drive. Beware that this may cause problems with
+ * other ejectable disks too.
  * Note A:\ = drive 0, B:\ = drive 1, etc.
  */
 
@@ -1520,6 +1553,7 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 		case ITM_FOLDER:
 		case ITM_PROGRAM:
 		case ITM_FILE:
+		case ITM_NETOB:
 		{
 			icn->icon_dat.name = fname;
 		}
@@ -1542,7 +1576,7 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 
 	errexit:;
 
-	if (isfile(type))
+	if (isfilenet(type))
 		free(fname);
 
 	free(h);
@@ -1817,13 +1851,10 @@ int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpatt, int bck
 
 static void icn_hidesome(void)
 {
-	obj_hide(addicon[ICSHFIL]);
-	obj_hide(addicon[ICSHFLD]);
-	obj_hide(addicon[ICSHPRG]);
-	obj_hide(addicon[ICNTYPE]);
-	obj_hide(addicon[ICNTYPT]);
-	obj_hide(addicon[DRIVEID]);
-	obj_hide(addicon[ADDBUTT]);
+	static const int 
+		items[] = {ICSHFIL,ICSHFLD,ICSHPRG,ICNTYPE,ICNTYPT,DRIVEID,ADDBUTT,0};
+
+	rsc_hidemany(addicon, items);
 	obj_unhide(addicon[CHNBUTT]);
 	obj_unhide(addicon[ICNLABEL]);	
 	obj_unhide(addicon[ICBTNS]);
@@ -1909,7 +1940,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
  				nameonly = fn_get_name(name);
 				cramped_name(nameonly, iconlabel, (int)sizeof(INAME));
 				icon_no = icnt_geticon( nameonly, itype, ttype );
-				strsncpy(dirname, name, sizeof(LNAME));
+				strsncpy(dirname, name, sizeof(VLNAME));
 				button = AFILE;
 				startobj = IFNAME;
 				free(name); /* name is not needed anymore */
@@ -2002,6 +2033,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
  * that of a trashcan or a printer. Return string index
  * corresponding to item type, or 0 if type is not a printer
  * or a trashcan.
+ * Now this routine is extended to handle unknown objects and network objects.
  */
 
 int trash_or_print(ITMTYPE type)
@@ -2012,6 +2044,10 @@ int trash_or_print(ITMTYPE type)
 			return MTRASHCN;
 		case ITM_PRINTER:
 			return MPRINTER;
+		case ITM_NOTUSED:
+			return MUNKNOWN;
+		case ITM_NETOB:
+			return MNETOB;
 		default:
 			return 0;
 	}
@@ -2037,7 +2073,7 @@ static int chng_icon(int object)
 	if(startobj == IFNAME)
 	{
 		*drvid = 0;
-		strsncpy(dirname, icn->icon_dat.name, sizeof(LNAME));
+		strsncpy(dirname, icn->icon_dat.name, sizeof(VLNAME));
 	}
 	else
 		*drvid = (char)icn->icon_dat.drv;
@@ -2217,7 +2253,7 @@ static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
 
 			for(i = 0; i < n; i++)
 			{
-				if((item = list[i]) == -1)
+				if((item = list[i]) < 0) /* was -1 earlier */
 					return FALSE;
 
 				ttype = itm_tgttype(sw, item);
@@ -2351,7 +2387,7 @@ static CfgNest icon_cfg
 				if(ic->tgt_type == ic->item_type)
 					this.ic.tgt_type = 0; /* for smaller config files */
 	
-				if (isfile(ic->item_type))
+				if (isfilenet(ic->item_type))
 					strcpy(this.name, ic->icon_dat.name);
 
 				*error = CfgSave(file, Icon_table, lvl, CFGEMP); 
@@ -2367,13 +2403,14 @@ static CfgNest icon_cfg
 	{
 		memclr(&this, sizeof(this));
 
-		*error = CfgLoad(file, Icon_table, (int)sizeof(LNAME), lvl); 
+		*error = CfgLoad(file, Icon_table, (int)sizeof(VLNAME), lvl); 
 
 		if ( *error == 0 )
 		{
 			if (   this.ic.icon_name[0] == 0 
-				|| this.ic.item_type < ITM_DRIVE
-				|| this.ic.item_type > ITM_FILE 
+				|| ((this.ic.item_type < ITM_DRIVE
+				|| this.ic.item_type > ITM_FILE)
+				&& this.ic.item_type != ITM_NETOB) 
 				|| this.ic.icon_dat.drv > 'Z' - 'A'
 				)
 					*error = EFRVAL;
@@ -2388,17 +2425,11 @@ static CfgNest icon_cfg
 				if (icon < 0)
 					icon = default_icon(this.ic.item_type); /* display an alert */
 
-				/* 
-				 * Note: if this.name is an empty string, icon name
-				 * will not be allocated at all. This string is relevant
-				 * for files (and programs) and folders only
-				 */
-
-				nl = strlen(this.name);
+				nl = (int)strlen(this.name);
 
 				if( nl ) 
 					name = strdup(this.name);
-				else if(isfile(this.ic.item_type))
+				else if(isfilenet(this.ic.item_type))
 					name = strdup(empty);
 
 				if (nl == 0 || name != NULL)
@@ -2730,7 +2761,7 @@ void dsk_chngicon(int n, int *list, boolean dialog)
 
 
 /*
- * Limit a colour index to existing values
+ * Limit a colour index to values existing in the current video mode 
  */
 
 int limcolor(int col)
@@ -2752,7 +2783,7 @@ int limpattern(int pat)
 
 /* 
  * Set colour in a colour / pattern selector box.
- * Colour is limited to available range. 
+ * Colour is limited to range available in the current video mode. 
  */
 
 void set_selcol(XDINFO *info, int obj, int col)

@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
  *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ *                                      2003, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -79,6 +79,7 @@
 #define BACKSPC		0x0008
 #define DELETE		0x007F
 #define TAB			0x0009
+#define SHFT_TAB	0x0109
 #define RETURN		0x000D
 #define SPACE		0x0020
 

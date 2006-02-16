@@ -41,13 +41,15 @@ typedef struct appl
 
 extern APPLINFO awork, *applikations;
 
+extern int naap;
+
 CfgNest app_config;
 
 void app_init(void);
 void app_default(void);
 
-void app_install(int use);
-APPLINFO *app_find(const char *file);
+void app_install(int use, APPLINFO **applist);
+APPLINFO *app_find(const char *file, boolean dial);
 APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
 APPLINFO *find_fkey(int fkey);
 boolean app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate);

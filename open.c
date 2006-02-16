@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,6 +26,7 @@
 #include <string.h> 
 #include <vdi.h>
 #include <mint.h>
+#include <library.h>
 #include <xdialog.h>
 
 #include "resource.h"
@@ -50,6 +51,7 @@
 boolean onfile = FALSE; /* true if app is started to open a file */
 
 int trash_or_print(ITMTYPE type);
+
 
 
 /*
@@ -82,7 +84,7 @@ int open_dialog(void)
 				break;
 			case OWUSE:
 				log_shortname(fwork.filetype, awork.name);
-				app_install(LS_SELA); /* selitem is nonnull only if successful here */
+				app_install(LS_SELA, &applikations); /* selitem is nonnull only if successful here */
 				if (!selitem)
 					button = 0;			
 			default:
@@ -111,15 +113,14 @@ boolean item_open
 	int initem,			/* ordinal of the selected item from the window */ 
 	int kstate,			/* keyboard state while opening the item */ 
 	char *theitem, 		/* explicitely specified full item name */
-	char *thecommand	/* command line if theitem is a program */
+	char *thecommand	/* command line if the item is a program */
 )
 {
 	char
+		*realname = NULL,	/* link target name */ 
+		*path;				/* constructed path of the item to open */
 
-		*realname,		/* link target name */ 
-		*path;			/* constructed path of the item to open */
-
-	LNAME 
+	VLNAME 
 		epath,			/* Path of the item specified in "Open" */ 
 		ename;			/* name of the item specified in "Open" */
 
@@ -128,6 +129,7 @@ boolean item_open
 		*cmline = NULL;	/* Command passed to application from "Open" dialog" */
 
 	int 
+		error,
 		button;			/* index of the button pressed */
 
 	ITMTYPE 
@@ -142,6 +144,9 @@ boolean item_open
 
 	WINDOW
 		*w;				/* "inw", locally (i.e. maybe changed) */
+
+	DIR_WINDOW
+		simw;
 
 	int 
 		item = initem;	/* "item", locally (i.e. maybe changed) */
@@ -167,7 +172,7 @@ boolean item_open
 
 		/* Is this really needed ? */
 
-		if ( realname && !trash_or_print(type) && type != ITM_NOTUSED )
+		if ( realname && type != ITM_NOTUSED && type != ITM_NETOB && !trash_or_print(type) )
 			type = diritem_type( (char *)realname );
 
 		 /* If "Alternate" is pressed a program is treated like ordinary file */
@@ -234,14 +239,6 @@ boolean item_open
 #endif
 					strupr(openline);
 
-				/* Is this name (path) too long?  */
-
-				if ( strlen(openline) >= PATH_MAX )
-				{
-					alert_iprint(TPTHTLNG);
-					return FALSE;
-				}
-
 				/* Find the real name of the item */
 
 				if ((realname = x_fllink( openline )) == NULL )
@@ -254,6 +251,8 @@ boolean item_open
 			}
 			else
 			{
+				/* Item name is explicitely specified in "theitem" */
+
 				if ( (realname = x_fllink(theitem)) == NULL )
 					return FALSE;
 
@@ -274,11 +273,12 @@ boolean item_open
 		type = diritem_type( (char *)realname );
 	}
 	
-	/* Is this name (path) too long? */
+	/* Is this name (path) too long, or wrong in some other way? */
 
-	if ( realname && (strlen(realname) >= PATH_MAX) )
+	if(realname && ((error = x_checkname(realname, NULL)) != 0))
 	{
-		alert_iprint(TPTHTLNG);
+		free(realname);
+		xform_error(error);
 		return FALSE;
 	}
 
@@ -292,21 +292,27 @@ boolean item_open
 
 			/* Object is a trah can or a printer (or unknown) and can not be opened */
 
-			alert_iprint(MICNOPEN); 
+			alert_cantdo(trash_or_print(type), MNOOPEN);
 			break;
-
 		default:
 	
 			/* Separate "realname" into "ename" and "epath" */
 
-			split_path(epath, ename, realname);
+			if(type == ITM_NETOB)
+			{
+				strcpy(ename, realname);
+				strcpy(epath, empty);
+			}
+			else
+				split_path(epath, ename, realname);
 
 			/* 
 			 * Simulate some structures of a directory window so that existing
 			 * routines expecting an item selected in a window can be used
 			 */
 
-			dir_simw( &((DIR_WINDOW *)w), epath, ename, type, (size_t)1, (int)0 );
+			w = (WINDOW *)&simw;
+			dir_simw( &simw, epath, ename, type, (size_t)1, (int)0 );
 			item = 0;
 			break;		
 	}
@@ -373,14 +379,22 @@ boolean item_open
 
 			break;
 
+		case ITM_NETOB:
 		case ITM_FILE:
 
 			/* Object is a file */
 
+			naap = 0; /* see app_find() */
 			onfile = TRUE;
-			if ((alternate == FALSE) && (appl = app_find(itm_name(w, item))) != NULL)
+			deselect = FALSE;
+
+			if 
+			(
+				!alternate && 
+				(appl = app_find(itm_name(w, item), TRUE)) != NULL
+			)
 				deselect = app_exec(NULL, appl, w, &item, 1, kstate);
-			else
+			else if(naap == 0) 
 			{
 				/* File type assignment has been bypassed: now show/edit/cancel */
 

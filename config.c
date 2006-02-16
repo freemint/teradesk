@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -450,7 +450,7 @@ int CfgLoad
 (
 	XFILE *fp,			/* pointer to file definition structure */ 
 	CfgEntry *cfgtab, 	/* pointer to configuration table */
-	int maxs,			/* maximum length of value string (after "=") */ 
+	int maxs,			/* maximum length of value string (after "="), incl. termination */ 
 	int level0			/* nesting (indent) level */
 ) 
 {
@@ -570,7 +570,7 @@ int CfgLoad
 						break;
 					case CFG_S:
 						/* Decode a string */
-						cfgcpy(tab->a, s, maxs);
+						cfgcpy(tab->a, s, maxs - 1);
 						break;
 
 /* currently not used in Teradesk but may be used some day
@@ -724,7 +724,7 @@ int handle_cfg
 
 			/* 
 			 * In case of error, again perform default setup 
-			 * It always contain initial setup as well
+			 * It always contains initial setup as well
 			 */
 
 			if(def)

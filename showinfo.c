@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -89,7 +89,7 @@ static char
 	*search_buf,		/* buffer to store the file to search the string in */
 	**search_finds;		/* pointers to found strings */
 
-static LNAME 
+static VLNAME 
 	search_pattern = {0}; /* store filename pattern for search */
 
 static boolean
@@ -97,7 +97,7 @@ static boolean
 	nofound = TRUE;			/* TRUE if no items founnd */
 
 
-extern char *app_find_name(const char *fname);
+char *app_find_name(const char *fname);
 
 
 /* 
@@ -287,6 +287,7 @@ static int search_dialog(void)
 
 				if 
 				(  
+					x_checkname(empty, search_pattern) || 
 					*search_pattern == 0 ||			 /* must have a pattern */
 					search_lodate == -1  ||			 /* valid low date      */ 
 					search_hidate == -1  ||			 /* valid high date     */
@@ -572,6 +573,7 @@ static int get_file_attribs(int old_attribs)
 	return attribs;
 }
 
+
 #if _MINT_
 
 /*
@@ -688,10 +690,10 @@ static void disp_smatch( int ism )
 
 int object_info
 (
-	ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE< etc. */ 
-	const char *oldname,	/* object path + name */ 
-	const char *fname,		/* object name only (why the duplication?) */ 
-	XATTR *attr				/* Object's extended attributes */
+	ITMTYPE type,		/* Item type: ITM_FOLDER, ITM_FILE, etc. */ 
+	const char *oldn,	/* object path + name */ 
+	const char *fname,	/* object name only (why the duplication?) */ 
+	XATTR *attr			/* Object's extended attributes */
 )
 {
 	char 
@@ -699,16 +701,16 @@ int object_info
 		*date;			/* date string */ 
 
 #if _MORE_AV
-	LNAME
+	VLNAME
 		avname;			/* name to be reported to an AV client */
 
 #if _MINT_
-	LNAME
-		ltgtname;		/* link target name */
+	VLNAME
+		ltgtname;		/* link target fullname */
 #endif
 #endif	
 
-	LNAME
+	VLNAME
 		nfname;			/* changed item name taken from the dialog field */	
 
 	long 
@@ -746,10 +748,16 @@ int object_info
 		*lblted = fileinfo[FLLABEL].ob_spec.tedinfo;
 #endif
 
+	static const int 
+		items1[] = {FLLIBOX,FLFOLBOX,PFBOX,FOPWITH,FOPWTXT,0},
+		items2[] = {FLNAMBOX,ATTRBOX,RIGHTBOX,FLALL,0},
+		items3[] = {FLLABBOX,FLSPABOX,FLCLSIZ,0};
+
+
 	/* In which filesystem does this item reside */
 
 #if _MINT_
-	fs_type = x_inq_xfs(oldname);
+	fs_type = x_inq_xfs(oldn);
 #endif
 
 	/* Pointers to time and date fields in the dialog */
@@ -759,11 +767,7 @@ int object_info
 
 	/* Some fields are set to invisible */
 
-	obj_hide(fileinfo[FLLIBOX]);	/* link target name */
-	obj_hide(fileinfo[FLFOLBOX]);	/* number of folders and files */
-	obj_hide(fileinfo[PFBOX]);		/* program flags */
-	obj_hide(fileinfo[FOPWITH]);	/* open with... */
-	obj_hide(fileinfo[FOPWTXT]);	/* open with... */
+	rsc_hidemany(fileinfo, items1);
 
 	/* Put object data into dialog forms */
 
@@ -782,7 +786,7 @@ int object_info
 	}
 
 #if _MORE_AV
-	strsncpy(avname, oldname, sizeof(LNAME));
+	strsncpy(avname, oldn, sizeof(LNAME));
 #endif	
 
 	switch(type)
@@ -791,13 +795,22 @@ int object_info
 
 			/* Count the numbers of items in the folder */
 
-			error = cnt_items(oldname, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE); 
+			error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE); 
 			arrow_mouse();
 
 			if ( error != 0 )
 			{
-				result = si_error(fname, error);
-				return result;
+				result =  si_error(fname, error);
+
+				/* Path can be too long in subfolder, allow change */
+
+				if( error == EPTHTL || error == EFNTL)
+				{
+					error = 0;
+					result = 0;
+				}
+				else
+					return result;
 			}
 
 			rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
@@ -833,7 +846,7 @@ int object_info
 			obj_unhide(fileinfo[FLLIBOX]);
 			memclr(ltgtname, sizeof(ltgtname) );
 			ltgtname[0] = 0;
-			error = x_rdlink( (int)sizeof(ltgtname), ltgtname, oldname);
+			error = x_rdlink( (int)sizeof(ltgtname), ltgtname, oldn);
 			if ( error != 0 )
 			{
 				result = si_error(fname, error);
@@ -859,7 +872,7 @@ int object_info
 				*pflags = 0;
 				*pprot = 0;
 
-				if((flg = x_pflags((char *)oldname)) >= 0)
+				if((flg = x_pflags((char *)oldn)) >= 0)
 				{
 					/* 
 					 * Note: strings must be in the correct sequence
@@ -933,7 +946,7 @@ int object_info
 
 			setmore:;
 
-			strcpy ( nfname, oldname );
+			strcpy ( nfname, oldn );
 			path_to_disp ( nfname );
 
 			cv_fntoform(fileinfo, FLPATH, nfname);	
@@ -941,9 +954,7 @@ int object_info
 			cv_ttoform(time, attr->mtime);
 			cv_dtoform(date, attr->mdate);
 
-			obj_hide(fileinfo[FLLABBOX]);
-			obj_hide(fileinfo[FLSPABOX]);			
-			obj_hide(fileinfo[FLCLSIZ]);
+			rsc_hidemany(fileinfo, items3);
 			obj_unhide(fileinfo[FLNAMBOX]);
 
 #if _MINT_
@@ -984,13 +995,27 @@ int object_info
 				fileinfo[FLLABEL].ob_flags |= EDITABLE;
 #endif
 #endif
-			drive = (oldname[0] & 0x5F) - 'A';
+			drive = (oldn[0] & 0x5F) - 'A';
 
 			if (check_drive( drive ) != FALSE)
 			{
-				if ((error = cnt_items(oldname, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE)) == 0)
-					if ((error = x_getlabel(drive, dskl)) == 0)
-						x_dfree(&diskinfo, drive + 1);
+				error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE);
+
+				if(error != 0)
+				{
+					result = si_error(oldn, error);
+
+					if( error == EPTHTL || error == EFNTL)
+					{
+						error = 0;
+						result = 0;
+					}
+					else
+						return result;
+				}
+
+				if ((error = x_getlabel(drive, dskl)) == 0)
+					x_dfree(&diskinfo, drive + 1);
 
 				if (error == 0)
 				{
@@ -1040,18 +1065,14 @@ int object_info
 
 					fileinfo[FLDRIVE].ob_spec.tedinfo->te_ptext[0] = drive + 'A';
 				}
-				else
-					result = si_error(oldname, error);
 			}
 			else
 				result = XABORT;
 
 			/* Set visibility states of other fields */
 
-			obj_hide(fileinfo[FLNAMBOX]);
-			obj_hide(fileinfo[ATTRBOX]);	/* file attributes */
-			obj_hide(fileinfo[RIGHTBOX]);
-			obj_hide(fileinfo[FLALL]);
+			rsc_hidemany(fileinfo, items2);
+
 			obj_unhide(fileinfo[FLLABBOX]);
 			obj_unhide(fileinfo[FLSPABOX]);
 			obj_unhide(fileinfo[FLCLSIZ]);
@@ -1143,7 +1164,7 @@ int object_info
 					 * Information on disk volumes is currently readonly
 					 */
 
-					char *newname;
+					char *newn;
 					int error = 0;
 					XATTR new_attribs = *attr;
 					boolean link = (type == ITM_LINK);
@@ -1166,7 +1187,7 @@ int object_info
 						new_attribs.gid = atoi(fileinfo[GID].ob_spec.tedinfo->te_ptext);
 					}
 #endif
-					if ((newname = fn_make_newname(oldname, nfname)) != NULL)
+					if ((newn = fn_make_newname(oldn, nfname)) != NULL)
 					{
 						/* 
 						 * Rename the file only if needed (name changed).
@@ -1176,28 +1197,31 @@ int object_info
 						 */
 
 						if ((strcmp(nfname, fname) != 0) && (error == 0))
-							error = frename(oldname, newname, &new_attribs);
+							error = frename(oldn, newn, &new_attribs);
 
 						if ( error == 0 )
+						{
 							changed = TRUE;
+							icn_fix_ictype(); /* fix desktop icon too */
+						}
 #if _MINT_
 						if ( link && (strcmp(tgname, ltgtname) != NULL) )
 						{
 							/* It should be checked here whether the target exists */
 
-							char *tgpname = x_pathlink(tgname, newname);
+							char *tgpname = x_pathlink(tgname, newn);
 
 							if ( tgpname )
 							{
-								if ( !(x_exist(tgpname, EX_FILE) || x_exist(tgpname, EX_DIR) ) )
+								if ( !x_netob(tgpname) && (!(x_exist(tgpname, EX_FILE) || x_exist(tgpname, EX_DIR)) ) )
 									alert_iprint(TNOTGT);
 
 								free(tgpname);
 
-								error = x_unlink( newname );
+								error = x_unlink( newn );
 								if ( !error )
 								{
-									error = x_mklink( newname, tgname );
+									error = x_mklink( newn, tgname );
 									changed = TRUE;
 								} 
 							}
@@ -1253,7 +1277,7 @@ int object_info
 								else
 								{
 									changed = TRUE;
-									error = touch_file(newname, &optime, &new_attribs, link);								
+									error = touch_file(newn, &optime, &new_attribs, link);								
 								}
 							}
 						}		/* changed */
@@ -1261,16 +1285,16 @@ int object_info
 						if (error != 0)
 						{
 							arrow_mouse();
-							result = si_error(fn_get_name(newname), error);
+							result = si_error(fn_get_name(newn), error);
 							hourglass_mouse();
 						}
 
 						if ((result != XFATAL) && changed)
-							wd_set_update(WD_UPD_COPIED, oldname, NULL);
+							wd_set_update(WD_UPD_COPIED, oldn, NULL);
 #if _MORE_AV
-						strsncpy(avname, newname, sizeof(LNAME));
+						strsncpy(avname, newn, sizeof(LNAME));
 #endif
-						free(newname);
+						free(newn);
 					}
 
 					arrow_mouse();
@@ -1313,7 +1337,6 @@ int object_info
 				}
 
 				nofound = FALSE;
-
 				break;
 			}
 			case FLABORT:
@@ -1438,7 +1461,7 @@ void item_showinfo
 			{
 				if ( search ) 
 				{
-					if ( (result = cnt_items ( path, &nd, &nf, &nb, 0x1 | options.attribs, search ) ) != XSKIP && result != 0)
+					if ( (result = cnt_items( path, &nd, &nf, &nb, 0x1 | options.attribs, search ) ) != XSKIP && result != 0)
 						break;
 				}
 				else
@@ -1468,7 +1491,10 @@ void item_showinfo
 			}
 		}
 		else
-			result = XSKIP;
+		{
+			alert_cantdo(trash_or_print(type), MNOOPEN);
+			result = XSKIP;	/* trash, printer, network */
+		}
 
 		if ((result == XFATAL) || (result == XABORT) || (result == XALL) )
 			break;

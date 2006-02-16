@@ -76,6 +76,9 @@ typedef struct
 	int namelength;			/* length of longest name in the directory */
 	int llength;			/* length of a directory line in text mode */
 	int dcolumns;			/* number of directory columns in text mode */
+	int par_px;				/* Position of the slider in the parent window */
+	long par_py;			/* Position of the slider in the parent window */
+	long par_itm;			/* index of this dir in the parent dir */
 	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
 							/* ref to row of ref to NDTA */
 							/* ref () ref NDTA */
@@ -100,8 +103,6 @@ typedef struct
 
 #define DO_PATH_TOP 	0
 #define DO_PATH_UPDATE	1
-
-extern const char *prevdir;
 
 
 CfgNest dir_one;
@@ -138,6 +139,6 @@ void dir_trim_slash ( char *path );
 boolean dir_do_path( char *path, int action );
 void dir_readnew(DIR_WINDOW *w);
 OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boolean smode, RECT *work);
-void dir_simw(DIR_WINDOW **dwa, char *path, char *name, ITMTYPE type, size_t size, int attrib);
+void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type, size_t size, int attrib);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);

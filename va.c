@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1997, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)             1997, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -30,7 +30,7 @@
 #include <xdialog.h>
 #include <library.h>
 
-#include "desktop.h"
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "font.h"
@@ -115,7 +115,8 @@ static const int answertypes[]=
 	VA_OB_FILE, 	/* program file */
 	VA_OB_FILE,		/* any file */
 	VA_OB_FOLDER,	/* parent directory */
-	VA_OB_FILE		/* symbolic link */
+	VA_OB_FILE,		/* symbolic link */
+	VA_OB_FILE		/* network object */
 };
 
 #endif
@@ -126,7 +127,7 @@ void load_settings(char *newinfname);
 
 
 /*
- * Clear an 'answer' buffer and set word [1] to TeraDesk's ap_id
+ * Clear the 'answer' buffer and set word [1] to TeraDesk's ap_id
  */
 
 static void va_clranswer(int *va_answer)
@@ -229,7 +230,7 @@ AVTYPE *va_findclient(int ap_id)
 
 
 /* 
- * Remove an AV-protocol client from the list
+ * Remove an AV-protocol client from the list. Close all its windows
  */
 
 void rem_avtype(AVTYPE **list, AVTYPE *item)
@@ -295,15 +296,14 @@ void va_checkclient(void)
  * has signed as an av-client, and supports VA_START.
  * If true, then use the VA_START message to pass the command.
  * Note: accessories are maybe an exception?: they can be sent VA_START
- * even if they had not signed on (this is needed at least for 
- * ST-Guide, and maybe some other as well) 
- * Note 2: some other apss also understand VA_START but do not sign-on
+ * even if they had not signed on.
+ * Note 2: some other aps also understand VA_START but do not sign-on
  * to the server. Pity. So the above idea is impractical. See below.
  *
  * Parameters:
  *
  * program	- name of the program.
- * cmdline	- commandline.
+ * cmdl	- commandline.
  *
  * If flag 'onfile' is set to TRUE elsewhere, this routine will ask
  * about starting another instance of an already running application
@@ -311,7 +311,7 @@ void va_checkclient(void)
  * Result: TRUE if command has been passed using VA_START.
  */
 
-int va_start_prg(const char *program, ApplType type, const char *cmdline)
+int va_start_prg(const char *program, ApplType type, const char *cmdl)
 {
 	char 
 		prgname[9],		/* AV-protocol name of the program to be started */ 
@@ -336,7 +336,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 	 * for the command line.
 	 */
 
-	if (strlen(cmdline) > (GLOBAL_MEM_SIZE - 1))
+	if (strlen(cmdl) > (GLOBAL_MEM_SIZE - 1))
 		return FALSE;
 
 	/*
@@ -351,6 +351,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 	/* 
 	 * Now copy not more than first eight characters of program name 
 	 * (should it be converted to uppercase?)
+	 * YES- appl_find() in Magic is case sensitive.
 	 */
  
 	while (*ptr && (*ptr != '.') && (i < 8))
@@ -362,14 +363,15 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 		prgname[i++] = ' ';
 
 	prgname[i] = 0;
+	strupr(prgname);
 
 	/* 
 	 * Has this application signed on as an AV-client?
 	 * that supports VA_START ? 
 	 * (or, is it maybe an accessory? If neither, return FALSE)
-	 * (Some?) accessories sign-on only when
+	 * Some accessories appear to sign-on only when
 	 * they open a window, so it is necessary to be able to send
-	 * them a VA_START even if they are not signed on.
+	 * them a VA_START even if they have not signed on.
 	 * BUT: it seems that applications generally do NOT sign-on as
 	 * AV-protocol clients, so this severely restricts the behaviour
 	 * of the desktop vs applications. Maybe better to test each
@@ -417,7 +419,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdline)
 
 		/* Double quotes must be converted to single quotes */
 
-		strcpyrq(global_memory, (char *)cmdline, qc);
+		strcpyrq(global_memory, (char *)cmdl, qc);
 
 		va_clranswer(va_answer);
 
@@ -472,7 +474,6 @@ boolean va_fontreply(int messid, int dest_ap_id)
 	va_answer[4] = dir_font.size;	/* font size */
 
 #if _MORE_AV
-
 	if ( messid == VA_FONTCHANGED )
 	{
 		va_answer[5] = dir_font.id;		/* simulate console font */
@@ -490,8 +491,8 @@ boolean va_fontreply(int messid, int dest_ap_id)
 
 /*
  * Add a name to a reply string for an AV-client. If the name contains
- * spaces, it will be quoted with single quotes ('). If te name contais
- * the single-quote chracter, it will be doubled.
+ * spaces, it will be quoted with single quotes ('). If the name contais
+ * the single-quote character, it will be doubled.
  * This routine is also used to create a list of names to be sent
  * to an application using the Drag & drop protocol
  */
@@ -623,7 +624,7 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 			} 
 
 			/* 
-			 * "thename" must be NULL for the next loop, therwise, if an
+			 * "thename" must be NULL for the next loop, otherwise, if an
 			 * unused item type occurs, an unallocated block will be
 			 * freed above
 			 */
@@ -698,7 +699,10 @@ void handle_av_protocol(const int *message)
 {
 	char 
 		*path = NULL, 
-		*mask = NULL;
+		*mask = NULL,
+		*pp3,			/* location in a message as strng pointer */
+		*mp5,			/* same */
+		*pp6;			/* same */
 
 	int 
 #if _MINT_
@@ -742,37 +746,43 @@ void handle_av_protocol(const int *message)
 	 * or ask for a font, or inf-file is sent to TeraDesk
 	 */
 
-	if( !(message[0] == AV_PROTOKOLL || message[0] == FONT_SELECT || message[0] == VA_START || theclient) )
+	if( !(message[0] == AV_PROTOKOLL || message[0] == FONT_SELECT || (message[0] == VA_START && av_current == ap_id) || theclient) )
 		return;
+
+	/* Some locations in the message may point to strings */
+
+	pp3 = *(char **)(message + 3);
+	mp5 = *(char **)(message + 5);
+	pp6 = *(char **)(message + 6);
 
 	switch(message[0])
 	{
 	/* AV protocol */
 
 	case AV_PROTOKOLL:
+
 		/*
 		 * Client signing on.
 		 * Mostly ignore the features send by the (sender) client.
 		 * Return the server-supported features.
+		 * Maybe the name should be converted to uppercase here ? 
+		 * Hopefully not- AV protocol requires that names be sent in uppercase.
 		 */
 
-		strcpy(avwork.name, (*(char **)(message + 6)) );
+		strcpy(avwork.name, pp6 );
+
 		avwork.ap_id = appl_find( (const char *)avwork.name );
 		avwork.avcap3 = message[3]; /* notify client-supported features */
 		avwork.flags = 0;
 
-		/* Maybe the name should be converted to uppercase here ? */
-
-		/* strupr(avwork.name); */
-
 		/* 
-		 * Add the client to the list- but some clients may sign-on
-		 * multiply. Avoid this.
+		 * Add the client to the list- but some clients (e.g. ST-GUIDE) 
+		 * may sign-on more than once without signing off. Avoid this.
 		 */
 
-		if (!theclient)
+		if (!theclient && av_current != ap_id)
 		{
-			if (!lsadd((LSTYPE **)&avclients, sizeof(AVTYPE), (LSTYPE *)(&avwork), 32700, copy_avtype ))
+			if (!lsadd_end((LSTYPE **)&avclients, sizeof(AVTYPE), (LSTYPE *)(&avwork), copy_avtype ))
 				reply = FALSE; /* can't add client */
 		}
 
@@ -813,11 +823,13 @@ void handle_av_protocol(const int *message)
 		break;
 
 	case AV_EXIT:
+
 		/* 
-		 * Note: do not send an instruction to AV client to close its
+		 * Note: do not send an instruction to an AV client to close its
 		 * windows. It is supposed that now it will do that by itself.
 		 * Therefore xw_dosend = 0 temporarily
 		 */
+
 		rem_avtype(&avclients, va_findclient(av_current));
 		reply = FALSE;
 		break;
@@ -826,7 +838,7 @@ void handle_av_protocol(const int *message)
 
 		/* 
 		 * Return the id and size of the console window font.
-		 * Reply to this is currently the same as for directory window 
+		 * Reply to this is currently the same as for directory window font 
 		 */
 
 	case AV_ASKFILEFONT:
@@ -842,18 +854,6 @@ void handle_av_protocol(const int *message)
 		va_fontreply( (message[0] == AV_ASKCONFONT) ? VA_CONFONT : VA_FILEFONT, message[1]); 
 		reply = FALSE;
 		break;
-
-	case VA_START:
-
-		/* 
-		 * TeraDesk can understand about inf files being sent to it.
-		 * There is no point in sending the reply message back to itself
-		 * because AV_STARTED is ignored anyway.
-		 */
-		 
-		reply = FALSE;
-		load_settings(strdup(*(char **)(message + 3))); 
-		break;
 	case AV_ACCWINDOPEN:
 
 		/* 
@@ -865,6 +865,7 @@ void handle_av_protocol(const int *message)
 		aw = xw_create(ACC_WIND, &aw_functions, message[3], NULL, sizeof(ACC_WINDOW), NULL, &error );
 		aw->xw_xflags |= XWF_OPN;
 		aw->xw_ap_id = av_current;
+
 		reply = FALSE;
 		break;
 
@@ -895,19 +896,18 @@ void handle_av_protocol(const int *message)
 
 		/* 
 		 * Open a directory window with additional features
-		 * Action is currently the similar as for just opening a window;
-		 * Ignored features: wildcard object selection.
+		 * Action is currently similar to that for just opening a window;
 		 * It is not entirely clear whether this message is 
 		 * correctly supported 
 		 */
 
 	case AV_OPENWIND:
 
-		/* Open a directory window (path must be kept) */
+		/* Open a directory window */
 
-		path = strdup(*(char **)(message + 3));
+		path = strdup(pp3); /* path must be kept */
 
-		if ( path && *path )
+		if ( path && (x_checkname(path, NULL) == 0) )
 		{
 			dir_trim_slash(path);
 			stat = 1;
@@ -916,27 +916,46 @@ void handle_av_protocol(const int *message)
 
 			if ( !( message[0] == AV_XWIND && (message[7] & 0x01) && dir_do_path(path, DO_PATH_TOP)) )
 			{
-				mask = strdup(*(char **)(message + 5));
-				stat = ( path && mask );
+				mask = strdup(mp5);	/* mask must be kept too */
 
-				if ( stat )
+				if( mask )
 					stat = (int)dir_add_window(path, mask, NULL);
+				else
+				{
+					free(path);
+					stat = 0;
+				}
 			}
 		}
 		else
+		{
+			free(path);
 			stat = 0;
+		}
 
 		answer[0] = ( message[0] == AV_OPENWIND) ? VA_WINDOPEN : VA_XOPEN;
 		answer[3] = stat;	/* status */
 		break;
 
 #endif
+	case VA_START:
+
+		/* 
+		 * TeraDesk can understand about inf files being sent to it.
+		 * There is no point in sending the reply message back to itself
+		 * because AV_STARTED is ignored anyway.
+		 * Name of the file must be kept. 
+		 */
+		 
+		reply = FALSE;
+		load_settings(strdup(pp3)); 
+		break;
 
 	case AV_STARTPROG:
 
 		/* Start a program with possibly a command line */
 
-		mask = strdup(*(char **)(message + 5)); 
+		mask = mp5;
 		answer[0] = VA_PROGSTART;
 		answer[7] = message[7];
 
@@ -949,14 +968,13 @@ void handle_av_protocol(const int *message)
 		 * the same.
 		 * If the application is already running, parameters will be
 		 * passed to it.
+		 * Parameter "mask" may contain the command line
 		 */
 
 		onfile = TRUE;
-		path = strdup(*(char **)(message + 3));
 
-		if ( path && *path )
-			stat = item_open( NULL, 0, 0, path, mask );
-
+		if ( pp3 && *pp3 )
+			stat = item_open( NULL, 0, 0, pp3, mask );
 		else
 			stat = 0;
 
@@ -965,8 +983,6 @@ void handle_av_protocol(const int *message)
 		if (message[0] == AV_VIEW)
 			answer[0] = VA_VIEWED;
 
-		free(path);
-		free(mask);
 		break;
 
 #if _MORE_AV
@@ -982,14 +998,16 @@ void handle_av_protocol(const int *message)
 
 		/* Update a dir window */
 
-		path = strdup(*(char **)(message + 3));
-		if ( path && *path )
+		path = strdup(pp3); /*duplicate because it will be modified */
+
+		if ( path && !x_netob(path) && (x_checkname(path, NULL) == 0) )
 		{
 			dir_trim_slash(path);
 			dir_do_path(path, DO_PATH_UPDATE);
 		}
 
 		free(path);
+
 		reply = FALSE; /* no reply to this message */
 		break;
 
@@ -997,7 +1015,7 @@ void handle_av_protocol(const int *message)
 
 		/* Note: "path" has to be kept; it contains the status string */
 
-		path = strdup(*(char **)(message + 3));
+		path = strdup(pp3);
 
 		thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
 
@@ -1025,7 +1043,7 @@ void handle_av_protocol(const int *message)
 				strcpy(avswork.name, theclient->name);
 				avswork.stat = path;
 
-				if (!lsadd((LSTYPE **)&avstatus, sizeof(AVSTAT), (LSTYPE *)(&avswork), 32700, copy_avstat ))
+				if (!lsadd_end((LSTYPE **)&avstatus, sizeof(AVSTAT), (LSTYPE *)(&avswork), copy_avstat ))
 					free(path);
 			}
 		}
@@ -1084,7 +1102,7 @@ void handle_av_protocol(const int *message)
 					/* An item can be located in a desktop or directory window */
 
 					itype = itm_type(aw, item);
-					if ( itype >= ITM_NOTUSED && itype <= ITM_LINK )
+					if ( itype >= ITM_NOTUSED && itype <= ITM_NETOB )
 					{
 						answer[4] = answertypes[itype];
 
@@ -1112,17 +1130,27 @@ void handle_av_protocol(const int *message)
 	} /* what is it ? */
 
 	case AV_DRAG_ON_WINDOW:
-		path = strdup(*(char **)(message + 6));	/* source */
+
+		/* Drag a file to the path of a window */
+
+		path = strdup(pp6);	/* source; duplicate because it will be modified */
 		goto processname;
+
 	case AV_COPYFILE:
-		mask = strdup(*(char **)(message + 5)); /* destination */
+
+		/* Copy a file to a path */
+
+		mask = strdup(mp5);	/* destination */
+
 	case AV_DELFILE:
 	case AV_FILEINFO:
-		path = strdup(*(char **)(message + 3)); /* source */
 
+		/* Delete a file or return information about it */
+
+		path = strdup(pp3);	/* source; duplicate because it will be modified */
 		processname:;
 
-		if ( path && *path )
+		if ( path && !x_netob(path) && x_checkname(path, mask) == 0)
 		{
 			dir_trim_slash(path);
 			*global_memory = 0;		/* clear the string in the buffer */
@@ -1137,7 +1165,7 @@ void handle_av_protocol(const int *message)
 				boolean q = FALSE;	/* true if name is quoted */
 
 				ITMTYPE itype;		/* type of the item */
-				DIR_WINDOW *ww;		/* pointer to the simulated window */
+				DIR_WINDOW ww;		/* pointer to the simulated window */
 				int list = 0;		/* simulated selected item */
 
 				stat = 1;			/* all is well for the time being */
@@ -1208,30 +1236,30 @@ void handle_av_protocol(const int *message)
 						{
 						case AV_DRAG_ON_WINDOW:
 							answer[0] = VA_DRAG_COMPLETE;
-							stat = (int)itm_move( (WINDOW *)ww, 0, message[3], message[4], message[5]);	
+							stat = (int)itm_move( (WINDOW *)&ww, 0, message[3], message[4], message[5]);	
 							break;
 						case AV_COPYFILE:
 						{
 							/* 
-							 * Note: this is not fully compliant to the
+							 * Note: this is still not fully compliant to the
 							 * AV-protocol: links can not be created
 							 */
 							int old_prefs = options.cprefs;
 							options.cprefs = (message[7] & 4) ? old_prefs : (old_prefs & ~CF_OVERW);
 							answer[0] = VA_FILECOPIED;
 							rename_files = (message[7] & 2) ? TRUE : FALSE;
-							stat = (int)itmlist_op((WINDOW *)ww, 1, &list, mask, ( message[7] & 1) ? CMD_MOVE : CMD_COPY);
+							stat = (int)itmlist_op((WINDOW *)&ww, 1, &list, mask, ( message[7] & 1) ? CMD_MOVE : CMD_COPY);
 							options.cprefs = old_prefs;
 							break;
 						}
 						case AV_DELFILE:
 							answer[0] = VA_FILEDELETED;
-							stat = (int)itmlist_wop((WINDOW *)ww, 1, &list, CMD_DELETE);
+							stat = (int)itmlist_wop((WINDOW *)&ww, 1, &list, CMD_DELETE);
 							break;
 						case AV_FILEINFO:
 							answer[0] = VA_FILECHANGED;
 							*(char **)(answer + 6) = global_memory;	
-							item_showinfo((WINDOW *)ww, 1, &list, FALSE);
+							item_showinfo((WINDOW *)&ww, 1, &list, FALSE);
 							stat = 1; /* but it is not always so! */
 							break;
 						}
@@ -1258,6 +1286,7 @@ void handle_av_protocol(const int *message)
 
 		free(path);
 		free(mask);
+
 		break;
 #endif
 
@@ -1284,9 +1313,7 @@ void handle_av_protocol(const int *message)
 	}
 
 	if ( reply )
-	{
 		appl_write(av_current, 16, answer);
-	}
 }
 
 
@@ -1400,7 +1427,7 @@ static CfgNest one_avstat
 	{
 		memclr(&avswork, sizeof(avswork));
 
-		*error = CfgLoad(file, stat_table, MAX_CFGLINE - 1, lvl); 
+		*error = CfgLoad(file, stat_table, MAX_CFGLINE, lvl); 
 
 		if ( *error == 0 )
 		{
@@ -1416,12 +1443,11 @@ static CfgNest one_avstat
 					strcpy(avswork.name, this.name);
 					avswork.stat = stat;
 
-					if ( lsadd
+					if ( lsadd_end
 						 ( 
 				             (LSTYPE **)&avstatus, 
 				              sizeof(avswork), 
 				              (LSTYPE *)&avswork, 
-				              32000,
 				              copy_avstat
 				          ) == NULL 
 				   		)

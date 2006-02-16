@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002 W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -32,14 +32,24 @@
 #include <vdi.h>
 #include <xdialog.h>
 
-#include "desktop.h"
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
 #include "file.h"
 
-#define XBUFSIZE	2048L
+#define XBUFSIZE	2048L /* size of a buffer used in file reading/writing */
 
+
+/* 
+ * If _CHECK_RWMODE is set to 0, there will be no checks whether xfile->mode
+ * is exactly O_RDONLY or O_WRONLY; 
+ * if it is not O_WRONLY, O_RDONLY will be assumed
+ */
+
+#define _CHECK_RWMODE 0
+
+long Dgetcwd(char *path, int drive, int size);
 
 static boolean flock;
 extern int tos_version, aes_version;
@@ -61,17 +71,38 @@ static long x_retresult(long result)
 
 /*
  * Check if a filename or path + name is valid in this OS.
+ * Also check if it fits into buffers.
  * Return 0 if OK.
- * Beware: it is still possible that a path+name be too long for
- * some buffers in TeraDesk!
+ * 'path' must exist even if empty; 'name' cen be NULL.
  */
 
 int x_checkname(const char *path, const char *name)
 {
-	if (strlen(name) > x_pathconf(path, DP_NAMEMAX))
-		return EFNTL;
+	long nl = 0, mp = sizeof(VLNAME);
 
-	if (strlen(path) + strlen(name) + 2L > x_pathconf(path, DP_PATHMAX))
+
+	if(!x_netob(path))
+	{
+		if(*path)
+		{
+			if(!isdisk(path))
+				return EPTHNF;
+
+			mp = x_pathconf(path, DP_PATHMAX);
+
+			if(mp < 0) 
+				return xerror((int)mp);
+		}
+
+		nl = (long)strlen((name) ? name : fn_get_name(path));
+
+		/* Avoid needless interrogation of drive if no name given */
+
+		if ( (*path && nl && nl > x_pathconf(path, DP_NAMEMAX)) || nl >= (long)sizeof(LNAME))
+			return EFNTL;
+	}
+
+	if ((long)(strlen(path) + nl + 2L) > lmin(mp, (long)sizeof(VLNAME)))
 		return EPTHTL;
 
 	return 0;
@@ -89,8 +120,13 @@ char *x_makepath(const char *path, const char *name, int *error)
 
 	if ((p = malloc(strlen(path) + strlen(name) + 2L)) != NULL)
 	{
-		*error = 0;
-		make_path(p, (char *)path, (char *)name);
+		*error = make_path(p, (char *)path, (char *)name);
+
+		if(*error != 0)
+		{
+			free(p);
+			p = NULL;
+		}
 	}
 	else
 		*error = ENSMEM;
@@ -146,82 +182,24 @@ boolean x_exist(const char *file, int flags)
 
 
 /*
- * Modify a name string so that it represents a full path + name ?
- * Note: it seems that the resulting string can be longer than the
- * original one? Use with care.
+ * Check if a name points to a network object, to be accessed
+ * as http:, ftp: or mailto: target. Return TRUE if it is.
  */
 
-static int _fullname(char *buffer)
+boolean x_netob(const char *name)
 {
-	char *name, *h, *d, *s;
-	int error;
-
-	/* 
-	 * Note: there will probably be two alerts 
-	 * if string can not be duplicated, 
-	 * as strdup already displays an alert
-	 */
-
-	if ((name = strdup(buffer)) == NULL)
-		error = ENSMEM;
+	if
+	(
+		name[1] != ':' &&	/* dont check further if not */
+		(
+			strnicmp(name, "http:", 5) == 0 || 
+			strnicmp(name, "ftp:", 4) == 0  ||
+			strnicmp(name, "mailto:", 7) == 0 
+		)
+	)
+		return TRUE;
 	else
-	{
-		d = buffer;
-
-		if ((h = strchr(name, ':')) == NULL)
-		{
-			/* 
-			 * If there is no drive name in the name, put one first.
-			 * Original string will be appended to it later
-			 */
-
-			*d++ = (char) (x_getdrv() + 'A');
-			*d++ = ':';
-			h = name;
-		}
-		else
-		{
-			h++;
-			s = name;
-			while (s != h)
-				*d++ = *s++;
-		}
-
-		if (*h == '\\')
-		{
-			strcpy(d, h);
-			error = 0;
-		}
-		else
-		{
-			if ((error = xerror(Dgetpath(d, buffer[0] - 'A' + 1))) == 0)
-				make_path(buffer, buffer, h);
-		}
-		free(name);
-	}
-	return error;
-}
-
-
-char *x_fullname(const char *file, int *error)
-{
-	char *buffer;
-
-	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
-	{
-		*error = ENSMEM;
-		return NULL;
-	}
-
-	strcpy(buffer, file);
-
-	if ((*error = _fullname(buffer)) != 0)
-	{
-		free(buffer);
-		return NULL;
-	}
-
-	return buffer;
+		return FALSE;
 }
 
 
@@ -238,33 +216,47 @@ int x_setpath(const char *path)
 
 
 /* 
- * Get current default path, return pointer to this new-allocated string 
+ * Get current default path on the specified drive, return pointer to
+ * this new-allocated string. If drive is specified as 0, also get 
+ * default drive. The resulting path will not be longer than VLNAME.
+ * Drive 1 = A: 2 = B: 3 = C: , etc.
  */
 
 char *x_getpath(int drive, int *error)
 {
-	char *buffer;
+	VLNAME tmp;
+	char *buffer = NULL, *t = tmp + 2;
+	long e;
 
-	/* Allocate a buffer */
+	/* Put drive id at the beginning of the temporary buffer */
 
-	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
+	tmp[0] = (char)(((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
+	tmp[1] = ':';
+	tmp[2] = 0;
+
+#if _MINT_
+	if(mint)
 	{
-		*error = ENSMEM;
-		return NULL;
+		/* Use Dgetcwd so that length can be limited */
+
+		e = Dgetcwd(t, drive, (int)sizeof(VLNAME) - 2 );
+		if(e == GERANGE)
+			e = EPTHTL;
+	}
+	else
+#endif
+	{
+		/* In single-TOS this should be safe */
+
+		e = Dgetpath(t, drive);
 	}
 
-	/* Put drive id at the beginning of the buffer */
+	*error = xerror(e);
 
-	buffer[0] = (char) (((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
-	buffer[1] = ':';
+	/* Create output buffer only if there are no errors */
 
-	/* Append the rest */
-
-	if ((*error = xerror(Dgetpath(buffer + 2, drive))) < 0)
-	{
-		free(buffer);
-		return NULL;
-	}
+	if(*error == 0)
+		buffer = strdup(tmp);
 	
 	return buffer;
 }
@@ -290,25 +282,94 @@ int x_rmdir(const char *path)
 }
 
 
+/*
+ * Modify a name string so that it represents a full path + name.
+ * The returned string can be longer than the initial one, so take
+ * care to have a sufficient buffer. 
+ * The resulting name will never be longer than VLNAME.
+ */
+
+static int _fullname(char *buffer)
+{
+	int error = 0, drive = 0;
+	boolean d = isdisk(buffer);
+
+	if(!d || strlen(buffer) < 3)
+	{
+		/* No drive name contained in the name, or no complete path */
+
+		char *def, *save, *n = buffer;
+
+		/* Save the name so that it can be copied back */
+
+		if(d)
+		{
+			drive = *buffer - 'A' + 1;
+			n += 2;		/* here begins the name (after the ':') */
+		}
+
+		save = strdup(n);					/* save name only */
+		def = x_getpath(drive, &error); 	/* get default path incl. drive name */
+
+		/* Compose fullname */
+
+		if(def && save && !error)
+			make_path(buffer, def, save);
+
+		free(save);
+		free(def);
+	}
+
+	return error;
+}
+
+
+/*
+ * Create a new name string with maybe a path prepended to it so that
+ * it represents a full name 
+ */
+
+char *x_fullname(const char *file, int *error)
+{
+	char *buffer;
+
+	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
+		*error = ENSMEM;
+	else
+	{
+		strcpy(buffer, file);
+
+		if ((*error = _fullname(buffer)) != 0)
+		{
+			free(buffer);
+			buffer = NULL;
+		}
+	}
+
+	return buffer;
+}
+
+
 #if _MINT_
 
 /*
- * Create a symbolic link. "newname" will point to a real object "oldname"
+ * Create a symbolic link. "linkname" will point to a real object "refname"
  */
 
-int x_mklink(const char *newname, const char *oldname)
+int x_mklink(const char *linkname, const char *refname)
 {
-	if(x_exist(newname, EX_LINK))
+	if(x_exist(linkname, EX_LINK))
 		return EACCDN;
 
-	return xerror( (int)Fsymlink( (char *)oldname, (char *)newname ) );
+	return xerror( (int)Fsymlink( (char *)refname, (char *)linkname ) );
 }
 
 
 /*
  * Read target name of a symbolic link.
  * Any '/' characters are converted to '\', otherwise other routines
- * may not find this target
+ * may not find this target. 
+ * Do not make this conversion for network objects.
  */
 
 int x_rdlink( int tgtsize, char *tgt, const char *linkname )
@@ -318,7 +379,7 @@ int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 
 	err =  xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
 
-	if (err == 0)
+	if (err == 0 && !x_netob(tgt))
 	{
 		while( ( slash = strchr(tgt, '/') ) != NULL )
 			*slash = '\\';
@@ -330,7 +391,8 @@ int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 
 /*
  * Prepend a path to a link target definition, if it is not given.
- * Return a path + name string (memory allocated here)
+ * Return a path + name string (memory allocated here).
+ * Do not add anything for a network object
  */
 
 char *x_pathlink( char *tgtname, char *linkname )
@@ -342,7 +404,7 @@ char *x_pathlink( char *tgtname, char *linkname )
 	int
 		error;
 
-	if ( strchr(tgtname,'\\') == NULL )
+	if ( !x_netob(tgtname) && (strchr(tgtname,'\\') == NULL) )
 	{
 		/* referenced name does not contain a path, use that of the link */
 
@@ -516,13 +578,13 @@ int x_putlabel(int drive, char *label)
 /* File functions */
 
 /* 
- * Rename a file from "oldname" to "newname"; 
+ * Rename a file from "oldn" to "newn"; 
  * note unusual (for C) order of arguments: (source, destination) 
  */
 
-int x_rename(const char *oldname, const char *newname)
+int x_rename(const char *oldn, const char *newn)
 {
-	return xerror(Frename(0, oldname, newname));
+	return xerror(Frename(0, oldn, newn));
 }
 
 
@@ -732,7 +794,7 @@ int x_inq_xfs(const char *path)
 
 	if (mint)
 	{
-		long c, t, m, x;
+		long c, t, m, x, n;
 
 		/* Inquire about filesystem details */
 
@@ -740,6 +802,7 @@ int x_inq_xfs(const char *path)
 		t = Dpathconf(path, DP_TRUNC);	/* name truncation */
 		m = Dpathconf(path, DP_MODE);	/* valid mode bits */
 		x = Dpathconf(path, DP_XATT);	/* valid XATTR fields */
+		n = Dpathconf(path, DP_NAMEMAX);/* maximum name length */
 
 		/* 
 		 * If information can not be returned, results will be < 0, then
@@ -754,6 +817,8 @@ int x_inq_xfs(const char *path)
 			c = 0;
 		if ( t < 0)
 			t = 0;
+		if ( n < 0)
+			n = 255;
 
 		/* 
 		 * If (m & 0x1FF00), nine access rights bits are valid mode fields
@@ -772,7 +837,7 @@ int x_inq_xfs(const char *path)
 		{
 			retcode |= FS_CSE;
 
-			if(t != DP_DOSTRUNC)
+			if(t != DP_DOSTRUNC && n > 12)
 				retcode |= FS_LFN;
 		}
 
@@ -802,7 +867,7 @@ XDIR *x_opendir(const char *path, int *error)
 	{
 		dir->path = (char *)path;
 
-		strsncpy(p, path, sizeof(VLNAME) - 1L);
+		strsncpy(p, path, sizeof(VLNAME) - 1);
 		if (*(p + strlen(p) - 1) != '\\')
 			strcat(p, bslash);
 
@@ -851,13 +916,14 @@ XDIR *x_opendir(const char *path, int *error)
 
 long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib) 
 {
-	static char fspec[260];
+	static char fspec[sizeof(VLNAME) + 4];
 	long result;
 
 	/* Prepare some pointer to return in case any error occurs later */
 
 	fspec[0] = 0;
 	*buffer = fspec;
+
 
 #if _MINT_
 	if (dir->type == 0)
@@ -869,8 +935,9 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 
 		if (dir->data.gdata.first != 0)
 		{
-			make_path(fspec, dir->path, TOSDEFAULT_EXT); /* presets[1] = "*.*"  */	
-			error = xerror(Fsfirst(fspec, FA_ANY));
+			error = make_path(fspec, dir->path, TOSDEFAULT_EXT); /* presets[1] = "*.*"  */	
+			if(error == 0)
+				error = xerror(Fsfirst(fspec, FA_ANY));
 			dir->data.gdata.first = 0;
 		}
 		else
@@ -878,7 +945,7 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 
 		if (error == 0)
 		{
-			if (strlen(dir->data.gdata.dta.d_fname) + 1 > len)
+			if ((int)strlen(dir->data.gdata.dta.d_fname) + 1 > len)
 				error = EFNTL;
 			else
 			{
@@ -919,38 +986,6 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 
 	return result;
 }
-
-
-/* This routine is currently not used in TeraDesk
-
-/*
- * Rewind an open directory, so that the next reading is that of the first
- * item in it.
- */
-
-long x_rewinddir(XDIR *dir)
-{
-
-#if _MINT_
-	if (dir->type == 0)
-	{
-#endif
-		/* DOS file system */
-	
-		dir->data.gdata.first = 1;
-		return 0L;
-#if _MINT_  
-	}
-	else
-	{
-		/* File system with long filenames (why this long/int nonsense?) */
-	
-		return x_retresult(Drewinddir(dir->data.handle));
-	}
-#endif /* _MINT_ */
-}
-
-*/
 
 
 /* 
@@ -1074,8 +1109,7 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 
 
 /*
- * Read flags from a program file header.
- * TPA size is not passed.
+ * Read flags from a program file header. TPA size is not passed.
  */
 
 long x_pflags(char *filename)
@@ -1103,15 +1137,15 @@ long x_pflags(char *filename)
  * This function returns the maximum possible path or name length.
  * In single TOS those lengths are assigned fixed values, in Mint,
  * they are obtained through Dpathconf. 
+ * Beware that negative value can be returned if sensible data
+ * can not be obtained!
  */
 
 long x_pathconf(const char *path, int which)
 {
 #if _MINT_
 	if (mint)
-	{
 		return x_retresult(Dpathconf(path, which));
-	}
 	else
 #endif
 	{
@@ -1148,14 +1182,13 @@ char *xshel_find(const char *file, int *error)
 {
 	char *buffer;
 
-	if ((buffer = calloc(sizeof(VLNAME), 1)) == NULL)
-	{
+	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
 		*error = ENSMEM;
-		return NULL;
-	}
 	else
 	{
 		strcpy(buffer, file);
+
+		/* note: shel_find() modifies the content of 'buffer' */
 
 		if (shel_find(buffer) == 0)
 			*error = EFILNF;
@@ -1164,9 +1197,12 @@ char *xshel_find(const char *file, int *error)
 			if ((*error = _fullname(buffer)) == 0)
 				return buffer;
 		}
+
 		free(buffer);
-		return NULL;
+		buffer = NULL;
 	}
+
+	return buffer;
 }
 
 
@@ -1180,47 +1216,45 @@ char *xfileselector(const char *path, char *name, const char *label)
 	char *buffer;
 	int error, button;
 
-	if ((buffer = malloc_chk(sizeof(VLNAME))) == NULL)
-		return NULL;
-
-	strcpy(buffer, path);
-
-	/* Correct file specification for the more primitive selectors */
-
-	if((error = _fullname(buffer)) != 0)
+	if ((buffer = malloc_chk(sizeof(VLNAME))) != NULL)
 	{
-		xform_error(error);
-	}
-	else
-	{
-		/* A call to a file selector MUST be surrounded by wind_update() */
+		strcpy(buffer, path);
 
-		wind_update(BEG_UPDATE);
+		/* Correct file specification for the more primitive selectors */
 
-		/* 
-		 * In fact there should be a check here if an alternative file selector
-		 * is installed, in such case the extended file-selector call can be used
-		 * although TOS is older than 1.04
-		 */
-
-		if ( tos_version >= 0x104 )
-			error = fsel_exinput(buffer, name, &button, (char *) label);
-		else
-			error = fsel_input(buffer, name, &button);
-
-		wind_update(END_UPDATE);
-
-		if ((error == 0) || (button == 0))
-		{
-			if (error == 0)
-				alert_printf(1, MFSELERR);
-		}
-		else
-		{
-			if ((error = _fullname(buffer)) == 0)
-				return buffer;
-
+		if((error = _fullname(buffer)) != 0)
 			xform_error(error);
+		else
+		{
+			/* A call to a file selector MUST be surrounded by wind_update() */
+
+			wind_update(BEG_UPDATE);
+
+			/* 
+			 * In fact there should be a check here if an alternative file selector
+			 * is installed, in such case the extended file-selector call can be used
+			 * although TOS is older than 1.04
+			 */	
+
+			if ( tos_version >= 0x104 )
+				error = fsel_exinput(buffer, name, &button, (char *) label);
+			else
+				error = fsel_input(buffer, name, &button);
+
+			wind_update(END_UPDATE);
+
+			if ((error == 0) || (button == 0))
+			{
+				if (error == 0)
+					alert_printf(1, MFSELERR);
+			}
+			else
+			{
+				if ((error = _fullname(buffer)) == 0)
+					return buffer;
+
+				xform_error(error);
+			}
 		}
 	}
 
@@ -1290,51 +1324,51 @@ static int write_buffer(XFILE *file)
 /* 
  * Open a real file. Return pointer to a XFILE structure
  * which is created in this routine. 
+ * Beware: check for improper 'mode' can be disabled
  */
 
 XFILE *x_fopen(const char *file, int mode, int *error)
 {
 	int 
-		result = 0, 
 		rwmode = mode & O_RWMODE;
 
 	XFILE 
 		*xfile;
 
-
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
-		result = ENSMEM;
+		*error = ENSMEM;
 	else
 	{
+		memclr(xfile, sizeof(XFILE));
+		*error = 0;
+
 		xfile->mode = mode;
 		xfile->buffer = (char *) (xfile + 1);
 		xfile->bufsize = (int) XBUFSIZE;
-		xfile->read = 0;
-		xfile->write = 0;
-		xfile->eof = FALSE;
-		xfile->memfile = FALSE;
 
-		if (rwmode == O_RDONLY)
-		{
-			if ((xfile->handle = x_open(file, mode)) < 0)
-				result = xfile->handle;
-		}
-		else if (rwmode == O_WRONLY)
-		{
-			if ((xfile->handle = x_create(file, NULL)) < 0)
-				result = xfile->handle;
-		}
+		if (rwmode == O_WRONLY)
+			xfile->handle = x_create(file, NULL);
 		else
-			result = EINVFN;
+		{
+#if _CHECK_RWMODE 
+			if(rwmode == O_RDONLY)
+#endif
+				xfile->handle = x_open(file, mode);
+#if _CHECK_RWMODE
+		else
+			xfile->handle = EINVFN;
+#endif
+		}
 
-		if (result != 0)
+		if(xfile->handle < 0)
+			*error = xfile->handle;
+
+		if (*error != 0)
 		{
 			free(xfile);
 			xfile = NULL;
 		}
 	}
-
-	*error = result;
 
 	return xfile;
 }
@@ -1345,52 +1379,46 @@ XFILE *x_fopen(const char *file, int mode, int *error)
  * If allocation is unsuccessful, return ENSMEM (-39)
  * If not read/write mode it returned EINVFN (-32) 
  * (why bother?, this routine is used only once, so this check
- * is disabled, but use carefully then!). If OK, return 0
+ * can be disabled, but use carefully then!). If OK, return 0
  */
 
 XFILE *x_fmemopen(int mode, int *error)
 {
-	int 
-		result = 0; 
-
-/* not needed
+#if _CHECK_RWMODE
 		rwmode = mode & O_RWMODE; /* mode & 0x03 */
-*/
+#endif
 
 	XFILE 
 		*xfile;
 
+	*error = 0;
+
 	/* A memory block is allocated and some structures set */
 
 	if ((xfile = malloc(sizeof(XFILE))) == NULL)
-		result = ENSMEM;
+		*error = ENSMEM;
 	else
 	{
+		memclr(xfile, sizeof(XFILE));
 		xfile->mode = mode;
-		xfile->buffer = NULL;	/* buffer location         */
-		xfile->bufsize = 0;		/* buffer size             */
-		xfile->read = 0;		/* read position (offset)  */
-		xfile->write = 0;		/* write position (offset) */
-		xfile->eof = FALSE;		/* end of file not reached */
-		xfile->memfile = TRUE;	/* this is a memory file   */
+		xfile->memfile = TRUE;
 
-/* no need to bother, routine is used only once and in a controlled way 
+#if _CHECK_RWMODE
 		if (rwmode != O_RDWR) /* 0x02 */
 		{
 			result = EINVFN; /* unknown function ? */
 			free(xfile);
 			xfile = NULL;
 		}
-*/
+#endif
 	}
 
-	*error = result;
 	return xfile;
 }
 
 
 /* 
- * Close a file 
+ * Close a file or a memory file 
  */
 
 int x_fclose(XFILE *file)
@@ -1406,7 +1434,7 @@ int x_fclose(XFILE *file)
 	{
 		int h;
 
-		h = (rwmode == O_RDONLY) ? 0 : write_buffer(file);
+		h = (rwmode == O_WRONLY) ? write_buffer(file) : 0;
 		if ((error = x_close(file->handle)) == 0)
 			error = h;
 	}
@@ -1418,9 +1446,11 @@ int x_fclose(XFILE *file)
 
 
 /* This routine (a pair with x_fwrite) is never used in TeraDesk
+   and not maintained anymore
 
 /* 
- * Read file contents (not more than "length" bytes)
+ * Read file contents (not more than "length" bytes).
+ * This routine can handle "memory files" too.
  */
 
 long x_fread(XFILE *file, void *ptr, long length)
@@ -1431,6 +1461,8 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 	if (file->memfile)
 	{
+		/* This is a memory file */
+
 		read = file->read;
 		write = file->write;
 		src = file->buffer;
@@ -1452,9 +1484,11 @@ long x_fread(XFILE *file, void *ptr, long length)
 	}
 	else
 	{
+		/* This is a real file */
+#if _CHECK_RWMODE
 		if ((file->mode & O_RWMODE) == O_WRONLY)
 			return 0;
-
+#endif
 		src = file->buffer;
 
 		do
@@ -1525,8 +1559,12 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 		write,			 		/* position currently written to */
 		error;					/* error code */
 
+	/* Don't write into a file opened for reading */
+
+#if _CHECK_RWMODE
 	if ((file->mode & O_RWMODE) == O_RDONLY)
 		return EINVFN;
+#endif
 
 	if (file->memfile)
 	{
@@ -1577,6 +1615,8 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 	}
 	else
 	{
+		/* This is a "real" file */
+
 		dest = file->buffer;
 
 		do
@@ -1616,27 +1656,6 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 }
 
 
-/* Not used anymore
-
-/*
- * Position file pointer to location 'offset' from the start of 
- * a 'memory file'
- */
-
-long x_fseek(XFILE *file, long offset, int mode)
-{
-	if (!file->memfile || (mode != 0) || (offset != 0))
-		return EINVFN;
-	else
-	{
-		file->read = (int)offset;
-		return 0;
-	}
-}
-
-*/
-
-
 /* 
  * Read a string from a file, but not more than 'n' characters 
  */
@@ -1647,14 +1666,16 @@ int x_fgets(XFILE *file, char *string, int n)
 	int i = 1, read, write, error;
 	char *dest, *src, ch, nl = 0;
 
-/* Why ? Just a safety precaution against careless use maybe?
+	/* Why ? Just a safety precaution against careless use maybe? */
 
+#if _CHECK_RWMODE
 	if ((file->mode & O_RWMODE) != O_RDONLY)
 	{
 		*string = 0;
 		return 0;
 	}
-*/
+#endif
+
 	/* Has end-of-file been reached? */
 
 	if (x_feof(file))

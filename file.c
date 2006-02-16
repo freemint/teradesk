@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,7 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+ 
 
 #include <np_aes.h>	
 #include <stdlib.h>
@@ -30,9 +30,10 @@
 #include <ctype.h>
 #include <vdi.h>
 #include <xdialog.h>
+#include <internal.h>
 #include <library.h>
 
-#include "desktop.h"
+#include "resource.h"
 #include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
@@ -45,6 +46,82 @@
 #define PRN_EXT		"*.PRN" /* default print-file extension */
 
 void wd_drawall(void);
+
+
+/* 
+ * Concatenate a path+filename string "name" from a path "path" and
+ * a filename "fname"; Add a "\" between the path andthe name if needed.
+ * Space for resultant string has to be allocated before the call
+ * Note: "name" and "path" can be at the same location.
+ * A check is made whether total path length is within VLNAME size
+ */
+
+int make_path( char *name, const char *path, const char *fname )
+{
+	long l = (long)strlen(path);
+
+	if(l + (long)strlen(fname) >= (long)sizeof(VLNAME))
+		return EPTHTL;
+
+	strcpy(name, path);
+	if (l && (name[l - 1] != '\\'))
+		name[l++] = '\\';
+	strcpy(name + l, fname);
+
+	return 0;
+}
+
+
+/*
+ * Return a pointer to the last backslash in a name string;
+ * If a backslash does not exist, return pointer to the
+ * beginning of the string
+ */
+
+char *fn_last_backsl(const char *fname)
+{
+	char *e;
+
+	if ((e = strrchr(fname, '\\')) == NULL)
+		e = (char *)fname;
+
+	return e;
+}
+
+
+/*
+ * Split a full (file)name (path+filename) "name" into "path" and "fname" parts.
+ * Space for path and fname has to be allocated beforehand.
+ * Root path is always finished with a "\"
+ * It is assumed that "path" is at least VLNAME and
+ * that "fname" is at least LNAME.
+ */ 
+
+void split_path( char *path, char *fname, const char *name )
+{
+	char 
+		*np = fn_get_name(name);
+
+	long
+		pl;		/* path length */
+
+
+	pl = lmin((size_t)(np - (char *)name), sizeof(VLNAME));
+	strsncpy(fname, np, sizeof(LNAME));
+	*path = 0;
+
+	if(pl > 0)
+	{
+		if(fn_last_backsl(name) == name + 2)
+			pl++;
+
+		strsncpy(path, name, pl); 
+	}
+/*
+	else
+		strcpy(path, "\\"); /* why ? try without. */
+*/
+}
 
 
 /* 
@@ -91,28 +168,12 @@ void path_to_disp ( char *fpath )
 }
 
 
-/*
- * Return a pointer to the last backslash in a name string;
- * If a backslash does not exist, return pointer to the
- * beginning of the string
- */
-
-char *fn_last_backsl(const char *fname)
-{
-	char *e;
-
-	if ((e = strrchr(fname, '\\')) == NULL)
-		e = (char *)fname;
-
-	return e;
-}
-
-
 /* 
  * This routine returns a pointer to the beginning of the name proper
- * in an existing fullname string. If there is no backslash in the
- * name, it returns pointer to the beginning of the string.
- * If the fullname string does not exist, returns NULL.
+ * in an existing fullname string. It is identified as the string after 
+ * the last backslash in the name. If there is no backslash in the name, 
+ * it returns pointer to the beginning of the string. If the fullname 
+ * string does not exist, returns NULL.
  * It doesn't allocate any memory for the name. 
  */
 
@@ -123,7 +184,7 @@ char *fn_get_name(const char *path)
 	if (!path)
 		return NULL;
 
-	h = fn_last_backsl(path);
+	h = fn_last_backsl(path); /* h == path if no backslash found */
 	if ( h != path || *path == '\\' )
 		h++;
 
@@ -188,12 +249,12 @@ char *fn_make_path(const char *path, const char *name)
 
 
 /* 
- * Compose a new name from old fullname "oldname" and a new name "newname".
+ * Compose a new name from old fullname "oldn" and a new name "newn".
  * I.e. concatenate the new name and the old path.
  * Space is allocated for the result.
  */
 
-char *fn_make_newname(const char *oldname, const char *newname)
+char *fn_make_newname(const char *oldn, const char *newn)
 {
 	char 
 		*backsl, 
@@ -208,19 +269,19 @@ char *fn_make_newname(const char *oldname, const char *newname)
 
 	/* Find position of the last backslash  */
 
-	backsl = fn_last_backsl(oldname);
+	backsl = fn_last_backsl(oldn);
 
-	l = backsl - (char *)oldname;			/* length of the path part */
-	tl = l + strlen(newname) + 2L;			/* total new length */
+	l = backsl - (char *)oldn;				/* length of the path part */
+	tl = l + strlen(newn) + 2L;				/* total new length */
 
 	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
 	{
-		strsncpy(path, oldname, l + 1);		/* copy the path */
+		strsncpy(path, oldn, l + 1);		/* copy the path */
 
-		if ( (error = x_checkname( path, newname ) ) == 0 )
+		if ( (error = x_checkname( path, newn ) ) == 0 )
 		{
 			strcat(path, bslash);
-			strcat(path, newname);
+			strcat(path, newn);
 		}
 		else
 		{
@@ -229,7 +290,7 @@ char *fn_make_newname(const char *oldname, const char *newname)
 		}
 	}
 
-	/* Note: failed malloc will be reported in malloc_chk */
+	/* Note: failed malloc will be reported in malloc_chk above */
 
 	xform_error(error); /* Will ignore error >= 0 */
 
@@ -293,7 +354,7 @@ char *locate(const char *name, int type)
 
 	char 
 		*newpath, 
-		*newname, /* local */ 
+		*newn, 
 		*fspec, 
 		*title,
 		*cfgext,
@@ -353,14 +414,14 @@ char *locate(const char *name, int type)
 		if (!newpath)
 			return NULL;
 
-/* Currently not used
+/* Currently not used anywhere in TeraDesk
 
 		if (type == L_FOLDER)
 		{
-			if (((newname = fn_get_path(newpath)) != NULL) && isroot(newname))
+			if (((newn = fn_get_path(newpath)) != NULL) && isroot(newname))
 			{
 				alert_iprint(MNOROOT);
-				free(newname);
+				free(newn);
 			}
 			else
 				result = TRUE;
@@ -373,13 +434,13 @@ char *locate(const char *name, int type)
 				alert_iprint(TPLFMT);
 			else
 			{
-				if (((newname = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
+				if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
 				{
-					result = x_exist(newname, ex_flags);
+					result = x_exist(newn, ex_flags);
 					if (!result)
 					{
 						alert_iprint(TFILNF);
-						free(newname);
+						free(newn);
 					}
 				}
 				else
@@ -392,28 +453,33 @@ char *locate(const char *name, int type)
 
 	free(newpath);
 
-	return newname;
+	return newn;
 }
 
 
 /*
  * Get a path or a name using a fileselector and insert into string.
  * This is used in scrolled editable text fields.
+ * Note: if flags & 0x8000 is set, path only will be passed.
+ * If flags & 0x4000 is set, name only will be passed.
+ * These flags are set in the resource as ob_flags; bits 15 and 14 for
+ * the scrolled-text FTEXT object.
  */
 
 void get_fsel
 (
 	XDINFO *info,	/* dialog data */
-	char *result,	/* pointer to string being edited */
-	int len,		/* max. length of field          */
-	int *pos		/* cursor position in the string */
+	char *result,	/* pointer to the string being edited */
+	int flags		/* sets whether pathonly or nameonly */
 )
 {
 	long
-		pl = 0,		/* path length   */
-		fl = 0,		/* name length   */
-		tl,			/* total length of inserted string */
-		sl;			/* string length */
+		pl = 0,			/* path length   */
+		fl = 0,			/* name length   */
+		tl,				/* total length of inserted string */
+		sl,				/* string length */
+		ml,				/* possible maximum for tl */
+		err = EPTHTL;
 
 	char
 		*c,			/* pointer to aft part of the string */
@@ -421,12 +487,18 @@ void get_fsel
 		*path,		/* path obtained */
 		*title;		/* Selector title */
 
-	LNAME
+	VLNAME			/* actually a LNAME should be enough */
 		name;		/* name obtained */
+
+	boolean
+		addname = ((flags & 0x8000) == 0);
 
 
 	title = get_freestring(FSTLANY);
 	name[0] = 0;
+
+	/* Call the fileselector */
+
 	path = xfileselector( fsdefext, name, title ); /* path is allocated here */
 
 	/* Some fileselectors do not redraw what was below them... */
@@ -446,30 +518,45 @@ void get_fsel
 
 		path_to_disp(path);
 
-		if (*name && !isroot(path))
+		if (*name && !isroot(path) && addname )
 			strcat(path, bslash);
 
 		fl = strlen(name);
 		pl = strlen(path);
-		tl = fl + pl;
 		sl = strlen(result);
-
-		if ( sl + tl >= len )
-		{
-			alert_iprint(TFNTLNG);
-			goto freepath;
-		}
+		tl = 0;			/* length of the string to be inserted */
+		ml = XD_MAX_SCRLED - sl - 1;
 
 		cc = NULL;
-		c = result + (long)(*pos); /* part after the cursor */
+		c = result + (long)(info->cursor_x); /* part after the cursor */
 
-		if ( (*pos < sl) && ( (cc = strdup(c)) == NULL ) )
+		if ( (info->cursor_x < sl) && ( (cc = strdup(c)) == NULL ) )
+		{
+			err = 0; /* error already reported in strdup */
 			goto freepath; /* not decent, but... */
+		}
 
-		strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+		*c = 0;
 
-		if ( fl )
+		if((flags & 0x4000) == 0)
+		{
+			tl += pl;
+
+			if(tl > ml)
+				goto freepath;
+
+			strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+		}
+
+		if ( fl && addname )
+		{
+			tl += fl;
+
+			if(tl > ml) 
+				goto freepath;
+
 			strcat( result, name );
+		}
 
 		if ( cc )
 		{
@@ -477,39 +564,15 @@ void get_fsel
 			free(cc);
 		} 
 
-		*pos = *pos + (int)tl;
+		info->cursor_x += tl;
+		err = 0;
 
 		freepath:;
+		xform_error(err);
 		free(path);
 	}
 }
 
-
-/* 
- * Get name of the root directory of the current directory
- * (i.e. drive name, in the form such as "A:" ) 
- */
-
-void getroot(char *root)
-{
-	root[0] = x_getdrv() + 'A';
-	root[1] = ':';
-	root[2] = 0;
-}
-
-
-#if !__USE_MACROS
-
-/* 
- * Get name (i.e. path + name) of the current directory 
- */
-
-char *getdir(int *error)
-{
-	return x_getpath(0, error);
-}
-
-#endif
 
 /* 
  * Change current directory to "path" 
@@ -582,8 +645,17 @@ boolean check_drive(int drv)
 
 boolean match_pattern(const char *t, const char *pat)
 {
-	bool valid = true;
-	char u;
+	bool 
+		valid = TRUE;
+
+	char 
+		u, 					/* uppercase character in pat */
+		*d, 
+		*pe = NULL,		 	/* pointer to pattern end */
+		*te = NULL, 		/* pointer to name end */
+		*pa = NULL;			/* pointer to last astarisk */
+
+
 
 	while(valid && ((*t && *pat) || (!*t && *pat == '*')))	/* HR: catch empty that should be OK */
 	{
@@ -594,10 +666,36 @@ boolean match_pattern(const char *t, const char *pat)
 			pat++;
 			break;
 		case '*':			/* * means a string of any character */
+
+			if(!te)
+				te = (char *)t + strlen(t);	/* find the end */
+
+			if(!pe)
+			{
+				pe = (char *)pat;
+
+				while(*pe)	/* find the end and the last asterisk */
+				{
+					if(*pe == '*')
+						pa = pe;
+					pe++;
+				}
+			}
+
 			pat++;
+
+			if(pat > pa)	/* skip irelevant part */
+			{
+				d = te - (pe - (char *)pat);
+				if(d > t)
+					t = d;
+			}
+
 			u = (char)touppc(*pat);
+
 			while(*t &&(touppc(*t) != u))
 				t++;
+
 			break;
 #if _MINT_
 		case '!':			/* !X means any character but X */
@@ -627,6 +725,7 @@ boolean match_pattern(const char *t, const char *pat)
 			}
 #endif
 		default:			/* exact match on anything else, case insensitive */
+
 			if (touppc(*t++) != touppc(*pat++))
 				valid = false;
 			break;
@@ -663,7 +762,7 @@ boolean cmp_wildcard(const char *fname, const char *wildcard)
 	matched = match_pattern(fname, wildcard);
 
 	if (dot)
-		*dot = '.';
+		*dot = '.'; /* restore the dot which was removed earlier */
 
 	return matched;
 }
@@ -867,12 +966,12 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 		{
 			if(xd_xobtype(ob) == XD_SCRLEDIT)
 			{
-				l = sizeof(LNAME);
-				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(dest) > sizeof(LNAME) */
+				l = sizeof(VLNAME);
+				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(dest) > sizeof(VLNAME) */
 			}
 			strsncpy(dst, src, (long)l); 		/* term. byte included in l */
 
-			if ( strlen(src) > l - 1 )
+			if ( (int)strlen(src) > l - 1 )
 				alert_iprint(TFNTLNG);
 		}
 		else

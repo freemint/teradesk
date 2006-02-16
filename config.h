@@ -65,11 +65,11 @@ typedef struct
 /* 
  * Maximum acceptable length of a line in configuration file defined below.
  * Should be longer than maximum path length by the length of
- * a keyword and a reasonable number of tabs. Currently PATH_MAX is
- * defined as 128. Probably about 20 characters more should be enough: 
+ * a keyword and a reasonable number of tabs. Currently max. path is
+ * set to 254. Probably about 20 characters more should be enough: 
  */
  
-#define MAX_CFGLINE PATH_MAX+20
+#define MAX_CFGLINE 275
 
 /*
  * Maximum possible keyword length is defined below

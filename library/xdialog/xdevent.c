@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                2003, 2004, 2005  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,13 +34,15 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <library.h>
+#include <vaproto.h>
 
 #include "xdialog.h"
 #include "internal.h"
 
-#define AV_SENDKEY		0x4710
 
-int xd_kstate; /* kbd state while clicking a button; */
+int 
+	xe_mbshift,
+	xd_kstate; /* kbd state while clicking a button; */
 
 /* 
  * Funktie voor het converteren van een VDI scancode  naar een
@@ -49,12 +51,21 @@ int xd_kstate; /* kbd state while clicking a button; */
 
 int xe_keycode(int scancode, int kstate)
 {
-	int keycode, nkstate, scan;
+	static const char 
+		num[] = {0,27,49,50,51,52,53,54,55,56,57,48,45,61,8},
+		numk[] = {55,56,57,52,53,54,49,50,51,48};
+
+	int 
+		keycode, 
+		nkstate, 
+		scan,
+		ctrl;
 
 	/* Zet key state om in eigen formaat */
 
 	nkstate = (kstate & (K_RSHIFT | K_LSHIFT)) ? XD_SHIFT : 0;
 	nkstate = nkstate | ((kstate & 0xC) << 7);
+	ctrl = nkstate & (XD_CTRL | XD_ALT);
 
 	/* Bepaal scancode */
 
@@ -62,43 +73,66 @@ int xe_keycode(int scancode, int kstate)
 
 	/* Controleer of de scancode hoort bij een ASCII teken */
 
-	if ((scan < 59) || (scan == 74) || (scan == 78) || (scan == 83) ||
+	if(ctrl && scan < 15)
+		keycode = num[scan];
+	else if(ctrl && scan > 102 && scan < 113)
+		keycode = numk[scan - 103];
+	else if (ctrl && scan == 74)
+		keycode = 45;
+	else if (ctrl && scan == 78)
+		keycode = 43;
+	else if ((scan < 59) || (scan == 74) || (scan == 78) || (scan == 83) ||
 		(scan == 96) || ((scan >= 99) && (scan <= 114)) || (scan >= 117))
 	{
-
 		if (scan >= 120)
 			scan -= 118;
 
 		if ((keycode = scancode & 0xFF) == 0)
 		{
 #ifdef __PUREC__
-/* shorter below
-			keycode = toupper((int) ((unsigned char) (Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
-*/
 			keycode = touppc(((unsigned char)(Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
-
 #else
-			keycode = touppc((int) ((unsigned char) (((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
+			keycode = touppc((int)((unsigned char)(((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
 #endif
 		}
 
-		keycode |= nkstate;
 	}
 	else
 	{
 		nkstate |= XD_SCANCODE;
-		keycode = nkstate | scan;
+		keycode = scan;
 	}
 
+	keycode |= nkstate;
+
 	return keycode;
+}
+
+
+/*
+ * Should dialog activity be routed to a dialog or to a nonmodal dialog?
+ * This is better than just checking whether a dialog is opened.
+ */
+ 
+int xd_isdopen(void)
+{
+	if
+	(
+		xd_dialogs && 
+		!(
+			xd_dialogs->dialmode == XD_WINDOW && 
+			xd_nmdialogs && 
+			xw_top() == xd_nmdialogs->window
+		)
+	)
+		return 1;
+	return 0;
 }
 
 
 /* 
  * Vervanging van evnt_multi, die eigen keycode terug levert. 
  */
-
-int xe_mbshift;
 
 int xe_xmulti(XDEVENT *events)
 {
@@ -121,12 +155,13 @@ int xe_xmulti(XDEVENT *events)
 
 	/* No message events when a dialog is opened and the dialog is not in a window. */
 
+
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
 
 	/* Wait for an event */
 
-	events->xd_keycode = 0; /* ??? */
+	events->xd_keycode = 0; /* why ??? */
 
 #ifdef __PUREC__
 
@@ -163,7 +198,7 @@ int xe_xmulti(XDEVENT *events)
 		if (events->ev_mmgpbuf[0] == AV_SENDKEY)
 			events->xd_keycode |= XD_SENDKEY;
 
-		if (!xd_dialogs && (level == 1))
+		if(!xd_isdopen() && (level == 1))
 		{
 			if (xw_hndlkey(events->xd_keycode, events->ev_mmokstate))
 				r &= ~MU_KEYBD;
@@ -180,38 +215,13 @@ int xe_xmulti(XDEVENT *events)
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
 			r &= ~MU_MESAG;
 		}
-		else if ((events->ev_mmgpbuf[0] == WM_CLOSED) && xd_dialogs)
-		{
-			if (xw_hfind(events->ev_mmgpbuf[3]) != xd_dialogs->window)
-			{
-				bell();
-				xw_set(xd_dialogs->window, WF_TOP);
-				r &= ~MU_MESAG; 
-			}
-		}
-		else if (((events->ev_mmgpbuf[0] == WM_TOPPED) ||
-				 (events->ev_mmgpbuf[0] == WM_NEWTOP)) &&
-				 xd_dialogs)
-		{
-			WINDOW *ww = xw_hfind(events->ev_mmgpbuf[3]);
-
-			if ( ww != xd_dialogs->window )
-				bell();
-
-			if ( xd_nmdialogs && ww == xd_nmdialogs->window )
-				xw_set(ww, WF_TOP);
-			else
-				xw_set(xd_dialogs->window, WF_TOP);
-
-			r &= ~MU_MESAG;
-		}
 		else if (xw_hndlmessage(events->ev_mmgpbuf)) /* window-handling messages processed */
 			r &= ~MU_MESAG;
 	}
 
 	/* If this is a button event... */
 
-	if ((r & MU_BUTTON) && !xd_dialogs && (level == 1))
+	if ((r & MU_BUTTON) && !xd_isdopen() && (level == 1))
 	{
 		if (events->ev_mmobutton == 2)
 			events->ev_mbreturn = 2;	/* right button is double click */
@@ -264,14 +274,11 @@ int xe_mouse_event(int mstate, int *x, int *y, int *kstate)
 	XDEVENT events;
 	int flags;
 
+	xd_clrevents(&events);
 	events.ev_mflags = MU_TIMER | MU_BUTTON;
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
 	events.ev_mbstate = mstate;
-	events.ev_mm1flags = 0;
-	events.ev_mm2flags = 0;
-	events.ev_mtlocount = 0;
-	events.ev_mthicount = 0;
 
 	flags = xe_xmulti(&events);
 

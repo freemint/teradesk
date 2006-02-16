@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                                     2003  Dj. Vukovic
+ * Teradesk. Copyright (c)             1993, 1994, 2002  W. Klaren,
+ *                                           2002, 2003  H. Robbers,
+ *                               2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -39,6 +39,7 @@
 int alert_msg(const char *string, ...);	
 int alert_printf(int def, int message,...);
 void alert_iprint( int message );
+void alert_cantdo(int msg1, int msg2);
 void alert_abort( int message );
 int alert_query( int message );
 

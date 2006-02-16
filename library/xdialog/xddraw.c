@@ -1,7 +1,7 @@
 /* 
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                2003, 2004, 2005  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -343,27 +343,6 @@ static bool xd_is3dobj(int flags)
 
 
 /*
- * Draw a box. Most progdefined objects in TeraDesk in fact require
- * that a rectangular box be drawn, possibly with 3d effects.
- *
- * "r" defines size of the basic box; routine may change the size 
- * by the width of 3d enlargements, "outline" state 
- * and by "default" and "exit" flags.
- *
- * "flags": "default", "exit" "activator" and "indicator" are recognized
- *
- * "state": "selected" and "outlined" bits are recognized
- *
- * border thickness is not recognized.
- * 
- * Box colour is determined from extended flags
- *
- * Clipping is NOT performed in this routine, must be set beforehand
- * 
- */
-
-
-/*
  * Calculate size of an object enlargement, including 3D effects
  */
 
@@ -385,10 +364,25 @@ static void xd_3dbrd( int ob_state, int *xl, int *xr, int *yu, int *yd)
 
 
 /*
- * Draw a rectangular box with 3D effects. This type of object is used
- * several times in xdialog;
- * Specified box size will be enlarged by the value of 3D enlargements
+ * Draw a rectangular box. Most progdefined objects in TeraDesk in fact require
+ * that a rectangular box be drawn, possibly with 3d effects.
+ *
+ * "r" defines size of the basic box; routine may change the size 
+ * by the width of 3d enlargements, "outline" state 
+ * and by "default" and "exit" flags.
+ *
+ * "flags": "default", "exit" "activator" and "indicator" are recognized
+ *
+ * "state": "selected" and "outlined" bits are recognized
+ *
+ * Border thickness is not recognized.
+ * 
+ * Box colour is determined from extended flags
+ *
+ * Clipping is NOT performed in this routine, must be set beforehand
+ * 
  */
+
 
 static void xd_drawbox
 (
@@ -865,7 +859,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 
 	MFDB
 		smfdb,			/* source memory block definition */
-		dmfdb;			/* destination memory block dfinition */
+		dmfdb;			/* destination memory block definition */
 
 
 	/* Define clipping area */
@@ -1080,20 +1074,6 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 }
 
 
-/* DjV 074 ---vvv--- */
-
-/* 
-
-some object types defined in previous versions are never used in TeraDesk;
-so, they are here extracted into a separate file
-
-#include "xdunused.h"
-
-*/
-
-/* DjV 074 ---^^^--- */
-
-
 /*
  * Code which handles scrolled editable text fields 
  */
@@ -1104,7 +1084,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	TEDINFO *ted = blk->ob_spec.tedinfo;
 
 	char 
-		s[132],							/* same as size of LNAME !!! */
+		s[XD_MAX_SCRLED + 1],
 		*text = s,
 	    *save = ted->te_ptext;			/* pointer to editable text field */
 
@@ -1155,7 +1135,8 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	tmode  = MD_REPLACE;
 	if ( xd_aes4_0 && xd_colaes ) 
 	{
-		if ( aes_hor3d == 0 && ted->te_thickness != 0)
+		/* Beware that AES version thus defined is only for PureC- see xdialog.c */
+		if ( aes_hor3d == 0 && ted->te_thickness != 0 && _GemParBlk.glob.version == 0x399)
 			/* hopefully this branch is valid for Magic only */
 			xd_drawbox(&size, AES3D_1, SELECTED, XD_SCRLEDIT );
 		else
@@ -1575,7 +1556,6 @@ static void xd_cur_remove(XDINFO *info)
 			*pxyp   = cursor.y + pxy[3];
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
-
 			xd_clip_off();
 		}
 		else
@@ -1798,9 +1778,9 @@ static void xd_translate(OBJECT *tree, int parent, int offset)
  * Try to determine if the AES supports required object features,
  * It is assumed that if WHITEBAK is set, and AES does not support WHITEBAK,
  * then must_userdef returns true. 
- * Note: this detects only magic-style capabilities, but -not- those
+ * Note: this detects only Magic-style capabilities, but -not- those
  * of e.g. Geneva.
- * If own_userdef = 1, all objects will be drawn by teradesk.
+ * If own_userdef = 1, all objects will be drawn by TeraDesk.
  * Unfortunately, there is currenlty no easy way to put it somewhere
  * in the configuration file.
  */
@@ -2066,7 +2046,7 @@ void xd_set_userobjects(OBJECT *tree)
 /*
 				c_code = ub_unknown; 
 */
-c_code = ub_drag;
+				c_code = ub_drag;	/* does not matter, so use an existing one */
 				break;
 /*
 			default:
@@ -2105,7 +2085,7 @@ c_code = ub_drag;
 
 
 /* 
- * Obtain address of an object of an object from the R_TREE group
+ * Obtain address of an object from the R_TREE group
  * Call this routine only once for each object 
  */
 
