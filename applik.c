@@ -940,14 +940,14 @@ APPLINFO *app_find(const char *file, boolean dial)
  * Find the (short) name of the first application associated with a filename
  */
 
-char *app_find_name(const char *fname)
+char *app_find_name(const char *fname, boolean full)
 {
 	APPLINFO *theapp;
 
-	theapp = app_find(fname, FALSE);
+	theapp = app_find(fname, (full) ? TRUE : FALSE);
 
 	if (theapp)
-		return theapp->shname;
+		return (full) ? theapp-> name : theapp->shname;
 	else
 		return NULL;
 }
@@ -983,12 +983,14 @@ APPLINFO *find_fkey(int fkey)
  
 static char *requote_cmd(char *cmd)
 {
-	char *q = malloc_chk(strlenq(cmd));
+	char
+		*fb, 
+		*q = malloc_chk(strlenq(cmd));
 
 	if(q)
 	{
 		*q = '*';
-		strcpyrq(q + 1, cmd, qc);
+		strcpyrq(q + 1, cmd, qc, &fb);
 	}
 
 	return q;
@@ -1027,24 +1029,26 @@ static char *app_build_cml
 		item;				/* item index */
 
 
-
 	/* Convert any quotes in the command line to double quotes */
 
 	if((qformat = requote_cmd((char *)format)) != NULL)
 	{
 		const char *c = qformat;	/* pointer to a position in qformat */
 		ITMTYPE type;				/* current item type */
-		long ml;					/*needed buffer length for the command line */
+		long ml;					/* needed buffer length for the command line */
 
 		/* 
 		 * Allocate a little more memory, because a couple of characters
-		 * may be added to the command line on each name 
+		 * may be added to the command line for each name in the list.
+		 * Also, a command line may contain other text beside the names.
 		 */
 
-		ml = (n + 2) * sizeof(VLNAME);
+		ml = (n + 2) * sizeof(VLNAME) + strlen(qformat);
+
 		if ( (build = malloc_chk(ml)) == NULL )
 			goto error_exit2; 
 
+		memclr(build, ml);
 		d = build;
 
 		/* Process input (i.e. format line) until 0-byte encountered */
@@ -1174,10 +1178,9 @@ static char *app_build_cml
 
 
 /* 
- * Attempt to extract a valid path from a command line.
- * Return pointer to a new string containing this path.
- * Memory is allocated in this routine.
- * If a string resembling a path is not found, return NULL
+ * Attempt to extract a valid path from a command line. Return the pointer to 
+ * a new string containing this path. Memory is allocated in this routine.
+ * If a string resembling a path is not found in the line, return NULL
  */
 
 static char *app_parpath(char *cmline)
@@ -1200,8 +1203,8 @@ static char *app_parpath(char *cmline)
 	{
 		/* 
 		 * Beginning of a path was found (see below), now find the end 
-		 * (end is recognized by any char with code lesser than '!'
-		 * which is not between quotes)
+		 * (end is recognized by any character with code lesser than '!'
+		 * that is not between quotes)
 		 */
 
 		if(p1 && ((*p == 0) || (q && *p == fqc && p[1] != fqc) || (!q && *p < '!')))
@@ -1608,7 +1611,7 @@ static CfgNest this_atype
 	*error = 0;
 
 	prg_table[0].s = "atype";
-	prg_table[2].flag = CFG_INHIB; /* name mask do not make sense here */
+	prg_table[2].type |= CFG_INHIB;
 
 	if ( io == CFG_SAVE )
 	{
@@ -1663,14 +1666,14 @@ static CfgNest dt_config
 
 static CfgEntry app_table[] =
 {
-	{CFG_HDR, 0, "app" },
+	{CFG_HDR,  "app" },
 	{CFG_BEG},
-	{CFG_S,   0, "path", 	this.name	  },
-	{CFG_S,   0, "cmdl", 	this.cmdline  },
-	{CFG_S,   0, "envr", 	this.localenv },
-	{CFG_D,   0, "fkey", 	&awork.fkey	  },
-	{CFG_NEST,0, "atype",    this_atype   },
-	{CFG_NEST,0, "doctypes", dt_config    },
+	{CFG_S,    "path", 	this.name	  },
+	{CFG_S,    "cmdl", 	this.cmdline  },
+	{CFG_S,    "envr", 	this.localenv },
+	{CFG_D,    "fkey", 	&awork.fkey	  },
+	{CFG_NEST, "atype",    this_atype   },
+	{CFG_NEST, "doctypes", dt_config    },
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -1778,9 +1781,9 @@ static CfgNest one_app
 
 static CfgEntry applications_table[] =
 {
-	{CFG_HDR, 0, "applications" },
+	{CFG_HDR,  "applications" },
 	{CFG_BEG},
-	{CFG_NEST,0, "app", one_app },		/* Repeating group */
+	{CFG_NEST, "app", one_app },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };

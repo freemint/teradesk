@@ -377,12 +377,12 @@ void prg_default(void)
 
 CfgEntry prg_table[] =
 {
-	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
+	{CFG_HDR, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_S,   0, "name",  pwork.name	},
-	{CFG_L,   0, "limm",  &pwork.limmem	},
-	{CFG_D,   0, "appt",  &pwork.appl_type	},
-	{CFG_X,   0, "flag",  &pwork.flags },
+	{CFG_S,   "name",  pwork.name	},
+	{CFG_L,   "limm",  &pwork.limmem	},
+	{CFG_D,   "appt",  &pwork.appl_type	},
+	{CFG_X,   "flag",  &pwork.flags },
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -449,9 +449,9 @@ static CfgNest one_ptype
  
 static CfgEntry prgty_table[] =
 {
-	{CFG_HDR, 0, "apptypes" },
+	{CFG_HDR,  "apptypes" },
 	{CFG_BEG},
-	{CFG_NEST,0, "ptype", one_ptype  },		/* Repeating group */
+	{CFG_NEST, "ptype", one_ptype  },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -464,7 +464,7 @@ static CfgEntry prgty_table[] =
 CfgNest prg_config
 {
 	prg_table[0].s = "ptype";
-	prg_table[2].flag = 0;
+	prg_table[2].type &= CFG_MASK;
 
 	*error = handle_cfg(file, prgty_table, lvl, CFGEMP, io, rem_all_prgtypes, prg_default);
 } 

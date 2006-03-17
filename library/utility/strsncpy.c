@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                                           2002, 2003  H. Robbers,
- *                                                     2003, 2004, 2005  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright (c)        1993, 1994, 2002  W. Klaren,
+ *                                                            2002, 2003  H. Robbers,
+ *                                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -148,26 +148,81 @@ char *strcpyq(char *d, const char *s, char qc)
 
 
 /*
- * Copy a string from s to d substituting the quotes character if 
- * necessary. Return a pointer to the -end- of string.
- * This function will e.g. convert a string containing items
- * between single-quotes into a string containing items between
- * double quotes - or v.v. Any appearance of the char qc between quotes
- * will be doubled.
+ * Copy a string removing the quotes. The first of the single- or
+ * double-quote characters encountered in interpreted as the quote
+ * character. If the string contains two consecutive quotes, onlt
+ * one will be left. Any unquoted spaces will be replaced by zeros.
+ * The routine will return a pointer to the -end- of the string.
+ * The source and the destination can be the same, because the
+ * resulting string will always be shorter than the source, and
+ * copying starts from the beginning of the string.
  */
 
-char *strcpyrq(char *d, const char *s, char qc)
+char *strcpyuq(char *d, char *s)
+{
+	char h, fqc = 0, q = 0;
+
+	while ((h = *s++) != 0)
+	{
+		if ((h == ' ') && !q )
+		{
+			/* If not between quotes, substitute blanks with a single 0 */
+
+			*d++ = 0;
+			while (*s == ' ')
+				s++;
+		}
+
+		/* Is this a quote character (see also va_start_prg() in va.c) */
+
+		else if ((h == fqc) || (!fqc && (h == 39 || h == 34))) /* 34= double quote, 39=single quote */
+		{
+			/* two consequtive quotes mean that one is part of the string */
+
+			if (*s == h)
+				*d++ = *s++;	/* transfer quote as part of the string */
+			else
+			{
+				fqc = 0;		/* reset quote character, just in case */
+
+				if(!q)
+					fqc = h;	/* First encountered quote character */
+
+				q = !q;			/* start or end the quote */
+			}
+		}
+		else
+			*d++ = h;
+	}
+
+	*d++ = 0; /* a trailing zero (termination) byte */
+
+	return d;
+}
+
+
+/*
+ * Copy a string from s to d substituting the quotes character if 
+ * necessary. Return a pointer to the -end- of string.
+ * This function will e.g. convert a string containing items between
+ * single-quotes into a string containing items between double quotes -
+ * or v.v. Any appearance of the char qc between quotes will be doubled.
+ * This routine will also find the first blank character that is not 
+ * quoted.
+ */
+
+char *strcpyrq(char *d, const char *s, char qc, char **fb)
 {
 	char
 		q = 0,				/* nonzero if quoting in effect */
 		fqc = 0,			/* first encountered quote character */
  		*p = (char *)s,		/* a location in source string */
 		*t = d;				/* a location in destination string */
+		*fb = 0L;			/* no blanks found yet */
 
 
 	while(*p)
 	{
-
 		if( ((*p == fqc) || (!fqc && (*p == 39 || *p == 34))) && p[1] != *p)
 		{
 			/* This is one quote character; start or end quoting */
@@ -203,6 +258,11 @@ char *strcpyrq(char *d, const char *s, char qc)
 					p++;			
 				}
 			}
+			else
+			{
+				if(*p == ' ' && *fb == 0L) /* first unquoted blank */
+					*fb = t;
+			}		
 
 			/* or any other character... */
 

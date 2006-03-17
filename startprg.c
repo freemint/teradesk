@@ -48,7 +48,6 @@
 #include "va.h"
 
 
-
 typedef struct
 {
 	LNAME name;
@@ -687,8 +686,9 @@ void start_prg
 		{
 #if _MINT_
 			error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
-#endif
+#else
 			error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
+#endif
 		}
 		else
 			error = exec_com(fname, &cl, buildenv, appl_type);

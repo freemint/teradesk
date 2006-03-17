@@ -42,15 +42,15 @@
 #include "prgtype.h"
 
 
-#define CFG_EXT		"*.INF" /* default configuration-file extension */
-#define PRN_EXT		"*.PRN" /* default print-file extension */
+#define CFGEXT		"*.IN?" /* default configuration-file extension */
+#define PRNEXT		"*.PRN" /* default print-file extension */
 
 void wd_drawall(void);
 
 
 /* 
  * Concatenate a path+filename string "name" from a path "path" and
- * a filename "fname"; Add a "\" between the path andthe name if needed.
+ * a filename "fname"; Add a "\" between the path and the name if needed.
  * Space for resultant string has to be allocated before the call
  * Note: "name" and "path" can be at the same location.
  * A check is made whether total path length is within VLNAME size
@@ -60,12 +60,16 @@ int make_path( char *name, const char *path, const char *fname )
 {
 	long l = (long)strlen(path);
 
-	if(l + (long)strlen(fname) >= (long)sizeof(VLNAME))
+	/* "-1" below because a backlash may be added to the string */
+
+	if(l + (long)strlen(fname) >= (long)sizeof(VLNAME) - 1)
 		return EPTHTL;
 
 	strcpy(name, path);
+
 	if (l && (name[l - 1] != '\\'))
 		name[l++] = '\\';
+
 	strcpy(name + l, fname);
 
 	return 0;
@@ -272,7 +276,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 	backsl = fn_last_backsl(oldn);
 
 	l = backsl - (char *)oldn;				/* length of the path part */
-	tl = l + strlen(newn) + 2L;				/* total new length */
+	tl = l + strlen(newn) + 3L;				/* total new length */
 
 	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
 	{
@@ -280,7 +284,8 @@ char *fn_make_newname(const char *oldn, const char *newn)
 
 		if ( (error = x_checkname( path, newn ) ) == 0 )
 		{
-			strcat(path, bslash);
+			if(*(backsl + 1) != '\0')
+				strcat(path, bslash);
 			strcat(path, newn);
 		}
 		else
@@ -370,7 +375,7 @@ char *locate(const char *name, int type)
 		titles[] = {FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT};
 
 
-	cfgext = strdup( (type == L_PRINTF) ? PRN_EXT : CFG_EXT); /* so that strlwr can be done upon it */
+	cfgext = strdup( (type == L_PRINTF) ? PRNEXT : CFGEXT); /* so that strlwr can be done upon it */
 
 #if _MINT_
 	if (mint && cfgext)
@@ -865,9 +870,11 @@ void force_mediach(const char *path)
 /*
  * Convert a TOS filename (8+3) into a string suitable for display
  * (with left-justified file extension, e.g.: FFFF    XXX without ".")
+ * This routine is also used to create 8-characters-long program name
+ * when searching with appl_find().
  */
 
-static void cv_tos_fn2form(char *dest, const char *source)
+void cv_tos_fn2form(char *dest, const char *source)
 {
 	const char 
 		*s = source;			/* a location in the source string */ 

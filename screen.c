@@ -263,28 +263,28 @@ CfgNest rgb_config, pal_config;
 
 static CfgEntry palette_root[] =
 {
-	{CFG_NEST, 0, "palette", pal_config },
+	{CFG_NEST, "palette", pal_config },
 	{CFG_FINAL},
 	{CFG_LAST}
 };
 
 static CfgEntry palette_table[] =
 {
-	{CFG_HDR, 0, "palette" },
+	{CFG_HDR,  "palette" },
 	{CFG_BEG},
-	{CFG_D,   0, "size", &palsize    },
-	{CFG_NEST,0, "col",  rgb_config	 },
+	{CFG_D,    "size", &palsize    },
+	{CFG_NEST, "col",  rgb_config	 },
 	{CFG_ENDG},
 	{CFG_LAST}
 };
 
 
-static CfgEntry colour_table[] =
+static const CfgEntry colour_table[] =
 {
-	{CFG_HDR, 0, "col"  },
+	{CFG_HDR, "col"  },
 	{CFG_BEG},
-	{CFG_D,   CFG_INHIB, "ind", &cwork.ind }, /* index is not essential, but accept it */
-	{CFG_DDD, 0, "rgb", &cwork.red },
+	{CFG_D | CFG_INHIB, "ind", &cwork.ind }, /* index is not essential, but accept it */
+	{CFG_DDD, "rgb", &cwork.red },
 	{CFG_END},
 	{CFG_LAST}
 };

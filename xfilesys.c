@@ -73,7 +73,7 @@ static long x_retresult(long result)
  * Check if a filename or path + name is valid in this OS.
  * Also check if it fits into buffers.
  * Return 0 if OK.
- * 'path' must exist even if empty; 'name' cen be NULL.
+ * 'path' must exist even if empty; 'name' can be NULL or empty.
  */
 
 int x_checkname(const char *path, const char *name)
@@ -183,27 +183,28 @@ boolean x_exist(const char *file, int flags)
 
 /*
  * Check if a name points to a network object, to be accessed
- * as http:, ftp: or mailto: target. Return TRUE if it is.
+ * as http:, https:, ftp: or mailto: target. Return TRUE if it is.
+ * Comparison is case insensitive.
  */
 
 boolean x_netob(const char *name)
 {
-	if
-	(
-		name[1] != ':' &&	/* dont check further if not */
-		(
-			strnicmp(name, "http:", 5) == 0 || 
-			strnicmp(name, "ftp:", 4) == 0  ||
-			strnicmp(name, "mailto:", 7) == 0 
-		)
-	)
-		return TRUE;
-	else
-		return FALSE;
+	int i;
+	static const char *pfx[] = {"http:", "https:", "ftp:", "mailto:"};
+
+
+	if(*name && name[1] != ':') /* don't check further if not necessary */
+	{
+		for(i = 0; i < 4; i++)
+		{
+			if( strnicmp(name, pfx[i], strlen(pfx[i])) )
+				return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
-
-/* Directory functions */
 
 /* 
  * Set a directory path 
@@ -337,7 +338,7 @@ char *x_fullname(const char *file, int *error)
 		*error = ENSMEM;
 	else
 	{
-		strcpy(buffer, file);
+		strsncpy(buffer, file, sizeof(VLNAME));
 
 		if ((*error = _fullname(buffer)) != 0)
 		{
@@ -375,9 +376,10 @@ int x_mklink(const char *linkname, const char *refname)
 int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 {
 	char *slash;
-	int err;
+	int err = EACCDN;
 
-	err =  xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
+	if(!x_netob(linkname))
+		err =  xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
 
 	if (err == 0 && !x_netob(tgt))
 	{
@@ -390,8 +392,8 @@ int x_rdlink( int tgtsize, char *tgt, const char *linkname )
 
 
 /*
- * Prepend a path to a link target definition, if it is not given.
- * Return a path + name string (memory allocated here).
+ * Prepend path of the link 'linkname' to a link target definition 'tgtname', 
+ * if it is not given. Return a path + name string (memory allocated here).
  * Do not add anything for a network object
  */
 

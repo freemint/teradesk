@@ -52,7 +52,7 @@ boolean onfile = FALSE; /* true if app is started to open a file */
 
 int trash_or_print(ITMTYPE type);
 
-
+static const char qc = 34;
 
 /*
  * Handle the Show/Edit/Run... dialog. Return button index.
@@ -125,6 +125,7 @@ boolean item_open
 		ename;			/* name of the item specified in "Open" */
 
 	char
+		*qline = NULL,	/* requoted content of openline */
 		*blank,			/* pointer to a ' ' in the name */ 
 		*cmline = NULL;	/* Command passed to application from "Open" dialog" */
 
@@ -172,7 +173,7 @@ boolean item_open
 
 		/* Is this really needed ? */
 
-		if ( realname && type != ITM_NOTUSED && type != ITM_NETOB && !trash_or_print(type) )
+		if ( realname && type != ITM_NOTUSED && !trash_or_print(type) )
 			type = diritem_type( (char *)realname );
 
 		 /* If "Alternate" is pressed a program is treated like ordinary file */
@@ -226,23 +227,32 @@ boolean item_open
 
 				cmline = (char *)empty; /* first, cmline points to an empty string */
 
-				if ( (blank = strchr(openline,' ') ) != NULL )
+				qline = malloc_chk(strlenq(openline));
+				strcpyrq(qline, openline, qc, &blank);
+
+				if(blank)
 				{
 					*blank = 0;
-					cmline = blank;
-					cmline++; /* now cmline points to after the first blank */
+					cmline = blank + 1; /* now cmline points to after the first blank */
 				}
+
+				/* Unquote item name */
+
+				strcpyuq(qline, qline);
 
 				/* Convert item name to uppercase, keep the command as it is */
 #if _MINT_
 				if (!mint)
 #endif
-					strupr(openline);
+					strupr(qline);
 
 				/* Find the real name of the item */
 
-				if ((realname = x_fllink( openline )) == NULL )
+				if ((realname = x_fllink(qline)) == NULL )
+				{
+					free(qline);
 					return FALSE;
+				}
 					
 				/* Restore complete line (for the next opening) */
 
@@ -267,7 +277,7 @@ boolean item_open
 		 * Try to divine which type of item this is. This is done
 		 * by analyzing the name and by examining the object's
 		 * attributes- if the object does not exist, there will
-		 * be an error warning
+		 * be an error warning.
 		 */
 
 		type = diritem_type( (char *)realname );
@@ -278,6 +288,7 @@ boolean item_open
 	if(realname && ((error = x_checkname(realname, NULL)) != 0))
 	{
 		free(realname);
+		free(qline);
 		xform_error(error);
 		return FALSE;
 	}
@@ -335,6 +346,7 @@ boolean item_open
 				if (check_drive( (path[0] & 0xDF) - 'A') == FALSE)
 				{
 					free(path);
+					free(qline);
 					return FALSE;
 				}
 				else
@@ -445,5 +457,6 @@ boolean item_open
 			deselect = FALSE;
 	}
 
+	free(qline);
 	return deselect;
 }

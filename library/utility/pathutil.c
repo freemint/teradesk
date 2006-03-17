@@ -73,6 +73,7 @@ void strip_name(char *to, const char *from)
  * s = source, t=target, ww= available target length
  * Note 1: "ww" accomodates the termination byte as well
  * Note 2: At most sizeof(XLNAME) - 1 characters will be considered
+ * Source and destination can be at the same location.
  */
 
 

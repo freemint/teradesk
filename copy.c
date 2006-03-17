@@ -776,8 +776,6 @@ static int filecopy(const char *sname, const char *dname, XATTR *src_attrib, DOS
 			error = fh1;
 		else
 		{
-			/* Note: further code changed significantly for V3.6 */
-
 			fh2 = x_create(dname, src_attrib);
 			
 			if(fh2 < 0 )
@@ -884,8 +882,8 @@ int copy_error(int error, const char *name, int function)
 		case CMD_TOUCH:
 			msg = MESHOWIF;
 			break;
-		default:
-			msg = 0;
+		default:			/* CMD_PRINT, CMD_PRINTDIR */
+			msg = MEPRINT;
 	}
 
 	/* a table would have been even better above ! */
@@ -1331,13 +1329,16 @@ static int hndl_nameconflict
  * Handle the dialog for name conflict in case of file rename 
  */
 
-static int hndl_rename(char *name)
+static int hndl_rename(char *name, XATTR *attr)
 {
 	int 
 		oldmode,
 		button;
 
 	/* Write filenames to dialog fields */
+
+	dir_briefline(nameconflict[NCNINFO].ob_spec.tedinfo->te_ptext, attr);
+	dir_briefline(nameconflict[NCCINFO].ob_spec.tedinfo->te_ptext, attr);
 
 	cv_fntoform(nameconflict, OLDNAME, name);
 	cv_fntoform(nameconflict, NEWNAME, name);
@@ -1545,7 +1546,7 @@ static int copy_file
 
 	/* Check for name change (open dialog) */
 
-	if (rename_files && ((result = hndl_rename(name)) != 0))
+	if (rename_files && ((result = hndl_rename(name, attr)) != 0))
 		return (result == XSKIP) ? 0 : result;
 
 	/* 
@@ -1762,7 +1763,7 @@ static int create_folder
 
 	strcpy(name, fn_get_name(sname)); 
 
-	if (rename_files && ((result = hndl_rename(name)) != 0))
+	if (rename_files && ((result = hndl_rename(name, attr)) != 0))
 		return result;
 
 	/* Is the new name perhaps too long ?  */

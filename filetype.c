@@ -453,9 +453,9 @@ void ft_default(void)
 
 CfgEntry ft_table[] =
 {
-	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
+	{CFG_HDR, NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_S,   0, "mask", fwork.filetype },
+	{CFG_S,   "mask", fwork.filetype },
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -522,9 +522,9 @@ CfgNest one_ftype
 
 CfgEntry filetypes_table[] =
 {
-	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
+	{CFG_HDR,  NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_NEST,0, NULL, one_ftype },		/* Repeating group */
+	{CFG_NEST, NULL, one_ftype },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };

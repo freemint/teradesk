@@ -64,8 +64,6 @@
 
 
 #define TOFFSET			2
-#define ICON_W			80		/* icon width (pixels) */
-#define ICON_H			46		/* icon height (pixels) */
 
 #define MAXLENGTH		128		/* Maximum length of a filename to display in a window. HR: 128 */
 #define MINLENGTH		12		/* Minimum length of a filename to display in a window. */
@@ -330,7 +328,7 @@ void revord(NDTA **buffer, int n)
 /*
  * Function for sorting of a directory by desired key (no drawing here)
  * Note: it would be a little shorter to have a table of addresses
- * and refer to routines by indices. But only about 16 bytes would be saved.
+ * and refer to routines by indices. But only a few bytes would be saved.
  */
 
 static void sort_directory( DIR_WINDOW *w, int sort)
@@ -2475,8 +2473,10 @@ boolean dir_add_window
 	while ((j < MAXWINDOWS - 1) && dirwindows[j].used )
 		j++;
 
-	if((error = x_checkname(path, empty)) != 0)
+	if((error = x_checkname(path, thespec)) != 0)
 	{
+		/* path or filespec is too long or wrong somehow */
+
 		xform_error(error);
 	}
 	else if (dirwindows[j].used)
@@ -2611,13 +2611,13 @@ boolean dir_onalt(int key, WINDOW *w)
 
 static CfgEntry dirw_table[] =
 {
-	{CFG_HDR, 0, "dir" },
+	{CFG_HDR, "dir" },
 	{CFG_BEG},
-	{CFG_D,   0, "indx", &that.index },
-	{CFG_S,   0, "path",  that.path	 },
-	{CFG_S,   0, "mask",  that.spec	 },
-	{CFG_D,   0, "xrel", &that.px	 },
-	{CFG_L,   0, "yrel", &that.py	 }, 
+	{CFG_D,   "indx", &that.index },
+	{CFG_S,   "path", that.path  },
+	{CFG_S,   "mask", that.spec  },
+	{CFG_D,   "xrel", &that.px	  },
+	{CFG_L,   "yrel", &that.py	  }, 
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -3684,6 +3684,7 @@ void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type, size_t size,
 ITMTYPE diritem_type(char *fullname )
 {
 	XATTR attr;
+	int error;
 
 	attr.attr = 0;
 
@@ -3704,17 +3705,22 @@ ITMTYPE diritem_type(char *fullname )
 
 	/* Get info on the object itself, don't follow links */
 
-	if ( x_attr(  1, FS_INQ, fullname, &attr )  >= 0 )
+	if((error = x_checkname(fullname, NULL)) == 0)
 	{
-		if ( prg_isprogram(fn_get_name(fullname)) )
-			return ITM_PROGRAM;
-		if ( attr.attr & FA_SUBDIR ) 
-			return ITM_FOLDER;
-		else if ( !( attr.attr & FA_VOLUME) )
-			return ITM_FILE;
+		if (x_attr(  1, FS_INQ, fullname, &attr )  >= 0 )
+		{
+			if ( prg_isprogram(fn_get_name(fullname)) )
+				return ITM_PROGRAM;
+			if ( attr.attr & FA_SUBDIR ) 
+				return ITM_FOLDER;
+			else if ( !( attr.attr & FA_VOLUME) )
+				return ITM_FILE;
+		}
+		else
+			alert_iprint(MNOITEM); /* item not found or item type unknown */
 	}
 	else
-		alert_iprint(MNOITEM); /* item not found or item type unknown */
+		xform_error(error);
 
 	return ITM_NOTUSED;
 }

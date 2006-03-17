@@ -289,8 +289,6 @@ static boolean isfilenet(ITMTYPE type)
  * and also for network objects.
  * This is needed after changes in the list of executable filetypes,
  * or after a link is made to reference a network object.
- * Also used to fix compatibility issues for configuration files
- * earlier than V3.60
  */
 
 void icn_fix_ictype(void)
@@ -1031,6 +1029,7 @@ static boolean icn_xlist(WINDOW *w, int *nsel, int *nvis, int **sel_list, ICND *
 	int i, *list, n;
 	ICND *icnlist;
 
+
 	if (!icn_list(desk_window, nsel, sel_list))
 		return FALSE;
 
@@ -1058,7 +1057,6 @@ static boolean icn_xlist(WINDOW *w, int *nsel, int *nvis, int **sel_list, ICND *
 
 	free(*sel_list);
 	return FALSE;
-
 }
 
 
@@ -1180,6 +1178,7 @@ static void icn_set_update(WINDOW *w, wd_upd_type type, const char *fname1, cons
 	int i;
 	ICON *icon = desk_icons;
 	char *new;
+
 
 	for (i = 0; i < max_icons; i++)
 	{
@@ -1366,6 +1365,7 @@ int rsrc_icon(const char *name)
 	int i = 0;
 	CICONBLK *h;
 
+
 	do
 	{
 		OBJECT *ic = icons + i;
@@ -1405,6 +1405,7 @@ int rsrc_icon_rscid ( int id, char *name )
 	char *nnn = NULL;
 	int ic;
 
+
 	if (id)
 		nnn = get_freestring(id);
 
@@ -1429,6 +1430,7 @@ int rsrc_icon_rscid ( int id, char *name )
 static void icn_disklabel(int drive, char *ilabel)
 {
 	INAME vlabel;
+
 
 	if(drive > 1 && *ilabel == 0 && x_getlabel(drive, vlabel) == 0)
 		strcpy(ilabel, vlabel);
@@ -1582,7 +1584,6 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 	free(h);
 
 	return -1;
-
 }
 
 
@@ -1619,6 +1620,7 @@ static void get_iconpos(int *x, int *y)
 {
 	int dummy, mx, my;
 
+
 	wind_update(BEG_MCTRL);
 	graf_mouse(USER_DEF, &icnm);
 	evnt_button(1, 1, 1, &mx, &my, &dummy, &dummy);
@@ -1635,6 +1637,7 @@ static void get_iconpos(int *x, int *y)
 static ITMTYPE get_icntype(void)
 {
 	int object = xd_get_rbutton(addicon, ICBTNS);
+
 
 	switch (object)
 	{
@@ -1658,6 +1661,7 @@ static ITMTYPE get_icntype(void)
 static int set_icntype(ITMTYPE type)
 {
 	int startobj, object;
+
 
 	switch (type)
 	{
@@ -1713,6 +1717,7 @@ void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
 {
 	OBJECT *h1, *ic = icons + slider->line;
 
+
 	h1 = addicon + ICONDATA;
 	h1->ob_type = ic->ob_type;
 	h1->ob_spec = ic->ob_spec;
@@ -1754,6 +1759,7 @@ int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpatt, int bck
 
 	static const char 
 		so[] = {DRIVEID, ICNLABEL, ICNLABEL, IFNAME};
+
 
 	/* Background colour and pattern */
 
@@ -1888,6 +1894,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 		*name,
 		*nameonly,
 		*ifname = NULL;
+
 
 	get_iconpos(&x, &y);
 	rsc_title(addicon, AITITLE, DTADDICN);
@@ -2341,17 +2348,17 @@ static ICONINFO this;
 
 CfgEntry Icon_table[] =
 {
-	{CFG_HDR,0,"icon" },
+	{CFG_HDR, "icon" },
 	{CFG_BEG},
-	{CFG_S, 0, "name", this.ic.icon_name	},
-	{CFG_S, 0, "labl", this.ic.label		},
-	{CFG_D, 0, "type", &this.ic.item_type	},
-	{CFG_D, 0, "tgtt", &this.ic.tgt_type	},
-	{CFG_D, 0, "link", &this.ic.link		},
-	{CFG_D, 0, "driv", &this.ic.icon_dat.drv},
-	{CFG_S, 0, "path", this.name			},
-	{CFG_D, 0, "xpos", &this.ic.x			},
-	{CFG_D, 0, "ypos", &this.ic.y			},
+	{CFG_S,  "name", this.ic.icon_name	},
+	{CFG_S,  "labl", this.ic.label		},
+	{CFG_D,  "type", &this.ic.item_type	},
+	{CFG_D,  "tgtt", &this.ic.tgt_type	},
+	{CFG_D,  "link", &this.ic.link		},
+	{CFG_D,  "driv", &this.ic.icon_dat.drv},
+	{CFG_S,  "path", this.name			},
+	{CFG_D,  "xpos", &this.ic.x			},
+	{CFG_D,  "ypos", &this.ic.y			},
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -2407,13 +2414,15 @@ static CfgNest icon_cfg
 
 		if ( *error == 0 )
 		{
-			if (   this.ic.icon_name[0] == 0 
-				|| ((this.ic.item_type < ITM_DRIVE
-				|| this.ic.item_type > ITM_FILE)
-				&& this.ic.item_type != ITM_NETOB) 
+			ITMTYPE it = this.ic.item_type;
+
+			if 
+			(   
+				this.ic.icon_name[0] == 0 
+				|| ((it < ITM_DRIVE || it > ITM_FILE) && it != ITM_NETOB) 
 				|| this.ic.icon_dat.drv > 'Z' - 'A'
-				)
-					*error = EFRVAL;
+			)
+				*error = EFRVAL;
 			else
 			{
 				int nl, icon;
@@ -2423,23 +2432,23 @@ static CfgNest icon_cfg
 
 				icon = rsrc_icon(this.ic.icon_name); /* find by name */
 				if (icon < 0)
-					icon = default_icon(this.ic.item_type); /* display an alert */
+					icon = default_icon(it); /* display an alert */
 
 				nl = (int)strlen(this.name);
 
 				if( nl ) 
 					name = strdup(this.name);
-				else if(isfilenet(this.ic.item_type))
+				else if(isfilenet(it))
 					name = strdup(empty);
 
 				if (nl == 0 || name != NULL)
 				{
 					if (this.ic.tgt_type == 0) /* for smaller config files */
-						this.ic.tgt_type = this.ic.item_type;
+						this.ic.tgt_type = it;
 
 					*error = add_icon
 							(
-								(ITMTYPE)this.ic.item_type,
+								it,
 								(ITMTYPE)this.ic.tgt_type, 
 								this.ic.link,
 								icon,
@@ -2465,9 +2474,9 @@ static CfgNest icon_cfg
 
 static CfgEntry DskIcons_table[] =
 {
-	{CFG_HDR,0,"deskicons" },
+	{CFG_HDR,  "deskicons" },
 	{CFG_BEG},
-	{CFG_NEST,0,"icon", icon_cfg },		/* Repeating group */
+	{CFG_NEST, "icon", icon_cfg },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -2493,31 +2502,26 @@ CfgNest dsk_config
 
 boolean load_icons(void)
 {
-	const char 
-		*colour_irsc = "cicons.rsc", 	/* name of the colour icons file */
-		*mono_irsc = "icons.rsc";		/* name of the mono icons file */
-
 	void 
 		**svtree = _GemParBlk.glob.ptree,
 		*svrshdr = _GemParBlk.glob.rshdr;
 
-	int 
-		error;
 
 	/* 
-	 * Geneva 4 returns information that it supports
-	 * colour icons, but that doesn't seem to work; thence a fix below:
-	 * if there is no colour icons file fall back to black/white.
+	 * Geneva 4 returns information that it supports colour icons, but 
+	 * that doesn't seem to work; thence a fix below:
+	 * if reading of colour icons file fails, then fall back to black/white.
 	 * Therefore, in Geneva 4 (and other similar cases, if any), remove 
 	 * cicons.rsc from TeraDesk folder. Geneva 6 seems to work ok.
+	 * Colour icons can be loaded only if AES 4 has been detected.
 	 */
 
-	if (!xd_aes4_0 || (xshel_find(colour_irsc, &error) == NULL))
+	if (!xd_aes4_0 || !rsrc_load("cicons.rsc")) 	/* try to load colour icons */
 		colour_icons = FALSE;
 
-	if (rsrc_load( colour_icons ? colour_irsc : mono_irsc) == 0)
+	if (!colour_icons && !rsrc_load("icons.rsc"))	/* try to load mono icons */
 	{
-		alert_abort(MICNFRD); 
+		alert_abort(MICNFRD); 	/* no icons loaded */
 		return FALSE;
 	}
 	else
@@ -2621,6 +2625,10 @@ boolean dsk_init(void)
 }
 
 
+/*
+ * Increment position for placiong an icon on the screen
+ */
+
 static void incr_pos(int *x, int *y)
 {
 	if ((*x += 1) > m_icnx)
@@ -2633,7 +2641,7 @@ static void incr_pos(int *x, int *y)
 
 /*
  * Add missing disk icons A to Z. Icon and label are the same for all
- * disks (i.e. it is possible here that a floppy gets the hard-disk icon.
+ * disks (i.e. it is possible here that a floppy gets the hard-disk icon).
  * If icon name (label) is not specified, disk volume label is read
  * (except for A and B disks).
  */
@@ -2716,7 +2724,6 @@ void dsk_default(void)
 	y++;
 	ic = rsrc_icon_rscid ( PRINAME, iname );
 	add_devicon(ITM_PRINTER, ic, iname, 0, 0, y);	
-
 	y++;
 	ic = rsrc_icon_rscid ( TRINAME, iname );
 	add_devicon(ITM_TRASH, ic, iname, 0, 0, y);

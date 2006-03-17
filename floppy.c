@@ -27,9 +27,9 @@
 #include <np_aes.h>
 #include <vdi.h> 
 #include <error.h>
-#include <xerror.h>
 #include <library.h>
 #include <xdialog.h>
+#include <xerror.h>
 #include <boolean.h>
 
 #include "resource.h"
@@ -102,25 +102,10 @@ void cctoi(unsigned char *out, unsigned char *in)
 
 
 /*
- * Return additional text string about XBIOS error.
- * Currently only for write-protect.
- */
-
-char *xbioserr(long istat)
-{
-	if ( istat == WRITE_PROTECT )
-		return get_freestring( TWPROT );
-	else
-		return (char *)empty;
-}
-
-
-/*
  * Write or read one complete track (with verify)
  * Note: there are conflicting data about these functions.
  * In tos.h, xbios() is defined as long, elsewhere as int;
- * Also, filler is sometime int, sometime long, sometime *long!
- * 
+ * Also, filler is somewhere int, elsewhere long, elsewhere *long!
  */
 
 long onetrack
@@ -133,15 +118,51 @@ long onetrack
 	int spt		/* number of sectors to read/write */
 )
 {
-	long filler = 0L; /* required but unused filler */
-	long istat;		/* xbios return status */
+	long 
+		filler = 0L,	/* required but unused filler */
+		istat;			/* xbios return status */
+
+
+	again:;
 
 	/* These xbios calls are Flopwr() / Floprd() and Flopver() */
 
 	istat = xbios( what, buf, filler, devno, 1, itrack, iside, spt );
-	if ( !istat )
-		istat = xbios( 19, buf, filler, devno, 1, itrack, iside, spt );
+	
+	if(!istat && what != 19)
+	{
+		what = 19;
+		goto again;
+	}
+
 	return istat;
+}
+
+
+/*
+ * Check whether number of sides, tracks, etc. is sensible.
+ * Return TRUE if OK, FALSE if not. 
+ */
+
+static boolean checktracks
+(
+	int tsides,		/* Number of sides */
+	int ttracks,	/* Number of tracks */
+	int tspt,		/* Number of sectors per track */
+	int mspt,		/* max. number of sectors per track */
+	int tbps		/* Number of bytes per sector */
+)
+{
+	if 
+	( 
+		( tsides  <  1  ) || ( tsides > 2 )   ||	/* number of sides: 1 or 2 */
+		( ttracks <  1 )  || ( ttracks > 84 ) ||	/* 84=extreme physical limit, most often it is 83 */
+		( tspt < 3 )      || ( tspt > mspt )  ||	/* mspt depends on disk type; max. 40 for ED disk */
+		( tbps < 128 )    || ( tbps > 4096 )		/* sensible values for bytes per sector? usually 512 */
+	)
+		return FALSE;
+
+	return TRUE;
 }
 
 
@@ -149,7 +170,7 @@ long onetrack
  * Aux. sze-optimization routine
  */
 
-int fl_atoi(int obj)
+static int fl_atoi(int obj)
 {
 	return atoi(fmtfloppy[obj].ob_spec.tedinfo->te_ptext);
 }
@@ -204,7 +225,6 @@ void formatfloppy
 	    
 	char 
 		drive[4],		/* string with drive id */
-		*errtxt,		/* errortext */
 		fmtsel;     	/* flag for selected format type */
 
 	unsigned char 
@@ -215,7 +235,7 @@ void formatfloppy
 		fat0;			/* first byte of each FAT */
 
 	static const unsigned char 
-		hdr[]=			/* MS-DOS compatible header */
+		hdr[]=			/* MS-DOS compatible header of the boot sector */
 		{
 			0xeb,	/*  [0] */
 			0x34,	/*  [1] maybe should be 0x3c for HD floppy? */
@@ -280,12 +300,12 @@ void formatfloppy
 	if ( format )	/* format disk */
 	{
 		rsc_title(fmtfloppy, FLTITLE, DTFFMT);		/* title */
-		obj_hide(fmtfloppy[FTGTDRV]);  	/* hide "to ... " text */
+		obj_hide(fmtfloppy[FTGTDRV]);  				/* hide "to ... " text */
 		xd_set_child(fmtfloppy, FFTYPE, 1);
-		obj_unhide(fmtfloppy[FPAR3]); 	/* show editable fields */
-		obj_unhide(fmtfloppy[FLABEL]); 	/* show label field */
-		obj_enable(fmtfloppy[FLABEL]); 	/* it is editable */
-		tdevno = (int)fdrive - 'A';		/* target drive */
+		obj_unhide(fmtfloppy[FPAR3]); 				/* show editable fields */
+		obj_unhide(fmtfloppy[FLABEL]); 				/* show label field */
+		obj_enable(fmtfloppy[FLABEL]); 				/* it is editable */
+		tdevno = (int)fdrive - 'A';					/* target drive */
 	}
 	else 			/* copy disk */
 	{
@@ -419,11 +439,12 @@ void formatfloppy
 			  
 				tbps = 512; /* always 512 bytes per sector */
 		  
-				if ( ( tsides  <  1  ) || ( tsides > 2 )   ||
-				   ( ttracks <  1 ) || ( ttracks > 84 ) || /* 84=extreme physical limit, most often it is 83 */
-				   ( tspt < 3 )  || ( tspt > mspt ) ||     /* mspt depends on disk type */
-				   ( fatsize < 1 ) || ( fatsize > ((tspt - 1) / 2) ) || /* two fats + sector 0 fit on a track */
-				   ( dirsize < 32) || ( dirsize > ( (tspt * tbps) / 32 - 1) ) ) /* 32 byes per entry */
+				if
+				(
+					!checktracks(tsides, ttracks, tspt, mspt, tbps) ||
+					( fatsize < 1 ) || ( fatsize > ((tspt - 1) / 2) ) || /* two fats + sector 0 fit on a track */
+					( dirsize < 32) || ( dirsize > ( (tspt * tbps) / 32 - 1) ) /* 32 bytes per entry */
+				)
 				{
 					alert_iprint ( MFPARERR );
 					goto again; /* go back to dialog if params not correct */
@@ -472,7 +493,7 @@ void formatfloppy
 					{       
 						for ( iside = 0; iside < tsides; iside++ )
 						{
-   	     				retry: /* come here for a retry after formatting error */
+	   	     				retry: /* come here for a retry after formatting error */
 
 							/*
 							 * Calling xbios... produces slightly smaller code
@@ -489,8 +510,7 @@ void formatfloppy
 							{
 								/* Disk protected is the most common error */	
 
-								errtxt = xbioserr(istat);
-								button = alert_printf( 3, AFMTERR, (int)istat, itrack, errtxt );
+								button = alert_printf( 3, AFMTERR, itrack, get_message((int)istat) );
 
 								switch ( button )
 								{
@@ -523,14 +543,13 @@ void formatfloppy
 
 					memclr( sect0, (size_t)( tspt * tbps * 2 ) );
        
-					/* Create a MS-DOS-compatible header */
+					/* Create a MS-DOS-compatible header of 17 bytes */
 
 					memcpy(sect0, hdr, 17);
 
-					serial = xbios(17);	 			  /* random serial number */					  										/* produce random number */
-					memcpy(&sect0[0x08], &serial, 3); /* turned around, but doesn't matter */
-                              
-					sect0[0x0c] = (char)(tbps >> 8); /* bytes/128 per sector */
+					serial = xbios(17);	 				/* random serial number */					  										/* produce random number */
+					memcpy(&sect0[0x08], &serial, 3);	/* turned around, but doesn't matter */
+					sect0[0x0c] = (char)(tbps >> 8);	/* bytes/128 per sector */
 
 					cctoi(&sect0[0x11], (unsigned char *)(&dirsize));
 
@@ -552,8 +571,8 @@ void formatfloppy
 					sect0[0x1a] = (unsigned char)tsides;    /* sides */
 					strcpy ( (char *)(sect0 + 0x20L), " Formatted by TeraDesk " );
 
-					i = tbps;					/* locate at start of sector 1 */	
-					sect0[i++] = fat0;			/* start of first FAT */
+					i = tbps;				/* locate at start of sector 1 */	
+					sect0[i++] = fat0;		/* start of first FAT */
 					sect0[i++] = 0xff;
 					sect0[i++] = 0xff;
         
@@ -579,25 +598,20 @@ void formatfloppy
 
 						if ( istat ) 
 							goto abortfmt;
-						else
-						{
-							finished = 1;
-							goto endall;
-						} /* if istat... */
-					}	  /* for itrack... */        
+					}   
+
+					finished = 1;
+					goto endall;   
 				}
 				else /* disk copy */
 				{
-					int tbpt; /* bytes pee track */
+					int tbpt; /* bytes per track */
 
 					/* Insert target disk, read boot sector */
         
 					drive[0] = 'A' + tdevno; /* target drive letter */
 					istat = onetrack(8, sect0, tdevno, 0, 0, 1);
  
-					if ( istat ) 
-						goto abortfmt;
-					
 					/* Decode format parameters from boot sector */	
 
 					cctoi((unsigned char *)(&tbps), &sect0[0x0b]);
@@ -607,6 +621,12 @@ void formatfloppy
 
 					ttracks = sectors /( tspt * tsides );
           
+					if(!checktracks(tsides, ttracks, tspt, 40, tbps))
+						istat = UNKNOWN_MEDIA;
+
+					if ( istat ) 
+						goto abortfmt;
+
 					/* Insert source disk, read boot sector */
         
 					drive[0] = 'A' + sdevno; /* source drive letter */
@@ -624,7 +644,7 @@ void formatfloppy
 					stracks = sectors / (sspt * ssides);
 
 					/*  
-					 *  Do source and target  diskshave the same format?
+					 *  Do source and target  disks have the same format?
 					 *  If not, abort all.
 					 *  Note: this will, unfortunately, prevent copying of "data" disks
 					 * 	without a proper boot sector. Maybe it should be disabled?  
@@ -684,13 +704,14 @@ void formatfloppy
  
 								if ( istat ) 
 									goto abortfmt;
+
 								if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
-								goto endall;
+									goto endall;
 							}				    
 
 							prdisp ( i + j + itrack, ttracks * 2 ); /* display progress */
- 						
 						}
+
 						i = i + n;
 				  
 						/* Write and verify a number of tracks, display progress */
@@ -704,14 +725,15 @@ void formatfloppy
 
 								if ( istat ) 
 									goto abortfmt;
+
 								if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 									goto endall;	
 							}
 				    
 							prdisp ( i + j + itrack, ttracks * 2 );	/* diplay progress */			    
 						}
-						j = j + n;
 
+						j = j + n;
 					} /* ipass */
 	  
 					finished = 1;    
@@ -722,18 +744,14 @@ void formatfloppy
     
 		 	/* 
 			 * Come here to report diverse XBIOS errors 
-			 * (" error while accessing floppy...")
+			 * (" Error while accessing floppy...")
 			 * Specially recognize protected disk as the most common error. 
 			 */
     
 			abortfmt:	
 
-			if ( (button == 1 ) && !finished ) /* if started but not finished */
-			{
-				errtxt = xbioserr(istat);
-				if ( istat )
-					alert_printf( 1, AERRACC, (int)istat, errtxt ); 
-			}
+			if ( (button == 1 ) && !finished && istat ) /* if started but not finished */
+				alert_printf( 1, AERRACC, get_message((int)istat) ); 
 		}
 
 		/* Final activities... */
@@ -752,10 +770,12 @@ void formatfloppy
 		}
 #endif
 
-		/* Close the dialog, free buffer */
+		/* Close the dialog */
   
 		xd_close(&fdinfo);
 	}
+
+	/* Free the buffer that was created for floppy data */
 
 	free(sect0);
 

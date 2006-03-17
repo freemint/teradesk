@@ -499,10 +499,10 @@ static ICONTYPE
 
 static CfgEntry icnt_table[] =
 {
-	{CFG_HDR, 0, "itype" },
+	{CFG_HDR, "itype" },
 	{CFG_BEG},
-	{CFG_S,   0, "mask", iwork.type		 },
-	{CFG_S,   0, "name", iwork.icon_name },
+	{CFG_S,   "mask", iwork.type		 },
+	{CFG_S,   "name", iwork.icon_name },
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -569,9 +569,9 @@ static CfgNest one_itype
 
 static CfgEntry icngrp_table[] =
 {
-	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
+	{CFG_HDR,  NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_NEST,0, "itype", one_itype  },		/* Repeating group */
+	{CFG_NEST, "itype", one_itype  },		/* Repeating group */
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -638,11 +638,11 @@ static CfgNest program_cfg
 
 static CfgEntry icontypes_table[] =
 {
-	{CFG_HDR, 0, "icontypes" },
+	{CFG_HDR,  "icontypes" },
 	{CFG_BEG},
-	{CFG_NEST,0, "files",     file_cfg    },		/* group */
-	{CFG_NEST,0, "folders",   folder_cfg  },		/* group */
-	{CFG_NEST,0, "programs",  program_cfg },		/* group */
+	{CFG_NEST, "files",     file_cfg    },		/* group */
+	{CFG_NEST, "folders",   folder_cfg  },		/* group */
+	{CFG_NEST, "programs",  program_cfg },		/* group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };

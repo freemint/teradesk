@@ -47,7 +47,8 @@ typedef struct
 char *strsncpy(char *dst, const char *src, size_t len);	
 char *strcpyj(char *dst, const char *src, size_t len);
 char *strcpyq(char *d, const char *s, char qc);
-char *strcpyrq(char *d, const char *s, char qc);
+char *strcpyuq(char *d, const char *s);
+char *strcpyrq(char *d, const char *s, char qc, char **fb);
 size_t strlenq(const char *name);
 
 int min(int x, int y);

@@ -124,6 +124,10 @@ char
 	*palname,		/* name of colour palette file (teradesk.pal)    */
 	*global_memory;	/* Globally available buffer for passing params */
 
+static char
+	*definfname;	/* name of the initial configuration file at startup */
+
+
 #if _LOGFILE
 FILE
 	*logfile;
@@ -173,15 +177,15 @@ CfgNest
 
 static const CfgEntry Config_table[] =
 {
-	{CFG_NEST, 0, "options",	 opt_config	 },
-	{CFG_NEST, 0, "shortcuts",	 short_config},
-	{CFG_NEST, 0, "filetypes",	 ft_config	 },
-	{CFG_NEST, 0, "apptypes",    prg_config	 }, /* must be before icons and apps */
-	{CFG_NEST, 0, "icontypes",	 icnt_config },
-	{CFG_NEST, 0, "deskicons",	 dsk_config	 },
-	{CFG_NEST, 0, "applications",app_config	 },
-	{CFG_NEST, 0, "windows",	 wd_config	 },
-	{CFG_NEST, 0, "avstats",	 va_config   },
+	{CFG_NEST, "options",	 opt_config	 },
+	{CFG_NEST, "shortcuts",	 short_config},
+	{CFG_NEST, "filetypes",	 ft_config	 },
+	{CFG_NEST, "apptypes",    prg_config	 }, /* must be before icons and apps */
+	{CFG_NEST, "icontypes",	 icnt_config },
+	{CFG_NEST, "deskicons",	 dsk_config	 },
+	{CFG_NEST, "applications",app_config	 },
+	{CFG_NEST, "windows",	 wd_config	 },
+	{CFG_NEST, "avstats",	 va_config   },
 	{CFG_FINAL}, /* file completness check */
 	{CFG_LAST}
 };
@@ -196,36 +200,36 @@ static const CfgEntry Config_table[] =
 
 CfgEntry Options_table[] =
 {
-	{CFG_HDR,0,"options" },
+	{CFG_HDR, "options" },
 	{CFG_BEG},
 	/* file version */
-	{CFG_X, 0, "infv", &options.version	    }, 		/* file version */
+	{CFG_X, "infv", &options.version	    }, 		/* file version */
 	/* desktop preferences */
-	{CFG_X, 0, "save", &options.sexit		},		/* what to save at exit */
-	{CFG_X, 0, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
-	{CFG_X, 0, "xpre", &options.xprefs		}, 		/* bit flags !!! diverse prefs */
+	{CFG_X, "save", &options.sexit		},		/* what to save at exit */
+	{CFG_X, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
+	{CFG_X, "xpre", &options.xprefs		}, 		/* bit flags !!! diverse prefs */
 	/* Copy preferences */
-	{CFG_X, 0, "pref", &options.cprefs		}, 		/* bit flags !!! copy prefs */
+	{CFG_X, "pref", &options.cprefs		}, 		/* bit flags !!! copy prefs */
 	/* sizes of diverse items */
-	{CFG_D, 0, "buff", &options.bufsize	    }, 		/* copy buffer size */
-	{CFG_L, 0, "maxd", &options.max_dir		},		/* initial dir size */
-	{CFG_D, 0, "plin", &options.plinelen	},		/* printer line length */
-	{CFG_D, 0, "tabs", &options.tabsize	    }, 		/* tab size    */
-	{CFG_D, 0, "cwin", &options.cwin	    }, 		/* compare match size */
+	{CFG_D, "buff", &options.bufsize	    }, 		/* copy buffer size */
+	{CFG_L, "maxd", &options.max_dir		},		/* initial dir size */
+	{CFG_D, "plin", &options.plinelen	},		/* printer line length */
+	{CFG_D, "tabs", &options.tabsize	    }, 		/* tab size    */
+	{CFG_D, "cwin", &options.cwin	    }, 		/* compare match size */
 	/* settings of the View menu */
-	{CFG_H, 0, "mode", &options.mode		}, 		/* text/icon mode */
-	{CFG_H, 0, "aarr", &options.aarr		}, 		/* auto arrange */
-	{CFG_H, 0, "sort", &options.sort		}, 		/* sorting key */
-	{CFG_X, 0, "attr", &options.attribs	    }, 		/* Bit flags !!! global attributes to show */
-	{CFG_X, 0, "flds", &options.fields		},		/* Bit flags !!! dir. fields to show  */
+	{CFG_H, "mode", &options.mode		}, 		/* text/icon mode */
+	{CFG_H, "aarr", &options.aarr		}, 		/* auto arrange */
+	{CFG_H, "sort", &options.sort		}, 		/* sorting key */
+	{CFG_X, "attr", &options.attribs	    }, 		/* Bit flags !!! global attributes to show */
+	{CFG_X, "flds", &options.fields		},		/* Bit flags !!! dir. fields to show  */
 	/* video options */
-	{CFG_X, 0, "vidp", &options.vprefs	}, 			/* Bit flags ! */
-	{CFG_D, 0, "vres", &options.vrez	},			/* video resolution */
+	{CFG_X, "vidp", &options.vprefs	}, 			/* Bit flags ! */
+	{CFG_D, "vres", &options.vrez	},			/* video resolution */
 	/* patterns and colours */
-	{CFG_H,0, "dpat", &options.dsk_pattern  }, 		/* desk pattern */
-	{CFG_H,0, "dcol", &options.dsk_color	},		/* desk colour  */
-	{CFG_H,0, "wpat", &options.win_pattern  },		/* window pattern */
-	{CFG_H,0, "wcol", &options.win_color	},		/* window colour  */
+	{CFG_H, "dpat", &options.dsk_pattern }, 		/* desk pattern */
+	{CFG_H, "dcol", &options.dsk_color	},		/* desk colour  */
+	{CFG_H, "wpat", &options.win_pattern },		/* window pattern */
+	{CFG_H, "wcol", &options.win_color	},		/* window colour  */
 
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -241,67 +245,67 @@ CfgEntry Options_table[] =
 
 CfgEntry Shortcut_table[] =
 {
-	{CFG_HDR,0, "shortcuts" },
+	{CFG_HDR, "shortcuts" },
 	{CFG_BEG},
 
 	/* File menu */
-	{CFG_X, 0, "open", &options.kbshort[MOPEN		- MFIRST]	},
-	{CFG_X, 0, "show", &options.kbshort[MSHOWINF	- MFIRST]	},
-	{CFG_X, 0, "newd", &options.kbshort[MNEWDIR		- MFIRST]	},
-	{CFG_X, 0, "comp", &options.kbshort[MCOMPARE	- MFIRST]	},
-	{CFG_X, 0, "srch", &options.kbshort[MSEARCH		- MFIRST]	},
-	{CFG_X, 0, "prin", &options.kbshort[MPRINT		- MFIRST]	},
-	{CFG_X, 0, "dele", &options.kbshort[MDELETE		- MFIRST]	},
-	{CFG_X, 0, "sela", &options.kbshort[MSELALL		- MFIRST]	},
+	{CFG_X, "open", &options.kbshort[MOPEN		- MFIRST]	},
+	{CFG_X, "show", &options.kbshort[MSHOWINF	- MFIRST]	},
+	{CFG_X, "newd", &options.kbshort[MNEWDIR		- MFIRST]	},
+	{CFG_X, "comp", &options.kbshort[MCOMPARE	- MFIRST]	},
+	{CFG_X, "srch", &options.kbshort[MSEARCH		- MFIRST]	},
+	{CFG_X, "prin", &options.kbshort[MPRINT		- MFIRST]	},
+	{CFG_X, "dele", &options.kbshort[MDELETE		- MFIRST]	},
+	{CFG_X, "sela", &options.kbshort[MSELALL		- MFIRST]	},
 #if MFCOPY
-	{CFG_X, 0, "copy", &options.kbshort[MFCOPY		- MFIRST]	},
-	{CFG_X, 0, "form", &options.kbshort[MFFORMAT	- MFIRST]	},
+	{CFG_X, "copy", &options.kbshort[MFCOPY		- MFIRST]	},
+	{CFG_X, "form", &options.kbshort[MFFORMAT	- MFIRST]	},
 #else
-	{CFG_X, CFG_INHIB, "copy", &inhibit	},
-	{CFG_X, CFG_INHIB, "form", &inhibit	},
+	{CFG_X | CFG_INHIB, "copy", &inhibit	},
+	{CFG_X | CFG_INHIB, "form", &inhibit	},
 #endif
-	{CFG_X, 0, "quit", &options.kbshort[MQUIT		- MFIRST]	},
+	{CFG_X, "quit", &options.kbshort[MQUIT		- MFIRST]	},
 
 	/* View menu */
 #ifdef MSHOWTXT
-	{CFG_X, 0, "shtx", &options.kbshort[MSHOWTXT	- MFIRST]	},
+	{CFG_X, "shtx", &options.kbshort[MSHOWTXT	- MFIRST]	},
 #endif
-	{CFG_X, 0, "shic", &options.kbshort[MSHOWICN	- MFIRST]	},
-	{CFG_X, 0, "sarr", &options.kbshort[MAARNG		- MFIRST]	},
-	{CFG_X, 0, "snam", &options.kbshort[MSNAME		- MFIRST]	},
-	{CFG_X, 0, "sext", &options.kbshort[MSEXT		- MFIRST]	},
-	{CFG_X, 0, "sdat", &options.kbshort[MSDATE		- MFIRST]	},
-	{CFG_X, 0, "ssiz", &options.kbshort[MSSIZE		- MFIRST]	},
-	{CFG_X, 0, "suns", &options.kbshort[MSUNSORT	- MFIRST]	},
-	{CFG_X, 0, "revo", &options.kbshort[MREVS		- MFIRST]	},
-	{CFG_X, 0, "asiz", &options.kbshort[MSHSIZ		- MFIRST]	},
-	{CFG_X, 0, "adat", &options.kbshort[MSHDAT		- MFIRST]	},
-	{CFG_X, 0, "atim", &options.kbshort[MSHTIM		- MFIRST]	},
-	{CFG_X, 0, "aatt", &options.kbshort[MSHATT		- MFIRST]	},
+	{CFG_X, "shic", &options.kbshort[MSHOWICN	- MFIRST]	},
+	{CFG_X, "sarr", &options.kbshort[MAARNG		- MFIRST]	},
+	{CFG_X, "snam", &options.kbshort[MSNAME		- MFIRST]	},
+	{CFG_X, "sext", &options.kbshort[MSEXT		- MFIRST]	},
+	{CFG_X, "sdat", &options.kbshort[MSDATE		- MFIRST]	},
+	{CFG_X, "ssiz", &options.kbshort[MSSIZE		- MFIRST]	},
+	{CFG_X, "suns", &options.kbshort[MSUNSORT	- MFIRST]	},
+	{CFG_X, "revo", &options.kbshort[MREVS		- MFIRST]	},
+	{CFG_X, "asiz", &options.kbshort[MSHSIZ		- MFIRST]	},
+	{CFG_X, "adat", &options.kbshort[MSHDAT		- MFIRST]	},
+	{CFG_X, "atim", &options.kbshort[MSHTIM		- MFIRST]	},
+	{CFG_X, "aatt", &options.kbshort[MSHATT		- MFIRST]	},
 #if _MINT_
-	{CFG_X, 0, "aown", &options.kbshort[MSHOWN		- MFIRST]	},
+	{CFG_X, "aown", &options.kbshort[MSHOWN		- MFIRST]	},
 #endif
-	{CFG_X, 0, "smsk", &options.kbshort[MSETMASK	- MFIRST]	},
+	{CFG_X, "smsk", &options.kbshort[MSETMASK	- MFIRST]	},
 
 	/* Window menu */
-	{CFG_X, 0, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
-	{CFG_X, 0, "wclo", &options.kbshort[MCLOSEW		- MFIRST]	},
-	{CFG_X, 0, "cloa", &options.kbshort[MCLOSALL	- MFIRST]	},
-	{CFG_X, 0, "wdup", &options.kbshort[MDUPLIC		- MFIRST]	},
-	{CFG_X, 0, "cycl", &options.kbshort[MCYCLE		- MFIRST]	},
+	{CFG_X, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
+	{CFG_X, "wclo", &options.kbshort[MCLOSEW		- MFIRST]	},
+	{CFG_X, "cloa", &options.kbshort[MCLOSALL	- MFIRST]	},
+	{CFG_X, "wdup", &options.kbshort[MDUPLIC		- MFIRST]	},
+	{CFG_X, "cycl", &options.kbshort[MCYCLE		- MFIRST]	},
 
 	/* Options menu */
-	{CFG_X, 0, "appl", &options.kbshort[MAPPLIK		- MFIRST]	},
-	{CFG_X, 0, "ptyp", &options.kbshort[MPRGOPT		- MFIRST]	},
-	{CFG_X, 0, "dski", &options.kbshort[MIDSKICN	- MFIRST]	},
-	{CFG_X, 0, "wini", &options.kbshort[MIWDICN		- MFIRST]	},
-	{CFG_X, 0, "pref", &options.kbshort[MOPTIONS	- MFIRST]	},
-	{CFG_X, 0, "copt", &options.kbshort[MCOPTS		- MFIRST]	},
-	{CFG_X, 0, "wopt", &options.kbshort[MWDOPT		- MFIRST]	},
-	{CFG_X, 0, "vopt", &options.kbshort[MVOPTS		- MFIRST]	},
-	{CFG_X, 0, "ldop", &options.kbshort[MLOADOPT	- MFIRST]	},
-	{CFG_X, 0, "svop", &options.kbshort[MSAVESET	- MFIRST]	},
-	{CFG_X, 0, "svas", &options.kbshort[MSAVEAS		- MFIRST]	},
+	{CFG_X, "appl", &options.kbshort[MAPPLIK		- MFIRST]	},
+	{CFG_X, "ptyp", &options.kbshort[MPRGOPT		- MFIRST]	},
+	{CFG_X, "dski", &options.kbshort[MIDSKICN	- MFIRST]	},
+	{CFG_X, "wini", &options.kbshort[MIWDICN		- MFIRST]	},
+	{CFG_X, "pref", &options.kbshort[MOPTIONS	- MFIRST]	},
+	{CFG_X, "copt", &options.kbshort[MCOPTS		- MFIRST]	},
+	{CFG_X, "wopt", &options.kbshort[MWDOPT		- MFIRST]	},
+	{CFG_X, "vopt", &options.kbshort[MVOPTS		- MFIRST]	},
+	{CFG_X, "ldop", &options.kbshort[MLOADOPT	- MFIRST]	},
+	{CFG_X, "svop", &options.kbshort[MSAVESET	- MFIRST]	},
+	{CFG_X, "svas", &options.kbshort[MSAVEAS		- MFIRST]	},
 
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -411,6 +415,7 @@ static void showhelp (unsigned int key)
 	if ( key & XD_SHIFT )
 	{
 		APPLINFO *helpprg = app_find("*.HYP", FALSE);
+
 		if(helpprg)
 		{
 			onfile = TRUE;
@@ -627,6 +632,7 @@ int arrow_form_do
 		else
 			return *oldbutton;
 	}
+
 	button = xd_form_do(treeinfo, ROOT) & 0x7FFF;
 
 	if ( button != *oldbutton )
@@ -635,6 +641,7 @@ int arrow_form_do
 		xd_drawthis( treeinfo, button );
 		*oldbutton = button;
 	}
+
 	return button;
 }
 
@@ -753,9 +760,6 @@ static void setpreferences(void)
 						    ( 
 								isupper((int)aux[1]) ||
 								isdigit((int)aux[1]) ||
-/* is this an error?
-								( (aux[i] & 0x80) != 0 )
-*/
 								( (aux[1] & 0x80) != 0 )
 							)
 						)
@@ -809,7 +813,6 @@ static void setpreferences(void)
 					}
 				}
 			}
-
 			while(!shok);
 
 			/* 
@@ -924,6 +927,7 @@ static void copyprefs(void)
 			options.bufsize = 1;
 
 		options.plinelen = atoi(copyoptions[CPPLINE].ob_spec.tedinfo->te_ptext);
+
 		if ((options.plinelen < MIN_PLINE) || (options.plinelen > MAX_PLINE) )
 			options.plinelen = DEF_PLINE;
 	}
@@ -1072,7 +1076,6 @@ static CfgNest opt_config
 				|| options.plinelen > MAX_PLINE
 				|| options.max_dir < 32 
 				|| (options.dial_mode & DIAL_MODE) > XD_WINDOW
-				|| options.vrez > 7 
 			)
 				*error = EFRVAL;
 
@@ -1084,16 +1087,12 @@ static CfgNest opt_config
 				options.attribs &= 0x0077;
 				options.dsk_pattern &= 0x0007;
 				options.win_pattern &= 0x0007;
+				options.vrez &= 0x0007;
 
 				/* Currently it makes no sense NOT to confirm touch */
 
 				options.cprefs |= CF_TOUCH;
 				options.cprefs &= ~(CF_CTIME | CF_CATTR);	
-
-				/* Compatibility issue in V3.63/V3.70; remove in the next version */
-
-				if(options.version < 0x0363)
-					options.sexit |= SAVE_WIN;
 
 				/* If all is OK so far, start setting TeraDesk */
 
@@ -1134,7 +1133,7 @@ static CfgNest short_config
  * Save configuration into default config file 
  */
 
-static void save_options(void)
+static void save_options(const char *fname)
 {
 	hourglass_mouse();
 
@@ -1145,11 +1144,11 @@ static void save_options(void)
 
 	/* Then save the configuration */
 
-	handle_cfgfile( infname, Config_table, infide, CFG_SAVE );
+	handle_cfgfile( (char *)fname, Config_table, infide, CFG_SAVE );
 	
 	/* Update destination window */
 
-	wd_set_update(WD_UPD_COPIED, infname, NULL);
+	wd_set_update(WD_UPD_COPIED, fname, NULL);
 	wd_do_update();
 
 	arrow_mouse();
@@ -1168,14 +1167,14 @@ static void save_options_as(void)
 	{
 		free(infname);
 		infname = newinfname;
-		save_options();
+		save_options(infname);
 	}
 }
 
 
 /* 
  * Load configuration from an explicitely specified config file.
- * If this does not succeed attempt to recover previous state.
+ * If this does not succeed, attempt to recover previous state.
  */
 
 void load_settings(char *newinfname)
@@ -1200,7 +1199,7 @@ void load_settings(char *newinfname)
  * Set complete specification for configuration file(s)
  */
 
-boolean find_cfgfiles(char **cfgname, boolean report)
+boolean find_cfgfiles(char **cfgname)
 {
 	char *fullname;
 	int error;
@@ -1210,20 +1209,18 @@ boolean find_cfgfiles(char **cfgname, boolean report)
 		free(*cfgname);
 		*cfgname = fullname;
 	}
-	else
+	else	/* fullname is NULL, so error must be nonzero */
 	{
 		if ((error == EFILNF) && ((fullname = x_fullname(*cfgname, &error)) != NULL))
 		{
 			free(*cfgname);
 			*cfgname = fullname;
 		}
-		if (report && error != 0)
-		{
-			xform_error(error);
-			return FALSE;
-		}
 	}
-	return TRUE;
+
+	xform_error(error);
+
+	return (error >= 0) ? TRUE : FALSE;
 }
 
 
@@ -1234,33 +1231,40 @@ boolean find_cfgfiles(char **cfgname, boolean report)
 
 static boolean init(void)
 {
+	/* Get screen work area */
+
 	xw_getwork(NULL, &screen_info.dsk);
 
-	find_cfgfiles(&infname, FALSE); 
-	find_cfgfiles(&palname, FALSE);
+	/* Find configuration files */
+
+	if(find_cfgfiles(&infname) && find_cfgfiles(&palname))
+	{
+		/* Save the name of the initial configuration file */
+
+		definfname = strdup(infname);
 
 #if _LOGFILE
-	logname  = strdup(infname);
-	strcpy(strrchr(logname,'.'), ".log");
-	logfile = fopen((const char *)logname, "w");
-	if (logfile == NULL)
+		logname  = strdup(infname);
+		strcpy(strrchr(logname,'.'), ".log");
+		logfile = fopen((const char *)logname, "w");
+		if (logfile == NULL)
 		printf("\n CAN'T OPEN LOGFILE");
-	fprintf(logfile, "\n LOG FILE OPENED; ap_id %i", ap_id);
+		fprintf(logfile, "\n LOG FILE OPENED; ap_id %i", ap_id);
 #endif
 
-	if (!dsk_init())
-		return FALSE;
+		if (!dsk_init())
+			return FALSE;
 
-	/* Clear all definable items */
+		/* Clear all definable items */
 
-	ft_init();				/* filetype masks */
-	icnt_init();			/* filetype icons */
-	prg_init();				/* program types  */
-	app_init();				/* installed apps */
-	va_init();				/* AV-protocol    */
-	wd_init();				/* windows        */
+		ft_init();				/* filetype masks */
+		icnt_init();			/* filetype icons */
+		prg_init();				/* program types  */
+		app_init();				/* installed apps */
+		va_init();				/* AV-protocol    */
+		wd_init();				/* windows        */
 
-	menu_bar(menu, 1);
+		menu_bar(menu, 1);
 
 	/* 
 	 * Force the name of the single-tasking program to DESKTOP 
@@ -1270,24 +1274,27 @@ static boolean init(void)
 	 */
 
 #if _MINT_
-	/* no need to do anything here ? */
+		/* no need to do anything here ? */
 #else
-	menu_register(-1, thisapp);
+		menu_register(-1, thisapp);
 #endif
 
-	/* Set a default path. Ignore errors */
+		/* Set a default path. Ignore errors */
 
-	x_setpath(bslash);
+		x_setpath(bslash);
 
-	/* Load the configuration file */
+		/* Load the configuration file */
 
-	load_options();
+		load_options();
 
-	/* Start applications which have been defined as autostart */
+		/* Start applications which have been defined as autostart */
 
-	app_specstart(AT_AUTO, NULL, NULL, 0, 0);
+		app_specstart(AT_AUTO, NULL, NULL, 0, 0);
 
-	return TRUE;
+		return TRUE;
+	}
+	else
+		return FALSE;
 }
 
 
@@ -1355,6 +1362,7 @@ static void hndlmenu(int title, int item, int kstate)
 #if _LOGFILE
 fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 #endif
+
 	if ((menu[item].ob_state & DISABLED) == 0)
 	{
 		switch (item)
@@ -1366,9 +1374,6 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 		{
 			int qbutton;
 
-#if _LOGFILE
-fprintf(logfile,"\n  hndlmenu MQUIT");
-#endif
 			bell();
 			wait(150);
 			bell();
@@ -1395,7 +1400,7 @@ fprintf(logfile,"\n  hndlmenu MQUIT");
 			prg_setprefs();
 			break;
 		case MSAVESET:
-			save_options();
+			save_options(definfname);
 			break;
 		case MSAVEAS:
 			save_options_as();
@@ -1422,6 +1427,7 @@ fprintf(logfile,"\n  hndlmenu MQUIT");
 			break;
 		}
 	}
+
 	menu_tnormal(menu, title, 1);
 }
 
@@ -1584,8 +1590,12 @@ fprintf(logfile,"\n  AP_TERM");
 				break;
 
 /* currently not used
+
+#if _MINT_
 			case AP_DRAGDROP:
 				break;
+#endif
+
 */
 		}
 	}
@@ -1694,6 +1704,7 @@ static void evntloop(void)
 			else
 				_hndlmessage(loopevents.ev_mmgpbuf, TRUE);
 		}
+
 		/* Process keyboard events */
 
 		if (event & MU_KEYBD)
@@ -1703,8 +1714,8 @@ static void evntloop(void)
 
 
 /*
- * Set shutting = true and return TRUE 
- * if AP_TERM is received within 3 seconds after starting this routine.
+ * If AP_TERM is received within 3 seconds after starting this routine
+ * set shutting = true and return TRUE. 
  * If another message is received in that time, wait 3 seconds more.
  * (no other action is performed for other messages).
  * Theoretically this may get into an endless loop if some application
@@ -1909,7 +1920,7 @@ int main(void)
 								va_delall(-1);		/* remove remaining pseudowindows  */
 
 								if ((options.sexit & SAVE_CFG) != 0)	/* save config */
-									save_options();
+									save_options(definfname);
 
 								wd_del_all();		/* remove windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
@@ -1943,7 +1954,6 @@ int main(void)
 		rsrc_free();
 	}
 
-
 #if _LOGFILE
 		fprintf(logfile,"\n CLOSE LOG FILE \n");
 		fclose(logfile);
@@ -1954,6 +1964,9 @@ int main(void)
 	 * If a resolution change is required, shutdown is (supposed to be)
 	 * performed first (but it did not work as planned... see below).
 	 * If only shutdown is required, the system will reset at the end.
+	 * Note that if anexternal application is set to perform shutdown,
+	 * all this will -not- be executed: upon receiving AP_TERM, TeraDesk
+	 * will just quit.
 	 */ 
 
 	if ( chrez || shutdown )	/* If change resolution or shutdown ... */
@@ -2033,7 +2046,8 @@ int main(void)
 /* 
  * This routine displays the incrementation of the 200Hz timer;
  * it is to be used only for evaluation of the duration of some
- * operations during development
+ * operations during development.
+ * Call this twice, first with mode=0, then with mode=1
  */
 
 /* 
@@ -2044,6 +2058,7 @@ long show_timer(int mode)
 	long old = Super(0);
 
 	t1 = *(long *)(0x4ba);
+
 	if(mode == 0)
 	{
 		t0 = t1;

@@ -28,6 +28,7 @@
 #include <tos.h>
 #include <boolean.h>
 #include <vdi.h>
+#include <library.h>
 #include <xdialog.h>
 
 #include "desktop.h"
@@ -172,16 +173,11 @@ char *make_argv_env
 		argvl = 0;			/* Size of allocated space */
 
 	char 
-		fqc = 0,			/* quote character */
-		h, 					/* Location in command line string */
 		*envp;				/* String being built */
 
 	const char
 		*name = "ARGV=", 	/* name of ARGV variable */
 		*s;					/* current location in input strings */
-	
-		boolean 
-			q = FALSE;		/* quoting flag */
 
 	/* 
 	 * Length of command line + two trailing zeros. If the command line
@@ -238,42 +234,8 @@ char *make_argv_env
 		 * or double quotes
 		 */
 
-		s = cmdl;
+		d = strcpyuq(d, cmdl);
 
-		while ((h = *s++) != 0)
-		{
-			if ((h == ' ') && !q )
-			{
-				/* If not between quotes, substitute blanks with a single 0 */
-
-				*d++ = 0;
-				while (*s == ' ')
-					s++;
-			}
-
-			/* Is this a quote character (see also va_start_prg() in va.c) */
-
-			else if ((h == fqc) || (!fqc && (h == 39 || h == 34))) /* 34= double quote, 39=single quote */
-			{
-				/* two consequtive quotes mean that one is part of the string */
-
-				if (*s == h)
-					*d++ = *s++;	/* transfer quote as part of the string */
-				else
-				{
-					fqc = 0;		/* reset quote character, just in case */
-
-					if(!q)
-						fqc = h;	/* First encountered quote character */
-
-					q = !q;			/* start or end the quote */
-				}
-			}
-			else
-				*d++ = h;
-		}
-
-		*d++ = 0; /* first trailing zero  */
 		*d = 0;	  /* second trailing zero */
 
 		/* This is the actual length of the environment string */

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -60,6 +60,19 @@ char *get_message(int error)
 
 	switch (error)
 	{
+	case UNKNOWN_MEDIA:
+		msg = TUNKM;
+		break;
+	case SEEK_ERROR:
+	case SECTOR_NOT_FOUND:
+		msg = TSEEKE;
+		break;
+	case WRITE_PROTECT:
+		msg = TWPROT;
+		break;
+	case BAD_SECTORS:
+		msg = TBADS;
+		break;
 	case EFILNF:
 		msg = TFILNF;
 		break;
@@ -108,7 +121,7 @@ char *get_message(int error)
 		msg = MVDIERR;
 		break;
 	default:
-		sprintf(buffer, get_freestring(TERROR), error);
+		sprintf(buffer, get_freestring((error < INSERT_DISK) ? TERROR : TXBERROR), error);
 		return buffer;
 	}
 	

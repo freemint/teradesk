@@ -78,9 +78,6 @@ int
 extern FONT 
 	dir_font;				/* data for the font used in directories */
 
-extern char
-	*infname;				/* name of TeraDesk's inf file */
-	
 AVTYPE 
 	avwork,					/* work area for editing AV-clients data */
 	*avclients;				/* List of signed-on AV-clients */
@@ -124,7 +121,7 @@ static const int answertypes[]=
 static void copy_avstat( AVSTAT *t, AVSTAT *s);
 static void rem_avstat(AVSTAT **list, AVSTAT *t);
 void load_settings(char *newinfname);
-
+char *app_find_name(char *path, boolean full);
 
 /*
  * Clear the 'answer' buffer and set word [1] to TeraDesk's ap_id
@@ -314,11 +311,10 @@ void va_checkclient(void)
 int va_start_prg(const char *program, ApplType type, const char *cmdl)
 {
 	char 
-		prgname[9],		/* AV-protocol name of the program to be started */ 
-		*ptr;			/* aux. variable for copying the name */
+		*fb,			/* not used here */
+		prgname[14];	/* 8-chars-long name of the program. Must be 14 bytes long here */
 
 	int 
-		i, 				/* counter */
 		va_answer[8],	/* local answer-message buffer */
 		dest_ap_id;		/* ap_id of the application parameters are sent to */
 
@@ -339,31 +335,15 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 	if (strlen(cmdl) > (GLOBAL_MEM_SIZE - 1))
 		return FALSE;
 
-	/*
-	 * Copy the name of the program (without path) to 'prgname' and
-	 * append spaces to make the total length be eight characters.
-	 * First find where the name proper begins.
-	 */
-
-	ptr = fn_get_name(program);
-	i = 0;
-
 	/* 
-	 * Now copy not more than first eight characters of program name 
+	 * Now copy not more than first eight characters of program name (no path) 
 	 * (should it be converted to uppercase?)
 	 * YES- appl_find() in Magic is case sensitive.
 	 */
  
-	while (*ptr && (*ptr != '.') && (i < 8))
-		prgname[i++] = *ptr++;
-
-	/* Fill with blanks up to eighth character. Append 0 byte at end */
-
-	while (i < 8)
-		prgname[i++] = ' ';
-
-	prgname[i] = 0;
+	cv_tos_fn2form(prgname, fn_get_name(program));
 	strupr(prgname);
+	prgname[8] = 0;
 
 	/* 
 	 * Has this application signed on as an AV-client?
@@ -419,7 +399,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 
 		/* Double quotes must be converted to single quotes */
 
-		strcpyrq(global_memory, (char *)cmdl, qc);
+		strcpyrq(global_memory, (char *)cmdl, qc, &fb);
 
 		va_clranswer(va_answer);
 
@@ -581,7 +561,7 @@ boolean va_pathupdate( const char *path )
 
 
 /*
- * Drop items onto accwindow using AV/VA protocol.
+ * Drop items onto an accwindow using AV/VA protocol.
  * Note: client window has to be signed-on for this to work
  */
 
@@ -854,6 +834,7 @@ void handle_av_protocol(const int *message)
 		va_fontreply( (message[0] == AV_ASKCONFONT) ? VA_CONFONT : VA_FILEFONT, message[1]); 
 		reply = FALSE;
 		break;
+
 	case AV_ACCWINDOPEN:
 
 		/* 
@@ -903,11 +884,11 @@ void handle_av_protocol(const int *message)
 
 	case AV_OPENWIND:
 
-		/* Open a directory window */
+		/* Open a directory window. (name lengths are checked in dir_add_window() ) */
 
 		path = strdup(pp3); /* path must be kept */
 
-		if ( path && (x_checkname(path, NULL) == 0) )
+		if ( path )
 		{
 			dir_trim_slash(path);
 			stat = 1;
@@ -918,6 +899,11 @@ void handle_av_protocol(const int *message)
 			{
 				mask = strdup(mp5);	/* mask must be kept too */
 
+				/* 
+				 * In case of an error (e.g. too long string), path and mask are 
+				 * deallocated in dir_add_window()
+				 */
+
 				if( mask )
 					stat = (int)dir_add_window(path, mask, NULL);
 				else
@@ -926,12 +912,14 @@ void handle_av_protocol(const int *message)
 					stat = 0;
 				}
 			}
+			else
+			{
+				/* This was AV_XWIND; path was just used for comparison */
+				free(path);
+			}
 		}
 		else
-		{
-			free(path);
 			stat = 0;
-		}
 
 		answer[0] = ( message[0] == AV_OPENWIND) ? VA_WINDOPEN : VA_XOPEN;
 		answer[3] = stat;	/* status */
@@ -941,28 +929,36 @@ void handle_av_protocol(const int *message)
 	case VA_START:
 
 		/* 
-		 * TeraDesk can understand about inf files being sent to it.
-		 * There is no point in sending the reply message back to itself
+		 * TeraDesk can understand about inf files being sent to it by itself.
+		 * There is no point in sending the reply message back
 		 * because AV_STARTED is ignored anyway.
 		 * Name of the file must be kept. 
+		 * This command is ignored if it does not come from TeraDesk.
 		 */
 		 
 		reply = FALSE;
-		load_settings(strdup(pp3)); 
+
+		if(av_current == ap_id)
+			load_settings(strdup(pp3)); 
 		break;
 
 	case AV_STARTPROG:
 
-		/* Start a program with possibly a command line */
+		/* 
+		 * Start a program with possibly a command line. Instead of a
+		 * program name, a filename may be passed, and an application
+		 * should be found for it
+		 */
 
-		mask = mp5;
+		mask = strdup(mp5);
 		answer[0] = VA_PROGSTART;
 		answer[7] = message[7];
+		goto openit;
 
 	case AV_VIEW:
 
 		/* 
-		 * Activate a viewer for the file. Currently, TeraDesk does not
+		 * Activate a viewer for one file. Currently, TeraDesk does not
 		 * differentiate between a viewer and a processing program;
 		 * so, behaviour for AV_VIEW and AV_STARTPROG is essentially
 		 * the same.
@@ -971,18 +967,44 @@ void handle_av_protocol(const int *message)
 		 * Parameter "mask" may contain the command line
 		 */
 
+		answer[0] = VA_VIEWED;
+
+		openit:;
+
 		onfile = TRUE;
 
-		if ( pp3 && *pp3 )
-			stat = item_open( NULL, 0, 0, pp3, mask );
+		path = strdup(pp3); 
+
+		if ( path )
+		{
+			/* 
+			 * Internet access programs may send very longs strings. 
+			 * Some special provisions for those. Find which application
+			 * is to be used, and use the recieved string as a command.
+			 */
+
+			if(!mask && x_netob(path) && strlen(path) >= sizeof(VLNAME))
+			{
+				char *app = app_find_name(path, TRUE);
+
+				if(app)
+				{
+					mask = path;
+					path = strdup(app);
+				}
+			}
+
+			/* Now open the item */
+
+			stat = item_open( NULL, 0, 0, path, mask );
+		}
 		else
 			stat = 0;
 
+		free(path);
+		free(mask);
+
 		answer[3] = stat;
-
-		if (message[0] == AV_VIEW)
-			answer[0] = VA_VIEWED;
-
 		break;
 
 #if _MORE_AV
@@ -996,11 +1018,14 @@ void handle_av_protocol(const int *message)
 
 	case AV_PATH_UPDATE:
 
-		/* Update a dir window */
+		/* 
+		 * Update a dir window. probably there is no need to check path
+		 * because theat wtring is just compared to existing paths
+		 */
 
 		path = strdup(pp3); /*duplicate because it will be modified */
 
-		if ( path && !x_netob(path) && (x_checkname(path, NULL) == 0) )
+		if ( path && !x_netob(path) )
 		{
 			dir_trim_slash(path);
 			dir_do_path(path, DO_PATH_UPDATE);
@@ -1131,109 +1156,114 @@ void handle_av_protocol(const int *message)
 
 	case AV_DRAG_ON_WINDOW:
 
-		/* Drag a file to the path of a window */
+		/* Drag one or several files to the path of a window */
 
 		path = strdup(pp6);	/* source; duplicate because it will be modified */
 		goto processname;
 
 	case AV_COPYFILE:
 
-		/* Copy a file to a path */
+		/* Copy one or several files to a path */
 
 		mask = strdup(mp5);	/* destination */
 
 	case AV_DELFILE:
 	case AV_FILEINFO:
 
-		/* Delete a file or return information about it */
+		/* Delete one or several files or return information about it/them */
 
 		path = strdup(pp3);	/* source; duplicate because it will be modified */
+
 		processname:;
 
-		if ( path && !x_netob(path) && x_checkname(path, mask) == 0)
+		if ( path )
 		{
-			dir_trim_slash(path);
-			*global_memory = 0;		/* clear the string in the buffer */
+			char 
+				*p = path,		/* current position in the string */
+				*wpath = NULL,	/* simulated window path */
+				*cs, *cq, 		/* position of the next " " and "'" */
+				*pp = NULL;		/* position of the next name */
 
+			boolean 
+				q = FALSE;		/* true if name is quoted */
+
+			ITMTYPE 
+				itype;			/* type of the item */
+
+			DIR_WINDOW 
+				ww;				/* pointer to the simulated window */
+
+			int 
+				list = 0;		/* simulated selected item */
+
+			*global_memory = 0;	/* clear the string in the buffer */
+			stat = 1;			/* all is well for the time being */
+
+			/* In this loop, items in the message are processed one by one */
+
+			while(stat && p && *p)
 			{
-				char 
-					*p = path,		/* current position in the string */
-					*wpath = NULL,	/* simulated window path */
-					*cs, *cq, 		/* position of the next " " and "'" */
-					*pp = NULL;		/* position of the next name */
+				/* Attempt to extract next item name (possibly quoted) */
 
-				boolean q = FALSE;	/* true if name is quoted */
-
-				ITMTYPE itype;		/* type of the item */
-				DIR_WINDOW ww;		/* pointer to the simulated window */
-				int list = 0;		/* simulated selected item */
-
-				stat = 1;			/* all is well for the time being */
-
-				/* In this loop, items in the message are processed one by one */
-
-				while(stat && p && *p)
+				if (*p == qc && *(p + 1) != qc) /* single quote, but not doubled */
 				{
-					/* Attempt to extract item name (possibly quoted) */
+					p++;		/* move to the character after the quote */
+					q = TRUE;	/* quoting has been started */
+				}
 
-					if (*p == qc && *(p + 1) != qc) /* single quote, but not doubled */
-					{
-						p++;		/* move to the character after the quote */
-						q = TRUE;	/* quoting has been started */
-					}
+				strip_name(p, p);		/* strip leading/trailing blanks */
+				cq = p;
 
-					strip_name(p, p);		/* strip leading/trailing blanks */
+				while((cq = strchr(cq, qc)) != NULL && *(cq + 1) == qc)
+				{
+					cq += 2;		
+				}
+
+				if ( q && cq )			/* quoted and unquote exists ? */
+					*cq++ = 0;			/* terminate string at quote */
+				else 
 					cq = p;
 
-					while((cq = strchr(cq, qc)) != NULL && *(cq + 1) == qc)
-					{
-						cq += 2;		
-					}
+				cs = strchr(cq, ' ');	/* space after the quote */
 
-					if ( q && cq )			/* quoted and unquote exists ? */
-						*cq++ = 0;			/* terminate string at quote */
-					else 
-						cq = p;
+				pp = NULL;
 
-					cs = strchr(cq, ' ');	/* space after the quote */
+				if ( cs )				/* there is a next space */
+				{
+					pp = cs + 1L; 		/* character after the space */
+					*cs = 0;
+				}
 
-					pp = NULL;
+				/* 
+				 * Try to determine the type of the item.
+				 * This is done by examining the name and by
+				 * analyzing the object attributes (i.e. data
+				 * from the disk are being read here)- if the
+				 * object does not exist an error alert will be
+				 * displayed and ITM_NOTUSED returned.
+				 */
 
-					if ( cs )				/* there is a next space */
-					{
-						pp = cs + 1L; 		/* character after the space */
-						*cs = 0;
-					}
+				dir_trim_slash(p);
+				itype = diritem_type(p);
+
+				if ( itype != ITM_NOTUSED && itype != ITM_NETOB )
+				{
+					wpath = fn_get_path(p);
+
+					dir_simw(&ww, wpath, fn_get_name(p), itype, (size_t)1, 0);
 
 					/* 
-					 * Try to determine the type of the item.
-					 * This is done by examining the name and by
-					 * analyzing the object attributes (i.e. data
-					 * from the disk are being read here)- if the
-					 * object does not exist an error alert will be
-					 * displayed and ITM_NOTUSED returned.
+					 * Some routines will perform differently when
+					 * working as a response to a VA-protocol command.
+					 * This is set through va_reply.
+					 * Note: these four messages may also provoke
+					 * a VA_PATH_UPDATE response	
 					 */
 
-					itype = diritem_type(p);
+					va_reply = TRUE;
 
-					if ( itype != ITM_NOTUSED )
+					switch(message[0])
 					{
-						wpath = fn_get_path(p);
-
-						dir_simw(&ww, wpath, fn_get_name(p), itype, (size_t)1, 0);
-
-						/* 
-						 * Some routines will perform differently when
-						 * working as a response to a VA-protocol command.
-						 * This is set through va_reply.
-						 * Note: these four messages may also provoke
-						 * a VA_PATH_UPDATE response	
-						 */
-
-						va_reply = TRUE;
-
-						switch(message[0])
-						{
 						case AV_DRAG_ON_WINDOW:
 							answer[0] = VA_DRAG_COMPLETE;
 							stat = (int)itm_move( (WINDOW *)&ww, 0, message[3], message[4], message[5]);	
@@ -1262,15 +1292,15 @@ void handle_av_protocol(const int *message)
 							item_showinfo((WINDOW *)&ww, 1, &list, FALSE);
 							stat = 1; /* but it is not always so! */
 							break;
-						}
-						free(wpath);
 					}
-					else
-						stat = 0;
+					free(wpath);
 
-					p = pp;
-				} /* while */
-			}
+				}
+				else
+					stat = 0;
+
+				p = pp;
+			} /* while */
 		}
 		else
 			stat = 0;
@@ -1305,7 +1335,7 @@ void handle_av_protocol(const int *message)
 	default:
 		/* 
 		 * Beside the unsupported messages, this also handles
-		 * those (mostly acknowledge) messages which do not need 
+		 * those (mostly acknowledge) messages which do not require 
 		 * any action
 		 */
 		reply = FALSE;
@@ -1369,10 +1399,10 @@ static SINFO this;
 
 CfgEntry stat_table[] =
 {
-	{CFG_HDR, 0, "status" },
+	{CFG_HDR, "status" },
 	{CFG_BEG},
-	{CFG_S,   0, "name",  this.name	},
-	{CFG_S,   0, "stat",  this.stat	},
+	{CFG_S,   "name",  this.name	},
+	{CFG_S,   "stat",  this.stat	},
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -1466,9 +1496,9 @@ static CfgNest one_avstat
 
 static CfgEntry va_table[] =
 {
-	{CFG_HDR, 0, "avstats" },
+	{CFG_HDR,  "avstats" },
 	{CFG_BEG},
-	{CFG_NEST,0, "status", one_avstat  },		/* Repeating group */
+	{CFG_NEST, "status", one_avstat  },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };

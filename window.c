@@ -176,12 +176,12 @@ WD_FUNC wd_type_functions =
 
 CfgEntry fnt_table[] =
 {
-	{CFG_HDR, 0, "font" },
+	{CFG_HDR, "font" },
 	{CFG_BEG},
-	{CFG_D,   0, "iden", &thisw.font.id		},
-	{CFG_D,   0, "size", &thisw.font.size	},
-	{CFG_D,   0, "fcol", &thisw.font.colour	},
-	{CFG_D,   0, "feff", &thisw.font.effects},
+	{CFG_D,   "iden", &thisw.font.id		},
+	{CFG_D,   "size", &thisw.font.size	},
+	{CFG_D,   "fcol", &thisw.font.colour	},
+	{CFG_D,   "feff", &thisw.font.effects},
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -193,17 +193,17 @@ CfgEntry fnt_table[] =
 
 CfgEntry positions_table[] =
 {
-	{CFG_HDR, 0, "pos"	},
+	{CFG_HDR, "pos"	},
 	{CFG_BEG},
-	{CFG_D,   0, "xpos", &thisw.x	}, /* note: can't go off the left edge */
-	{CFG_D,   0, "ypos", &thisw.y	},
-	{CFG_D,   0, "winw", &thisw.ww	},
-	{CFG_D,   0, "winh", &thisw.wh	},
-	{CFG_D,   0, "xicw", &thisw.ix	},
-	{CFG_D,   0, "yicw", &thisw.iy	},
-	{CFG_D,   0, "wicw", &thisw.iw	},	/* Is this needed? */
-	{CFG_D,   0, "hicw", &thisw.ih	},
-	{CFG_X,   0, "flag", &thisw.flags	},
+	{CFG_D,   "xpos", &thisw.x	}, /* note: can't go off the left edge */
+	{CFG_D,   "ypos", &thisw.y	},
+	{CFG_D,   "winw", &thisw.ww	},
+	{CFG_D,   "winh", &thisw.wh	},
+	{CFG_D,   "xicw", &thisw.ix	},
+	{CFG_D,   "yicw", &thisw.iy	},
+	{CFG_D,   "wicw", &thisw.iw	},	/* Is this needed? */
+	{CFG_D,   "hicw", &thisw.ih	},
+	{CFG_X,   "flag", &thisw.flags	},
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -436,10 +436,10 @@ CfgNest positions
 
 CfgEntry wtype_table[] =
 {
-	{CFG_HDR, 0, NULL }, /* keyword will be substituted */
+	{CFG_HDR,  NULL }, /* keyword will be substituted */
 	{CFG_BEG},
-	{CFG_NEST,0, "font", cfg_wdfont },
-	{CFG_NEST,0, "pos", positions	},		/* Repeating group */
+	{CFG_NEST, "font", cfg_wdfont },
+	{CFG_NEST, "pos", positions	},		/* Repeating group */
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -650,6 +650,16 @@ void wd_restoretop(int code, int *whandle, int *wap_id)
 #endif
 
 
+/*
+ * Does a pointer points to a directory or text window?
+ */
+
+static boolean dirortext(WINDOW *w)
+{
+	return (w && (xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND));
+}
+
+
 /********************************************************************
  *																	*
  * Funkties voor het enablen en disablen van menupunten.			*
@@ -713,7 +723,7 @@ void itm_set_menu(WINDOW *w)
 	}
 
 	nwin = wd_wcount();
-	nonsel = ( !n && (wtoptype == DIR_WIND || wtoptype == TEXT_WIND) );
+	nonsel = (!n && dirortext(wtop));
 
 	if(n > 0)
 		showinfo = TRUE;
@@ -833,7 +843,7 @@ void itm_set_menu(WINDOW *w)
 
 	/* Enable duplication of dir and text windows */
 
-	menu_ienable(menu, MDUPLIC, (int)(wtoptype == DIR_WIND || wtoptype == TEXT_WIND) );
+	menu_ienable(menu, MDUPLIC, (int)dirortext(wtop));
 
 	/* Enable window cycling if there is more than one window open */
 
@@ -1000,7 +1010,7 @@ const char *wd_toppath(void)
 
 const char *wd_path(WINDOW *w)
 {
-	if(xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND)
+	if(dirortext(w))
 		return ((TYP_WINDOW *)w)->path; 
 
 	return NULL;		
@@ -2071,25 +2081,24 @@ void wd_calcsize(WINFO *w, RECT *size)
 			/* 
 			 * Add some empty lines to fulled directory directory windows
 			 * This will make draging of items into windows more comfortable. 
-			 * Add two lines in text mode, or one row in icons mode.
+			 * Add one line in text mode, or one row in icons mode.
 			 */
 
 			if (wtype == DIR_WIND)
 			{
-				ll += 2;	/* two lines in text mode */
+				ll += 1;	
 				if (options.mode != TEXTMODE)
-				{
-					ll -= 1; /* one line is enough in icon mode */
 					def.w += XOFFSET;
-				}
 			}
 
-			/* Window outside size must not exceed max integer */
+			/* Window overall size must not exceed max integer */
 
 			def.h = lmin(32700, ll * ch);
 		}
 
 		wd_wsize(tw, &def, size, iswork);
+
+		/* Limit window size to screen size (excluding menu), or slightly smaller */
 
 		size->x = max(0, min(size->x, screen_info.dsk.w - size->w - 4)); 
 		size->y = max(screen_info.dsk.y, min(size->y, screen_info.dsk.h - size->h));
@@ -2125,7 +2134,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 {
 	RECT 
 		r2, 
-		in, 
+		in, 			/* intersection rectangle */
 		work;			/* window work area */
 
 	boolean 
@@ -2136,7 +2145,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 		*obj = NULL;	/* window root object in icon mode */
 
 
-	if (clip_desk(r1) == FALSE)
+	if (!clip_desk(r1))
 		return;
 
 	xw_getwork(w, &work);
@@ -2253,8 +2262,10 @@ void wd_drawall(void)
 				wd_type_draw((TYP_WINDOW *)w, TRUE);
 		}
 */
-		if(xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND)
+
+		if(dirortext(w))
 			set_sliders((TYP_WINDOW *)w);
+
 		wd_type_draw((TYP_WINDOW *)w, TRUE);
 
 		w = w->xw_next;
@@ -2309,7 +2320,7 @@ void wd_type_bottomed(WINDOW *w)
 void wd_type_title(TYP_WINDOW *w)
 {
 	int 
-		d = 3,		/* Default single-TOS value */ 
+		d = 3,		/* Required width increment, single-TOS value */ 
 		columns;
 
 	char 
@@ -2390,7 +2401,7 @@ void wd_type_nofull(WINDOW *w)
 {
 	WINFO *wi;
 
-	if ( xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND )
+	if(dirortext(w))
 	{
  		wi = ((TYP_WINDOW *)w)->winfo;
 		wi->flags.fulled = 0;
@@ -2994,7 +3005,7 @@ boolean wd_adapt(WINDOW *w)
 {
 	RECT size;
 
-	if (xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND)
+	if(dirortext(w))
 	{
 		wd_calcsize(((TYP_WINDOW *) w)->winfo, &size);
 		xw_setsize(w, &size);
@@ -3260,11 +3271,11 @@ CfgNest
 
 CfgEntry window_table[]= 
 {
-	{CFG_HDR, 0, "windows" },
+	{CFG_HDR,  "windows" },
 	{CFG_BEG},
-	{CFG_NEST,0, "directories",	dir_config	},	/* directory windows */
-	{CFG_NEST,0, "views",		view_config	},	/* text windows */
-	{CFG_NEST,0, "open",		open_config	},	/* open windows (any type */
+	{CFG_NEST, "directories",	dir_config	},		/* directory windows */
+	{CFG_NEST, "views",			view_config	},		/* text windows */
+	{CFG_NEST, "open",			open_config	},		/* open windows (any type */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -3284,14 +3295,14 @@ CfgNest wd_config
  * Configuration tables for start/end of group for open windows
  */
 
-static CfgEntry open_start_table[] =
+static const CfgEntry open_start_table[] =
 {
-	{CFG_HDR, 0, "open" },
+	{CFG_HDR, "open" },
 	{CFG_BEG},
 	{CFG_LAST}
 };
 
-static CfgEntry open_end_table[] =
+static const CfgEntry open_end_table[] =
 {
 	{CFG_END},
 	{CFG_LAST}
@@ -3304,10 +3315,10 @@ static CfgEntry open_end_table[] =
 
 static CfgEntry open_table[] =
 {
-	{CFG_HDR, 0, "open" },
+	{CFG_HDR,  "open" },
 	{CFG_BEG},
-	{CFG_NEST,0, "dir",	 dir_one  },
-	{CFG_NEST,0, "text", text_one },
+	{CFG_NEST, "dir",	dir_one  },
+	{CFG_NEST, "text",	text_one },
 	{CFG_END},
 	{CFG_LAST}
 };
@@ -3319,7 +3330,7 @@ static CfgEntry open_table[] =
 
 CfgEntry reopen_table[]=
 {
-	{CFG_NEST, 0, "open", open_config},	/* open windows (any type) */
+	{CFG_NEST, "open", open_config},	/* open windows (any type) */
 	{CFG_FINAL}, 				       	/* file completness check  */
 	{CFG_LAST}
 };
@@ -4277,6 +4288,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 			if ((m_state != 0) && itm_state(w, item))
 				itm_move(w, item, x, y, 0);
 		}
+
 		wd_setselection(selection.w);
 	}
 	else if (in_window(w, x, y))
@@ -4295,7 +4307,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 
 			while (ww)
 			{
-				if (xw_type(ww) == DIR_WIND || xw_type(ww) == TEXT_WIND )
+				if(dirortext(ww))
 				{
 					wd_type_topped(ww);	
 					nowin = FALSE;

@@ -97,7 +97,7 @@ static boolean
 	nofound = TRUE;			/* TRUE if no items founnd */
 
 
-char *app_find_name(const char *fname);
+char *app_find_name(const char *fname, boolean full);
 
 
 /* 
@@ -919,7 +919,7 @@ int object_info
 #else
 			{
 #endif
-					char *appname = app_find_name(fname);
+					char *appname = app_find_name(fname, FALSE);
 
 					if(appname && *search_pattern == 0)
 					{
@@ -1000,6 +1000,7 @@ int object_info
 			if (check_drive( drive ) != FALSE)
 			{
 				error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE);
+				arrow_mouse();
 
 				if(error != 0)
 				{

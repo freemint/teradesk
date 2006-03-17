@@ -62,3 +62,4 @@ void force_mediach(const char *path);
 
 void cv_formtofn(char *dest, OBJECT *tree, int object);
 void cv_fntoform(OBJECT *tree, int object, const char *source);
+void cv_tos_fn2form(char *dest, const char *source);

@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Note: at most 31 entry type can be defined here */
 
 typedef enum
 {
@@ -39,19 +40,15 @@ typedef enum
 	CFG_L,				/* %ld on int32, nonnegative only     */
 	CFG_S,				/* %s           */
 	CFG_NEST,			/* group        */
-	CFG_HIGHEST			/* (not used)   */
+	CFG_INHIB = 0x20,	/* inhibit output, modifier for the above */
+	CFG_NOFMT = 0x40,	/* ignore default format; modifier */
 } CFG_TYPE;
 
-typedef enum
-{	
-	CFG_INHIB = 0x01,	/* accept input; don't write (compatability flag) */
-	CFG_NOFMT = 0x02,	/* ignore default formatting, set explicitely */
-} CFG_FLAG;
+#define CFG_MASK 0x1F;	/* to extract 31 entry type without modifiers */
 
 typedef struct
 {
 	char type;			/* CFG_TYPE */
-	char flag;			/* CFG_FLAG */
 	char *s;			/* format   */
 	void *a;			/* data     */
 } CfgEntry;

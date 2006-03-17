@@ -1401,14 +1401,14 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 
 static CfgEntry txtw_table[] =
 {
-	{CFG_HDR, 0, "text" },
+	{CFG_HDR, "text" },
 	{CFG_BEG},
-	{CFG_D,   0, "indx", &that.index	},
-	{CFG_S,   0, "name",  that.path	    },
-	{CFG_D,   0, "xrel", &that.px		},
-	{CFG_L,   0, "yrel", &that.py		},
-	{CFG_BD,  0, "hexm", &that.hexmode	},
-	{CFG_D,   0, "tabs", &that.tabsize	},
+	{CFG_D,   "indx", &that.index	},
+	{CFG_S,   "name",  that.path	    },
+	{CFG_D,   "xrel", &that.px		},
+	{CFG_L,   "yrel", &that.py		},
+	{CFG_BD,  "hexm", &that.hexmode	},
+	{CFG_D,   "tabs", &that.tabsize	},
 	{CFG_END},
 	{CFG_LAST}
 };

@@ -110,64 +110,63 @@ static void no_percent(char *s)
 static void append_fmt
 (
 	CFG_TYPE cfgtype,	/* entry type         */
-	char flag,			/* if CFG_NOFMT, don't add anything, just copy */
 	char *dest,			/* destination string */
 	char *src			/* input string       */
 )
 {
+	CFG_TYPE cftype = cfgtype & CFG_MASK;
 
 	if ( src != NULL )
 		strcpy(dest, src);
 
-	if ( (flag & CFG_NOFMT) == 0 )
+	/* CFG_NOFMT can be tested for here if it becomes needed */
+
+	switch(cftype)
 	{
-		switch(cfgtype)
-		{
-			case CFG_HDR:
-				strcat(dest, "=");
-				break;
-			case CFG_BEG:
-				strcpy(dest, "{");
-				break;
-			case CFG_END:
-				strcpy(dest, "}");
-				break;
-			case CFG_ENDG:
-				strcpy(dest, "}");
-				strcat(dest, eol);
-				break;
-			case CFG_FINAL:
-				strcpy(dest, "end");
-				strcat(dest, eol);
-				break;
+		case CFG_HDR:
+			strcat(dest, "=");
+			break;
+		case CFG_BEG:
+			strcpy(dest, "{");
+			break;
+		case CFG_END:
+			strcpy(dest, "}");
+			break;
+		case CFG_ENDG:
+			strcpy(dest, "}");
+			strcat(dest, eol);
+			break;
+		case CFG_FINAL:
+			strcpy(dest, "end");
+			strcat(dest, eol);
+			break;
 
 /* currently not used in Teradesk- but may be used later 
-			case CFG_B:
-			case CFG_C:
-				strcat(dest, "=%c");
-				break;
+		case CFG_B:
+		case CFG_C:
+			strcat(dest, "=%c");
+			break;
 */
-			case CFG_BD:
-			case CFG_D:
-			case CFG_H:
-				strcat(dest, "=%d");
-				break;
-			case CFG_DDD:
-				strcat(dest,"=%d,%d,%d");
-				break;
-			case CFG_X:
-				strcat(dest, "=0x%4x");
-				break;
-			case CFG_L:
-				strcat(dest, "=%ld");
-				break;
-			case CFG_S:
-				strcat(dest, "=%s");
-			default:
-				break;
-		}
-		strcat( dest, eol );
+		case CFG_BD:
+		case CFG_D:
+		case CFG_H:
+			strcat(dest, "=%d");
+			break;
+		case CFG_DDD:
+			strcat(dest,"=%d,%d,%d");
+			break;
+		case CFG_X:
+			strcat(dest, "=0x%4x");
+			break;
+		case CFG_L:
+			strcat(dest, "=%ld");
+			break;
+		case CFG_S:
+			strcat(dest, "=%s");
+		default:
+			break;
 	}
+	strcat( dest, eol );
 }
 
 
@@ -229,17 +228,23 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 		ts[MAX_CFGLINE],	 /* temporary */
 		fmt[2 * MAX_KEYLEN]; /* "2 *" because of "end..." */
 
-	while( (tab->type) && (error >= 0) )
+	CFG_TYPE
+		tabtype;
+
+	
+	while( tab->type && (error >= 0) )
 	{
 		int lvl = level;
 
+		tabtype = tab->type & CFG_MASK;
+
 		/* Append (or not) default formatting according to entry type */
 
-		append_fmt( tab->type, tab->flag, fmt, tab->s );
+		append_fmt( tab->type, fmt, tab->s );
 
 		/* Now do output according to entry type */
 
-		switch(tab->type)
+		switch(tabtype)
 		{
 			case CFG_NEST:
 				/* Go deeper, it is a nest, and all is specified */
@@ -265,11 +270,11 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 				break;
 			default:
 			{
-				if ( !(tab->flag & CFG_INHIB) )
+				if ( !(tab->type & CFG_INHIB) )
 				{
 					/* Write data according to type (check if data exist) */
 
-					switch(tab->type)
+					switch(tabtype)
 					{
 						case CFG_S:
 						{
@@ -467,6 +472,9 @@ int CfgLoad
 	boolean
 		skip = FALSE;			/* true while recovering from errors */
 
+	CFG_TYPE
+		tabtype;
+
 
 	/* Loop while needed. Get next record from the file */
 
@@ -520,6 +528,8 @@ int CfgLoad
 
 		while( (tab->type != CFG_LAST) && (error >= 0) )
 		{
+			tabtype = tab->type & CFG_MASK;
+
 			/* 
 			 * How long is the keyword? Search until "=" found 
 			 * It is assumed that it starts with a nonblank.
@@ -532,7 +542,7 @@ int CfgLoad
 
 			v = 0;
 
-			if ( tab->type > CFG_FINAL )
+			if ( tabtype > CFG_FINAL )
 			{
 				while ( (tab->s[v] > ' ') && (tab->s[v] != '=') )
 					v++;
@@ -553,7 +563,7 @@ int CfgLoad
 
 				/* Now do whatever is appropriate to interpret data */
 
-				switch(tab->type)
+				switch(tabtype)
 				{
 					case CFG_NEST: 
 						/* It is a nest, go one level deeper */
@@ -591,7 +601,7 @@ int CfgLoad
 					case CFG_D:
 						/* Decode a positive decimal integer value */
 						*(int *)tab->a = max(atoi(s), 0);
-						if ( (tab->type == CFG_BD) && (*(int *)tab->a > 0) )
+						if ( (tabtype == CFG_BD) && (*(int *)tab->a > 0) )
 							*(int *)tab->a = 1;
 						break;
 					case CFG_DDD:
@@ -633,7 +643,7 @@ int CfgLoad
 		 * other nests many times without an abort)
 		 */
 
-		if ( (tab->type == CFG_LAST) || (tab->s == NULL) )
+		if ( (tabtype == CFG_LAST) || (tab->s == NULL) )
 		{
 			tel++;
 			alert_printf( 1, AUNKRTYP, s, lastnest );

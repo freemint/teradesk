@@ -177,7 +177,7 @@ static int print_file(WINDOW *w, int item)
 		result = 0;
 
 	char 
-		*buffer;
+		*buffer;	/* file is read into this */
 
 	const 
 		char *name;
@@ -347,12 +347,12 @@ boolean check_print(WINDOW *w, int n, int *list)
 
 
 /* 
- * Print a list of items selected in a window, or print a directory. 
- * This routine currently does -not- recurse into subdirectories, 
- * but prints only files in the current directory level.
- * Directory printout is performed by using window lines, and so
- * sorting and display of diverse information is the same as for the 
- * directory window the directory of which is being printed.
+ * Print a list of items selected in a window, or print a directory of an
+ * open directory window. This routine currently does -not- recurse into
+ * subdirectories, but prints only files in the current directory level.
+ * Directory printout is performed by using lines as displayed in windows, 
+ * and so sorting and display of diverse information is the same as for the 
+ * window the directory of which is being printed.
  */
 
 boolean print_list
@@ -368,12 +368,14 @@ boolean print_list
 {
 	int 
 		i,			/* counter */ 
+		amode,		/* attribute finding mode; 0= follow links */
 		item,		/* item type (file/folder) */ 
 		error,		/* error code */ 
 		result;		/* TRUE if operation successful */
 
 	ITMTYPE 
-		type;		/* Item type (file/folder...) */
+		type,		/* Item type (file/folder...) */
+		tgttype;	/* Link target type */
 
 	const char 
 		*path,		/* Item's path */ 
@@ -417,13 +419,23 @@ boolean print_list
 		else
 		{
 			type = itm_type(w, item);
-			if ((error = itm_attrib(w, item, 0, &attr)) == 0)
+			tgttype = itm_tgttype(w, item);
+			amode = 0;
+
+			/* Dont follow links for directory printout or network items */
+
+			if(function == CMD_PRINTDIR || tgttype == ITM_NETOB)
+				amode = 1;
+			
+			/* Now do whatever is needed to "print" an item */
+
+			if ((error = itm_attrib(w, item, amode, &attr)) == 0) /* follow links */
 			{
 				if ( function == CMD_PRINT )
 				{
 					/* 
-					 * Only files can be printed, ignore everything else 
-					 * Executable files (programs) are hex-dumped
+					 * Only files can be printed, ignore everything else. 
+					 * Executable files (programs) are hex-dumped.
 					 */
 
 					*folders = 0; 
@@ -431,18 +443,23 @@ boolean print_list
 					if ( isfileprog(type) )
 					{
 						int oldmode = printmode;
+						result = 0;
 
-						if ( type == ITM_PROGRAM && printmode == PM_TXT )
-							printmode = PM_HEX; /* hex-dump */
+						if(tgttype != ITM_NETOB)
+						{
+							if ( type == ITM_PROGRAM && printmode == PM_TXT )
+								printmode = PM_HEX; /* hex-dump */
 
-						upd_copyname(NULL, NULL, name);
-						result = print_file(w, list[i]);
+							upd_copyname(NULL, NULL, name);
+							result = print_file(w, list[i]);
+
+							printmode = oldmode;
+						}
+
 						*bytes -= attr.size;
 						*files -= 1;
 						upd_copyname(NULL, NULL, empty);
-						printmode = oldmode;
 					}
-
 				}
 				else
 				{
