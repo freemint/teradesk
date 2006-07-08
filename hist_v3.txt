@@ -3,6 +3,123 @@ Tera Desktop. Copyright  1991, 1992, 1993, 1994, 1995  W. Klaren.
                          2002, 2003, 2004, 2005, 2006  Dj. Vukovic.
 
 
+Version 3.83
+------------
+- Code for handling compatibility with a bug in earlier versions of the
+  configuration file removed. As a result, if configuration files older
+  than V3.82 are loaded, visibility of directory fields has to be set again.
+
+- As the number of translations of TeraDesk grew (so far, beside English
+  original, there are Russian, German, French and Greek) it was felt that
+  certain explanations regarding DESKTOP.RSC were needed. Therefore, a new
+  file named RESOURCE.TXT was created. It contains comments intended
+  to help people translating TeraDesk to other languages. It will be
+  available in the source code package.
+ 
+- Some changes made in the resource file. See RESOURCE.TXT 
+
+- Changed behaviour of the Info... dialog when displaying data on disk
+  volumes (partitions). In earlier versions, retrieval of these data took
+  unpleasantly long time, especially on large partitions, because all files
+  and folders on the volume were counted. Now, only information on disk 
+  size, used and free space is immediately displayed, and folder/file 
+  count is displayed only after pressing the 'More' button.
+
+- Text "Number of files and links" in the Info... dialog is now, more 
+  correctly, "Number of files" in single-TOS.
+
+- Removed the possibility of too long filenames appearing in some alerts.
+
+- More informational file-selector titles now appear in fileselectors
+  invoked from some editable dialog fields.
+
+- Fixed unwanted change of titles in iconified windows when changing
+  visibility of directory fields.
+
+- Fixed possible buffer overrun with autolocator active in mint.
+
+- Fixed a bad redraw problem that manifested when doing real-time window 
+  moving/sizing in Magic-PC.
+
+- Fixed a redraw problem that manifesed when left/right scrolling a
+  directory window with selected items.
+
+- Optimized the number of GEM calls, exchange of AES messages and some 
+  waiting for timer events when resizing or moving windows. Response should 
+  be quicker now.
+
+- Certain simplifications and optimizations were made. Program size is now
+  less than it was in V3.80. 
+
+
+Version 3.82
+------------
+- Corrected display of size, free and used space when showing information
+  on large disk partitions. Up to 1024 GB should be correctly displayed. 
+  For partitions larger than 1 GB, size data is displayed in kilobytes, 
+  not in bytes. It ought to be noted that there is still a 2GB limit on the
+  total size and 32767 on the count of files in an open directory or in a 
+  list of selected items for a file operation (copying, deleting, etc.). 
+
+- Fixed a redraw problem that existed during real-time resizing of directory
+  windows in XaAES.
+
+- Fixed a bug that could crash TeraDesk when responding to AV_DRAG_ON_WINDOW
+  AV-protocol message.
+
+- Fixed an instance of using a deallocated memory block when launching
+  applications assigned to documenttypes. Application start parameters
+  could get corrupted.
+
+- Fixed an old bug (since V3.0!) that disabled assignment of the last icon 
+  in the icons resource file (any assignment made was lost after saving and 
+  loading the configuration file).
+
+- Corrected the somewhat ilogical beaviour of the dialog that appears
+  when more than one application is assigned to a filetype. Now the first 
+  application in the displayed list is preselected, so that the user does 
+  not have to explicitely click on a list item to select it.
+
+- Corrected response to Mint's arrogant tampering with filenames: when 
+  reading directories, if Dpathconf(path,DP_CASE) inquiry returns 
+  DP_NOSENSITIVE (i.e. value "1", meaning that filenames are not 
+  case-sensitive and are converted to uppercase), names are now really 
+  converted to uppercase. Names in partitions where case-sensitive names
+  are permitted are, of course, displayed in original case.
+
+- Substantial changes in window-iconifying code in order to better adjust 
+  it to recent developments in XaAES. Iconified windows are now moved to
+  positions and sizes determined by the AES, instead of remaining at 
+  previous locations and hard-coded iconified sizes. Recommended size
+  of iconified window (when it can be set in the AES) is 80 x 64 pixels
+  or 88x72 pixels (divisible by 8 and depending on window border thickness
+  in a particular AES; this is about the minimum window size into which an
+  icon with a 12-characters label can nicely fit).
+
+- Enabled 'light' display of icons for hidden files on the desktop. This
+  works nicely only in XaAES and MyAES- other AESes display 'disabled' 
+  icons in a very ugly way - the complete object rectangle is shaded, 
+  not only the icon mask. 'Light' display of icons for hidden files in
+  directory windows is possible (in any AES), at least for the time being,
+  only if window background is white, to allow for incapabilities of 
+  most AESes (the user may decide not to put a hidden file on the desktop
+  if it looks ugly, but such a file may appear in a window out of his 
+  control, therefore this safe approach).
+
+- Slightly modified calculation of default window sizes and positions.
+
+- Certain amount of source code cleanup and several size optimizations.
+  Program size actually reduced a little bit, in spite of added fixes.
+
+- Added some currently inactive code that will be used in future development.
+
+- Support for CFG2INF convertor of V2 configuration files completely dropped
+  as obsolete.
+
+- A number of mistakes in the hypertext help corrected and some items
+  updated.
+
+
 Version 3.81
 ------------
 - Added "https:" as a recognized name prefix for network objects.
@@ -1014,7 +1131,7 @@ Version 3.31
 
 - Fixed a bug in redrawing dialog and windows after font changes.
 
-- Fixed a bug in passing parameters in drag & drop.
+- Fixed a bug in passing parameters via drag & drop.
 
 - Fixed a bug which crashed the desktop if an attempt was made to
   open more than one item through Open...
@@ -1041,7 +1158,7 @@ Version 3.31
   windows- only items matching the current mask (i.e. visible ones)
   are summed up.
 
-- Better handling of a TOS 2.06 bug which manifested itself as a need
+- Better handling of a TOS 2.06 bug that manifested itself as a need
   for an additional mouseclick after (and sometimes before) a program
   was started, and there were no windows open. Version 3.30 did not
   work well in this respect with unpatched TOS 2.06 (possibly relevant

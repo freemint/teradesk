@@ -36,10 +36,11 @@
 
 typedef struct sliderinfo
 {
-	int type;					/* slider type (0 or 1) */
-
 	LSTYPE **list;				/* pointer to the list scrolled by this slider */
-
+	OBJECT *tree;				/* root object of the dialog */
+	void (*set_selector) (struct sliderinfo *slider, boolean draw, XDINFO *info);
+	int (*findsel) (void);		/* funktie voor het vinden van het geselekteerde object */
+	int type;					/* slider type (0 or 1) */
 	int up_arrow;				/* 'up arrow' object index */
 	int down_arrow;				/* 'down arrow' object index */
 	int slider;					/* index of the slider object */
@@ -47,20 +48,14 @@ typedef struct sliderinfo
 	int lines;					/* number of visible lines (list items) */
 	int n;						/* total number of lines (list items) */
 	int line;					/* index of the first visible item (0 - n-lines) */
-
-	void (*set_selector) (struct sliderinfo *slider, boolean draw, XDINFO *info);
-
 	int first;					/* index van eerste regel in objectboom */
-	int (*findsel) (void);		/* funktie voor het vinden van het geselekteerde object */
 } SLIDER;
 
 
-void sl_init(OBJECT *tree, SLIDER *slider);
-void sl_set_slider(OBJECT *tree, SLIDER *slider, XDINFO *info);
-int sl_handle_button(int button, OBJECT *tree, SLIDER *sl, XDINFO *dialog);
-int sl_form_do(OBJECT *tree, int start, SLIDER *slider, XDINFO *info);
-void set_selector(SLIDER *slider, boolean draw, XDINFO *info);
-void ls_sl_init (int n, void *set_sel, SLIDER *sl, LSTYPE **list);
+void sl_init(SLIDER *slider);
+void sl_set_slider(SLIDER *slider, XDINFO *info);
+int sl_handle_button(int button, SLIDER *sl, XDINFO *dialog);
+int sl_form_do(int start, SLIDER *slider, XDINFO *info);
 int keyfunc(XDINFO *info, SLIDER *sl, int scancode); 
 long calc_slpos(int newpos, long lines);
 int calc_slmill(long pos, long lines);

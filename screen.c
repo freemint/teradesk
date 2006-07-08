@@ -140,11 +140,11 @@ void set_rect_default(void)
 
 void draw_rect(int x1, int y1, int x2, int y2)
 {
-	moff_mouse();
+	xd_mouse_off();
 	xd_clip_on(&screen_info.dsk);
 	draw_xdrect(x1, y1, x2 - x1, y2 - y1);
 	xd_clip_off();
-	mon_mouse();
+	xd_mouse_on();
 }
 
 

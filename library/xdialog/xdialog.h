@@ -240,9 +240,8 @@ void xd_mouse_on(void);
 
 int xd_get_rbutton(OBJECT *tree, int rb_parent);
 int xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
-int xd_set_child(OBJECT *tree, int rb_parent, int enab);
+void xd_set_child(OBJECT *tree, int rb_parent, int enab);
 
-OBSPEC xd_get_obspec(OBJECT *object);
 OBSPEC *xd_get_obspecp(OBJECT *object);
 char *xd_ptext(OBJECT *object);
 void xd_zerotext(OBJECT *object);

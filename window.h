@@ -30,7 +30,7 @@
 #define CON_WIND		20 /* currently not used */
 
 #define TFLAGS			(NAME|CLOSER|FULLER|MOVER|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE|ICONIFY)
-#define DFLAGS			(NAME|CLOSER|FULLER|MOVER|INFO|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE|ICONIFY)
+#define DFLAGS			(NAME|CLOSER|FULLER|MOVER|SIZER|UPARROW|DNARROW|VSLIDE|LFARROW|RTARROW|HSLIDE|ICONIFY|INFO)
 
 /* Interne variabelen item windows. */
 
@@ -115,7 +115,7 @@ typedef struct
 {
 	unsigned int fulled : 1;		/* window fulled */
 	unsigned int iconified: 1;		/* window iconified */ 
-	unsigned int fullfull: 1;		/* window very much fulled */
+	unsigned int fullfull: 1;		/* window very much fulled (whole screen) */
 	unsigned int setmask: 1;		/* non-default filename mask */
 	unsigned int resvd: 12;			/* currently unused */ 
 } WDFLAGS;
@@ -129,14 +129,14 @@ typedef struct
 #define WD_VARS 	int scolumns;  \
 					int rows;	   \
 					int columns;   		/* number of columns in window content (chars or icons) */ \
-					long nrows;	   		/* visible height (lines) */  \
 					int ncolumns;  		/* visible width (chars) */   \
 					int px;        		/* h.slider position  */ \
 					long py;       		/* v.slider position  */ \
+					long nrows;	   		/* visible height (lines) */  \
 					long nlines;   		/* total number of lines in window content (lines or icons) */ \
 					char title[80];		/* window title */ \
 					char *path;			/* name of directory or file */ \
-	struct winfo *winfo
+					struct winfo *winfo
 
 /*
  * Identical part of DIR_WINDOW and TXT_WINDOW structures
@@ -159,9 +159,9 @@ typedef struct winfo
 	int iy; 
 	int iw;
 	int ih;
+	TYP_WINDOW *typ_window;
 	WDFLAGS flags;
 	boolean used;
-	TYP_WINDOW *typ_window;
 }WINFO;
 
 
@@ -244,6 +244,7 @@ void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
 void wd_update_drv(int drive);
 void wd_restoretop(int code, int *whandle, int *wap_id);
+boolean wd_dirortext(WINDOW *w);
 
 void wd_hndlbutton(WINDOW *w, int x, int y, int n, int button_state,
 				   int keystate);
@@ -258,6 +259,7 @@ void wd_deselect_all(void);
 void wd_fields(void);
 void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
+void wd_menu_ienable(int item, int enable);
 
 void wd_sizes(void);
 #if __USE_MACROS
@@ -313,10 +315,13 @@ void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch);
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
 void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, 
 int obj_x, int obj_y, char *name );
-void wd_type_iconify(WINDOW *w);
-void wd_type_uniconify(WINDOW *w);
-void wd_iopen( WINDOW *w, RECT *size);
+void wd_type_iconify(WINDOW *w, RECT *r);
+void wd_type_uniconify(WINDOW *w, RECT *r);
+void wd_restoresize(WINFO *info);
+void wd_setnormal(WINFO *info); 
+void wd_iopen( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags);
 boolean wd_checkopen(int *error);
+void wd_noselection(void);
 void wd_in_screen ( WINFO *info );
 long wd_type_slines(TYP_WINDOW *w);
 void wd_drawall(void);
@@ -325,8 +330,6 @@ boolean itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y, int avkst
 
 void arrow_mouse(void);
 void hourglass_mouse(void);
-void mon_mouse(void);
-void moff_mouse(void);
 void w_transptext( int x, int y, char *text);
 boolean isfileprog(ITMTYPE type);
 

@@ -50,7 +50,7 @@
 typedef struct
 {
 	int id;
-	char name[17];
+	SNAME name;
 	int flag;
 } FONTDATA;
 
@@ -212,28 +212,23 @@ static void set_theselector
 	int nnf
 )
 {
-	int i;
+	int i, isl;
 	OBJECT *o;
 
 	for (i = 0; i < NLINES; i++)
 	{
 		o = &wdfont[WDFONT1 + i];
+		o->ob_state &= ~SELECTED;
+		isl = i + slider->line;
 
-		if (i + slider->line >= nnf)
-		{
-/* no need?
-			o->ob_spec.tedinfo->te_ptext = "                ";
-*/
+		if (isl >= nnf)
 			*o->ob_spec.tedinfo->te_ptext = 0;
-			o->ob_state &= ~SELECTED;
-		}
 		else
 		{
-			if (i + slider->line == thefont)
-				o->ob_state |= SELECTED;
-			else
-				o->ob_state &= ~SELECTED;		
-			o->ob_spec.tedinfo->te_ptext = fd[i + slider->line].name;
+			o->ob_spec.tedinfo->te_ptext = fd[isl].name;
+
+			if (isl == thefont)
+				o->ob_state |= SELECTED;	
 		}
 	}
 
@@ -255,7 +250,7 @@ static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
 #if _FONT_SEL
 
 /*
- * Set font selector listbox for the nonmodal font-selector dialog
+ * Set font selector listbox for the systemwide nonmodal font-selector dialog
  */
 
 static void mset_fselector(SLIDER *slider, boolean draw, XDINFO *info)
@@ -366,12 +361,15 @@ void font_count
 		{
 			strsncpy(s, name, sizeof(h->name));	
 			j = (int) strlen(h->name);
+
 			while (j < 16)
 				s[j++] = ' ';
+
 			h->flag = (int)name[32];
 			lnf++;
 		}
 	}
+
 	*nfn = lnf;
 }
 
@@ -383,6 +381,7 @@ void font_count
 static void fnt_sl_init( int nf, void *set_sel, SLIDER *sl, int oldfont, int *newfont, FONTDATA *fd)
 {
 	sl->type = 0;
+	sl->tree = wdfont;
 	sl->up_arrow = WDFUP;
 	sl->down_arrow = WDFDOWN;
 	sl->slider = FSLIDER;
@@ -392,8 +391,9 @@ static void fnt_sl_init( int nf, void *set_sel, SLIDER *sl, int oldfont, int *ne
 	sl->line = set_font(sl, oldfont, newfont, fd, nf);
 	sl->set_selector = set_sel; 
 	sl->first = WDFONT1;
-	sl->findsel = fnt_find_selected; 
-	sl_init(wdfont, sl);
+	sl->findsel = fnt_find_selected;
+ 
+	sl_init(sl);
 }
 
 
@@ -430,6 +430,7 @@ static void do_fd_button
 			{
 				if ((curobj >= WDFONT1) && (curobj < WDFONT1 + NLINES)) 
 					xd_drawbuttnorm(info, curobj);
+
 				fbl->font = newfont;
 				fbl->cursize = get_size(fbl);
 				state = SELECTED;
@@ -443,17 +444,16 @@ static void do_fd_button
 			break;
 		case WDFSUP:
 			if (fbl->cursize < fbl->nfsizes - 1)
-				fbl->cursize = fbl->cursize + 1;
+				fbl->cursize += 1;
 			break;
 		case WDFSDOWN:
 			if (fbl->cursize > 0)
-				fbl->cursize = fbl->cursize - 1;
+				fbl->cursize -= 1;
 			break;
 		case WDFCUP:
-			fbl->colour += 1;
-			break;
+			fbl->colour += 2;	/* limited further below */
 		case WDFCDOWN:
-			fbl->colour -= 1;
+			fbl->colour -= 1; 	/* limited further below */
 			break;
 	}
 
@@ -461,8 +461,8 @@ static void do_fd_button
 	fbl->fsize = fbl->fsizes[fbl->cursize];
 
 	itoa(fbl->fsize, wdfont[WDFSIZE].ob_spec.free_string, 10);
-	wdfont[WDFCOL].ob_spec.obspec.interiorcol = limcolor(fbl->colour);
 
+	wdfont[WDFCOL].ob_spec.obspec.interiorcol = limcolor(fbl->colour);
 	fbl->colour = wdfont[WDFCOL].ob_spec.obspec.interiorcol;
 
 	xd_drawthis(info, WDFCOL);
@@ -547,7 +547,7 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 
 		while (!stop)
 		{
-			button = sl_form_do(wdfont, 0, &sl_info, &info) & 0x7FFF;
+			button = sl_form_do(ROOT, &sl_info, &info) & 0x7FFF;
 
 			switch(button)
 			{
@@ -618,7 +618,7 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 
 	button &= 0x7FFF;
 
-	if (sl_handle_button(button, wdfont, &fnt_dial->sl_info.slider, dialog))
+	if (sl_handle_button(button, &fnt_dial->sl_info.slider, dialog))
 		return;
 
 	switch (button)
@@ -660,8 +660,7 @@ XD_NMFUNC fnt_funcs =
  * such as ST-Guide, Multistrip, Taskbar, aMail, etc. 
  */
 
-void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
-				 int effect, int prop)
+void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect, int prop)
 {
 	FNT_DIALOG 
 		*fnt_dial;
@@ -687,7 +686,7 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 
 		/* 
 		 * If font selector is already open, display an alert and
-		 * just return the old values as if new ones were selected 
+		 * just return old values as if new ones were selected 
 		 */ 
 
 		alert_iprint(TDOPEN);
@@ -705,6 +704,7 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 
 		return;
 	}
+
 	wdfopen = TRUE;
 
 	if ((fnt_dial = malloc_chk(sizeof(FNT_DIALOG))) == NULL)
@@ -737,6 +737,7 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color,
 	fnt_dial->fbl.fsize = size;
 	fnt_dial->fbl.colour = color;
 	fnt_dial->fbl.effect = effect;
+
 	fnt_dial->fbl.cursize = get_size(&fnt_dial->fbl);
 
 	fnt_dial->fbl.fsize = fnt_dial->fbl.fsizes[fnt_dial->fbl.cursize];

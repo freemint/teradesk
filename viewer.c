@@ -56,7 +56,6 @@ FONT txt_font;
 static int displen = -1;
 
 static void set_menu(TXT_WINDOW *w);
-static void txt_closed(WINDOW *w);
 static void txt_hndlmenu(WINDOW *w, int title, int item);
 
 
@@ -66,7 +65,7 @@ static void txt_hndlmenu(WINDOW *w, int title, int item);
 
 static long txt_nlines(TXT_WINDOW *w)
 {
-	return   (w->hexmode) ? ((w->size + 15L) / 16) : w->tlines;
+	return (w->hexmode) ? ((w->size + 15L) / 16) : w->tlines;
 }
 
 
@@ -81,8 +80,8 @@ static long txt_nlines(TXT_WINDOW *w)
 static int txt_width(TXT_WINDOW *w, int hexmode)
 {
 	long 
-		i,				/* line counter */
-		mw;				/* maximum line width */
+		i,	/* line counter */
+		mw;	/* maximum line width */
 
 
 	/* 
@@ -146,15 +145,18 @@ static char hexdigit(int x)
 
 /*
  * Create a line in hex mode.
- * tmp = output buffer tmp[HEXLEN + 2] with data in hex mode
- * p = pointer to the beginning of the 16-byte line of text 
- * a = index of 1st byte of the line from the file beginning
- * size =  file size.
  * Note: offset from file beginning will not be displayed correctly
  * for files larger than 256MB.
  */
 
-void disp_hex( char *tmp, char *p, long a, long size, boolean toprint )
+void disp_hex
+(
+	char *tmp,  		/* output buffer tmp[HEXLEN + 2] with data in hex mode  */
+	char *p,  			/* pointer to the beginning of the 16-byte line of text */
+	long a,				/* index of 1st byte of the line from the file beginning */
+	long size,			/* file size */
+	boolean toprint		/* true if file is being printed */ 
+)
 {
 	long 
 		h = a;
@@ -318,7 +320,6 @@ static int txt_line
 			tmp[HEXLEN + 2], 
 			*p = &w->buffer[a];
 
-
 		if (w->px >= HEXLEN)
 		{
 			*dest = 0;
@@ -327,7 +328,7 @@ static int txt_line
 
 		disp_hex(tmp, p, a, w->size, FALSE);
 
-		s = &tmp[wpxm + cntm]; /* same as &tmp[w->px - (MARGIN-cntm)] */
+		s = &tmp[wpxm + cntm]; /* same as &tmp[w->px - (MARGIN - cntm)] */
 
 		while (cnt < m)
 		{
@@ -349,20 +350,19 @@ static int txt_line
 
 /*
  * Bereken de rechthoek die de te tekenen tekst omsluit.
- *
- * Parameters:
- *
- * tw		- Pointer naar window
- * line		- Regelnummer
- * strlen	- lengte van de string
- * work		- RECT structuur met de grootte van het werkgebied van het
- *			  window.
  */
 
-static void txt_comparea(TXT_WINDOW *w, long line, int strlen, RECT *r, RECT *work)
+static void txt_comparea
+(
+	TXT_WINDOW *w,	/* pointer naar window */
+	long line, 		/* regelnummer */
+	int strlen, 	/* lengte van de string */
+	RECT *r,
+	RECT *work		/* RECT structuur met de grootte van het werkgebied van het window */
+)
 {
 	r->x = work->x;
-	r->y = work->y + (int) (line - w->py) * txt_font.ch;
+	r->y = work->y + (int)(line - w->py) * txt_font.ch;
 	r->w = strlen * txt_font.cw;
 	r->h = txt_font.ch;
 }
@@ -372,17 +372,17 @@ static void txt_comparea(TXT_WINDOW *w, long line, int strlen, RECT *r, RECT *wo
  * Functie voor het afdrukken van 1 karakter van een regel. Deze
  * functie wordt bij het naar links en rechts scrollen van een
  * window gebruikt.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- * column	- Kolom waarin het karakter wordt afgedrukt
- * line		- Regel waarin het karakter wordt afgedrukt
- * area		- Clipping rechthoek
- * work		- Werkgebied van het window
  */
 
-static void txt_prtchar(TXT_WINDOW *w, int column, int nc, long line, RECT *area, RECT *work)
+static void txt_prtchar
+(
+	TXT_WINDOW *w,	/* pointer naar window */
+	int column,		/* column	- Kolom waarin het karakter wordt afgedrukt */
+	int nc,			/* number of columns */
+	long line,		/* regel waarin het karakter wordt afgedrukt */
+	RECT *area,		/* clipping rechthoek */
+	RECT *work		/* Werkgebied van het window */
+)
 {
 	RECT r, in;
 	int len, c;
@@ -410,16 +410,15 @@ static void txt_prtchar(TXT_WINDOW *w, int column, int nc, long line, RECT *area
 
 /*
  * Functie voor het afdrukken van een regel.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- * line		- Regel die wordt afgedrukt
- * area		- Clipping rechthoek
- * work		- Werkgebied van het window
  */
 
-void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
+void txt_prtline
+(
+	TXT_WINDOW *w,	/* Pointer naar window */
+	long line,		/* Regel die wordt afgedrukt */
+	RECT *area,		/* Clipping rechthoek */
+	RECT *work		/* Werkgebied van het window */
+)
 {
 	RECT 
 		r,
@@ -445,30 +444,6 @@ void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work)
 }
 
 
-/*
- * Functie voor het afdrukken van alle regels die zichtbaar zijn in
- * een window.
- *
- * Parameters:
- *
- * w		- Pointer naar window
- * area		- Clipping rechthoek
- */
-
-void txt_prtlines(TXT_WINDOW *w, RECT *area)
-{
-	long i;
-	RECT work;
-
-	set_txt_default(&txt_font);
-
-	xw_getwork((WINDOW *)w, &work);
-
-	for (i = 0; i < w->rows; i++)
-		txt_prtline(w, w->py + i, area, &work);
-}
-
-
 /********************************************************************
  *																	*
  * Funkties voor scrollen van tekstwindows.							*
@@ -477,16 +452,16 @@ void txt_prtlines(TXT_WINDOW *w, RECT *area)
 
 /*
  * Teken een kolom van een window opnieuw.
- *
- * Parameters:
- *
- * w		- pointer naar window
- * column	- kolom
- * area		- clipping rechthoek
- * work		- werkgebied window
  */
 
-void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work)
+void txt_prtcolumn
+(
+	TXT_WINDOW *w,	/* pointer naar window */
+	int column,		/* first column */
+	int nc,			/* number of columns */
+	RECT *area,		/* clipping rechthoek */
+	RECT *work		/* werkgebied window */
+)
 {
 	int i;
 
@@ -575,19 +550,18 @@ static void txt_free(TXT_WINDOW *w)
 
 
 /*
- * Remove a text window
+ * Remove a text window and delete window structure
  */
 
 static void txt_rem(TXT_WINDOW *w)
 {
-	if (w != NULL)
-	{
-		txt_free(w);
-		free(w->path);
+	txt_free(w);
+	free(w->path);
 
-		w->winfo->used = FALSE;
-		w->winfo->typ_window = NULL; 
-	}
+	w->winfo->used = FALSE;
+	w->winfo->typ_window = NULL; 
+
+	xw_delete((WINDOW *)w);
 }
 
 
@@ -601,8 +575,8 @@ static void txt_rem(TXT_WINDOW *w)
 
 void txt_closed(WINDOW *w)
 {
+	xw_close(w);
 	txt_rem((TXT_WINDOW *) w);
-	xw_closedelete(w);
 }
 
 
@@ -616,7 +590,12 @@ void txt_closed(WINDOW *w)
  * item			- Menupunt dat geselekteerd is
  */
 
-void txt_hndlmenu(WINDOW *w, int title, int item)
+void txt_hndlmenu
+(
+	WINDOW *w,	/* pointer to (text) window */
+	int title,	/* menu title id. */
+	int item	/* menu item id. */
+	)
 {
 	switch (item)
 	{
@@ -640,10 +619,15 @@ void txt_hndlmenu(WINDOW *w, int title, int item)
  ********************************************************************/
 
 /* 
- * Funkties voor het tellen van de regels van een file 
+ * Funkties voor het tellen van de regels van een file.
+ * Return number of lines counted. 
  */
 
-static long count_lines(char *buffer, long length)
+static long count_lines
+(
+	char *buffer,	/* pointer to buffer contaning file */ 
+	long length		/* buffer (file) length */
+)
 {
 	char 
 		cr = '\n', 
@@ -674,7 +658,13 @@ static long count_lines(char *buffer, long length)
  * Number of tabs per lines is returned in *ntabs 
  */
 
-static void set_lines(char *buffer, char **lines, int *ntabs, long length)
+static void set_lines
+(
+	char *buffer,	/* pointer to buffer containing file */
+	char **lines,	/* pointer to array of pointers to line beginnings */
+	int *ntabs,		/* maximum number of tabs in any line */
+	long length		/* file buffer length */
+)
 {
 	char 
 		*s = buffer, 
@@ -698,7 +688,7 @@ static void set_lines(char *buffer, char **lines, int *ntabs, long length)
 				*t += 1;
 		}
 
-		if (*s++ == '\n')	/* count linefeeds */
+		if (*s++ == '\n')	/* find lineends */
 		{
 			*(++t) = 0;
 			*p++ = s;
@@ -744,7 +734,7 @@ extern long
  * or for the purpose of searching to find a string in the file
  * or for any other purpose where found convenient.
  * Function returns error code, if there is any, or 0 for OK.
- * If parameter "tlines" is NULL, it is assumed that the routine will
+ * If pointer parameter "tlines" is NULL, it is assumed that the routine will
  * be used for non-display purpose; then lines and tabs will not be 
  * counted and set.
  * Note: for safety reasons, the routine allocates several bytes 
@@ -757,7 +747,7 @@ int read_txtfile
 	char **buffer,		/* location of the buffer to receive text */
 	long *flength,		/* size of the file being read */
 	long *tlines,		/* number of text lines in the file */
-	char ***lines,		/* pointers to beginnings of text lines */
+	char ***lines,		/* pointer to array of pointers to beginnings of text lines */
 	int **ntabs			/* a list of numbers of tabs per lines */
 )
 {
@@ -805,7 +795,7 @@ int read_txtfile
 						 * or the display routine will not know when to stop
 						 */
 
-						(*buffer)[*flength]='\n';
+						(*buffer)[*flength] = '\n';
 
 						/* Count text lines in the file (in fact, in the buffer) */
 
@@ -820,7 +810,7 @@ int read_txtfile
 						if 
 						(
 							((*lines = malloc(*tlines * sizeof(char *))) != NULL) &&
-							((*ntabs = malloc((*tlines + 1L) * sizeof(int  *))) != NULL)
+							((*ntabs = malloc((*tlines + 1L) * sizeof(int *))) != NULL)
 						)
 							set_lines(*buffer, *lines, *ntabs, *flength);
 						else
@@ -833,7 +823,7 @@ int read_txtfile
 				}
 				else
 				{
-					error = (read < 0) ? (int) read : EREAD;
+					error = (read < 0) ? (int)read : EREAD;
 					free(*buffer);
 				}
 			}
@@ -865,12 +855,17 @@ int read_txtf
  * Funktie voor het laden van een file in het geheugen.
  * Bij een leesfout wordt een waarde ongelijk 0 terug gegeven.
  * Alle buffers zijn dan vrijgegeven. 
+ * File name is contained in w->path;
  * ASCII or Hex mode is determined from the first 256 bytes of file.
  * Af at least 80% of those characters are ASCII printable ones,
  * it is assumed that text mode should be applied.
  */
 
-static int txt_read(TXT_WINDOW *w, boolean setmode)
+static int txt_read
+(
+	TXT_WINDOW *w,	/* pointer to window where the file will be displayed */
+	boolean setmode	/* if true, determine whether to use text or hex mode */
+)
 {
 	int 
 		error;
@@ -927,15 +922,19 @@ static int txt_read(TXT_WINDOW *w, boolean setmode)
 
 
 /*
- * Reread a file into the same window.
+ * Read or reread a file into the same window.
  * If filename is not given (NULL), keep old name
  * and reread old file.
  */
 
-int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
+boolean txt_reread
+(
+	TXT_WINDOW *w, 	/* pointer to window into which the file is reread */
+	char *name, 	/* file name */
+	int px,			/* position of horizontal slider (column index) */ 
+	long py			/* position of vertical slider (line index) */
+)
 {
-	int error;
-
 	txt_free(w);
 
 	if (name)
@@ -944,9 +943,7 @@ int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
 		w->path = name;
 	}
 
-	error = txt_read(w, TRUE);
-
-	if ( error >= 0)
+	if (txt_read(w, TRUE) >= 0)
 	{
 		w->px = px;
 		w->py = py;
@@ -964,7 +961,12 @@ int txt_reread( TXT_WINDOW *w, char *name, int px, long py)
  * If buffers are identical, return buffer length
  */
 
-long compare_buf( char *buf1, char*buf2, long len )
+long compare_buf
+(
+	char *buf1,	/* pointer to buffer #1 */
+	char*buf2,	/* pointer to buffer #2 */
+	long len	/* how many bytes to compare */
+)
 {
 	long i;
 
@@ -981,9 +983,9 @@ long compare_buf( char *buf1, char*buf2, long len )
 /*
  * Copy a number of bytes from source to destination, starting from
  * index "pos", substituting all nulls with something else; 
- * Not more than displen bytes will be copied, or less if buffer end 
+ * Not more than "displen" bytes will be copied, or less if buffer end 
  * is encountered first. Add a 0 char at the end. In order for all this
- * to work, 'displen' must first be given a positive value.
+ * to work, "displen" must first be given a positive value.
  *
  * Note 1: "pos" should never be larger than "length" !!!! no checking done !
  * ("length" is length from the beginning of source, not counted from "pos").
@@ -1068,7 +1070,7 @@ void compare_files( WINDOW *w, int n, int *list )
 	 */
 
 	if(displen < 0)
-		displen = strlen(compare[DTEXT1].ob_spec.tedinfo->te_ptext);
+		displen = (int)strlen(compare[DTEXT1].ob_spec.tedinfo->te_ptext);
 
 	compare[CFILE1].ob_flags |= EDITABLE;
 	compare[CFILE2].ob_flags |= EDITABLE;
@@ -1178,6 +1180,7 @@ void compare_files( WINDOW *w, int n, int *list )
 							if ( sync || (in > swx2) )
 							{
 								arrow_mouse();
+
 								sync = FALSE;	
 								diff = TRUE;
 
@@ -1288,7 +1291,8 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 						   boolean setmode, int *error) 
 {
 	TXT_WINDOW *w;
-	RECT size;
+	RECT oldsize;
+	WDFLAGS oldflags;
 
 	wd_in_screen( info );
 
@@ -1301,6 +1305,8 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 
 	/* Note: complete window structure content set to zeros in xw_create */
 
+	hourglass_mouse();
+
 	info->typ_window = (TYP_WINDOW *)w; 
 	w->px = px;
 	w->py = py;
@@ -1309,23 +1315,28 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 	w->hexmode = hexmode;
 	w->winfo = info;
 
+	oldsize = *(RECT *)(&(info->x)); /* remember old size */
+
+	wd_restoresize(info);
+
+	oldflags = info->flags;
+
+	wd_setnormal(info);
+
 	/* Read text file */
 
-	hourglass_mouse();
 	*error = txt_read(w, setmode);
+
 	arrow_mouse();
 
 	if (*error != 0)
 	{
 		txt_rem(w);
-		xw_delete((WINDOW *) w);		/* after txt_rem (MP) */
 		return NULL;
 	}
 	else
 	{
-		wd_calcsize(info, &size); 
-		wd_type_title((TYP_WINDOW *)w); /* set title AND sliders */
-		wd_iopen((WINDOW *)w, &size); 
+		wd_iopen((WINDOW *)w, &oldsize, &oldflags); 
 		return (WINDOW *)w;
 	}
 }
@@ -1401,14 +1412,14 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 
 static CfgEntry txtw_table[] =
 {
-	{CFG_HDR, "text" },
+	{CFG_HDR,	"text" },
 	{CFG_BEG},
-	{CFG_D,   "indx", &that.index	},
-	{CFG_S,   "name",  that.path	    },
-	{CFG_D,   "xrel", &that.px		},
-	{CFG_L,   "yrel", &that.py		},
-	{CFG_BD,  "hexm", &that.hexmode	},
-	{CFG_D,   "tabs", &that.tabsize	},
+	{CFG_D,		"indx", &that.index	},
+	{CFG_S,		"name",  that.path	    },
+	{CFG_D,		"xrel", &that.px		},
+	{CFG_L,		"yrel", &that.py		},
+	{CFG_D,		"hexm", &that.hexmode	},
+	{CFG_D,		"tabs", &that.tabsize	},
 	{CFG_END},
 	{CFG_LAST}
 };

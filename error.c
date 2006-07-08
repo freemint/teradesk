@@ -138,12 +138,14 @@ char *get_message(int error)
 
 int alert_msg(const char *string, ...)
 {
-	char alert[256];
+	char alert[256], s[256];
 	va_list argpoint;
 	int button;
+
 	sprintf(alert, "[1][ %s ][ Ok ]", string);
 	va_start(argpoint, string);
-	button = vaprintf(1, alert, argpoint);
+	vsprintf(s, string, argpoint);
+	button = form_alert(1, s);
 	va_end(argpoint);
 
 	return button;
@@ -154,19 +156,30 @@ int alert_msg(const char *string, ...)
 
 /* 
  * Display an alert box identified by "message" (alert-box id.) and  
- * contining some texts; return button index 
+ * possibly containing some other texts; return button index 
  */
 
-int alert_printf(int def, int message,...)
+int alert_printf
+(
+	int def,		/* default button index */ 
+	int message,	/* message text id. */
+	...				/* other text to be printed */
+)
 {
-	va_list argpoint;
-	int button;
-	char *string;
+	va_list
+		argpoint;
 
+	int 
+		button;
+
+	char 
+		*string,
+		s[256];
 
 	string = get_freestring(message);
 	va_start(argpoint, message);
-	button = vaprintf(def, string, argpoint);
+	vsprintf(s, string, argpoint);
+	button = form_alert(def, s);
 	va_end(argpoint);
 
 	return button;

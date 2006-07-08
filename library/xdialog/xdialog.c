@@ -454,7 +454,6 @@ int xd_wdupdate(int mode)
 	case END_MCTRL:
 		if (--xd_upd_mcnt != 0)
 			return 1;
-		break;
 	}
 
 	return wind_update(mode);
@@ -2202,7 +2201,10 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_aes4_0 = (_global[0] >= 0x330);
 #endif
 
+/*
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
+*/
+xd_min_timer = 5;
 
 	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
 	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);

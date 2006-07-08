@@ -438,26 +438,15 @@ void app_update(wd_upd_type type, const char *fname1, const char *fname2)
 /* 
  * Create a "short" name of an application; it will be used for informational
  * purposes in dialogs opened to edit documenttypes and application type, and 
- * in some alerts. "dest" must be allocated beforehand.
+ * in some alerts. "dest" must be allocated beforehand and be at least a SNAME
  */ 
 
 void log_shortname( char *dest, char *appname )
 {
-	char *n;
-
 	*dest = 0;
 	
-	if (appname == NULL)
-		return;
-	
-	n = fn_get_name(appname);	/* find name proper in the full name */
-
-#if _MINT_
-	if (mint)
-		cramped_name( n, dest, (int)sizeof(SNAME) );
-	else
-#endif
-		strsncpy( dest, n, 13 ); /* 8 (name) + 1 (dot) + 3 (ext) + 1 (term) */ 
+	if (appname)
+		cramped_name(fn_get_name(appname), dest, sizeof(SNAME));
 }
 
 
@@ -833,7 +822,11 @@ void app_install(int use, APPLINFO **applist)
 		rsc_title(setmask, FTTEXT, TAPP ); 
 		setmask[FILETYPE].ob_flags &= ~(EDITABLE | HIDETREE);
 		obj_unhide(setmask[FTTEXT]);
-		*(setmask[FILETYPE].ob_spec.tedinfo->te_ptext) = 0; 
+
+		if(selitem)
+			cv_fntoform(setmask, FILETYPE, (*applist)->shname);
+		else
+			*(setmask[FILETYPE].ob_spec.tedinfo->te_ptext) = 0; 
 	}
 	else
 		title = DTINSAPP; 
@@ -881,11 +874,14 @@ APPLINFO *app_find(const char *file, boolean dial)
 		t = h->filetypes;
 		while (t)
 		{
-			if (cmp_wildcard(file, t->filetype))
-			{
-				if(!selitem)
-					(APPLINFO *)selitem = h;	/* First associated one */
+			/* 
+			 * Match name pattern; for network objects allow only 
+			 * applications assigned for network objects
+			 * Or better not. It would reduce flexibility!
+			 */
 
+			if(cmp_wildcard(file, t->filetype) /* && (!x_netob(file) || x_netob(t->filetype)) */ )
+			{
 				if
 				(
 					lsadd_end
@@ -908,6 +904,8 @@ APPLINFO *app_find(const char *file, boolean dial)
 
 	nomore:;
 
+	selitem = (LSTYPE *)d;
+
 	/* If more than one app found, open the dialog, but disable editing */
 
 	if(naap > 1 && dial)
@@ -921,16 +919,17 @@ APPLINFO *app_find(const char *file, boolean dial)
 		obj_enable(setmask[FTADD]);
 		obj_enable(setmask[FTDELETE]);
 		obj_enable(setmask[FTCHANGE]); 
-
-		/* Now find (by name) the selected application in the original list */
-
-		if(selitem)
-			(APPLINFO *)selitem = find_appl(&applikations, ((APPLINFO *)selitem)->name, NULL);
 	}
+
+	/* Now find (by name) the selected application in the original list */
+
+	if(selitem)
+		(APPLINFO *)selitem = find_appl(&applikations, ((APPLINFO *)selitem)->name, NULL);
 
 	/* Remove temporary list of applications */
 
 	lsrem_all((LSTYPE **)&d, rem_appl);
+
 	nodocs = FALSE;
 	return (APPLINFO *)selitem;
 }
@@ -1327,9 +1326,11 @@ boolean app_exec
 		 * Abort if a program file with this name does not exist. 
 		 */
 
+		log_shortname((char *)thiscall, (char *)name);
+
 		if (!x_exist(name, EX_FILE))
 		{
-			alert_printf(1, APRGNFND, fn_get_name(name));
+			alert_printf(1, APRGNFND, thiscall);
 			goto errexit;
 		}
 
@@ -1361,6 +1362,7 @@ boolean app_exec
 
 		free(name);
 		name = x_fllink(appl->name); /* allocate new name */
+
 		theenv = (appl->localenv && appl->localenv[0]) ? appl->localenv : NULL;
 		thework = (PRGTYPE *)appl;
 
@@ -1369,48 +1371,56 @@ boolean app_exec
 		 * locate it or to remove it. 
 		 */
 
-		if (name && !x_exist(name, EX_FILE))
+		if(name)
 		{
-			char *fullname;
-			int button;
+			log_shortname((char *)thiscall, (char *)name);
 
-			if ((button = alert_printf(1, AAPPNFND, fn_get_name(name))) == 2)	/* remove */
-				rem_appl(&applikations, appl); 
-		
-			if (button > 1)						/* remove or cancel */
-				goto errexit;
-
-			/* Locate the file using file selector */
-
-			if ((fullname = locate(name, L_PROGRAM)) == NULL)
-				goto errexit;
-
-			/* 
-			 * Fullname is not NULL.
-			 * Maybe a link was selected. Locate real object.
-			 * If this fails, old settings are kept
-			 */
-
-			free(name); /* have fullname now; don't need 'name' */
-
-			if ( (name = x_fllink(fullname)) != NULL )
+			if (!x_exist(name, EX_FILE))
 			{
+				char *fullname;
+				int button;
+
+				if ((button = alert_printf(1, AAPPNFND, thiscall)) == 2)	/* remove */
+					rem_appl(&applikations, appl); 
+		
+				if (button > 1)						/* remove or cancel */
+					goto errexit;
+
+				/* Locate the file using file selector */
+
+				if ((fullname = locate(name, L_PROGRAM)) == NULL)
+					goto errexit;
+
 				/* 
-				 * Replace existing application name.
-				 * then create a short name here, or applications list 
-				 * in the dialog will look wrong  
+				 * Fullname is not NULL.
+				 * Maybe a link was selected. Locate real object.
+				 * If this fails, old settings are kept
 				 */
 
-				free(appl->name);
-				appl->name = strdup(name);
-				log_shortname( appl->shname, appl->name );
-			}
+				free(name); /* have fullname now; don't need 'name' */
 
-			free(fullname);
+				if ( (name = x_fllink(fullname)) != NULL )
+				{
+					/* 
+					 * Replace existing application name.
+					 * then create a short name here, or applications list 
+					 * in the dialog will look wrong  
+					 */
+
+					free(appl->name);
+					appl->name = strdup(name);
+					log_shortname( appl->shname, appl->name );
+				}
+
+				free(fullname);
+			}
 		}
 	}
 
-	/* Set some program-type details as proper boolean values */
+	/* 
+	 * Set some program-type details as proper boolean values 
+	 * note: form of the assignment given below appears to give the smallest binary
+	 */
 
 	argv = FALSE;
 	single = FALSE;

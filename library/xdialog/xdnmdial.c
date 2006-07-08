@@ -122,7 +122,7 @@ void __xd_topped(WINDOW *w)
  *('mode' is for compatibility with WD_FUNC)
  */
 
-void __xd_closed(WINDOW *w, int mode)
+void __xd_closed(WINDOW *w, int dummy_mode)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 

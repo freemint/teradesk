@@ -43,14 +43,14 @@ typedef struct
 
 	/* three window-type structures are identical up to this point */
 
-	int tabsize;
 	char *buffer;				/* buffer met de tekst */
-	long size;					/* aantal bytes in de tekst */
-	int twidth;					/* text width incl. tab substitutes */
-	long tlines;				/* aantal regels in de tekst */
 	char **lines;				/* lijst met pointers naar het begin van alle tekstregels */
+	long size;					/* aantal bytes in de tekst */
+	long tlines;				/* aantal regels in de tekst */
+	int tabsize;				/* tab size */
 	int *ntabs;					/* tabs per lines */
-	unsigned int hexmode : 1;	/* Hexmode flag. */
+	int twidth;					/* text width incl. tab substitutes */
+	int hexmode;				/* Hexmode flag. */
 
 } TXT_WINDOW;
 
@@ -61,10 +61,10 @@ void txt_closed(WINDOW *w);
 void txt_hndlmenu(WINDOW *w, int title, int item);
 
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
-void txt_prtlines(TXT_WINDOW *w, RECT *area);
+void txt_prtlines(TXT_WINDOW *w, RECT *area, RECT *work);
 void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work);
 int txt_read(TXT_WINDOW *w, boolean setmode);
-int txt_reread( TXT_WINDOW *w, char *name, int px, long py);
+boolean txt_reread( TXT_WINDOW *w, char *name, int px, long py);
 
 int read_txtfile(const char *name, char **buffer, long *flength, long *tlines, char ***lines, int **ntabs); 
 int read_txtf(const char *name, char **buffer, long *flength); 

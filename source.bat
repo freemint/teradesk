@@ -12,6 +12,7 @@ cd e:\teradesk
 
 copy -n copying      e:\tera3s\
 copy -n readme.txt   e:\tera3s\
+copy -n resource.txt   e:\tera3s\
 copy -n cfg2inf.txt  e:\tera3s\
 copy -n hist_v3.txt  e:\tera3s\
 copy -n ann*.txt     e:\tera3s\

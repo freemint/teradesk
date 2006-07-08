@@ -50,7 +50,6 @@
 
 #define PTIMEOUT 2000 /* 2000 * 1/200s = 10s printer timeout */
 
-#define plinelen options.plinelen
 
 XATTR pattr;				/* item attributes */
 XFILE *printfile = NULL;	/* print file; if NULL print to port */
@@ -64,13 +63,24 @@ int trash_or_print(ITMTYPE type);
  * Print a character through GEMDOS.
  */
 
-static boolean prtchar(char ch)
+static boolean prtchar
+(
+	char ch	/* character to be printed */
+)
 {
-	long time;
-	boolean ready = FALSE, result = FALSE;
-	int button;
-	char s;
-	int error;
+	long 
+		time;
+
+	boolean
+		ready = FALSE, 
+		result = FALSE;
+
+	int 
+		button,
+		error;
+
+	char 
+		s;
 
 	if ( printfile )
 	{
@@ -116,8 +126,10 @@ static boolean prtchar(char ch)
 static boolean print_eol(void)
 {
 	boolean status = FALSE;
+
 	if ( ( status = prtchar( (char)13 )	) == FALSE )	/* CR */
 		status = prtchar( (char)10 );					/* LF */
+
 	return status;
 }
 
@@ -134,7 +146,7 @@ static boolean print_line
 )
 {
 	const char 
-		*p;					/* address of position in dline string */
+		*p = dline;			/* address of position in dline string */
 
 	int 
 		i = 0;				/* position in printer line */
@@ -142,7 +154,6 @@ static boolean print_line
 	boolean 
 		status = FALSE;		/* prtchar print status */
 
-	p = dline;
 
 	while ( !status && (*p != 0) )
 	{
@@ -150,7 +161,7 @@ static boolean print_line
 		p++;						/* pointer to a char in the buffer */
 		i++;						/* print line length */
 
-		if ( !status && ((*p == 0) || (i >= plinelen)) ) /* end of line or line too long */
+		if ( !status && ((*p == 0) || (i >= options.plinelen)) ) /* end of line or line too long */
 		{
 			i = 0;					/* reset linelength counter */
 			status = print_eol();	/* print CR-LF */
@@ -167,14 +178,14 @@ static boolean print_line
  * Return 0 if successfull, error code otherwise.
  */
 
-static int print_file(WINDOW *w, int item)
+static int print_file
+(
+	WINDOW *w,	/* ponter to window in which the item has been selected */ 
+	int item	/* item index in the window */
+)
 {
-	int 
-		handle,
-		i, 
-		error = 0,  
-		ll = 0,		/* line length counter */
-		result = 0;
+	long 
+		l;			/* index in buffer[] */
 
 	char 
 		*buffer;	/* file is read into this */
@@ -182,8 +193,12 @@ static int print_file(WINDOW *w, int item)
 	const 
 		char *name;
 
-	long 
-		l;			/* index in buffer[] */
+	int 
+		handle,
+		i, 
+		error = 0,  
+		ll = 0,		/* line length counter */
+		result = 0;
 
 	boolean 
 		stop = FALSE;
@@ -253,7 +268,7 @@ static int print_file(WINDOW *w, int item)
 								ll++;
 								if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
 									ll = 0; /* reset linelength counter at CR, LF or FF */
-								else if ( ll >= plinelen )
+								else if ( ll >= options.plinelen )
 								{
 									ll = 0;
 									if (( stop = print_eol() ) == TRUE)
@@ -262,7 +277,7 @@ static int print_file(WINDOW *w, int item)
 							}
 
 							if ((stop = prtchar(buffer[i])) == TRUE)
-							break;
+								break;
 						}
 					}
 
@@ -277,6 +292,7 @@ static int print_file(WINDOW *w, int item)
 			while ((l == PBUFSIZ) && (stop == FALSE));
 
 			x_close(handle);
+
 			if(printmode != PM_RAW)
 				print_eol();			/* print CR-LF at end of file */
 		}
@@ -309,9 +325,16 @@ static int print_file(WINDOW *w, int item)
 
 /*
  * Check if an item can be printed, depending on item type.
+ * Drives, folders, network objects or unknown objects can not
+ * be printed.
  */
 
-boolean check_print(WINDOW *w, int n, int *list)
+boolean check_print
+(
+	WINDOW *w,	/* poiner to window in which items have been selected */
+	int n,		/* number of selected items */
+	int *list	/* list of item indices */
+)
 {
 	int mes, i;
 	ITMTYPE type;
@@ -357,13 +380,13 @@ boolean check_print(WINDOW *w, int n, int *list)
 
 boolean print_list
 ( 
-	WINDOW *w, 
-	int n, 
-	int *list, 
-	long *folders, 
-	long *files, 
-	long *bytes,
-	int function
+	WINDOW *w,		/* pointer to window in which itemsh have been selected */ 
+	int n,			/* number of seleced items */ 
+	int *list, 		/* list of item indices */
+	long *folders,	/* count of selected files */ 
+	long *files,	/* count of selected files */
+	long *bytes,	/* total size of selected items */
+	int function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
 )
 {
 	int 

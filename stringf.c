@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <vdi.h>
 #include <xdialog.h>
+#include <library.h>
 
 #include "desktop.h"
 #include "desk.h"
@@ -37,23 +38,22 @@
 
 /*
  * Duplicate 's', returning an identical malloc'd string.
- * This is a replacement for the library routine;
+ * This is an adjusted replacement for the library routine:
  * it displays an alert if memory can not be allocated.
  * Also, if the source is NULL, NULL is returned.
  */
 
 char *strdup(const char *s)
 {
-	size_t l;
-	char *new;
+	char *new = NULL;
 
-	if ( s == NULL )
-		return NULL;
+	if(s != NULL)
+	{
+		size_t ls = strlen(s) + 1;
 
-	l = strlen(s) + 1;
-
-	if ((new = malloc_chk(l)) != NULL)
-		memcpy(new, s, l);
+		if ((new = malloc_chk(ls)) != NULL)
+			memcpy(new, s, ls);
+	}
 
 	return new;
 }
@@ -66,28 +66,31 @@ char *strdup(const char *s)
  * Recognized formats are -ONLY- : %d %x %ld %lx %s.
  * Maximum width of NUMERIC output should not exceed 15 characters.
  * Maximum width of TEXT output should not exceed 255 characters.
- * Width specifier is supported. Output is a null-terminated string.
+ * Width specifier is supported but in a simplified form- specifiers 
+ * like %nn are ok but not %n.n; Output is a null-terminated string.
  */
 
 int vsprintf(char *buffer, const char *format, va_list argpoint)
 {
 	char 
-		*s, 
-		*d, 
-		*h, 
+		*s,			/* pointer to a location in input format */ 
+		*d,			/* pointer to a location in output buffer */ 
+		*h,			/* pointer to a location in input string */ 
 		fill,		/* padding character */
 		tmp[16];	/* temporary buffer */
 
 	boolean 
-		lng, 	/* true if a numeric variable is of a long type */
-		ready;
+		lng, 		/* true if a numeric variable is of a long type */
+		ready;		/* true when conversionn is finished */
 
 	int 
-		radix,	/* decimal or hexadecimal base for numeric output */
-		maxl, 
-		i;		/* counter */
+		radix,		/* decimal or hexadecimal base for numeric output */
+		maxl,		/* maximum output string length */ 
+		ls,			/* string length */
+		i;			/* counter */
 
-	s = (char *) format;
+
+	s = (char *)format;
 	d = buffer;
 
 	while (*s)
@@ -99,6 +102,8 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 			s++;
 			lng = ready = FALSE;
 			maxl = 0;
+			radix = 10;
+			fill = ' ';
 
 			while (!ready)
 			{
@@ -110,17 +115,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					/* alphanumeric string format */
 
 					h = va_arg(argpoint, char *);
-
-					i = 0;
-					if (maxl == 0 || maxl > 255)
-						maxl = 256 - (int)(d - buffer);	
-
-					/* copy data to output */
-
-					while ((h[i]) && (i < maxl))
-						*d++ = h[i++];
-					ready = TRUE;
-					break;
+					goto copyit;
 
 				case 'l':
 					/* next numeric output will be of a 'long' variable */
@@ -128,41 +123,51 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					lng = TRUE;
 					break;
 
-				case 'd':
 				case 'x':
+					/* override radix and fill for hexadecimal output */
+					radix = 16;
+					fill = '0';
+				case 'd':
 					/* decimal or hexadecimal numeric output */
 
-					if ( *s == 'x' )
-					{
-						radix = 16;
-						fill = '0';
-					}
-					else
-					{
-						radix = 10;
-						fill = ' ';
-					}
 					if ( lng )					
 						ltoa(va_arg(argpoint, long), tmp, radix);
 					else
 						itoa(va_arg(argpoint, int), tmp, radix);
 
 					h = tmp;
-					i = (int)strlen(tmp);
+
+					copyit:;
+
+					ls = (int)strlen(h);
+
+					if(maxl == 0)
+						maxl = ls;
+
+					maxl = min(maxl, 255 - (int)(d - buffer)); 
 
 					/* pad with zeros or blanks */
 
-					if (maxl && i < maxl) /* use maxl for d as well */
+					i = maxl - ls;
+					ls = 0;
+
+					if (maxl && i) /* use maxl for d as well */
 					{
-						i = maxl - i;
 						while (i--)
+						{
 							*d++ = fill;
+							ls++;
+						}
 					}
 
 					/* copy data to output */
 
-					while (*h)
+					while (*h && (ls < maxl))
+					{
 						*d++ = *h++;
+						ls++;
+					}
+
 					ready = TRUE;
 					break;
 
@@ -170,7 +175,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					/* interpret length specifier if given */
 
 					if (isdigit(*s))
-						maxl = maxl * 10 + (int) (*s - '0');
+						maxl = maxl * 10 + (int)(*s - '0');
 					else
 						ready = TRUE;
 					break;
@@ -195,34 +200,12 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 int sprintf(char *buffer, const char *format,...)
 {
 	int r;
-	va_list argpoint;
 
+	va_list argpoint;
 	va_start(argpoint, format);
 	r = vsprintf(buffer, format, argpoint);
 	va_end(argpoint);
 
 	return r;
-}
-
-
-int vaprintf( int def, const char *string, va_list argpoint )
-{
-	char s[256];
-
-	vsprintf(s, string, argpoint);
-	return form_alert(def, s); 
-}
-
-
-int aprintf( int def, const char *string, ... )
-{
-	va_list argpoint;
-	int button;
-
-	va_start(argpoint,string);
-	button = vaprintf(def,string,argpoint);
-	va_end(argpoint);
-
-	return button;
 }
 

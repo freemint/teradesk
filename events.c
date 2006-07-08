@@ -57,7 +57,8 @@ static int event(int evflags, int mstate, int *key)
 			if (hndlmessage(events.ev_mmgpbuf) != 0)
 				return -1;
 		}
-	} while (!(result == MU_TIMER) && !(result & ~(MU_MESAG | MU_TIMER)));
+	} 
+	while (!(result == MU_TIMER) && !(result & ~(MU_MESAG | MU_TIMER)));
 
 	*key = events.xd_keycode;
 
@@ -96,11 +97,14 @@ int key_state(int *key, boolean hndl_msg)
 }
 
 
+/* As this is, after all, used only once, call directly key_state
+
 /*
  * Clear the keyboard buffer.
  * Note: no events but the keyboard and the timer are processed here
  * because of FALSE below; 
  */
+
 
 void clr_key_buf(void)
 {
@@ -109,6 +113,7 @@ void clr_key_buf(void)
 	while (key_state(&dummy, FALSE) > 0);
 }
 
+*/
 
 /* This routine is never used in Teradesk
 

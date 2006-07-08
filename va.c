@@ -525,6 +525,7 @@ boolean va_add_name(int type, const char *name)
 			*pd = '\0';
 		}
 	}
+
 	return TRUE;
 }
 
@@ -590,7 +591,7 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 
 		for ( i = 0; i < n; i++ )
 		{
-			thename = NULL;
+			thename = NULL; /* see further below */
 
 			if 
 			(
@@ -680,7 +681,7 @@ void handle_av_protocol(const int *message)
 	char 
 		*path = NULL, 
 		*mask = NULL,
-		*pp3,			/* location in a message as strng pointer */
+		*pp3,			/* location in the message as a string pointer */
 		*mp5,			/* same */
 		*pp6;			/* same */
 
@@ -689,7 +690,8 @@ void handle_av_protocol(const int *message)
 		j,
 #endif
 		error,
-		answer[8],		/* answer message will be composed here */
+		answer[8],			/* answer message will be composed here */
+		m3 = message[3],	/* save some bytes in program size */
 		stat;
 
 	boolean 
@@ -752,7 +754,7 @@ void handle_av_protocol(const int *message)
 		strcpy(avwork.name, pp6 );
 
 		avwork.ap_id = appl_find( (const char *)avwork.name );
-		avwork.avcap3 = message[3]; /* notify client-supported features */
+		avwork.avcap3 = m3; /* notify client-supported features */
 		avwork.flags = 0;
 
 		/* 
@@ -843,7 +845,7 @@ void handle_av_protocol(const int *message)
 		 * which the client supplied in message [3]
 		 */
 
-		aw = xw_create(ACC_WIND, &aw_functions, message[3], NULL, sizeof(ACC_WINDOW), NULL, &error );
+		aw = xw_create(ACC_WIND, &aw_functions, m3, NULL, sizeof(ACC_WINDOW), NULL, &error );
 		aw->xw_xflags |= XWF_OPN;
 		aw->xw_ap_id = av_current;
 
@@ -854,7 +856,7 @@ void handle_av_protocol(const int *message)
 
 		/* Client has closed a window, identified by its handle */
 
-		xw_delete(xw_hfind(message[3]));
+		xw_delete(xw_hfind(m3));
 
 		reply = FALSE;
 		break;
@@ -1098,15 +1100,12 @@ void handle_av_protocol(const int *message)
 	case AV_WHAT_IZIT:
 	{
 		int item, wind_ap_id;
-		ITMTYPE itype = ITM_NOTUSED;
 
 		*global_memory = 0; /* clear any old strings */
 
-		answer[4] = VA_OB_UNKNOWN;
-
 		/* Find the owner of the window (can't be always done in single-tos) */
 
-		wind_get( wind_find(message[3], message[4]), WF_OWNER, &wind_ap_id);
+		wind_get( wind_find(m3, message[4]), WF_OWNER, &wind_ap_id);
 
 		/* Note: it is not clear what should be returned in answer[3] */
 
@@ -1116,17 +1115,20 @@ void handle_av_protocol(const int *message)
 			answer[4] = VA_OB_WINDOW;
 		else
 		{
-			if ( (aw = xw_find(message[3], message[4])) != NULL )
+			answer[4] = VA_OB_UNKNOWN;
+
+			if ( (aw = xw_find(m3, message[4])) != NULL )
 			{
 				/* Yes, this is TeraDesk's window */
 
 				if ( xw_type(aw) == TEXT_WIND )
 					answer[4] = VA_OB_WINDOW;
-				else if ( (item = itm_find(aw, message[3], message[4])) >= 0 )
+				else if ( (item = itm_find(aw, m3, message[4])) >= 0 )
 				{
 					/* An item can be located in a desktop or directory window */
 
-					itype = itm_type(aw, item);
+					ITMTYPE itype = itm_type(aw, item);
+
 					if ( itype >= ITM_NOTUSED && itype <= ITM_NETOB )
 					{
 						answer[4] = answertypes[itype];
@@ -1148,8 +1150,9 @@ void handle_av_protocol(const int *message)
 						}			/* A file or a volume; has path ? */
 					}			/* Recognized item type ? */
 				}			/* Not a text window ? */
-			}			/* TeraDesk's window ? */
-		}
+			}			/* Window found ? */
+		}			/* TeraDesk's window ? */
+
 		answer[0] = VA_THAT_IZIT;			
 		break;
 	} /* what is it ? */
@@ -1191,7 +1194,7 @@ void handle_av_protocol(const int *message)
 				itype;			/* type of the item */
 
 			DIR_WINDOW 
-				ww;				/* pointer to the simulated window */
+				ww;				/* structure for the simulated window */
 
 			int 
 				list = 0;		/* simulated selected item */
@@ -1225,7 +1228,6 @@ void handle_av_protocol(const int *message)
 					cq = p;
 
 				cs = strchr(cq, ' ');	/* space after the quote */
-
 				pp = NULL;
 
 				if ( cs )				/* there is a next space */
@@ -1250,14 +1252,14 @@ void handle_av_protocol(const int *message)
 				{
 					wpath = fn_get_path(p);
 
-					dir_simw(&ww, wpath, fn_get_name(p), itype, (size_t)1, 0);
+					dir_simw(&ww, wpath, fn_get_name(p), itype);
 
 					/* 
 					 * Some routines will perform differently when
 					 * working as a response to a VA-protocol command.
 					 * This is set through va_reply.
 					 * Note: these four messages may also provoke
-					 * a VA_PATH_UPDATE response	
+					 * a VA_PATH_UPDATE response itm_attrib	
 					 */
 
 					va_reply = TRUE;
@@ -1266,7 +1268,15 @@ void handle_av_protocol(const int *message)
 					{
 						case AV_DRAG_ON_WINDOW:
 							answer[0] = VA_DRAG_COMPLETE;
-							stat = (int)itm_move( (WINDOW *)&ww, 0, message[3], message[4], message[5]);	
+							stat = 
+							(int)itm_move
+							( 
+								(WINDOW *)&ww, 
+								0, 
+								m3,
+								message[4],
+								message[5]
+							);	
 							break;
 						case AV_COPYFILE:
 						{
@@ -1275,16 +1285,31 @@ void handle_av_protocol(const int *message)
 							 * AV-protocol: links can not be created
 							 */
 							int old_prefs = options.cprefs;
-							options.cprefs = (message[7] & 4) ? old_prefs : (old_prefs & ~CF_OVERW);
+							options.cprefs = (message[7] & 0x0004) ? old_prefs : (old_prefs & ~CF_OVERW);
 							answer[0] = VA_FILECOPIED;
-							rename_files = (message[7] & 2) ? TRUE : FALSE;
-							stat = (int)itmlist_op((WINDOW *)&ww, 1, &list, mask, ( message[7] & 1) ? CMD_MOVE : CMD_COPY);
+							rename_files = (message[7] & 0x0002) ? TRUE : FALSE;
+							stat = 
+							(int)itmlist_op
+							(
+								(WINDOW *)&ww, 
+								1, 
+								&list, 
+								mask, 
+								( message[7] & 0x0001) ? CMD_MOVE : CMD_COPY
+							);
 							options.cprefs = old_prefs;
 							break;
 						}
 						case AV_DELFILE:
 							answer[0] = VA_FILEDELETED;
-							stat = (int)itmlist_wop((WINDOW *)&ww, 1, &list, CMD_DELETE);
+							stat = 
+							(int)itmlist_wop
+							(
+								(WINDOW *)&ww, 
+								1, 
+								&list, 
+								CMD_DELETE
+							);
 							break;
 						case AV_FILEINFO:
 							answer[0] = VA_FILECHANGED;
@@ -1293,8 +1318,9 @@ void handle_av_protocol(const int *message)
 							stat = 1; /* but it is not always so! */
 							break;
 					}
-					free(wpath);
 
+					wd_noselection();
+					free(wpath);
 				}
 				else
 					stat = 0;
@@ -1326,7 +1352,7 @@ void handle_av_protocol(const int *message)
 
 		/* Select a font for the client (FONT protocol) */
 
-		fnt_mdialog(message[1], message[3], message[4], message[5],
+		fnt_mdialog(message[1], m3, message[4], message[5],
 					message[6], message[7], 1);
 		reply = FALSE;
 		break;

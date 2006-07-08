@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: March 2006
+@$VER: July 2006
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.81
+                User's Manual for Tera Desktop V3.83
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            March 2006
+                              July 2006
 
 @autorefon
 
@@ -50,7 +50,7 @@
 @endnode
 
 
-@node "About the Tera Desktop"
+@node "About Tera Desktop"
 @toc "Introduction"
 @image udo_fo.img 1
    Contents
@@ -59,8 +59,8 @@
 
 @{U}1.1  About Tera Desktop                                       TeraDesk@{u}
 
-Tera Desktop (TeraDesk) is a replacement for the ST, STE or TT desktop.
-It provides more facilities than the built-in TOS desktops.
+Tera Desktop (TeraDesk) is a replacement for the ST, STE, TT or Falcon
+desktop. It provides more facilities than the built-in TOS desktops.
 
 TeraDesk is currently the only open-souce desktop available for 16-bit
 and 32-bit  Atari computers.  Developers' goal has  been  to  maintain
@@ -100,6 +100,7 @@ program is  distributed  by a PD library,  only the  costs of the disk
 and distribution may be recovered.
 
 Tera Desktop files (included in the binary distribution) are:
+@autorefoff
 
              COPYING          Copy of the GPL
              DESKTOP.PRG      The Tera Desktop program
@@ -114,6 +115,7 @@ Tera Desktop files (included in the binary distribution) are:
              TERADESK.REF     Reference file for the above
              TERADESK.INF     Sample configuration file
              TERADESK.PAL     Sample palette file
+@autorefon
 
 There also exists  a source distribution  that  contains  the complete
 source tree of Tera Desktop, to be compiled and linked with PureC 1.1.
@@ -155,7 +157,7 @@ offspring, TT, Falcon, Hades, Milan or emulators. It uses about 200 to
 If a computer has TT-RAM or Alt-RAM installed,  it is  recognized  and
 used by Tera Desktop.
 
-Although  Tera Desktop can be used without the aid of a hard disk, the
+Although  Tera Desktop can be  ran without the aid of a hard disk, the
 use of one is strongly recommended. Tera Desktop is not well optimized
 (regarding file operations) for use on machines with  only one  floppy
 drive and no hard disk. File copying in TeraDesk is done file-by-file,
@@ -287,7 +289,8 @@ Users should beware  that  the current version of  Tera Desktop  has a
 limitation that the number of items  in a directory,  or the number of
 selected items in  a directory tree should not exceed 32767,  and that
 total size of items in a directory or in a selection should not exceed
-2GB.
+2 GB.  Maximum disk partition size  that can be correctly displayed is
+1024 GB. 
 
 See also  Supported screen resolutions
 
@@ -331,7 +334,7 @@ resolution):
        -Set program types...
        -Window options...
        -Video options...
-       -Save as...
+       -Save settings as...
 
 Configuration items set by removed menu items  can still be set in the
 configuration  file.  These  options  are  also  still  available  via
@@ -538,7 +541,7 @@ See also  The icons files.
 
 8. Some aspects of Tera Desktop's  behaviour can be  (or may be in the
 future) controlled  through the  environment variable TERAENV,  mostly
-because they have to be set before any configuration files are loaded.
+because they have to be set before any Configuration Files are loaded.
 The value  of  TERAENV  variable  should consist  of  uppercase-letter
 flags. Currently, only flags 'A' and 'D' can be used, as in:
 
@@ -552,7 +555,7 @@ Note that this variable is evaluated only when TeraDesk starts.  Later
 changes to TERAENV will have no effect.
 
 9. Users are advised to load,  check and save  any existing TeraDesk's
-configuration files.  As the format  of configuration files may change
+Configuration Files.  As the format  of configuration files may change
 slightly with new releases, by this procedure  they will be kept up to
 date as much as possible.
 
@@ -915,7 +918,7 @@ to more than one application, a dialog is opened  showing the assigned
 applications and permitting  the user to select  among one of them. If
 the selected application is already running,  an attempt is first made
 to send the filename  to that application  using the  VA_START message
-(see The AV protocol).
+(see The AV Protocol).
 
 If the object is a symbolic link,  it is always followed to the target
 object,  and the action  appropriate  for the target is commenced,  as
@@ -1037,11 +1040,17 @@ and it can be edited. Note that if this item is changed, the  symbolic
 link will in fact be deleted and a new one created.
 
 4. If  the  selected  object  is  a disk volume, the drive letter, the
-volume  label,  the  number  of files and folders on it, the number of
-used  and  available bytes, the total free space on it and the cluster
-size  will be displayed. If the disk is empty, it is possible that the
-total space and the free space will be different;  this is caused by a
-bug in TOS.
+volume label, the numbers of used and  available bytes, the total free
+space on it  and the  cluster size  will be displayed.  If the disk is
+empty,  it is possible that the total space and the free space will be
+different; this is caused by a bug in TOS.  Note that if the volume is
+larger than 1 GB, its size,  used and free space  will be displayed in
+kilobytes, not in bytes.  If the volume  is larger than 1 TB, TeraDesk
+will not correctly display this data.
+
+If button 'More' is pressed, the numbers of files (or files and links)
+and folders  on the volume  will be displayed.  Note that,  on a large
+volume this counting may take some time.
 
 5.  If  no  object  has  been  selected,  Tera Desktop   will  display
 information  on the disk volume of the top directory window, if any is
@@ -1696,7 +1705,7 @@ TOS 1.0,  these  menu  items   may not  be  visible,  because  of  the
 limitations in this TOS version.  In such case they are still settable
 through Keyboard shortcuts.
 
-See also:  TOS Version Compatibility  Supported screen resolutions
+See also:  TOS Version compatibility  Supported screen resolutions
 
 @endnode
 
@@ -1848,6 +1857,7 @@ See also:  Close  Supported Protocols
       Menus and Dialogs
 @image udo_fo.img 7
          Menu title: Window
+         
 @{U}4.4.3  Close all                                           TeraDesk@{u}
 
 The effect of this action  is to completely close all TeraDesk's  open
@@ -1883,7 +1893,7 @@ top window.
 @image udo_fo.img 4
       Menus and Dialogs
 @image udo_fo.img 7
-         Menu title: File
+         Menu title: Window
 
 @{U}4.4.5 Cycle windows                                           TeraDesk@{u}
 
@@ -2265,7 +2275,7 @@ enter  a mask  and  select an icon.  You can also delete an entry from
 the list by selecting 'Delete' or edit it with 'Edit'.
 
 If  you activate  this option while  a file or folder is selected in a
-window or  on the desktop,  The icon-selector dialog  will immediately
+window or  on the desktop,  The icon selector dialog  will immediately
 appear (icon group will be set according to item type). This gives you
 a chance to assign icons in a way similar to that  existing in the TOS
 desktop.  Only one item at a time can be handled this way.
@@ -2287,7 +2297,6 @@ See: The icon selector dialog  Set desk icons...  Show as icons
          Menu title: Options
 
 @{U}4.5.5  Desk preferences...                                    TeraDesk@{u}
-
 
 This dialog enables the user to adjust  some options which affect the
 overall look of Tera Desktop:
@@ -2479,7 +2488,6 @@ and the OS on which TeraDesk is running.
   . TT-Medium (80-Columns on a Falcon)
   . TT-High
 
-
 - Options:
 
     1. Toggle a switch to save the palette. If this facility is turned
@@ -2488,7 +2496,8 @@ and the OS on which TeraDesk is running.
        palette  without  restoring it  at exit.  If  this  options  is
        selected, the palette is also saved to a file  TERADESK.PAL  or
        restored from this file whenever a configuration file is saved/
-       restored. See Configuration Files.
+       restored  (use of this option should be avoided in multitasking
+       environments). See Configuration Files.
 
     2. Toggle a switch to activate/deactivate the blitter chip. If the
        blitter chip is  not available, this  option  is  disabled. The
@@ -3077,7 +3086,7 @@ represent.
 
 TeraDesk  holds  its  images  of  icons  in  the files named ICONS.RSC
 and/or  CICONS.RSC; the first file should contain monochrome icons and
-the  second  one colour icons. These files should reside in TeraDesk's
+the  second one  colour icons. These files should reside in TeraDesk's
 folder (see Installation).
 
 Icons  files  contains  the bit-maps of the icons which you can select
@@ -3101,7 +3110,7 @@ or  replace  those  already  there by your own. The maximum size of an
 icon is  64 pixels wide by 32 pixels high  and the maximum size of the
 file  is  64 Kb.  Do  not  add other sorts of object  to this resource
 file;  if you do, it will not load.  Owners of a Mega STE  or a TT  or
-any other computer using TOS 2.06 or higher can also  use the resource
+any other computer with  TOS 2.06  or higher can also use the resource
 file which comes with these computers in place of ICON.RSC  as long as
 they copy it to Tera Desktop's folder and rename it to  ICONS.RSC, and
 the file contains certain icons which are essential to TeraDesk.  Many
@@ -3452,14 +3461,19 @@ It  is  possible  to  'iconify'  the windows of TeraDesk in the  AESes
 which  support that operation  (i.e. which are  AES 4  compatible). An
 iconified  window  is  reduced  in size  so that it  contains just one
 icon:  a  file,  a folder  or  a  disk drive,  depending on the window
-content.  To  iconify  a window, click  on the window gadget,  usually
-represented  by  a triangle,  immediately left to the 'Fuller'  gadget
-in the upper right corner of the window. Click again to deiconify.
+content.  Actual size of an iconified window is determined by the AES.
+In some  AESes  this is  settable  by  the user;  in such  case  it is
+recommended to set it to 80x64 pixels. 
 
-An  iconified  window maintains, until moved, the previous position of
-the upper left corner of the normal window.  If an iconified window is
-moved, when it is deiconified it will return to the  position and size
-it had at the moment it was iconified.
+An iconified window is automatically moved to a position determined by
+the AES, usually to some unocupied space near the lower left border of 
+the screen.  When a window is deiconified it will automatically return
+to the position and size it had at the moment it was iconified.
+
+To  iconify a window, click  on the window gadget, usually represented
+by  a triangle,  immediately left to the 'Fuller'  gadget in the upper
+right corner  of the window.  Double-click  on an  iconified window in 
+order to deiconify it.
 
 The 'Fuller'  gadget  in the upper  right corner of  TeraDesk  windows
 causes the window to  expand in order to show  as much as possible  of
@@ -3662,10 +3676,8 @@ directory opening if directories with many files are expected.
 The palette file is optional and can be used to restore colour palette
 after programs  that may corrupt it,  or to set  some specific palette
 when Tera Desktop is started.  Whether it is used or not can be set in
-Video options...
-
-If you want to convert your old TeraDesk V2.* configuration file(s) to
-the format of TeraDesk 3.*, use CFG2INF.PRG (see Installation).
+Video options... Save palette option should be avoided in multitasking
+environments.
 
 @endnode
 
@@ -3709,11 +3721,11 @@ and Set program types...
 There  are  two  ways  you  can  avoid  this difficulty  with the ARGV
 protocol:
 
-1. Install  programs  which  do not support the ARGV separately  using
-the  'Set program types...' menu item.  Enter their  full names in the
-list of file types  and switch off the  ARGV protocol  for them.  Make
-sure  you enter their names nearer to the top of the programtypes list
-than any other name masks which they might match.
+1. Install programs which do not support the ARGV separately using the
+'Set program types...' menu item.  Enter their  full names in the list
+of file types  and switch off the  ARGV protocol  for them.  Make sure
+you enter their names  nearer to the top of the programtypes list than
+any other name masks which they might match.
 
 2. Do the reverse of 1:  Switch off the ARGV protocol for all programs
 but enter the names of those that do separately.
@@ -3744,7 +3756,6 @@ in shel_write() and to build a local environment string  with the ARGV
 variable appended  whenever starting a program which understands ARGV,
 regardless   of the length  of the  command line.  This  may  help  if
 problems are encounetered.
-
 
 @endnode
 
@@ -3859,7 +3870,6 @@ AV_GETSTATUS/VA_SETSTATUS   Aks the server about saved client status.
 AV_SETWINDPOS               Fix  the  position  of   the  next  client
                             window to be opened.
 
-
 Messages currently not supported:
 
 AV_OPENCONSOLE/VA_CONSOLEOPEN  Open the console window
@@ -3888,7 +3898,7 @@ run into problems  with some AV-protocol clients,  and  fail with  the
 'memory protection: type private' error.  This  will most  probably be
 a fault of a  badly programmed  AV-protocol client.  In  some cases it
 can be  cured  if  the memory-protection flag  in  the header   of the
-offending AV-protocol-client is set to  'readable'  or  (if it doesn't
+offending AV-protocol client is set to  'readable'  or  (if it doesn't
 help)  to  'supervisor'  or  'global'.  Examples of  such programs are
 ST-Guide and aMail.
 
@@ -3949,8 +3959,8 @@ The protocol is automatically  operated  if  one or more  objects in a
 window  are  Drag & Dropped  onto  a  window   belonging  to   another
 application.  TeraDesk can currently  operate only  as  a  Drag & Drop
 sender,  i.e. it can not  receive objects  dragged to its windows from
-other applications (however,  TeraDesk can act both as a sender and as
-a receiver when objects are drag & dropped using the AV-protocol).
+other applications  (however, TeraDesk can act both as a sender and as
+a receiver when objects are dragged & dropped using the AV-protocol).
 
 See also:  Dragging Objects  The AV Protocol
 
@@ -3969,9 +3979,9 @@ contribution to various stages of the development of the Tera Desktop:
 
    Ric Klaren,
    Ger Hobbelt and
-   Hans Wessels            for testing the Tera Desktop,  designing
+   Hans Wessels            for testing Tera Desktop V1.*, designing
                            some icons and making some  improvements
-                           to the program code of V1.*
+                           to the program code.
    Keith Frisby and
    Mark Matts              for distributing and supporting the Tera
                            Desktop V1.* in the United Kingdom.
@@ -3979,7 +3989,7 @@ contribution to various stages of the development of the Tera Desktop:
    Ted Richards            for rewritting the English manual of V1.*
 
    Jean Jacques Cortes     for translating  the  resource  file  of
-                           TeraDesk to French.
+                           TeraDesk V1.* to French.
 
    Joachim Farbowky        for the German resource file of TeraDesk
                            V1.* and for F_KEYS.RSC
@@ -3999,11 +4009,14 @@ contribution to various stages of the development of the Tera Desktop:
                            for performing a number of tests upon the
                            pre-release binaries.
 
+   Emmanuel Baranger       For translating Tera Desktop to French.
+
    Dennis W. van der Burg
    Milan Jurik
    Markus Lutz
    Miro Kropacek
-   Odd Skancke             For testing and reporting on TeraDesk 3.*
+   Odd Skancke 
+   and others              For testing and reporting on TeraDesk 3.*
 
 @endnode
 

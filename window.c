@@ -65,6 +65,7 @@
 #define WMINH 4	 /* minimum window height (in character cell units) */
 
 extern int 
+	chklevel,
 	aes_wfunc,	/* result appl_getinfo(11, ...) */
 	aes_ctrl;	/* this should probably be in xdialog.h */
 
@@ -77,8 +78,8 @@ extern WINFO
 	dirwindows[MAXWINDOWS];		/* some information about open windows */
 
 extern RECT 
-	dmax,		/* maximum window size */
-	tmax;		/* maximum window size */
+	dmax,		/* maximum directory window size */
+	tmax;		/* maximum text window size */
 
 extern OBJECT 
 	*icons;		/* icons from the resource file */
@@ -89,28 +90,19 @@ extern char
 #if _OVSCAN	
 extern long
 	over;		/* identification of overscan type */
+
 extern int
 	ovrstat;	/* state of overscan */
 #endif
 
 extern boolean
+	clearline,
 	onekey_shorts;	/* true if single-key menu shortcuts exist */
 
-extern FONT 
-	dir_font,
-	txt_font;
-
-char 
-	floppy;
-
-RECT 
-	icwsize;	/* size of the iconified window */
-
-boolean 
-	wclose = FALSE,	/* true during windows being temporarily closed */
-	can_touch,
-	can_iconify;	/* true if current AES supports iconification */ 
-
+boolean
+	autoloc = FALSE,	/* true if autolocator is in effect */
+	can_iconify,		/* true if current AES supports iconification */ 
+	can_touch;
 
 SEL_INFO
 	selection;
@@ -124,8 +116,6 @@ SINFO2
 FONT 
 	*cfg_font;
 
-boolean
-	autoloc = FALSE;	/* true if autolocator is in effect */
 
 #if _MINT_
 LNAME automask = {0};	/* to compose the autolocator mask */
@@ -133,11 +123,20 @@ LNAME automask = {0};	/* to compose the autolocator mask */
 SNAME automask = {0};	/* no need for long names in single-TOS */
 #endif
 
+static char 
+	floppid;
+
+static RECT 
+	icwsize = {0,0,0,0};	/* size of the iconified window */
+
+static boolean 
+	wclose = FALSE;			/* true during windows being temporarily closed */
+
 static size_t 
-	aml = 0;			/* length of string in automask */
+	aml = 0;				/* length of string in automask */
 
 static XFILE 
-	*mem_file;			/* for saving temporarily closed windows */
+	*mem_file;				/* for saving temporarily closed windows */
 
 
 int appl_control(int ap_id, int what, void *out);
@@ -147,6 +146,8 @@ static void itm_selall(WINDOW *w);
 static void wd_type_hndlmenu(WINDOW *w, int title, int item);
 static void icw_draw(WINDOW *w);
 static boolean in_window(WINDOW *w, int x, int y);
+static boolean wd_isiconified(TYP_WINDOW *w);
+
 
 WD_FUNC wd_type_functions =
 {
@@ -195,6 +196,7 @@ CfgEntry positions_table[] =
 {
 	{CFG_HDR, "pos"	},
 	{CFG_BEG},
+	{CFG_X,   "flag", &thisw.flags	},
 	{CFG_D,   "xpos", &thisw.x	}, /* note: can't go off the left edge */
 	{CFG_D,   "ypos", &thisw.y	},
 	{CFG_D,   "winw", &thisw.ww	},
@@ -203,14 +205,13 @@ CfgEntry positions_table[] =
 	{CFG_D,   "yicw", &thisw.iy	},
 	{CFG_D,   "wicw", &thisw.iw	},	/* Is this needed? */
 	{CFG_D,   "hicw", &thisw.ih	},
-	{CFG_X,   "flag", &thisw.flags	},
 	{CFG_END},
 	{CFG_LAST}
 };
 
 
 /*
- * Load or save configurtion of window font
+ * Load or save configuration of window font
  * Note: this is initialized to zero in wd_config.
  * There are no initialization or default routines for this
  */
@@ -263,18 +264,6 @@ void hourglass_mouse(void)
 }
 
 
-void mon_mouse(void)
-{
-	graf_mouse(M_ON, NULL);
-}
-
-
-void moff_mouse(void)
-{
-	graf_mouse(M_OFF, NULL);
-}
-
-
 /*
  * Write window text in transparent mode at location (x,y)
  */
@@ -309,7 +298,10 @@ boolean isfileprog(ITMTYPE type)
 
 static void wrect_in_screen(RECT *info, boolean normalsize)
 {
-	/* Window should be at least 32 pixels in the screen */
+	/* 
+	 * Window should be at least 32 pixels in the screen 
+	 * both horizontally and vertically
+	 */
 
 	info->x = minmax(0, info->x, screen_info.dsk.w - 32);
 	info->y = minmax(0, info->y, screen_info.dsk.h - 32);
@@ -384,7 +376,7 @@ CfgNest positions
 	WINFO *w = thisw.windows;
 	int i;
 
-	size_t s = 2 * sizeof(RECT) + sizeof(thisw.flags); /* data size */
+	size_t s = 2 * sizeof(RECT) /* + sizeof(thisw.flags) */; /* data size */
 
 	if (io == CFG_SAVE)
 	{
@@ -395,6 +387,7 @@ CfgNest positions
 			thisw.i = i;
 
 			memcpy(&thisw.x, &(w->x), s); /* copy all in one row */
+			thisw.flags = w->flags;
 	
 			/* 
 			 * In order to save on size of configuration file,
@@ -424,6 +417,8 @@ CfgNest positions
 		{
 			w += thisw.i;
 			memcpy(&(w->x), &thisw.x, s); /* copy all in one row */
+			w->flags = thisw.flags;
+
 			thisw.i++;
 		}
 	}
@@ -498,24 +493,6 @@ static void wd_set_fields( int fields )
 }
 
 
-/* 
- * Check/mark menu item for text/icon directory display mode.
- * It is assumed that MSHOWTXT and MSHOWICN are in sequence
- * (mode: 0=text, 1=icon).
- * Note: since TeraDesk V3.40 MSHOWTXT has been removed; 
- * MSHOWICN now toggles the mode 
- */
-
-static void wd_set_mode(int mode)
-{
-#ifdef MSHOWTXT
-	menu_checkone( 2, MSHOWTXT, mode );
-#else
-	menu_icheck(menu, MSHOWICN, mode ? 1 : 0 );	
-#endif
-}
-
-
 /*
  * Count open windows (text, directory or accessory type)
  * Note: this routine relies on definitions of DIR_WIND, TEXT_WIND and 
@@ -555,7 +532,7 @@ void wd_noselection(void)
  * Attention: the item list is deallocated here!
  */
 
-void wd_iselection(WINDOW *w, int n, int *list)
+static void wd_iselection(WINDOW *w, int n, int *list)
 {
 	wd_noselection();
 
@@ -654,7 +631,7 @@ void wd_restoretop(int code, int *whandle, int *wap_id)
  * Does a pointer points to a directory or text window?
  */
 
-static boolean dirortext(WINDOW *w)
+boolean wd_dirortext(WINDOW *w)
 {
 	return (w && (xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND));
 }
@@ -665,6 +642,17 @@ static boolean dirortext(WINDOW *w)
  * Funkties voor het enablen en disablen van menupunten.			*
  *																	*
  ********************************************************************/
+
+
+/*
+ * Make it shorter and a little bit slower...
+ */
+
+void wd_menu_ienable(int item, int enable)
+{
+	menu_ienable(menu, item, enable);
+}
+
 
 /* 
  * Funktie die menupunten enabled en disabled, die met objecten te
@@ -679,7 +667,6 @@ void itm_set_menu(WINDOW *w)
 		*wtop;				/* pointer to top window */
 
 	int 
-		topicf = 0,			/* nonzero if top window is iconified */
 		n = 0,				/* number of selected items */
 	    *list = NULL,		/* pointer to a list of selected items */
 		wtoptype = 0,		/* type of the topped window */
@@ -687,6 +674,7 @@ void itm_set_menu(WINDOW *w)
 	    i = 0;				/* counter */
 
 	boolean 
+		topicf = FALSE,		/* true if top window is iconified */
 		nonsel,				/* true if nothing selected and dir/text topped */
 		showinfo = FALSE,	/* true if show info is enabled */
 	    enab = FALSE,		/* flag for enabling diverse options */
@@ -719,11 +707,11 @@ void itm_set_menu(WINDOW *w)
 	if ( wtop )
 	{
 		wtoptype = xw_type(wtop);
-		topicf =  (can_iconify) ? (wtop->xw_xflags & XWF_ICN) : 0; 
+		topicf =  wd_isiconified((TYP_WINDOW *)wtop); 
 	}
 
 	nwin = wd_wcount();
-	nonsel = (!n && dirortext(wtop));
+	nonsel = (!n && wd_dirortext(wtop));
 
 	if(n > 0)
 		showinfo = TRUE;
@@ -742,8 +730,8 @@ void itm_set_menu(WINDOW *w)
 		showinfo = TRUE;
 	}
 
-	menu_ienable(menu, MSHOWINF, showinfo);
-	menu_ienable(menu, MSEARCH, showinfo);
+	wd_menu_ienable(MSHOWINF, showinfo);
+	wd_menu_ienable(MSEARCH, showinfo);
 
 	/* 
 	 * New dir is OK only if a dir window is topped and not iconified, 
@@ -765,7 +753,7 @@ void itm_set_menu(WINDOW *w)
 	)
 		enab = TRUE;
 
-	menu_ienable(menu, MNEWDIR, enab);
+	wd_menu_ienable(MNEWDIR, enab);
 
 	/*
 	 * "enab" will be set if there are selected items and
@@ -799,8 +787,8 @@ void itm_set_menu(WINDOW *w)
 	 * or a window is open (to print directory or text)
 	 */
 
-	menu_ienable(menu, MDELETE, enab && (n > 0));
-	menu_ienable(menu, MPRINT, enab2);
+	wd_menu_ienable(MDELETE, enab && (n > 0));
+	wd_menu_ienable(MPRINT, enab2);
 
 	/* Determine enabling states for Compare, Programtype and App menu items */
 
@@ -829,7 +817,7 @@ void itm_set_menu(WINDOW *w)
 
 	/* Compare will be enabled only if there are not more than two files selected */
 
-	menu_ienable(menu, MCOMPARE, enab );
+	wd_menu_ienable(MCOMPARE, enab );
 
 	/* 'Select all' is possible only on directory or desk window */
 
@@ -837,17 +825,17 @@ void itm_set_menu(WINDOW *w)
 
 	/* Enable window closing if there are open windows */
 
-	menu_ienable(menu, MCLOSE, nwin);
-	menu_ienable(menu, MCLOSEW, nwin);
-	menu_ienable(menu, MCLOSALL, nwin);
+	wd_menu_ienable(MCLOSE, nwin);
+	wd_menu_ienable(MCLOSEW, nwin);
+	wd_menu_ienable(MCLOSALL, nwin);
 
 	/* Enable duplication of dir and text windows */
 
-	menu_ienable(menu, MDUPLIC, (int)dirortext(wtop));
+	wd_menu_ienable(MDUPLIC, (int)wd_dirortext(wtop));
 
 	/* Enable window cycling if there is more than one window open */
 
-	menu_ienable(menu, MCYCLE, (nwin > 1) ? 1 : 0 );
+	wd_menu_ienable(MCYCLE, (nwin > 1) ? 1 : 0 );
 
 	/* 
 	 * Enable setting of applications and program types only for
@@ -860,12 +848,12 @@ void itm_set_menu(WINDOW *w)
 		enab2 = FALSE;
 	}
 
-	menu_ienable(menu, MPRGOPT, enab);
-	menu_ienable(menu, MAPPLIK, enab2); 
+	wd_menu_ienable(MPRGOPT, enab);
+	wd_menu_ienable(MAPPLIK, enab2); 
 
 	/* Enable setting of window icons */
 
-	menu_ienable(menu, MIWDICN, (n < 2) );
+	wd_menu_ienable(MIWDICN, (n < 2) );
 
   	/*
 	 * enable disk formatting and disk copying
@@ -888,7 +876,7 @@ void itm_set_menu(WINDOW *w)
 			&& ( drive[1] == ':' )
 		)
 		{  
-			floppy = drive[0];      /* i.e. floppy= 65dec (A) or 66dec (B) */
+			floppid = drive[0];      /* i.e. floppid= 65dec (A) or 66dec (B) */
 			enab = TRUE;
 		}  
 	}
@@ -896,8 +884,8 @@ void itm_set_menu(WINDOW *w)
 /* By removing floppy formatting/copying from the resource, this will be deleted */
 
 #if MFFORMAT
-	menu_ienable(menu, MFCOPY, enab );
-	menu_ienable(menu, MFFORMAT, enab );
+	wd_menu_ienable(MFCOPY, enab );
+	wd_menu_ienable(MFFORMAT, enab );
 #endif
 
 	/* Notify the first selected item */
@@ -1010,7 +998,7 @@ const char *wd_toppath(void)
 
 const char *wd_path(WINDOW *w)
 {
-	if(dirortext(w))
+	if(wd_dirortext(w))
 		return ((TYP_WINDOW *)w)->path; 
 
 	return NULL;		
@@ -1035,7 +1023,7 @@ void wd_set_update(wd_upd_type type, const char *fname1, const char *fname2)
 		w = w->xw_next;
 	}
 
-	((ITM_WINDOW *) desk_window)->itm_func->wd_set_update(desk_window, type, fname1, fname2);
+	((ITM_WINDOW *)desk_window)->itm_func->wd_set_update(desk_window, type, fname1, fname2);
 
 	app_update(type, fname1, fname2);
 }
@@ -1052,7 +1040,7 @@ void wd_do_update(void)
 		w = w->xw_next;
 	}
 
-	((ITM_WINDOW *) desk_window)->itm_func->wd_do_update(desk_window);
+	((ITM_WINDOW *)desk_window)->itm_func->wd_do_update(desk_window);
 }
 
 
@@ -1105,6 +1093,35 @@ void wd_update_drv(int drive)
 
 
 /*
+ * A size-savng aux. routine; copies noniconified window size to
+ * current window size. To be used before opening a window.
+ */
+
+void wd_restoresize(WINFO *winfo)
+{
+	if(winfo->flags.iconified)
+	{
+		*(RECT *)&(winfo->x) = *(RECT *)&(winfo->ix);
+
+		if(!can_iconify)
+			winfo->flags.iconified = 0;
+	}
+}
+
+
+/*
+ * Reset some window flags
+ */
+
+void wd_setnormal(WINFO *info)
+{
+	info->flags.fulled = 0;
+	info->flags.fullfull = 0;
+	info->flags.iconified = 0;
+}
+
+
+/*
  * Close a directory, text or accessory window.
  * Note: take care not to attempt to use it on desk window
  */
@@ -1119,12 +1136,20 @@ void wd_type_close( WINDOW *w, int mode)
 		va_close(w);
 	else
 	{
-		/* fulled and setmask flags are preserved for temporary close */
+		/* 
+		 * fulled and setmask flags are preserved for temporary close;
+		 * otherwise, they are reset.
+		 * Window size and coordinates are reset to values before iconifying
+		 */
 
 		if (!wclose)
 		{
-			((TYP_WINDOW *)w)->winfo->flags.fulled = 0;
-			((TYP_WINDOW *)w)->winfo->flags.setmask = 0;
+			WINFO *info = ((TYP_WINDOW *)w)->winfo;
+
+			wd_restoresize(info);
+			wd_setnormal(info);
+
+			info->flags.setmask = 0;
 		}
 
 		if (wt == TEXT_WIND)
@@ -1157,8 +1182,10 @@ void wd_del_all(void)
 	while (w)
 	{
 		prev = w->xw_prev;
+
 		if ( xw_type(w) != ACC_WIND )
 			wd_type_close(w, 1);		
+
 		w = prev;
 	}
 }
@@ -1192,63 +1219,49 @@ boolean wd_checkopen(int *error)
 
 
 /* 
- * Set icon or text display of directory windows 
+ * Toggle icon or text display of directory windows 
  */
 
-static void wd_mode(int mode)
+static void wd_mode(void)
 {
 	WINDOW *w = xw_first();
-	DIR_WINDOW *dw;	
-	int i;
 
-#ifdef MSHOWTXT
-	/* Do something only if mode has changed */
+	options.mode = !options.mode;
+	menu_icheck(menu, MSHOWICN, options.mode);	
 
-	if ( mode != options.mode )
+	while (w)
 	{
-#endif
-		options.mode = mode;
-
-		while (w)
+		if (xw_type(w) == DIR_WIND)	
 		{
-			if (xw_type(w) == DIR_WIND)	
+			wd_type_nofull(w);
+							
+			if ( options.mode )	
 			{
-				wd_type_nofull(w);
-								
-				if ( mode )	
-				{
-					/* 
-					 * Icon mode; find appropriate icons.
-					 * This can take a long time, change mouse form to busy 
-					 */
+				DIR_WINDOW *dw = (DIR_WINDOW *)w;	
+				int i;
 
-					hourglass_mouse();
-					dw = (DIR_WINDOW *)w;
+				/* 
+				 * Icon mode; find appropriate icons.
+				 * This can take a long time, change mouse form to busy 
+				 */
+
+				hourglass_mouse();
 			
-					for ( i = 0; i < dw->nfiles; i++ )
-					{
-						NDTA *d = (*dw->buffer)[i];
-						d->icon = icnt_geticon( d->name, d->item_type, d->tgt_type);
-					}
-
-					arrow_mouse();
+				for ( i = 0; i < dw->nfiles; i++ )
+				{
+					NDTA *d = (*dw->buffer)[i];
+					d->icon = icnt_geticon( d->name, d->item_type, d->tgt_type);
 				}
 
-				/* Now really make the change */
-
-				dir_disp_mode(w);
+				arrow_mouse();
 			}
-			w = w->xw_next;
+
+			/* Now really make the change */
+
+			dir_disp_mode(w);
 		}
-
-		/* mark (check) appropriate menu entry */
-
-		wd_set_mode(mode);
-
-#ifdef MSHOWTXT
+		w = w->xw_next;
 	}
-#endif
-
 }
 
 
@@ -1260,15 +1273,16 @@ static void wd_arr(void)
 {
 	WINDOW *w = xw_first();
 
-	options.aarr = !options.aarr; 					/* toggle option */
-	menu_icheck(menu, MAARNG, (int)options.aarr);	/* set menu item */
+	options.aarr = !options.aarr; 				/* set option */
+	menu_icheck(menu, MAARNG, options.aarr);	/* set menu item */
 
 	while(w)
 	{
-		wd_type_nofull(w);
-
 		if ( xw_type(w) == DIR_WIND )
+		{
+			wd_type_nofull(w);
 			dir_disp_mode(w);
+		}
 
 		w = w->xw_next;
 	}
@@ -1284,16 +1298,16 @@ static void wd_sort(int sort)
 {
 	WINDOW *w = xw_first();
 
-	options.sort = sort; /* save this in options */
+	options.sort = sort;	/* save this in options */
+	wd_set_sort(sort);		/* mark a menu item */
 
 	while (w)
 	{
 		if (xw_type(w) == DIR_WIND)
 			dir_sort(w, sort);
+
 		w = w->xw_next;
 	}
-
-	wd_set_sort(sort);	/* mark a menu item */
 }
 
 
@@ -1312,8 +1326,10 @@ void wd_fields(void)
 			wd_type_nofull(w);
 			dir_newdir((DIR_WINDOW *)w);
 		}
+
 		w = w->xw_next;
 	}
+
 	wd_set_fields(options.fields);
 }
 
@@ -1326,6 +1342,7 @@ void wd_seticons(void)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->wd_seticons(w);
+
 		w = w->xw_next;
 	}
 }
@@ -1348,7 +1365,7 @@ static void wd_ontext(WINDOW *ww, char **thepath)
 	if (*thepath)
 	{
 		thename = fn_get_name( thisname );
-		dir_simw((DIR_WINDOW *)ww, *thepath, thename, ITM_FILE, (size_t)1, 0);
+		dir_simw((DIR_WINDOW *)ww, *thepath, thename, ITM_FILE);
 	}
 	else
 		xform_error(ENSMEM);
@@ -1441,11 +1458,9 @@ void wd_hndlmenu(int item, int keystate)
 			}
 		}
 		else
-			/* 
-			 * If nothing is selected, open the dialog to enter 
-			 * item specification 
-			 */
-			item_open( NULL, 0, 0, NULL, NULL );	
+			/* If nothing is selected, open the dialog to enter item spec. */
+			item_open( NULL, 0, 0, NULL, NULL );
+	
 		break;
 	case MSHOWINF:
 	case MSEARCH:
@@ -1471,7 +1486,7 @@ void wd_hndlmenu(int item, int keystate)
 						thepath[3] = 0;
 
 					ww = (WINDOW *)&simw;
-					dir_simw(&simw, thepath, ".", ITM_DRIVE, 0, 0);
+					dir_simw(&simw, thepath, ".", ITM_DRIVE);
 				}
 			}
 			else if ( wtoptype == TEXT_WIND )
@@ -1577,16 +1592,12 @@ void wd_hndlmenu(int item, int keystate)
 			}
 		}
 
-
 		if(n || ((thepath || (wtoptype == DIR_WIND)) && itm_list(ww, &n, &list))) 
 		{
 			itmlist_wop( ww, n, list, cmd); 
+
 			if(cmd == CMD_PRINTDIR || w == NULL)
 				wd_deselect_all();
-/* no need?
-			if(w == NULL) /* deselect all in a simulated window */
-				wd_noselection();
-*/
 		}
 
 		free(thepath);
@@ -1594,11 +1605,11 @@ void wd_hndlmenu(int item, int keystate)
 	}
 #if MFFORMAT
 	case MFCOPY:
-		formatfloppy(floppy, FALSE);
+		formatfloppy(floppid, FALSE);
 		break;
 	case MFFORMAT:
 		if ( !app_specstart(AT_FFMT, w, list, n, 0) )
-			formatfloppy(floppy, TRUE);
+			formatfloppy(floppid, TRUE);
 		break;
 #endif
 	case MSETMASK:
@@ -1608,12 +1619,7 @@ void wd_hndlmenu(int item, int keystate)
 			wd_filemask(NULL);	/* the dialog */
 		break;
 	case MSHOWICN:
-#ifdef MSHOWTXT
-	case MSHOWTXT:
-		wd_mode(item - MSHOWTXT); 
-#else
-		wd_mode(!options.mode);	
-#endif
+		wd_mode();	
 		break;
 	case MAARNG:
 		wd_arr();
@@ -1694,98 +1700,101 @@ void wd_hndlmenu(int item, int keystate)
 /********************************************************************
  *																	*
  * Functions for initialisation of the windows modules and loading	*
- * and saving about windows.										*
+ * and saving windows.										        *
  *																	*
  ********************************************************************/
 
 /*
  * Create some reasonable default window sizes and positions.
  * Each new window of a type will generally be located a little bit
- * to the right and down.
+ * to the right and down. Directory and text windows start from
+ * different positions on the screen.
  */
 
 static void wd_defsize(int type)
 {
 	WINFO *wi;
-	int i;
+	int i, x0, x1, y0, y1, w1, w3, h1;
 
 	for (i = 0; i < MAXWINDOWS; i++)
 	{
-		int x0, x1, y0, y1, w1, w2, w3, h1, h2;
+
+		x0 = screen_info.dsk.w / 8;
+		x1 = i;
+		y1 = i;
 
 		if (type == TEXT_WIND)
 		{
 			wi = &textwindows[i];
 			txt_font = def_font;
-			x0 = 16;
-			x1 = i;
-			y0 = 8;
-			y1 = i * 2;
-			w1 = 7;
+			y0 = 20;
+			y1 += i;
+			w1 = 12;
 			w3 = i + i % 2;
-			h1 = 4;
+			h1 = 7;
 		}
 		else
 		{
 			wi = &dirwindows[i];
 			dir_font = def_font;
-			x0 = 64;
-			x1 = i * 2;
-			y0 = 20;
-			y1 = i; 
-			w1 = 5;
-			w3 = i * 2;
-			h1 = 5;
+			x0 *= 2;
+			x1 += i;
+			y0 = 16;
+			w1 = 8;
+			w3 = x1;
+			h1 = 9;
 		}
-
-		w2 = 10;
-		h2 = 10;
 
 		wi->x = x0 + x1 * screen_info.fnt_w + screen_info.dsk.x;
 		wi->y = y0 + y1 * screen_info.fnt_h + screen_info.dsk.y;
-		wi->w = screen_info.dsk.w * w1 / (w2 * screen_info.fnt_w) + w3; 	/* in char cell units */
-		wi->h = screen_info.dsk.h  * h1 / (h2 * screen_info.fnt_h);			/* in char cell units */
+		wi->w = screen_info.dsk.w * w1 / (screen_info.fnt_w * 16) + w3; 	/* in char cell units */
+		wi->h = screen_info.dsk.h  * h1 / (screen_info.fnt_h * 16);			/* in char cell units */
 	}
 }
 
 
 /* 
- * Determine maximum permitted window sizes, mostly depending on screen area
+ * Determine maximum permitted window work area size, mostly depending on
+ * screen area. Size is rounded to multiples of character cell sizes. If 
+ * 'themenu' is given, it is assumed that a text window size is set; 
+ * otherwise it is for a dir window.
+ */
+
+void wd_type_sizes(RECT *dest, OBJECT *themenu)
+{
+	RECT work;
+	int delta, flags;
+
+	if(themenu)
+	{
+		flags = TFLAGS;
+		delta = 0;
+	}
+	else
+	{
+		flags = DFLAGS;
+		delta = DELTA;
+	}
+
+	xw_calc(WC_WORK, flags, &screen_info.dsk, &work, themenu);
+
+	dest->x = screen_info.dsk.x;
+	dest->y = screen_info.dsk.y;
+	dest->w = work.w - (work.w % screen_info.fnt_w);
+	dest->h = work.h + delta - (work.h % (screen_info.fnt_h + delta));
+}
+
+
+/*
+ * Combine calculation of maximum window work area sizes for text and 
+ * directory windows
  */
 
 void wd_sizes(void)
 {
-	RECT work;
+	wd_type_sizes(&dmax, NULL);
+	wd_type_sizes(&tmax, viewmenu);
 
-	/* Maximum possible sizes of directory and text windows */
-
-	xw_calc(WC_WORK, DFLAGS, &screen_info.dsk, &work, NULL);
-	dmax.x = screen_info.dsk.x;
-	dmax.y = screen_info.dsk.y;
-	dmax.w = work.w - (work.w % screen_info.fnt_w);
-	dmax.h = work.h + DELTA - (work.h % (screen_info.fnt_h + DELTA));
-
-	xw_calc(WC_WORK, TFLAGS, &screen_info.dsk, &work, viewmenu);
-	tmax.x = screen_info.dsk.x;
-	tmax.y = screen_info.dsk.y;
-	tmax.w = work.w - (work.w % screen_info.fnt_w);
-	tmax.h = work.h - (work.h % screen_info.fnt_h);
-
-	/* 
-	 * How big should an iconified window be for an icon to fit 
-	 * into work area? Iconified window has only the title bar (i.e. NAME flag);
-	 * remember iconified size in icwsize- it is the same for all windows.
-	 * Use this routine just once to determine the dimensions.
-	 * Note: this works perfectly with most AESses, but with some (NAES 1.1 ?)
-	 * it seems that size is not calculated exactly as it should be 
-	 * (by a couple of pixels)
-	 */
-
-    work.x = 0;
-	work.y = 0;
-	work.w = ICON_W;
-	work.h = ICON_H;
-	xw_calc(WC_BORDER, NAME, &work, &icwsize, NULL);
 	can_iconify = aes_wfunc & 128; 
 }
 
@@ -1794,9 +1803,9 @@ void wd_default(void)
 {
 	wd_deselect_all();
 	wd_del_all();
-	wd_set_mode(options.mode);
+	menu_icheck(menu, MSHOWICN, options.mode);	
+	menu_icheck(menu, MAARNG, options.aarr);
 	wd_set_sort(options.sort);
-	menu_icheck(menu, MAARNG, (int)options.aarr);
 	wd_set_fields(options.fields);
 	wd_sizes();
 	wd_defsize(TEXT_WIND);
@@ -1812,16 +1821,6 @@ void wd_default(void)
 
 void wd_init(void)
 {
-	/* Nothing is selected */
-
-/* no need?
-	wd_noselection();
-
-	/* Determine default windows sizes */
-
-	wd_sizes();
-*/
-
 	wd_default();
 }
 
@@ -1882,8 +1881,8 @@ boolean wd_type_setfont(int title)
 
 		return TRUE;
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -1905,14 +1904,15 @@ void calc_rc(TYP_WINDOW *w, RECT *work)
 {
 	int cw, ch;
 
+
 	wd_cellsize(w, &cw, &ch);
 
 	/* Note: do not set w->columns here */
 
-	w->rows     = (work->h +  ch - 1) / ch;
+	w->rows     = (work->h + ch - 1) / ch;
 	w->nrows    =  work->h / ch; 
-	w->ncolumns =  work->w /  cw;
-	w->scolumns = work->w / screen_info.fnt_w;
+	w->ncolumns =  work->w / cw;
+	w->scolumns =  work->w / screen_info.fnt_w;
 
 	if (xw_type(w) == DIR_WIND)
 	{
@@ -1922,13 +1922,29 @@ void calc_rc(TYP_WINDOW *w, RECT *work)
 }
 
 
+/*
+ * Aux. function for rounding window position and size;
+ * parameter m is the modulus for rounding
+ */
+
+int wd_round(int x, int m)
+{
+	x += m / 2;
+	x -= (x % m);
+	return x;
+}
+
+
 /* 
  * Funktie die uit opgegeven grootte de werkelijke grootte van het
  * window berekent.
  * If iswork == TRUE, input->w and input->h are assumed to be equal to 
- * area (but -not- input->x and input->y).
+ * work area (but -not- input->x and input->y).
+ * Size and position of a window may be slightly modified in order to
+ * always make it multiples of character size; otherwise there may be
+ * problems with patterns.
  * This routine also limits window size so that it does not
- * exceed the screen.
+ * exceed the screen, or does not become too small.
  */
 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork)
@@ -1946,6 +1962,23 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork)
 	OBJECT 
 		*menu = NULL;
 
+
+	/*
+	 * Things are simpler for an iconified window. It can not be resized
+	 * and so all parameters remain as they were when the window was
+	 * made iconified. Just the position is rounded to multiples of 8
+	 */
+
+	if(wd_isiconified(w))
+	{
+		output->x = wd_round(input->x, 8);
+		output->y = wd_round(input->y, (input->y > 32) ? 8 : 1);
+		output->w = icwsize.w;
+		output->h = icwsize.h;
+
+		return;
+	}
+
 	/* Normal window size */
 
 	if ( xw_type((WINDOW *)w) == TEXT_WIND )
@@ -1960,56 +1993,46 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork)
 
 	xw_calc(WC_WORK, wflags, input, &work, menu);
 
+	/* Note: this is relevant only if the window is fulled */
+
 	if (iswork)
 	{
 		work.w = input->w;
 		work.h = input->h;
 	}
 
-	/* Round-up position and dimensions */
+	/* 
+	 * Round-up position and dimensions of the work area.
+	 * Note: rounding of position is problematic in y direction 
+	 * because of inconvenient menu and screen heights 
+	 */
 
 	fw = screen_info.fnt_w;
 	fh = screen_info.fnt_h + d;
 
-	work.x += fw / 2;
-	work.w += fw / 2;
-	work.h += fh / 2 - d;
-	work.x -= (work.x % fw);
-	work.w -= (work.w % fw);
-	work.h -= (work.h % fh) - d;
+	work.x = wd_round(work.x, fw);
+	work.w = wd_round(work.w, fw);
+	work.h = wd_round(work.h, fh) + d;
 
-	/* Note: do not use min() here */
+	/* Attempt some rounding of y position when possible... */
 
-	if ( work.w > dtmax->w)
-		work.w = dtmax->w;
-	if ( work.h > dtmax->h)
-		work.h = dtmax->h;
+	if(work.y > 72) /* about 5 lines from the top */
+		work.y = wd_round(work.y, screen_info.fnt_h);
 
-	if ( (w->xw_xflags & XWF_ICN) == 0 )
-	{
-		work.w = max(work.w, WMINW * fw);
-		work.h = max(work.h, WMINH * fh);
-	}
+	/* There are limits on permitted window size */
+
+	work.w = minmax(WMINW * fw, work.w, dtmax->w);
+	work.h = minmax(WMINH * fh, work.h, dtmax->h);
+
+	/* Recalculate overall size from modified work size */
 
 	xw_calc(WC_BORDER, wflags, &work, output, menu);
-	calc_rc((TYP_WINDOW *)w, &work);
-	
-	if ( ( (w->winfo)->flags.iconified == 1 ) && can_iconify )
-	{
-		/* 
-		 * If this is an iconified window, override window size
-		 * (size of a dir window is calculated differently than that
-		 * of a text window, which is iconvenient here)
-		 */
-
-		output->w = icwsize.w;
-		output->h = icwsize.h;
-	}
+	calc_rc((TYP_WINDOW *)w, &work); /* number of lines and columns */
 }
 
 
 /* 
- * Calculate window size; merge of txt_calcsize and dir_calcsize.
+ * Calculate window size for directory or text windows.
  * Special considerations when the window is fulled.
  */
 
@@ -2091,14 +2114,14 @@ void wd_calcsize(WINFO *w, RECT *size)
 					def.w += XOFFSET;
 			}
 
-			/* Window overall size must not exceed max integer */
+			/* Window overall size must not exceed max integer or so */
 
-			def.h = lmin(32700, ll * ch);
+			def.h = (int)lmin(32700, ll * ch);
 		}
 
 		wd_wsize(tw, &def, size, iswork);
 
-		/* Limit window size to screen size (excluding menu), or slightly smaller */
+		/* Limit window positon to screen size (excluding menu), or slightly smaller */
 
 		size->x = max(0, min(size->x, screen_info.dsk.w - size->w - 4)); 
 		size->y = max(screen_info.dsk.y, min(size->y, screen_info.dsk.h - size->h));
@@ -2127,7 +2150,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 
 
 /* 
- * Merge of txt_redraw and do_redraw functions for text and dir windows 
+ * Merge of redraw functions for text and dir windows 
  */
 
 void wd_type_redraw(WINDOW *w, RECT *r1)
@@ -2137,12 +2160,16 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 		in, 			/* intersection rectangle */
 		work;			/* window work area */
 
-	boolean 
-		text,			/* flag that directory window is in text mode */ 
-		icf;			/* flag that the window is iconified */
+	long
+		rows = ((TYP_WINDOW *)w)->rows,
+		py = ((TYP_WINDOW *)w)->py,
+		i;
 
 	OBJECT 
 		*obj = NULL;	/* window root object in icon mode */
+
+	FONT
+		*thefont = &txt_font;
 
 
 	if (!clip_desk(r1))
@@ -2150,17 +2177,13 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 
 	xw_getwork(w, &work);
 
-	icf = ( (((TYP_WINDOW *)w)->winfo)->flags.iconified == 1 ) ? TRUE : FALSE;
-
-	if ( icf && can_iconify )
+	if ( wd_isiconified((TYP_WINDOW *)w) )
 		icw_draw( w );
 	else
 	{
 		if ( xw_type(w) == DIR_WIND )
 		{
-			if (options.mode == TEXTMODE)
-				text = TRUE;
-			else 
+			if (options.mode != TEXTMODE)
 			{
 				int nc = ((DIR_WINDOW *)w)->ncolumns;
 
@@ -2178,30 +2201,53 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 					&work
 				)) == NULL) 
 					return;
-				text = FALSE;
 			}
+
+			thefont = &dir_font;
 		}
 
 		xd_wdupdate(BEG_UPDATE);
-		moff_mouse();
+		xd_mouse_off();
+
+		clearline = FALSE; /* don't redraw window background twice */
+
+		set_txt_default(thefont);
 
 		xw_getfirst(w, &r2);
+
 		while (r2.w != 0 && r2.h != 0)
 		{
 			if (xd_rcintersect(r1, &r2, &in))
 			{
 				xd_clip_on(&in);
+
 				if ( xw_type(w) == TEXT_WIND )
-					txt_prtlines((TXT_WINDOW *) w, &in);
+				{
+					for (i = 0; i < rows; i++)
+						txt_prtline((TXT_WINDOW *)w, py + i, &in, &work);
+				}
 				else
-					do_draw((DIR_WINDOW *)w, &in, obj, text, &work);
+				{
+					if (options.mode == TEXTMODE)
+					{
+						pclear(&in);
+
+						for(i = 0; i < rows; i++ )
+							dir_prtcolumns((DIR_WINDOW *)w, py + i, &in, &work);
+					}
+					else
+						draw_tree(obj, &in);
+				}
+
 				xd_clip_off();
 			}
 
 			xw_getnext(w, &r2);
 		}
 
-		mon_mouse();
+		clearline = TRUE;
+
+		xd_mouse_on();
 		xd_wdupdate(END_UPDATE);
 
 		free(obj);
@@ -2210,7 +2256,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 
 
 /* 
- * Merge of txt_draw and dir_draw 
+ * Either redraw a window or send a message to AES to redraw it 
  */
 
 void wd_type_draw(TYP_WINDOW *w, boolean message) 
@@ -2218,10 +2264,11 @@ void wd_type_draw(TYP_WINDOW *w, boolean message)
 	RECT area;
 
 	xw_getsize((WINDOW *)w, &area);
+
 	if (message)
-		xw_send_redraw((WINDOW *)w, &area);
+		xw_send_redraw((WINDOW *)w, WM_REDRAW, &area);
 	else
-		wd_type_redraw((WINDOW *) w, &area);
+		wd_type_redraw((WINDOW *)w, &area);
 }
 
 
@@ -2251,19 +2298,8 @@ void wd_drawall(void)
 		 * if wd_type_draw() is called with message=FALSE
 		 * (as in earlier versions of this file)
 		 */
-/* below is shorter
-		switch( xw_type(w))
-		{
-			case DIR_WIND:
-			case TEXT_WIND:
-				set_sliders((TYP_WINDOW *)w);
-			case DESK_WIND:
-			case ACC_WIND:
-				wd_type_draw((TYP_WINDOW *)w, TRUE);
-		}
-*/
 
-		if(dirortext(w))
+		if(wd_dirortext(w))
 			set_sliders((TYP_WINDOW *)w);
 
 		wd_type_draw((TYP_WINDOW *)w, TRUE);
@@ -2324,7 +2360,13 @@ void wd_type_title(TYP_WINDOW *w)
 		columns;
 
 	char 
-		*fulltitle;
+		*fulltitle = NULL;
+
+
+	/* Don't do anything n an iconified window */
+
+	if(wd_isiconified(w))
+		return;
 
 	/* 
 	 * aes_hor3d is usually either 0 or 2 pixels;
@@ -2341,16 +2383,18 @@ void wd_type_title(TYP_WINDOW *w)
 
 	if(xw_type(w) == TEXT_WIND)
 		fulltitle = strdup(((TXT_WINDOW *)w)->path);
-	else
+	else if (columns > 0)
 		fulltitle = fn_make_path(((DIR_WINDOW *)w)->path, ((DIR_WINDOW *)w)->fspec);
 
 	/* Set window */
 
 	if(fulltitle)
-		cramped_name(fulltitle, w->title, columns);
-
-	free(fulltitle);
-	xw_set((WINDOW *)w, WF_NAME, w->title);
+	{
+		cramped_name(fulltitle, w->title, (size_t)columns);
+		free(fulltitle);
+		xw_set((WINDOW *)w, WF_NAME, w->title);
+	}
+	
 	set_sliders(w);
 }
 
@@ -2373,14 +2417,12 @@ void wd_type_fulled(WINDOW *w, int mbshift)
 	if ( (winfo->flags.fulled == 0) || (f && (winfo->flags.fullfull == 0)) )
 	{
 		winfo->flags.fulled = 1;
+
 		if (mbshift)
 			winfo->flags.fullfull = 1;
 	}
 	else
-	{
-		winfo->flags.fulled = 0;
-		winfo->flags.fullfull = 0;
-	}
+		wd_setnormal(winfo); /* this resets the iconified too but it doesn't matter */
 
 	/* Change window size depending on flags state */
 
@@ -2401,7 +2443,7 @@ void wd_type_nofull(WINDOW *w)
 {
 	WINFO *wi;
 
-	if(dirortext(w))
+	if(wd_dirortext(w))
 	{
  		wi = ((TYP_WINDOW *)w)->winfo;
 		wi->flags.fulled = 0;
@@ -2423,19 +2465,19 @@ void wd_type_arrowed(WINDOW *w, int arrows)
 	case WA_DNLINE:
 	case WA_LFLINE:
 	case WA_RTLINE:
-		w_scroll((TYP_WINDOW *) w, arrows);
+		w_scroll((TYP_WINDOW *)w, arrows);
 		break;
 	case WA_UPPAGE:
-		w_pageup((TYP_WINDOW *) w); 
+		w_pageup((TYP_WINDOW *)w); 
 		break;
 	case WA_DNPAGE:
-		w_pagedown((TYP_WINDOW *) w); 
+		w_pagedown((TYP_WINDOW *)w); 
 		break;
 	case WA_LFPAGE:
-		w_pageleft((TYP_WINDOW *) w); 
+		w_pageleft((TYP_WINDOW *)w); 
 		break;
 	case WA_RTPAGE:
-		w_pageright((TYP_WINDOW *) w); 
+		w_pageright((TYP_WINDOW *)w); 
 		break;
 	}
 }
@@ -2457,15 +2499,13 @@ void wd_type_vslider(WINDOW *w, int newpos)
 
 void wd_set_defsize(WINFO *w) 
 {
-	RECT border, work;
+	WINDOW *ww = (WINDOW *)w->typ_window;
 
-	xw_getsize((WINDOW *)w->typ_window, &border);
-	xw_getwork((WINDOW *)w->typ_window, &work);
+	w->x = ww->xw_size.x - screen_info.dsk.x;
+	w->y = ww->xw_size.y - screen_info.dsk.y;
+	w->w = ww->xw_work.w / screen_info.fnt_w;
+	w->h = ww->xw_work.h / (screen_info.fnt_h + ((xw_type((WINDOW *)(w->typ_window)) == TEXT_WIND || w->flags.iconified != 0) ? 0 : DELTA) );
 
-	w->x = border.x - screen_info.dsk.x;
-	w->y = border.y - screen_info.dsk.y;
-	w->w = work.w / screen_info.fnt_w;
-	w->h = work.h / (screen_info.fnt_h + ((xw_type((WINDOW *)(w->typ_window)) == TEXT_WIND) ? 0 : DELTA) );
 }
 
 
@@ -2479,9 +2519,9 @@ void wd_type_moved(WINDOW *w, RECT *newpos)
 	WINFO *wd = ((TYP_WINDOW *) w)->winfo; 
 	RECT size;
 
+	/* Permit size/position of window only as multiples of character size */
+
 	wd_wsize((TYP_WINDOW *)w, newpos, &size, FALSE);
-	
-	/* Note: at least a minimum window size should be set here */ 
 
 	wd->flags.fulled = 0;
 	wd->flags.fullfull = 0;
@@ -2501,7 +2541,7 @@ void wd_type_moved(WINDOW *w, RECT *newpos)
 	 * and this would probably be used only rarely.
 	 */
 
-	if ( over != 0xffffffffL && ovrstat == 0 ) /* overscan exists and is OFF */
+	if ( over != -1L && ovrstat == 0 ) /* overscan exists and is OFF */
 	{
 		size.w -= 1;	
 		xw_setsize(w, &size);
@@ -2509,56 +2549,75 @@ void wd_type_moved(WINDOW *w, RECT *newpos)
 	}
 #endif
 
-	xw_setsize(w, &size);
-	wd_set_defsize(wd);
+	xw_setsize(w, &size); 	/* set new size in pixels */
+	wd_set_defsize(wd);		/* calculte new size for WINFO */
 }
 
 
 /*
- * Handle resizing of a window
+ * Handle resizing of a window. In some cases it may be necessary to
+ * redraw the window here; otherwise, redraw message is received and 
+ * window redrawn elsewhere
  */
 
 void wd_type_sized(WINDOW *w, RECT *newsize)
 {
-	RECT 
-		area;
-
 	int 
-		dc,
 		old_w, 
-		old_h;
+		old_h,
+		ox,
+		dc = 0,
+		oc = 0;
 
-	if ( xw_type(w) == DIR_WIND)
-	{
-		dc = ((DIR_WINDOW *)w)->dcolumns;
+	boolean
+		draw = FALSE;
 
-		if(((DIR_WINDOW *)w)->par_itm > 0)
-			((DIR_WINDOW *)w)->par_itm = -((DIR_WINDOW *)w)->par_itm;
-	}
+	ox = ((TYP_WINDOW *)w)->px;
+	old_w = w->xw_size.w; 
+	old_h = w->xw_size.h;
 
-
-	xw_getwork(w, &area);
-
-	old_w = area.w;
-	old_h = area.h;
+	if ( xw_type(w) == DIR_WIND )
+		oc = ((DIR_WINDOW *)w)->dcolumns;
 
 	wd_type_moved(w, newsize);
-	xw_getwork(w, &area);
-
-	if ( xw_type(w) == TEXT_WIND )
-	{
-		if ((area.w > old_w) || (area.h > old_h))
-			wd_type_draw((TYP_WINDOW *) w, TRUE);
-	}
-	else
-	{
-		calc_nlines((DIR_WINDOW *)w);
-
-		if ((area.w != old_w || area.h != old_h) && (options.mode != TEXTMODE || dc != ((DIR_WINDOW *)w)->dcolumns) )
-			wd_type_draw((TYP_WINDOW *) w, TRUE);
-	}
-
 	wd_type_title((TYP_WINDOW *)w);
+
+	if ( xw_type(w) == DIR_WIND )
+	{
+		if(((DIR_WINDOW *)w)->par_itm > 0)
+			((DIR_WINDOW *)w)->par_itm = -((DIR_WINDOW *)w)->par_itm;
+
+		dc = ((DIR_WINDOW *)w)->dcolumns;
+
+		if
+		(
+			dc != oc && 
+			w->xw_size.w < old_w  && 
+			w->xw_size.h <= old_h
+		)
+			draw = TRUE;
+	}
+
+	/* 
+	 * This should fix some redraw problems with real-time resizing.
+	 * However, real-time resizing can not be detected in XaAES and the
+	 * inquiry is therefore somewhat simplified- this may result in double
+	 * redraws. It is now assumed that realtime resizing exists only in those
+	 * AESes that need mint. 
+	 */
+
+#if _MINT_
+	if
+	(
+		(((TYP_WINDOW *)w)->px != ox || dc != oc) && 
+		(w->xw_size.w > old_w || w->xw_size.h > old_h) &&
+		(mint /* && ((xe_button_state() & 1) != 0) doesn't work in XaAES! */ )
+	)
+		draw = TRUE; 
+#endif
+
+	if(draw)
+		wd_type_redraw(w, &(w->xw_size));
 }
 
 
@@ -2696,14 +2755,13 @@ void w_pageup(TYP_WINDOW *w)
 	if (newy < 0)
 		newy = 0;
 
-	w_page( w, w->px, newy);
+	w_page(w, w->px, newy);
 }
 
 
 void w_pagedown(TYP_WINDOW *w)
 {
-	long 
-		newy = w->py + w->nrows;						
+	long newy = w->py + w->nrows;						
 
 	if ((newy + w->nrows) > w->nlines)	
 		newy = lmax(w->nlines - (long)w->nrows, 0);
@@ -2731,6 +2789,7 @@ void w_pageright(TYP_WINDOW *w)
 		newx;
 
 	newx = w->px + nc;
+
 	if ((newx + nc) > lwidth)
 		newx = max(lwidth - nc, 0);
 
@@ -2783,7 +2842,7 @@ static long find_firstlast(int wy, int ay, int ah, boolean *prev, int ch, int la
 		line--;
 	}
 
-	return (long)(line/ ch);
+	return (long)(line / ch);
 }
 
 
@@ -2800,12 +2859,10 @@ void w_scroll(TYP_WINDOW *w, int type)
 {
 	RECT 
 		work, 
-		area, 
 		r, 
 		in, 
 		src, 	/* screen area bein copied from */
 		dest;	/* screen area being copied to */
-
 
 	long 
 		line;
@@ -2822,8 +2879,7 @@ void w_scroll(TYP_WINDOW *w, int type)
 		wtype = xw_type((WINDOW *)w);
 
 	boolean 
-		prev, 
-		iconwind = (wtype == DIR_WIND) && (options.mode != TEXTMODE);
+		prev; 
 
 	/* Change position in the window, i.e. w->px, w->py */
 
@@ -2857,30 +2913,19 @@ void w_scroll(TYP_WINDOW *w, int type)
 
 	xw_getwork((WINDOW *) w, &work);
 
+	/* Is this in the visible screen at all ? */
+
+	if(!clip_desk(&work))
+		return;
+
 	/* Determine increments for scrolling- in char cell or icon cell units */
 
 	wd_cellsize(w, &cw, &ch);
 
 	wx = work.x;
 	wy = work.y;
-	area = work;
 
-	/* 
-	 * In an icon window icons do not start from the very corner
-	 * of the window, so calculate another rectangle, to be used
-	 * from now on instead of window work area
-	 */
-
-	if ( iconwind )
-	{
-		area.x += XOFFSET;
-		area.w -= XOFFSET;
-		area.y += YOFFSET;
-		area.h -= YOFFSET;
-	}
-
-	if (!clip_desk(&area)) /* for text window this was &work ? */
-		return;
+	/* Start updating... */
 
 	xd_wdupdate(BEG_UPDATE);
 
@@ -2891,15 +2936,17 @@ void w_scroll(TYP_WINDOW *w, int type)
 	else
 		set_hslsize_pos(w);
 
-	moff_mouse();
+	xd_mouse_off();
+
 	set_txt_default(( wtype == TEXT_WIND ) ? &txt_font : &dir_font);
 
 	/* Traverse all rectangles */
 
 	xw_getfirst((WINDOW *) w, &r);
+
 	while (r.w != 0 && r.h != 0)
 	{
-		if (xd_rcintersect(&r, &area, &in)) /* for text window this was &work ? */
+		if (xd_rcintersect(&r, &work, &in)) 
 		{
 			xd_clip_on(&in);
 
@@ -2990,7 +3037,7 @@ void w_scroll(TYP_WINDOW *w, int type)
 		xw_getnext((WINDOW *)w, &r);
 	}
 
-	mon_mouse();
+	xd_mouse_on();
 	xd_wdupdate(END_UPDATE);
 }
 
@@ -3005,7 +3052,7 @@ boolean wd_adapt(WINDOW *w)
 {
 	RECT size;
 
-	if(dirortext(w))
+	if(wd_dirortext(w))
 	{
 		wd_calcsize(((TYP_WINDOW *) w)->winfo, &size);
 		xw_setsize(w, &size);
@@ -3156,6 +3203,11 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 						int ei = 0; /*  index of "*"  */
 						size_t lm = x_pathconf(((DIR_WINDOW *)w)->path, DP_NAMEMAX);
 
+						if(lm < 0)
+							lm = 12; /* override error in x_pathconf */
+						else
+							lm = lmin(lm, (long)sizeof(LNAME) - 1);
+
 						/* [Insert] and wildcard should have no effect */
 
 						if((unsigned int)key == INSERT)
@@ -3250,6 +3302,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 				}
 			}
 		}
+
 		break;
 	}
 
@@ -3422,7 +3475,7 @@ boolean wd_tmpcls(void)
 	if ((mem_file = x_fmemopen(O_DENYRW | O_RDWR, &error)) != NULL)
 	{
 		wclose = TRUE;
-		error = CfgSave(mem_file, reopen_table, -1, CFGEMP); 
+		error = CfgSave(mem_file, reopen_table, -1, CFGEMP); /* windows closed here */ 
 		wclose = FALSE;
 	}
 
@@ -3449,8 +3502,6 @@ boolean wd_tmpcls(void)
  * ("the memory file") and open them.  This routine closes the "file"
  * after reading
  */
-
-extern int chklevel;
 
 void wd_reopen(void)
 {
@@ -3696,7 +3747,7 @@ boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, 
  * This routine will return FALSE and a NULL list pointer
  * if no list has been created.
  * If list allocation fails, an alert will be generated.
- * Note: XWF_SIM flag is set in dir_simw() to mark a simulated window;
+ * Note: XWF_SIM (x)flag is set in dir_simw() to mark a simulated window;
  * it is checked here because xw_exist does not recognize simulated windows
  */
 
@@ -3706,9 +3757,11 @@ boolean itm_list(WINDOW *w, int *n, int **list)
 	(
 		w == NULL || 
 		(!xw_exist(w) && (w->xw_xflags & XWF_SIM) == 0) || 
-		xw_type(w) == TEXT_WIND
+		xw_type(w) == TEXT_WIND /* DIR_WIND and DESK_WIND are permitted */
 	)
 	{
+		/* this is neither a simulated nor a real window with items */
+
 		*list = NULL;
 		*n = 0;
 		return FALSE;
@@ -3744,8 +3797,8 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 
 		if (((ITM_WINDOW *)dw)->itm_func->itm_copy(dw, dobject, sw, n, list, icnlist, x, y, kstate))
 		{
-			if(selection.w && (va_reply || ((options.cprefs & CF_KEEPS) == 0) ) )
-				itm_select(sw, -1, 0, va_reply ? FALSE : TRUE);
+			if( !va_reply && selection.w && ((options.cprefs & CF_KEEPS) == 0) )
+				itm_select(sw, -1, 0, TRUE);
 		}
 
 		return TRUE;
@@ -3869,7 +3922,6 @@ static boolean itm_drop
 			ddclose(fd);
 			itm_select(w, -1, 0, TRUE);	
 			return TRUE;
-
 		}
 		else
 		{
@@ -3963,7 +4015,7 @@ static void draw_icns(ICND *icns, int n, int mx, int my, int *clip)
 
 	clip_coords(clip, &x, &y);
 	set_rect_default();
-	moff_mouse();
+	xd_mouse_off();
 
 	for (i = 0; i < n; i++)
 	{
@@ -3978,7 +4030,7 @@ static void draw_icns(ICND *icns, int n, int mx, int my, int *clip)
 		v_pline(vdi_handle, icnd->np, c);
 	}
 
-	mon_mouse();
+	xd_mouse_on();
 }
 
 
@@ -4011,6 +4063,7 @@ static void find_newobj(int x, int y, WINDOW **wd, int *object, boolean *state)
 	WINDOW *w = xw_find(x, y);
 
 	*wd = w;
+	*object = -1;
 
 	if (w != NULL)
 	{
@@ -4019,13 +4072,6 @@ static void find_newobj(int x, int y, WINDOW **wd, int *object, boolean *state)
 			if ((*object = itm_find(w, x, y)) >= 0)
 				*state = itm_state(w, *object);
 		}
-		else
-			*object = -1;
-	}
-	else
-	{
-		*wd = NULL;
-		*object = -1;
 	}
 }
 
@@ -4074,7 +4120,7 @@ boolean itm_move
 		keepsel = selection;	/* to restore corrupted "selection" */
 
 
-	if ( itm_type(src_wd, src_object) == ITM_PREVDIR )
+	if ( src_object >= 0 && itm_type(src_wd, src_object) == ITM_PREVDIR )
 	{
 		if (!va_reply)
 		{
@@ -4091,7 +4137,9 @@ boolean itm_move
 	if ( (itm_list(src_wd, &n, &list) == FALSE) )
 		return result;
 
-	if ( !va_reply )
+	/* Don't do the following if AV-protocol command is executed */
+
+	if (!va_reply)
 	{
 		for (i = 0; i < n; i++)
 		{
@@ -4104,8 +4152,8 @@ boolean itm_move
 			return result;
 	}
 
-	get_minmax(icnlist, nv, clip);
-	wind_update(BEG_MCTRL);
+	get_minmax(icnlist, nv, clip); /* if nv == 0 clip is unchanged */
+	xd_wdupdate(BEG_MCTRL);
 	graf_mouse(FLAT_HAND, NULL);
 	draw_icns(icnlist, nv, x, y, clip);
 
@@ -4159,7 +4207,7 @@ boolean itm_move
 	while (mreleased == FALSE);
 
 	arrow_mouse();
-	wind_update(END_MCTRL);
+	xd_wdupdate(END_MCTRL);
 
 	/* 
 	 * During moving of the cursor over objects, current selection may
@@ -4176,7 +4224,6 @@ boolean itm_move
 		if (cur_wd != NULL)
 		{
 			int cur_type = xw_type(cur_wd);
-			ITMTYPE itype;
 
 			switch(cur_type)
 			{
@@ -4189,15 +4236,13 @@ boolean itm_move
 
 				if ((xw_type(cur_wd) == DESK_WIND) && (cur_object == -1) && (xw_type(src_wd) == DESK_WIND))
 					clip_coords(clip, &x, &y);
-
 				result = itm_copy(src_wd, n, list, cur_wd, cur_object, kstate, icnlist, x, y);
-
 				break;
 			case ACC_WIND:
 				result = va_accdrop(cur_wd, src_wd, list, n, kstate, x, y );
 				break;
 			case TEXT_WIND:			
-				if (n == 1 && ((itype = itm_tgttype(src_wd, list[0])) == ITM_FILE || itype == ITM_PROGRAM) )
+				if (n == 1 && isfileprog(itm_tgttype(src_wd, list[0])))
 				{
 					char *path = itm_fullname(src_wd, list[0]);
 					result = txt_reread((TXT_WINDOW *)cur_wd, x_fllink(path), 0, 0L);
@@ -4209,7 +4254,7 @@ boolean itm_move
 			}
 		}
 		else
-			result = itm_drop(src_wd, n, list, kstate, x, y); /* drag & drop */
+			result = itm_drop(src_wd, n, list, kstate, x, y); /* MultiTOS drag & drop */
 	}
 
 	free(list);
@@ -4228,9 +4273,11 @@ static boolean in_window(WINDOW *w, int x, int y)
 
 	xw_getwork(w, &work);
 
-	if (   (x >= work.x) && (x < (work.x + work.w))
-	    && (y >= work.y) && (y < (work.y + work.h))
-	   )
+	if 
+	(   
+		(x >= work.x) && (x < (work.x + work.w)) && 
+		(y >= work.y) && (y < (work.y + work.h))
+	)
 		return TRUE;
 	else
 		return FALSE;
@@ -4239,7 +4286,7 @@ static boolean in_window(WINDOW *w, int x, int y)
 
 /* 
  * Button handling routine. 
- * This is called in desktop,  directory and text windows.
+ * This is called in desktop, directory and text windows.
  * Note: bstate never used in this routine ? 
  */
 
@@ -4274,6 +4321,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 			if (itm_open(w, item, kstate))
 			{
 				w = selection.w;
+
 				if(w)
 					itm_select(w, item, 2, TRUE);
 			}
@@ -4307,7 +4355,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 
 			while (ww)
 			{
-				if(dirortext(ww))
+				if(wd_dirortext(ww))
 				{
 					wd_type_topped(ww);	
 					nowin = FALSE;
@@ -4328,6 +4376,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 
 		if (((m_state == 0) || ((kstate & (K_RSHIFT | K_LSHIFT)) == 0)) && (selection.w == w))
 			itm_select(w, -1, 0, TRUE);
+
 		if (m_state)
 			itm_rselect(w, x, y);
 
@@ -4363,7 +4412,7 @@ void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, R
 	obj[0].r.x = work->x;
 	obj[0].r.y = row + work->y + YOFFSET - yoffset;
 	obj[0].r.w = work->w;
-	obj[0].r.h = lines * ICON_H;
+	obj[0].r.h = min(work->h, lines * ICON_H);
 }
 
 
@@ -4408,12 +4457,19 @@ void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, bo
 static void icw_draw(WINDOW *w)
 {
 
-	OBJECT *obj;			/* background and icon objects */
-	RECT where;	 			/* location ans size of the background object */
-	RECT r2;				/* rectangle for redraw test */
-	INAME icname;			/* name of icon in desktop.rsc */
-	int icon_no, icon_ind;	/* icon indices in resource files */
-	const char *wpath = wd_path(w);
+	OBJECT
+		*obj;			/* background and icon objects */
+	
+	INAME 
+		icname;			/* name of icon in desktop.rsc */
+	
+	int 
+		dx, dy,			/* icon offsets in the root object */
+		icon_no, 		/* icon identifier in resource files */
+		icon_ind;		/* icon identifier in resource files */
+	
+	const char 
+		*wpath = wd_path(w);
 
 
 	/* allocate memory for objects: background + 1 icon */
@@ -4421,24 +4477,24 @@ static void icw_draw(WINDOW *w)
 	if ((obj = malloc_chk( 2 * sizeof(OBJECT) + sizeof(CICONBLK))) == NULL)
 		return;
 
+	/* Center the icon in the window work area */
+
+	dx = (w->xw_work.w - ICON_W + XOFFSET) / 2;
+	dy = (w->xw_work.h - ICON_H + YOFFSET) / 2;
+
 	/* Set background object. It is needed for background colour / pattern */
 
-	icwsize.x = w->xw_size.x;
-	icwsize.y = w->xw_size.y;
-	xw_calc(WC_WORK, NAME, &icwsize, &where, NULL);
-	wd_set_obj0(obj, FALSE, 0, 1, YOFFSET, &where);
+	wd_set_obj0(obj, FALSE, 0, 2, YOFFSET, &(w->xw_work));
 
-	/* determine which icon to use: file, floppy, disk or folder */
+	/* Decide which icon to use: file, floppy, disk or folder */
 
 	if ( xw_type(w) == TEXT_WIND )
-	{
 		icon_ind = FIINAME; 			/* file icon */
-	}
 	else
 	{
-		if ( wpath && isroot( wpath ) )
+		if ( wpath && isroot(wpath) )
 		{
-			if ( wpath[0] <= 'B' ) 
+			if ( *wpath <= 'B' ) 
 				icon_ind = FLINAME; 	/* floppy icon */
 			else
 				icon_ind = HDINAME;		/* hard disk icon */
@@ -4450,23 +4506,15 @@ static void icw_draw(WINDOW *w)
 	icon_no = rsrc_icon_rscid( icon_ind, icname );
 	cramped_name(wpath ,icname, sizeof(INAME));
 
-	/* Set icon */
+	/* Set icon centered in work area */
 
-	set_obji( obj, 0L, 1L, FALSE, FALSE, FALSE, icon_no, XOFFSET/2, YOFFSET, icname );
+	set_obji( obj, 0L, 1L, FALSE, FALSE, FALSE, icon_no, dx, dy, icname );
 
 	/* (re)draw it */
-
-	wind_update(BEG_UPDATE);
-
-	xw_getfirst((WINDOW *)w, &r2);
-	while (r2.w != 0 && r2.h != 0)
-	{
- 		objc_draw(obj, ROOT, MAX_DEPTH, r2.x, r2.y, r2.w, r2.h);
-		xw_getnext((WINDOW *)w, &r2);
-	}
-
-	wind_update(END_UPDATE);
-
+	
+	xd_wdupdate(BEG_UPDATE);
+	draw_icrects(w, obj, &(w->xw_size));
+	xd_wdupdate(END_UPDATE);
 	free(obj);
 }
 
@@ -4475,7 +4523,7 @@ static void icw_draw(WINDOW *w)
  * Routine for text/dir window iconification 
  */
 
-void wd_type_iconify(WINDOW *w)
+void wd_type_iconify(WINDOW *w, RECT *r)
 {
 	WINFO *wi = ((TYP_WINDOW *)w)->winfo;
 
@@ -4488,22 +4536,19 @@ void wd_type_iconify(WINDOW *w)
 
 	xw_set((WINDOW *)w, WF_NAME, nonwhite(get_freestring(MENUREG)));
 
-	/* Remember size of noniconified window */
+	/* Remember size of noniconified window (from WINFO structure) */
 
-	*(RECT *)(&(wi->ix)) = *(RECT *)(&(wi->x));
+	if(!(wi->flags.iconified))
+		*(RECT *)(&(wi->ix)) = *(RECT *)(&(wi->x));
 
-	/* Call function to iconify window */
+	/* Call the function to iconify this window. remember iconified size */
 
-	xw_iconify(w, icwsize.w, icwsize.h);
+	xw_iconify(w, r);
+	icwsize = w->xw_size;
 
-	/* If window is not open, return */
+	/* Convert and remember the new position */
 
-	if ( (w->xw_xflags & XWF_OPN) == 0 )
-		return;
-
-	/* Draw contents of iconified window */
-
-	icw_draw(w);
+	wd_set_defsize(wi);
 
 	/* 
 	 * Set a flag that this is an iconified window;
@@ -4514,8 +4559,10 @@ void wd_type_iconify(WINDOW *w)
 	 */
 
 	wi->flags.iconified = 1;
-	wi->flags.fulled = 0;
-	wi->flags.fullfull = 0;
+
+	/* Draw contents of iconified window */
+
+	icw_draw(w);
 }
 
 
@@ -4523,19 +4570,29 @@ void wd_type_iconify(WINDOW *w)
  * Routine for text/dir window deiconification 
  */
 
-void wd_type_uniconify(WINDOW *w)
+void wd_type_uniconify(WINDOW *w, RECT *r)
 {
-	/* Call uniconify function */
+	RECT size;
+	WINFO *wi = ((TYP_WINDOW *)w)->winfo;
 
-	xw_uniconify(w);
+	wd_type_topped(w);
 
-	/* Reset a flag that this is an iconified window */
+	/* Calculate window size */
 
-	(((TYP_WINDOW *)w)->winfo)->flags.iconified = 0;
+	wd_restoresize(wi);
 
-	/* Calculate and draw the window */
+	wi->flags.iconified = 0;
+	wd_calcsize(wi, &size);
 
-	wd_type_sized( w, &(w->xw_nsize) );
+	r->x = size.x;
+	r->y = size.y;
+
+	/* Call uniconify function then resize the window */
+
+	xw_uniconify(w, r);
+	wd_type_sized(w, &size);
+
+/* this is probably not needed anymore
 
 	/*
 	 * XaAES (V0.963 and 0.970 at least) does not redraw uniconifed windows 
@@ -4554,10 +4611,22 @@ void wd_type_uniconify(WINDOW *w)
 		xw_getsize(w, &area);
 		area.w = ICON_W + 16;	/* a window will always be wider than this */
 		area.h = 2 * ICON_H;	/* and higher than this, so it is safe */
-		xw_send_redraw(w, &area);
+		xw_send_redraw(w, WM_REDRAW, &area);
 	}
 #endif
 
+*/
+
+}
+
+
+/*
+ * Is a window really iconified right now?
+ */
+
+static boolean wd_isiconified(TYP_WINDOW *w)
+{
+	return (can_iconify && wd_dirortext((WINDOW *)w) && w->winfo->flags.iconified);
 }
 
 
@@ -4567,34 +4636,52 @@ void wd_type_uniconify(WINDOW *w)
  * text windows, NOT av-client windows (which do not have a WINFO pointer)
  */
 
-void wd_iopen ( WINDOW *w, RECT *size )
+void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 {
-	WINFO *wi = ((TYP_WINDOW *)w)->winfo;
-	boolean icf = can_iconify && wi->flags.iconified;
-	RECT nsize;
+	WINFO *info = ((TYP_WINDOW *)w)->winfo;
+	RECT size;
 
-#if _MINT_
-	/* 
-	 * In Magic the window should be opened -after- iconifying,
-	 * otherwise it will get a wrong title bar???
-	 */
 
-	if (icf && magx)
-		xw_iconify(w, icwsize.h, icwsize.h );
-#endif
-		xw_open( w, size );
+	if ( avsetw.flag )
+	{
+		/* size is set through AV-protocol */
 
-	wi->flags.iconified = 0; /* so that wd_calcsize would be correctly done */
+		size = avsetw.size;
+		avsetw.flag = FALSE;
+	}
+	else
+	{
+		/* properly recalculate size */
 
-	if ( icf )   
-	{	
-		*(RECT *)(&(wi->x)) = *(RECT *)(&(wi->ix)); 
-		wd_calcsize ( wi, &nsize );
-		wd_type_iconify(w);
-		*(RECT *)(&(w->xw_nsize)) = *(RECT *)(&nsize);
+		info->flags = *oldflags;		/* now set real fulled state */
+
+		if(info->flags.iconified)
+		{
+			*(RECT *)(&info->x) = *oldsize;
+
+			/* Set iconified size only the first time (why?) */
+
+			if(icwsize.w == 0)
+			{
+				icwsize.w = oldsize->w * screen_info.fnt_w;
+				icwsize.h = oldsize->h * screen_info.fnt_h;
+			}
+		}
+
+		wd_calcsize(info, &size);	/* and calculate */
 	}
 
-	wi->used = TRUE;
+	/* Set window title and open the window */
+
+	wd_type_title((TYP_WINDOW *)w);
+	xw_open( w, &size );
+
+	/* Tell AES to iconify this window; set the flag */
+
+	if ( info->flags.iconified )   
+		wd_type_iconify(w, &size);
+
+	info->used = TRUE;
 }
 
 

@@ -77,7 +77,7 @@ void strip_name(char *to, const char *from)
  */
 
 
-void cramped_name(const char *s, char *t, int ww)
+void cramped_name(const char *s, char *t, size_t ww)
 {
 	char 
 		*p = t; 	/* pointer to a location in target string  */
@@ -85,21 +85,20 @@ void cramped_name(const char *s, char *t, int ww)
 	XLNAME
 		ts;			/* temporary storage for the stripped name */
 
-	int
+	long
 		l,			/* input string length */ 
 		d,			/* difference between input and output lengths */ 
 		h;			/* length of the first part of the name (before "...") */
 
-
 	strip_name(ts, s);		/* remove leading and trailing blanks; insert term. byte */
-	l = (int)strlen(ts);	/* new (trimmed) string length */
+	l = strlen(ts);			/* new (trimmed) string length */
 	d = l - ww + 1;			/* new length difference */
 
-	if (d <= 0)		/* (new) source is shorter than target (or same), so just copy */
+	if (d <= 0L)	/* (new) source is shorter than target (or same), so just copy */
 		strcpy(t, ts);
 	else			/* (new) source is longer than the target, must cramp */
 	{
-		if (ww < 13)				/* 8.3: destination is very short  */
+		if (ww < 13L)				/* 8.3: destination is very short  */
 		{
 			strcpy(t, ts + d);	/* so copy only the last ch's */
 			t[0] = '<';			/* cosmetic, to show it is a truncated name */
@@ -109,12 +108,13 @@ void cramped_name(const char *s, char *t, int ww)
 			h = (ww - 4) / 2;	/* half of dest. length minus "..." */ 
 
 			strncpy(t, ts, h);	/* copy first half to  destination */
+
 			p += h;				/* add "..." */
 			*p++ = '.';
 			*p++ = '.';
 			*p++ = '.';
- 
-			strcpy(p, ts + l - (ww - h - 4) );
+
+			strcpy(p, ts + d + h + 3);
 		}
 	}
 }

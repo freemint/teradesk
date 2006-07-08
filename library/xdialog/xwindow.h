@@ -31,18 +31,17 @@
 
 #define XW_INTVARS	struct window *xw_prev;	\
 					struct window *xw_next;	\
-					int xw_type;	/* window type */		\
-					int xw_handle;	/* window handle */		\
-					int xw_ap_id;	/* app id of owner */	\
-					int xw_flags;	/* flags for widgets */	\
 					struct wd_func *xw_func;				\
 					OBJECT *xw_menu;/* menu object */		\
+					RECT xw_size;	/* window size */		\
+					RECT xw_work;	/* work area size */	\
+					int xw_handle;	/* window handle */		\
+					int xw_ap_id;	/* app id of owner */	\
 					int xw_bar;		/* menubar object ind */\
 					int xw_mparent;	/* parent window id */	\
-					RECT xw_size;	/* window size */		\
-					RECT xw_nsize;	/* uniconified size */	\
-					RECT xw_work;	/* work area size */	\
-					int xw_xflags	/* diverse flags */ 	
+					int xw_type;	/* window type */		\
+					int xw_flags;	/* flags for widgets */	\
+					int xw_xflags	/* other diverse flags */
 
 /*
  * Default window structuur, bevat alleen de door de window
@@ -93,8 +92,8 @@ typedef struct wd_func
 	void (*wd_moved) 	(WINDOW *w, RECT *newpos);
 	void (*wd_hndlmenu) (WINDOW *w, int title, int item);
 	void (*wd_top)     	(WINDOW *w);
-	void (*wd_iconify)	(WINDOW *w);
-	void (*wd_uniconify)(WINDOW *w);
+	void (*wd_iconify)	(WINDOW *w, RECT *r);
+	void (*wd_uniconify)(WINDOW *w, RECT *r);
 } WD_FUNC;
 
 /*
@@ -174,7 +173,7 @@ extern int xw_dosend;
 
 extern void xw_cycle(void);
 extern void xw_send(WINDOW *w, int messid);
-extern void xw_send_redraw(WINDOW *w, RECT *area);
+extern void xw_send_redraw(WINDOW *w, int messid, RECT *area);
 extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);
 extern void xw_menu_text(WINDOW *w, int item, const char *text);
@@ -188,8 +187,8 @@ extern int xw_hndlmessage(int *message);
 extern WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 							size_t wd_struct_size, int *error);
 extern void xw_close_desk(void);
+extern void xw_iconify(WINDOW *w, RECT *r); 
+extern void xw_uniconify(WINDOW *w, RECT *r); 
 
-extern void xw_iconify(WINDOW *w, int width, int height); 
-extern void xw_uniconify(WINDOW *w); 
 
 #endif

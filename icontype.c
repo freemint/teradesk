@@ -244,8 +244,8 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 		thename;
 
 	static const int 
-		items1[] = {ICSHFIL,ICSHFLD,ICSHPRG,0},
-		items2[] = {CHNBUTT,ICBTNS,DRIVEID,ICNLABEL,INAMBOX,0};
+		items1[] = {ICSHFIL, ICSHFLD, ICSHPRG, 0},
+		items2[] = {CHNBUTT, ICBTNS, DRIVEID, ICNLABEL, INAMBOX, 0};
 
 	/* Which title to use? */
 
@@ -306,8 +306,8 @@ static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
 
 		return TRUE;
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -469,6 +469,7 @@ void icnt_fix_ictypes(void)
 	ICONTYPE *it, *next;
 
 	it = iconlists[FILE_LIST];
+
 	while(it)
 	{
 		next = it->next;
@@ -478,6 +479,7 @@ void icnt_fix_ictypes(void)
 	}
 
 	it = iconlists[PROG_LIST];
+
 	while(it)
 	{
 		next = it->next;
@@ -501,7 +503,7 @@ static CfgEntry icnt_table[] =
 {
 	{CFG_HDR, "itype" },
 	{CFG_BEG},
-	{CFG_S,   "mask", iwork.type		 },
+	{CFG_S,   "mask", iwork.type	  },
 	{CFG_S,   "name", iwork.icon_name },
 	{CFG_END},
 	{CFG_LAST}

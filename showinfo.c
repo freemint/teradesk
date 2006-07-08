@@ -100,6 +100,15 @@ static boolean
 char *app_find_name(const char *fname, boolean full);
 
 
+/*
+ * Save some bytes in program size...
+ */
+
+static int fi_atoi(int obj)
+{
+	return atoi(fileinfo[obj].ob_spec.tedinfo->te_ptext);
+}
+
 /* 
  * Convert time to a string to be displayed in a form 
  */
@@ -687,6 +696,7 @@ static void disp_smatch( int ism )
  * Show or set information about one drive, folder, file or link. 
  * Return result code
  */
+void rsc_ftoftext(OBJECT *tree, int object, double value);
 
 int object_info
 (
@@ -719,6 +729,7 @@ int object_info
 		nbytes;			/* sum of bytes used */
 
 	int 
+		tflall,			/* button text */
 		drive,			/* drive id */
 		error = 0,		/* error code */
 		ism = 0,		/* ordinal of string search match */
@@ -749,9 +760,9 @@ int object_info
 #endif
 
 	static const int 
-		items1[] = {FLLIBOX,FLFOLBOX,PFBOX,FOPWITH,FOPWTXT,0},
-		items2[] = {FLNAMBOX,ATTRBOX,RIGHTBOX,FLALL,0},
-		items3[] = {FLLABBOX,FLSPABOX,FLCLSIZ,0};
+		items1[] = {FLLIBOX, FLFOLBOX, PFBOX, FOPWITH, FOPWTXT, 0},
+		items2[] = {FLNAMBOX, ATTRBOX, RIGHTBOX, 0},
+		items3[] = {FLLABBOX, FLSPABOX, FLCLSIZ, 0};
 
 
 	/* In which filesystem does this item reside */
@@ -783,7 +794,13 @@ int object_info
 		else
 			attrib &= ~FA_READONLY;
 #endif
+		tflall = TFIALL;
 	}
+	else
+		tflall = TFIMORE;
+
+	rsc_title(fileinfo, FLALL, tflall);
+	obj_unhide(fileinfo[FLALL]);
 
 #if _MORE_AV
 	strsncpy(avname, oldn, sizeof(LNAME));
@@ -842,16 +859,19 @@ int object_info
 
 #if _MINT_
 		case ITM_LINK:
+
 			rsc_title(fileinfo, FLTITLE, DTLIINF);
 			obj_unhide(fileinfo[FLLIBOX]);
 			memclr(ltgtname, sizeof(ltgtname) );
 			ltgtname[0] = 0;
-			error = x_rdlink( (int)sizeof(ltgtname), ltgtname, oldn);
+			error = x_rdlink(sizeof(ltgtname), ltgtname, oldn);
+
 			if ( error != 0 )
 			{
 				result = si_error(fname, error);
 				return result;
 			}
+
 			cv_fntoform(fileinfo, FLTGNAME, ltgtname);
 			goto evenmore;
 #endif
@@ -876,7 +896,7 @@ int object_info
 				{
 					/* 
 					 * Note: strings must be in the correct sequence
-					 * for the following code to work
+					 * in the resource for the following code to work
 					 */
 
 					for ( jf = 0; jf < 3; jf++ )
@@ -948,18 +968,17 @@ int object_info
 
 			strcpy ( nfname, oldn );
 			path_to_disp ( nfname );
-
 			cv_fntoform(fileinfo, FLPATH, nfname);	
 			cv_fntoform(fileinfo, FLNAME, fname);
 			cv_ttoform(time, attr->mtime);
 			cv_dtoform(date, attr->mdate);
-
 			rsc_hidemany(fileinfo, items3);
 			obj_unhide(fileinfo[FLNAMBOX]);
 
 #if _MINT_
 			gid = attr->gid;
 			uid = attr->uid;
+
 			if ( (fs_type & FS_UID) != 0 )
 			{
 				/* user ids and access rights possible */
@@ -978,9 +997,7 @@ int object_info
 				obj_unhide(fileinfo[ATTRBOX]);
 			}
 
-			if ( can_touch && *search_pattern == 0 && !va_reply ) 
-				obj_unhide(fileinfo[FLALL]);
-			else
+			if(!can_touch || *search_pattern != 0 || va_reply)
 				obj_hide(fileinfo[FLALL]);
 
 			break;
@@ -999,31 +1016,17 @@ int object_info
 
 			if (check_drive( drive ) != FALSE)
 			{
-				error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE);
 				arrow_mouse();
-
-				if(error != 0)
-				{
-					result = si_error(oldn, error);
-
-					if( error == EPTHTL || error == EFNTL)
-					{
-						error = 0;
-						result = 0;
-					}
-					else
-						return result;
-				}
-
 				if ((error = x_getlabel(drive, dskl)) == 0)
-					x_dfree(&diskinfo, drive + 1);
-
-				if (error == 0)
 				{
 					long 
-						fbytes = diskinfo.b_free,	/* number of free bytes */
-						tbytes = diskinfo.b_total,	/* total number of bytes */
-						clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
+						fbytes, tbytes, clsize, k = 1;
+
+					x_dfree(&diskinfo, drive + 1);
+
+					fbytes = diskinfo.b_free,	/* number of free bytes */
+					tbytes = diskinfo.b_total,	/* total number of bytes */
+					clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
 
 #if _EDITLABELS
 #if _MINT_
@@ -1034,6 +1037,7 @@ int object_info
 						rsc_tostmplt(lblted);
 #endif
 					cv_fntoform(fileinfo, FLLABEL, dskl);
+					rsc_ltoftext(fileinfo, FLCLSIZ, clsize);
 
 					/* 
 					 * Make some arrangements for partitions larger
@@ -1043,26 +1047,29 @@ int object_info
 					 * See rsc_ltoftext() for meaning of negative parameters.
 					 * This is probably relevant only in non-TOS fs
 					 * i.e. mint or magic would have to be present,
-					 * and so it can be excluded for the single-TOS version
+					 * and so it can be excluded for the single-TOS version.
+					 * This should correctly display partition sizes up to 1TB,
+					 * but would be incorrect if cluster size is not a multiple
+					 * of 512 bytes. 
 					 */
 #if _MINT_
-					if( tbytes > LONG_MAX / clsize )
+					if( tbytes > (LONG_MAX / 2) / clsize )
 					{
-						fbytes = (fbytes * -10) / 1024;
-						tbytes = (tbytes * -10) / 1024;
-						nbytes = (((diskinfo.b_total - diskinfo.b_free) * -10) / 1024 ) * clsize;
+						clsize /= -512;
+						k = 2;
 					}
-
 #endif
 					tbytes *= clsize;
 					fbytes *= clsize;
+#if _MINT_
+					tbytes /= k;
+					fbytes /= k;
+#endif
+					nbytes = (tbytes - fbytes);
 
-					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
-					rsc_ltoftext(fileinfo, FLFILES, nfiles);
 					rsc_ltoftext(fileinfo, FLBYTES, nbytes);
 					rsc_ltoftext(fileinfo, FLFREE, fbytes);
 					rsc_ltoftext(fileinfo, FLSPACE, tbytes);
-					rsc_ltoftext(fileinfo, FLCLSIZ, clsize);
 
 					fileinfo[FLDRIVE].ob_spec.tedinfo->te_ptext[0] = drive + 'A';
 				}
@@ -1077,8 +1084,6 @@ int object_info
 			obj_unhide(fileinfo[FLLABBOX]);
 			obj_unhide(fileinfo[FLSPABOX]);
 			obj_unhide(fileinfo[FLCLSIZ]);
-			obj_unhide(fileinfo[FLFOLBOX]);	/* number of folders and files */
-
 			break;
 
 		default:
@@ -1172,6 +1177,7 @@ int object_info
 
 					hourglass_mouse();
 					qquit = TRUE;
+
 					if ( search_nsm > 0 )
 						find_offset = search_finds[ism] - search_buf;
 					else
@@ -1184,8 +1190,8 @@ int object_info
 					if ( (fs_type & FS_UID) != 0 )
 					{
 						new_attribs.mode = get_file_rights(mode);
-						new_attribs.uid = atoi(fileinfo[UID].ob_spec.tedinfo->te_ptext);
-						new_attribs.gid = atoi(fileinfo[GID].ob_spec.tedinfo->te_ptext);
+						new_attribs.uid = fi_atoi(UID);
+						new_attribs.gid = fi_atoi(GID);
 					}
 #endif
 					if ((newn = fn_make_newname(oldn, nfname)) != NULL)
@@ -1218,8 +1224,8 @@ int object_info
 									alert_iprint(TNOTGT);
 
 								free(tgpname);
-
 								error = x_unlink( newn );
+
 								if ( !error )
 								{
 									error = x_mklink( newn, tgname );
@@ -1305,7 +1311,6 @@ int object_info
 #if _EDITLABELS
 					SNAME ndskl;
 #endif
-
 					/* result = XABORT; Better to skip ? */
 					result = XSKIP;
 #if _EDITLABELS
@@ -1315,7 +1320,7 @@ int object_info
 
 					/* 
 					 * Unfortunately label-handling functions in mint
-					 * and magic appear to have different behaviour. In mint,
+					 * and magic appears to have different behaviour. In mint,
 					 * there should not be the dot in the label on FAT fs, and
 					 * also, there should be no blanks. At least the dot
 					 * is handled here.
@@ -1360,14 +1365,39 @@ int object_info
 
 			case FLALL:
 			{
-				opattr = get_file_attribs(attrib);
+				if(type == ITM_DRIVE)
+				{
+					error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE);
+					arrow_mouse();
+					if(error != 0)
+					{
+						result = si_error(oldn, error);
+
+						if( error == EPTHTL || error == EFNTL)
+						{
+							error = 0;
+							result = 0;
+						}
+						else
+							return result;
+					}
+
+					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
+					rsc_ltoftext(fileinfo, FLFILES, nfiles);
+					obj_unhide(fileinfo[FLFOLBOX]);	/* number of folders and files */
+					obj_hide(fileinfo[FLALL]);
+				}
+				else
+				{
+					opattr = get_file_attribs(attrib);
 #if _MINT_
-				opmode = get_file_rights(mode);
-				opuid = atoi(fileinfo[UID].ob_spec.tedinfo->te_ptext);
-				opgid = atoi(fileinfo[GID].ob_spec.tedinfo->te_ptext);
+					opmode = get_file_rights(mode);
+					opuid = fi_atoi(UID);
+					opgid = fi_atoi(GID);
 #endif
-				result = XALL;
-				qquit = TRUE;
+					result = XALL;
+					qquit = TRUE;
+				}
 				break;
 			}
 			default:
@@ -1477,9 +1507,7 @@ void item_showinfo
 					{
 						name = itm_name(w, item);
 						hourglass_mouse();
-
 						error = itm_attrib(w, item, (type == ITM_LINK ) ? 1 : 0 , &attrib);
-
 						arrow_mouse();
 
 						if (error != 0)

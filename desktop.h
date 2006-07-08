@@ -643,157 +643,157 @@
 
 #define MDRVEXIS         88  /* Free String */
 
-#define MNOROOT          89  /* Free String */
+#define MDIRTBIG         89  /* Free String */
 
-#define MDIRTBIG         90  /* Free String */
+#define MDEXISTS         90  /* Free String */
 
-#define MDEXISTS         91  /* Free String */
+#define MTMWIND          91  /* Free String */
 
-#define MTMWIND          92  /* Free String */
+#define MFNEMPTY         92  /* Free String */
 
-#define MFNEMPTY         93  /* Free String */
+#define MCOPYSLF         93  /* Free String */
 
-#define MCOPYSLF         94  /* Free String */
+#define MVALIDCF         94  /* Free String */
 
-#define MVALIDCF         95  /* Free String */
+#define BADCFG           95  /* Free String */
 
-#define BADCFG           96  /* Free String */
+#define TFRVAL           96  /* Free String */
 
-#define TFRVAL           97  /* Free String */
+#define MCOMPOK          97  /* Free String */
 
-#define MCOMPOK          98  /* Free String */
+#define DTFONSEL         98  /* Free String */
 
-#define DTFONSEL         99  /* Free String */
+#define DTNEWDIR         99  /* Free String */
 
-#define DTNEWDIR         100 /* Free String */
+#define DTOPENIT         100 /* Free String */
 
-#define DTOPENIT         101 /* Free String */
+#define MNOITEM          101 /* Free String */
 
-#define MNOITEM          102 /* Free String */
+#define TDONTEDI         102 /* Free String */
 
-#define TDONTEDI         103 /* Free String */
+#define TNOLOCK          103 /* Free String */
 
-#define TNOLOCK          104 /* Free String */
+#define DTFIINF          104 /* Free String */
 
-#define DTFIINF          105 /* Free String */
+#define DTFOINF          105 /* Free String */
 
-#define DTFOINF          106 /* Free String */
+#define DTDRINF          106 /* Free String */
 
-#define DTDRINF          107 /* Free String */
+#define TCRETIM          107 /* Free String */
 
-#define TCRETIM          108 /* Free String */
+#define TACCTIM          108 /* Free String */
 
-#define TACCTIM          109 /* Free String */
+#define TNOEDIT          109 /* Free String */
 
-#define TNOEDIT          110 /* Free String */
+#define DTAFONT          110 /* Free String */
 
-#define DTAFONT          111 /* Free String */
+#define DTNEWLNK         111 /* Free String */
 
-#define DTNEWLNK         112 /* Free String */
+#define TLINKTO          112 /* Free String */
 
-#define TLINKTO          113 /* Free String */
+#define DTLIINF          113 /* Free String */
 
-#define DTLIINF          114 /* Free String */
+#define TNOTGT           114 /* Free String */
 
-#define TNOTGT           115 /* Free String */
+#define DTUPDAT          115 /* Free String */
 
-#define DTUPDAT          116 /* Free String */
+#define DTRESTO          116 /* Free String */
 
-#define DTRESTO          117 /* Free String */
+#define TNFILES          117 /* Free String */
 
-#define SNFILES          118 /* Free String */
+#define TFILES           118 /* Free String */
 
-#define SFILES           119 /* Free String */
+#define TMULTI           119 /* Free String */
 
-#define SMULTI           120 /* Free String */
+#define DWTITLE          120 /* Free String */
 
-#define DWTITLE          121 /* Free String */
+#define MENUREG          121 /* Free String */
 
-#define MENUREG          122 /* Free String */
+#define DTSELAPP         122 /* Free String */
 
-#define DTSELAPP         123 /* Free String */
+#define CANCTXT          123 /* Free String */
 
-#define CANCTXT          124 /* Free String */
+#define MSRFINI          124 /* Free String */
 
-#define MSRFINI          125 /* Free String */
+#define FSPRINT          125 /* Free String */
 
-#define FSPRINT          126 /* Free String */
+#define TFALLOW          126 /* Free String */
 
-#define TFALLOW          127 /* Free String */
+#define TFALMED          127 /* Free String */
 
-#define TFALMED          128 /* Free String */
+#define TINTERL          128 /* Free String */
 
-#define TINTERL          129 /* Free String */
+#define MRESTLOW         129 /* Free String */
 
-#define MRESTLOW         130 /* Free String */
+#define MICNFRD          130 /* Free String */
 
-#define MICNFRD          131 /* Free String */
+#define MVDIERR          131 /* Free String */
 
-#define MVDIERR          132 /* Free String */
+#define MDUPAPP          132 /* Free String */
 
-#define MDUPAPP          133 /* Free String */
+#define MFAILPRG         133 /* Free String */
 
-#define MFAILPRG         134 /* Free String */
+#define MICNFND          134 /* Free String */
 
-#define RESERVE2         135 /* Free String */
+#define DTDEVINF         135 /* Free String */
 
-#define MICNFND          136 /* Free String */
+#define DTPIPINF         136 /* Free String */
 
-#define DTDEVINF         137 /* Free String */
+#define DTMEMINF         137 /* Free String */
 
-#define DTPIPINF         138 /* Free String */
+#define DTPRGINF         138 /* Free String */
 
-#define DTMEMINF         139 /* Free String */
+#define MGEMBACK         139 /* Free String */
 
-#define DTPRGINF         140 /* Free String */
+#define PFFLOAD          140 /* Free String */
 
-#define MGEMBACK         141 /* Free String */
+#define PFALOAD          141 /* Free String */
 
-#define PFFLOAD          142 /* Free String */
+#define PFAMEM           142 /* Free String */
 
-#define PFALOAD          143 /* Free String */
+#define PPPRIVAT         143 /* Free String */
 
-#define PFAMEM           144 /* Free String */
+#define PPGLOBAL         144 /* Free String */
 
-#define PPPRIVAT         145 /* Free String */
+#define PPSUPER          145 /* Free String */
 
-#define PPGLOBAL         146 /* Free String */
+#define PPREAD           146 /* Free String */
 
-#define PPSUPER          147 /* Free String */
+#define PPSHARE          147 /* Free String */
 
-#define PPREAD           148 /* Free String */
+#define FSTLANY          148 /* Free String */
 
-#define PPSHARE          149 /* Free String */
+#define TDOPEN           149 /* Free String */
 
-#define FSTLANY          150 /* Free String */
+#define TFNVALID         150 /* Free String */
 
-#define TDOPEN           151 /* Free String */
+#define TFNTMPLT         151 /* Free String */
 
-#define TFNVALID         152 /* Free String */
+#define TBYTES           152 /* Free String */
 
-#define TFNTMPLT         153 /* Free String */
+#define MUNKNOWN         153 /* Free String */
 
-#define TBYTES           154 /* Free String */
+#define MNETOB           154 /* Free String */
 
-#define MUNKNOWN         155 /* Free String */
+#define MNOCOPY          155 /* Free String */
 
-#define MNETOB           156 /* Free String */
+#define MNOPRINT         156 /* Free String */
 
-#define MNOCOPY          157 /* Free String */
+#define MNODRAGP         157 /* Free String */
 
-#define MNOPRINT         158 /* Free String */
+#define MNOOPEN          158 /* Free String */
 
-#define MNODRAGP         159 /* Free String */
+#define TBADS            159 /* Free String */
 
-#define MNOOPEN          160 /* Free String */
+#define TXBERROR         160 /* Free String */
 
-#define TBADS            161 /* Free String */
+#define TSEEKE           161 /* Free String */
 
-#define TXBERROR         162 /* Free String */
+#define TUNKM            162 /* Free String */
 
-#define TSEEKE           163 /* Free String */
+#define TFIALL           163 /* Free String */
 
-#define TUNKM            164 /* Free String */
+#define TFIMORE          164 /* Free String */
 
 #define ALOADCFG         165 /* Alert-string */
 

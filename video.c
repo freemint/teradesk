@@ -51,6 +51,7 @@ extern int tos_version;
 extern WINDOW *xd_deskwin; 
 extern int aes_version;
 
+
 int 
 #if _OVSCAN
 	oldstat = -1,   /* previous state of OVERscan */
@@ -166,8 +167,10 @@ void get_set_video (int set)
    		/* Which is the current standard resolution ? */
 	
 		currez = (int)xbios(4); /* Getrez() */   	
-		
-		options.vrez = currez;	/* no use of this, in fact */ 
+
+/* not used, at least for the time being		
+		options.vrez = currez;
+*/
 
 		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
 		
@@ -191,7 +194,7 @@ void get_set_video (int set)
 		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO || vdohi == ARA_VIDEO)
 		{
 			fal_mil = TRUE;
-			falmode = (int)xbios(88,-1); 		/* Vsetmode() */
+			falmode = (int)xbios(88, -1); 		/* Vsetmode() */
 			fmtype = (int)xbios(89); 			/* mon_type() */
 			bltstat = 0;						/* No ST blitter */
 
@@ -263,8 +266,6 @@ void get_set_video (int set)
 				else	
 					options.vprefs &= ~VO_OVSCAN;
 			}
-			else
-				over  = 0xffffffffL;
 #endif
 			/* Is there a blitter in this machine ? */
   
@@ -293,6 +294,7 @@ void get_set_video (int set)
 					bltstat |= 0x0001;	
 				else
 					bltstat &= ~0x0001;
+
 				bltstat = Blitmode ( bltstat );
 			}
 		
@@ -302,7 +304,7 @@ void get_set_video (int set)
 			 * that which is below is ok but not enough !!!!
 			 */
 
-			if ( (over != 0xffffffffL ) && ( (vprefsold ^ options.vprefs) & VO_OVSCAN) )
+			if ( (over != -1L ) && ( (vprefsold ^ options.vprefs) & VO_OVSCAN) )
 			{
 				oldstat = ovrstat;
 
@@ -484,8 +486,8 @@ int voptions(void)
 		newrez,		/* desired resolution   */
 		newmode,	/* desired video mode (Falcon) */	
 		rimap[16];	/* inverse to rmap */
-	             	/* dimensioning will be problematic */
-    	           	/* if object indices are large - check in desktop.rsc */
+	             	/* dimensioning will be problematic if object */
+    	           	/* indices are large - check in desktop.rsc   */
 
 	static const char 
 		npc[] = {0, 0, 1, 0,2, 0,0,0,3, 0,0,0,0,0,0,0,4}; /* = f(np) */
@@ -540,7 +542,7 @@ int voptions(void)
 #if _OVSCAN 
 			/* Overscan */
   
-			if ( over != 0xffffffffL )
+			if ( over != -1L )
 			{
 				obj_enable(vidoptions[VOVERSCN]);	
   				set_opt( vidoptions, options.vprefs, VO_OVSCAN, VOVERSCN ); 
@@ -658,6 +660,7 @@ int voptions(void)
 
 				if ( newrez <= ST_HIGHRES )
 					newmode |= VM_STMODE;
+
 				if (newrez != ST_LOWRES && newrez != TT_LOWRES)
 					newmode |= VM_80COL;
 			

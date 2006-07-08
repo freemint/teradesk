@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                     2002, 2003  H. Robbers,
+ *                         2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -48,11 +48,68 @@ void log_shortname( char *dest, char* appname );
 LSTYPE *selitem;
 
 
+/*
+ * Fill-in and redraw contents of scrolled fields FTYPE1... FTYPEn
+ * in the list-manipulation dialog. See lists.c 
+ */
+
+static void set_lselector(SLIDER *slider, boolean draw, XDINFO *info) 
+{
+	int i;
+	LSTYPE *f;
+	OBJECT *ob;
+
+	for (i = 0; i < NLINES; i++)
+	{
+		ob = &setmask[FTYPE1 + i];
+
+		if ((f = get_item( slider->list, i + slider->line)) == NULL)
+			*ob->ob_spec.tedinfo->te_ptext = 0;
+		else
+			cv_fntoform(ob, 0, f->filetype );
+	}
+
+	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */
+
+	if (draw && info)
+	{
+		xd_drawdeep(info, FTPARENT);
+		xd_drawdeep(info, FTSPAR);
+	}
+}
+
+
+
+/*
+ * Initiate a (FTYPE, PRGTYPE, ICONTYPE...) list-scroller slider
+ */
+
+static void ls_sl_init ( int n, SLIDER *sl, LSTYPE **list )
+{
+	sl->type = 1;
+	sl->tree = setmask;			/* root object */
+	sl->up_arrow = FTUP;		/* up-arrow object   */
+	sl->down_arrow = FTDOWN;	/* down-arrow object */
+	sl->slider = FTSLIDER;		/* slider object     */
+	sl->sparent = FTSPAR;		/* slider parent (background) object    */
+	sl->lines = NLINES;			/* number of visible lines in the box   */
+	sl->n = n;					/* number of items in the list          */
+	sl->line = 0;				/* index of first item shown in the box */
+	sl->list = list;			/* pointer to list of items to be shown */
+	sl->set_selector = set_lselector;	/* selector routine */
+	sl->first = FTYPE1;			/* first object in the scrolled box     */
+	sl->findsel = find_selected;
+
+	xd_set_rbutton(setmask, FTPARENT, FTYPE1 );
+	sl_init ( sl );
+}
+
+
 /* 
- * Find in the list an item presented by a name possibly
- * containing wildcards; copy the name (if given) and other data 
- * (if match found) to work area. If a name is given, 
- * it is stripped off its path component, if there is any.
+ * Find in the list an item presented by a name possibly containing
+ * cwildcards; copy the name (if given) and other data (if match found)
+ * to work area. If a name is given, it is stripped off its path component,
+ * if there is any.
  */
 
 boolean find_wild 
@@ -60,7 +117,7 @@ boolean find_wild
 	LSTYPE **list,		/* list to be searched in */ 
 	char *name,			/* name to match */ 
 	LSTYPE *work,		/* work area where data is copied */ 
-	void *copy_func 	/* pointer to functon to copy data */
+	void *copy_func 	/* pointer to a functon to copy data */
 )
 {
 	char 
@@ -130,7 +187,7 @@ int find_selected(void)
 
 LSTYPE *get_item
 ( 
-	LSTYPE **list,		/* list to be searched */ 
+	LSTYPE **list,		/* pointer to the pointer to list to be searched */ 
 	int item			/* item # */
 )
 {
@@ -164,7 +221,12 @@ LSTYPE *get_item
  * or -1 if not found
  */
 
-LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
+LSTYPE *find_lsitem
+(
+	LSTYPE **list,	/* pointer to the pointer to list to be searched */
+	char *name,		/* item name to be found */
+	int *pos		/* position where item was found, or -1 */
+)
 {
 	LSTYPE 
 		*f = *list;		/* pointer to current list item */   
@@ -174,18 +236,20 @@ LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
 
 	*pos = -1;
 
-	if (name == NULL)
-		return NULL;
 
-	n = fn_get_name(name);
-
-	while (f)
+	if (name)
 	{
-		*pos = *pos + 1;
-		if(strcmp(n, f->filetype) == 0)
-			return f;
+		n = fn_get_name(name);
 
-		f = f->next;
+		while (f)
+		{
+			*pos = *pos + 1;
+
+			if(strcmp(n, f->filetype) == 0)
+				return f;
+
+			f = f->next;
+		}
 	}
 
 	return NULL;
@@ -201,7 +265,7 @@ LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos)
 
 void lsrem
 ( 
-	LSTYPE **list, 		/* list of filetype items */
+	LSTYPE **list, 		/* pointer to pointer to list of filetype items */
 	LSTYPE *item		/* item to be removed */
 )
 {
@@ -240,7 +304,7 @@ void lsrem
 
 void lsrem_all
 (
-	LSTYPE **list,	/* pointer to list to work on */ 
+	LSTYPE **list,	/* pointer to pointer to list to work on */ 
 	void *rem_func	/* pointer to function to remove specific item kind */
 )
 {
@@ -383,7 +447,10 @@ boolean copy_all
  * (there is no check for overflow anywhere)
  */
 
-int cnt_types (LSTYPE **list)
+int cnt_types
+(
+	LSTYPE **list	/* list to be counted */
+)
 {
 	int n = 0;
 	LSTYPE *f = *list;  
@@ -423,28 +490,28 @@ boolean check_dup
 
 	/* If there is no list to check, result is always TRUE */
 
-	if ( list == NULL )
-		return TRUE;
-
-	f = *list;
-
-	/* while there is something to do... */
-
-	while (f)
+	if ( list )
 	{
-		if ( i != pos )
+		f = *list;
+
+		/* while there is something to do... */
+
+		while (f)
 		{
-			/* compare names... */
-
-			if ( strcmp( f->filetype, name ) == 0 )
+			if ( i != pos )
 			{
-				alert_printf( 1, AFILEDEF, f->filetype );
-				return FALSE;
+				/* compare names... */
+	
+				if ( strcmp( f->filetype, name ) == 0 )
+				{
+					alert_printf( 1, AFILEDEF, f->filetype );
+					return FALSE;
+				}
 			}
-		}
 
-		i++;
-		f = f->next;
+			i++;
+			f = f->next;
+		}
 	}
 
 	return TRUE;
@@ -455,7 +522,11 @@ boolean check_dup
  * A size-saving aux. function; remove three lists
  */
 
-void lsrem_three(LSTYPE **clist, void *remfunc)
+void lsrem_three
+(
+	LSTYPE **clist,	/* pointer to array of pointers to lists */ 
+	void *remfunc	/* pointer to function that removes list member */
+)
 {
 	/* Note: this is shorter than a loop */
 
@@ -466,10 +537,13 @@ void lsrem_three(LSTYPE **clist, void *remfunc)
 
 
 /*
- * Aux. routine for resizing the setmask dialog
+ * Aux. routine for resizing the setmask dialog when convenient
  */
 
-static void resize_dialog(int dh)
+static void resize_dialog
+(
+	int dh	/* vertical size change */
+)
 {
 	setmask[0].r.h += dh;
 	setmask[FTOK].r.y += dh;
@@ -632,7 +706,6 @@ int list_edit
 		wsel = FALSE;
 		curitm = NULL;
 		pname = NULL;
-		selitem = NULL;
 
 		/*
 		 * It is needed now to make copies of list(s), because it might be
@@ -641,6 +714,7 @@ int list_edit
 		 */
 
 		copyok = TRUE;
+
 		for ( i = 0; i < nl; i++)
 		{
 			if(copyok)
@@ -656,7 +730,7 @@ int list_edit
 		list = &clist[0]; /* always start from the first list */
 		luse = use | LS_FIIC;
 
-		ls_sl_init( cnt_types(list), set_selector, &sl_info, list); 
+		ls_sl_init( cnt_types(list), &sl_info, list); 
 
 		if(chk_xd_open( setmask, &info ) < 0)
 		{
@@ -692,7 +766,7 @@ int list_edit
 			 * dc marks a double click; relevant for filemasks and
 			 * selected applications only
 			 */
-			button = sl_form_do(setmask, ROOT, &sl_info, &info);
+			button = sl_form_do(ROOT, &sl_info, &info);
  			dc = (button & 0x8000) ? TRUE : FALSE; 
 			button &= 0x7FFF;
 		}
@@ -752,7 +826,7 @@ int list_edit
 						pos = pos0;
 						sl_info.n = cnt_types(list) + 1;
 						redraw = TRUE;
-						sl_set_slider(setmask, &sl_info, &info); 
+						sl_set_slider(&sl_info, &info); 
 					}
 
 					/* Add an item to the temporary list here */
@@ -781,7 +855,7 @@ int list_edit
 					lsfunc->lsrem(list, curitm);
 					sl_info.n = cnt_types(list);
 					redraw = TRUE;
-					sl_set_slider(setmask, &sl_info, &info); 
+					sl_set_slider(&sl_info, &info); 
 				}
 				break;
 
@@ -804,6 +878,7 @@ int list_edit
 				if ( curitm )
 				{
 					lsfunc->lscopy( lwork, curitm );
+
 					if ( lsfunc->ls_dialog(list, pos, lwork, luse | LS_EDIT) )
 					{
 						lsfunc->lscopy( curitm, lwork );
@@ -820,6 +895,7 @@ int list_edit
 				/* Move an item up in the list, unless it is the first one */
 
 				pos = pos0;
+
 				if (pos > 0 && (curitm = get_item(list, pos)) != NULL)
 				{
 					anitem = get_item(list, pos - 1);
@@ -844,9 +920,9 @@ int list_edit
 				/* Move an item down in the list, unless it is the last one */
 
 				pos = pos0;
+
 				if ( (pos < (sl_info.n - 1)) && (curitm = get_item(list, pos)) != NULL)
 				{
-
 					anitem = get_item(list, pos + 1);
 
 					curitm->next = anitem->next;
@@ -917,7 +993,7 @@ int list_edit
 				{
 					redraw = TRUE;
 					list = newlist;
-					ls_sl_init( cnt_types(list), set_selector, &sl_info, list); 
+					ls_sl_init( cnt_types(list), &sl_info, list); 
 				}
 				break;
 
@@ -932,8 +1008,8 @@ int list_edit
 
 			if ( redraw || (use & LS_APPL) )
 			{
-				set_selector(&sl_info, TRUE, &info);
-				sl_set_slider(setmask, &sl_info, &info); 
+				set_lselector(&sl_info, TRUE, &info);
+				sl_set_slider(&sl_info, &info); 
 			}
 
 			/* Reset buttons in some cases */
@@ -987,7 +1063,10 @@ int list_edit
 				selitem = get_item(&lists[0], pos);
 		}
 		else
+		{
+			selitem = NULL;
 			lsrem_three(clist, lsfunc->lsrem);
+		}
 
 		/* Close the dialog */
 
@@ -1000,5 +1079,4 @@ int list_edit
 	/* Return last (exit) button code */
 
 	return button;
-
 }

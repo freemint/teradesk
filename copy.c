@@ -395,7 +395,7 @@ static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
 	 * for other FSes it points to a static space defined in x_xreaddir.
 	 */
 
-	while (((error = (int) x_xreaddir(stack->dir, &fname, ms, attr)) == 0) 
+	while (((error = (int)x_xreaddir(stack->dir, &fname, ms, attr)) == 0) 
 		   && ((strcmp(prevdir, fname) == 0) || (strcmp(".", fname) == 0)));
 
 	strsncpy ( name, fname, ms );
@@ -567,7 +567,7 @@ int cnt_items
 			if ( fpath != NULL && result == 0 )
 			{
 				path_to_disp ( fpath );
-				menu_ienable(menu, MSEARCH, 0);  
+				wd_menu_ienable(MSEARCH, 0);  
 				wd_deselect_all(); 				 
 				dir_add_window ( fpath, NULL, name  ); 
 #if _SHOWFIND
@@ -637,6 +637,7 @@ static boolean count_items
 
 	boolean
 		link;
+
 
 	/* Zero all sums */
 
@@ -734,6 +735,7 @@ static boolean count_items
 			if (dir_error(error, itm_name(w, item)) != XERROR)
 				ok = FALSE;
 		}
+
 		i++;
 	}
 
@@ -932,6 +934,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 			if ((path = itm_fullname(w, item)) != NULL)
 			{
 				l = (long)strlen(path);
+
 				if ((strncmp(path, dest, l) == 0) &&
 					(((type != ITM_DRIVE) && ((dest[l] == '\\') || (dest[l] == 0))) ||
 					 ((type == ITM_DRIVE) && (dest[l] != 0))))
@@ -2124,6 +2127,7 @@ static boolean itm_copyit
 
 		if ((itm_type(dw, dobject) == ITM_DRIVE) && (check_drive((int) ( (dest[0] & 0x5F) - 'A') ) == FALSE))
 		{
+			/* drive does not exist */
 			free(dest);
 			return FALSE;
 		}
@@ -2147,7 +2151,6 @@ static boolean itm_copyit
 	/* Now handle the actual operation; return status */
 
     result = itmlist_op(sw, n, list, dest, function);
-
 	free(dest);
 
 	return result;
@@ -2467,21 +2470,21 @@ boolean itmlist_op
 )
 {
 	long 
-		folders,		/* number of folders to do */ 
-		files,			/* number of files to do   */ 
-		bytes;			/* number of bytes to do   */
+		folders,			/* number of folders to do */ 
+		files,				/* number of files to do   */ 
+		bytes;				/* number of bytes to do   */
 
 	int 
 		itm0,				/* first item in the list */
 		button = COPYCAN;	/* button code */
 
 	boolean 
-		result = FALSE, 
-		cont;			/* true if there is some action to perform */
+		result = FALSE, 	/* returned value */
+		cont;				/* true if there is some action to perform */
 
 	char
-		anypath[6],		/* Dummy destination path when it does not matter */
-		*spath;			/* initial source path */
+		anypath[6],			/* Dummy destination path when it does not matter */
+		*spath;				/* initial source path */
 
 
 	/* Save the index of the first item in the list (may become -1 later) */
@@ -2501,7 +2504,7 @@ boolean itmlist_op
 
 	options.cprefs &= ~(CF_CTIME | CF_CATTR | CF_FOLL );
 
-	/* Set buttons for these copy options, when appropriate */
+	/* Set checkbox buttons for these copy options, when appropriate */
 
 	set_opt(copyinfo, options.cprefs, CF_CTIME, CCHTIME); 
 	set_opt(copyinfo, options.cprefs, CF_CATTR, CCHATTR); 
@@ -2551,7 +2554,7 @@ boolean itmlist_op
 
 	cont = count_items(w, n, list, &folders, &files, &bytes, function );
 
-	/* Yes, something has to be done */
+	/* Is there anything to do? */
 
 	if (cont)
 	{
@@ -2583,15 +2586,15 @@ boolean itmlist_op
 
 		if(dest == NULL)
 		{
-			strsncpy(anypath, spath, 4);
+			strsncpy(anypath, spath, 4); /* Disk drive of the source will do */
 			dest = anypath;
 		}
 
 		/* Show first source file name. It is blank if starting with a folder */
 
-		if ( isfileprog( itype0) )
+		if ( isfileprog(itype0) )
 		{
-			cv_fntoform( copyinfo, CPFILE, itm_name( w, itm0 ) );
+			cv_fntoform( copyinfo, CPFILE, itm_name(w, itm0) );
 			path_to_disp(spath);
 		}
 		else
@@ -2656,15 +2659,15 @@ boolean itmlist_op
 					{
 						int error = 0;
 						LNAME thename = {0};
-						char *printname;
-
-						printname = locate(thename, L_PRINTF);
+						char *printname = locate(thename, L_PRINTF);
 
 						if (printname)
 							printfile = x_fopen(printname, O_DENYRW | O_WRONLY, &error);
+
 						free(printname);
 
 						xform_error(error);
+
 						if (!printfile)
 							goto forcexit;
 					}

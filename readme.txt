@@ -16,9 +16,11 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991-1995 W. Klaren.
              V3.70  03-12-05, Copyright 2005  Dj. Vukovic
              V3.80  16-02-06, Copyright 2006  Dj. Vukovic
              V3.81  17-03-06, Copyright 2006  Dj. Vukovic
+             V3.82  30-05-06, Copyright 2006  Dj. Vukovic
+             V3.83  08-07-06, Copyright 2006  Dj. Vukovic
 
 
-This  is version 3.81 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.83 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -60,6 +62,16 @@ downloaded from:
 
 	http://members.ams.chello.nl/h.robbers/ahcm.zip
 
+A note on the naming of distribution files:
+
+Binary distributions have names in the form TERAnnnB.ZIP
+(nnn being the version number multipled by 100 (as 382 for 3.82)
+
+Source-code distributions have names in the form TERAnnnS.ZIP
+
+Preliminary compilations sent to testers have names in the form TERAnnnP.ZIP
+Contents of TERAnnnP.ZIP may vary.
+
 
 Hardware and Operating System Requirements
 ==========================================
@@ -99,7 +111,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the
-last  released  version (3.70). Also, read the manual TERADESK.HYP (you will
+last  released  version (3.82). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -206,10 +218,12 @@ directive in MAGX.INF:
 
 
 6.  All text strings used by Tera Desktop are located in DESKTOP.RSC (except
-default  filenames  and  a warning that DESKTOP.RSC can not be found). It is
+default filenames  and  a warning that DESKTOP.RSC can not be found).  It is
 possible  to  completely  adapt  TeraDesk  to  other  languages  by  using a
-translated  DESKTOP.RSC  and, possibly, ICONS.RSC and CICONS.RSC (if someone
-is willing to supply it/them).
+translated  DESKTOP.RSC  and, possibly, ICONS.RSC and CICONS.RSC, if someone
+is willing to supply it/them. In the source distribution there exists a file
+named RESOURCE.TXT containing some comments that may be of use to people who
+wish to make such translations.
 
 
 7.  The icon files supplied  contain a basic  set of  icons only.  Users are
@@ -269,8 +283,8 @@ Some Possible Future Developments
 - Improvement of the algorithm for file copying when floppies are involved.
 
 - Check whether the limits of 32767  selected items and 2GB total byte count
-  on a partition may present  a problems on higher-end systems,  and correct
-  that problem if possible.
+  in selected items may present  a problems on higher-end systems,  and
+  correct that problem if possible.
 
 - Complete compliance to the AV-protocol and Drag & Drop protocol.
 
@@ -278,7 +292,8 @@ Some Possible Future Developments
 
 - Capability to change video mode in any AES.
 
-- Capability to show a 'tree view' directory window of all drives.
+- Capability to show a 'tree view' directory window of all drives or maybe
+  to show any directory window with 'tree view'.
 
 - Integration of a non-modal, windowed, long-names-capable fileselector.
 
@@ -292,26 +307,26 @@ Some Possible Future Developments
 Some Very Unlikely To Happen Future Developments
 ================================================
 
-- There are  NO  plans to enable desktop background pictures in TeraDesk. It
+- There are  no plans  to enable desktop background pictures in TeraDesk. It
   would be a completely nonfunctional feature, which would increase  program
   size unacceptably.  Besides, personally, I think that  background pictures
   are  in fact distracting  to  the user and  a waste  of system  resources.
-  However, MyAES provides this feature and, an maybe XaAES will.
+  However, MyAES provides this feature and, and maybe XaAES will.
 
 
 
 Comments and Bug-Reports
 ========================
 
-It   will  be  appreciated,  if  problems  are  reported   with  a  complete
+It  will  be  appreciated,  if  problems   are  reported   with  a  complete
 description  of  the  problem  and the configuration you are using (machine,
 TOS-version,  autoboot  programs, accessories etc.). Mention TeraDesk in the
 subject line of your e-mail.
 
-THE  AUTHORS  CAN  NOT  BE HELD RESPONSIBLE for any form of damage caused by
-this program  or any of its components;  usage of all components of TeraDesk
-is  at  your own risk.  See also the accompanying file COPYING for the terms
-of the General Public License.
+THE AUTHORS OF  TERA DESKTOP  CAN NOT BE  HELD RESPONSIBLE  for  any form of
+damage  caused  by this  program  or any  of  its components;  usage  of all 
+components of TeraDesk is at your own risk.  See also  the accompanying file
+COPYING for the terms of the General Public License.
 
 PLEASE  read the manual and  the development-history file before you use the
 program. You will need ST-Guide  (not supplied with Tera Desktop) or another
@@ -324,6 +339,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; March 17th 2006
+                                            Beograd; July 8th 2006
 
 

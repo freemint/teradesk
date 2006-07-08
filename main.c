@@ -113,16 +113,16 @@ int
 
 static boolean
 	chrez = FALSE, 		/* true if resolution should be changed */
-	quit = FALSE,		/* true if teradesk should finish      */ 
-	shutdown = FALSE,	/* true if system shutdown is required */
-	shutting = FALSE;	/* true if started shutting down       */
+	quit = FALSE,		/* true if teradesk should finish       */ 
+	shutdown = FALSE,	/* true if system shutdown is required  */
+	shutting = FALSE;	/* true if started shutting down        */
 
 char
 	*teraenv,		/* pointer to value of TERAENV environment variable */ 
-	*fsdefext,		/* default filename extension in current OS */
+	*fsdefext,		/* default filename extension in current OS      */
 	*infname,		/* name of V3 configuration file (teradesk.inf)  */ 
-	*palname,		/* name of colour palette file (teradesk.pal)    */
-	*global_memory;	/* Globally available buffer for passing params */
+	*palname,		/* name of V3 colour palette file (teradesk.pal) */
+	*global_memory;	/* Globally available buffer for passing params  */
 
 static char
 	*definfname;	/* name of the initial configuration file at startup */
@@ -145,7 +145,8 @@ const char
 	*prevdir = "..";	/* often used string */
 
 boolean
-	onekey_shorts;
+	onekey_shorts;	/* true if any single-key menu shortcuts are defined */
+
 
 /*
  * Below is supposed to be the only text embedded in the code:
@@ -180,10 +181,10 @@ static const CfgEntry Config_table[] =
 	{CFG_NEST, "options",	 opt_config	 },
 	{CFG_NEST, "shortcuts",	 short_config},
 	{CFG_NEST, "filetypes",	 ft_config	 },
-	{CFG_NEST, "apptypes",    prg_config	 }, /* must be before icons and apps */
+	{CFG_NEST, "apptypes",    prg_config }, /* must be before icons and apps */
 	{CFG_NEST, "icontypes",	 icnt_config },
 	{CFG_NEST, "deskicons",	 dsk_config	 },
-	{CFG_NEST, "applications",app_config	 },
+	{CFG_NEST, "applications",app_config },
 	{CFG_NEST, "windows",	 wd_config	 },
 	{CFG_NEST, "avstats",	 va_config   },
 	{CFG_FINAL}, /* file completness check */
@@ -203,7 +204,7 @@ CfgEntry Options_table[] =
 	{CFG_HDR, "options" },
 	{CFG_BEG},
 	/* file version */
-	{CFG_X, "infv", &options.version	    }, 		/* file version */
+	{CFG_X, "infv", &options.version	}, 		/* file version */
 	/* desktop preferences */
 	{CFG_X, "save", &options.sexit		},		/* what to save at exit */
 	{CFG_X, "dial", &options.dial_mode	},		/* bit flags !!! dialog mode and position */
@@ -211,25 +212,25 @@ CfgEntry Options_table[] =
 	/* Copy preferences */
 	{CFG_X, "pref", &options.cprefs		}, 		/* bit flags !!! copy prefs */
 	/* sizes of diverse items */
-	{CFG_D, "buff", &options.bufsize	    }, 		/* copy buffer size */
-	{CFG_L, "maxd", &options.max_dir		},		/* initial dir size */
+	{CFG_D, "buff", &options.bufsize	}, 		/* copy buffer size */
+	{CFG_L, "maxd", &options.max_dir	},		/* initial dir size */
 	{CFG_D, "plin", &options.plinelen	},		/* printer line length */
-	{CFG_D, "tabs", &options.tabsize	    }, 		/* tab size    */
+	{CFG_D, "tabs", &options.tabsize	}, 		/* tab size    */
 	{CFG_D, "cwin", &options.cwin	    }, 		/* compare match size */
 	/* settings of the View menu */
-	{CFG_H, "mode", &options.mode		}, 		/* text/icon mode */
-	{CFG_H, "aarr", &options.aarr		}, 		/* auto arrange */
-	{CFG_H, "sort", &options.sort		}, 		/* sorting key */
-	{CFG_X, "attr", &options.attribs	    }, 		/* Bit flags !!! global attributes to show */
+	{CFG_D, "mode", &options.mode		}, 		/* text/icon mode */
+	{CFG_D, "sort", &options.sort		}, 		/* sorting key */
+	{CFG_D, "aarr", &options.aarr		}, 		/* auto arrange */
+	{CFG_X, "attr", &options.attribs	},		/* Bit flags !!! global attributes to show */
 	{CFG_X, "flds", &options.fields		},		/* Bit flags !!! dir. fields to show  */
-	/* video options */
+	/* video options (options.vrez currently not used) */
 	{CFG_X, "vidp", &options.vprefs	}, 			/* Bit flags ! */
 	{CFG_D, "vres", &options.vrez	},			/* video resolution */
 	/* patterns and colours */
-	{CFG_H, "dpat", &options.dsk_pattern }, 		/* desk pattern */
-	{CFG_H, "dcol", &options.dsk_color	},		/* desk colour  */
-	{CFG_H, "wpat", &options.win_pattern },		/* window pattern */
-	{CFG_H, "wcol", &options.win_color	},		/* window colour  */
+	{CFG_D, "dpat", &options.dsk_pattern},		/* desk pattern */
+	{CFG_D, "dcol", &options.dsk_color	},		/* desk colour  */
+	{CFG_D, "wpat", &options.win_pattern},		/* window pattern */
+	{CFG_D, "wcol", &options.win_color	},		/* window colour  */
 
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -313,9 +314,8 @@ CfgEntry Shortcut_table[] =
 
 
 /* 
- * Try to allocate some memory and check success.
- * There will generally be some loss in speed, 
- * so use with discretion.
+ * Try to allocate some memory and check success. Display an alert if failed.
+ * There will generally be some loss in speed, so use with discretion.
  */
 
 void *malloc_chk(size_t size)
@@ -348,7 +348,10 @@ int chk_xd_dialog(OBJECT *tree, int start)
 
 int chk_xd_open(OBJECT *tree, XDINFO *info)
 {
-	int error = xd_open(tree, info);
+	int error;
+
+	arrow_mouse();
+	error = xd_open(tree, info);
 	xform_error(error);
 	return error;
 }
@@ -395,7 +398,7 @@ static void info(void)
 
 
 /*
- * Display three consecutive boxes of text on HELP key
+ * If HELP is pressed, display consecutive boxes of text in a dialog,
  * or, if <Shift><Help> is pressed, try to call the .HYP file viewer
  * (usually this is ST-GUIDE program or accessory).
  * Note 1: currently, there is no notification if the call to the viewer
@@ -1087,12 +1090,13 @@ static CfgNest opt_config
 				options.attribs &= 0x0077;
 				options.dsk_pattern &= 0x0007;
 				options.win_pattern &= 0x0007;
+/* currently not used
 				options.vrez &= 0x0007;
-
+*/
 				/* Currently it makes no sense NOT to confirm touch */
 
 				options.cprefs |= CF_TOUCH;
-				options.cprefs &= ~(CF_CTIME | CF_CATTR);	
+				options.cprefs &= ~(CF_CTIME | CF_CATTR);
 
 				/* If all is OK so far, start setting TeraDesk */
 
@@ -1157,6 +1161,7 @@ static void save_options(const char *fname)
 
 /* 
  * Save configuration into an explicitely specified config file
+ * (file selector is opened to specify the file)
  */
 
 static void save_options_as(void)
@@ -1174,15 +1179,21 @@ static void save_options_as(void)
 
 /* 
  * Load configuration from an explicitely specified config file.
- * If this does not succeed, attempt to recover previous state.
+ * If this does not succeed, attempt to recover the state obtained
+ * from a previously loaded configuration file.
  */
 
-void load_settings(char *newinfname)
+void load_settings
+(
+	char *newinfname	/* Name of a configuration file */
+)
 {
 	if (newinfname && *newinfname && !x_checkname(newinfname, empty))
 	{
 		char *oldinfname = infname;
+
 		infname = newinfname;
+
 		if(load_options() != 0 && oldinfname)
 		{
 			free(infname);
@@ -1378,10 +1389,9 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 			wait(150);
 			bell();
 			qbutton = alert_printf(3, ALRTQUIT);
+
 			switch (qbutton)
 			{
-				case 3:		/* cancel */
-					break;
 				case 2:		/* shutdown */
 					if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
 						break;
@@ -1389,6 +1399,7 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 						shutdown=TRUE;
 				case 1:		/* quit */      
 					quit = TRUE;
+				case 3:		/* cancel */
 					break;
 			}
 			break;
@@ -1455,7 +1466,6 @@ int scansh ( int key, int kstate )
 			a |= XD_CTRL;
 		else if ( a == 0x1f ) 				/* ^DEL          */
 			a |= ( XD_CTRL | 0x60 );
-
 		else if (0x30 <= a && a < 0x40 )	/* ^1 to ^9      */
 			a |= ( XD_CTRL | 0x30 );			
 		else  if (!h) 						/* ^A ... ^\     */
@@ -1517,9 +1527,12 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 		/* Find if this is defined as a menu shortcut */
 
 		title = TFIRST;
+
 		while (   (options.kbshort[i] != k) && (i <= ( MLAST - MFIRST)) )
 		{
-			if ( (options.kbshort[i] & XD_ALT) != 0 ) title++;  
+			if ( (options.kbshort[i] & XD_ALT) != 0 ) 
+				title++;  
+
 			i++;
 		}
 
@@ -1552,13 +1565,12 @@ static int _hndlmessage(int *message, boolean allow_exit)
 fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exit);
 #endif
 
-	if (   
-			( message[0] >= AV_PROTOKOLL && message[0] < VA_HIGH ) || 
-			( message[0] >= FONT_CHANGED && message[0] <= FONT_ACK )
-	   )
-	{
+	if 
+	(   
+		( message[0] >= AV_PROTOKOLL && message[0] < VA_HIGH ) || 
+		( message[0] >= FONT_CHANGED && message[0] <= FONT_ACK )
+	)
 		handle_av_protocol(message);
-	}
 	else
 	{
 		/* Perhaps it would make sense to support SH_M_SPECIAL as well? */
@@ -1641,7 +1653,7 @@ static void evntloop(void)
 		/* 
 		 * In order to properly execute in Single-TOS some items
 		 * related to AV-protocol, window- and menu-updates,
-		 * the loop has to executed every once in a while-
+		 * the loop has to be executed every once in a while-
 		 * like every 500ms defined below. It looks as if this 
 		 * is not needed in a multitasking environment.
 		 * Also, this is needed only if there are open accessory windows.
@@ -1690,10 +1702,12 @@ static void evntloop(void)
 		/*		
 		 * HR 151102: This imposed an unsolved problem with N.Aes 1.2 	
 		 * (lockup of TeraDesk after live moving) 	
-		 * It is not a essential function. 
+		 * It is not an essential function.
 		 */
 
+/* try without - or maybe use xe_button_state to call it only if button not pressed
 		clr_key_buf();		
+*/
 
 		/* Process any recieved messages */
 
@@ -1715,8 +1729,8 @@ static void evntloop(void)
 
 /*
  * If AP_TERM is received within 3 seconds after starting this routine
- * set shutting = true and return TRUE. 
- * If another message is received in that time, wait 3 seconds more.
+ * then set shutting = true and return TRUE. 
+ * If another message is received within that time, wait 3 seconds more.
  * (no other action is performed for other messages).
  * Theoretically this may get into an endless loop if some application
  * starts sending messages endlessly
@@ -1789,7 +1803,10 @@ int main(void)
 
 	have_ssystem = (Ssystem(-1, 0L, 0L) == 0);		/* use Ssystem where possible */
 
-	/* Attempt to divine from cookies the version of TOS and AES */
+	/* 
+	 * Attempt to divine from cookies the version of TOS and AES.
+	 * this can NOT detect: MyAES, XaAES and Atari AES
+	 */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
@@ -1846,7 +1863,7 @@ int main(void)
 			menu_register(ap_id, get_freestring(MENUREG));
 		}
 
-		/* Initialize x-dialogs malloc_chk */
+		/* Initialize x-dialogs */
 
 		if ((error = init_xdialog(&vdi_handle, malloc_chk, free,
 								  get_freestring(DWTITLE), 1, &nfonts)) < 0)
@@ -1865,7 +1882,10 @@ int main(void)
 
 			rsc_init();
 
-			/* If screen resolution is too low (less than 40x25), can't continue */
+			/* 
+			 * If screen resolution is too low (less than 40x25), can't continue.
+			 * AES should supply a reasonable font size for this to work
+			 */
 
 			if (((max_w / screen_info.fnt_w) < 40) || ((max_h / screen_info.fnt_h) < 25))
 				alert_abort(MRESTLOW);
@@ -1926,6 +1946,7 @@ int main(void)
 								menu_bar(menu, 0);	/* remove menu bar       */
 								xw_close_desk();	/* remove desktop window */
 							}
+
 							free_icons();
 							regen_desktop(NULL);
 						}
@@ -2047,7 +2068,7 @@ int main(void)
  * This routine displays the incrementation of the 200Hz timer;
  * it is to be used only for evaluation of the duration of some
  * operations during development.
- * Call this twice, first with mode=0, then with mode=1
+ * Call this twice, first with mode=0 (reset), then with mode=1 (display count)
  */
 
 /* 

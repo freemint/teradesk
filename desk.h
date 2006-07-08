@@ -75,10 +75,10 @@
 #define CF_KEEPS		0x0020	/* keep selection after copy */
 								/* unused 0x0040     */
 #define P_GDOS			0x0080	/* use GDOS device for printing; currently NOT used */
-								/* unused 0x0020 0x0040 */
+								/* unused 0x0100 0x0200 */
 #define CF_CTIME		0x0400	/* change date & time */
 #define CF_CATTR		0x0800  /* change file attributes */
-#define CF_SHOWD		0x1000 	/* always show dialog */
+#define CF_SHOWD		0x1000 	/* always show copyinfo dialog */
 #define P_HEADER		0x2000	/* print header and formfeed */
 #define CF_FOLL			0x4000	/* follow links */
 
@@ -176,20 +176,20 @@ typedef struct
 
 	/* View */
 
-	char mode;					/* text or icon mode */
-	char aarr;					/* auto arrange directory items */
-	char sort;					/* sorting rule */
+	int mode;					/* text or icon mode */
+	int sort;					/* sorting rule */
+	int aarr;					/* auto arrange directory items */
+	int fields;					/* shown file data elements */
 	int attribs;				/* shown attributes of visible directory items */
-	char fields;                /* shown file data elements */
 
 	/* Video */
 
 	int vprefs;                 /* video preferences  */
 	int vrez;                   /* video resolution */
-	unsigned char dsk_pattern;	/* desktop pattern  */
-	unsigned char dsk_color;	/* desktop colour */
-	unsigned char win_pattern;  /* window pattern */
-	unsigned char win_color;    /* window colour */
+	int dsk_color;				/* desktop colour */
+	int win_color;				/* window colour */
+	int dsk_pattern;			/* desktop pattern  */
+	int win_pattern;			/* window pattern */
 
 } Options;
 
@@ -215,7 +215,7 @@ typedef struct
 
 extern Options options;
 extern SCRINFO screen_info;
-extern RECT *sdsk;	/* directly point to part of scree_info */
+
 extern int 
 	vdi_handle,		/* workstation handle */ 
 	max_w, max_h, 	/* maximum possible window size */

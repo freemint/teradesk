@@ -187,7 +187,7 @@ char *x_getpath(int drive, int *error);
 int x_mkdir(const char *path);
 int x_rmdir(const char *path);
 int x_mklink(const char *linkname, const char *refname);
-int x_rdlink( int tgtsize, char *tgt, const char *linkname );
+int x_rdlink(size_t tgtsize, char *tgt, const char *linkname );
 char *x_pathlink( char *tgtname, char *linkname );
 char *x_fllink( char *linkname );
 int x_dfree(DISKINFO *diskinfo, int drive);
@@ -214,7 +214,7 @@ long x_seek(long offset, int handle, int seekmode);
 
 XDIR *x_opendir(const char *path, int *error);
 
-long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib); 
+long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib); 
 long x_rewinddir(XDIR *dir);
 long x_closedir(XDIR *dir);
 long x_attr(int flag, int fs_type, const char *name, XATTR *attrib);

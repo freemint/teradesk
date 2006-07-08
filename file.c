@@ -397,15 +397,18 @@ char *locate(const char *name, int type)
 		ex_flags = EX_DIR;
 	}
 	else
-*/
-
 	{
+
+*/
 		if ((fspec = fn_make_newname(name, defext)) == NULL)
 				return NULL;
 
 		strcpy(fname, fn_get_name(name));
 		ex_flags = EX_FILE;
+
+/*
 	}
+*/
 
 	free(cfgext);
 	title = get_freestring(titles[type]);
@@ -419,22 +422,22 @@ char *locate(const char *name, int type)
 		if (!newpath)
 			return NULL;
 
-/* Currently not used anywhere in TeraDesk
+/* Currently not used anywhere in TeraDesk; it is incorrect, anyway.
 
 		if (type == L_FOLDER)
 		{
 			if (((newn = fn_get_path(newpath)) != NULL) && isroot(newname))
 			{
-				alert_iprint(MNOROOT);
+				/* must not set folder name to be root name */
+				alert_iprint(MNOROOT); /* this string does not exist anymore */
 				free(newn);
 			}
 			else
 				result = TRUE;
 		}
 		else
-
-*/
 		{
+*/
 			if ((type == L_PROGRAM) && !prg_isprogram(fname))
 				alert_iprint(TPLFMT);
 			else
@@ -442,6 +445,7 @@ char *locate(const char *name, int type)
 				if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
 				{
 					result = x_exist(newn, ex_flags);
+
 					if (!result)
 					{
 						alert_iprint(TFILNF);
@@ -451,7 +455,9 @@ char *locate(const char *name, int type)
 				else
 					result = TRUE;
 			}
+/*
 		}
+*/
 		fspec = newpath;
 	}
 	while (!result);
@@ -483,7 +489,10 @@ void get_fsel
 		fl = 0,			/* name length   */
 		tl,				/* total length of inserted string */
 		sl,				/* string length */
-		ml,				/* possible maximum for tl */
+		ml;				/* possible maximum for tl */
+
+	int
+		tid = FSTLANY,
 		err = EPTHTL;
 
 	char
@@ -499,7 +508,16 @@ void get_fsel
 		addname = ((flags & 0x8000) == 0);
 
 
-	title = get_freestring(FSTLANY);
+	if(addname)
+	{
+		if((flags & 0x4000) != 0)
+			tid = FSTLFILE;
+	}
+	else
+		tid = FSTLFLDR;
+
+	title = get_freestring(tid);
+
 	name[0] = 0;
 
 	/* Call the fileselector */
@@ -569,7 +587,7 @@ void get_fsel
 			free(cc);
 		} 
 
-		info->cursor_x += tl;
+		info->cursor_x += (int)tl;
 		err = 0;
 
 		freepath:;
@@ -958,14 +976,14 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 	OBJECT *ob = tree + object;
 	TEDINFO *ti = xd_get_obspecp(ob)->tedinfo;
 	char *dst = ti->te_ptext;
-	int l = ti->te_txtlen;
+	long l = (long)(ti->te_txtlen);
 
 	/* 
 	 * The only 12-chars long fields in TeraDesk should be 
 	 * for 8+3 names, possibly even if Mint/Magic is around 
 	 */
 
-	if ( l < 13 )
+	if ( l < 13L )
 		cv_tos_fn2form(dst, src);
 	else
 	{	
@@ -976,13 +994,14 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 				l = sizeof(VLNAME);
 				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(dest) > sizeof(VLNAME) */
 			}
-			strsncpy(dst, src, (long)l); 		/* term. byte included in l */
 
-			if ( (int)strlen(src) > l - 1 )
+			strsncpy(dst, src, l); 		/* term. byte included in l */
+
+			if ( strlen(src) >= l )
 				alert_iprint(TFNTLNG);
 		}
 		else
-			cramped_name(src, dst, l); 			/* term. byte included */
+			cramped_name(src, dst, l); 	/* term. byte included */
 	}	
 } 
 

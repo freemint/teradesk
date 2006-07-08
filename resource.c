@@ -288,7 +288,7 @@ static void rsc_fixmenus(void)
 	for( i = 0; i < 2; i++ )
 	{
 		xd_objrect(menu, (int)maxbox[i], &boxrect);
-		mnsize = max(mnsize, xd_initmfdb(&boxrect, &mfdb));
+		mnsize = lmax(mnsize, xd_initmfdb(&boxrect, &mfdb));
 	}
 
 	/*
@@ -338,8 +338,8 @@ void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
 {
 	strcpy(ted->te_pvalid, valid);
 	strcpy(ted->te_ptmplt, tmplt);
-	ted->te_tmplen = strlen(tmplt) + 1;
-	ted->te_txtlen = strlen(valid) + 1;
+	ted->te_tmplen = (int)strlen(tmplt) + 1;
+	ted->te_txtlen = (int)strlen(valid) + 1;
 	ted->te_ptext[ted->te_txtlen] = 0;
 }
 
@@ -512,9 +512,7 @@ void rsc_init(void)
 	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
 
 	for(i = 0; i < 4; i++)
-	{
 		rsc_xalign(wdoptions, (int)xleft[i], (int)xitem[i], (int)xright[i]);
-	}
 
 	wdoptions[DSKCUP].r.y   += v3d2;
 	wdoptions[DSKCDOWN].r.y += v3d2;
@@ -561,6 +559,8 @@ void rsc_init(void)
 	if ( !mint )
 #endif
 	{
+		char *s;
+
 		/* These are SNAMEs */
 
 		tos_fnform( addicon, ICNTYPE, 3 );
@@ -587,11 +587,13 @@ void rsc_init(void)
 		xd_get_obspecp(&addicon[ICNTYPE])->tedinfo->te_pvalid[8] = 'P';
 
 		/* 
-		 * Below are substituted "Files and links" with "Files" if no mint.
+		 * Below is substituted "Files and links" with "Files" if no mint.
 		 * If sometime links get into dialogs separately, this should be removed
 		 */
 
-		rsc_title(copyinfo, CIFILES, SFILES);
+		rsc_title(copyinfo, CIFILES, TFILES);
+		s = get_freestring(TNFILES);
+		memcpy(fileinfo[FLFILES].ob_spec.tedinfo->te_ptmplt, s, strlen(s));
 
 		/* Modify size, position or visibility of some objects */
 
@@ -616,7 +618,7 @@ void rsc_init(void)
 	lbltmplt = strdup((char *)fileinfo[FLLABEL].ob_spec.tedinfo->te_ptmplt);
 #endif
 #else
-		tos_fnform(fileinfo, FLLABEL, -1);
+	tos_fnform(fileinfo, FLLABEL, -1);
 #endif
 
 	*drvid = 0;
@@ -625,7 +627,7 @@ void rsc_init(void)
 	/* Fill-in the constant part of the info-box dialog */
 
 #if _MINT_
-	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(SMULTI);
+	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TMULTI);
 #endif
 	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = INFO_VERSION;
 	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = INFO_COPYRIGHT;
@@ -670,8 +672,8 @@ void rsc_title(OBJECT *tree, int object, int title)
  * try to write too many bytes.
  * Note2: it would be possible to use strcpyj() but there would be
  * almost no gain in size.
- * If a negative number is entered, the last character will be
- * substituted with a 'K'
+ * If a negative number is entered, a 'K' will be appended to the
+ * absolute value of the number.
  */
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
@@ -687,10 +689,11 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 
 	char 
 		s[16], 
+		*s1 = s,
 		*p = ti->te_ptext;
 
-	ltoa((value < 0) ? -value : value, s, 10);			/* Convert value to ASCII, decimal. */
 
+	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
 	l2 = strlen(s);				/* Length of the number as string.  */
 
     if((ob->ob_type & 0xFF) == G_FTEXT)
@@ -706,9 +709,13 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 		}
 	}
 
-	strsncpy(p, s, l2 + 1);		/* Copy number. */
-
 	if(value < 0)
-		*(p + l2 - 1) = 'K';
+	{
+		s1++;
+		s[l2] = 'K';
+		s[l2 + 1] = 0;
+	}
+
+	strsncpy(p, s1, l2 + 1);		/* Copy the number */
 }
 

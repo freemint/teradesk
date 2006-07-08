@@ -53,30 +53,8 @@ int xw_dosend = 1;					/* if 0, xw_send is disabled */
 
 
 /*
- * Send a message to this or other window owner.
- * Sending is disabled if xw_dosend is set to 0.
- */
-
-void xw_send(WINDOW *w, int messid)
-{
-	if(xw_dosend)
-	{
-		int message[8], *mp = message;
-
-		*mp++ = messid;
-		*mp++ = aes_pid;
-		*mp++ = 0;
-		*mp++ = w->xw_handle;
-		*mp++ = 0;
-		*mp++ = 0;
-		*mp++ = 0;
-		*mp = 0;
-		appl_write(w->xw_ap_id, 16, message);
-	}
-}
-
-/*
  * Stuur een redraw boodschap naar een window.
+ * Can also be used for other messages that pass rectangle size.
  *
  * Parameters:
  *
@@ -88,17 +66,34 @@ void xw_send(WINDOW *w, int messid)
  *			   applikatie id van het programma staat.
  */
 
-void xw_send_redraw(WINDOW *w, RECT *area)
+void xw_send_redraw(WINDOW *w, int messid, RECT *area)
 {
-	int message[8], *messagep = message;
+	if(xw_dosend)
+	{
+		int message[8], *messagep = message;
 
-	*messagep++ = WM_REDRAW;
-	*messagep++ = aes_pid;
-	*messagep++ = 0;
-	*messagep++ = w->xw_handle;
-	*(RECT *)(messagep) = *area;	
+		*messagep++ = messid;
+		*messagep++ = aes_pid;
+		*messagep++ = 0;
+		*messagep++ = w->xw_handle;
+		*(RECT *)(messagep) = *area;
+	
+		appl_write(aes_pid, 16, message);
+	}
+}
 
-	appl_write(aes_pid, 16, message);
+
+/*
+ * Send a message to this or other window owner.
+ * All unused members of the message will be set to 0.
+ * Sending is disabled if xw_dosend is set to 0.
+ */
+
+void xw_send(WINDOW *w, int messid)
+{
+	static const int dummy[] = {0, 0, 0, 0};
+
+	xw_send_redraw(w, messid, (RECT *)&dummy[0]);
 }
 
 
@@ -116,8 +111,10 @@ WINDOW *xw_hfind(int handle)
 	{
 		if (w->xw_handle == handle)
 			return (w);
+
 		w = w->xw_next;
 	}
+
 	return (handle == 0) ? desktop : NULL;
 }
 
@@ -167,6 +164,7 @@ WINDOW *xw_top(void)
 	{
 		if ( w->xw_type == ACC_WIND ) 
 			xw_note_top(w);
+
 		return w;
 	}
 
@@ -178,6 +176,7 @@ WINDOW *xw_top(void)
 	{
 		if ((w->xw_xflags & XWF_OPN) != 0)
 			return w;					/* first teradesk's window */
+
 		w = w->xw_next;
 	}
 
@@ -202,6 +201,7 @@ WINDOW *xw_bottom(void)
 	{
 		if ( w->xw_type == ACC_WIND ) 
 			xw_note_bottom(w);
+
 		return w;
 	}
 
@@ -355,12 +355,6 @@ static void xw_set_bottom(WINDOW *w)
 {
 	xw_bottom();
 
-/* this will never happen
-	if ( w->xw_type == ACC_WIND )
-		xw_send(w, WM_BOTTOMED);
-	else
-
-*/
 	if (w->xw_type != ACC_WIND)
 		wind_set(w->xw_handle, WF_BOTTOM, w->xw_handle);
 
@@ -430,7 +424,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 	if ( menu && ((w->xw_xflags & XWF_ICN) == 0) )
 	{
-		xd_objrect(w->xw_menu, object, &r1);
+		xd_objrect(menu, object, &r1);
 		if (object == w->xw_bar)
 			r1.h += 1;
 
@@ -460,6 +454,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 				}
 				xw_getnext(w, &r2);
 			}
+
 			xd_mouse_on();
 			xd_wdupdate(END_UPDATE);
 		}
@@ -524,12 +519,10 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
 
 static int xw_do_menu(WINDOW *w, int x, int y)
 {
-	int title, otitle, item, p, i, c, exit_mstate;
-	int pxy[8];
+	int title, otitle, item, p, i, c, exit_mstate, pxy[8], stop, draw;
 	long mem;
 	OBJECT *menu = w->xw_menu;
 	RECT r, box;
-	int stop, draw;
 	MFDB bmfdb, smfdb;
 
 	/* If no menu, or if window is iconified, return */
@@ -654,6 +647,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 					smfdb.fd_addr = NULL;
 					xw_copy_screen(&smfdb, &bmfdb, pxy);
 				}
+
 				(*xd_free)(bmfdb.fd_addr);
 			}
 
@@ -675,6 +669,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 		if (item >= 0)
 			w->xw_func->wd_hndlmenu(w, title, item);
 	}
+
 	return TRUE;
 }
 
@@ -692,12 +687,17 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 void xw_menu_icheck(WINDOW *w, int item, int check)
 {
+	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+
 	if (check == 0)
-		w->xw_menu[item].ob_state &= ~CHECKED;
+		*s &= ~CHECKED;
 	else
-		w->xw_menu[item].ob_state |= CHECKED;
+		*s |= CHECKED;
 }
 
+
+
+/* These functions are curently unused in TeraDesk
 
 /*
  * Funktie voor het enablen of disablen van een menupunt.
@@ -711,10 +711,12 @@ void xw_menu_icheck(WINDOW *w, int item, int check)
 
 void xw_menu_ienable(WINDOW *w, int item, int enable)
 {
+	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+
 	if (enable == 0)
-		w->xw_menu[item].ob_state |= DISABLED;
+		*s |= DISABLED;
 	else
-		w->xw_menu[item].ob_state &= ~DISABLED;
+		*s &= ~DISABLED;
 }
 
 
@@ -730,8 +732,10 @@ void xw_menu_ienable(WINDOW *w, int item, int enable)
 
 void xw_menu_text(WINDOW *w, int item, const char *text)
 {
-	w->xw_menu[item].ob_spec.free_string = (char *) text;
+	w->xw_menu[item].ob_spec.free_string = (char *)text;
 }
+
+*/
 
 
 /*
@@ -747,11 +751,13 @@ void xw_menu_text(WINDOW *w, int item, const char *text)
 void xw_menu_tnormal(WINDOW *w, int item, int normal)
 {
 	RECT r;
+	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+
 
 	if (normal == 0)
-		w->xw_menu[item].ob_state |= SELECTED;
+		*s |= SELECTED;
 	else
-		w->xw_menu[item].ob_state &= ~SELECTED;
+		*s &= ~SELECTED;
 
 	xw_bar_rect(w, &r);
 	xw_redraw_menu(w, item, &r);
@@ -800,21 +806,19 @@ int xw_hndlbutton(int x, int y, int n, int bstate, int kstate)
 
 	if ((w = xw_find(x, y)) != NULL)
 	{
-		if (xw_do_menu(w, x, y) == FALSE)
+		if (!xw_do_menu(w, x, y))
 		{
 			if (w->xw_func->wd_hndlbutton != 0L)
 			{
 				w->xw_func->wd_hndlbutton(w, x, y, n, bstate, kstate);
 				return TRUE;
 			}
-			else
-				return FALSE;
 		}
 		else
 			return TRUE;
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -836,18 +840,16 @@ int xw_hndlkey(int scancode, int keystate)
 
 	if (w != NULL)
 	{
-		if ( scancode == 0x2217 ) /* ^W from AV-protocol client */
+		if ( scancode == 0x2217 ) /* hardcoded ^W from AV-protocol client */
 		{
 			xw_cycle();
 			return TRUE;
 		}		
 		else if (w->xw_func->wd_hndlkey != 0)
 			return w->xw_func->wd_hndlkey(w, scancode, keystate);
-		else
-			return FALSE;
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -855,23 +857,11 @@ int xw_hndlkey(int scancode, int keystate)
  * Iconify a window.
  */
 
-void xw_iconify(WINDOW *w, int width, int height)
+void xw_iconify(WINDOW *w, RECT *r)
 {
-	/* Remember size and position of window in normal state */
-/*
-	w->xw_nsize.x = w->xw_size.x; 
-	w->xw_nsize.y = w->xw_size.y; 
-	w->xw_nsize.w = w->xw_size.w;
-	w->xw_nsize.h = w->xw_size.h;
-*/
-	*(RECT *)(&(w->xw_nsize.x)) = *(RECT *)(&(w->xw_size.x));
+	/* Set window to iconified state and find new work area */
 
-	/* 
-	 * Set window to iconified state; note that this function
-	 * apparently does not change xw_size. 
-	 */
-
-	wind_set(w->xw_handle, WF_ICONIFY, w->xw_size.x, w->xw_size.y, width, height);
+	xw_set(w, WF_ICONIFY, r); /* wind_set() then wind_get() */ 
 
 	w->xw_xflags |= XWF_ICN;
 }
@@ -882,9 +872,11 @@ void xw_iconify(WINDOW *w, int width, int height)
  * it had before iconification.
  */
 
-void xw_uniconify(WINDOW *w)
+void xw_uniconify(WINDOW *w, RECT *r)
 {
-	wind_set(w->xw_handle, WF_UNICONIFY, w->xw_nsize.x, w->xw_nsize.y, w->xw_nsize.w, w->xw_nsize.h);
+	/* Uniconify window and find new work area */
+
+	xw_set(w, WF_UNICONIFY, r);
 
 	w->xw_xflags &= ~XWF_ICN;
 }
@@ -904,19 +896,12 @@ int xw_hndlmessage(int *message)
 	WINDOW *w, *ww;
 	int *m4 = &message[4];
 
+	/* Process only messages for an existing window */
 
-	/* Process only messages in the known range, and in an existing window */
-
-	if 
-	(
-		(message[0] < WM_REDRAW) || 
-		(message[0] > WM_UNICONIFY) ||
-		((w = xw_hfind(message[3])) == NULL)
-	)
+	if ((w = xw_hfind(message[3])) == NULL)
 		return FALSE;
 
 	/* If a windowed dialog is opened, override the topping function */
-
 
 	ww = w;
 
@@ -989,10 +974,10 @@ int xw_hndlmessage(int *message)
 			func->wd_bottomed(w);
 		break;
 	case WM_ICONIFY:
-		func->wd_iconify(w);
+		func->wd_iconify(w, (RECT *)m4);
 		break;
 	case WM_UNICONIFY:
-		func->wd_uniconify(w);
+		func->wd_uniconify(w, (RECT *)m4);
 		break;
 	default :
 		return FALSE;
@@ -1019,14 +1004,16 @@ void xw_set(WINDOW *w, int field,...)
 
 	switch (field)
 	{
+	case WF_ICONIFY: 
+	case WF_UNICONIFY:
 	case WF_CURRXYWH:
 		r = va_arg(p, RECT *);
 		w->xw_size = *r;
-		wind_set(w->xw_handle, WF_CURRXYWH, w->xw_size.x,
+		wind_set(w->xw_handle, field, w->xw_size.x,
 				 w->xw_size.y, w->xw_size.w, w->xw_size.h);
 		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
 				 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
-		xw_set_barpos(w);
+		xw_set_barpos(w); /* irelevant but harmless in an iconified window */
 		break;
 	case WF_TOP:
 		xw_set_top(w);
@@ -1042,6 +1029,7 @@ void xw_set(WINDOW *w, int field,...)
 		wind_set(w->xw_handle, field, p1, p2, p3, p4);
 		break;
 	}
+
 	va_end(p);
 }
 
@@ -1085,19 +1073,20 @@ static unsigned const char xw_get_argtab[] =
  * WF_NEXTXYWH, WF_FULLXYWH, WF_PREVXYWH, WF_WORKXYWH en WF_CURRXYWH
  * moet als parameter een pointer naar RECT structuur worden
  * opgegeven, in plaats van vier pointers naar integers.
- * Beware that, if window handle is not 0, this function just returns
- * data from the buffer and does not make any inquiry to the AES.
+ * Beware that, if window handle is not 0, this function for some cases 
+ * just returns data from the buffer and does not make any inquiry to the AES.
  */
 
 void xw_get(WINDOW *w, int field,...)
 {
 	RECT *r;
-	int *parm[4], dummy, i, parms, handle;
+	int *parm[4], dummy, i, parms, handle = 0;
 	va_list p;
 
 	va_start(p, field);
 
-	handle = (w == NULL) ? 0 : w->xw_handle;
+	if(w)
+		handle = w->xw_handle;
 
 	switch (field)
 	{
@@ -1165,7 +1154,7 @@ void xw_getwork(WINDOW *w, RECT *size)
 
 /*
  * Similar to above, but obtain WF_FIRSTXYWH; this routine -does-
- * make an inquiry to the AES.
+ * always make an inquiry to the AES.
  */
 
 void xw_getfirst(WINDOW *w, RECT *size)
@@ -1191,15 +1180,14 @@ void xw_getnext(WINDOW *w, RECT *size)
  * menubalk.
  */
  
-void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output,
-			 OBJECT *menu)
+void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output, OBJECT *menu)
 {
 	int bar, boxes, height;
 
 	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h,
 			  &output->x, &output->y, &output->w, &output->h);
 
-	if (menu != NULL)
+	if (menu)
 	{
 		xw_find_objects(menu, &bar, &boxes);
 
@@ -1223,16 +1211,15 @@ static int xw_tree_size(OBJECT *menu)
 {
 	int i = 0;
 
-	if (menu == NULL)
-		return 0;
-	else
+	if (menu)
 	{
 		while ((menu[i].ob_flags & LASTOB) == 0)
 			i++;
-		i++;
 
-		return i;
+		i++;
 	}
+
+	return i;
 }
 
 
@@ -1317,8 +1304,6 @@ WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
 
 	if (windows)
 		windows->xw_prev = w;
-
-	/* w->xw_prev = NULL; no need, because structure zeroed */
 
 	w->xw_next = windows;
 	windows = w;
@@ -1480,12 +1465,6 @@ WINDOW *xw_open_desk(int type, WD_FUNC *functions,
 
 	xw_getwork(NULL, &w->xw_size);
 	w->xw_work = w->xw_size;
-
-/* In TeraDesk, the topping function is not defined for the desktop window
-
-	if ((windows == NULL) && (w->xw_func->wd_top != 0L))
-		w->xw_func->wd_top(w);
-*/
 
 	return w;
 }

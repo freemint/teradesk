@@ -1,7 +1,7 @@
 /* 
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                2003, 2004, 2005  Dj. Vukovic
+ * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                                            2002, 2003  H. Robbers,
+ *                                2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -56,23 +56,17 @@ void xd_rect2pxy(RECT *r, int *pxy)
 
 int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 {
-	int xmin, xmax, ymin, ymax, h1, h2;
+	int xmin, xmax, ymin, ymax;
+
 
 	xmin = max(r1->x, r2->x);
 	ymin = max(r1->y, r2->y);
-
-	h1 = r1->x + r1->w - 1;
-	h2 = r2->x + r2->w - 1;
-	xmax = min(h1, h2);
-
-	h1 = r1->y + r1->h - 1;
-	h2 = r2->y + r2->h - 1;
-	ymax = min(h1, h2);
-
+	xmax = min(r1->x + r1->w, r2->x + r2->w);
+	ymax = min(r1->y + r1->h, r2->y + r2->h);
 	dest->x = xmin;
 	dest->y = ymin;
-	dest->w = xmax - xmin + 1;
-	dest->h = ymax - ymin + 1;
+	dest->w = xmax - xmin;
+	dest->h = ymax - ymin;
 
 	if ((dest->w <= 0) || (dest->h <= 0))
 		return FALSE;
@@ -85,7 +79,7 @@ int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
  * Funktie die bepaalt of een bepaald punt binnen een gegeven
  * rechthoek ligt.
  *
- * Parmeters:
+ * Parameters:
  *
  * x	- x coordinaat punt,
  * y	- y coordinaat punt,
@@ -120,7 +114,7 @@ long xd_initmfdb(RECT *r, MFDB *mfdb)
 	mfdb->fd_stand = 0;
 	mfdb->fd_nplanes = xd_nplanes;
 
-	size = ((long) (mfdb->fd_w) * (long) r->h * (long) xd_nplanes) / 8L;
+	size = ((long)(mfdb->fd_w) * r->h * xd_nplanes) / 8;
 
 	return size;
 }
@@ -204,6 +198,7 @@ int xd_obj_parent(OBJECT *tree, int object)
 			}
 			while (j != i);
 		}
+
 		i = tree[i].ob_next;
 	}
 
@@ -212,7 +207,6 @@ int xd_obj_parent(OBJECT *tree, int object)
 
 
 /* 
- * Funktie voor het bepalen van de geselekteerde radiobutton
  * This function sets one of the radiobutton objects within
  * a parent object. The argument is the index of the button object
  * to be set/selected. 
@@ -265,7 +259,7 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent)
  * Enable or disable all children of the parent
  */
 
-int xd_set_child(OBJECT *tree, int rb_parent, int enab)
+void xd_set_child(OBJECT *tree, int rb_parent, int enab)
 {
 	int i = tree[rb_parent].ob_head;	/* first child of parent */
 	OBJECT *obj;
@@ -281,21 +275,13 @@ int xd_set_child(OBJECT *tree, int rb_parent, int enab)
 
 		i = obj->ob_next;
 	}
-
-	return 0; /* no use of this, in fact */
 }
 
 
 /*
  * Funktie voor het verkrijgen van de 'ob_spec': werkt voor normale
  * zowel als USERDEF als XUSERDEF objecten!
- */
-
-/* Use correct types ! */
-
-
-/* 
- * Similar to xd_get_obspec(), but return pointer only 
+ * Similar to earlier xd_get_obspec(), but returns a pointer only 
  */
 
 OBSPEC *xd_get_obspecp(OBJECT *object)
@@ -337,10 +323,11 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 }
 
 
-/* DjV 074 ---vvv--- */
 /* There are cutrrently no tristate objects in teradesk
 
-/* tristate-button functions... */
+/* 
+ * Tristate-button functions...
+ */
 
 int xd_get_tristate(int ob_state)
 {
@@ -356,9 +343,8 @@ int xd_is_tristate(OBJECT *object)
 {
 	return(xd_xobtype(object) == XD_RECBUTTRI);
 }
-*/
 
-/* DjV 074 ---^^^--- */
+*/
 
 
 /*

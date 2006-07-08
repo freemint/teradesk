@@ -54,9 +54,9 @@ long Dgetcwd(char *path, int drive, int size);
 static boolean flock;
 extern int tos_version, aes_version;
 extern const char *presets[];
+extern boolean va_reply;
 
 extern boolean prg_isprogram(const char *name);
-
 
 /* 
  * Aux. function for size optimization when returning results
@@ -252,7 +252,7 @@ char *x_getpath(int drive, int *error)
 		e = Dgetpath(t, drive);
 	}
 
-	*error = xerror(e);
+	*error = xerror((int)e);
 
 	/* Create output buffer only if there are no errors */
 
@@ -373,13 +373,13 @@ int x_mklink(const char *linkname, const char *refname)
  * Do not make this conversion for network objects.
  */
 
-int x_rdlink( int tgtsize, char *tgt, const char *linkname )
+int x_rdlink( size_t tgtsize, char *tgt, const char *linkname )
 {
 	char *slash;
 	int err = EACCDN;
 
 	if(!x_netob(linkname))
-		err =  xerror( (int)Freadlink( tgtsize, tgt, (char *)linkname ) );
+		err =  xerror( (int)Freadlink( (int)tgtsize, tgt, (char *)linkname ) );
 
 	if (err == 0 && !x_netob(tgt))
 	{
@@ -449,7 +449,7 @@ char *x_fllink( char *linkname )
 		{
 			if ( (tmp = malloc_chk( sizeof(VLNAME) )) != NULL )
 			{
-				error = x_rdlink( (int)sizeof(VLNAME), tmp, linkname ); 
+				error = x_rdlink( sizeof(VLNAME), tmp, linkname ); 
 	
 				/* If the name of the referenced item has been obtained... */
 
@@ -526,7 +526,7 @@ int x_getlabel(int drive, char *label)
 	if(mint)
 	{
 		path[3] = 0;
-		error = x_retresult(Dreadlabel(path, lblbuf, LBLMAX));
+		error = (int)x_retresult(Dreadlabel(path, lblbuf, LBLMAX));
 	}
 	else
 #endif
@@ -777,11 +777,11 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
  * HR 151102: courtesy XaAES & EXPLODE; now it also works with MagiC 
  * Dj.V. Modified here to return integer code identifying file system type.
  * Return code contains bitflags describing the filesystem: 
- * 0x0000: standard TOS FAT filesystem
- * 0x0001: long file names are possible
- * 0x0002: symbolic links are possible
- * 0x0004: access rights and user/group IDs are possible.
- * 0x0008: case-sensitive names are possible
+ * 0x0000: FS_TOS- standard TOS FAT filesystem
+ * 0x0001: FS_LFN- long file names are possible
+ * 0x0002: FS_LNK- symbolic links are possible
+ * 0x0004: FS_UID- access rights and user/group IDs are possible.
+ * 0x0008: FS_CSE- case-sensitive names are possible
  * If neither mint or magic are present, always return 0. 
  * If the inquiry is about the contents of a folder specified
  * then 'path' should be terminated by a '\'
@@ -916,7 +916,7 @@ XDIR *x_opendir(const char *path, int *error)
  * not to be written to or used for permanent storage
  */
 
-long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib) 
+long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib) 
 {
 	static char fspec[sizeof(VLNAME) + 4];
 	long result;
@@ -947,7 +947,7 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 
 		if (error == 0)
 		{
-			if ((int)strlen(dir->data.gdata.dta.d_fname) + 1 > len)
+			if ((int)strlen(dir->data.gdata.dta.d_fname) >= len)
 				error = EFNTL;
 			else
 			{
@@ -975,14 +975,17 @@ long x_xreaddir(XDIR *dir, char **buffer, int len, XATTR *attrib)
 		/* By convention, names beginning with '.' are invisible in mint */
 
 		n = fn_get_name(*buffer);
+
 		if ( n[0] == '.' && n[1] != '.' )
 			attrib->attr |= FA_HIDDEN;
 
 		result = x_retresult(error);
 	}
 
+	/* Correct mint's arrogant tampering with filenames */
+
 	if ( mint && ((dir->type & FS_CSE) == 0)) /* no need to waste time otherwise */
-		strupr(dir->data.gdata.dta.d_fname); /* arrogant MiNT tampering with filenames. */
+		strupr(*buffer);
 
 #endif /* _MINT_ */
 
@@ -1030,6 +1033,7 @@ long x_closedir(XDIR *dir)
  * FS_LFN = 0x0001 : has long filenames
  * FS_LNK = 0x0002 : has links
  * FS_UID = 0x0004 : has user rights
+ * FS_CSE = 0x0008 : has case-sensitive names
  * FS_INQ = 0x0100 : inquire about filesystem
  */
 
@@ -1054,7 +1058,6 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		 */
 
 		xattr->mode = 0;
-
 		result = x_retresult(Fxattr(flag, name, xattr));
 
 		if ( (result >= 0) && ((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0))
@@ -1230,7 +1233,7 @@ char *xfileselector(const char *path, char *name, const char *label)
 		{
 			/* A call to a file selector MUST be surrounded by wind_update() */
 
-			wind_update(BEG_UPDATE);
+			xd_wdupdate(BEG_UPDATE);
 
 			/* 
 			 * In fact there should be a check here if an alternative file selector
@@ -1242,8 +1245,8 @@ char *xfileselector(const char *path, char *name, const char *label)
 				error = fsel_exinput(buffer, name, &button, (char *) label);
 			else
 				error = fsel_input(buffer, name, &button);
-
-			wind_update(END_UPDATE);
+			
+			xd_wdupdate(END_UPDATE);
 
 			if ((error == 0) || (button == 0))
 			{
@@ -1402,6 +1405,7 @@ XFILE *x_fmemopen(int mode, int *error)
 	else
 	{
 		memclr(xfile, sizeof(XFILE));
+
 		xfile->mode = mode;
 		xfile->memfile = TRUE;
 
@@ -1602,7 +1606,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 					return ENSMEM;	
 
 				dest = file->buffer = new;
-				file->bufsize += MRECL;
+				file->bufsize += (long)MRECL;
 			}
 
 			/* Now write till the end of input */

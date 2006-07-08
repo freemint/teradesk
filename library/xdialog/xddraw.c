@@ -1964,8 +1964,8 @@ void xd_set_userobjects(OBJECT *tree)
 					c_code = ub_rectbut;
 				break;
 
-/* DjV 074 ---vvv--- */
-/* not used anywhere in Teradesk
+/* Currently not used anywhere in Teradesk
+
 			case XD_RECTBUTTRI :
 				if (must_userdef(c_obj))
 					c_code = ub_rectbuttri;
@@ -1974,8 +1974,6 @@ void xd_set_userobjects(OBJECT *tree)
 				c_code = ub_cyclebut;
 				break;
 */
-/* DjV 074 ---^^^--- */
-
 			case XD_BUTTON :
 				/* 
 				 * Rectangular button with (possibly) underlined text;   

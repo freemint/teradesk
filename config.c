@@ -91,7 +91,10 @@ static const char
  * Substitute all "%" in a string with  "$" ?? 
  */
 
-static void no_percent(char *s)
+static void no_percent
+(
+	char *s	/* pointer to the string to be modified */
+)
 {
 	while (*s)
 	{
@@ -146,10 +149,10 @@ static void append_fmt
 		case CFG_C:
 			strcat(dest, "=%c");
 			break;
-*/
 		case CFG_BD:
-		case CFG_D:
 		case CFG_H:
+*/
+		case CFG_D:
 			strcat(dest, "=%d");
 			break;
 		case CFG_DDD:
@@ -197,10 +200,9 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 
 	if ( error >= 0 )
 	{
-		va_start(argpoint, string);
-
 		/* Note: if positive, error contains string length */
 
+		va_start(argpoint, string);
 		error = vsprintf(s, string, argpoint); 
 		va_end(argpoint);
 
@@ -302,8 +304,8 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						}
 /* currently not used
 						case CFG_C:
-*/
 						case CFG_BD:
+*/
 						case CFG_D:
 						case CFG_X:
 						{
@@ -314,6 +316,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 								error = fprintf_wtab(fp, lvl, fmt, *v);
 							break;
 						}
+/* Currently not used
 						case CFG_H:
 						case CFG_B:
 						{
@@ -323,6 +326,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 								error = fprintf_wtab(fp, lvl, fmt, v);
 							break;
 						}
+*/
 						case CFG_DDD: 
 						{
 							/* Write a triplet of integers */
@@ -399,7 +403,10 @@ static void crlf(char *f)
  * Strip any comments from the end of a line (everything after ";")
  */
 
-static char *nocomment( char *f )
+static char *nocomment
+(
+	char *f		/* pointer to string being modified */
+)
 {
 	char *s = strchr( f, ';' );
 
@@ -416,7 +423,12 @@ static char *nocomment( char *f )
  * substituting all "@" with " " 
  */
 
-static void cfgcpy(char *d, char *s, int x)
+static void cfgcpy
+(
+	char *d,	/* pointer to destination string */
+	char *s,	/* pointer to source string */
+	int x		/* max. number of characters to be copied */
+)
 {
 	while 
 	( 					/* loop until: */     
@@ -478,7 +490,7 @@ int CfgLoad
 
 	/* Loop while needed. Get next record from the file */
 
-	while ( (error = (int)x_fgets(fp, s = r, sizeof(r))) == 0 )
+	while ( (error = x_fgets(fp, s = r, (int)sizeof(r))) == 0 )
 	{
 		CfgEntry *tab = cfgtab;
 
@@ -592,17 +604,19 @@ int CfgLoad
 						/* Decode a character value */
 						*(char *)tab->a = *s++;
 						break;
-*/
 					case CFG_H:
 						/* Decode a positive decimal byte value */
 						*(char *)tab->a = (char)max(atoi(s), 0);
 						break;
 					case CFG_BD:
+*/
 					case CFG_D:
 						/* Decode a positive decimal integer value */
 						*(int *)tab->a = max(atoi(s), 0);
+/* Currently not used
 						if ( (tabtype == CFG_BD) && (*(int *)tab->a > 0) )
 							*(int *)tab->a = 1;
+*/
 						break;
 					case CFG_DDD:
 					{

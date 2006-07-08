@@ -42,7 +42,7 @@
 
 int 
 	xe_mbshift,
-	xd_kstate; /* kbd state while clicking a button; */
+	xd_kstate; 	/* kbd state while clicking a button; */
 
 /* 
  * Funktie voor het converteren van een VDI scancode  naar een
@@ -150,11 +150,18 @@ int xe_xmulti(XDEVENT *events)
 	 * If true set to the minimum time. 
 	 */
 
-	if ((events->ev_mthicount == 0) && (events->ev_mtlocount < xd_min_timer))
+	if 
+	(
+		((events->ev_mflags & MU_TIMER) != 0) && 
+		(events->ev_mthicount == 0) && 
+		(events->ev_mtlocount < xd_min_timer)
+	)
 		events->ev_mtlocount = xd_min_timer;
 
-	/* No message events when a dialog is opened and the dialog is not in a window. */
-
+	/* 
+	 * No message events to be received when a dialog is opened 
+	 * and this dialog is not in a window. 
+	 */
 
 	if (xd_dialogs && (xd_dialogs->dialmode != XD_WINDOW) && !xd_nmdialogs)
 		events->ev_mflags &= ~MU_MESAG;
@@ -216,7 +223,10 @@ int xe_xmulti(XDEVENT *events)
 			r &= ~MU_MESAG;
 		}
 		else if (xw_hndlmessage(events->ev_mmgpbuf)) /* window-handling messages processed */
+		{
 			r &= ~MU_MESAG;
+
+		}
 	}
 
 	/* If this is a button event... */
@@ -225,6 +235,7 @@ int xe_xmulti(XDEVENT *events)
 	{
 		if (events->ev_mmobutton == 2)
 			events->ev_mbreturn = 2;	/* right button is double click */
+
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
 						  events->ev_mbreturn, events->ev_mmobutton,
 						  events->ev_mmokstate))

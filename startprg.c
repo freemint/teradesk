@@ -95,8 +95,8 @@ static void set_title(char *title)
 
 
 /*
- * Trick to restore the mouse after some programs, which hide the
- * mouse. Does not work always.
+ * Trick to restore the mouse after some programs, which hide it. 
+ * Does not work always.
  */
 
 static void clean_up(void)
@@ -159,6 +159,7 @@ static void close_windows(void)
 static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_type)
 {
 	int 
+		dummy,
 		error, 
 		*colors = NULL, 
 		stdout_handle, 
@@ -166,8 +167,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 	/* If 'save color' option is set, save the current colors. */
 
-	if (   (options.vprefs & SAVE_COLORS)
-	    && ((colors = get_colors()) == NULL))
+	if ((options.vprefs & SAVE_COLORS) && ((colors = get_colors()) == NULL))
 		return ENSMEM;
 
 	/* 
@@ -238,7 +238,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 			/* Why is this ? */
 
-/* try without 
+/* why was this?  
 {
 			appl_exit();
 			appl_init();
@@ -256,7 +256,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			if (aptype == 0)
 			{
 				/* TOS app; remove mouse, set new exception vector */
-				moff_mouse();
+				xd_mouse_off();
 				v_enter_cur(vdi_handle);
 				install_critic();
 			}
@@ -299,7 +299,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 				}
 
 				v_exit_cur(vdi_handle);
-				mon_mouse();
+				xd_mouse_on();
 			}
 			else
 			{
@@ -364,21 +364,22 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 	 * then set mouse pointer to arrow shape 
 	 */
 
-	clr_key_buf();
+	while (key_state(&dummy, FALSE) > 0); /* instead of clr_key_buf() */
+
 	arrow_mouse();
 
 	/* Restore handle 2 to old handle. */
 
 	if (options.xprefs & TOS_STDERR)
 	{
-		Fforce(2,ostderr_handle);
+		Fforce(2, ostderr_handle);
 		Fclose(ostderr_handle);
 		Fclose(stdout_handle);
 	}
 
 	/* Restore old colors. */
 
-	if (options.vprefs & SAVE_COLORS)
+	if(colors)
 	{
 		set_colors(colors);
 		free(colors);
@@ -389,13 +390,11 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 
 /* 
- * There seems to be a problem with TOS 2.06 swallowing the 
- * first mouse click after executing a program by clicking on
- * a desktop icon, when there are no windows open.
- * It is mentioned also in the manual for the Thing desktop
+ * There seems to be a problem with TOS 2.06 swallowing the first mouse click
+ * after a program is executed by clicking on a desktop icon, when there are
+ * no windows open. It is mentioned also in the manual for the Thing desktop
  * (Thing seems to suffer from the same problem).
- * Code below seems to cure that:
- * a mouse click is simulated by appl_tplay().
+ * Code below seems to cure that: a mouse click is simulated by appl_tplay().
  * Note1: sim_click() is also used when starting a program, see above.
  * Note2: code below seems to be a working compromise fit both for
  * the unpatched and the patched TOS 2.06.
@@ -412,14 +411,10 @@ void sim_click(void)
 #endif
 	   ) 
 	{
-		WINDOW *tw = xw_top();
 		XDEVENT events;
-		int twt = 0, p[8] = {0,1, 1,1, 0,1, 0,0};
+		int p[8] = {0,1, 1,1, 0,1, 0,0};
 
-		if ( tw )
-			twt  = xw_type(tw);
-
-		if ( twt != DIR_WIND && twt != TEXT_WIND )
+		if ( !wd_dirortext(xw_top()) )
 			appl_tplay( (void *)(&p), 2, 4 );
 
 		xd_clrevents(&events);
@@ -763,11 +758,10 @@ void start_prg
 				if ( doargv && !catargv )
 				{
 					(char)cmdl[0] = 127; /* this signals the use of ARGV */
-					wiscr = 1;
+					wiscr = 1;			 /* the same */
 				}
 				else
-					/* ARGV is provided in other way, if needed */
-					wiscr = 0;
+					wiscr = 0; /* ARGV is provided in other way, if needed */
 			}
 
 			/* Start a program using shel_write */

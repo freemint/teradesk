@@ -32,10 +32,9 @@ static void  *oldpipesig;
 
 
 /*
- * create a pipe for doing the drag & drop,
- * and send an AES message to the receipient
- * application telling it about the drag & drop
- * operation.
+ * Create a pipe for doing the drag & drop,
+ * and send an AES message to the receipient application 
+ * telling it about the drag & drop operation.
  *
  * Input Parameters:
  * apid:	   AES id of the window owner
@@ -55,20 +54,22 @@ static void  *oldpipesig;
  * -1 if the receipient doesn't respond or
  *    returns DD_NAK
  * -2 if appl_write fails
+ *
+ * Note: example code for this that can be found in various documents is wrong:
+ * it doesn't correctly search through pipes .AA to .ZZ
  */
 
 int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
 {
 	int 
 		fd,			/* pipe handle */ 
-		i,
 		msg[8],		/* message buffer */
 		*mp = msg;	/* pointer to */
 
 	long 
 		fd_mask;
 
-	char 
+	char
 		c = 0;
 
 	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
@@ -78,6 +79,8 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	fd = -1;
 	do
 	{
+		/* Try .AA, .AB, .AC ... .AZ, .BA, .BB ... .ZZ */
+
 		pipename[18]++;
 		if (pipename[18] > 'Z')
 		{
@@ -90,15 +93,11 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 		/* Mode 2 means "get EOF if nobody has pipe open for reading" */
 
 		fd = (int)Fcreate(pipename, 0x02);
-
 	} 
 	while (fd == EACCDN);
 
-	if (fd < 0)
-	{
-		/* fcreate error */
+	if (fd < 0) /* fcreate error */
 		return fd;
-	}
 
 	/* Construct and send the AES message to destination app */
 
@@ -111,9 +110,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	*mp++ = kstate;
 	*mp   = ( ( ((int)pipename[17]) << 8) + pipename[18] );
 
-	i = appl_write(dpid, 16, msg);
-
-	if (i == 0)
+	if(appl_write(dpid, 16, msg) == 0)
 	{
 		/* appl_write error */
 		Fclose(fd);
@@ -123,39 +120,25 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	/* Now wait for a response */
 
 	fd_mask = 1L << fd;
-	i = Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L);
 
-	if ( !(i && fd_mask) )
-	{	
-		/* timeout happened */
-		Fclose(fd);
-		return -1;
-	}
-
-	/* Read the 1 byte response */
-
-	i = (int)Fread(fd, 1L, &c);
-
-	if ( (i != 1) || (c != DD_OK) )
+	if (Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L) && fd_mask) /* no timeout */
 	{
-		/* read error or DD_NAK */
-		Fclose(fd);
-		return -1;
+		/* Read the 1 byte response */
+
+		if( ((int)Fread(fd, 1L, &c) == 1) && (c == DD_OK) ) /* no read error or DD_NAK */
+		{
+			/* Now read the "preferred extensions" */
+
+			if ((int)Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE) /* no error reading extensions */
+			{
+				oldpipesig = Psignal(SIGPIPE, (void *)SIG_IGN);
+				return fd;
+			}
+		}
 	}
 
-	/* Now read the "preferred extensions" */
-
-	i = Fread(fd, DD_EXTSIZE, exts);
-
-	if (i != DD_EXTSIZE)
-	{
-		/* error reading extensions */
-		Fclose(fd);
-		return -1;
-	}
-
-	oldpipesig = Psignal(SIGPIPE, (void *)SIG_IGN);
-	return fd;
+	Fclose(fd);
+	return -1;
 }
 
 
@@ -175,36 +158,35 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 int ddstry(int fd, char *ext, char *name, long size)
 {
-	int hdrlen, i;
 	char c;
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
-	hdrlen = 9 + (int)strlen(name); /* in Magic docs it is 8 + ... */
+	int hdrlen = 9 + (int)strlen(name); /* in Magic docs it is 8 + ... */
 
-	i = (int)Fwrite(fd, 2L, &hdrlen);	/* send header length */
+	if ((int)Fwrite(fd, 2L, &hdrlen) == 2) 	/* send header length */
+	{
+		/* Now send the header */
 
-	/* Now send the header */
+		if
+		(
+			(
+				(int)Fwrite(fd, 4L, ext) + 
+				(int)Fwrite(fd, 4L, &size) + 
+				(int)Fwrite(fd, (long)strlen(name) + 1, name) /* in Magic docs there is no + 1 */		
+			)
 
-	if (i != 2) 
-		return DD_NAK;
+			== hdrlen
+		) 
+		{
+			/* Wait for a reply */
 
-	i = Fwrite(fd, 4L, ext);
-	i += Fwrite(fd, 4L, &size);
-	i += Fwrite(fd, (long)strlen(name) + 1, name); /* in Magic docs there is no + 1 */
+			if ((int)Fread(fd, 1L, &c) == 1) 
+				return (int)c;
+		}
+	}
 
-	if (i != hdrlen) 
-		return DD_NAK;
-
-	/* Wait for a reply */
-
-	i = Fread(fd, 1L, &c);
-
-	if (i != 1) 
-		return DD_NAK;
-
-	return (int)c;
-
+	return DD_NAK;
 }
 
 
@@ -219,7 +201,6 @@ void ddclose(int fd)
 		Psignal(SIGPIPE, oldpipesig);
 		Fclose(fd);
 	}
-	fd = -1;
 }
 
 
@@ -254,18 +235,19 @@ int ddopen(int ddnam, char *preferext)
 	pipename[17] = (ddnam & 0xff00) >> 8;
 
 	fd = Fopen(pipename, 2);
-	if (fd < 0) 
-		return fd;
 
-	outbuf[0] = DD_OK;
-	strncpy(outbuf+1, preferext, DD_EXTSIZE);
-
-	oldpipesig = Psignal(SIGPIPE, SIG_IGN);
-
-	if (Fwrite(fd, (long)DD_EXTSIZE+1, outbuf) != DD_EXTSIZE + 1) 
+	if (fd >= 0) 
 	{
-		ddclose(fd);
-		return -1;
+		outbuf[0] = DD_OK;
+		strncpy(outbuf+1, preferext, DD_EXTSIZE);
+
+		oldpipesig = Psignal(SIGPIPE, SIG_IGN);
+
+		if (Fwrite(fd, (long)DD_EXTSIZE + 1, outbuf) != DD_EXTSIZE + 1) 
+		{
+			ddclose(fd);
+			return -1;
+		}
 	}
 
 	return fd;
@@ -295,51 +277,40 @@ int ddopen(int ddnam, char *preferext)
 
 int ddrtry(int fd, char *name, char *whichext, long *size)
 {
-	int hdrlen;
-	int i;
+	int hdrlen, i;
 	char buf[80];
 
-	i = Fread(fd, 2L, &hdrlen);
-
-	if (i != 2)
+	if ((int)Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
 		return -1;
 
-	if (hdrlen < 9)       /* this should never happen */
-		return -1;
-
-	i = Fread(fd, 4L, whichext);
-
-	if (i != 4)
-		return -1;
-
-	whichext[4] = 0;
-	i = Fread(fd, 4L, size);
-	if (i != 4)
-		return -1;
-
-	hdrlen -= 8;
-	if (hdrlen > DD_NAMEMAX)
-		i = DD_NAMEMAX;
-	else
-		i = hdrlen;
-
-	if (Fread(fd, (long)i, name) != i) 
-		return -1;
-
-	hdrlen -= i;
-
-	/* skip any extra header */
-
-	while (hdrlen > 80) 
+	if ((int)Fread(fd, 4L, whichext) == 4)
 	{
-		Fread(fd, 80L, buf);
-		hdrlen -= 80;
+		whichext[4] = 0;
+
+		if ((int)Fread(fd, 4L, size) == 4)
+		{
+			hdrlen -= 8;
+
+			i = min(hdrlen, DD_NAMEMAX);
+
+			if (Fread(fd, (long)i, name) == i) 
+			{
+				hdrlen -= i;
+
+				/* skip any extra header, no more than 80 bytes at a time */
+
+				while (hdrlen > 0) 
+				{
+					Fread(fd, (long)min(80, hdrlen), buf);
+					hdrlen -= 80;
+				}
+
+				return 0;
+			}
+		}
 	}
 
-	if (hdrlen > 0)
-		Fread(fd, (long)hdrlen, buf);
-
-	return 0;
+	return -1;
 }
 
 

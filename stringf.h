@@ -24,5 +24,3 @@
 
 int vsprintf(char *buffer, const char *format, va_list argpoint);
 int sprintf(char *buffer, const char *format, ...);
-int vaprintf( int def,const char *string,va_list argpoint );
-int aprintf( int def,const char *string, ... );

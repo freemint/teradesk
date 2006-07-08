@@ -84,6 +84,7 @@ int open_dialog(void)
 				break;
 			case OWUSE:
 				log_shortname(fwork.filetype, awork.name);
+				selitem = NULL;
 				app_install(LS_SELA, &applikations); /* selitem is nonnull only if successful here */
 				if (!selitem)
 					button = 0;			
@@ -323,7 +324,7 @@ boolean item_open
 			 */
 
 			w = (WINDOW *)&simw;
-			dir_simw( &simw, epath, ename, type, (size_t)1, (int)0 );
+			dir_simw(&simw, epath, ename, type);
 			item = 0;
 			break;		
 	}
@@ -400,11 +401,7 @@ boolean item_open
 			onfile = TRUE;
 			deselect = FALSE;
 
-			if 
-			(
-				!alternate && 
-				(appl = app_find(itm_name(w, item), TRUE)) != NULL
-			)
+			if (!alternate && (appl = app_find(itm_name(w, item), TRUE)) != NULL)
 				deselect = app_exec(NULL, appl, w, &item, 1, kstate);
 			else if(naap == 0) 
 			{

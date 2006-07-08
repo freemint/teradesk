@@ -66,7 +66,7 @@ void *memclr(void *s, size_t len);
 /* Funkties voor filenamen */
 
 void strip_name (char *dst, const char *src);
-void cramped_name(const char *s, char *t, int w);
+void cramped_name(const char *s, char *t, size_t w);
 
 /* Funkties voor cookie-jar */
 

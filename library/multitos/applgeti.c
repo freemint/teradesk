@@ -1,7 +1,7 @@
 /*
- * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002  W. Klaren,
- *                                                2002, 2003  H. Robbers
- *                                                2004, 2005  Dj. Vukovic
+ * Multitos Library for Pure C 1.0. Copyright (c)       1994, 2002  W. Klaren,
+ *                                                      2002, 2003  H. Robbers
+ *                                                2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,23 +23,18 @@
 #include <np_aes.h>
 #include <multitos.h>
 
+
 int appl_getinfo(int ap_gtype,
 				 int *ap_gout1, int *ap_gout2,
 				 int *ap_gout3, int *ap_gout4)
 {
 	int *g = &(_GemParBlk.contrl[0]);
-/*
-	_GemParBlk.contrl[0] = 130;
-	_GemParBlk.contrl[1] = 1;
-	_GemParBlk.contrl[2] = 5;
-	_GemParBlk.contrl[3] = 0;
-	_GemParBlk.contrl[4] = 0;
-*/
-	*g++ = 130;
-	*g++ = 1;
-	*g++ = 5;
-	*g++ = 0;
-	*g   = 0;
+
+	*g++ = 130; /* [0] */
+	*g++ = 1;	/* [1] */
+	*g++ = 5;	/* [2] */
+	*g++ = 0;	/* [3] */
+	*g   = 0;	/* [4] */
 
 	_GemParBlk.intin[0] = ap_gtype;
 
@@ -54,23 +49,15 @@ int appl_getinfo(int ap_gtype,
 }
 
 
-int objc_sysvar(int mo, int which,
-				int  ivall, int  ival2,
-                int *oval1, int *oval2)
+int objc_sysvar(int mo, int which, int  ivall, int  ival2, int *oval1, int *oval2)
 {
 	int *g = &(_GemParBlk.contrl[0]);
-/*
-	_GemParBlk.contrl[0] = 48;
-	_GemParBlk.contrl[1] = 4;
-	_GemParBlk.contrl[2] = 3;
-	_GemParBlk.contrl[3] = 0;
-	_GemParBlk.contrl[4] = 0;
-*/
-	*g++ = 48;
-	*g++ = 4;
-	*g++ = 3;
-	*g++ = 0;
-	*g   = 0;
+
+	*g++ = 48;	/* [0] */
+	*g++ = 4;	/* [1] */
+	*g++ = 3;	/* [2] */
+	*g++ = 0;	/* [3] */
+	*g   = 0;	/* [4] */
 
 
 	_GemParBlk.intin[0] = mo;
@@ -90,18 +77,12 @@ int objc_sysvar(int mo, int which,
 int appl_control(int ap_cid, int ap_cwhat, void *ap_cout)
 {
 	int *g = &(_GemParBlk.contrl[0]);
-/*
-	_GemParBlk.contrl[0] = 129;
-	_GemParBlk.contrl[1] = 2;
-	_GemParBlk.contrl[2] = 1;
-	_GemParBlk.contrl[3] = 1;
-	_GemParBlk.contrl[4] = 0;
-*/
-	*g++ = 129;
-	*g++ = 2;
-	*g++ = 1;
-	*g++ = 1;
-	*g   = 0;
+
+	*g++ = 129;	/* [0] */
+	*g++ = 2;	/* [1] */
+	*g++ = 1;	/* [2] */
+	*g++ = 1;	/* [3] */
+	*g   = 0;	/* [4] */
 
 
 	_GemParBlk.intin[0] = ap_cid;

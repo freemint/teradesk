@@ -60,19 +60,18 @@ typedef struct
 	/* three window-type structures are identical up to this point */
 
 #if _MINT_
-	char info[210];			/* info line of window */
+	char info[212];			/* info line of window */
 #else
 	char info[80];			/* info line of window */
 #endif
 	const char *fspec;		/* filename mask for the window */
-
+	long usedbytes;			/* total size of files in the dir. */
+	long visbytes;			/* total size of visible files */
+	long selbytes;			/* total size of selected items */
 	int fs_type;			/* We need to know the filesystem type for formatting purposes. */
 	int nfiles;				/* number of files in directory */
 	int nvisible;			/* number of visible files in directory */
 	int nselected;			/* number of selected items in directory */
-	long usedbytes;			/* total size of files in the dir. */
-	long visbytes;			/* total size of visible files */
-	long selbytes;			/* total size of selected items */
 	int namelength;			/* length of longest name in the directory */
 	int llength;			/* length of a directory line in text mode */
 	int dcolumns;			/* number of directory columns in text mode */
@@ -130,7 +129,6 @@ void dir_columns(DIR_WINDOW *dw);
 void dir_info(DIR_WINDOW *w);
 			
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
-void do_draw(DIR_WINDOW *dw, RECT *r, OBJECT *tree, boolean text, RECT *work); 
 void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
 void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
@@ -139,6 +137,7 @@ void dir_trim_slash ( char *path );
 boolean dir_do_path( char *path, int action );
 void dir_readnew(DIR_WINDOW *w);
 OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boolean smode, RECT *work);
-void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type, size_t size, int attrib);
+void draw_tree(OBJECT *tree, RECT *clip);
+void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);
