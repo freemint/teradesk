@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <library.h>
 #include <mint.h>
 #include <xdialog.h>
@@ -603,6 +602,11 @@ void rsc_init(void)
 
 		mn_del(MNVIEWBX, MSHOWN);
 	}
+
+#if _MINT_
+	if(!xd_aes4_0)
+#endif
+		mn_del(MNWINBOX, MICONIF);
 
 #if _EDITLABELS
 #if _MINT_

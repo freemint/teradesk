@@ -31,7 +31,6 @@
 #include <ctype.h>
 #include <tos.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <library.h>
 #include <mint.h>
 #include <system.h>
@@ -252,18 +251,18 @@ CfgEntry Shortcut_table[] =
 	/* File menu */
 	{CFG_X, "open", &options.kbshort[MOPEN		- MFIRST]	},
 	{CFG_X, "show", &options.kbshort[MSHOWINF	- MFIRST]	},
-	{CFG_X, "newd", &options.kbshort[MNEWDIR		- MFIRST]	},
+	{CFG_X, "newd", &options.kbshort[MNEWDIR	- MFIRST]	},
 	{CFG_X, "comp", &options.kbshort[MCOMPARE	- MFIRST]	},
-	{CFG_X, "srch", &options.kbshort[MSEARCH		- MFIRST]	},
+	{CFG_X, "srch", &options.kbshort[MSEARCH	- MFIRST]	},
 	{CFG_X, "prin", &options.kbshort[MPRINT		- MFIRST]	},
-	{CFG_X, "dele", &options.kbshort[MDELETE		- MFIRST]	},
-	{CFG_X, "sela", &options.kbshort[MSELALL		- MFIRST]	},
+	{CFG_X, "dele", &options.kbshort[MDELETE	- MFIRST]	},
+	{CFG_X, "sela", &options.kbshort[MSELALL	- MFIRST]	},
 #if MFCOPY
 	{CFG_X, "copy", &options.kbshort[MFCOPY		- MFIRST]	},
 	{CFG_X, "form", &options.kbshort[MFFORMAT	- MFIRST]	},
 #else
-	{CFG_X | CFG_INHIB, "copy", &inhibit	},
-	{CFG_X | CFG_INHIB, "form", &inhibit	},
+	{CFG_X | CFG_INHIB, "copy", &inhibit					},
+	{CFG_X | CFG_INHIB, "form", &inhibit					},
 #endif
 	{CFG_X, "quit", &options.kbshort[MQUIT		- MFIRST]	},
 
@@ -289,24 +288,27 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, "smsk", &options.kbshort[MSETMASK	- MFIRST]	},
 
 	/* Window menu */
+
+	{CFG_X, "wico", &options.kbshort[MICONIF	- MFIRST]	},
+	{CFG_X, "wful", &options.kbshort[MFULL		- MFIRST]	},
 	{CFG_X, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
-	{CFG_X, "wclo", &options.kbshort[MCLOSEW		- MFIRST]	},
+	{CFG_X, "wclo", &options.kbshort[MCLOSEW	- MFIRST]	},
 	{CFG_X, "cloa", &options.kbshort[MCLOSALL	- MFIRST]	},
-	{CFG_X, "wdup", &options.kbshort[MDUPLIC		- MFIRST]	},
+	{CFG_X, "wdup", &options.kbshort[MDUPLIC	- MFIRST]	},
 	{CFG_X, "cycl", &options.kbshort[MCYCLE		- MFIRST]	},
 
 	/* Options menu */
-	{CFG_X, "appl", &options.kbshort[MAPPLIK		- MFIRST]	},
-	{CFG_X, "ptyp", &options.kbshort[MPRGOPT		- MFIRST]	},
+	{CFG_X, "appl", &options.kbshort[MAPPLIK	- MFIRST]	},
+	{CFG_X, "ptyp", &options.kbshort[MPRGOPT	- MFIRST]	},
 	{CFG_X, "dski", &options.kbshort[MIDSKICN	- MFIRST]	},
-	{CFG_X, "wini", &options.kbshort[MIWDICN		- MFIRST]	},
+	{CFG_X, "wini", &options.kbshort[MIWDICN	- MFIRST]	},
 	{CFG_X, "pref", &options.kbshort[MOPTIONS	- MFIRST]	},
 	{CFG_X, "copt", &options.kbshort[MCOPTS		- MFIRST]	},
 	{CFG_X, "wopt", &options.kbshort[MWDOPT		- MFIRST]	},
 	{CFG_X, "vopt", &options.kbshort[MVOPTS		- MFIRST]	},
 	{CFG_X, "ldop", &options.kbshort[MLOADOPT	- MFIRST]	},
 	{CFG_X, "svop", &options.kbshort[MSAVESET	- MFIRST]	},
-	{CFG_X, "svas", &options.kbshort[MSAVEAS		- MFIRST]	},
+	{CFG_X, "svas", &options.kbshort[MSAVEAS	- MFIRST]	},
 
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -336,6 +338,7 @@ void *malloc_chk(size_t size)
 int chk_xd_dialog(OBJECT *tree, int start)
 {
 	int error = xd_dialog(tree, start);
+
 	xform_error(error);
 	return error;
 }
@@ -453,8 +456,10 @@ static void showhelp (unsigned int key)
 				i++;
 
 				obj_unhide( helpno1[hbox[i]] );
+
 				if ( i == 3 )
 					obj_hide(helpno1[HELPOK]);
+
 				xd_drawdeep(&info, ROOT);
 			}
 			while(TRUE);
@@ -974,7 +979,7 @@ static void opt_default(void)
  * those offered here have become a de-facto standard
  * in other applications. On the other hand, they are different
  * from those which Atari has adopted for the in-built TOS desktop.
- * As for me, I would prefer some other ones, e.g. "?" for "Info..."
+ * Personally, I would prefer some other ones, e.g. "?" for "Info..."
  * and "*" for "Select all"
  */
 
@@ -1097,11 +1102,6 @@ static CfgNest opt_config
 
 				options.cprefs |= CF_TOUCH;
 				options.cprefs &= ~(CF_CTIME | CF_CATTR);
-
-				/* If all is OK so far, start setting TeraDesk */
-
-				set_dsk_background(options.dsk_pattern, options.dsk_color);
-
 #if PALETTES
 				/* Load palette. Ignore errors */
 
@@ -1110,6 +1110,10 @@ static CfgNest opt_config
 				/* Set video state but do not change resolution */
 
 				get_set_video(1);
+
+				/* If all is OK so far, start setting TeraDesk */
+
+				set_dsk_background(options.dsk_pattern, options.dsk_color);
 			}
 		}
 	}
@@ -1154,7 +1158,6 @@ static void save_options(const char *fname)
 
 	wd_set_update(WD_UPD_COPIED, fname, NULL);
 	wd_do_update();
-
 	arrow_mouse();
 }
 
@@ -1460,7 +1463,7 @@ int scansh ( int key, int kstate )
 
 	if( key & XD_SCANCODE)
 		return -1;
-	else if ( kstate == K_CTRL ) 			/* Ctrl...       */	
+	else if ((kstate & (K_CTRL | K_ALT)) == K_CTRL) /* Ctrl... or Shift-Ctrl... */
 	{
 		if ( a == SPACE )					/* ^SP           */
 			a |= XD_CTRL;
@@ -1473,7 +1476,7 @@ int scansh ( int key, int kstate )
 		else								/* Above 127     */
 			a |= XD_CTRL;
 	}
-	else if ( kstate > (K_RSHIFT | K_LSHIFT) || key < 0 ) 		/* everything but shift or plain */
+	else if ( (kstate > (K_RSHIFT | K_LSHIFT)) || key <= 0 ) 		/* everything but shift or plain */
 		a = -1;								/* shortcut def. is never this value */
 
 	return a;
@@ -1483,8 +1486,6 @@ int scansh ( int key, int kstate )
 /* 
  * Handle keyboard commands 
  */
-
-boolean dir_onalt(int key, WINDOW *w);
 
 static void hndlkey(int key, int kstate)
 {
@@ -1505,6 +1506,7 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 	if(uk == UNDO)
 		wd_deselect_all();
 
+
 	k = key & ~XD_CTRL; 
 
 	if ((( uk >= 0x803B) && ( uk <= 0x8044)) ||
@@ -1522,9 +1524,9 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 	}
 	else
 	{
-		k = scansh( key, kstate );
-
 		/* Find if this is defined as a menu shortcut */
+
+		k = scansh( key, kstate );
 
 		title = TFIRST;
 
@@ -1536,15 +1538,19 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 			i++;
 		}
 
-		/* Handle keyboard shortcuts or opening root directories */
+		/* Handle keyboard shortcuts or opening of root directories */
 
 		if ( options.kbshort[i] == k )
 		{
+			/* A keyboard shortcut has been recognized */
+
 			menu_tnormal(menu, title, 0 );
 			hndlmenu( title, i + MFIRST, kstate );
 		}
 		else
 		{
+			/* A directory window is to be opened */
+
 			if(dir_onalt(key, NULL))
 				autoloc_off();
 		}
@@ -1656,7 +1662,7 @@ static void evntloop(void)
 		 * the loop has to be executed every once in a while-
 		 * like every 500ms defined below. It looks as if this 
 		 * is not needed in a multitasking environment.
-		 * Also, this is needed only if there are open accessory windows.
+		 * Also, do it only if there are open accessory windows.
 		 */
 
 		if
@@ -1851,30 +1857,32 @@ int main(void)
 	{
 		/* 
 		 * The resource file has been loaded.
-		 * Inform AES of TeraDesk's capabilities regarding messages 
-		 * (should here be version 0x340, 0x399 or 0x400 ?)
+		 * Initialize x-dialogs 
 		 */
-
-		if ( aes_version >= 0x399 ) 
-		{
-			/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
-
-			shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); 
-			menu_register(ap_id, get_freestring(MENUREG));
-		}
-
-		/* Initialize x-dialogs */
 
 		if ((error = init_xdialog(&vdi_handle, malloc_chk, free,
 								  get_freestring(DWTITLE), 1, &nfonts)) < 0)
 			xform_error(error);
 		else
 		{
+			/*
+			 * Inform AES of TeraDesk's capabilities regarding messages 
+			 * (should here be version 0x340, 0x399 or 0x400 ?)
+			 */
+
+			if ( xd_aes4_0 /* aes_version >= 0x399 */ ) 
+			{
+				/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
+
+				shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); 
+				menu_register(ap_id, get_freestring(MENUREG));
+			}
+
 			/* Some details about xdialogs (possible words for 'Cancel') */
 
 			xd_cancelstring = get_freestring(CANCTXT);
 
-			/* Initialize things related to vdi */
+			/* Initialize things related to vdi. Set default font */
 
 			init_vdi();
 
@@ -1944,7 +1952,6 @@ int main(void)
 
 								wd_del_all();		/* remove windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
-								xw_close_desk();	/* remove desktop window */
 							}
 
 							free_icons();

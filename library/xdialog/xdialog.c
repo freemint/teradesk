@@ -34,7 +34,6 @@
 #endif
 
 #include <ctype.h>
-#include <stddef.h>
 #include <string.h>
 #include <library.h>
 
@@ -139,11 +138,11 @@ static WD_FUNC xd_wdfuncs =
 	0L,				/* hndlbutton */
 	__xd_redraw,	/* redraw */
 	__xd_topped,	/* topped */
-	0L,				/* bottomed */
+	xw_nop1,		/* bottomed */
 	__xd_topped,	/* newtop */
 	0L,				/* closed */
 	0L,				/* fulled */
-	0L,				/* arrowed */
+	xw_nop2,		/* arrowed */
 	0L,				/* hslider */
 	0L,				/* vslider */
 	0L,				/* sized */
@@ -1493,6 +1492,7 @@ int xd_movebutton(OBJECT *tree)
 	while(1)
 	{
 		c_obj = &tree[cur];
+
 		if(xd_xobtype(c_obj) == XD_DRAGBOX)
 			return cur;
 
@@ -1593,6 +1593,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 				{
 					if ((cont = xd_form_keybd(info, next_obj, events.xd_keycode, &next_obj, &kr)) != FALSE)
 						cmode = -1;
+
 					if (kr)
 						xd_edit_char(info, kr);
 				}
@@ -1632,8 +1633,10 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		if (cont && (next_obj != 0))
 		{
 			xd_edit_init(info, next_obj, cmode);
+
 			if ((events.ev_mbreturn == 2) && xd_xobtype(&(info->tree[next_obj])) == XD_SCRLEDIT)
 				xd_edit_char(info, INSERT);
+
 			next_obj = 0;
 		}
 	}
@@ -2273,7 +2276,7 @@ xd_min_timer = 5;
 
 			/* This is surely (or hopefully?) some sort of "3D" AES 4 */
 
-			xd_aes4_0 |= TRUE;
+			xd_aes4_0 = TRUE;
 
 			/* Assume some colour settings */
 
@@ -2350,7 +2353,7 @@ xd_min_timer = 5;
 			 * hopefully without bad effects: AES4 is declared by force.
 			 */
 
-			if ( get_tosversion() > 0x400 && _GemParBlk.glob.version >= 0x330 )
+			if ( get_tosversion() >= 0x400 && _GemParBlk.glob.version >= 0x330 )
 			{
 				xd_aes4_0 = TRUE; 
 				aes_hor3d = 2;

@@ -1,6 +1,7 @@
 /*
  * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002  W. Klaren.
  *                                                2002, 2003  H. Robbers,
+ *														2006  Dj.Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,13 +24,24 @@
 #include <stdarg.h>
 #include <multitos.h>
 
-static unsigned char argtab[] =
+
+
+int wind_get_nargs(int field)
 {
-	1, 1, 1, 4, 4, 4, 4, 1,
-	1, 1, 4, 4, 1, 1, 1, 1,
-	4, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1
-};
+	static const unsigned char argtab[] =
+	{
+		1, 1, 1, 4, 4, 4, 4, 1,
+		1, 1, 4, 4, 1, 1, 1, 1,
+		4, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1
+	};
+
+	if(field >= 1 && field <= sizeof(argtab))
+		return (int)argtab[(field - 1) & 0x1F];
+	else
+		return 4;
+}
+
 
 int wind_get(int handle, int field, ... )
 {
@@ -49,7 +61,7 @@ int wind_get(int handle, int field, ... )
 
 	aes();
 
-	parms = argtab[(field - 1) & 0x1F];
+	parms = wind_get_nargs(field);
 
 	for(i = 0; i < parms; i++)
 		*(va_arg(args, int *)) = _GemParBlk.intout[i + 1];

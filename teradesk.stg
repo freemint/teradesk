@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: July 2006
+@$VER: October 2006
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.83
+                User's Manual for Tera Desktop V3.85
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                              July 2006
+                           October 2006
 
 @autorefon
 
@@ -228,7 +228,7 @@ TOS 2.06 + NVDI 4.11 + Wdialog 2
 TOS 2.06 + NVDI 4.11 + AES 4.1
 TOS 2.06 + NVDI 4.11 + MyAES
 TOS 2.06 + Geneva 4 / 6 + NVDI 4.11
-TOS 2.06 + Mint 1.15.0  + NVDI 4.11 + AES 4.1 / N.Aes / XaAES / MyAES
+TOS 2.06 + Mint 1.17.0  + NVDI 4.11 + AES 4.1 / N.Aes / XaAES / MyAES
 
 TOS 2.06 + Mint 1.15.12 + AES 4.1 / N.Aes / XaAES
 
@@ -434,9 +434,14 @@ and may not  be appropriate for your setup  (Tera Desktop will attempt
 to  obey all that is  specified  in the configuration file,  no matter
 what the  actual  environment is,  e.g. the example  TERADESK.INF  has
 desktop icon for drives  A, B and C only,  and, if  that file is used,
-only those disk icons will be shown on the desktop).  Of course, these
-files can be adjusted to any user's particular environment by defining
-additional desktop and window icons, filetypes, applications, etc.
+only those disk icons will be shown on the desktop).  
+
+If you start Tera Desktop without  TERADESK.INF in its directory, the
+program will complain that it can not find its configuration file. In
+order to avoid this message appearing again, activate "Save settings"
+in the Options menu.  Of course, before saving, the configuration can
+first be adjusted  to  any  user's  particular environment  and taste
+by defining additional desktop and window icons, filetypes, etc.
 
 If you would feel more comfortable with  Tera Desktop  translated into
 some other language, you can replace DESKTOP.RSC  (and maybe ICONS.RSC
@@ -451,12 +456,12 @@ available translation(s).
 TERADESK.HYP and TERADESK.REF from the \DOC folder to the folder where
 your other .HYP files are.  When you first start Tera Desktop, install
 your hypertext viewer  (program or accessory)  as the  application for
-the  *.HYP filetype. Hypertext manual for Tera Desktop will thereafter
-be available upon [Shift][Help] keypress.  If you would like to have a
-translated hypertext manual instead, check the links on Tera Desktop's
-home web page  for  currently  available translations, and replace the
-English  TERADESK.HYP  and  TERADESK.REF  with translated ones if they
-exist.
+the  *.HYP filetype and save the configuration.  The  hypertext manual
+for TeraDesk will thereafter be available upon [Shift][Help] keypress. 
+If you would like to have a translated hypertext manual instead, check
+the links on  Tera Desktop's  home web page  for  currently  available
+translations, and replace the English  TERADESK.HYP  and  TERADESK.REF 
+with translated ones if they exist.
 
 After copying the necessary files, Tera Desktop can now  be started in
 the usual way by double clicking on its name.
@@ -1272,7 +1277,7 @@ appear in which additional printing options may be set:
 
 - If files are printed, one of three printing modes can be selected:
 
-  .Text mode:  files printed will be  considered  as text  files,  and
+  .Text mode: files printed  will be  considered  as text  files,  and
    carriage returns/line feeds  will  be  inserted  upon reaching  the
    specified  printer line length;  lines longer than this length will
    be wrapped.  If a file being printed  is recognized  as a  program,
@@ -1786,15 +1791,68 @@ These selections are global, i.e. they apply to ALL Directory windows.
 
 @{U}4.4  Menu title: Window                                       TeraDesk@{u}
 
-   4.4.1  Close
-   4.4.2  Close window
-   4.4.3  Close all
-   4.4.4  Duplicate
-   4.4.5  Cycle windows
+   4.4.1  Iconified
+   4.4.2  Full   
+   4.4.3  Close
+   4.4.4  Close window
+   4.4.5  Close all
+   4.4.6  Duplicate
+   4.4.7  Cycle windows
 
 @endnode
 
 
+
+@node "Iconified"
+@toc "Menu title: Window"
+@image udo_fo.img 1
+   Contents
+@image udo_fo.img 4
+      Menus and Dialogs
+@image udo_fo.img 7
+         Menu title: Window
+
+@{U}4.4.1  Iconified                                              TeraDesk@{u}
+
+This menu item is visible only in AES V4.
+
+When this  menu item is selected,  the current  top window  is  either 
+iconified  or  deiconified  (see TeraDesk Windows),  depending  on its
+previous state.
+
+If an application has  signed-on itself as an  AV-protocol client, its
+windows  may be included in the TeraDesk's  list of windows;  in  such
+case, the 'Iconified' command applies to the client's windows as well.
+
+See also Supported Protocols
+
+@endnode
+
+
+
+@node "Full"
+@toc "Menu title: Window"
+@image udo_fo.img 1
+   Contents
+@image udo_fo.img 4
+      Menus and Dialogs
+@image udo_fo.img 7
+         Menu title: Window
+
+@{U}4.4.2  Full                                                   TeraDesk@{u}
+
+When this  menu item is selected,  the current  top window  is  set to 
+either fulled or normal state (see TeraDesk Windows), depending on its
+previous state.  Result of the action  can be modified by holding down
+the [Shift] key while clicking the menu item.
+
+If an application has  signed-on itself as an  AV-protocol client, its
+windows  may be included in the TeraDesk's  list of windows;  in  such
+case, the 'Full' command applies to the client's windows as well.
+
+See also: Supported Protocols
+
+@endnode
 
 
 @node "Close"
@@ -1806,7 +1864,7 @@ These selections are global, i.e. they apply to ALL Directory windows.
 @image udo_fo.img 7
          Menu title: Window
 
-@{U}4.4.1  Close                                                  TeraDesk@{u}
+@{U}4.4.3  Close                                                  TeraDesk@{u}
 
 If you select this menu item,  the current  (top) window is closed. If
 the window is the directory window  of a folder, it is replaced by the
@@ -1815,7 +1873,7 @@ the  directory window of a disk volume root,  the window is closed. If
 the window is a text (viewer) window, it is closed.
 
 If an application has  signed-on itself as an  AV-protocol client, its
-windows  can be included in the TeraDesk's  list of windows;  in  such
+windows  may be included in the TeraDesk's  list of windows;  in  such
 cases, the 'Close' command applies to the client's windows as well.
 
 See also:  Close window  Supported Protocols
@@ -1833,14 +1891,14 @@ See also:  Close window  Supported Protocols
 @image udo_fo.img 7
          Menu title: Window
 
-@{U}4.4.2  Close window                                           TeraDesk@{u}
+@{U}4.4.4  Close window                                           TeraDesk@{u}
 
 The effect of selecting this menu item is similar to that  of 'Close';
 the difference is that  the window of a folder is  NOT replaced by the
 one of the parent folder.
 
 If an application has  signed-on itself as an  AV-protocol client, its
-windows  can be included in the TeraDesk's  list  of windows;  in such
+windows  may be included in the TeraDesk's  list  of windows;  in such
 cases, the 'Close window' command  applies  to the client's windows as
 well.
 
@@ -1858,10 +1916,11 @@ See also:  Close  Supported Protocols
 @image udo_fo.img 7
          Menu title: Window
          
-@{U}4.4.3  Close all                                           TeraDesk@{u}
+@{U}4.4.5  Close all                                              TeraDesk@{u}
 
 The effect of this action  is to completely close all TeraDesk's  open
-windows, including those of signed-on AV-protocol clients.
+windows,  including those of  signed-on  AV-protocol clients  (if they 
+have been included in TeraDesk's list of windows).
 
 See also:  Close  Close window  Supported Protocols
 
@@ -1877,7 +1936,7 @@ See also:  Close  Close window  Supported Protocols
 @image udo_fo.img 7
          Menu title: Window
 
-@{U}4.4.4  Duplicate                                              TeraDesk@{u}
+@{U}4.4.6  Duplicate                                              TeraDesk@{u}
 
 A new directory or text window is opened  with the same content as the
 top window.
@@ -1895,7 +1954,7 @@ top window.
 @image udo_fo.img 7
          Menu title: Window
 
-@{U}4.4.5 Cycle windows                                           TeraDesk@{u}
+@{U}4.4.7 Cycle windows                                           TeraDesk@{u}
 
 When  this  item  is  selected, the bottom window is moved to the top.
 This is  particularly useful when  one window is covered completely by
@@ -3427,26 +3486,31 @@ following prefixes: http:, https:, ftp: or mailto: (case insensitive).
 
 @{U}7  TeraDesk Windows                                           TeraDesk@{u}
 
-Two kinds of windows may be displayed on the desktop:
+Two kinds of windows may be displayed by TeraDesk:
 
 7.1  Directory windows
 7.2  Text windows
 
 You  can  control  windows  in  the  standard manner using the various
 boxes  and  sliders.  In  Tera Desktop  you  can also control  them by
-pressing various keys; these produce specific effects:
+selecting menu items or by pressing various keys.  These keyboard keys
+produce specific effects:
 
 [Clr Home] Jump to top of window
 
 [Shift] [Clr Home] Jump to bottom of window
 
-[<user defined shortcut>]  Close window
+[<user defined shortcut>] Toggle the Iconified state of the top window
+           
+[<user defined shortcut>] Toggle the Full state of the top window
 
-[<user defined shortcut>]  Close all windows
+[<user defined shortcut>] Close the top window
 
-[<user defined shortcut>]  Cycle windows
+[<user defined shortcut>] Close all windows
 
-[<user defined shortcut>]  Duplicate the top window
+[<user defined shortcut>] Duplicate the top window
+
+[<user defined shortcut>] Cycle windows
 
 [Cursor (arrow)]  These keys scroll the window in the direction of the
 arrow.  If a [Shift] key is pressed at the same time as the arrow key,
@@ -3473,7 +3537,10 @@ to the position and size it had at the moment it was iconified.
 To  iconify a window, click  on the window gadget, usually represented
 by  a triangle,  immediately left to the 'Fuller'  gadget in the upper
 right corner  of the window.  Double-click  on an  iconified window in 
-order to deiconify it.
+order to deiconify it. 
+
+A window  can  also  be  iconified  (or vice versa)  by  selecting the 
+'Iconified' menu item.
 
 The 'Fuller'  gadget  in the upper  right corner of  TeraDesk  windows
 causes the window to  expand in order to show  as much as possible  of
@@ -3481,7 +3548,9 @@ the window content on the screen. Note that if complete content of the
 window can be displayed on the screen the window will be expanded only
 as much as needed- unless any of the [Shift] keys is pressed while the
 'Fuller'  gadget is clicked;  in the  latter case the  window  will be
-expanded to all of desktop.
+expanded  to  all  of desktop  (in fact  window size  may  be slightly 
+smaller than desktop size  because of the rounding dependent on window 
+font size and current setting of icon/text mode).
 
 If the 'Fuller' of a fulled window is  clicked again,  the window will
 return  to its previous size.  However,  any action which changes  the
@@ -3489,6 +3558,9 @@ extents of the displayed material (such as window sizing, font change,
 icon/text mode change, etc.)  will reset  the  'fulled'  state  of the
 window  and the  next click  on the  'Fuller'  will  again  cause  the
 window to be fulled to a size appropriate for the new content.
+
+An effect identical to clicking the 'Fuller' gadget can be obtained by
+selecting the 'Full' menu item.
 
 See also: Keyboard shortcuts  Dragging Objects   Menus and Dialogs
 
@@ -3755,7 +3827,7 @@ which will force Tera Desktop  to bypass the ARGV-composing  mechanism
 in shel_write() and to build a local environment string  with the ARGV
 variable appended  whenever starting a program which understands ARGV,
 regardless   of the length  of the  command line.  This  may  help  if
-problems are encounetered.
+problems are encountered.
 
 @endnode
 
@@ -3781,7 +3853,7 @@ actions by sending messages. Generally,  the server performs an action
 and replies by sending an appropriate acknowledgment message.
 
 TeraDesk currently supports  a  large subset  of  AV-protocol  message
-exchanges (listed below as request/reply):
+exchanges (listed below in client request / server reply pairs):
 
 AV_PROTOKOLL/VA_PROTOSTATUS:Establish client-server  communication and
                             inform each other of capabilities.
@@ -3933,12 +4005,12 @@ For successful operation the following criteria must be fulfilled:
  an application running  as  a desk accessory under  Single-TOS or one
  working in a multitasking environment
 
--The environmental variable FONTSELECT must be set:
+-The environmental variable FONTSELECT must be set as:
 
  FONTSELECT=DESKTOP
 
 In the  current version  of TeraDesk  only one  instance  of the  font
-selector at a time can be opened.
+selector can be opened at any time.
 
 See also  Installation
 
@@ -3953,7 +4025,8 @@ See also  Installation
 
 @{U}9.4  The Drag & Drop Protocol                                 TeraDesk@{u}
 
-This protocol was introduced by Atari for MultiTOS.
+This protocol was introduced by Atari for MultiTOS, and it can be used
+only in a multitasking environment.
 
 The protocol is automatically  operated  if  one or more  objects in a
 window  are  Drag & Dropped  onto  a  window   belonging  to   another
@@ -3975,7 +4048,7 @@ See also:  Dragging Objects  The AV Protocol
 @{U}10  Acknowledgements                                          TeraDesk@{u}
 
 The  authors  would like  to  thank  the  following  people  for their
-contribution to various stages of the development of the Tera Desktop:
+contribution to various stages in development of the Tera Desktop:
 
    Ric Klaren,
    Ger Hobbelt and
@@ -4010,6 +4083,8 @@ contribution to various stages of the development of the Tera Desktop:
                            pre-release binaries.
 
    Emmanuel Baranger       For translating Tera Desktop to French.
+   
+   Christos Tziotzis       For translating Tera Desktop to Greek.
 
    Dennis W. van der Burg
    Milan Jurik

@@ -1,7 +1,7 @@
 /*
  * Utility functions for Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren,
  *                                                     2002, 2003 H. Robbers,
- *                                                     2003, 2004 Dj. Vukovic
+ *                                               2003, 2004, 2006 Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -22,8 +22,9 @@
 
 
 /*
- * Note: to save space, do not use these fonctions to substirute 
+ * Note: to save space, do not use these functions to substitute 
  * costructs like "if ( x > y ) x = y;" with "x = min(x,y);", etc.
+ * they are only useful if three variables are present, e.g. z = min(x, y)
  */
 
 
@@ -48,19 +49,27 @@ int max(int x, int y)
 
 
 /*
- * Return an integer within limits
+ * Return an integer within limits.
+ * It is somewhat problematic what to do when 
+ * high limit is lower than low limit
  */
 
 int minmax(int lo, int i, int hi)
 {
+/*
 	if ( i < lo )
 		return lo;
 	else
+		return(i < hi) ? i : hi;
+*/
+	if( i < lo )
+		return lo;
+	else
 	{
-		if ( i < hi )
-			return i;
-		else
-			return hi;
+		if(hi < lo)
+			hi = lo;
+
+		return(i < hi) ? i : hi;
 	}
 }
 
@@ -86,18 +95,26 @@ long lmax(long x, long y)
 
 
 /*
- * Return an long integer within limits
+ * Return a long integer within limits
+ * It is somewhat problematic what to do when 
+ * high limit is lower than low limit
  */
 
 long lminmax(long lo, long i, long hi)
 {
+/*
 	if ( i < lo )
 		return lo;
 	else
+		return (i < hi) ? i : hi;
+*/
+	if( i < lo )
+		return lo;
+	else
 	{
-		if ( i < hi )
-			return i;
-		else
-			return hi;
+		if(hi < lo)
+			hi = lo;
+
+		return(i < hi) ? i : hi;
 	}
 }

@@ -22,9 +22,7 @@
 
 
 #include <np_aes.h>
-#include <stddef.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
@@ -152,7 +150,7 @@ int calc_slmill
 	long lines	/* number of items */
 )
 {
-	return (int)((1000L * pos) / lines);
+	return (lines) ? (int)((1000L * pos) / lines) : 0;
 }
 
 

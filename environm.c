@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
-#include <boolean.h>
 #include <vdi.h>
 #include <library.h>
 #include <xdialog.h>

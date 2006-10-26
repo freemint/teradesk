@@ -62,7 +62,9 @@ typedef struct
 
 static ICONTYPE 
 	iwork, 			/* work area for editing icon data */
-	*iconlists[3];	/* pointers to lists of files, folders and programs */
+	*iconlists[3],	/* pointers to lists of files, folders and programs */
+	*pthis,			/* pointer to current member of files, folders or programs icon group */ 
+	**ppthis;		/* pointer to address of current member of icon group */
 
 static ITMTYPE
 	defictype;
@@ -202,7 +204,7 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
 
 	if ((icon = find_icon(name, iconlists[i])) < 0)
 	{
-		/* Specific icon not found, but this is a link */
+		/* Specific icon not found, but this is a link, so try again */
 
 		if(more)
 		{
@@ -224,13 +226,15 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
  * Handle the dialog for assigning an icon to a file;
  * assignment of icon to a device (desktop icon) uses the same dialog 
  * in resource but a different handling routine.
- * list = list into which the item is placed;
- * pos = position (ordinal) in the list where to place the item
- * it = item to be placed in the list
- * use = purpose of use of dialog (add/edit)
  */
 
-static boolean icntype_dialog( ICONTYPE **list, int pos, ICONTYPE *it, int use)
+static boolean icntype_dialog
+(
+	ICONTYPE **list,	/* list into which the item is placed */
+	int pos,			/* position (ordinal) in the list where to place the item */
+	ICONTYPE *it,		/* item to be placed in the list */
+	int use				/* purpose of use of dialog (add/edit) */
+)
 {
 	int 
 		button, 
@@ -473,8 +477,10 @@ void icnt_fix_ictypes(void)
 	while(it)
 	{
 		next = it->next;
+
 		if(prg_isprogram(it->type))
 			icnt_move( PROG_LIST, FILE_LIST, it);
+
 		it = next;
 	}
 
@@ -483,16 +489,13 @@ void icnt_fix_ictypes(void)
 	while(it)
 	{
 		next = it->next;
+
 		if(!prg_isprogram(it->type))
 			icnt_move(FILE_LIST, PROG_LIST, it);
+
 		it = next;
 	}
 }
-
-
-static ICONTYPE 
-	*pthis,		/* pointer to current member of files, folders or programs icon group */ 
-	**ppthis;	/* pointer to address of current member of icon group */
 
 
 /*

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c)         1993, 1994, 2002  W. Klaren,
+ *                                       2002, 2003  H. Robbers,
+ *                           2003, 2004, 2005, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -74,6 +74,8 @@ typedef struct
 
 #define MAX_KEYLEN 20
 #define CFGSKIP 0x0002
+
+extern int chklevel;
 
 
 typedef void CfgNest(XFILE *file, int lvl, int io, int *error);

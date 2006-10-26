@@ -22,8 +22,7 @@
 
 #ifndef DRAGDROP_H
 
-int ddcreate(
-	int dpid, int spid, int winid, int msx, int msy, int kstate, char exts[] );
+int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char exts[] );
 int ddstry(int fd, char *ext, char *name, long size);
 void ddclose(int fd);
 int ddopen(int ddnam, char *preferext);

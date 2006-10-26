@@ -30,7 +30,6 @@
 #include <library.h>
 #include <xdialog.h>
 #include <xerror.h>
-#include <boolean.h>
 
 #include "resource.h"
 #include "desk.h"

@@ -8,6 +8,8 @@
 	2002: adapted to modern AES like XaAES.
 */
 
+#include <prelude.h>
+
 #ifndef __2B_UNIVERSAL_TYPES__
 /* For the AES: this is enough for complete portability */
 typedef char			G_b;
@@ -62,10 +64,6 @@ typedef int				G_w;	/* int types in user interface */
 		#define __Cdecl
 	#endif
 #endif
-
-/* Pure C doesnt accept short for bit fields */
-typedef int bits;				/* use these for bitfields */
-typedef unsigned int ubits;
 
 typedef union
 {

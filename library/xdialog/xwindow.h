@@ -142,6 +142,8 @@ extern void xw_getnext(WINDOW *w, RECT *size);
 extern void xw_calc(int w_ctype, int w_flags, RECT *input,
 					RECT *output, OBJECT *menu);
 
+extern void xw_nop1(WINDOW *w);
+extern void xw_nop2(WINDOW *w, int i);
 extern WINDOW *xw_find(int x, int y);
 extern WINDOW *xw_hfind(int handle);
 extern WINDOW *xw_top(void);
@@ -155,24 +157,20 @@ WINDOW *xw_last(void);
 #if __USE_MACROS
 #define xw_type(w)		((w)->xw_type)
 #define xw_handle(w)	((w)->xw_handle)
+#define xw_next(w) 		((w)->xw_next)
+#define xw_prev(w) 		((w)->xw_prev)
 #else
 extern int xw_type(WINDOW *w);
 extern int xw_handle(WINDOW *w);
+extern WINDOW *xw_next(WINDOW *w);
+extern WINDOW *xw_prev(WINDOW *w);
 #endif
 
 extern int xw_dosend;
 
-/* 
- * The two macros below are not used; provided just in case, as a 
- * substitute for xw_next() and xw_prev() routines which can not be 
- * used the way they were
- */
-
-#define xw_next(w) ((w)->xw_next)
-#define xw_prev(w) ((w)->xw_prev)
-
 extern void xw_cycle(void);
 extern void xw_send(WINDOW *w, int messid);
+extern void xw_send_rect(WINDOW *w, int messid, int pid, RECT *area);
 extern void xw_send_redraw(WINDOW *w, int messid, RECT *area);
 extern void xw_menu_icheck(WINDOW *w, int item, int check);
 extern void xw_menu_ienable(WINDOW *w, int item, int enable);

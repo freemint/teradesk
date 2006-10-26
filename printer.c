@@ -203,6 +203,7 @@ static int print_file
 	boolean 
 		stop = FALSE;
 
+
 	if ((name = itm_fullname(w, item)) == NULL)
 		return XFATAL;
 
@@ -251,8 +252,10 @@ static int print_file
 						for ( i = 0; i < ( ((int)l - 1) / 16 + 1); i++ )
 						{
 							disp_hex(tmp, &buffer[ll], a, size, TRUE);
+
 							if ( (stop = print_line((const char *)(&tmp)) ) == TRUE )
 								break;
+
 							ll += 16;
 							a += 16;
 						}
@@ -266,11 +269,13 @@ static int print_file
 							if ( printmode == PM_TXT ) /* line wrap in text mode */
 							{
 								ll++;
+
 								if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
 									ll = 0; /* reset linelength counter at CR, LF or FF */
 								else if ( ll >= options.plinelen )
 								{
 									ll = 0;
+
 									if (( stop = print_eol() ) == TRUE)
 										break;
 								}
@@ -338,6 +343,7 @@ boolean check_print
 {
 	int mes, i;
 	ITMTYPE type;
+
 
 	for (i = 0; i < n; i++)
 	{

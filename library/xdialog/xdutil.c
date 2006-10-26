@@ -323,7 +323,7 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 }
 
 
-/* There are cutrrently no tristate objects in teradesk
+/* There are cutrrently no tristate objects in TeraDesk
 
 /* 
  * Tristate-button functions...

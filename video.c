@@ -29,7 +29,6 @@
 #include <error.h>
 #include <library.h>
 #include <xdialog.h>
-#include <boolean.h>
 
 #include "xfilesys.h"
 #include "resource.h"
@@ -48,8 +47,11 @@
 extern GRECT xd_desk;
 extern int xd_nplanes;
 extern int tos_version;
-extern WINDOW *xd_deskwin; 
+extern WINDOW *xw_deskwin; 
 extern int aes_version;
+
+void clean_up(void);
+void wd_forcesize(WINDOW *w, RECT *size, boolean cond);
 
 
 int 
@@ -337,8 +339,8 @@ void get_set_video (int set)
 				screen_info.dsk.h = max_h - menu_h;
 				xd_desk.g_w = max_w;
 				xd_desk.g_h = max_h - menu_h;
-				xd_deskwin->xw_size.w = max_w;
-				xd_deskwin->xw_size.h = max_h;
+				xw_deskwin->xw_size.w = max_w;
+				xw_deskwin->xw_size.h = max_h;
 
 				/* Note: return from supervisor before Setscreen()... */
 
@@ -360,22 +362,27 @@ void get_set_video (int set)
 			/* Calculate window sizes to fit the screen */
 
 			wd_sizes();
-
-			/* Change window sizes to fit the screen */
-
 			w = xw_first();
 
 			while (w)
 			{
 				if (wd_adapt(w))
+				{
+					wd_forcesize(w, &(w->xw_size), TRUE);
 					set_sliders((TYP_WINDOW *)w);
+					wd_type_draw((TYP_WINDOW *)w, FALSE); /* TeraDesk draws */
+				}
+
 				w = w->xw_next;
 			}
 
 			menu_bar(menu, 0);
 			regen_desktop(desktop);
 			menu_bar(menu, 1);
-			wd_drawall();
+/*
+			wd_drawall(); /* does wd_type_draw(w, TRUE) i.e. send to AES */
+*/
+			clean_up();      
 			arrow_mouse();
 		}
 		else /* Set > 1 */
@@ -730,8 +737,9 @@ int voptions(void)
 				  	/* Set save palette flag */
 
 					get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
+/*
 					get_set_video(1); /* execute settings which do not require a reset */
-
+*/
 					/* Will resolution be changed? Display an alert */
 
 					if ( (newrez != currez && newrez != -1) || (newmode != falmode) )
@@ -765,6 +773,11 @@ int voptions(void)
 		while(!qquit);
 
 		xd_close(&info);
+
+		if(button == VIDOK)
+		{
+			get_set_video(1);
+		}
 	}
 
  	return rcode;

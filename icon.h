@@ -44,6 +44,7 @@ void dsk_insticon(WINDOW *w, int n, int *list);
 void dsk_chngicon(int n, int *list, boolean dialog);
 
 void dsk_draw(void);
+void redraw_desk(RECT *r);
 
 void dsk_options(void);
 

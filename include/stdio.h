@@ -12,9 +12,8 @@
 
 #include <prelude.h>
 #include <stdarg.h>
+#include <stddef.h>
 
-
-typedef unsigned long   size_t;
 typedef unsigned long   fpos_t;
 
 typedef struct

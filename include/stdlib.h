@@ -15,9 +15,7 @@
 #define EXIT_SUCCESS    0
 #define RAND_MAX        32767
 
-
-typedef unsigned long   size_t;
-
+#include <stddef.h>
 
 typedef struct
 {

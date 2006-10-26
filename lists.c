@@ -964,29 +964,20 @@ int list_edit
 					}
 
 					pos = pos0;
-
 				}
 
 				break;
 
 			case ITFILES:
-
-				luse = use | LS_FIIC;
-				newlist = &clist[0];
-				goto anylist;
-
 			case ITFOLDER:
-
-				luse = use | LS_FOIC;
-				newlist = &clist[1];
-				goto anylist;
-
 			case ITPROGRA:
+				/*
+				 * The following two linew will work only if object indices
+				 * for ITFILES to ITPROGRA are in sequence.
+				 */
+				luse = luse | (LS_FIIC << (button - ITFILES)); /* assuming buttons in a sequence */
+				newlist = &clist[button - ITFILES];
 
-				luse = use | LS_PRIC;
-				newlist = &clist[2];
-
-				anylist:;
 				keep = TRUE;
 
 				if ( newlist != list )

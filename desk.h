@@ -65,7 +65,7 @@
 /* Diverse options which are bitflags */
 
 
-/* Copy and print options */
+/* Copy and print options; these go into options.cprefs */
 
 #define CF_COPY			0x0001	/* confirm copy              */
 #define CF_DEL			0x0002	/* confirm delete            */
@@ -107,19 +107,19 @@
 #define WD_SHATT 0x0008 /* show attributes */
 #define WD_SHOWN 0x0010 /* show owner      */
 
-/* Option bitflags for some settable video modes and related information */
+/* Option bitflags for some settable video modes and related information in options.vprefs */
 
 #define VO_BLITTER	0x0001 	/* video option blitter ON  */
 #define VO_OVSCAN  	0x0002 	/* video option overscan ON */
 							/* unused: 0x0004 0x0008 0x0010 0x0020 0x0040 0x0080 */
 #define SAVE_COLORS	0x0100	/* save palette */
 
-/* Saving options */
+/* Saving options; these go into options.sexit */
 
 #define SAVE_CFG	0x0001	/* Save configuration at exit */
 #define SAVE_WIN	0x0002	/* Save open windows at exit */
 
-/* Option bitflags for other diverse settings */
+/* Option bitflags for other diverse settings; these go into options.xprefs */
 
 #define S_IGNCASE	0x0001	/* Ignore string case when searching */
 #define S_SKIPSUB	0x0002	/* Skip subdirectories when searching */

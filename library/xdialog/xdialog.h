@@ -28,6 +28,7 @@
 #endif
 
 #include <np_aes.h>
+#include <stddef.h>
 
 #ifndef __XWINDOW_H__
  #include "xwindow.h"

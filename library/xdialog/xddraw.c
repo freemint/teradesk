@@ -29,9 +29,8 @@
  #include <vdibind.h>
 #endif
 
-#include <stddef.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <library.h>
 
 #include "xdialog.h"
@@ -191,17 +190,21 @@ static void prt_text(char *s, int x, int y, int state)
 
 void draw_xdrect(int x, int y, int w, int h)
 {
-	int pxy[10];
-	int *pxyp = pxy;
+	int 
+		p,
+		pxy[10],
+		*pxyp = pxy;
 
 	*pxyp++ = x;			/* [0] */
 	*pxyp++ = y;			/* [1] */
-	*pxyp++ = x + w - 1;	/* [2] */
+	p = x + w - 1;
+	*pxyp++ = p;			/* [2] */
 	*pxyp++ = y;			/* [3] */
-	*pxyp++ = pxy[2];		/* [4] */
-	*pxyp++ = y + h - 1;	/* [5] */
+	*pxyp++ = p;			/* [4] */
+	p = y + h - 1;
+	*pxyp++ = p;			/* [5] */
 	*pxyp++ = x;			/* [6] */
-	*pxyp++ = pxy[5];		/* [7] */
+	*pxyp++ = p;			/* [7] */
 	*pxyp++ = x;			/* [8] */
 	*pxyp = y;				/* [9] */
 
@@ -276,7 +279,6 @@ static void set_textdef(void)
 /* 
  * Set 'transparent'  and 'replace' drawing modes
  */
-
 
 void xd_vswr_trans_mode(void)
 {
@@ -355,10 +357,16 @@ static void xd_3dbrd( int ob_state, int *xl, int *xr, int *yu, int *yd)
 
 	if (ob_state & OUTLINED)
 	{
-		*xl = max(*xl, brd_l);
-		*xr = max(*xr, brd_r);
-		*yu = max(*yu, brd_u);
-		*yd = max(*yd, brd_d);
+		/* don't use max() here, thhis is shorter */
+
+		if(brd_l > *xl)
+			*xl = brd_l;
+		if(brd_l > *xr)
+			*xr = brd_r;
+		if(brd_u > *yu)
+			*yu = brd_u;
+		if(brd_d > *yd)
+			*yd = brd_d;
 	}
 }
 
@@ -402,7 +410,8 @@ static void xd_drawbox
 		vxd,		/* vertical enlargement    */
 		border,		/* border thickness        */
 		color,		/* current colour          */
-		color2,		/* other (inverse) colour  */		
+		color2,		/* other (inverse) colour  */
+		p,			/* aux.                    */		
 		pxy[10]; 	/* point array for drawing */
 
 
@@ -490,14 +499,16 @@ static void xd_drawbox
 	{
 		int *pxyp = pxy;
 
-		*pxyp++ = outsize.x + outsize.w - 2;	/* [0] upper right corner */
+		p = outsize.x + outsize.w - 2;
+		*pxyp++ = p;							/* [0] upper right corner */
 		*pxyp++ = outsize.y + 1;				/* [1] */
 	
-		*pxyp++ = pxy[0];						/* [2] */
-		*pxyp++ = outsize.y + outsize.h - 2;	/* [3] lower right corner */
+		*pxyp++ = p;							/* [2] */
+		p = outsize.y + outsize.h - 2;
+		*pxyp++ = p;							/* [3] lower right corner */
 
 		*pxyp++ = outsize.x + 1;				/* [4] lower left corner  */
-		*pxyp++ = pxy[3];						/* [5] */
+		*pxyp++ = p;							/* [5] */
 
 		*pxyp++ = pxy[4];						/* [6] upper left corner  */
 		*pxyp++ = pxy[1];						/* [7] */
@@ -525,7 +536,7 @@ static void xd_drawbox
 
 
 /*
- * Code for drawing progdefined "dragbox" ear for dialogs
+ * Code for drawing progdefined "dragbox" ear on dialogs
  */
 
 static int cdecl ub_drag(PARMBLK *pb)
@@ -904,7 +915,6 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	{
 		smfdb.fd_h = 16;
 		pxy[3] = 15;
-
 		bmu = rbu_16x16x3;
 		bml = rbl_16x16x3;
 		bmc = rbc_16x16;
@@ -942,9 +952,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	smfdb.fd_nplanes = 1;
 	smfdb.fd_w = 16;
 	smfdb.fd_wdwidth = 1;
-
 	dmfdb.fd_addr = NULL;
-
 	pxy[4] = x;
 	pxy[5] = y;
 	pxy[6] = x + pxy[2];
@@ -953,6 +961,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	/* If selected, first draw the second chosen bitmap (swap places) */
 
 	ci[4] = 1; 
+
 	if( pb->pb_currstate & SELECTED )
 	{
 		t = rb[0];
@@ -964,6 +973,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 		if ( xd_colaes && do3d )
 			ci[4] = 0;
 	}
+
 	ci[1] = xd_bg_col;
 	ci[2] = xd_sel_col; 
 
@@ -1115,7 +1125,6 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	/* Calculate some positions... */
 
 	y += (h - xd_regular_font.fnt_chh - 1) / 2;
-
 	xl = x - xd_regular_font.fnt_chw - 3;
 	xr = x + w + 3;
 
@@ -1158,8 +1167,8 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	set_textdef();
 
 	/* 
-	 * Put or remove marks that part of the text is not visible in the field 
-	 * ( characters < and/or > )
+	 * Put or remove marks that part of the text is not visible 
+	 * in the field ( characters < and/or > )
 	 */
 
 	if ( blk->ob_shift > 0 )
@@ -1392,9 +1401,8 @@ static int cdecl ub_title(PARMBLK *pb)
 	{
 		dx = 0;		
 		pxy[0] = pb->pb_x;
-		pxy[1] = pb->pb_y + pb->pb_h;
+		pxy[3] = pxy[1] = pb->pb_y + pb->pb_h;
 		pxy[2] = pxy[0] + pb->pb_w - 1;
-		pxy[3] = pxy[1];
 
 		xd_vswr_repl_mode();
 		set_linedef(BLACK);
@@ -1617,6 +1625,7 @@ void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
 	{
 		if (flags & XD_RDIALOG)
 			objc_draw(tree, start, depth, area->x, area->y, area->w, area->h);
+
 		if (draw_cur)
 			xd_credraw(info, &cursor);
 	}
@@ -1718,8 +1727,18 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 	twostates = (newstate&0xff) | (tree[object].ob_state & (0xff00 | WHITEBAK));	/* preserve extended states */
 
 	if (info->dialmode != XD_WINDOW)
-		objc_change(tree, object, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h,
-					twostates, (int) draw);
+		objc_change
+		(
+			tree, 
+			object, 
+			0,
+			info->drect.x,
+			info->drect.y,
+			info->drect.w,
+			info->drect.h,
+			twostates, 
+			(int)draw
+		);
 	else
 	{
 		tree[object].ob_state = twostates;
@@ -1793,9 +1812,11 @@ static int must_userdef(OBJECT *ob)
 	{
 		if (!(aes_flags & GAI_WHITEBAK))
 			return TRUE;
+
 		if (ob->ob_state & WHITEBAK)
 			return FALSE;
 	}
+
 	return TRUE;
 }
 
@@ -1849,7 +1870,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 		{
 			switch(etype)
 			{
-			case XD_DRAGBOX:	/* dragbox "ear" on thedialog */
+			case XD_DRAGBOX:	/* dragbox "ear" on a dialog */
 			case XD_SCRLEDIT:	/* scrolled text field */
 			case XD_FONTTEXT:
 				(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
@@ -1917,9 +1938,15 @@ void xd_set_userobjects(OBJECT *tree)
 
 	/* Allocate memory for objects; return from this routine if failed */
 
-	if ((data = xd_malloc(sizeof(XDOBJDATA) + sizeof(USERBLK) * (long) n +
-						  sizeof(XUSERBLK) * (long) nx)) == NULL)
-		                          return;
+	if 
+	(
+		(
+			data = xd_malloc(sizeof(XDOBJDATA) + 
+			sizeof(USERBLK) * (long)n +
+			sizeof(XUSERBLK) * (long)nx)
+		) == NULL
+	)
+		return;
 
 	data->next = xd_objdata;
 	xd_objdata = data;
@@ -1929,10 +1956,10 @@ void xd_set_userobjects(OBJECT *tree)
 
 	for (;;)
 	{
-		c_code = 0L;							/* no pointer to user code */
-		c_obj = tree + object;					/* object index */
-		xuserblk = FALSE;						/* no extended block */
-		etype = xd_xobtype(c_obj);				/* extended type */
+		c_code = 0L;					/* no pointer to user code */
+		c_obj = tree + object;			/* object index */
+		xuserblk = FALSE;				/* no extended block */
+		etype = xd_xobtype(c_obj);		/* extended type */
 
 		if (xd_is_xtndelement(etype) && ((c_obj->ob_type & 0xFF) != G_USERDEF))
 		{
@@ -1957,11 +1984,13 @@ void xd_set_userobjects(OBJECT *tree)
 				/* Round radio button */
 				if (must_userdef(c_obj))
 					c_code = ub_roundrb;
+
 				break;
 			case XD_RECTBUT :
 				/* Rectangular "checkbox" button */
 				if (must_userdef(c_obj))
 					c_code = ub_rectbut;
+
 				break;
 
 /* Currently not used anywhere in Teradesk
@@ -1995,6 +2024,7 @@ void xd_set_userobjects(OBJECT *tree)
 
 				if (must_userdef(c_obj))
 					c_code = ub_button;
+
 				break;
 			case XD_RBUTPAR :
 				/* 
@@ -2012,8 +2042,10 @@ void xd_set_userobjects(OBJECT *tree)
 				c_obj->ob_y -= d;
 				c_obj->ob_height += d;
 				xd_translate(tree, object, d);
+
 				if (must_userdef(c_obj)) 
 					c_code = ub_rbutpar;
+
 				break;
 			case XD_TITLE :
 				/* 
@@ -2092,7 +2124,7 @@ int xd_gaddr(int index, void *addr)
 	int result;
 
 	if ((result = rsrc_gaddr(R_TREE, index, addr)) != 0) 
-		xd_set_userobjects(*(OBJECT **) addr);
+		xd_set_userobjects(*(OBJECT **)addr);
 
 	return result;
 }
@@ -2119,8 +2151,10 @@ void xd_fixtree(OBJECT *tree)
 	for (;;)
 	{
 		rsrc_obfix(tree, i);
+
 		if (tree[i].ob_flags & LASTOB)
 			break;
+
 		i++;
 	}
 }

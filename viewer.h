@@ -54,6 +54,11 @@ typedef struct
 
 } TXT_WINDOW;
 
+
+extern FONT txt_font;
+extern WINFO textwindows[MAXWINDOWS];	/* some information about open windows */
+extern RECT tmax;
+
 CfgNest text_one;
 
 boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);

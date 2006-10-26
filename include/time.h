@@ -12,7 +12,8 @@
 
 #define     CLK_TCK 200
 
-typedef     unsigned long size_t;
+#include <stddef.h>
+
 typedef     long time_t;
 typedef     long clock_t;
 

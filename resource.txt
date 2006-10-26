@@ -16,7 +16,8 @@ General remarks
 
 - Usually, changes in the resource file between subsequent versions are
   small and an existing translated previous version of the resource file
-  can be carefully updated. There is no need to start each time from scratch. See next section.
+  can be carefully updated. There is no need to start each time from scratch. 
+  See next section: changes ... relative to previous version.
 
 - If translated texts do not fit into available spaces in the dialogs, alerts
   or the menu, the translator should use his imagination to find the best 
@@ -24,22 +25,13 @@ General remarks
   words or phrases that are not literal translations can be used, etc.
  
 
-Changes in V3.83 relative to previous version
+Changes in V3.85 relative to previous version
 ---------------------------------------------
 
-- Texts in trees MESHOWIF, AAPPNFND and APRGNFND slightly changed for the 
-  purpose of better formatting.
+- Strings MICONIF and MFULL added to Window menu.
 
-- Trees MNOROOT and RESERVE2 deleted.
-
-- Trees SNFILES, SFILES and SMULTI renamed to TNFILES, TFILES and TMULTI,
-  respectively (in fact this does not affect the resource file itself, but
-  only DESKTOP.RSD and DESKTOP.H).
-
-- String-type object trees TFIALL and TFIMORE added (in that order).
-
-- Text on button FLALL in fileinfo dialog changed to a single "t". See
-  note about strings TFIALL and TFIMORE further below.
+- Added a hidden button in the INFOBOX dialog. Text on this button must
+  be one (preferrably shorter) of the texts specified in the CANCTXT string.
 
 
 Naming of object trees
@@ -47,13 +39,13 @@ Naming of object trees
 
 Names of dialog-type object trees do not follow any particular rule, except
 that they are associative to the purpose of the dialog. However, with some
-unfortunate exceptions, other object trees are mostly named as follows:
+unfortunate exceptions, most other object trees are named as follows:
 
-DT* - dialog titles texts (for dialogs where titles are not constant)
+DT* - dialog titles texts (for dialogs in which the titles are not constant)
+FS* - file selector titles
 M*  - various texts, mostly messages in error alerts
 T*  - some of these are also for alerts, other are strings that
       appear in dialogs.
-FS* - file selector titles
 P*  - program flags descriptions
 A*  - alerts
 
@@ -73,14 +65,15 @@ About the menu
 About dialog-type object trees
 ------------------------------
 
-- Dialog sizes can be changed if necessary, but should not exceed 312 pixels
-  horizontally by 320 pixels vertically. This is the largest dialog size 
-  that fits in the lowest possible screen resolution (320x200) that TeraDesk
-  can handle.
+- Dialog sizes can be changed if necessary in order to fit translated texts, 
+  but should not exceed 312 pixels horizontally by 320 pixels vertically.
+  This is the largest dialog size that fits in the lowest possible screen 
+  resolution (320x200) that TeraDesk can handle.
 
 - Sizes (widths) of dialog titles should not be changed unless dialog widths
   are changed, even if texts of translated titles have lengths different
-  from English titles. 
+  from English titles.  This is needed in order to correctly display the
+  title underline or box across the full width of the dialog.
 
 - Some texts in the INFOBOX dialog (e.g. program version and date of 
   compilation) are set in the code of the program.
@@ -118,6 +111,10 @@ About button-type objects
 Some specific free-string object trees
 --------------------------------------
 
+- Strings MISINGUL and MIPLURAL contain parts of the texts that appear in
+  info lines of directory windows when one or more objects are visible or
+  selected.
+ 
 - Strings FLINAME to FOINAME contain names of essential icons that should
   always exist in the icons recource files used by TeraDesk. These strings
   should not be translated unless one wants also to translate icon names 
@@ -147,7 +144,8 @@ Some specific free-string object trees
   configuration file. It must begin with a ";"
 
 - String TNFILES should be exactly as long as the non-editable beginning
-  of the template in the FTEXT-type object FLFILES in the FILEINFO dialog.
+  of the template string of the FTEXT-type object FLFILES in the FILEINFO 
+  dialog.
 
 - Strings TFIALL and TFIMORE are button texts that alternatively appear
   on the leftmost button in the Info... dialog. They must fit into button
@@ -155,6 +153,6 @@ Some specific free-string object trees
   first characters) must be usable as hotkeys (shortcuts).
 
 - Some strings are divided into lines by "|" characters. They appear in
-  alerts. Number of divisions in any string should not be increased, and 
+  alerts. Number of divisions in any string should not be changed, and 
   the length of any line should not exceed 31 characters.
  

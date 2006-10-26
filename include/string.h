@@ -10,9 +10,7 @@
 #if !defined( __STRING )
 #define __STRING
 
-
-typedef unsigned long    size_t;
-
+#include <stddef.h>
 
 char    *strcat( char *s1, const char *s2 );
 char    *strncat( char *s1, const char *s2, size_t n );

@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
 #include <library.h>
@@ -48,25 +47,34 @@
 #include "va.h"
 
 
+static void va_redraw(WINDOW *w, RECT *r);
+static void va_iconify(WINDOW *w, RECT *r);
+static void va_uniconify(WINDOW *w, RECT *r);
+static void va_fulled(WINDOW *w, int dummy);
+static void copy_avstat( AVSTAT *t, AVSTAT *s);
+static void rem_avstat(AVSTAT **list, AVSTAT *t);
+void load_settings(char *newinfname);
+char *app_find_name(char *path, boolean full);
+
 static WD_FUNC aw_functions =
 {
-	0L,						/* key */	
-	0L,						/* button */
-	wd_type_redraw,			/* redraw */
+	0L,						/* handle key */	
+	0L,						/* handle button */
+	va_redraw,				/* redraw; was wd_type_redraw */
 	wd_type_topped,			/* topped */
 	wd_type_bottomed,		/* bottomed */
 	wd_type_topped,			/* newtop */
 	wd_type_close,			/* closed */
-	0L,						/* fulled */
-	0L,						/* arrowed */
+	va_fulled,				/* fulled */
+	xw_nop2,				/* arrowed */
 	0L,						/* hslider */
 	0L,						/* vslider */
 	0L,						/* sized */
 	0L,						/* moved */
 	0L, 					/* hndlmenu */
 	0L,						/* top */
-	0L,						/* iconify */
-	0L						/* uniconify */
+	va_iconify,				/* iconify */
+	va_uniconify			/* uniconify */
 };
 
 boolean 
@@ -118,10 +126,50 @@ static const int answertypes[]=
 
 #endif
 
-static void copy_avstat( AVSTAT *t, AVSTAT *s);
-static void rem_avstat(AVSTAT **list, AVSTAT *t);
-void load_settings(char *newinfname);
-char *app_find_name(char *path, boolean full);
+
+
+/*
+ * Redraw AV-client's wndow
+ */
+
+static void va_redraw(WINDOW *w, RECT *r)
+{
+	xw_send_redraw(w, WM_REDRAW, r);
+}
+
+
+/*
+ * Full the client's window
+ */
+
+static void va_fulled(WINDOW *w, int dummy)
+{
+	xw_send(w, WM_FULLED);
+}
+
+
+/*
+ * Iconify the client's window
+ */
+
+static void va_iconify(WINDOW *w, RECT *r)
+{
+	xw_send_rect(w, WM_ICONIFY, w->xw_ap_id, r);
+	w->xw_xflags |= XWF_ICN;
+}
+
+
+/*
+ * Uniconify the client's window
+ */
+
+static void va_uniconify(WINDOW *w, RECT *r)
+{
+	wd_type_topped(w);
+	xw_send_rect(w, WM_UNICONIFY, w->xw_ap_id, r);
+	w->xw_xflags &= ~XWF_ICN;
+}
+
 
 /*
  * Clear the 'answer' buffer and set word [1] to TeraDesk's ap_id
@@ -136,7 +184,7 @@ static void va_clranswer(int *va_answer)
 
 /*
  * Initialize structures for using the AV-protocol.
- * Should be used before initialization of windows.
+ * Should be called before initialization of windows.
  */
 
 void va_init(void)
@@ -956,7 +1004,6 @@ void handle_av_protocol(const int *message)
 		answer[0] = VA_PROGSTART;
 		answer[7] = message[7];
 		goto openit;
-
 	case AV_VIEW:
 
 		/* 
@@ -974,7 +1021,6 @@ void handle_av_protocol(const int *message)
 		openit:;
 
 		onfile = TRUE;
-
 		path = strdup(pp3); 
 
 		if ( path )
@@ -1408,6 +1454,7 @@ void va_close(WINDOW *w)
 }
 
 #endif
+
 
 /*
  * Structures for saving and loading AV-protocol client status.

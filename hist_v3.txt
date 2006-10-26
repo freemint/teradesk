@@ -2,6 +2,80 @@ Tera Desktop. Copyright  1991, 1992, 1993, 1994, 1995  W. Klaren.
                                            2002, 2003  H. Robbers.
                          2002, 2003, 2004, 2005, 2006  Dj. Vukovic.
 
+Version 3.85
+------------
+- Added 'Iconified' and 'Full' functions to 'Window' menu, so that more
+  control can be exercised through the menu and, using shortcuts, through 
+  the keyboard- which was the main reason for this change. These controls 
+  apply to windows of AV-protocol clients as well, same as most other
+  functions in the 'Window' menu. 'Iconified' function is available only in
+  AES V4. Unfortunately, this menu function does not work with some older 
+  V4 AESes, e.g. Atari AES4.1 and N.AES 1.1, but is OK with Magic 6, XaAES, 
+  MyAES, Geneva 6...
+
+- 'TeraDesk Info' dialog can now be closed by clicking on the closer gadget 
+  when in windowed dialogs mode (it was the only dialog that could not be 
+  closed this way). 
+
+- Changes were made in the resource file as part of the above changes. 
+  Details are in RESOURCE.TXT.
+
+- Fixed a bug that caused template strings from the resource file to appear 
+  in the Info... dialog if information was asked about a nonresponding disk
+  (e.g. a floppy not inserted).
+
+- Fixed some old bug(s) that caused divisions by zero when opening directory
+  windows without any visible items, and could crash TeraDesk (at least
+  they did so in MagicPC).
+
+- Fixed some irregularities in 'Window' menu operations that showed when 
+  there were AV-client windows open but the desktop was topped.
+
+- Fixed several problems related to saving and loading iconified windows.
+  Because of this change, iconified windows saved in earlier versions of
+  TeraDesk will not reopen correctly now (they were corrupted anyway). 
+  Users are advised to close them and update configuration file(s).
+
+- Fixed a redraw problem that sometimes showed in real-time resizing of 
+  windows. However, in some V4 AESes this fix may result in double redraw of 
+  resized windows, depending on the 'smart redraw' capability and setting. 
+  This behaviour may be improved in future releases, if it poses a problem.
+
+- Fixed some inconsistencies when determining window size in relation to 
+  window font or icon size. A consequence of this change is slightly changed
+  behaviour when setting windows to minimum or maximum (e.g. fulled) sizes.
+  A fulled window may not completely fill the screen because of ceratin
+  rounding of window size.
+
+- The two above changes were made mostly in order to better cope with dumb
+  'smart redraw' capabilities of some AESes. Also, they are related to better
+  redraw of patterned window backgrounds (but it seems that an ideal solution
+  is not possible here).
+
+- Improved regeneration of the desktop upon exiting from the video options
+  dialog with 'OK' (i.e. capability is improved to restore screen corrupted
+  by some application).
+
+- Replaced some of the header files with new versions prepared by H.Robbers, 
+  in order to adjust TeraDesk for compilation with AHCC. Removed some
+  duplicate header inclusions in the C source files.
+
+- Some more size optimisations made, particularily regarding the single-TOS
+  version of the program.
+
+- Updated the hypertext manual to reflect new features.
+ 
+
+Version 3.84
+------------
+- Fixed handling of AV-protocol clients in the Window menu of TeraDesk.
+  It was unintentionally broken in V3.83.
+
+- Fixed unwanted responses that sometimes occured after some Magic-specific
+  keystrokes (e.g. Ctrl-Alt-Clr).
+
+- Made several small optimisations.
+
 
 Version 3.83
 ------------
@@ -23,14 +97,14 @@ Version 3.83
   unpleasantly long time, especially on large partitions, because all files
   and folders on the volume were counted. Now, only information on disk 
   size, used and free space is immediately displayed, and folder/file 
-  count is displayed only after pressing the 'More' button.
+  count is displayed only after clicking the 'More' button.
 
 - Text "Number of files and links" in the Info... dialog is now, more 
   correctly, "Number of files" in single-TOS.
 
 - Removed the possibility of too long filenames appearing in some alerts.
 
-- More informational file-selector titles now appear in fileselectors
+- More informative file-selector titles now appear in fileselectors
   invoked from some editable dialog fields.
 
 - Fixed unwanted change of titles in iconified windows when changing
@@ -568,7 +642,7 @@ Version 3.60
     (AFAIK no Atari-relevant file system uses both simultaneously?).
 
 - Hypertext help file will be opened (upon [Shift][Help]) by any application
-  installed for the *.HYP filetype. entry for the help program in the
+  installed for the *.HYP filetype. entry for the help ogram in the
   earlier version(s) of configuration files will be ignored.
 
 - More than one selected item at a time can be opened by 'Open...' menu item.
@@ -722,7 +796,7 @@ Version 3.60
   selector in the selected state (when clicked upon).
 
 - Sample text in the font selector can be previewed in the selected state
-  too, when clicked upon.
+  t too, when clicked upon.
 
 - Improved (hopefully) reaction to an AP_TERM message received after
   TeraDesk initiates a shutdown.

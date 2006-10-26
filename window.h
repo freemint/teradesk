@@ -130,6 +130,7 @@ typedef struct
 					int rows;	   \
 					int columns;   		/* number of columns in window content (chars or icons) */ \
 					int ncolumns;  		/* visible width (chars) */   \
+					int dcolumns;		/* number of dir. columns, otherwise 0 */ \
 					int px;        		/* h.slider position  */ \
 					long py;       		/* v.slider position  */ \
 					long nrows;	   		/* visible height (lines) */  \
@@ -239,6 +240,7 @@ boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, 
 boolean itm_list(WINDOW *w, int *n, int **list);
 void itm_set_menu ( WINDOW *w );
 void wd_setselection(WINDOW *w);
+void wd_do_dirs(void *func);
 
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
@@ -256,7 +258,6 @@ void wd_seticons(void);
 
 void wd_reset(WINDOW *w);
 void wd_deselect_all(void);
-void wd_fields(void);
 void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
 void wd_menu_ienable(int item, int enable);
@@ -275,7 +276,7 @@ boolean wd_tmpcls(void);
 void wd_reopen(void);
 
 void wd_type_draw(TYP_WINDOW *w, boolean message); 
-void wd_type_sldraw(TYP_WINDOW *w, boolean message);
+void wd_type_sldraw(WINDOW *w);
 boolean wd_type_setfont(int title); 
 void calc_rc(TYP_WINDOW *w, RECT *work); 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork); 
@@ -310,7 +311,7 @@ void w_pageright(TYP_WINDOW *w);
 void w_scroll(TYP_WINDOW *w, int type); 
 
 boolean wd_adapt(WINDOW *w);	
-void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch);
+void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons);
 
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
 void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, 

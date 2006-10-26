@@ -23,7 +23,6 @@
 
 #include <np_aes.h>			/* modern */
 #include <stdarg.h>
-#include <stddef.h>
 #include <vdi.h>
 #include <xdialog.h> 
 #include <library.h>

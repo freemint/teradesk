@@ -39,11 +39,11 @@
 #include "file.h"
 #include "font.h"
 #include "config.h"
-#include "viewer.h"
 #include "window.h"
 #include "icon.h"
 #include "showinfo.h"
 #include "copy.h"
+#include "viewer.h"
 #include "dir.h"
 #include "va.h"
 
@@ -696,7 +696,6 @@ static void disp_smatch( int ism )
  * Show or set information about one drive, folder, file or link. 
  * Return result code
  */
-void rsc_ftoftext(OBJECT *tree, int object, double value);
 
 int object_info
 (
@@ -879,6 +878,7 @@ int object_info
 		case ITM_PROGRAM:
 
 			thetitle = DTPRGINF;
+
 			if (*search_pattern == 0)
 			{
 				char 
@@ -1014,15 +1014,18 @@ int object_info
 #endif
 			drive = (oldn[0] & 0x5F) - 'A';
 
-			if (check_drive( drive ) != FALSE)
+			if (check_drive( drive ))
 			{
 				arrow_mouse();
-				if ((error = x_getlabel(drive, dskl)) == 0)
+
+				if 
+				(
+					((error = x_getlabel(drive, dskl)) == 0) &&
+					((error = x_dfree(&diskinfo, drive + 1)) == 0)
+				)
 				{
 					long 
 						fbytes, tbytes, clsize, k = 1;
-
-					x_dfree(&diskinfo, drive + 1);
 
 					fbytes = diskinfo.b_free,	/* number of free bytes */
 					tbytes = diskinfo.b_total,	/* total number of bytes */
@@ -1065,7 +1068,7 @@ int object_info
 					tbytes /= k;
 					fbytes /= k;
 #endif
-					nbytes = (tbytes - fbytes);
+					nbytes = (tbytes - fbytes);	
 
 					rsc_ltoftext(fileinfo, FLBYTES, nbytes);
 					rsc_ltoftext(fileinfo, FLFREE, fbytes);
@@ -1075,7 +1078,10 @@ int object_info
 				}
 			}
 			else
-				result = XABORT;
+				error = EDRIVE;
+
+			if(error != 0)
+				result = si_error(oldn, error);
 
 			/* Set visibility states of other fields */
 
@@ -1084,6 +1090,7 @@ int object_info
 			obj_unhide(fileinfo[FLLABBOX]);
 			obj_unhide(fileinfo[FLSPABOX]);
 			obj_unhide(fileinfo[FLCLSIZ]);
+
 			break;
 
 		default:
@@ -1475,7 +1482,7 @@ void item_showinfo
 	if ( search && search_dialog() != SOK )
 		return;
 
-	infodopen = FALSE; /* Show info dialog is currently closed */ 	
+	infodopen = FALSE; /* Showinfo dialog is currently closed */ 	
 
 	/* Proceed, for each item in the list */
 

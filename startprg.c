@@ -64,7 +64,7 @@ boolean fargv = FALSE;
 extern int tos_version, aes_version;
 
 void sim_click(void);
-
+void draw_tree(OBJECT *tree, RECT *clip);
 
 /* 
  * Display a title with the program name in the top of the screen. 
@@ -90,7 +90,8 @@ static void set_title(char *title)
 	ttd.te_color = 0x1F0;
 	ttd.te_thickness = 0;
 	ttd.te_txtlen = screen_info.dsk.w / screen_info.fnt_w;
-	objc_draw(&dsktitle, ROOT, MAX_DEPTH, dsktitle.r.x, dsktitle.r.y, dsktitle.r.w, dsktitle.r.h);
+
+	draw_tree(&dsktitle, &dsktitle.r);
 }
 
 
@@ -99,7 +100,7 @@ static void set_title(char *title)
  * Does not work always.
  */
 
-static void clean_up(void)
+void clean_up(void)
 {
 	v_hide_c(vdi_handle);
 	v_show_c(vdi_handle, 0);
@@ -623,163 +624,156 @@ void start_prg
 			if(olddir)
 				error = chdir(prgpath);
 
-			arrow_mouse();
-
-			if(error)
+			if(error < 0)
 			{
+				arrow_mouse();
 				xform_error(error);
 				goto errexit;
 			}
 		}
-	}
-	else
-		goto errexit;
 
-	/* See note above about singletasking ! */
+		/* See note above about singletasking ! */
 
-	if(stask)
-	{
-		/* 
-		 * AES is not multitasking, use Pexec() to start program,
-		 * (or else start a background program in mint)
-		 */
-
-		COMMAND cl;
-		boolean background = back;
-
-		/* Background program is activated if [Control] is pressed */
-
-		if (kstate & K_CTRL) 
-			background = TRUE;
-
-		/* GEM programs can not be started in background */
-
-		if ((appl_type == 1) && background)
+		if(stask)
 		{
-			alert_iprint(MGEMBACK);
-			goto errexit;
-		}
-
-		/* Don't start acc in single tos */
-
-		if (prg == PACC)	
-		{
-			alert_iprint(MCANTACC); 
-			goto errexit;
-		}
-
-		/* Make a copy of cmdl. Never more than 125 characters */
-
-		memclr(cl.command_tail, sizeof(cl.command_tail));
-		strsncpy(cl.command_tail, cmdl + 1, 126); /* "126" includes zero termination byte */
-		cl.length = *cmdl; /* value in the first byte */
-
-		if ( doargv )
-			cl.length = 127; /* signalizes that ARGV is used */
-
-		if ( background )
-		{
-#if _MINT_
-			error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
-#else
-			error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
-#endif
-		}
-		else
-			error = exec_com(fname, &cl, buildenv, appl_type);
-
-		/* Fix a TOS bug */
-
-		sim_click();
-
-		/* Report errors */
-
- 		xform_error(error); /* Will ignore rrror >= 0 */
-	}
-#if _MINT_
-	else
-	{
-		int wiscr = SHW_PARALLEL;
-
-		/* AES is multitasking, use shel_write() to start program. */
-
-		if (prg == PACC)
-		{
-			/* Start an accessory. Note: returns 0 if error. */
-
-			error = shel_write(SHW_EXEC_ACC, 0, wiscr, (char *)fname, (char *)empty); 
-		}
-		else
-		{
-			/* Start other types of applications */
-
-			int mode;			/* launch mode */
-			void *p[5];			/* parameters for the extended call */
-
-			/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
-
-			mode = SHW_XMDDEFDIR | SHW_EXEC; /* always use SHW_EXEC */
-
-			/* Notify if memory limit is defined */
-
-			if ( limmem > 0L )	
-				mode |= SHW_XMDLIMIT;
-
-			/* Notify that an environment is passed */
-
-			if ( doenv ) 
-				mode |= SHW_XMDENV;
-
 			/* 
-			 * Set pointers for extended mode. It seems that Magic will ignore
-			 * the pointer for the default directory
+			 * AES is not multitasking, use Pexec() to start program,
+			 * (or else start a background program in mint)
 			 */
 
-			p[0] = fname;			/* pointer to name                */
-			(long)p[1] = limmem;	/* value for Psetlimit()          */
-			p[2] = NULL;			/* value for Prenice()            */
-			p[3] = prgpath;			/* pointer to default directory   */
-			p[4] = buildenv;		/* pointer to environment string  */
+			COMMAND cl;
+			boolean background = back;
 
-			/* Magic specifies the use of ARGV differenlty than other AESes */
-		
-			if ( magx )
+			/* Background program is activated if [Control] is pressed */
+
+			if (kstate & K_CTRL) 
+				background = TRUE;
+
+
+			if ((appl_type == 1) && background)
+				alert_iprint(MGEMBACK); 		/* GEM programs can not be started in background */
+			else
 			{
-				if(doargv)
+				if (prg == PACC)	
+					alert_iprint(MCANTACC); 		/* Don't start acc in single tos */
+				else
 				{
-					if(catargv)
-						(char)cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+					/* Make a copy of cmdl. Never more than 125 characters */	
+
+					memclr(cl.command_tail, sizeof(cl.command_tail));
+					strsncpy(cl.command_tail, cmdl + 1, 126); /* "126" includes zero termination byte */
+					cl.length = *cmdl; /* value in the first byte */
+
+					if ( doargv )
+						cl.length = 127; /* signalizes that ARGV is used */
+
+					if ( background )
+					{
+#if _MINT_
+						error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
+#else
+						error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
+#endif
+					}
 					else
-						(char)cmdl[0] = 255; /* Magic will do ARGV only if needeed */
+						error = exec_com(fname, &cl, buildenv, appl_type);
+	
+					/* Fix a TOS bug */
+
+					sim_click();
+
+					/* Report errors */
+
+					xform_error(error); /* Will ignore error >= 0 */
 				}
+			}
+		}
+#if _MINT_
+		else
+		{
+			int wiscr = SHW_PARALLEL;
+
+			/* AES is multitasking, use shel_write() to start program. */
+
+			if (prg == PACC)
+			{
+				/* Start an accessory. Note: returns 0 if error. */
+				error = shel_write(SHW_EXEC_ACC, 0, wiscr, (char *)fname, (char *)empty); 
 			}
 			else
 			{
-				if ( doargv && !catargv )
+				/* Start other types of applications */
+
+				int mode;			/* launch mode */
+				void *p[5];			/* parameters for the extended call */
+
+				/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
+
+				mode = SHW_XMDDEFDIR | SHW_EXEC; /* always use SHW_EXEC */
+
+				/* Notify if memory limit is defined */
+
+				if ( limmem > 0L )	
+					mode |= SHW_XMDLIMIT;
+
+				/* Notify that an environment is passed */
+
+				if ( doenv ) 
+					mode |= SHW_XMDENV;
+
+				/* 
+				 * Set pointers for extended mode. It seems that Magic will ignore
+				 * the pointer for the default directory
+				 */
+
+				p[0] = fname;			/* pointer to name                */
+				(long)p[1] = limmem;	/* value for Psetlimit()          */
+				p[2] = NULL;			/* value for Prenice()            */
+				p[3] = prgpath;			/* pointer to default directory   */
+				p[4] = buildenv;		/* pointer to environment string  */
+
+				/* Magic specifies the use of ARGV differenlty than other AESes */
+		
+				if ( magx )
 				{
-					(char)cmdl[0] = 127; /* this signals the use of ARGV */
-					wiscr = 1;			 /* the same */
+					if(doargv)
+					{
+						if(catargv)
+							(char)cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+						else
+							(char)cmdl[0] = 255; /* Magic will do ARGV only if needeed */
+					}
 				}
 				else
-					wiscr = 0; /* ARGV is provided in other way, if needed */
+				{
+					if ( doargv && !catargv )
+					{
+						(char)cmdl[0] = 127; /* this signals the use of ARGV */
+						wiscr = 1;			 /* the same */
+					}
+					else
+						wiscr = 0; /* ARGV is provided in other way, if needed */
+				}
+
+				/* Start a program using shel_write */
+
+				error = shel_write(mode, appl_type, wiscr, (char *)p, (char *)cmdl);
 			}
 
-			/* Start a program using shel_write */
+			/* 
+			 * Note: shel_write() returns an application_id;
+			 * If it is 0, an error was encountered.
+			 * Unfortunately, this does not work in all AESes;
+			 * some happily return ap_id of a failed startup.
+			 */
 
-			error = shel_write(mode, appl_type, wiscr, (char *)p, (char *)cmdl);
+			if (error <= 0 )
+				alert_iprint(MFAILPRG);
 		}
-
-		/* 
-		 * Note: shel_write() returns an application_id;
-		 * If it is 0, an error was encountered.
-		 * Unfortunately, this does not work in all AESes;
-		 * some happily return ap_id of a failed startup.
-		 */
-
-		if (error <= 0 )
-			alert_iprint(MFAILPRG);
-	}
 #endif
+	}
+
+	/* Program may jump directly here in case of error */
 
 	errexit:;
 

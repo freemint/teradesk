@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <boolean.h>
 #include <ctype.h>
 #include <vdi.h>
 #include <xdialog.h>

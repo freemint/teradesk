@@ -38,7 +38,7 @@ extern int __text, __data, __bss;
 #define S_IREAD   0000400
 #define S_IWRITE  0000200
 
-typedef unsigned long size_t;
+#include <stddef.h>
 
 
 struct ffblk

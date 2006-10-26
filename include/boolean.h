@@ -24,6 +24,10 @@
 
 #include <prelude.h>
 
-typedef enum bool boolean;
+#if __AHCC__
+	typedef _Bool boolean;
+#else
+	typedef enum bool boolean;
+#endif
 
 #endif

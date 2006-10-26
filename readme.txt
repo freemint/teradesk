@@ -18,9 +18,11 @@ Tera Desktop V1.41, 20-09-95, Copyright 1991-1995 W. Klaren.
              V3.81  17-03-06, Copyright 2006  Dj. Vukovic
              V3.82  30-05-06, Copyright 2006  Dj. Vukovic
              V3.83  08-07-06, Copyright 2006  Dj. Vukovic
+             V3.84  22-07-06, Copyright 2006  Dj. Vukovic
+             V3.85  26-10-06, Copyright 2006  Dj. Vukovic
 
 
-This  is version 3.83 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.85 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -62,15 +64,22 @@ downloaded from:
 
 	http://members.ams.chello.nl/h.robbers/ahcm.zip
 
+
 A note on the naming of distribution files:
 
-Binary distributions have names in the form TERAnnnB.ZIP
-(nnn being the version number multipled by 100 (as 382 for 3.82)
+Binary distributions have names in the form TERAnnnB.ZIP  ("B" for "Binary"), 
+"nnn" being the version number multipled by 100 (as "384" for 3.84).
 
-Source-code distributions have names in the form TERAnnnS.ZIP
+Source-code  distributions  have  names in  the form  TERAnnnS.ZIP  ("S" for 
+"Source").
 
 Preliminary compilations sent to testers have names in the form TERAnnnP.ZIP
-Contents of TERAnnnP.ZIP may vary.
+("P" for "Preliminary"). Contents of TERAnnnP.ZIP may vary.
+
+It is recommended  that translated  resource and hypertext manual  files are
+distributed in zip archives having names in the form TERAnnnx.ZIP, "x" being
+a character conveniently marking the language of translation.
+
 
 
 Hardware and Operating System Requirements
@@ -78,7 +87,7 @@ Hardware and Operating System Requirements
 
 Tera Desktop  can  be  used  on  any  Atari  ST  series  computer  and their
 offspring,  TT,  Falcon, Hades, Milan or emulators. It uses about 200-300 KB
-of memory (depending on the complexity of configuration).
+of memory, depending on the complexity of configuration.
 
 Although  Tera Desktop  can be used  without the aid of a hard disk, the use
 of one is strongly recommended.  Tera Desktop is not  well optimized for use
@@ -86,9 +95,9 @@ on machines with  only one floppy  drive  and  no hard disk. File copying in
 TeraDesk  is done  file-by-file  which,  when copying files from one disk to
 another on a machine with only one drive, will mean a lot of disk swapping.
 
-Tera Desktop  should  work  with all existing versions of TOS (i.e. starting
+Tera Desktop  should work  with all existing versions of TOS  (i.e. starting
 with  TOS 1.0) but it is much more useful with TOS versions 1.04 (also known
-as TOS 1.4) and above. However,  it may fail on very old versions of Mint or
+as TOS 1.4) and above.  However, it may fail on very old versions of Mint or
 Magic (probably older than 1.12 and 3.0 respectively).
 
 Since  Version  2.0  Tera Desktop  runs on modern multitasking environments,
@@ -102,7 +111,7 @@ Tera Desktop  makes  several  inquires  trying  to  determine TOS- and  AES-
 versions  and  their capabilities and limitations. If some version of TOS or
 AES  is not able to answer these queries, Tera Desktop tries to make guesses
 which  may  not always be correct. It is also possible that incorrect answer
-to  a query is supplied by TOS/AES, in which case Tera Desktop may work with
+to  a query is supplied by TOS/AES.  In such case Tera Desktop may work with
 unnecessary limitations or else try to activate features which may not work.
 
 
@@ -111,7 +120,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the
-last  released  version (3.82). Also, read the manual TERADESK.HYP (you will
+last  released  version (3.84). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -159,13 +168,20 @@ may  not  be  appropriate  for your setup (Tera Desktop will attempt to obey
 everything  specified  in the configuration files, no matter what the actual
 environment is).
 
+If you start Tera Desktop without TERADESK.INF in its directory, the program
+will complain that it can not find its configuration file. In order to avoid
+this message  appearing again, activate "Save settings" in the Options menu.
+Of course,  before saving,  the configuration can first be adjusted  to  any
+user's  particular environment and taste  by defining additional desktop and
+window icons, filetypes, etc.
+
 
 3.  If you use ST-GUIDE  or other compatible  hypertext viewer  application,
 copy TERADESK.HYP and TERADESK.REF from the \DOC  folder to the folder where
 your other .HYP files are.  When you first start Tera Desktop,  install your
 hypertext viewer  (program or accessory)  as the  application for the  *.HYP
-filetype.  Hypertext manual for TeraDesk will thereafter  be available  upon
-[Shift][Help] keypress.
+filetype and save the configuration.  The hypertext manual for TeraDesk will
+thereafter be available upon [Shift][Help] keypress.
 
 
 4.  Cooperation  of  Tera Desktop  with  some  other  applications  will  be
@@ -188,7 +204,7 @@ the OS and utilities used.
 
 If you use  (Single)  TOS version 1.04  (also known as TOS 1.4)  or greater,
 you can  set it up by installing it  as an application, and then setting its
-boot  status to 'Auto' (remember to save the desktop configuration). As from
+boot status to 'Auto' (remember to save this desktop configuration). As from
 now on  Tera Desktop will take over  all  desktop tasks, prior to saving the
 desktop  configuration  all  other  applications  should be deinstalled, all
 unneeded  icons removed from the desktop and all windows closed. This is not
@@ -231,7 +247,7 @@ encouraged to create thier own, more extensive icon files;  they can can add
 icons  at  will,  or  use other icon files (e.g. one can rename DESKICON.RSC
 and/or  DESKCICN.RSC  used by the built-in desktop of TOS 2/3/4 to ICONS.RSC
 and  CICONS.RSC respectively, and use them with TeraDesk, but any files used
-must contain some icons which are essential to TeraDesk- see below).
+should contain some icons which are essential to TeraDesk- see below).
 
 Tera Desktop,  since  V2.0,  handles icons by name, not by index. Icons with
 the following names  (or  their  translated  equivalents)  should  always be
@@ -278,7 +294,7 @@ Some Possible Future Developments
 
 - Use of  advanced features  of the AHCM package to further improve handling
   of memory allocation when  large blocks  are allocated  (e.g. when reading
-  files).
+  files or opening flying dialogs).
 
 - Improvement of the algorithm for file copying when floppies are involved.
 
@@ -288,9 +304,9 @@ Some Possible Future Developments
 
 - Complete compliance to the AV-protocol and Drag & Drop protocol.
 
-- Better handling of memory-limit and no-multitask options.
+- Better implementation of memory-limit and no-multitask options.
 
-- Capability to change video mode in any AES.
+- Capability to change video mode in AESes earlier than V4.
 
 - Capability to show a 'tree view' directory window of all drives or maybe
   to show any directory window with 'tree view'.
@@ -311,7 +327,7 @@ Some Very Unlikely To Happen Future Developments
   would be a completely nonfunctional feature, which would increase  program
   size unacceptably.  Besides, personally, I think that  background pictures
   are  in fact distracting  to  the user and  a waste  of system  resources.
-  However, MyAES provides this feature and, and maybe XaAES will.
+  However, MyAES provides this feature and, and maybe XaAES will some day.
 
 
 
@@ -339,6 +355,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; July 8th 2006
+                                            Beograd; October 26th 2006
 
 

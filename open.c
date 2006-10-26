@@ -45,7 +45,6 @@
 #include "slider.h"
 #include "filetype.h"
 #include "applik.h"
-#include "library.h"
 #include "prgtype.h"
 
 boolean onfile = FALSE; /* true if app is started to open a file */

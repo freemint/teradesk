@@ -74,7 +74,7 @@ const char
 
 void copy_ftype(FTYPE *t, FTYPE *s)
 {
-	strsncpy ( t->filetype, s->filetype, sizeof(SNAME) );
+	strsncpy( t->filetype, s->filetype, sizeof(SNAME) );
 }
 
 
@@ -122,8 +122,6 @@ static void ftype_info
 	FTYPE *ft 			/* output information */
 )
 {
-	/* Note: earlier, copy function was not specified below */
-
 	if ( !(use & LS_SELA) )
 		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, copy_ftype );
 
@@ -378,8 +376,10 @@ char *ft_dialog
 			if ( mask != NULL )
 			{
 				cv_formtofn(newmask, setmask, FILETYPE);
+
 				if ((result = malloc_chk(strlen(newmask) + 1)) != NULL)
 					strcpy(result, newmask);
+
 				return result;
 			}
 		}

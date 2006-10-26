@@ -74,7 +74,7 @@ typedef struct
 	int nselected;			/* number of selected items in directory */
 	int namelength;			/* length of longest name in the directory */
 	int llength;			/* length of a directory line in text mode */
-	int dcolumns;			/* number of directory columns in text mode */
+	int reserved;			/* currently unused */
 	int par_px;				/* Position of the slider in the parent window */
 	long par_py;			/* Position of the slider in the parent window */
 	long par_itm;			/* index of this dir in the parent dir */
@@ -104,6 +104,10 @@ typedef struct
 #define DO_PATH_UPDATE	1
 
 
+extern FONT dir_font;
+extern WINFO dirwindows[MAXWINDOWS];		/* some information about open windows */
+extern RECT dmax;	/* maximum window size */
+
 CfgNest dir_one;
 
 boolean dir_add_window(const char *path, const char *thespec, const char *name);
@@ -114,13 +118,15 @@ void dir_close(WINDOW *w, int mode);
 const char *dir_path(WINDOW *w);
 void dir_filemask(DIR_WINDOW *w);
 void dir_newfolder(WINDOW *w);
-void dir_sort(WINDOW *w, int sort);
+void dir_sort(WINDOW *w);
+void dir_seticons(WINDOW *w);
 void dir_autoselect(DIR_WINDOW *w);
 
 void dir_briefline(char *tstr, XATTR *att);
 void dir_line(DIR_WINDOW *dw, char *s, int item);
 void dir_disp_mode(WINDOW *w);
-void dir_newdir( DIR_WINDOW *w );
+void dir_mode(WINDOW *w);
+void dir_newdir( WINDOW *w );
 void dir_reread( DIR_WINDOW *w );
 
 void calc_nlines(DIR_WINDOW *w);		

@@ -51,7 +51,7 @@ void bell(void)
 
 /*
  * An improved substitute for toupper();
- * This should work for characters above 127 as well.
+ * This should work for character ASCII codes above 127 as well.
  */
 
 int touppc(int c)

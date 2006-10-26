@@ -28,7 +28,6 @@
 
 /********************************************************************
  *																	*
- * Hulpfunkties voor dialoogboxen.									*
  * HR 151102 strip_name, cramped_name courtesy XaAES				*
  *																	*
  ********************************************************************/
@@ -68,8 +67,8 @@ void strip_name(char *to, const char *from)
 
 
 /* 
- * Fit a long filename or path (or any string into a shorter string;
- * a name should become e.g: c:\s...ng\foo.bar; 
+ * Fit a long filename or path (or any string) into a shorter string;
+ * a filename should become e.g: c:\s...ng\foo.bar; 
  * s = source, t=target, ww= available target length
  * Note 1: "ww" accomodates the termination byte as well
  * Note 2: At most sizeof(XLNAME) - 1 characters will be considered
@@ -98,7 +97,7 @@ void cramped_name(const char *s, char *t, size_t ww)
 		strcpy(t, ts);
 	else			/* (new) source is longer than the target, must cramp */
 	{
-		if (ww < 13L)				/* 8.3: destination is very short  */
+		if (ww < 13L)			/* 8.3: destination is very short  */
 		{
 			strcpy(t, ts + d);	/* so copy only the last ch's */
 			t[0] = '<';			/* cosmetic, to show it is a truncated name */

@@ -144,7 +144,7 @@ void path_to_disp ( char *fpath )
 
 	char *nend = strrchr( fpath, '\\' );
 		
-	if ( nend )
+	if ( nend > fpath ) /* otherwise nend[-1] below would not be possible */
 	{
 		char *p, *q;
 
@@ -152,6 +152,7 @@ void path_to_disp ( char *fpath )
 
 		if ( nend[-1] == ':' ) 
 			nend++;
+
 		*nend = 0;
 
 		/* Attempt to find '\.\' or a trailing '\.' */
@@ -189,6 +190,7 @@ char *fn_get_name(const char *path)
 		return NULL;
 
 	h = fn_last_backsl(path); /* h == path if no backslash found */
+
 	if ( h != path || *path == '\\' )
 		h++;
 
@@ -219,16 +221,17 @@ char *fn_get_path(const char *path)
 	if (((l = backsl - (char *)path) == 2) && (path[1] == ':'))
 		l++;
 
-	/* Allocate memory for the new path */
+	l++; /* for the trailing zero byte */
 
-	if ((backsl = malloc_chk(l + 1)) == NULL)
-		return NULL;
+	/* 
+	 * Allocate memory for the new path, then copy the relevant part of 
+	 * the path to the new location 
+	 */
 
-	/* Copy the relevant part of the path to the new location */
+	if ((backsl = malloc_chk(l)) != NULL)
+		strsncpy(backsl, path, l);
 
-	strsncpy(backsl, path, l + 1);
-
-	/* Return pointer to the new location */
+	/* Return pointer to the new location, or NULL if failed */
 
 	return backsl;
 }
@@ -286,6 +289,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 		{
 			if(*(backsl + 1) != '\0')
 				strcat(path, bslash);
+
 			strcat(path, newn);
 		}
 		else
@@ -337,7 +341,7 @@ boolean isroot(const char *path)
 {
 	char *d = nonwhite((char *)path);
 
-	if( isdisk(d) && (d[2] == '\0' || d[3] == '\0') )
+	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
 		return TRUE; 
 
 	return FALSE;
@@ -554,41 +558,40 @@ void get_fsel
 		c = result + (long)(info->cursor_x); /* part after the cursor */
 
 		if ( (info->cursor_x < sl) && ( (cc = strdup(c)) == NULL ) )
-		{
 			err = 0; /* error already reported in strdup */
-			goto freepath; /* not decent, but... */
-		}
-
-		*c = 0;
-
-		if((flags & 0x4000) == 0)
+		else
 		{
-			tl += pl;
+			*c = 0;
 
-			if(tl > ml)
-				goto freepath;
+			if((flags & 0x4000) == 0)
+			{
+				tl += pl;
 
-			strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+				if(tl > ml)
+					goto freepath;
+
+				strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+			}
+
+			if ( fl && addname )
+			{
+				tl += fl;
+
+				if(tl > ml) 
+					goto freepath;
+
+				strcat( result, name );
+			}
+
+			if ( cc )
+			{
+				strcat( result, cc );
+				free(cc);
+			} 
+
+			info->cursor_x += (int)tl;
+			err = 0;
 		}
-
-		if ( fl && addname )
-		{
-			tl += fl;
-
-			if(tl > ml) 
-				goto freepath;
-
-			strcat( result, name );
-		}
-
-		if ( cc )
-		{
-			strcat( result, cc );
-			free(cc);
-		} 
-
-		info->cursor_x += (int)tl;
-		err = 0;
 
 		freepath:;
 		xform_error(err);
@@ -612,9 +615,11 @@ int chdir(const char *path)
 		x_setdrv((path[0] & 0x5F) - 'A');
 
 		h = (char *)path + 2;
+
 		if (*h == 0)
 			h = (char *)bslash;
 	}
+
 	error = x_setpath(h);
 
 	return error;
@@ -632,14 +637,14 @@ long drvmap(void)
 
 
 /* 
- * Check if drive "drv" exists.
+ * Check if drive "drv" exists. Display an alert if it does not.
  * Note: 26 drives are supported (A to Z),
  * but defined by numbers 0 to 25.
  */
 
 boolean check_drive(int drv)
 {
-	if ((drv >= 0) && (drv < 26) && (btst(drvmap(), drv)))
+	if ((drv >= 0) && (drv < ('Z' - 'A')) && (btst(drvmap(), drv)))
 		return TRUE;
 
 	alert_iprint(MDRVEXIS);
@@ -685,9 +690,11 @@ boolean match_pattern(const char *t, const char *pat)
 		switch(*pat)
 		{
 		case '?':			/* ? means any single character */
+
 			t++;
 			pat++;
 			break;
+
 		case '*':			/* * means a string of any character */
 
 			if(!te)
@@ -701,6 +708,7 @@ boolean match_pattern(const char *t, const char *pat)
 				{
 					if(*pe == '*')
 						pa = pe;
+
 					pe++;
 				}
 			}
@@ -710,6 +718,7 @@ boolean match_pattern(const char *t, const char *pat)
 			if(pat > pa)	/* skip irelevant part */
 			{
 				d = te - (pe - (char *)pat);
+
 				if(d > t)
 					t = d;
 			}
@@ -738,11 +747,13 @@ boolean match_pattern(const char *t, const char *pat)
 			{
 				u = touppc(*t);
 				while((*(++pat) != ']') && (u != touppc(*pat)));
+
 				if (*pat == ']')
 					valid = false;
 				else
 					while(*++pat != ']');
 				pat++;
+
 				t++;
 				break;
 			}

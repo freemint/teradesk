@@ -138,6 +138,7 @@ void upd_copyinfo(long folders, long files, long bytes)
 		rsc_ltoftext(copyinfo, NFOLDERS, folders);
 		rsc_ltoftext(copyinfo, NFILES, files);
 	}
+
 	rsc_ltoftext(copyinfo, NBYTES, bytes);
 
 	if (cfdial_open)
@@ -160,6 +161,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 	static const int 
 		items[] = {PSETBOX,CSETBOX,CPT3,CPDEST,CFOLLNK,CPRFILE,0};
 
+
 	sd = 0;
 
 	/* Set default visibility and state of some objects */
@@ -174,10 +176,6 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 	switch (function)
 	{
-		case CMD_TOUCH:	
-			mask = CF_TOUCH;
-			title = DTTOUCH;
-			goto unhide2;
 		case CMD_COPY:
 			mask = CF_COPY;		
 			title = (rename_files) ? DTCOPYRN : DTCOPY;
@@ -185,13 +183,17 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 		case CMD_MOVE:
 			mask = CF_COPY;	
 			title = (rename_files) ? DTMOVERN : DTMOVE;
-			unhide1:;
+		unhide1:;
 			obj_unhide(copyinfo[CPT3]);
 			obj_unhide(copyinfo[CPDEST]);
 #if _MINT_
 			obj_unhide(copyinfo[CFOLLNK]);
 #endif
-			unhide2:;
+			goto unhide2;
+		case CMD_TOUCH:	
+			mask = CF_TOUCH;
+			title = DTTOUCH;
+		unhide2:;
 			obj_unhide(copyinfo[CSETBOX]);
 #if_MINT_
 			copyinfo[CFOLLNK].r.y = copyinfo[CSETBOX].r.y;
@@ -215,7 +217,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 			mask = CF_PRINT;
 			title = DTPRINTD;
 			sd = sd1 - screen_info.fnt_h;
-			unhide3:;
+		unhide3:;
 			obj_unhide(copyinfo[CPRFILE]);
 			break;		
 	}
@@ -229,6 +231,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 	if ( updatemode )
 		title = DTUPDAT;
+
 	if ( restoremode )
 		title = DTRESTO;
 
@@ -247,11 +250,11 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 	if ( !cfdial_open && (options.cprefs & ( mask | CF_SHOWD )) ) 
 	{
-		copyinfo[COKBOX].r.y -= sd; 	/* make the dialog as small as practical */
-		copyinfo[COPYBOX].r.h -= sd;	/* same */
+		copyinfo[COKBOX].r.y -= sd; 		/* make the dialog as small as practical */
+		copyinfo[COPYBOX].r.h -= sd;		/* same */
 
 		if(chk_xd_open(copyinfo, &cfdial) >= 0)
-			cfdial_open = TRUE;
+			cfdial_open = TRUE;				/* dialog has just been opened */
 		else
 		{
 			copyinfo[COKBOX].r.y += sd; 	/* restore size */
@@ -261,7 +264,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 	/* 
 	 * If option is set to confirm action, wait for the correct button;
-	 * If confirm is not needed, just redraw the dialog
+	 * If confirm is not needed, just redraw the dialog if it is open.
 	 */
 
 	button = COPYOK;
@@ -289,9 +292,7 @@ void close_cfdialog(int button)
 	if (cfdial_open)
 	{
 		xd_buttnorm(&cfdial, button);
-
 		xd_close(&cfdial);
-		cfdial_open = FALSE;
 
 		copyinfo[COKBOX].r.y += sd;
 		copyinfo[COPYBOX].r.h += sd;
@@ -302,6 +303,8 @@ void close_cfdialog(int button)
 
 		printfile = NULL;
 	}
+
+	cfdial_open = FALSE;
 }
 
 
@@ -320,8 +323,10 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
 
 		if ( folder )
 			cv_fntoform(copyinfo, CPFOLDER, folder);
+
 		if ( file )
-			cv_fntoform(copyinfo, CPFILE, fn_get_name(file) ); 
+			cv_fntoform(copyinfo, CPFILE, fn_get_name(file) );
+ 
 		if ( dest )
 			cv_fntoform(copyinfo, CPDEST, dest);
 	
@@ -348,6 +353,7 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean 
 		new->dpath = (char *)dpath;
 		new->chk = chk;
 		new->result = 0;
+
 		if ((new->dir = x_opendir(spath, &error)) != NULL)
 		{
 			new->prev = *stack;
@@ -356,6 +362,7 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean 
 		else
 			free(new);
 	}
+
 	return error;
 }
 
@@ -371,6 +378,7 @@ static boolean pull(COPYDATA **stack, int *result)
 	x_closedir(top->dir);
 	*result = top->result;
 	*stack = top->prev;
+
 	free(top);
 
 	return (*stack == NULL) ? TRUE : FALSE;
@@ -564,6 +572,7 @@ int cnt_items
 		if ( search && (result != XSKIP) )
 		{
 			closeinfo();
+
 			if ( fpath != NULL && result == 0 )
 			{
 				path_to_disp ( fpath );
@@ -931,6 +940,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 		if ((((type = itm_type(w, item)) == ITM_FOLDER) || (type == ITM_DRIVE)) && (dest != NULL))
 		{
 			/* Note: space for path allocated here */
+
 			if ((path = itm_fullname(w, item)) != NULL)
 			{
 				l = (long)strlen(path);
@@ -1043,6 +1053,7 @@ static int exist(const char *sname, int smode, const char *dname,
 	int error, attmode;
 	XATTR attr;
 
+
 	attmode = ( options.cprefs & CF_FOLL ) ? 0 : 1;
 
 	if ((error = (int)x_attr(attmode, FS_INQ, dname, &attr)) == 0) 
@@ -1083,10 +1094,13 @@ int set_posmode(int mode)
 
 static void redraw_after(void)
 {
+/* it seems that there is no need anymore to do this
 	wd_drawall();
+*/
 
 	if (cfdial_open)
 		xd_drawdeep(&cfdial, ROOT);
+
 }
 
 
@@ -1153,12 +1167,13 @@ static int hndl_nameconflict
 		dd = dxattr.mdate;
 		dt = dxattr.mtime;
 	}
+
 	if (restoremode)
 	{
-		dd = attr->mdate;
-		dt = attr->mtime;
 		sd = dxattr.mdate;
 		st = dxattr.mtime;
+		dd = attr->mdate;
+		dt = attr->mtime;
 	}
 
 	if ( (smode != S_IFDIR) && (updatemode || restoremode) )
@@ -1240,14 +1255,15 @@ static int hndl_nameconflict
 			/* Wait for a button, then immediately set it back to normal */ 
 
 			button = xd_form_do_draw(&xdinfo);
-
 			hourglass_mouse();
 
 			if (button == NCOK)
 			{
 				if ((*newname == 0) || (*oldname == 0))
+				{
 					/* Some name(s) must be entered! */
 					alert_iprint(MFNEMPTY);
+				}
 				else
 				{
 					if (strcmp(dupl, oldname))
@@ -1261,6 +1277,7 @@ static int hndl_nameconflict
 						if ((result = _rename(*dname, function, attr)) != XERROR)
 						{
 							stop = TRUE;
+
 							if (result == 0)
 								again = TRUE;
 						}
@@ -1311,6 +1328,7 @@ static int hndl_nameconflict
 						alert_iprint(MCOPYSLF); 
 						again = TRUE;
 					}
+
 					result = XOVERWRITE;
 				}
 			}
@@ -1323,7 +1341,6 @@ static int hndl_nameconflict
 	xd_close(&xdinfo);
 	set_oldpos = TRUE; 
 	redraw_after();
-
 	return result;
 }
 
@@ -1404,9 +1421,7 @@ static int hndl_rename(char *name, XATTR *attr)
 static int chk_access(XATTR *attr)
 {
 	if((attr->attr & FA_READONLY) != 0)
-	{
 		return EACCDN;
-	}
 
 	return 0;
 }
@@ -1462,9 +1477,12 @@ int touch_file
 
 				if ( (linktgt = x_fllink((char *)fullname)) == NULL )
 					return ENSMEM;
+
 				error = x_unlink(fullname);
+
 				if ( error >= 0 )
 					x_mklink(fullname, linktgt);
+
 				free(linktgt);
 			}
 		}
@@ -1540,6 +1558,7 @@ static int copy_file
 	DOSTIME
 		*thetime, 
 		time;
+
 
 	strcpy(name, fn_get_name(sname));
 
@@ -1784,10 +1803,7 @@ static int create_folder
 				if ( function != CMD_TOUCH )
 				{
 					if ((error = x_mkdir(*dname)) != 0)
-					{
 						free(*dname);
-						result = copy_error(error, name, function);
-					}
 					else
 						*chk = FALSE;
 				}
@@ -1806,26 +1822,29 @@ static int create_folder
 							*folders -= nfolders;
 							*bytes -= nbytes;
 						}
-						else
-							result = copy_error(error, name, function);
 					}
+
 					free(*dname);
 				}
 			}
 		}
-		else
-			result = copy_error(error, name, function);
 	}
-	else
-		result = copy_error(error, name, function);
 
-	return result;
+	return (error < 0) ? copy_error(error, name, function) : result;
 }
 
 
-static int copy_path(const char *spath, const char *dpath,
-					 const char *fname, long *folders, long *files,
-					 long *bytes, int function, boolean chk)
+static int copy_path
+(
+	const char *spath,	/* source path */
+	const char *dpath,	/* destination path */
+	const char *fname,	/* current name */
+	long *folders,		/* number of folders acted upon */
+	long *files,		/* number of files acted upon */
+	long *bytes,		/* number of bytes acted upon */
+	int function,		/* what to do */
+	boolean chk
+)
 {
 	COPYDATA *stack = NULL;
 	boolean ready = FALSE, eod = FALSE;
@@ -2015,6 +2034,7 @@ static boolean copy_list
 				}
 				else
 					result = copy_error(error, name, function);
+
 				*files -= 1;
 				*bytes -= attr.size;
 				break;
@@ -2494,7 +2514,7 @@ boolean itmlist_op
 
 	/* The confirmation dialog is currently closed */
 
-	cfdial_open = FALSE;
+	close_cfdialog(-1);
 
 	/* 
 	 * Currently, "change time" and "change attributes" options are active 
@@ -2543,149 +2563,146 @@ boolean itmlist_op
 			break;
 	}
 
-	if ( !result ) 
-		goto forcexit;
-
-	/* 
-	 * Count the items to work upon. Are there any at all? 
-	 * Note: in a future development, a check for free space on the
-	 * destination can be made here after count_items()
-	 */
-
-	cont = count_items(w, n, list, &folders, &files, &bytes, function );
-
-	/* Is there anything to do? */
-
-	if (cont)
+	if ( result ) 
 	{
-		ITMTYPE itype0 = itm_type(w, itm0);
 
 		/* 
-		 * Remember operation date and time, in case it is needed to
-		 * reset file data during copying. Also reset file attributes.
-		 * In case of a "touch", these values are set manually from
-		 * the dialog, so then do not set them 
+		 * Count the items to work upon. Are there any at all? 
+		 * Note: in a future development, a check for free space on the
+		 * destination can be made here after count_items()
 		 */
 
-		if ( function != CMD_TOUCH )
+		cont = count_items(w, n, list, &folders, &files, &bytes, function );
+
+		/* Is there anything to do? */
+
+		if (cont)
 		{
-			now.date = Tgetdate();
-			now.time = Tgettime();
-			optime = now;
+			ITMTYPE itype0 = itm_type(w, itm0);
 
-			opattr = FA_ARCHIVE; /* set all to just the "file changed" bit */
-		}
-
-		/* Find path of the first source (or its full name if it is a folder) */
-
-		spath = itm_fullname(w, itm0);
-		if ( spath == NULL )
-			goto forcexit;
-
-		/* Always provide some destination path */
-
-		if(dest == NULL)
-		{
-			strsncpy(anypath, spath, 4); /* Disk drive of the source will do */
-			dest = anypath;
-		}
-
-		/* Show first source file name. It is blank if starting with a folder */
-
-		if ( isfileprog(itype0) )
-		{
-			cv_fntoform( copyinfo, CPFILE, itm_name(w, itm0) );
-			path_to_disp(spath);
-		}
-		else
-			*(copyinfo[CPFILE].ob_spec.tedinfo->te_ptext) = 0;
-		
-		/* Show initial source and destination paths */
-		
-		cv_fntoform ( copyinfo, CPFOLDER, spath );	
-		cv_fntoform ( copyinfo, CPDEST, dest );
-		free(spath);			
-
-		/* Open the dialog. Wait for a button */
-
-		button = open_cfdialog(folders, files, bytes, function);
-
-		/* Act depending on the button code */
-
-#if _MINT_
-		if(button == CFOLLNK)
-		{
 			/* 
-			 * If state of the  'follow link' has changed, return to the
-			 * beginning to recalculate total number and size of items
+			 * Remember operation date and time, in case it is needed to
+			 * reset file data during copying. Also reset file attributes.
+			 * In case of a "touch", these values are set manually from
+			 * the dialog, so then do not set them 
 			 */
 
-			options.cprefs ^= CF_FOLL;
-			cfdial_open = TRUE;
-			goto recalc;
-		}
-#endif
-
-		/* If action is acceptable, proceed... */
-
-		if (button == COPYOK)
-		{
-			/* Copy/move/touch/delete a list of files */
-
-			hourglass_mouse();
-
-			switch(function)
+			if ( function != CMD_TOUCH )
 			{
-				case CMD_COPY:
-				case CMD_MOVE:
-				case CMD_TOUCH:
-					get_opt( copyinfo, &options.cprefs, CF_CTIME, CCHTIME ); 
-					get_opt( copyinfo, &options.cprefs, CF_CATTR, CCHATTR ); 
-					result = copy_list(w, n, list, dest, &folders, &files, &bytes, function);
-					break;
-				case CMD_DELETE:
-					result = del_list(w, n, list, &folders, &files, &bytes);
-					break;
-				case CMD_PRINT:
-					printmode = xd_get_rbutton(copyinfo, PSETBOX) - PRTXT;
-				case CMD_PRINTDIR:
-				{
-					int tofile = 0;
+				now.date = Tgetdate();
+				now.time = Tgettime();
+				optime = now;
 
-					printfile = NULL;
-					get_opt( copyinfo, &tofile, 1, CPRFILE ); 
-
-					if (tofile)
-					{
-						int error = 0;
-						LNAME thename = {0};
-						char *printname = locate(thename, L_PRINTF);
-
-						if (printname)
-							printfile = x_fopen(printname, O_DENYRW | O_WRONLY, &error);
-
-						free(printname);
-
-						xform_error(error);
-
-						if (!printfile)
-							goto forcexit;
-					}
-
-					result = print_list(w, n, list, &folders, &files, &bytes, function);
-				
-					break;
-				}
-				default:
-					result = FALSE;
-					break;
+				opattr = FA_ARCHIVE; /* set all to just the "file changed" bit */
 			}
 
-			arrow_mouse();
-		}
-	}
+			/* Find path of the first source (or its full name if it is a folder) */
 
-	forcexit:;
+			spath = itm_fullname(w, itm0);
+
+			if ( spath != NULL )
+			{
+				/* Always provide some destination path */
+
+				if(dest == NULL)
+				{
+					strsncpy(anypath, spath, 4); /* Disk drive of the source will do */
+					dest = anypath;
+				}
+
+				/* Show first source file name. It is blank if starting with a folder */
+
+				if ( isfileprog(itype0) )
+				{
+					cv_fntoform( copyinfo, CPFILE, itm_name(w, itm0) );
+					path_to_disp(spath);
+				}
+				else
+					*(copyinfo[CPFILE].ob_spec.tedinfo->te_ptext) = 0;
+		
+				/* Show initial source and destination paths */
+			
+				cv_fntoform ( copyinfo, CPFOLDER, spath );	
+				cv_fntoform ( copyinfo, CPDEST, dest );
+				free(spath);			
+
+				/* Open the dialog. Wait for a button */
+
+				button = open_cfdialog(folders, files, bytes, function);
+
+				/* Act depending on the button code */
+
+#if _MINT_
+				if(button == CFOLLNK)
+				{
+					/* 
+					 * If state of the  'follow link' has changed, return to the
+				 	 * beginning to recalculate total number and size of items
+					 */
+
+					options.cprefs ^= CF_FOLL;
+					cfdial_open = TRUE;
+					goto recalc;
+				}
+#endif
+
+				/* If action is acceptable, proceed... */
+
+				if (button == COPYOK)
+				{
+					/* Copy/move/touch/delete a list of files */
+
+					hourglass_mouse();
+
+					switch(function)
+					{
+						case CMD_COPY:
+						case CMD_MOVE:
+						case CMD_TOUCH:
+							get_opt( copyinfo, &options.cprefs, CF_CTIME, CCHTIME ); 
+							get_opt( copyinfo, &options.cprefs, CF_CATTR, CCHATTR ); 
+							result = copy_list(w, n, list, dest, &folders, &files, &bytes, function);
+							break;
+						case CMD_DELETE:
+							result = del_list(w, n, list, &folders, &files, &bytes);
+							break;
+						case CMD_PRINT:
+						printmode = xd_get_rbutton(copyinfo, PSETBOX) - PRTXT;
+						case CMD_PRINTDIR:
+						{
+							int tofile = 0;
+
+							printfile = NULL;
+							get_opt( copyinfo, &tofile, 1, CPRFILE ); 
+
+							if (tofile)
+							{
+								int error = 0;
+								LNAME thename = {0};
+								char *printname = locate(thename, L_PRINTF);
+
+								if (printname)
+									printfile = x_fopen(printname, O_DENYRW | O_WRONLY, &error);
+
+								free(printname);
+								xform_error(error);
+							}
+
+							if(printfile || !tofile)
+								result = print_list(w, n, list, &folders, &files, &bytes, function);
+				
+							break;
+						}
+						default:
+							result = FALSE;
+							break;
+					}
+
+					arrow_mouse();
+				}				/* button ? */
+			}					/* spath ? */
+		}						/* cont ? */
+	} 							/* result ? */
 
 	/* 
 	 * Close the information/confirmation dialog if it was open;
@@ -2693,6 +2710,7 @@ boolean itmlist_op
 	 */
 
 	close_cfdialog(button);
+
 	if(cont)
 		wd_do_update();
 

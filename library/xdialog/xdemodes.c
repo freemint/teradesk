@@ -28,7 +28,6 @@
  #include <vdibind.h>
 #endif
 
-#include <stddef.h>
 
 #include "xdialog.h"
 #include "xscncode.h"

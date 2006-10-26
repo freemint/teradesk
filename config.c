@@ -22,7 +22,6 @@
 
 
 #include <ctype.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <mint.h>
 #include <string.h>
@@ -32,24 +31,16 @@
 #include <xdialog.h>
 
 #include "desktop.h"
-#include "boolean.h"
 #include "desk.h"
 #include "error.h"
 #include "stringf.h"
 #include "xfilesys.h"
 #include "config.h"
 #include "file.h"
+#include "font.h"	/* because of windows.h */
+#include "window.h"
 
-typedef enum
-{
-	WD_UPD_DELETED,
-	WD_UPD_COPIED,
-	WD_UPD_MOVED,
-	WD_UPD_ALLWAYS
-} wd_upd_type;
 
-void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
-void wd_do_update(void);
 
 /*
  * Some variables for checkout of integrity of configuration files being read.
@@ -100,6 +91,7 @@ static void no_percent
 	{
 		if (*s == '%');
 			*s = '$';
+
 		s++;
 	}
 }
@@ -144,7 +136,7 @@ static void append_fmt
 			strcat(dest, eol);
 			break;
 
-/* currently not used in Teradesk- but may be used later 
+/* currently not used in TeraDesk- but may be used some day
 		case CFG_B:
 		case CFG_C:
 			strcat(dest, "=%c");
@@ -169,6 +161,7 @@ static void append_fmt
 		default:
 			break;
 	}
+
 	strcat( dest, eol );
 }
 
@@ -179,7 +172,12 @@ static void append_fmt
  * if everything is OK, return number of bytes written.
  */
 
-static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
+static int fprintf_wtab
+(
+	XFILE *fp,			/* pointer to open file parameters */ 
+	int lvl, 			/* number of tabs, equal to current nesting level */
+	char *string, ...	/* string(s) to print */ 
+)
 {
 	int 
 		error = 0;
@@ -216,11 +214,16 @@ static int fprintf_wtab(XFILE *fp, int lvl, char *string, ... )
 
 /* 
  * Save a part of configuration defined by one table.
- * Option "emp" to only write field if non zero or non empty.
  * Note: level is internally increased by one.  
  */
 
-int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp) 
+int CfgSave
+(
+	XFILE *fp,		/* pointer to open file parameters */
+	CfgEntry *tab,	/* pointer to configuration table */
+	int level0,		/* nesting (indent) level */
+	bool emp		/* if true, write empty or zero-value fields */
+) 
 {
 	int 
 		level = level0 + 1,
@@ -291,8 +294,10 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 								{
 									if (*ss == '@')
 										*tp++ = *ss;
+
 									if (*ss == ' ')
 										*ss = '@';
+
 									*tp++ = *ss++;						
 								}
 
@@ -322,6 +327,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						{
 							/* Write byte or unsigned char value */
 							unsigned int v = *(unsigned char *)tab->a;
+
 							if (v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, v);
 							break;
@@ -331,6 +337,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						{
 							/* Write a triplet of integers */
 							int *v = (int *)tab->a;
+
 							if (v)
 								error = fprintf_wtab(fp, lvl, fmt, v[0], v[1], v[2]); 
 							break;
@@ -339,6 +346,7 @@ int CfgSave(XFILE *fp, CfgEntry *tab, int level0, bool emp)
 						{
 							/* Write a long value */
 							long *v = (long *)tab->a;
+
 							if (*v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, *v);
 							break;
@@ -392,10 +400,10 @@ static void crlf(char *f)
 	for(j = 0; j < 2; j++)
 	{
 		i = (int)strlen(f) - 1;
+
 		if( (i >= 0) && ( (f[i] == '\n') || (f[i] == '\r')) )
 			f[i] = '\0';
 	}
-
 }
 
 
@@ -625,11 +633,13 @@ int CfgLoad
 						char *s2;
 						s2 = --s;
 						v = 0;
+
 						do
 						{
 							*vv++ = atoi(++s2);
 						}
 						while ( (s2 = strchr(s2,',')) != NULL && ++v < 3 );
+
 						break;	
 					}					
 					case CFG_X:
@@ -780,7 +790,6 @@ int handle_cfgfile
 
 	int 
 		n, 
-		h, 
 		error;
 
 	char 
@@ -799,7 +808,7 @@ int handle_cfgfile
 	savelastnest = lastnest;
 	savechklevel = chklevel;
 
-	/* Find name only; if there is mint, it is lowercase */
+	/* Find name only; if there is mint, name is in lowercase */
 
 	savecname = cname;
 	cname = fn_get_name(name);
@@ -827,8 +836,8 @@ int handle_cfgfile
 		
 			error = CfgSave(file, tab, -1, CFGEMP); 
 
-			if (((h = x_fclose(file)) < 0) && (error == 0))
-				error = h;
+			if (((n = x_fclose(file)) < 0) && (error == 0))
+				error = n;
 			
 			/* Update the window into which the file was written */
 
@@ -862,7 +871,7 @@ int handle_cfgfile
 				if (n < 0)
 					error = (int)n;
 				else
-					error = EEOF;
+					error = EEOF; /* if no error, it is end of file */
 			}
 		
 			x_fclose(file);

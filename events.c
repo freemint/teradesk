@@ -22,9 +22,7 @@
 
 
 #include <np_aes.h>	
-#include <stddef.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <xdialog.h>
 #include <xscncode.h>
 
@@ -40,6 +38,7 @@ static int event(int evflags, int mstate, int *key)
 	int result;
 
 	xd_clrevents(&events);
+
 	events.ev_mflags = MU_TIMER | evflags;
 	events.ev_mbclicks = 2;
 	events.ev_mbmask = 1;
@@ -53,7 +52,6 @@ static int event(int evflags, int mstate, int *key)
 			 * Message received; handle AV-protocol and FONT protocol messages, 
 			 * AP_TERM and SH_WDRAW. If AP_TERM is received, -1 will be returned 
 			 */
-
 			if (hndlmessage(events.ev_mmgpbuf) != 0)
 				return -1;
 		}
@@ -115,6 +113,7 @@ void clr_key_buf(void)
 
 */
 
+
 /* This routine is never used in Teradesk
 
 /*
@@ -163,8 +162,8 @@ int clr_msg_buf(void)
 
 
 /*
- * This is a routine for confirmation of an abort caused
- * by pressing [ESC] during multiple copy, delete, print, etc.
+ * This is a routine for confirmation of an abort caused by pressing [ESC] 
+ * during multiple copy, delete, print, etc.
  * An alert is posted with a text "Abort current operation?"
  * If hndl_msg = TRUE, this routine will process AV_PROTOCOL 
  * messages and also AP_TERM and SH_WDRAW.

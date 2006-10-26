@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright 1993, 2002  W. Klaren,
- *                                           2002, 2003  H. Robbers,
- *                                           2003, 2004  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright       1993, 2002  W. Klaren,
+ *                                                 2002, 2003  H. Robbers,
+ *                                           2003, 2004, 2006  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -59,9 +59,7 @@ long find_cookie( long name )
 	else
 #endif
 	{
-		void *old_stack;
-	
-		old_stack = (void *)Super(NULL);
+		void *old_stack = (void *)Super(NULL);
 	
 		if ((cookie = p_cookie) != NULL)
 		{
@@ -74,11 +72,12 @@ long find_cookie( long name )
 	
 		Super(old_stack);
 	}
+
 	return cvalue;
 }
 
 
-/* All the following routines are currently not used in Teradesk */
+/* All following routines are currently not used in Teradesk */
 
 
 static void cookie_reset( void )

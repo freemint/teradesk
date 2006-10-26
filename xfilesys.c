@@ -22,11 +22,9 @@
 
 
 #include <np_aes.h>	
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
-#include <boolean.h>
 #include <library.h>
 #include <mint.h>
 #include <vdi.h>
@@ -1360,8 +1358,8 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 #endif
 				xfile->handle = x_open(file, mode);
 #if _CHECK_RWMODE
-		else
-			xfile->handle = EINVFN;
+			else
+				xfile->handle = EINVFN;
 #endif
 		}
 

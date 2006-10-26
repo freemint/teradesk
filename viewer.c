@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
@@ -377,7 +376,7 @@ static void txt_comparea
 static void txt_prtchar
 (
 	TXT_WINDOW *w,	/* pointer naar window */
-	int column,		/* column	- Kolom waarin het karakter wordt afgedrukt */
+	int column,		/* kolom waarin het karakter wordt afgedrukt */
 	int nc,			/* number of columns */
 	long line,		/* regel waarin het karakter wordt afgedrukt */
 	RECT *area,		/* clipping rechthoek */
@@ -429,6 +428,7 @@ void txt_prtline
 
 	char 
 		s[FWIDTH];
+
 
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
@@ -488,22 +488,17 @@ static void set_menu(TXT_WINDOW *w)
 
 
 /*
- * Functie voor het instellen van de ASCII of de HEXMODE van een
- * window.
+ * Functie voor het instellen van de ASCII of de HEXMODE
+ * van een window.
  */
 
 static void txt_mode(TXT_WINDOW *w)
 {
-
-	if (w->hexmode == 0)
-		w->hexmode = 1;		/* switch to hex mode */
-	else
-		w->hexmode = 0;		/* switch to text mode */
-
+	w->hexmode ^= 1;
 	w->nlines = txt_nlines(w);
 	w->columns = txt_width(w, w->hexmode);
 
-	wd_type_sldraw ((TYP_WINDOW *)w, TRUE );
+	wd_type_sldraw ((WINDOW *)w);
 	set_menu(w);
 }
 
@@ -531,7 +526,7 @@ static void txt_tabsize(TXT_WINDOW *w)
 		{
 			w->twidth = txt_width(w, 0);
 			w->columns = (w->hexmode) ? txt_width(w, 1) : w->twidth;
-			wd_type_sldraw((TYP_WINDOW *)w, TRUE); 
+			wd_type_sldraw((WINDOW *)w); 
 		}
 	}
 }
@@ -923,8 +918,7 @@ static int txt_read
 
 /*
  * Read or reread a file into the same window.
- * If filename is not given (NULL), keep old name
- * and reread old file.
+ * If filename is not given (is NULL), keep old name and reread old file.
  */
 
 boolean txt_reread

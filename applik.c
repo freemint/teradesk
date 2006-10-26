@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <tos.h>
 #include <vdi.h>
-#include <boolean.h>
 #include <mint.h>
 #include <library.h>
 #include <xdialog.h>
@@ -50,7 +49,6 @@
 #include "lists.h"
 #include "slider.h" 
 #include "filetype.h" 
-#include "library.h"
 #include "applik.h"
 #include "open.h"
 #include "va.h"
@@ -446,7 +444,11 @@ void log_shortname( char *dest, char *appname )
 	*dest = 0;
 	
 	if (appname)
+#if _MINT_
 		cramped_name(fn_get_name(appname), dest, sizeof(SNAME));
+#else
+		strcpy(dest, fn_get_name(appname)); /* safe in single-TOS */
+#endif
 }
 
 
@@ -872,6 +874,7 @@ APPLINFO *app_find(const char *file, boolean dial)
 	while (h)
 	{
 		t = h->filetypes;
+
 		while (t)
 		{
 			/* 
@@ -897,8 +900,10 @@ APPLINFO *app_find(const char *file, boolean dial)
 				naap++;
 				break; /* stop scanning documenttypes for this app */
 			}
+
 			t = t->next;
 		}
+
 		h = h->next;
 	}
 
@@ -1460,24 +1465,21 @@ boolean app_exec
 			strcpy( prevcall, thiscall );
 		}
 
-		/* Don't start the application after all */
+		/* Don't start the application after all if not OK'd */
 
-		if (chk_xd_dialog(getcml, CMDLINE) != CMLOK)
-			goto errexit;
-			
-		/* 
-		 * Ttpline below is from the dialog. Copy any possible length,
-		 * and put command line length (or 127) into first byte
-		 */
+		if (chk_xd_dialog(getcml, CMDLINE) == CMLOK)
+		{
+			/* 
+			 * Ttpline below is from the dialog. Copy any possible length,
+			 * and put command line length (or 127) into first byte
+			 */
 
-		if((thecommand = requote_cmd(ttpline)) == NULL)
-			goto errexit;
+			thecommand = requote_cmd(ttpline);
+		}
 	}
 	else if(n == -1)
 	{
-		if((thecommand = requote_cmd((char *)sellist)) == NULL)
-			goto errexit;
-
+		thecommand = requote_cmd((char *)sellist);
 		*prevcall = 0;
 	}
 	else
@@ -1488,64 +1490,65 @@ boolean app_exec
 		 * quotes and spaces 
 		 */
 
-		if ((thecommand = app_build_cml(cl_format, w, sellist, n)) == NULL)
-			goto errexit;
-
+		thecommand = app_build_cml(cl_format, w, sellist, n);
 		*prevcall = 0;
 	}
 
-	/* Set the appropriate default directory */
-
-	if ( (thework->flags & PD_PDIR) != 0 )
+	if(thecommand != NULL)
 	{
-		/* default path is to the program directory */
-		def_path = NULL;
-	}
-	else if ( ((thework->flags & PD_PPAR) != 0) && thecommand[0] )
-	{
-		/* default path is to the first parameter of the command */
+		/* Set the appropriate default directory */
 
-		par_path = app_parpath((char *)(&thecommand[1]));
-		def_path = par_path;
-	}
-	else
-	{
-		/* default path is to the top window */
-		def_path = wd_toppath();
-	}
-
-	/* 
-	 * Do not use ARGV on programs not installed as applications
-	 * if the command line is sufficiently short. Do not use ARGV
-	 * if there is no command line at all.
-	 * (by now 'thecommand' is allocated in any of the branches above)
-	 * I.e. -some- form of command line always exist, even if an empty string.
-	 * Alternatively, force the use of ARGV if so said.
-	 */
-
-	strip_name(thecommand + 1, thecommand + 1);
-	cmllen = strlen(thecommand + 1);
-	thecommand[0] = (cmllen > 125) ? 127 : (char)cmllen;
-
-	if ( !cmllen || (!find_appl(&applikations, name, NULL) && (!fargv && (cmllen < 126))) )
-		argv = FALSE;
-
-	/* Check if the commandline is too long (max 125 if ARGV is not recognized)  */
-
-	if ( !argv && (cmllen > 125)  )
-		xform_error ( ECOMTL ); 
-	else	/* No error, start the program. */
-	{
-		if ( name )
+		if ( (thework->flags & PD_PDIR) != 0 )
 		{
-			/* Note: something is wrong here! see va_start_prg in va.c */
-
-			if (!va_start_prg(name, appl_type, &thecommand[1]))
-				start_prg(name, thecommand, def_path, appl_type, argv, single, back, limmem, theenv, kstate);
-
-			result = TRUE; /* Only now can it be true */
+			/* default path is to the program directory */
+			def_path = NULL;
 		}
-	}
+		else if ( ((thework->flags & PD_PPAR) != 0) && thecommand[0] )
+		{
+			/* default path is to the first parameter of the command */
+
+			par_path = app_parpath((char *)(&thecommand[1]));
+			def_path = par_path;
+		}
+		else
+		{
+			/* default path is to the top window */
+			def_path = wd_toppath();
+		}
+
+		/* 
+		 * Do not use ARGV on programs not installed as applications
+		 * if the command line is sufficiently short. Do not use ARGV
+		 * if there is no command line at all.
+		 * (by now 'thecommand' is allocated in any of the branches above)
+		 * I.e. -some- form of command line always exist, even if an empty string.
+		 * Alternatively, force the use of ARGV if so said.
+		 */
+
+		strip_name(thecommand + 1, thecommand + 1);
+		cmllen = strlen(thecommand + 1);
+		thecommand[0] = (cmllen > 125) ? 127 : (char)cmllen;
+
+		if ( !cmllen || (!find_appl(&applikations, name, NULL) && (!fargv && (cmllen < 126))) )
+			argv = FALSE;
+
+		/* Check if the commandline is too long (max 125 if ARGV is not recognized)  */
+
+		if ( !argv && (cmllen > 125)  )
+			xform_error ( ECOMTL ); 
+		else	/* No error, start the program. */
+		{
+			if ( name )
+			{
+				/* Note: something is wrong here! see va_start_prg in va.c */
+
+				if (!va_start_prg(name, appl_type, &thecommand[1]))
+					start_prg(name, thecommand, def_path, appl_type, argv, single, back, limmem, theenv, kstate);
+
+				result = TRUE; /* Only now can it be true */
+			}
+		}
+	}	
 
 	/* Program may jump here in case of an error */
 
