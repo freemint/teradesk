@@ -91,6 +91,7 @@ typedef struct
 	*/
 
 	boolean refresh;
+	boolean va_refresh;
 
 } DIR_WINDOW;
 

@@ -606,7 +606,7 @@ void rsc_init(void)
 #if _MINT_
 	if(!xd_aes4_0)
 #endif
-		mn_del(MNWINBOX, MICONIF);
+		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
 
 #if _EDITLABELS
 #if _MINT_

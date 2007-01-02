@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -87,7 +87,6 @@ FONT dir_font;
 WINFO dirwindows[MAXWINDOWS]; 
 
 RECT dmax;
-
 
 boolean clearline = TRUE;
 
@@ -454,11 +453,12 @@ void dir_info(DIR_WINDOW *w)
 
 static void dir_free_buffer(DIR_WINDOW *w) 
 {
-	long i;
 	RPNDTA *b = w->buffer;
 
 	if (b)
 	{
+		long i;
+
 		for (i = 0; i < w->nfiles; i++)
 			free((*b)[i]);		/* free NDTA + name */
 
@@ -475,55 +475,58 @@ static void dir_free_buffer(DIR_WINDOW *w)
 
 static void set_visible(DIR_WINDOW *w)
 {
-	long 
-		i, 
-		v = 0L;
 
-	int 
-		oa = options.attribs,
-		n = 0;
-
-	NDTA
-		*b;
-
-
-	if (w->buffer == NULL)
-		return;
-
-	for (i = 0; i < w->nfiles; i++)
+	if (w->buffer != NULL)
 	{
-		b = (*w->buffer)[i];
+		long 
+			i, 
+			v = 0L;
 
-		b->selected = FALSE;
-		b->newstate = FALSE;
+		int 
+			oa = options.attribs,
+			n = 0;
 
-		if (   (   (oa & FA_HIDDEN) != 0 				/* permit hidden */
-		        || (b->attrib.attrib & FA_HIDDEN) == 0 	/* or item is not hidden */
-		       )
-		    && (   (oa & FA_SYSTEM) != 0 				/* permit system */
-		        || (b->attrib.attrib & FA_SYSTEM) == 0 	/* or item is not system */
-		       )
-		    && (   (oa & FA_SUBDIR) != 0 				/* permit subdirectory */
-		        || (b->attrib.attrib & FA_SUBDIR) == 0 	/* or item is not subdirectory */
-		       )
-		    && (   (oa & FA_PARDIR) != 0 				/* permit parent dir */  
-				|| strcmp(b->name, prevdir) != 0       	/* or item is not parent dir */ 
-		       )
-		    && (   (b->attrib.mode & S_IFMT) == S_IFDIR /* permit directory */
-			    || cmp_wildcard(b->name, w->fspec)	   	/* or mask match */
-			   )
-		   )
+		NDTA
+			*b;
+
+		for (i = 0; i < w->nfiles; i++)
 		{
-			v += b->attrib.size; /* do this always, or on files only ? */			
-			b->visible = TRUE;
-			n++;
-		}
-		else
-			b->visible = FALSE;
-	}
+			b = (*w->buffer)[i];
+			b->selected = FALSE;
+			b->newstate = FALSE;
 
-	w->nvisible = n;
-	w->visbytes = v;
+			if 
+			(   
+				(   (oa & FA_HIDDEN) != 0 					/* permit hidden */
+			        || (b->attrib.attrib & FA_HIDDEN) == 0 	/* or item is not hidden */
+				) && 
+				(   (oa & FA_SYSTEM) != 0 					/* permit system */
+			        || (b->attrib.attrib & FA_SYSTEM) == 0 	/* or item is not system */
+				) && 
+				(   (oa & FA_SUBDIR) != 0 					/* permit subdirectory */
+			        || (b->attrib.attrib & FA_SUBDIR) == 0 	/* or item is not subdirectory */
+				) && 
+				(   (oa & FA_PARDIR) != 0 					/* permit parent dir */  
+					|| strcmp(b->name, prevdir) != 0       	/* or item is not parent dir */ 
+				) && 
+				(   (b->attrib.mode & S_IFMT) == S_IFDIR 	/* permit directory */
+				    || cmp_wildcard(b->name, w->fspec)	   	/* or mask match */
+				)
+			)
+			{
+ 				if((b->attrib.mode & S_IFMT) != S_IFDIR) 
+					v += b->attrib.size;
+			
+				b->visible = TRUE;
+				n++;
+			}
+			else
+				b->visible = FALSE;
+		}
+
+		w->nvisible = n;
+		w->visbytes = v;
+	}
 }
 
 
@@ -913,7 +916,7 @@ void dir_refresh_all(void)
 			wd_type_draw ((TYP_WINDOW *)w, TRUE );
 		}
 
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 }
 
@@ -943,28 +946,30 @@ boolean dir_do_path( char *path, int action )
 	WINDOW *w;
 	const char *wpath;
 
-	boolean result = FALSE;
-
  	w = xw_first();
 
 	while( w )
 	{
-		wpath = wd_path(w);
-
-		if ( xw_type(w) == DIR_WIND && wpath && path && (strcmp( path, wpath ) == 0) )
+		if 
+		(
+			xw_type(w) == DIR_WIND && 
+			(wpath = wd_path(w)) != NULL && 
+			path && 
+			(strcmp( path, wpath ) == 0) 
+		)
 		{
 			if ( action == DO_PATH_TOP )
 				wd_type_topped( w );
 			else			
 				dir_refresh_wd( (DIR_WINDOW *)w );
 
-			result = TRUE;
+			return TRUE;
 		}
 
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 
-	return result;
+	return FALSE;
 }
 
 
@@ -1031,7 +1036,7 @@ static void dir_set_update(WINDOW *w, wd_upd_type type, const char *fname1, cons
  * Update a directory window if it is marked for update
  * Also inform signed-on AV-clients that this directory should be updated.
  * Note: notification of AV-clients may slow down file copying.
- * If there are no AV-protocol clients, skip this copmletely for speed
+ * If there are no AV-protocol clients, skip this completely for speed
  */
 
 static void dir_do_update(WINDOW *w)
@@ -1042,7 +1047,7 @@ static void dir_do_update(WINDOW *w)
 
 #if _MORE_AV
 		if ( avclients )
-			va_pathupdate( ((DIR_WINDOW *)w)->path);
+			va_pathupdate(w);
 #endif
 	}
 }
@@ -1603,10 +1608,10 @@ static char *sizestr(char *tstr, long size)
 #if _MINT_
 
 /* 
- * Create a string for displaying user/group id (range 0:9999).
+ * Create a string for displaying user/group id (range -999:9999).
  * Leading zeros are shown; no termination zero byte.
  * Return pointer to -end- of string.
- * Hopefully this will be faster than sprintf( ... %i ...)
+ * Hopefully this will be faster than sprintf( ... %i ...).
  */
 
 static char *uidstr(char *idstr, int id)
@@ -1615,10 +1620,19 @@ static char *uidstr(char *idstr, int id)
 
 	for( i = 0; i < 4; i++ )
 	{
-		idstr[i] = id / k;
-		id -= k * idstr[i];
+		if(id < 0)
+		{
+			idstr[i] = '-';
+			id = -id;
+		}
+		else
+		{
+			idstr[i] = id / k;
+			id -= k * idstr[i];
+			idstr[i] += '0';
+		}
+
 		k /= 10;
-		idstr[i] += '0';
 	}
 
 	return idstr + 4;
@@ -2993,10 +3007,14 @@ void dir_setnws(DIR_WINDOW *w, boolean draw)
 		NDTA *h = (*pb)[i];
 
 		h->selected = h->newstate;
+
+		/* Count numbers and sum sizes- but dont add directory sizes */
+
 		if (h->selected)
 		{
 			n++;
-			bytes += h->attrib.size;
+			if((h->attrib.mode & S_IFMT) != S_IFDIR)
+				bytes += h->attrib.size;
 		}
 	}
 

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren. 
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren. 
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -129,7 +129,7 @@ static char
 
 #if _LOGFILE
 FILE
-	*logfile;
+	*logfile = NULL;
 char
 	*logname;
 #endif
@@ -1241,6 +1241,7 @@ boolean find_cfgfiles(char **cfgname)
 /*
  * Initiation function (reading configuraton, defaults, etc.).
  * Result: TRUE if OK.
+ * This function is called only once during program execution.
  */
 
 static boolean init(void)
@@ -1262,8 +1263,9 @@ static boolean init(void)
 		strcpy(strrchr(logname,'.'), ".log");
 		logfile = fopen((const char *)logname, "w");
 		if (logfile == NULL)
-		printf("\n CAN'T OPEN LOGFILE");
-		fprintf(logfile, "\n LOG FILE OPENED; ap_id %i", ap_id);
+			printf("\n CAN'T OPEN LOGFILE");
+		else
+			fprintf(logfile, "\n LOG FILE OPENED; ap_id %i", ap_id);
 #endif
 
 		if (!dsk_init())
@@ -1282,7 +1284,7 @@ static boolean init(void)
 
 	/* 
 	 * Force the name of the single-tasking program to DESKTOP 
-	 * this call to menu_register() is documented only of AES4
+	 * this call to menu_register() is documented only since AES4
 	 * but in fact works in all Atari AESes.
 	 * Must come after menu_bar()
 	 */
@@ -1597,7 +1599,6 @@ fprintf(logfile,"\n  AP_TERM");
 					/* Tell the AES that TeraDesk can't terminate just now */
 					int ap_tfail[8] = {AP_TFAIL, 0, 0, 0};
 					ap_tfail[1] = ap_id; /* ??? */
-
 					shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
 				}
 				return -1;
@@ -1662,24 +1663,26 @@ static void evntloop(void)
 		 * the loop has to be executed every once in a while-
 		 * like every 500ms defined below. It looks as if this 
 		 * is not needed in a multitasking environment.
-		 * Also, do it only if there are open accessory windows.
+		 * Do this only if there are open accessory (AV-client) windows.
 		 */
 
 		if
 		(
+/* it IS needed in multitasking, after all- but will it degrade speed?
 #if _MINT_
 			!mint &&
 #endif
+*/
 			va_accw()
 		)
 		{
-			loopevents.ev_mtlocount = 500;
-			loopevents.ev_mflags |= MU_TIMER;
+			loopevents.ev_mtlocount = 500;		/* 500ms */
+			loopevents.ev_mflags |= MU_TIMER;	/* with timer events */
 		}	
 		else
 		{
 			loopevents.ev_mtlocount = 0;
-			loopevents.ev_mflags &= ~MU_TIMER;
+			loopevents.ev_mflags &= ~MU_TIMER;	/* no timer events */
 		}
 
 		/*
@@ -1696,7 +1699,7 @@ static void evntloop(void)
 		 * Note: as some of the events are handled within xe_xmulti,
 		 * after which the appropriate bitflags are reset,
 		 * it is quite possible that the result returned by xe_xmulti
-		 * be a "nonevent" i.e. 0
+		 * be a "nonevent" i.e. with code 0
 		 */
 
 		event = xe_xmulti(&loopevents);
@@ -1704,16 +1707,6 @@ static void evntloop(void)
 #if _LOGFILE
 	fprintf(logfile,"\n loopevent 0x%x", event); 
 #endif
-
-		/*		
-		 * HR 151102: This imposed an unsolved problem with N.Aes 1.2 	
-		 * (lockup of TeraDesk after live moving) 	
-		 * It is not an essential function.
-		 */
-
-/* try without - or maybe use xe_button_state to call it only if button not pressed
-		clr_key_buf();		
-*/
 
 		/* Process any recieved messages */
 
@@ -1810,8 +1803,8 @@ int main(void)
 	have_ssystem = (Ssystem(-1, 0L, 0L) == 0);		/* use Ssystem where possible */
 
 	/* 
-	 * Attempt to divine from cookies the version of TOS and AES.
-	 * this can NOT detect: MyAES, XaAES and Atari AES
+	 * Attempt to divine from some cookies the versions of TOS and AES.
+	 * this can NOT detect: MyAES, XaAES and Atari AES 4.1
 	 */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
@@ -1846,13 +1839,15 @@ int main(void)
 	 */
 
 	tos_version = get_tosversion();
-	aes_version = _GemParBlk.glob.version;
+	aes_version = get_aesversion();
 
 	/* Load the dekstop.rsc resource file */
 
 	if (rsrc_load(RSRCNAME) == 0)
+	{
 		/* Failed, probably file not found */
 		form_alert(1, msg_resnfnd);
+	}
 	else
 	{
 		/* 
@@ -1860,27 +1855,27 @@ int main(void)
 		 * Initialize x-dialogs 
 		 */
 
-		if ((error = init_xdialog(&vdi_handle, malloc_chk, free,
-								  get_freestring(DWTITLE), 1, &nfonts)) < 0)
+		if 
+		(
+			(error = init_xdialog(&vdi_handle, malloc_chk, free,
+								  get_freestring(DWTITLE), 1, &nfonts)) < 0
+		)
 			xform_error(error);
 		else
 		{
 			/*
 			 * Inform AES of TeraDesk's capabilities regarding messages 
-			 * (should here be version 0x340, 0x399 or 0x400 ?)
+			 * (should here be version 0x340, 0x399 or 0x400 ?).
+			 * Also, put this appliction into the first menu.
 			 */
 
-			if ( xd_aes4_0 /* aes_version >= 0x399 */ ) 
+			if ( aes_version >= 0x399 ) 
 			{
 				/* Inform AES that AP_TERM is understood ("1"= NM_APTERM) */
 
 				shel_write(SHW_INFRECGN, 1, 0, NULL, NULL); 
 				menu_register(ap_id, get_freestring(MENUREG));
 			}
-
-			/* Some details about xdialogs (possible words for 'Cancel') */
-
-			xd_cancelstring = get_freestring(CANCTXT);
 
 			/* Initialize things related to vdi. Set default font */
 
@@ -1889,6 +1884,10 @@ int main(void)
 			/* Initialize the resource structure, fix some positions, etc. */
 
 			rsc_init();
+
+			/* Some details about xdialogs (possible words for 'Cancel') */
+
+			xd_cancelstring = get_freestring(CANCTXT);
 
 			/* 
 			 * If screen resolution is too low (less than 40x25), can't continue.
@@ -1944,8 +1943,8 @@ int main(void)
 								 * (remove AV-windows before save)
 								 */
 
-								va_checkclient();	/* remove nonexistent clients */
-								va_delall(-1);		/* remove remaining pseudowindows  */
+								va_checkclient();		/* remove nonexistent clients */
+								va_delall(-1, TRUE);	/* remove remaining pseudowindows  */
 
 								if ((options.sexit & SAVE_CFG) != 0)	/* save config */
 									save_options(definfname);
@@ -1983,8 +1982,11 @@ int main(void)
 	}
 
 #if _LOGFILE
-		fprintf(logfile,"\n CLOSE LOG FILE \n");
-		fclose(logfile);
+		if(logfile)
+		{
+			fprintf(logfile,"\n CLOSE LOG FILE \n");
+			fclose(logfile);
+		}
 #endif
 
 	/* 
@@ -1992,7 +1994,7 @@ int main(void)
 	 * If a resolution change is required, shutdown is (supposed to be)
 	 * performed first (but it did not work as planned... see below).
 	 * If only shutdown is required, the system will reset at the end.
-	 * Note that if anexternal application is set to perform shutdown,
+	 * Note that if an external application is set to perform shutdown,
 	 * all this will -not- be executed: upon receiving AP_TERM, TeraDesk
 	 * will just quit.
 	 */ 
@@ -2019,7 +2021,10 @@ int main(void)
 			 */
 #if _MINT_
 			int ignor = 0;
+/*
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
+*/
+			quit = shel_write( SHW_SHUTDOWN, TRUE, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
 #else
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
 #endif
@@ -2072,10 +2077,11 @@ int main(void)
 
 
 /* 
- * This routine displays the incrementation of the 200Hz timer;
- * it is to be used only for evaluation of the duration of some
- * operations during development.
- * Call this twice, first with mode=0 (reset), then with mode=1 (display count)
+ * This routine displays the incrementation of the 200Hz timer; 
+ * it is to be used only for evaluation of the duration of some 
+ ( operations during development.
+ * Call this twice, first with mode=0 (reset timer counter), 
+ * then with mode=1 (display timer count)
  */
 
 /* 

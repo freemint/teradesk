@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -390,29 +390,11 @@ char *locate(const char *name, int type)
 
 	defext = (type >= L_LOADCFG) ? cfgext : fsdefext;
 
-/* Currently not used anywhere in TeraDesk
+	if ((fspec = fn_make_newname(name, defext)) == NULL)
+			return NULL;
 
-	if (type == L_FOLDER)
-	{
-		if ((fspec = fn_make_path(name, defext)) == NULL)
-			return NULL; 
-
-		fname[0] = 0;
-		ex_flags = EX_DIR;
-	}
-	else
-	{
-
-*/
-		if ((fspec = fn_make_newname(name, defext)) == NULL)
-				return NULL;
-
-		strcpy(fname, fn_get_name(name));
-		ex_flags = EX_FILE;
-
-/*
-	}
-*/
+	strcpy(fname, fn_get_name(name));
+	ex_flags = EX_FILE;
 
 	free(cfgext);
 	title = get_freestring(titles[type]);
@@ -426,42 +408,24 @@ char *locate(const char *name, int type)
 		if (!newpath)
 			return NULL;
 
-/* Currently not used anywhere in TeraDesk; it is incorrect, anyway.
-
-		if (type == L_FOLDER)
+		if ((type == L_PROGRAM) && !prg_isprogram(fname))
+			alert_iprint(TPLFMT);
+		else
 		{
-			if (((newn = fn_get_path(newpath)) != NULL) && isroot(newname))
+			if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
 			{
-				/* must not set folder name to be root name */
-				alert_iprint(MNOROOT); /* this string does not exist anymore */
-				free(newn);
+				result = x_exist(newn, ex_flags);
+
+				if (!result)
+				{
+					alert_iprint(TFILNF);
+					free(newn);
+				}
 			}
 			else
 				result = TRUE;
 		}
-		else
-		{
-*/
-			if ((type == L_PROGRAM) && !prg_isprogram(fname))
-				alert_iprint(TPLFMT);
-			else
-			{
-				if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
-				{
-					result = x_exist(newn, ex_flags);
 
-					if (!result)
-					{
-						alert_iprint(TFILNF);
-						free(newn);
-					}
-				}
-				else
-					result = TRUE;
-			}
-/*
-		}
-*/
 		fspec = newpath;
 	}
 	while (!result);
@@ -784,6 +748,7 @@ boolean cmp_wildcard(const char *fname, const char *wildcard)
 #endif
 	{
 		dot = strchr(wildcard, '.');
+
 		if (dot)
 		{
 			if (dot[1] == '*' && dot[2] == '\0' && strchr(fname, '.') == NULL)
@@ -881,6 +846,7 @@ void force_mediach(const char *path)
 
 		fname[0] = drive + 'A';
 		r = Fopen(fname, 0);
+
 		if (r >= 0)
 			Fclose((int)r);
 

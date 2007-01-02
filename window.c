@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -100,7 +100,7 @@ SINFO2
 	that;		/* structure used when saving/loading window data */
 
 FONT 
-	*cfg_font;
+	*cfg_font;	/* to data for the font loaded or saved to confi. file */
 
 
 #if _MINT_
@@ -110,7 +110,7 @@ SNAME automask = {0};	/* no need for long names in single-TOS */
 #endif
 
 static char 
-	floppid;
+	floppid;				/* floppy id 'A' or 'B' */
 
 static RECT 
 	icwsize = {0,0,0,0};	/* size of the iconified window */
@@ -226,9 +226,11 @@ CfgNest cfg_wdfont
 void autoloc_off(void)
 {
 	WINDOW *w = xw_top();
+
 	autoloc = FALSE;
 	aml = 0;
 	*automask = 0;
+
 	if(w && xw_type(w) == DIR_WIND && *(((DIR_WINDOW *)w)->info + 1) == '(' )
 		dir_info((DIR_WINDOW *)w);
 }
@@ -502,7 +504,8 @@ int wd_wcount(void)
 	{
 		if (xw_type(h) >= DIR_WIND && xw_type(h) <= ACC_WIND)
 			n++;
-		h = h->xw_next;
+
+		h = xw_next(h);
 	}
 
 	return n;
@@ -693,19 +696,30 @@ void itm_set_menu(WINDOW *w)
 		w = NULL;
 
 	/* 
-	 * Find out the type of the top window.
-	 * Also find if windows are iconified and how many exist
+	 * Find out the type of the top window (ONLY directory/text/acc).
+	 * Also find if windows are iconified and how many exist.
+	 * Note: in earlier versions xw_top() was used here instead of xw_first()
+	 * but that could not properly detect open AV-client windows
+	 * when the desktop was topped.
 	 */
+
+	wtop = xw_first();
+
+	if ( wtop )
+		topicf =  wd_isiconified((TYP_WINDOW *)wtop); 
+
+	/* Now find the real topped window */
 
 	wtop = xw_top();
 
 	if ( wtop )
-	{
 		wtoptype = xw_type(wtop);
-		topicf =  wd_isiconified((TYP_WINDOW *)wtop); 
-	}
+
+
+	/* Count directory, text and accessory windows */
 
 	nwin = wd_wcount();
+
 	nonsel = (!n && wd_dirortext(wtop));
 
 	if(n > 0)
@@ -816,7 +830,16 @@ void itm_set_menu(WINDOW *w)
 
 	/* 'Select all' is possible only on directory or desk window */
 
-	menu_ienable(menu, MSELALL, (int)( (wtoptype == DIR_WIND && !topicf) || wtoptype == DESK_WIND ));
+	menu_ienable
+	(
+		menu, 
+		MSELALL, 
+		(int)
+		( 
+			(wtoptype == DIR_WIND && !topicf) || 
+			wtoptype == DESK_WIND 
+		)
+	);
 
 	/* Enable duplication of dir and text windows */
 
@@ -852,12 +875,16 @@ void itm_set_menu(WINDOW *w)
 	 */
 
 	enab=FALSE;
+
 	if ( (n == 1) && (type == ITM_DRIVE) )
 	{
 		char *fullname = itm_fullname ( w, list[0] );
+
 		strsncpy ( drive, fullname , sizeof(drive) );
 		free(fullname);
+
 		drive[0] &= 0x5F; /* to uppercase */
+
 		if 
 		(   
 			   ( drive[0] >= 'A' )
@@ -877,22 +904,17 @@ void itm_set_menu(WINDOW *w)
 	wd_menu_ienable(MFFORMAT, enab );
 #endif
 
-	enab = FALSE;
-	enab2 = FALSE;
-	if(nwin && wtoptype != DESK_WIND)
-	{
-		if(!topicf)
-			enab = TRUE;
-
-		enab2 = TRUE;
-	}
+	if(nwin && !topicf)
+		enab = TRUE;
+	else
+		enab = FALSE;
 
 	/* Enable window fulling, iconifying, closing... if there are open windows */
 
 	wd_menu_ienable(MFULL, enab);
-	wd_menu_ienable(MICONIF, enab2);
-	wd_menu_ienable(MCLOSE, enab2);
-	wd_menu_ienable(MCLOSEW, enab2);
+	wd_menu_ienable(MICONIF, nwin);
+	wd_menu_ienable(MCLOSE, (nwin && wtoptype == DIR_WIND));
+	wd_menu_ienable(MCLOSEW, nwin);
 	wd_menu_ienable(MCLOSALL, nwin);
 	menu_icheck(menu, MICONIF, topicf);
 
@@ -935,7 +957,8 @@ void wd_deselect_all(void)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->itm_select(w, -1, 0, TRUE);
-		w = w->xw_next;
+
+		w = xw_next(w);
 	}
 
 	((ITM_WINDOW *) desk_window)->itm_func->itm_select(desk_window, -1, 0, TRUE);
@@ -988,7 +1011,7 @@ const char *wd_toppath(void)
 		if (xw_type(w) == DIR_WIND)
 			return ((DIR_WINDOW *)w)->path; 
 
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 
 	return NULL;
@@ -1045,7 +1068,8 @@ void wd_set_update(wd_upd_type type, const char *fname1, const char *fname2)
 	{
 		if (xw_type(w) == DIR_WIND)
 			((ITM_WINDOW *) w)->itm_func->wd_set_update(w, type, fname1, fname2);
-		w = w->xw_next;
+
+		w = xw_next(w);
 	}
 
 	((ITM_WINDOW *)desk_window)->itm_func->wd_set_update(desk_window, type, fname1, fname2);
@@ -1101,7 +1125,8 @@ void wd_update_drv(int drive)
 			}
 
 		}
-		w = w->xw_next;
+
+		w = xw_next(w);
 	}
 
 	wd_do_update();
@@ -1197,7 +1222,7 @@ void wd_del_all(void)
 
 	while (w)
 	{
-		prev = w->xw_prev;
+		prev = xw_prev(w);
 
 		if ( xw_type(w) != ACC_WIND )
 			wd_type_close(w, 1);		
@@ -1293,7 +1318,8 @@ void wd_hndlmenu(int item, int keystate)
 
 	WINDOW 
 		*w, 			/* pointer to the window in which a selection is made */
-		*ww,			/* pointer a real or simulated window to search in or show info of */
+		*ww,			/* pointer to the real or simulated window to search in or show info of */
+		*wfirst,		/* pointer to the topmost TeraDesk's window */
 		*wtop;			/* pointer to the top window */
 
 	int 
@@ -1301,6 +1327,9 @@ void wd_hndlmenu(int item, int keystate)
 		n = 0,			/* number of items selected */ 
 		*list = NULL,	/* pointer to a list of selected items indices */
 		wtoptype = 0; 	/* type of the top window */
+
+	static int 
+		fmsg[] = {0, 0, 0, 0, -1, -1, -1, -1};	/* a message to itself */
 
 	char			
 		*thepath = NULL,/* aux. path */
@@ -1320,6 +1349,10 @@ void wd_hndlmenu(int item, int keystate)
 
 	if ( wtop )
 		wtoptype = xw_type(wtop);
+
+	wfirst = xw_first();
+
+	/* Now, what to do */
 
 	switch (item)
 	{
@@ -1562,38 +1595,44 @@ void wd_hndlmenu(int item, int keystate)
 		i = WM_CLOSED;
 		goto sendit;
 	case MICONIF:
-		if(wd_isiconified((TYP_WINDOW *)wtop))
+		if(wd_isiconified((TYP_WINDOW *)wfirst))
 			i = WM_UNICONIFY;
 		else
 			i = WM_ICONIFY;
 		
 		sendit:;
 
-		if(wtop)
+		if(wfirst)
 		{
 			/* fake a message about the top window */
-			int msg[] = {0, 0, 0, 0, -1, -1, -1, -1};
-			msg[0] = i;
-			msg[3] = wtop->xw_handle;
-			xw_hndlmessage(msg);
+			fmsg[0] = i;
+			fmsg[3] = wfirst->xw_handle;
+			xw_hndlmessage(fmsg);
 		}
+
 		break;
 	case MCLOSALL:
-		va_delall(-1);
+		va_delall(-1, FALSE);
 		wd_del_all();
 	case MCLOSEW:
-		if(wtop)
-			wd_type_close(wtop, 1);
+
+		if(wfirst)
+			wd_type_close(wfirst, 1);
+
 		break;
 	case MDUPLIC:
 		toppath = strdup(wd_path(wtop));
+
 		if ( toppath )
 		{
 			if ( wtoptype == DIR_WIND )
 				dir_add_dwindow(toppath);
 			else if (wtoptype == TEXT_WIND )
 				txt_add_window(NULL, 0, 0, toppath);
+			else
+				free(toppath);
 		}
+
 		break;
 	case MSELALL:
 		if ( wtoptype == DIR_WIND || wtoptype == DESK_WIND )
@@ -1653,7 +1692,7 @@ static void wd_defsize(int type)
 		if (type == TEXT_WIND)
 		{
 			wi = &textwindows[i];
-			txt_font = def_font;
+			txt_font = def_font; /* need not be in the loop */	
 			y0 = 20;
 			y1 += i;
 			w1 = 12;
@@ -1663,7 +1702,7 @@ static void wd_defsize(int type)
 		else
 		{
 			wi = &dirwindows[i];
-			dir_font = def_font;
+			dir_font = def_font; /* need not be in the loop */
 			x0 *= 2;
 			x1 += i;
 			y0 = 16;
@@ -1721,15 +1760,15 @@ void wd_sizes(void)
 
 void wd_default(void)
 {
-	wd_deselect_all();
-	wd_del_all();
+	wd_deselect_all();				/* deselect everything */
+	wd_del_all();					/* delete all windows */
 	menu_icheck(menu, MSHOWICN, options.mode);	
 	menu_icheck(menu, MAARNG, options.aarr);
 	wd_set_sort(options.sort);
 	wd_set_fields(options.fields);
-	wd_defsize(TEXT_WIND); 	/* default window sizes and font size */
-	wd_defsize(DIR_WIND);	/* default window sizes and font size */
-	wd_sizes();				/* limit window size (min/max) */
+	wd_defsize(TEXT_WIND); 			/* default window sizes and font size */
+	wd_defsize(DIR_WIND);			/* default window sizes and font size */
+	wd_sizes();						/* limit window size (min/max) */
 }
 
 
@@ -1871,6 +1910,7 @@ void wd_xyround(RECT *r)
 	r->x = wd_round(r->x, 8); 
 	r->y = wd_round(r->y, (r->y > 4 * screen_info.fnt_h) ? 8 : 2);
 }
+
 
 /* 
  * Funktie die uit opgegeven grootte de werkelijke grootte van het
@@ -2267,7 +2307,7 @@ void wd_drawall(void)
 		 */
 
 		wd_type_sldraw(w);
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 }
 
@@ -3127,10 +3167,10 @@ boolean wd_adapt(WINDOW *w)
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 {
 	int 
-		act,
-		key,
-		wt = xw_type(w),
-		result = 1;
+		act,				/* action code */
+		key,				/* code of pressed key */
+		wt = xw_type(w),	/* window type */
+		result = 1;			/* return value */
 
 	TYP_WINDOW 
 		*tyw = (TYP_WINDOW *)w;
@@ -3140,7 +3180,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 
 	switch (scancode)
 	{
-	case RETURN:		/* if autoselector is on, open the selected item(s0 */
+	case RETURN:		/* if autoselector is on, open the selected item(s) */
 		if ( wt != TEXT_WIND )
 		{	
 			int n, *list;
@@ -3168,7 +3208,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		scroll:;
 		w_scroll(tyw, act);
 		break;
-	case SPACE:
+	case SPACE:				/* scroll down one page except when autolocating */
 		if ( wt == DIR_WIND )
 		{
 			if(autoloc)
@@ -3210,9 +3250,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		{
 			/* re-read the file in a text window */
 
-			int wpx = tyw->px;
-			long wpy = tyw->py;
-			txt_reread((TXT_WINDOW *)w, NULL, wpx, wpy);
+			txt_reread((TXT_WINDOW *)w, NULL, tyw->px, tyw->py);
 		}
 		break;
 	case INSERT:	/* Toggle autoselector on/off */
@@ -3228,15 +3266,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		}
 	default:
 		thedefault:;
-
-/* DjV why was this needed? Is it still needed? Can't remember.
-
-		if ( !(autoloc && onekey_shorts) && scansh( scancode, keystate ) == options.kbshort[MCLOSEW-MFIRST] )
-			wd_type_close(w, 1);
-		else
-
 		{
-*/
 			if ( wt == TEXT_WIND )
 				result = 0;
 			else 
@@ -3264,6 +3294,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 
 						char *ast, *dot;  /* pointer to "." in the name */
 						int ei = 0; /*  index of "*"  */
+
 						size_t lm = x_pathconf(((DIR_WINDOW *)w)->path, DP_NAMEMAX);
 
 						if(lm < 0)
@@ -3301,12 +3332,14 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 
 							if(key == SPACE)
 								key = 0;
+
 							key = touppc(key);
 							dot = strchr(automask,'.');
 
 							if(dot)
 							{
 								lm = dot - automask + 4;
+
 								if(key == '.')
 									key = 0;
 							}
@@ -3326,7 +3359,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 #if _MINT_ 
 										if(!mint) 
 #endif
-												ei = 1;	/* index of *.*  */
+											ei = 1;	/* index of *.*  */
 									}
 								}
 							}							
@@ -3363,10 +3396,9 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 					else
 						result = 0;
 				}
-			}
-/*		
+			}		
 		}
-*/
+
 		break;
 	}
 
@@ -3496,7 +3528,7 @@ CfgNest open_config
 				if (wclose)
 					wd_type_close(w, 1);
 
-				w = w->xw_prev;
+				w = xw_prev(w);
 			}
 
 			*error = CfgSave(file, open_end_table, lvl, CFGEMP); 
@@ -3910,7 +3942,7 @@ static boolean itm_drop
 
 	/* Drag & drop is possible only in Mint or Magic (what about geneva 6?) */
 
-	if (mint && apid >= 0) /* was 'apid > 0' earlier */
+	if (mint && apid >= 0) 
 	{
 		char ddsexts[34];
 		long nsize = 0;
@@ -3982,8 +4014,10 @@ static boolean itm_drop
 					ddclose(fd);
 					return FALSE;
 			}
+
 			ddclose(fd);
 			itm_select(w, -1, 0, TRUE);	
+
 			return TRUE;
 		}
 		else
@@ -4028,11 +4062,15 @@ static void get_minmax(ICND *icns, int n, int *clip)
 			else
 			{
 				j2 = j * 2;
+
 				if (clip[0] > icnd->coords[j2]) /* Do not use min() here */
 					clip[0] = icnd->coords[j2];
+
 				clip[1] = min(clip[1], icnd->coords[j2 + 1]);
+
 				if ( clip[2] < icnd->coords[j2])
 					clip[2] = icnd->coords[j2]; /* Do not use max() here */
+
 				clip[3] = max(clip[3], icnd->coords[j2 + 1]);
 			}
 		}
@@ -4088,6 +4126,7 @@ static void draw_icns(ICND *icns, int n, int mx, int my, int *clip)
 			c[j2] = icnd->coords[j2] + x;
 			c[j2 + 1] = icnd->coords[j2 + 1] + y;
 		}
+
 		v_pline(vdi_handle, icnd->np, c);
 	}
 
@@ -4210,6 +4249,7 @@ boolean itm_move
 		}
 
 		free(list); 
+
 		if (itm_xlist(src_wd, &n, &nv, &list, &icnlist, old_x, old_y) == FALSE)
 			return result;
 	}
@@ -4405,7 +4445,10 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 	{
 		autoloc_off();
 
-		/* Top TeraDesk by clicking on desktop area */
+		/* 
+		 * Top TeraDesk by clicking on desktop area. Unfortunately,
+		 * it is not possible to handle this in the same way for all AESes
+		 */
 
 #if _MINT_
 		if ( (mint || geneva) && xw_type(w) == DESK_WIND )
@@ -4423,7 +4466,8 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 					nowin = FALSE;
 					break;
 				}
-				ww = ww->xw_next;
+
+				ww = xw_next(ww);
 			}
 
 			/* 
@@ -4479,6 +4523,7 @@ void wd_set_obj0
 	obj[0].ob_spec.obspec.interiorcol = options.win_color;
 	obj[0].ob_spec.obspec.fillpattern = options.win_pattern;
 	obj[0].ob_spec.obspec.textmode = 1;
+
 	obj[0].r.x = work->x;
 	obj[0].r.y = row + work->y + YOFFSET - yoffset;
 	obj[0].r.w = work->w;
@@ -4504,6 +4549,7 @@ void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, bo
 
 	if (hidden && (obj[0].ob_spec.obspec.interiorcol == 0) )
 		obji->ob_state |= DISABLED;	/* will this work in all AESes ? */
+
 	if (link)
 		obji->ob_state |= CHECKED;
 
@@ -4723,7 +4769,7 @@ static boolean wd_isiconified(TYP_WINDOW *w)
 			xw_get((WINDOW *)w, WF_ICONIFY, &r);
 	}
 
-	return r.x; 
+	return (bool)(r.x); 
 
 #else
 
@@ -4798,6 +4844,8 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 		wd_type_iconify(w, &size);
 
 #endif
+
+	xw_note_top(w);
 
 	info->used = TRUE;
 }

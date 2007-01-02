@@ -2016,7 +2016,8 @@ RECT *xywh, int zoom,
 		if (!(nmd || prev) )
 			xd_enable_menu(NORMAL);
 
-		xw_closedelete(w);
+		xw_close(w);
+		xw_delete(w);
 
 		if ( nmd )
 		{
@@ -2156,7 +2157,8 @@ int xd_setposmode(int new)
 }
 
 /*
- * A small routine to set default colours in AES 4
+ * A small routine to set default colours in AES 4, 
+ * in video modes with more than 4 colours.
  * Otherwise, these have been set earlier to WHITE and BLACK, respectively.
  */
 
@@ -2189,8 +2191,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	xd_malloc = malloc;
 	xd_free = free;
 	xd_prgname = prgname;
-#ifdef __PUREC__
-	
+
 	/* 
 	 * Note: Magic (V6.20 at least) returns AES version 3.99.
 	 * In that case, after an inquiry ?AGI has been made,
@@ -2199,15 +2200,12 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	 * but still is a "3D" AES
 	 */
 
-	xd_aes4_0  = (_GemParBlk.glob.version >= 0x400);
-#else
-	xd_aes4_0 = (_global[0] >= 0x330);
-#endif
+	xd_aes4_0  = (get_aesversion() >= 0x400);
 
 /*
 	xd_min_timer = 10;			/* Minimum time passed to xe_multi(). */
 */
-xd_min_timer = 5;
+	xd_min_timer = 5;
 
 	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
 	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);
@@ -2353,7 +2351,7 @@ xd_min_timer = 5;
 			 * hopefully without bad effects: AES4 is declared by force.
 			 */
 
-			if ( get_tosversion() >= 0x400 && _GemParBlk.glob.version >= 0x330 )
+			if ( get_tosversion() >= 0x400 && get_aesversion() >= 0x330 )
 			{
 				xd_aes4_0 = TRUE; 
 				aes_hor3d = 2;

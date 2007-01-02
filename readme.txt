@@ -1,33 +1,14 @@
-Tera Desktop V1.41, 20-09-95, Copyright 1991-1995 W. Klaren.
-             V2.1   15-11-02, Copyright 2002  H. Robbers.
-             V2.3   ??-03-03, Copyright 2003  H. Robbers, Dj. Vukovic
-             V3.0   14-12-03, Copyright 2003  H. Robbers, Dj. Vukovic
-             V3.01  07-01-04, Copyright 2003  Dj. Vukovic
-             V3.30  23-04-04, Copyright 2004  Dj. Vukovic
-             V3.31  04-06-04, Copyright 2004  Dj. Vukovic
-             V3.32  11-06-04, Copyright 2004  Dj. Vukovic
-             V3.40  10-10-04, Copyright 2004  Dj. Vukovic
-             V3.41  07-11-04, Copyright 2004  Dj. Vukovic
-             V3.42  27-11-04, Copyright 2004  Dj. Vukovic
-             V3.50  20-02-05, Copyright 2005  Dj. Vukovic
-             V3.60  02-08-05, Copyright 2005  Dj. Vukovic
-             V3.61  17-08-05, Copyright 2005  Dj. Vukovic
-             V3.62  27-08-05, Copyright 2005  Dj. Vukovic
-             V3.70  03-12-05, Copyright 2005  Dj. Vukovic
-             V3.80  16-02-06, Copyright 2006  Dj. Vukovic
-             V3.81  17-03-06, Copyright 2006  Dj. Vukovic
-             V3.82  30-05-06, Copyright 2006  Dj. Vukovic
-             V3.83  08-07-06, Copyright 2006  Dj. Vukovic
-             V3.84  22-07-06, Copyright 2006  Dj. Vukovic
-             V3.85  26-10-06, Copyright 2006  Dj. Vukovic
+Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
+             V2.1	 	Copyright 2002       H. Robbers.
+             V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
+             V3.01 to 3.87  	Copyright 2003-2007  Dj. Vukovic
 
-
-This  is version 3.85 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.87 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
 authorships   are   recognized  where  appropriate,  and  that  it,  or  its
-derivatives,  may not be sold. See the included COPYING file for the details
+derivatives, may not be sold.  See the included COPYING file for the details
 on GPL.
 
 Please note that the name  of this project is  'Tera Desktop' or 'TeraDesk',
@@ -292,15 +273,15 @@ Some Possible Future Developments
 - Further  optimization  of  code to reduce size and memory use and increase
   speed.
 
-- Use of  advanced features  of the AHCM package to further improve handling
+- Use of  advanced features of the AHCM package  to further improve handling
   of memory allocation when  large blocks  are allocated  (e.g. when reading
   files or opening flying dialogs).
 
 - Improvement of the algorithm for file copying when floppies are involved.
 
 - Check whether the limits of 32767  selected items and 2GB total byte count
-  in selected items may present  a problems on higher-end systems,  and
-  correct that problem if possible.
+  in selected items may present  a problem on higher-end systems, and
+  correction of that problem if possible.
 
 - Complete compliance to the AV-protocol and Drag & Drop protocol.
 
@@ -325,9 +306,10 @@ Some Very Unlikely To Happen Future Developments
 
 - There are  no plans  to enable desktop background pictures in TeraDesk. It
   would be a completely nonfunctional feature, which would increase  program
-  size unacceptably.  Besides, personally, I think that  background pictures
-  are  in fact distracting  to  the user and  a waste  of system  resources.
-  However, MyAES provides this feature and, and maybe XaAES will some day.
+  size unacceptably.  Besides, it is the opinion  of the  current maintainer
+  that background pictures are in fact distracting  to  the user and a waste
+  of system resources. However, MyAES provides this feature with any desktop
+  and maybe XaAES will have a similar capability some day.
 
 
 
@@ -355,6 +337,6 @@ I may at some time ask a question or two about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; October 26th 2006
+                                            Beograd; January 2nd 2007
 
 

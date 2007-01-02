@@ -140,7 +140,7 @@ WINDOW *xw_hfind(int handle)
 		if (w->xw_handle == handle)
 			return (w);
 
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 
 	return (handle == 0) ? xw_deskwin : NULL;
@@ -205,7 +205,7 @@ WINDOW *xw_top(void)
 		if ((w->xw_xflags & XWF_OPN) != 0)
 			return w;		/* first teradesk's window */
 
-		w = w->xw_next;
+		w = xw_next(w);
 	}
 
 	return xw_deskwin;		/* or the desktop, if none other */
@@ -262,7 +262,7 @@ int xw_exist( WINDOW *w )
 		if (h == w)
 			return 1;
 
-		h = h->xw_next;
+		h = xw_next(h);
 	}
 
 	if (xw_deskwin && (w == xw_deskwin))
@@ -300,8 +300,8 @@ WINDOW *xw_last(void)
 	{
 		w = windows;
 
-		while (w->xw_next != NULL)
-			w = w->xw_next;
+		while (xw_next(w) != NULL)
+			w = xw_next(w);
 	}
 
 	return w;
@@ -317,10 +317,10 @@ void xw_note_top(WINDOW *w)
 {
 	if (w && w != windows)
 	{
-		if (w->xw_next)
-			w->xw_next->xw_prev = w->xw_prev;
+		if (xw_next(w))
+			w->xw_next->xw_prev = xw_prev(w);
 
-		w->xw_prev->xw_next = w->xw_next;
+		w->xw_prev->xw_next = xw_next(w);
 		windows->xw_prev = w;
 		w->xw_prev = NULL;
 		w->xw_next = windows;
@@ -342,11 +342,11 @@ void xw_note_bottom(WINDOW *w)
 
 	if (!(w == lw || lw == windows || lw))
 	{
-		if (w->xw_next)
-			w->xw_next->xw_prev = w->xw_prev;
+		if (xw_next(w))
+			w->xw_next->xw_prev = xw_prev(w);
 
 		if (w->xw_prev)
-			w->xw_prev->xw_next = w->xw_next;
+			w->xw_prev->xw_next = xw_next(w);
 
 		lw->xw_next = w;
 		w->xw_prev = lw;
@@ -1379,16 +1379,16 @@ static void xw_rem(WINDOW *w)
 {
 	/* Take care of the next and the previous */
 
-	if (w->xw_prev == NULL)
+	if (xw_prev(w) == NULL)
 		/* This was the first window; now, the next one is the first */
-		windows = w->xw_next;
+		windows = xw_next(w);
 	else
 		/* This is not the first one; mark the next window as the next from the previous */
-		w->xw_prev->xw_next = w->xw_next;
+		w->xw_prev->xw_next = xw_next(w);
 
-	if (w->xw_next != NULL)
+	if (xw_next(w) != NULL)
 		/* Mark the previous window in the next one */
-		w->xw_next->xw_prev = w->xw_prev;
+		w->xw_next->xw_prev = xw_prev(w);
 
 	/* Release memory for this window */
 
@@ -1449,6 +1449,8 @@ void xw_delete(WINDOW *w)
 }
 
 
+/* currently not used in TeraDesk
+
 /*
  * Close and delete a window
  */
@@ -1458,6 +1460,8 @@ void xw_closedelete(WINDOW *w)
 	xw_close(w);
 	xw_delete(w);
 }
+
+*/
 
 
 /*

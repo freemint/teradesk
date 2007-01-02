@@ -17,7 +17,7 @@ General remarks
 - Usually, changes in the resource file between subsequent versions are
   small and an existing translated previous version of the resource file
   can be carefully updated. There is no need to start each time from scratch. 
-  See next section: changes ... relative to previous version.
+  See next section: Changes in ... relative to previous version.
 
 - If translated texts do not fit into available spaces in the dialogs, alerts
   or the menu, the translator should use his imagination to find the best 
@@ -25,13 +25,11 @@ General remarks
   words or phrases that are not literal translations can be used, etc.
  
 
-Changes in V3.85 relative to previous version
+Changes in V3.87 relative to previous version
 ---------------------------------------------
 
-- Strings MICONIF and MFULL added to Window menu.
-
-- Added a hidden button in the INFOBOX dialog. Text on this button must
-  be one (preferrably shorter) of the texts specified in the CANCTXT string.
+There are no changes; resource file is identical to those of V3.85 and 
+V3.86.
 
 
 Naming of object trees
@@ -42,11 +40,10 @@ that they are associative to the purpose of the dialog. However, with some
 unfortunate exceptions, most other object trees are named as follows:
 
 DT* - dialog titles texts (for dialogs in which the titles are not constant)
-FS* - file selector titles
+FS* - texts for file selector titles
 M*  - various texts, mostly messages in error alerts
-T*  - some of these are also for alerts, other are strings that
-      appear in dialogs.
-P*  - program flags descriptions
+T*  - some are texts for alerts, other are strings appearing in dialogs.
+P*  - strings with descriptions of program header flags
 A*  - alerts
 
 
@@ -54,8 +51,8 @@ About the menu
 --------------
 
 - Care should be taken to leave adequate space for keyboard shortcuts in
-  each menu item (4 characters). This space is marked by underline 
-  characters as ____
+  each menu item (4 characters). This space is marked in menu strings by 
+  underline characters as ____
 
 - If possible, it should be tested whether the translated menu fits into
   the screen width in ST-low resolution. TeraDesk is supposed to work in
@@ -152,7 +149,7 @@ Some specific free-string object trees
   size, and in both words the characters at the same locations (e.g. the 
   first characters) must be usable as hotkeys (shortcuts).
 
-- Some strings are divided into lines by "|" characters. They appear in
-  alerts. Number of divisions in any string should not be changed, and 
-  the length of any line should not exceed 31 characters.
+- Some strings are divided by "|" characters. They appear as lines in
+  alerts. If possible, number of divisions in any string should not be 
+  changed, and the length of any line should not exceed 31 characters.
  

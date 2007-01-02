@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
+ *                          2002 - 2003  H. Robbers,
+ *                          2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -310,7 +310,10 @@ void get_set_video (int set)
 			{
 				oldstat = ovrstat;
 
-				/* Note: perhaps use Ssystem here when appropriate */
+				/* 
+				 * The following segment is executed in supervisor mode.
+				 * Note: perhaps use Ssystem() here when appropriate? 
+				 */
 
 				s = Super(0L);
 				(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
@@ -373,15 +376,12 @@ void get_set_video (int set)
 					wd_type_draw((TYP_WINDOW *)w, FALSE); /* TeraDesk draws */
 				}
 
-				w = w->xw_next;
+				w = xw_next(w);
 			}
 
 			menu_bar(menu, 0);
 			regen_desktop(desktop);
 			menu_bar(menu, 1);
-/*
-			wd_drawall(); /* does wd_type_draw(w, TRUE) i.e. send to AES */
-*/
 			clean_up();      
 			arrow_mouse();
 		}
@@ -411,7 +411,7 @@ void get_set_video (int set)
 			/* 
 			 * This will actually (almost) reset the computer immediately
 			 * and change the video mode, but this call is recognized only 
-			 * in AES 4. Otherwise it will be ignored. 
+			 * in some versions of AES 4. Otherwise it will be ignored. 
 			 * Unfortunately, e.g. TOS 2.06 will return OK in this case,
 			 * but e.g. TOS 4.04 will not, as is proper.
 			 */
@@ -565,7 +565,7 @@ int voptions(void)
 
 			/* Set button for blitter. Practically ST and STE only */
     
-			if ( bltstat & 0x0002 )		/* blitter is present */
+			if ( bltstat & 0x0002 )			/* blitter is present */
 			{
 				obj_enable(vidoptions[VBLITTER]);
 				set_opt ( vidoptions, options.vprefs, VO_BLITTER, VBLITTER );
@@ -737,9 +737,7 @@ int voptions(void)
 				  	/* Set save palette flag */
 
 					get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
-/*
-					get_set_video(1); /* execute settings which do not require a reset */
-*/
+
 					/* Will resolution be changed? Display an alert */
 
 					if ( (newrez != currez && newrez != -1) || (newmode != falmode) )

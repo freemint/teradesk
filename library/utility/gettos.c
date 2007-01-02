@@ -22,6 +22,7 @@
 
 
 #include <tos.h>
+#include <np_aes.h>
 #include <system.h>
 #include <stddef.h>
 #include <boolean.h>
@@ -40,5 +41,20 @@ int get_tosversion( void )
 	version = _sysbase->os_version;
 	Super(stack);
 	return version;
+}
+
+
+/*
+ * Return AES version to be read as a hex number,
+ * e.g. 0x340, 0x399, etc.
+ */
+
+int get_aesversion(void)
+{
+#ifdef __PUREC__
+	return _GemParBlk.glob.version;
+#else
+	return _global[0;
+#endif
 }
 

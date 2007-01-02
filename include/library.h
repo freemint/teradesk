@@ -80,6 +80,7 @@ int aprintf( int def,const char *string, ... );
 /* Funkties voor het bepalen van de TOS-versie */
 
 int get_tosversion( void );
+int get_aesversion( void );
 
 
 #endif

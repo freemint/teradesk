@@ -1849,6 +1849,7 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 
 			if ( n )
 				wait(delayt); 
+
 			n++;
 
 			/* Start a marked application */

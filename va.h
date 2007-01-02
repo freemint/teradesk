@@ -89,12 +89,15 @@ extern const char *thisapp;
 
 void va_init(void);
 WINDOW *va_accw(void);
-void va_delall(int ap_id);
+void va_delall(int ap_id, bool force);
 void rem_all_avstat(void);
 
 #if __USE_MACROS
 #define vastat_default rem_all_avstat
+/*
 #define va_close  xw_closedelete
+*/
+#define va_close xw_close
 #else
 void vastat_default(void);
 void va_close(WINDOW *w);
@@ -106,5 +109,5 @@ AVTYPE *va_findclient(int ap_id);
 boolean va_add_name(int type, const char *name );
 boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
 boolean va_fontreply(int messid, int dest_ap_id);
-boolean va_pathupdate(const char *path);
+boolean va_pathupdate(WINDOW *w);
 void va_checkclient(void);

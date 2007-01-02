@@ -1144,8 +1144,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	tmode  = MD_REPLACE;
 	if ( xd_aes4_0 && xd_colaes ) 
 	{
-		/* Beware that AES version thus defined is only for PureC- see xdialog.c */
-		if ( aes_hor3d == 0 && ted->te_thickness != 0 && _GemParBlk.glob.version == 0x399)
+		if ( aes_hor3d == 0 && ted->te_thickness != 0 && get_aesversion() == 0x399)
 			/* hopefully this branch is valid for Magic only */
 			xd_drawbox(&size, AES3D_1, SELECTED, XD_SCRLEDIT );
 		else

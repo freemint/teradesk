@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)             1997, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1997 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -199,13 +199,13 @@ void va_init(void)
 /*
  * Find out if there are any AV-client windows "open"
  * Return index of the first accessory window 
- * (but in fact this is not needed, this could heve been void).
  * This routine will also log any accessory windows open as TeraDesk windows
  */
 
 WINDOW *va_accw(void)
 {
 	WINDOW *w = xw_first();
+
 	while(w)
 	{
 		if ( w->xw_type == ACC_WIND )
@@ -215,7 +215,8 @@ WINDOW *va_accw(void)
 			xw_top(); 
 			return w;
 		}
-		w = w->xw_next;
+
+		w = xw_next(w);
 	}
 	
 	return NULL;
@@ -227,17 +228,28 @@ WINDOW *va_accw(void)
  * or all windows belonging to a single client (if ap_id >= 0).
  * (because in single-tos all acc windows are closed anyway
  * when a program is started).
+ * If force is FALSE, pseudowindows will be just closed (by sending
+ * messages to relevant applicatons) and TeraDesk will rely on those
+ * applications to send AV_ACCWINDCLOSED; if force is TRUE, the pseudo-
+ * windows structures will be deleted 
  */
 
-void va_delall(int ap_id)
+void va_delall(int ap_id, bool force)
 {
 	WINDOW *prev, *w = xw_last();
 
 	while(w)
 	{
-		prev = w->xw_prev;
+		prev = xw_prev(w);
+
 		if ( w->xw_type == ACC_WIND && (ap_id < 0 || w->xw_ap_id == ap_id) )
-			xw_closedelete(w);
+		{
+			xw_close(w);
+
+			if(force)
+				xw_delete(w);
+		}
+
 		w = prev;
 	}
 }
@@ -268,8 +280,10 @@ AVTYPE *va_findclient(int ap_id)
 	{
 		if ( f->ap_id == ap_id )
 			return f;
+
 		f = f->next;
 	}
+
 	return NULL;
 }
 
@@ -281,7 +295,7 @@ AVTYPE *va_findclient(int ap_id)
 void rem_avtype(AVTYPE **list, AVTYPE *item)
 {
 	xw_dosend = 0;
-	va_delall(item->ap_id);
+	va_delall(item->ap_id, TRUE);
 	lsrem((LSTYPE **)list, (LSTYPE *)item);
 	xw_dosend = 1;
 }
@@ -329,8 +343,10 @@ void va_checkclient(void)
 	while(f)
 	{
 		next = f->next;
+
 		if (appl_find(f->name) < 0)
 			rem_avtype(&avclients, f);
+
 		f = next;
 	}
 }
@@ -380,86 +396,86 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 	 * for the command line.
 	 */
 
-	if (strlen(cmdl) > (GLOBAL_MEM_SIZE - 1))
-		return FALSE;
-
-	/* 
-	 * Now copy not more than first eight characters of program name (no path) 
-	 * (should it be converted to uppercase?)
-	 * YES- appl_find() in Magic is case sensitive.
-	 */
+	if (strlen(cmdl) < GLOBAL_MEM_SIZE)
+	{
+		/* 
+		 * Now copy not more than first eight characters of program name (no path) 
+		 * (should it be converted to uppercase?)
+		 * YES- appl_find() in Magic is case sensitive.
+		 */
  
-	cv_tos_fn2form(prgname, fn_get_name(program));
-	strupr(prgname);
-	prgname[8] = 0;
+		cv_tos_fn2form(prgname, fn_get_name(program));
+		strupr(prgname);
 
-	/* 
-	 * Has this application signed on as an AV-client?
-	 * that supports VA_START ? 
-	 * (or, is it maybe an accessory? If neither, return FALSE)
-	 * Some accessories appear to sign-on only when
-	 * they open a window, so it is necessary to be able to send
-	 * them a VA_START even if they have not signed on.
-	 * BUT: it seems that applications generally do NOT sign-on as
-	 * AV-protocol clients, so this severely restricts the behaviour
-	 * of the desktop vs applications. Maybe better to test each
-	 * time if an application is still running?
-	 * Note: this function may be called even if no AV-protocol clients
-	 * had previously signed-on. 
-	 */
+		prgname[8] = 0;
+
+		/* 
+		 * Has this application signed on as an AV-client?
+		 * that supports VA_START ? 
+		 * (or, is it maybe an accessory? If neither, return FALSE)
+		 * Some accessories appear to sign-on only when
+		 * they open a window, so it is necessary to be able to send
+		 * them a VA_START even if they have not signed on.
+		 * BUT: it seems that applications generally do NOT sign-on as
+		 * AV-protocol clients, so this severely restricts the behaviour
+		 * of the desktop vs applications. Maybe better to test each
+		 * time if an application is still running?
+		 * Note: this function may be called even if no AV-protocol clients
+		 * had previously signed-on. 
+		 */
 
 /* disabled for the time being
 
-	theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i ); 
-	if (type != PACC && (!theclient || (theclient->avcap3 & VV_START) != 0) )
-		return FALSE; /* this is not a VA_START capable client */
+		theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i ); 
+		if (type != PACC && (!theclient || (theclient->avcap3 & VV_START) != 0) )
+			return FALSE; /* this is not a VA_START capable client */
 */
 
-	/* Check if the application with this name is still/already running */
+		/* Check if the application with this name is still/already running */
 
-	dest_ap_id = appl_find(prgname);
+		dest_ap_id = appl_find(prgname);
 
-	if (dest_ap_id >= 0)
-	{
-		/* 
-		 * Yes, this applicaton already runs. Should it be
-		 * started again (do not ask this if this application is
-		 * to be used to open a file- in that case always assume that the
-		 * parameters will be passed to the running application)
-		 */
+		if (dest_ap_id >= 0)
+		{
+			/* 
+			 * Yes, this applicaton already runs. Should it be
+			 * started again (do not ask this if this application is
+			 * to be used to open a file- in that case always assume that the
+			 * parameters will be passed to the running application)
+			 */
 
-		if ( !onfile && (alert_query(MDUPAPP) == 1) )
-			return FALSE;
+			if ( onfile || (alert_query(MDUPAPP) != 1) )
+			{
+				/*
+				 * Something seems to be wrong here!!!!!
+				 * If CAB is started, and then EVEREST from CAB
+				 * (i.e. to view html source) and then EVEREST and CAB exited;
+				 * next time CAB can not be started: check below
+				 * returns dest_ap_id = 0, as if it is already running.
+				 * Maybe avoid it so that a check is made if destination
+				 * is the same as the current app.  
+				 * However, avoid confusing CAB with TeraDesk itself.
+				 */
 
-		/*
-		 * Something seems to be wrong here!!!!!
-		 * If CAB is started, and then EVEREST from CAB
-		 * (i.e. to view html source) and then EVEREST and CAB exited;
-		 * next time CAB can not be started: check below
-		 * returns dest_ap_id = 0, as if it is already running.
-		 * Maybe avoid it so that a check is made if destination
-		 * is the same as the current app.  
-		 * However, avoid confusing CAB with TeraDesk itself.
-		 */
+				if ( ap_id == dest_ap_id && strcmp(prgname, thisapp) != 0 ) /* should this fix CAB ? */
+					return FALSE;
 
-		if ( ap_id == dest_ap_id && strcmp(prgname, thisapp) != 0 ) /* should this fix CAB ? */
-			return FALSE;
+				/* Double quotes must be converted to single quotes */
 
-		/* Double quotes must be converted to single quotes */
+				strcpyrq(global_memory, (char *)cmdl, qc, &fb);
+				va_clranswer(va_answer);
 
-		strcpyrq(global_memory, (char *)cmdl, qc, &fb);
+				va_answer[0] = VA_START;
+				*(char **)(va_answer + 3) = global_memory;
 
-		va_clranswer(va_answer);
+				appl_write(dest_ap_id, 16, va_answer);	
 
-		va_answer[0] = VA_START;
-		*(char **)(va_answer + 3) = global_memory;
-
-		appl_write(dest_ap_id, 16, va_answer);
-
-		return TRUE;
+				return TRUE;
+			}
+		}
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -498,7 +514,7 @@ boolean va_fontreply(int messid, int dest_ap_id)
 	/* Note: font colour and effects are not sent in these replies */
 
 	va_answer[0] = messid;			/* message id */
-	va_answer[3] = dir_font.id;		/* font id */
+	va_answer[3] = dir_font.id;		/* directory font id */
 	va_answer[4] = dir_font.size;	/* font size */
 
 #if _MORE_AV
@@ -534,7 +550,8 @@ boolean va_add_name(int type, const char *name)
 	/* 
 	 * Check for available space in the global buffer:
 	 * Must fit: existing string, the name (maybe quoted), a blank 
-	 * a backslash and a terminating 0. 3 bytes are added in strlenq.
+	 * a backslash and a terminating 0. These 3 bytes are accounted
+	 * for in strlenq.
 	 */
 
 	if ( g + strlenq(name) > GLOBAL_MEM_SIZE )
@@ -581,29 +598,38 @@ boolean va_add_name(int type, const char *name)
 #if _MORE_AV
 
 /*
- * Send path to be updated to registered AV clients
+ * Send window path to be updated to registered AV clients
  *(can global 'answer' be used here? va_pathupdate happens
- * unprovoked by clients, maybe during a handshake)
+ * unprovoked by clients, maybe during a handshake).
+ * If composing of another VA_ mesage is in progress,
+ * messages will not be sent; instead. windows will be marked
+ * for sending the message.
+ * Retiurn TRUE if messages sent.
+ * Take care to use this routine only for directory windows.
  */
 
-boolean va_pathupdate( const char *path )
+boolean va_pathupdate( WINDOW *w )
 {
-	int va_answer[8];
-
 	if ( !va_reply )
 	{
+		int va_answer[8];
+
 		va_clranswer(va_answer);
+
 		va_answer[0] = VA_PATH_UPDATE;			/* message id */
-
 		*(char **)(va_answer + 3) = global_memory;
-
 		*global_memory = 0; /* so that va_add_name() works properly */
 
-		va_add_name( isroot(path)? ITM_DRIVE : ITM_FOLDER, path );
+		va_add_name( isroot(((DIR_WINDOW *)w)->path) ? ITM_DRIVE : ITM_FOLDER, ((DIR_WINDOW *)w)->path );
 		va_send_all( VV_PATH_UPDATE, va_answer );
+
+		((DIR_WINDOW *)w)->va_refresh = FALSE;
+
+		return TRUE;
 	}
 
-	return TRUE;
+	((DIR_WINDOW *)w)->va_refresh = TRUE;
+	return FALSE;
 }
 #endif
 
@@ -673,10 +699,11 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 		appl_write(client->ap_id, 16, va_answer);
 
 		client->flags |= AVCOPYING;
+
 		return TRUE;
 	}
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -762,7 +789,7 @@ void handle_av_protocol(const int *message)
 		*aw;
 
 
-	/* Clear the answer block; then set TeraDesk's ap_id where it will be */
+	/* Clear the answer message buffer; then set TeraDesk's ap_id where it will be */
 
 	va_clranswer(answer);
 
@@ -779,7 +806,11 @@ void handle_av_protocol(const int *message)
 	if( !(message[0] == AV_PROTOKOLL || message[0] == FONT_SELECT || (message[0] == VA_START && av_current == ap_id) || theclient) )
 		return;
 
-	/* Some locations in the message may point to strings */
+	/* 
+	 * Some locations in the message may point to strings and
+	 * these pointers are used in several functions, so determine
+	 * them here for all concerned
+	 */
 
 	pp3 = *(char **)(message + 3);
 	mp5 = *(char **)(message + 5);
@@ -787,8 +818,6 @@ void handle_av_protocol(const int *message)
 
 	switch(message[0])
 	{
-	/* AV protocol */
-
 	case AV_PROTOKOLL:
 
 		/*
@@ -799,15 +828,16 @@ void handle_av_protocol(const int *message)
 		 * Hopefully not- AV protocol requires that names be sent in uppercase.
 		 */
 
-		strcpy(avwork.name, pp6 );
+		strcpy(avwork.name, pp6);
 
 		avwork.ap_id = appl_find( (const char *)avwork.name );
 		avwork.avcap3 = m3; /* notify client-supported features */
 		avwork.flags = 0;
 
 		/* 
-		 * Add the client to the list- but some clients (e.g. ST-GUIDE) 
-		 * may sign-on more than once without signing off. Avoid this.
+		 * Add the client to the list- but it seems that some clients 
+		 * (e.g. ST-GUIDE) may sign-on more than once without signing off. 
+		 * Avoid this.
 		 */
 
 		if (!theclient && av_current != ap_id)
@@ -855,7 +885,7 @@ void handle_av_protocol(const int *message)
 	case AV_EXIT:
 
 		/* 
-		 * Note: do not send an instruction to an AV client to close its
+		 * Note: do not send to an AV client the instructions to close its
 		 * windows. It is supposed that now it will do that by itself.
 		 * Therefore xw_dosend = 0 temporarily
 		 */
@@ -889,8 +919,8 @@ void handle_av_protocol(const int *message)
 
 		/* 
 		 * Create an av-client pseudowindow; 
-		 * use "flags" parameter to pass window handle
-		 * which the client supplied in message [3]
+		 * use "flags" parameter to pass the window handle
+		 * that the client supplied in message [3]
 		 */
 
 		aw = xw_create(ACC_WIND, &aw_functions, m3, NULL, sizeof(ACC_WINDOW), NULL, &error );
@@ -902,7 +932,10 @@ void handle_av_protocol(const int *message)
 
 	case AV_ACCWINDCLOSED:
 
-		/* Client has closed a window, identified by its handle */
+		/* 
+		 * Client has closed a window, identified by its handle.
+		 * Now delete the data structire for this window
+		 */
 
 		xw_delete(xw_hfind(m3));
 
@@ -919,6 +952,8 @@ void handle_av_protocol(const int *message)
 			answer[3] = 1;
 			theclient->flags &= ~AVCOPYING;
 		}
+		else
+			reply = FALSE;
 
 		break;
 
@@ -926,15 +961,22 @@ void handle_av_protocol(const int *message)
 	case AV_XWIND:
 
 		/* 
-		 * Open a directory window with additional features
-		 * Action is currently similar to that for just opening a window;
+		 * Open a directory window with additional features.
+		 * Action is currently similar to that for just opening a window.
 		 * It is not entirely clear whether this message is 
 		 * correctly supported 
 		 */
 
+		answer[0] = VA_XOPEN;
+		goto getwpath;
+
 	case AV_OPENWIND:
 
 		/* Open a directory window. (name lengths are checked in dir_add_window() ) */
+
+		answer[0] = VA_WINDOPEN;
+
+		getwpath:;
 
 		path = strdup(pp3); /* path must be kept */
 
@@ -971,7 +1013,6 @@ void handle_av_protocol(const int *message)
 		else
 			stat = 0;
 
-		answer[0] = ( message[0] == AV_OPENWIND) ? VA_WINDOPEN : VA_XOPEN;
 		answer[3] = stat;	/* status */
 		break;
 
@@ -983,13 +1024,14 @@ void handle_av_protocol(const int *message)
 		 * There is no point in sending the reply message back
 		 * because AV_STARTED is ignored anyway.
 		 * Name of the file must be kept. 
-		 * This command is ignored if it does not come from TeraDesk.
+		 * This command is ignored if it does not come from TeraDesk?
 		 */
 		 
 		reply = FALSE;
 
 		if(av_current == ap_id)
 			load_settings(strdup(pp3)); 
+
 		break;
 
 	case AV_STARTPROG:
@@ -1068,7 +1110,7 @@ void handle_av_protocol(const int *message)
 
 		/* 
 		 * Update a dir window. probably there is no need to check path
-		 * because theat wtring is just compared to existing paths
+		 * because that string is just compared to existing paths
 		 */
 
 		path = strdup(pp3); /*duplicate because it will be modified */
@@ -1168,7 +1210,10 @@ void handle_av_protocol(const int *message)
 				/* Yes, this is TeraDesk's window */
 
 				if ( xw_type(aw) == TEXT_WIND )
+				{
+					/* this is a text window  and might as well belong to another app */
 					answer[4] = VA_OB_WINDOW;
+				}
 				else if ( (item = itm_find(aw, m3, message[4])) >= 0 )
 				{
 					/* An item can be located in a desktop or directory window */
@@ -1196,6 +1241,13 @@ void handle_av_protocol(const int *message)
 						}			/* A file or a volume; has path ? */
 					}			/* Recognized item type ? */
 				}			/* Not a text window ? */
+				else if(xw_type(aw) == DIR_WIND)
+				{
+					/* this is a directory window background */
+					answer[4] = VA_OB_FOLDER;
+					va_add_name(ITM_FOLDER, ((DIR_WINDOW *)aw)->path);
+					*(char **)(answer + 5) = global_memory;
+				}
 			}			/* Window found ? */
 		}			/* TeraDesk's window ? */
 
@@ -1207,6 +1259,7 @@ void handle_av_protocol(const int *message)
 
 		/* Drag one or several files to the path of a window */
 
+		answer[0] = VA_DRAG_COMPLETE;
 		path = strdup(pp6);	/* source; duplicate because it will be modified */
 		goto processname;
 
@@ -1214,12 +1267,21 @@ void handle_av_protocol(const int *message)
 
 		/* Copy one or several files to a path */
 
+		answer[0] = VA_FILECOPIED;
 		mask = strdup(mp5);	/* destination */
+		goto getpath;
 
 	case AV_DELFILE:
+		answer[0] = VA_FILEDELETED;
+		goto getpath;
+
 	case AV_FILEINFO:
 
 		/* Delete one or several files or return information about it/them */
+
+		answer[0] = VA_FILECHANGED;
+
+		getpath:;
 
 		path = strdup(pp3);	/* source; duplicate because it will be modified */
 
@@ -1305,7 +1367,7 @@ void handle_av_protocol(const int *message)
 					 * working as a response to a VA-protocol command.
 					 * This is set through va_reply.
 					 * Note: these four messages may also provoke
-					 * a VA_PATH_UPDATE response itm_attrib	
+					 * a VA_PATH_UPDATE response	
 					 */
 
 					va_reply = TRUE;
@@ -1313,7 +1375,6 @@ void handle_av_protocol(const int *message)
 					switch(message[0])
 					{
 						case AV_DRAG_ON_WINDOW:
-							answer[0] = VA_DRAG_COMPLETE;
 							stat = 
 							(int)itm_move
 							( 
@@ -1332,9 +1393,8 @@ void handle_av_protocol(const int *message)
 							 */
 							int old_prefs = options.cprefs;
 							options.cprefs = (message[7] & 0x0004) ? old_prefs : (old_prefs & ~CF_OVERW);
-							answer[0] = VA_FILECOPIED;
 							rename_files = (message[7] & 0x0002) ? TRUE : FALSE;
-							stat = 
+							stat = (mask) ?
 							(int)itmlist_op
 							(
 								(WINDOW *)&ww, 
@@ -1342,12 +1402,11 @@ void handle_av_protocol(const int *message)
 								&list, 
 								mask, 
 								( message[7] & 0x0001) ? CMD_MOVE : CMD_COPY
-							);
+							) : 0;
 							options.cprefs = old_prefs;
 							break;
 						}
 						case AV_DELFILE:
-							answer[0] = VA_FILEDELETED;
 							stat = 
 							(int)itmlist_wop
 							(
@@ -1358,7 +1417,6 @@ void handle_av_protocol(const int *message)
 							);
 							break;
 						case AV_FILEINFO:
-							answer[0] = VA_FILECHANGED;
 							*(char **)(answer + 6) = global_memory;	
 							item_showinfo((WINDOW *)&ww, 1, &list, FALSE);
 							stat = 1; /* but it is not always so! */
@@ -1416,6 +1474,23 @@ void handle_av_protocol(const int *message)
 
 	if ( reply )
 		appl_write(av_current, 16, answer);
+
+#if _MORE_AV
+
+	/* Send VA_PATH_UPDATE if any is due */
+
+	aw = xw_first();
+
+	while(aw)
+	{
+		if((xw_type(aw) == DIR_WIND) && ((DIR_WINDOW *)aw)->va_refresh)
+			va_pathupdate(aw);
+
+		aw = xw_next(aw);
+	}
+
+#endif
+
 }
 
 
@@ -1450,7 +1525,10 @@ void vastat_default(void)
 
 void va_close(WINDOW *w)
 {
+/*
 	xw_closedelete(w); /* xw_close(w) then xw_delete(w) */
+*/
+	xw_close(w);
 }
 
 #endif

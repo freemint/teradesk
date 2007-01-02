@@ -2542,10 +2542,11 @@ boolean load_icons(void)
 	 * if reading of colour icons file fails, then fall back to black/white.
 	 * Therefore, in Geneva 4 (and other similar cases, if any), remove 
 	 * cicons.rsc from TeraDesk folder. Geneva 6 seems to work ok.
-	 * Colour icons can be loaded only if AES 4 has been detected.
+	 * Colour icons can be loaded only if this capability has 
+	 * previously been detected.
 	 */
 
-	if (!xd_aes4_0 || !rsrc_load("cicons.rsc")) 	/* try to load colour icons */
+	if (!colour_icons || !rsrc_load("cicons.rsc")) 	/* try to load colour icons */
 		colour_icons = FALSE;
 
 	if (!colour_icons && !rsrc_load("icons.rsc"))	/* try to load mono icons */
