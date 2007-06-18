@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -37,7 +37,6 @@
 #include <vaproto.h>
 
 #include "xdialog.h"
-#include "internal.h"
 
 
 int 
@@ -136,9 +135,14 @@ int xd_isdopen(void)
 
 int xe_xmulti(XDEVENT *events)
 {
-	int r;
-	static int level = 0;
-	int old_mtlocount, old_mflags;
+	static int
+		level = 0;
+
+	int
+		r,
+		old_mtlocount,
+		old_mflags;
+
 
 	level++;
 
@@ -175,14 +179,31 @@ int xe_xmulti(XDEVENT *events)
 	EvntMulti((EVENT *)events);
 
 #else
-	events->ev_mwhich = evnt_multi(events->ev_mflags, events->ev_mbclicks,
-		events->ev_mbmask, events->ev_mbstate, events->ev_mm1flags,
-		events->ev_mm1.g_x, events->ev_mm1.g_y, events->ev_mm1.g_w,
-		events->ev_mm1.g_h, events->ev_mm2flags, events->ev_mm2.g_x,
-		events->ev_mm2.g_y, events->ev_mm2.g_w, events->ev_mm2.g_h, events->ev_mmgpbuf,
-		(((unsigned long) events->ev_mthicount) << 16) | (unsigned long) events->ev_mtlocount,
-		&events->ev_mmox, &events->ev_mmoy, &events->ev_mmobutton,
-		&events->ev_mmokstate, &events->ev_mkreturn, &events->ev_mbreturn);
+	events->ev_mwhich = evnt_multi
+	(
+		events->ev_mflags,
+		events->ev_mbclicks,
+		events->ev_mbmask,
+		events->ev_mbstate,
+		events->ev_mm1flags,
+		events->ev_mm1.g_x,
+		events->ev_mm1.g_y,
+		events->ev_mm1.g_w,
+		events->ev_mm1.g_h,
+		events->ev_mm2flags,
+		events->ev_mm2.g_x,
+		events->ev_mm2.g_y,
+		events->ev_mm2.g_w,
+		events->ev_mm2.g_h,
+		events->ev_mmgpbuf,
+		(((unsigned long)events->ev_mthicount) << 16) | (unsigned long)events->ev_mtlocount,
+		&events->ev_mmox,
+		&events->ev_mmoy,
+		&events->ev_mmobutton,
+		&events->ev_mmokstate,
+		&events->ev_mkreturn,
+		&events->ev_mbreturn
+	);
 #endif
 	xe_mbshift = events->ev_mmokstate;
 
@@ -218,7 +239,9 @@ int xe_xmulti(XDEVENT *events)
 	{
 		if ((events->ev_mmgpbuf[0] == MN_SELECTED) && xd_dialogs)
 		{
+/* no need 
 			if (xd_menu)
+*/
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
 			r &= ~MU_MESAG;
 		}
@@ -258,7 +281,10 @@ int xe_xmulti(XDEVENT *events)
 
 int xe_button_state(void)
 {
-	int dummy, mstate;
+	int
+		dummy,
+		mstate;
+
 
 	graf_mkstate(&dummy, &dummy, &mstate, &dummy);
 
@@ -282,8 +308,12 @@ int xe_button_state(void)
 
 int xe_mouse_event(int mstate, int *x, int *y, int *kstate)
 {
-	XDEVENT events;
-	int flags;
+	XDEVENT
+		events;
+
+	int
+		flags;
+
 
 	xd_clrevents(&events);
 	events.ev_mflags = MU_TIMER | MU_BUTTON;

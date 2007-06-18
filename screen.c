@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -26,9 +26,9 @@
 #include <vdi.h>
 #include <xdialog.h>
 #include <mint.h>
-#include <string.h>			/* for load_colors */
+#include <string.h>			/* for load_colours */
 #include <library.h>
-#include <internal.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -52,7 +52,9 @@ int *palette = 0; 	/* Pointer to current palette */
 void screen_size(void)
 {
 	int work_out[58];	
+
 	vq_extnd(vdi_handle, 0, work_out);
+
 	max_w = work_out[0] + 1;	/* Screen width (pixels)  */
 	max_h = work_out[1] + 1;	/* Screen height (pixels) */
 }
@@ -86,8 +88,13 @@ void clipdesk_on(void)
 
 void pclear(RECT *r)
 {
-	boolean doo = options.win_pattern && options.win_color;
-	clr_object( r, (doo) ? options.win_color : 0, (doo && options.win_pattern < 7) ? options.win_pattern : -1 );
+	boolean doo = options.win_pattern && options.win_colour;
+
+	if(doo)
+		clr_object(r, options.win_colour, options.win_pattern);
+	else
+		clr_object(r, 0, -1);
+
 }
 
 
@@ -98,6 +105,7 @@ void pclear(RECT *r)
 boolean rc_intersect2(RECT *r1, RECT *r2)
 {
 	RECT r;
+
 	return xd_rcintersect(r1, r2, &r);
 }
 
@@ -108,14 +116,16 @@ boolean rc_intersect2(RECT *r1, RECT *r2)
 
 boolean inrect(int x, int y, RECT *r)
 {
-	if (   x >= r->x
+	if 
+	(   
+		x >= r->x
 	    && x < (r->x + r->w)
 	    && y >= r->y
 	    && y < (r->y + r->h)
-	   )
+	)
 		return TRUE;
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 
@@ -135,7 +145,7 @@ void set_rect_default(void)
 
 
 /*
- * Draw a simple rectangle.
+ * Draw a simple rectangle, defined by its diagonal points
  */
 
 void draw_rect(int x1, int y1, int x2, int y2)
@@ -154,8 +164,8 @@ void draw_rect(int x1, int y1, int x2, int y2)
 
 void invert(RECT *r)
 {
-	int pxy[8];
 	MFDB mfdb;
+	int pxy[8];
 
 	xd_rect2pxy(r, pxy);
 	xd_rect2pxy(r, &pxy[4]);
@@ -183,20 +193,19 @@ void move_screen(RECT *dest, RECT *src)
 /* 
  * Set default text attributes from font data 
  * for subsequent writings to the screen.
- * Note: effects are currently ignored, always set to 0
  */
 
-void set_txt_default(FONT *f)
+void set_txt_default(XDFONT *f)
 {
 	int dummy;
 
 	xd_vswr_repl_mode();
 	vst_font(vdi_handle, f->id);
-	vst_color(vdi_handle, f->colour); 
 	vst_rotation(vdi_handle, 0);
 	vst_alignment(vdi_handle, 0, 5, &dummy, &dummy);
-	vst_point(vdi_handle, f->size, &dummy, &dummy, &dummy, &dummy);
-	vst_effects(vdi_handle, 0);
+	xd_vst_point(f->size, &dummy);
+	vst_color(vdi_handle, f->colour); 
+	vst_effects(vdi_handle, f->effects);
 }
 
 
@@ -206,24 +215,24 @@ void set_txt_default(FONT *f)
  * Return NULL if allocation is not successful.
  */
 
-int *get_colors(void)
+int *get_colours(void)
 {
-	int i, *colors, *h;
+	int i, *colours, *h;
 
-	palsize = xd_ncolors;
+	palsize = xd_ncolours;
 
-	if ((colors = malloc((long)xd_ncolors * 3L * sizeof(int))) != NULL)
+	if ((colours = malloc((long)xd_ncolours * 3L * sizeof(int))) != NULL)
 	{
-		h = colors;
+		h = colours;
 
-		for (i = 0; i < xd_ncolors; i++)
+		for (i = 0; i < xd_ncolours; i++)
 		{
 			vq_color(vdi_handle, i, 0, h);
 			h += 3;
 		}
 	}
 
-	return colors;
+	return colours;
 }
 
 
@@ -231,9 +240,9 @@ int *get_colors(void)
  * Set colour palette from a palette table
  */
 
-void set_colors(int *colors)
+void set_colours(int *colours)
 {
-	int i, *h = colors;
+	int i, *h = colours;
 
 	for (i = 0; i < palsize; i++)
 	{
@@ -298,17 +307,18 @@ static CfgNest rgb_config
 {
 	int 
 		i,
-		nc = min(xd_ncolors, palsize),
-		*thecolor = palette;
+		*p,
+		nc = min(xd_ncolours, palsize),
+		*thecolour = palette;
 
 	if ( io == CFG_SAVE )
 	{
-		for ( i = 0; i < xd_ncolors; i++ )
+		for ( i = 0; i < xd_ncolours; i++ )
 		{
 			cwork.ind = i;
-			cwork.red =  *thecolor++;
-			cwork.green = *thecolor++;
-			cwork.blue =  *thecolor++; 
+			cwork.red =  *thecolour++;
+			cwork.green = *thecolour++;
+			cwork.blue =  *thecolour++; 
 
 			*error = CfgSave(file, colour_table, lvl, CFGEMP);
 
@@ -329,13 +339,13 @@ static CfgNest rgb_config
 
 		if ( (*error == 0) && (cwork.ind < nc) )
 		{
-			int *p = &cwork.red;
+			p = &cwork.red;
 
-			thecolor += 3 * cwork.ind; /* need not be in sequence */
+			thecolour += 3 * cwork.ind; /* need not be in sequence */
 			cwork.ind++;
 
 			for ( i = 0; i < 3; i++ )
-				*thecolor++ = min(p[i], 1000);
+				*thecolour++ = min(*p++, 1000);
 		}
 	}
 }
@@ -347,7 +357,7 @@ static CfgNest rgb_config
 
 static CfgNest pal_config
 {
-	palette = get_colors();
+	palette = get_colours();
 	cwork.ind = 0;
 
 	/* 
@@ -361,10 +371,11 @@ static CfgNest pal_config
 
 		if ( io == CFG_LOAD )
 		{
-			if (palsize != xd_ncolors)
+			if (palsize != xd_ncolours)
 				alert_iprint(MECOLORS); /* warning */
+
 			if (*error == 0)
-				set_colors(palette);
+				set_colours(palette);
 		}
 
 		free(palette);
@@ -382,9 +393,9 @@ static CfgNest pal_config
  * Errors from handle_cfgfile() are ignored.
  */
 
-void handle_colors(int io)
+void handle_colours(int io)
 {
-	if (options.vprefs & SAVE_COLORS)	/* separate file "teradesk.pal" */
+	if (options.vprefs & SAVE_COLOURS)	/* separate file "teradesk.pal" */
 		handle_cfgfile( palname, palette_root, palide, io );
 }
 

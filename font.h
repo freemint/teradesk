@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,21 +20,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-typedef struct
-{
-	int id;
-	int size;
-	int colour;
-	int effects;
-	int cw;
-	int ch;
-} FONT;
+
+/* Font effects */
+
+#define FE_NONE		0x0000
+#define FE_BOLD		0x0001
+#define FE_LIGHT	0x0002
+#define FE_ITALIC	0x0004
+#define FE_ULINED	0x0008
+#define FE_OUTLIN	0x0010
+#define FE_SHADOW	0x0020
+#define FE_INVERS	0x0040
 
 
-extern FONT def_font;
+extern XDFONT def_font;
 
-extern void fnt_setfont(int font, int height, FONT *data);
-extern boolean fnt_dialog(int title, FONT *font, boolean prop);
-extern void fnt_mdialog(int ap_id, int win, int id, int size, int color,
-						int effect, int prop);
-
+extern void fnt_setfont(int font, int height, XDFONT *data);
+extern boolean fnt_dialog(int title, XDFONT *font, boolean prop);
+extern void fnt_mdialog(int ap_id, int win, int id, int size, int colour, int effect, int prop);

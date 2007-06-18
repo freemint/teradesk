@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren.
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -112,7 +112,7 @@
 #define VO_BLITTER	0x0001 	/* video option blitter ON  */
 #define VO_OVSCAN  	0x0002 	/* video option overscan ON */
 							/* unused: 0x0004 0x0008 0x0010 0x0020 0x0040 0x0080 */
-#define SAVE_COLORS	0x0100	/* save palette */
+#define SAVE_COLOURS	0x0100	/* save palette */
 
 /* Saving options; these go into options.sexit */
 
@@ -186,11 +186,10 @@ typedef struct
 
 	int vprefs;                 /* video preferences  */
 	int vrez;                   /* video resolution */
-	int dsk_color;				/* desktop colour */
-	int win_color;				/* window colour */
+	int dsk_colour;				/* desktop colour */
+	int win_colour;				/* window colour */
 	int dsk_pattern;			/* desktop pattern  */
 	int win_pattern;			/* window pattern */
-
 } Options;
 
 
@@ -244,18 +243,14 @@ extern int have_ssystem;
 #endif
 
 
-char *itoa(int value, char *string, int radix);
-char *ltoa(long value, char *string, int radix);
-
 long btst(long x, int bit);
 void *malloc_chk(size_t size);
 int chk_xd_dialog(OBJECT *tree, int start);
 int chk_xd_open(OBJECT *tree, XDINFO *info);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 
 void get_opt(OBJECT *tree, int *flags, int opt, int button );
-char *strsncpy(char *dst, const char *src, size_t len);	/* secure copy (0 --> len-1) */
-int scansh ( int key, int kstate );
 int hndlmessage(int *message);
 boolean wait_to_quit(void);
+boolean find_cfgfiles (char **cfgfile); 
 
 

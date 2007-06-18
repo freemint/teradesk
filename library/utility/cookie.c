@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright       1993, 2002  W. Klaren,
- *                                                 2002, 2003  H. Robbers,
- *                                           2003, 2004, 2006  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright 1993 - 2002  W. Klaren,
+ *                                           2002 - 2003  H. Robbers,
+ *                                           2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -50,8 +50,12 @@ void jmpa6( void ) 0x4ED6;
 
 long find_cookie( long name )		
 {
-	COOKIE *cookie;
-	long cvalue = -1L;
+	COOKIE
+		*cookie;
+
+	long
+		cvalue = -1L;
+
 
 #if _MINT_
 	if (have_ssystem)
@@ -77,8 +81,7 @@ long find_cookie( long name )
 }
 
 
-/* All following routines are currently not used in Teradesk */
-
+/* All following routines are currently not used in Teradesk
 
 static void cookie_reset( void )
 {
@@ -98,9 +101,17 @@ static void cookie_reset( void )
 
 int install_cookie( long name,long value,COOKIE *buffer,long l )
 {
-	void *stack;
-	int r,i,j;
-	COOKIE *cookie;
+	void
+		*stack;
+
+	COOKIE
+		*cookie;
+
+	int
+		r,
+		i,
+		j;
+
 
 	stack = (void *)Super(NULL);
 
@@ -129,7 +140,7 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 
 				e = (int)cookie[i].value - 1;
 
-				for(j = 0;j < e;j++)
+				for(j = 0; j < e; j++)
 					buffer[j] = cookie[j];
 
 				p_cookie = buffer;
@@ -169,3 +180,5 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 
 	return r;
 }
+
+*/

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -28,12 +28,11 @@
 #include <mint.h>
 #include <library.h>
 #include <xdialog.h>
-#include <internal.h>
 
 #include "resource.h"
 #include "desk.h"
 #include "xfilesys.h"
-#include "lists.h" /* must be before slider.h */
+#include "lists.h" 
 #include "slider.h"
 #include "error.h"
 #include "font.h"
@@ -47,29 +46,24 @@
 
 #define MFSIZES 100 /* Maximum number of available font sizes */
 
+typedef char FNAME[34];	/* must not be shorter than 34 bytes */
+ 
 typedef struct
 {
-	int id;
-	SNAME name;
-	int flag;
+	int id;		/* font identification number */
+	FNAME name;	/* font name and description (32 characters) */
+/* currently unused
+	int flag;	/* flag that this is a vector font */
+*/
 } FONTDATA;
 
 typedef struct
 {
 	FONTDATA *fd;				/* Fonts information. */
 	int nf;						/* Number of fonts. */
-	int font;					/* Current font index in fd */
-
-	/* note: preserve structure of 6 items below to be identical to FONT */
-
-	int id;						/* font id */
-	int fsize;					/* Current size of the font. */
-	int colour;					/* Currect colour of the font */
-	int effect;					/* Current effects of the font */
-	int chw;					/* Width of a character. */
-	int chh;					/* Height of a character. */
-
-	int cursize;				/* Index of current size in array 'fsize'. */
+	int fdfont;					/* Current font index in fd */
+	XDFONT font;				/* Font id., size and char dimensions */
+	int cursize;				/* Index of current size in array 'fsizes'. */
 	int fsizes[MFSIZES];		/* Array with sizes of the current font. */
 	int nfsizes;				/* Number of sizes in 'fsizes'. */
 } FONTBLOCK;
@@ -81,52 +75,56 @@ static boolean
 	wdfopen = FALSE,
 	nonmodal = FALSE;
 
+static int
 #if _MINT_
-static int 
 	fcwhandle, 
-	fcwap_id;
+	fcwap_id,
 #endif
-
-int fnt_point(int height, int *cw, int *ch)
-{
-	int dummy, r;
-
-	r = vst_point(vdi_handle, height, &dummy, &dummy, &dummy, ch);
-	vqt_width(vdi_handle, ' ', cw, &dummy, &dummy);
-
-	return r;
-} 
+	flblen = 0;
 
 
-void fnt_setfont(int font, int height, FONT *data)
+void fnt_setfont(int font, int height, XDFONT *data)
 {
 	data->id = vst_font(vdi_handle, font);
-	data->size = fnt_point(height, &data->cw, &data->ch);
+	data->size = xd_fnt_point(height, &data->cw, &data->ch);
 }
 
 
 /*
- * Draw sample text in desired font size 
+ * Draw sample text in Teradesk's font selector, using selected font.
+ * This is the code for the userdef 'sample text' object
  */
 
-static void draw_sample(RECT *r, RECT *c, char *text, FONTBLOCK *fbl, int sel)
+static int cdecl draw_text(PARMBLK *pb)
 {
-	int extent[8];
-	RECT tr, rr;
+	FONTBLOCK
+		*thefbl = (FONTBLOCK *)(((XUSERBLK *)(pb->pb_parm))->uv.ptr);
 
-	xd_rcintersect(r, c, &rr);
-	xd_clip_on(&rr);
+	char
+		*thetext = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+
+	int 
+		extent[8];
+
+	RECT
+		*r = &pb->r,
+		tr;
+
+	xd_clip_on(r); /* clipping does not seem to work with pb->c ? */
 
 	if (nonmodal)
 		clr_object( r, WHITE, -1); 	/* to make white background */
 	else
 		pclear(r); /* to show window colour and pattern */
 
-	fbl->id = fbl->fd[fbl->font].id;
+	/* note: do not create a direct pointer to thefbl->font, it would be longer */
 
-	set_txt_default((FONT *)(&fbl->id));
-	fnt_point(fbl->fsize, &fbl->chw, &fbl->chh);
-	vqt_extent(vdi_handle, text, extent);
+	thefbl->font.id = thefbl->fd[thefbl->fdfont].id;
+
+	set_txt_default(&(thefbl->font));
+	xd_fnt_point(thefbl->font.size, &(thefbl->font.cw), &(thefbl->font.ch));
+
+	vqt_extent(vdi_handle, thetext, extent);
 
 	tr.w = extent[2] - extent[0];
 	tr.h = extent[7] - extent[1] + 4;
@@ -134,25 +132,12 @@ static void draw_sample(RECT *r, RECT *c, char *text, FONTBLOCK *fbl, int sel)
 	tr.x = r->x + (r->w - tr.w) / 2;
 	tr.y = r->y + (r->h - tr.h) / 2;
 
-	w_transptext(tr.x, tr.y + 2, text);
+	w_transptext(tr.x, tr.y + 2, thetext);
 
-	if(sel)
+	if(pb->pb_currstate & SELECTED)
 		invert(&tr);
 
 	xd_clip_off();
-}
-
-
-/*
- * Draw sample text in Teradesk's font selector, using selected font
- */
-
-static int cdecl draw_text(PARMBLK *pb)
-{
-	FONTBLOCK *thefbl = (FONTBLOCK *)(((XUSERBLK *)(pb->pb_parm))->other);
-	char *thetext = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
-
-	draw_sample(&pb->r, &pb->c, thetext, thefbl, (pb->pb_currstate & SELECTED));
 
 	return 0;
 }
@@ -179,10 +164,10 @@ typedef struct fnt_dialog
 {
 	XDINFO dialog;
 	FNT_SLIDER sl_info;
-	int ap_id;					/* Application id of caller. */
-	int win;					/* Window id of caller. */
-	int color;					/* Color of font. */
-	int effect;					/* Text effects of font. */
+	int ap_id;					/* Application id of caller */
+	int win;					/* Window id of caller */
+	int colour;					/* Color of font */
+	int effect;					/* Text effects of font */
 	FONTBLOCK fbl;
 } FNT_DIALOG;
 
@@ -212,12 +197,16 @@ static void set_theselector
 	int nnf
 )
 {
-	int i, isl;
-	OBJECT *o;
+	int 
+		i,
+		isl;
+
+	OBJECT
+		*o = &wdfont[WDFONT1];
+
 
 	for (i = 0; i < NLINES; i++)
 	{
-		o = &wdfont[WDFONT1 + i];
 		o->ob_state &= ~SELECTED;
 		isl = i + slider->line;
 
@@ -230,6 +219,8 @@ static void set_theselector
 			if (isl == thefont)
 				o->ob_state |= SELECTED;	
 		}
+
+		o++;
 	}
 
 	if (draw)
@@ -243,7 +234,7 @@ static void set_theselector
 
 static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
 {
-	set_theselector(slider, draw, info, fbl.font, fbl.fd, fbl.nf);
+	set_theselector(slider, draw, info, fbl.fdfont, fbl.fd, fbl.nf);
 }
 
 
@@ -257,14 +248,17 @@ static void mset_fselector(SLIDER *slider, boolean draw, XDINFO *info)
 {
 	FNT_DIALOG *fnt_dial = ((FNT_SLIDER *)slider)->fnt_dial;
 
-	set_theselector(slider, draw, info, fnt_dial->fbl.font, fnt_dial->fbl.fd, fnt_dial->fbl.nf);
+	set_theselector(slider, draw, info, fnt_dial->fbl.fdfont, fnt_dial->fbl.fd, fnt_dial->fbl.nf);
 }
 #endif
 
 
 static int set_font(SLIDER *sl_info, int oldfont, int *font, FONTDATA *fd, int nf)
 {
-	int i = 0, line;
+	int 
+		i = 0,
+		line;
+
 
 	while ((fd[i].id != oldfont) && (i < (nf - 1)))
 		i++;
@@ -297,18 +291,18 @@ static int get_size(FONTBLOCK *fbl)
 		min = 0;
 
 
-	vst_font(vdi_handle, fbl->fd[fbl->font].id);
+	vst_font(vdi_handle, fbl->fd[fbl->fdfont].id);
 
-	height = fbl->fsizes[0] = vst_point(vdi_handle, height, &dummy, &dummy, &dummy, &dummy);
+	height = fbl->fsizes[0] = xd_vst_point(height, &dummy);
 
-	while (n < MFSIZES - 1 && fbl->fsizes[n - 1] != (height = vst_point(vdi_handle, height - 1, &dummy, &dummy, &dummy, &dummy)))
+	while (n < MFSIZES - 1 && fbl->fsizes[n - 1] != (height = xd_vst_point(height - 1, &dummy)))
 		fbl->fsizes[n++] = height;
 
-	error = abs(fbl->fsizes[0] - fbl->fsize);
+	error = abs(fbl->fsizes[0] - fbl->font.size);
 
 	for (i = 1; i < n; i++)
 	{
-		if ((tmp = abs(fbl->fsizes[i] - fbl->fsize)) < error)
+		if ((tmp = abs(fbl->fsizes[i] - fbl->font.size)) < error)
 		{
 			error = tmp;
 			min = i;
@@ -323,34 +317,46 @@ static int get_size(FONTBLOCK *fbl)
 
 
 /*
- * Count available fonts
+ * Count available fonts.
+ * Font name can be at most 32 characters long
+ * (16 characters name + 16 characters description)
  */
 
-void font_count
+static void font_count
 (
-	FONTDATA *fda,	/* resulting font data */ 
-	int *nfn,		/* number of fonts counted */ 
+	FONTBLOCK *fbl,	/* pointer to structure with fonts data */
 	boolean prop	/* true if proportional fonts are counted */
 )
 {
-	char name[34];
+	FNAME
+		name;		/* intermediate buffer for font name and description */
 
-	int i, j, iw, mw, dummy, lnf = 0;
-	char *s;
-	FONT fnt;
-	FONTDATA *h;
+	int 
+		i,
+		iw,
+		mw,
+		dummy,
+		lnf = 0;
+
+	XDFONT
+		fnt;
+
+	FONTDATA
+		*h;
+
+
+	/* Determine available form length only the first time */
+
+	if(flblen == 0)
+		flblen = strlen(wdfont[WDFONT1].ob_spec.tedinfo->te_ptext) + 1;
 
 	for (i = 0; i <= nfonts; i++)
 	{
-		h = &fda[lnf];
-		s = h->name;
+		h = &(fbl->fd[lnf]);
 		h->id = vqt_name(vdi_handle, i + 1, name);
 		fnt_setfont(h->id, 10, &fnt);
 
-		/* 
-		 * Identify nonproportional fonts by comparing widths
-		 * of "i" and "m"
-		 */
+		/* Identify nonproportional fonts by comparing widths of "i" and "m" */
 
 		vqt_width(vdi_handle, 'i', &iw, &dummy, &dummy);
 		vqt_width(vdi_handle, 'm', &mw, &dummy, &dummy);
@@ -359,18 +365,16 @@ void font_count
 
 		if ( prop || (iw == mw) )
 		{
-			strsncpy(s, name, sizeof(h->name));	
-			j = (int) strlen(h->name);
-
-			while (j < 16)
-				s[j++] = ' ';
-
+/* currently unused
 			h->flag = (int)name[32];
+*/
+			name[32] = 0;
+			strsncpy(h->name, name, flblen);
 			lnf++;
 		}
 	}
 
-	*nfn = lnf;
+	fbl->nf = lnf;
 }
 
 
@@ -398,6 +402,22 @@ static void fnt_sl_init( int nf, void *set_sel, SLIDER *sl, int oldfont, int *ne
 
 
 /* 
+ * Aux. routine to set font effects buttons. There are eight effects.
+ * These buttons must be in a proper sequence, starting with WDFBOLD.
+ */
+
+static void set_effects(FONTBLOCK *fbl)
+{
+	int i;
+	
+	for(i = 0; i < 7; i++)
+	{
+		set_opt(wdfont, fbl->font.effects, FE_BOLD << i, WDFBOLD + i);
+	}
+}
+
+
+/* 
  * Handle buttons in the font dialog- all but OK and Cancel
  */
 
@@ -411,13 +431,11 @@ static void do_fd_button
 {
 	int 
 		curobj,				/* index of object in the listbox */ 
-		newfont,			/* aux local font index */ 
-		state = NORMAL;		/* state to set current button to */
+		newfont;			/* aux local font index */ 
 
-#if _MINT_
 	boolean
 		drawbutt = TRUE;
-#endif
+
 
 	switch (button)
 	{
@@ -425,22 +443,20 @@ static void do_fd_button
 		case WDFONT2:
 		case WDFONT3:
 		case WDFONT4:
-			curobj = fbl->font - sl_info->line + WDFONT1;
+			curobj = fbl->fdfont - sl_info->line + WDFONT1;
+
 			if (((newfont = sl_info->line + button - WDFONT1) < fbl->nf) && (curobj != button))
 			{
 				if ((curobj >= WDFONT1) && (curobj < WDFONT1 + NLINES)) 
 					xd_drawbuttnorm(info, curobj);
 
-				fbl->font = newfont;
+				fbl->fdfont = newfont;
 				fbl->cursize = get_size(fbl);
-				state = SELECTED;
 			}
 
-			/* This is needed only in XaAES */
-#if _MINT_
 			drawbutt = FALSE;
 			xd_drawdeep(info, WDPARENT);
-#endif
+
 			break;
 		case WDFSUP:
 			if (fbl->cursize < fbl->nfsizes - 1)
@@ -451,28 +467,46 @@ static void do_fd_button
 				fbl->cursize -= 1;
 			break;
 		case WDFCUP:
-			fbl->colour += 2;	/* limited further below */
+			fbl->font.colour += 2;	/* limited further below */
 		case WDFCDOWN:
-			fbl->colour -= 1; 	/* limited further below */
+			fbl->font.colour -= 1; 	/* limited further below */
+			break;
+		case WDFBOLD:
+		case WDFLIG:
+		case WDFITAL:
+		case WDFUNDER:
+		case WDFHOLL:
+		case WDFSHAD:
+		case WDFINV:
+			get_opt(wdfont, &(fbl->font.effects), FE_BOLD << (button - WDFBOLD), button);
+		default:
+			drawbutt = FALSE;
 			break;
 	}
 
+	fbl->font.size = fbl->fsizes[fbl->cursize];
 
-	fbl->fsize = fbl->fsizes[fbl->cursize];
+	itoa(fbl->font.size, wdfont[WDFSIZE].ob_spec.free_string, 10);
 
-	itoa(fbl->fsize, wdfont[WDFSIZE].ob_spec.free_string, 10);
+	fbl->font.colour = limcolour(fbl->font.colour);
 
-	wdfont[WDFCOL].ob_spec.obspec.interiorcol = limcolor(fbl->colour);
-	fbl->colour = wdfont[WDFCOL].ob_spec.obspec.interiorcol;
+	set_selcolpat(info, WDFCOL, fbl->font.colour, 8);
 
-	xd_drawthis(info, WDFCOL);
 	xd_drawthis(info, WDFTEXT);
 	xd_drawthis(info, WDFSIZE);
 
-#if _MINT_
-	if (drawbutt)				/* "if (drawbutt)" needed only in XaAES */
-#endif
-		xd_change(info, button, state, 1);
+	if(drawbutt)
+		xd_change(info, button, SELECTED, 1);
+}
+
+
+/*
+ * Save about 20 bytes by using this routine...
+ */
+
+static void *alloc_fd(void)
+{
+	return malloc_chk((nfonts + 1) * sizeof(FONTDATA));
 }
 
 
@@ -480,7 +514,7 @@ static void do_fd_button
  * Dialog for selecting window (directory or text) font
  */
 
-boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
+boolean fnt_dialog(int title, XDFONT *wd_font, boolean prop)
 {
 	int 
 		button;
@@ -501,7 +535,8 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 	XUSERBLK 
 		*xub = (XUSERBLK *)(o->ob_spec.userblk);
 
-	/* Check if it is already open- curently can not be so twice */
+
+	/* Check if it is already open- currently can not be so twice */
 
 	if ( wdfopen )
 	{
@@ -511,7 +546,7 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 
 	/* Allocate space for font data */
 
-	if ((fbl.fd = malloc_chk((nfonts + 1) * sizeof(FONTDATA))) == NULL)
+	if((fbl.fd = alloc_fd()) == NULL)
 		return FALSE;
 
 	wdfopen = TRUE;
@@ -519,7 +554,7 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 	/* Set code for the userdefined object which draws the sample text */
 
 	xub->ub_code = draw_text;
-	(FONTBLOCK *)(xub->other) = &fbl;
+	(FONTBLOCK *)(xub->uv.ptr) = &fbl;
 
 	/* Set dialog title */
 
@@ -527,22 +562,23 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 
 	/* Count fonts and get available and current size and colour */
 
-	fbl.fsize = wd_font->size;
-	fbl.colour = wd_font->colour;
-	fbl.effect = wd_font->effects;
-	font_count(fbl.fd, &fbl.nf, prop);
+	*(&fbl.font) = *wd_font;
+
+	font_count(&fbl, prop);
 	fbl.cursize = get_size(&fbl);
-	fbl.fsize = fbl.fsizes[fbl.cursize];
-	wdfont[WDFCOL].ob_spec.obspec.interiorcol = fbl.colour;
+	fbl.font.size = fbl.fsizes[fbl.cursize];
+	set_effects(&fbl);
 
 	/* Initialize slider */
 
-	fnt_sl_init( fbl.nf, set_fselector, &sl_info, wd_font->id, &fbl.font, fbl.fd);
+	fnt_sl_init( fbl.nf, set_fselector, &sl_info, wd_font->id, &fbl.fdfont, fbl.fd);
 
 	/* Open the dialog */
 
 	if(chk_xd_open(wdfont, &info) >= 0)
 	{
+		set_selcolpat(&info, WDFCOL, fbl.font.colour, 8);
+
 		/* Loop until told to exit */
 
 		while (!stop)
@@ -552,10 +588,18 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 			switch(button)
 			{
 				case WDFOK:
-					if ((fbl.fd[fbl.font].id != wd_font->id) || (fbl.fsize != wd_font->size) || (fbl.colour != wd_font->colour) )
+					if 
+					(
+						(fbl.fd[fbl.fdfont].id != wd_font->id) || 
+						(fbl.font.size != wd_font->size) ||
+						(fbl.font.colour != wd_font->colour) ||
+						(fbl.font.effects != wd_font->effects)
+					)
 					{
-						fbl.id = fbl.fd[fbl.font].id;
-						*wd_font = *(FONT *)(&fbl.id);
+						/* font is changed only if really changed */
+
+						fbl.font.id = fbl.fd[fbl.fdfont].id;
+						*wd_font = *(&fbl.font);
 						ok = TRUE;
 					}
 
@@ -573,6 +617,8 @@ boolean fnt_dialog(int title, FONT *wd_font, boolean prop)
 	}
 
 	free(fbl.fd);
+	obj_unhide(wdfont[WDFEFF]);
+
 	wdfopen = FALSE;
 
 	return ok;
@@ -612,9 +658,16 @@ void fnt_close(XDINFO *dialog)
 
 void fnt_hndlbutton(XDINFO *dialog, int button)
 {
-	FNT_DIALOG *fnt_dial = (FNT_DIALOG *)dialog;
+	FNT_DIALOG
+		*fnt_dial = (FNT_DIALOG *)dialog;
 
-	int msg[8], *msgp = msg;
+	FONTBLOCK
+		*thefbl = &(fnt_dial->fbl);
+
+	int
+		msg[8],
+		*msgp = msg;
+
 
 	button &= 0x7FFF;
 
@@ -629,17 +682,17 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 			*msgp++ = ap_id;
 			*msgp++ = 0;
 			*msgp++ = fnt_dial->win;
-			*msgp++ = fnt_dial->fbl.fd[fnt_dial->fbl.font].id;
-			*msgp++ = fnt_dial->fbl.fsize;
-			*msgp++ = fnt_dial->fbl.colour;
-			*msgp   = fnt_dial->fbl.effect;
+			*msgp++ = thefbl->fd[thefbl->fdfont].id;
+			*msgp++ = thefbl->font.size;
+			*msgp++ = thefbl->font.colour;
+			*msgp   = thefbl->font.effects;
 			appl_write(fnt_dial->ap_id, 16, msg);
 		case WDFCANC:
 			xd_buttnorm(dialog, button);
 			fnt_close(dialog);
 			break;
 		default:
-			do_fd_button(dialog, &fnt_dial->sl_info.slider, &fnt_dial->fbl, button);
+			do_fd_button(dialog, &fnt_dial->sl_info.slider, thefbl, button);
 			break;
 	}
 }
@@ -660,10 +713,13 @@ XD_NMFUNC fnt_funcs =
  * such as ST-Guide, Multistrip, Taskbar, aMail, etc. 
  */
 
-void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect, int prop)
+void fnt_mdialog(int cl_ap_id, int win, int id, int size, int colour, int effect, int prop)
 {
 	FNT_DIALOG 
 		*fnt_dial;
+
+	FONTBLOCK
+		*thefbl;
 
 	char
 		*wtitle;
@@ -697,7 +753,7 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect,
 		*msgp++ = win;
 		*msgp++ = id;
 		*msgp++ = size;
-		*msgp++ = color;
+		*msgp++ = colour;
 		*msgp   = effect;
 
 		appl_write(cl_ap_id, 16, msg);
@@ -710,16 +766,18 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect,
 	if ((fnt_dial = malloc_chk(sizeof(FNT_DIALOG))) == NULL)
 		return;
 
+	thefbl = &(fnt_dial->fbl);
+
 	/* Who calls this ? */
 
 	fnt_dial->ap_id = cl_ap_id;	/* Application id of the caller */
 	fnt_dial->win = win;		/* Window id of the caller */
-	fnt_dial->color = color;	/* Color of the font */
+	fnt_dial->colour = colour;	/* Colour of the font */
 	fnt_dial->effect = effect;	/* Text effects of the font */
 
 	/* Allocate memory for fonts data */
 
-	if ((fnt_dial->fbl.fd = malloc_chk((nfonts + 1) * sizeof(FONTDATA))) == NULL)
+	if((thefbl->fd = alloc_fd()) == NULL)
 	{
 		free(fnt_dial);
 		return;
@@ -728,31 +786,30 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect,
 	/* Set userdef object type for display of sample text */
 
 	xub->ub_code = draw_text;
-	(FONTBLOCK *)(xub->other) = &fnt_dial->fbl;
+	(FONTBLOCK *)(xub->uv.ptr) = thefbl;
 
 	/* Count existing fonts and get available sizes */
 
-	font_count(fnt_dial->fbl.fd, &fnt_dial->fbl.nf, prop);
+	font_count(thefbl, prop);
+	thefbl->font.size = size;
+	thefbl->font.colour = colour;
+	thefbl->font.effects = effect;
+	set_effects(thefbl);
 
-	fnt_dial->fbl.fsize = size;
-	fnt_dial->fbl.colour = color;
-	fnt_dial->fbl.effect = effect;
-
-	fnt_dial->fbl.cursize = get_size(&fnt_dial->fbl);
-
-	fnt_dial->fbl.fsize = fnt_dial->fbl.fsizes[fnt_dial->fbl.cursize];
-
-	wdfont[WDFCOL].ob_spec.obspec.interiorcol = color;
+	thefbl->cursize = get_size(thefbl);
+	thefbl->font.size = thefbl->fsizes[thefbl->cursize];
 
 	/* Initialize slider */
 
 	fnt_dial->sl_info.fnt_dial = fnt_dial;
-	fnt_sl_init( fnt_dial->fbl.nf, mset_fselector, &(fnt_dial->sl_info.slider), id, &(fnt_dial->fbl.font), fnt_dial->fbl.fd);
+	fnt_sl_init( thefbl->nf, mset_fselector, &(fnt_dial->sl_info.slider), id, &(fnt_dial->fbl.fdfont), fnt_dial->fbl.fd);
 
 	/* This dialog is -always- windowed. Set window and dialog titles now */
 
 	wtitle = get_freestring(DTFONSEL);
+
 	rsc_title(wdfont, WDFTITLE, DTAFONT);
+
 	nonmodal = TRUE;
 
 #if _MINT_
@@ -765,6 +822,7 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int color, int effect,
  	xd_nmopen(wdfont, (XDINFO *)fnt_dial, &fnt_funcs, 0, /* -1, -1, not used */ NULL, wtitle);
 #endif
 
+	set_selcolpat(&(fnt_dial->dialog), WDFCOL, colour, -1);
 }
 
 #endif

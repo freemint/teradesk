@@ -1,9 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.87  	Copyright 2003-2007  Dj. Vukovic
+             V3.01 to 3.91  	Copyright 2003-2007  Dj. Vukovic
 
-This  is version 3.87 of the Tera Desktop, a replacement for the builtin TOS
+
+This  is version 3.91 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -101,7 +102,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the
-last  released  version (3.84). Also, read the manual TERADESK.HYP (you will
+last  released  version (3.87). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -224,8 +225,8 @@ wish to make such translations.
 
 
 7.  The icon files supplied  contain a basic  set of  icons only.  Users are
-encouraged to create thier own, more extensive icon files;  they can can add
-icons  at  will,  or  use other icon files (e.g. one can rename DESKICON.RSC
+encouraged  to create  thier own,  more extensive  icon files;  they can add
+icons  at will,  or use other  icon files (e.g. one can rename  DESKICON.RSC
 and/or  DESKCICN.RSC  used by the built-in desktop of TOS 2/3/4 to ICONS.RSC
 and  CICONS.RSC respectively, and use them with TeraDesk, but any files used
 should contain some icons which are essential to TeraDesk- see below).
@@ -252,7 +253,7 @@ TeraDesk  tries  to load  the colour icon file CICONS.RSC.  If this file can
 not be found, TeraDesk falls back to monochrome icons file ICONS.RSC.
 
 Some  versions  of  AES  (e.g.  Geneva  4)  declare themselves as capable of
-handling  colour icons, but fail to  work with  Tera Desktop. In such cases,
+handling colour icons,  but that fails to work with TeraDesk. In such cases,
 CICONS.RSC  file  should   be  removed,  and  TeraDesk  will  fall  back  to
 monochrome   icons.   Colour  icons  file  can  also  be  removed  in  other
 environments if there is a need to preserve as much free memory as possible.
@@ -308,8 +309,8 @@ Some Very Unlikely To Happen Future Developments
   would be a completely nonfunctional feature, which would increase  program
   size unacceptably.  Besides, it is the opinion  of the  current maintainer
   that background pictures are in fact distracting  to  the user and a waste
-  of system resources. However, MyAES provides this feature with any desktop
-  and maybe XaAES will have a similar capability some day.
+  of system resources. However, MyAES provides this feature for (almost) any
+  desktop and maybe XaAES will have a similar capability some day.
 
 
 
@@ -332,11 +333,12 @@ program. You will need ST-Guide  (not supplied with Tera Desktop) or another
 
 For the time being, comments should be sent to: vdjole@EUnet.yu
 
-If  you  intend to use TeraDesk, please send an e-mail to the above address,
-I may at some time ask a question or two about TeraDesk's behaviour.
+If  you  intend to use TeraDesk, it will be appreciated if you send an 
+e-mail to the above address; I may at some time ask a question or two
+about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; January 2nd 2007
+                                            Beograd; June 18th 2007
 
 

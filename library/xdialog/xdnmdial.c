@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993,       1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                      2003, 2004, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,8 +31,8 @@
 
 
 #include "xdialog.h"
-#include "internal.h"
 
+extern int xd_oldarrow(XDINFO *info);
 
 #define XD_NMWDFLAGS	(NAME | CLOSER | MOVER)
 
@@ -44,12 +44,27 @@
 
 int __xd_hndlkey(WINDOW *w, int key, int kstate)
 {
-	int next_obj, nkeys, kr, cont, key_handled = TRUE;
-	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
-	KINFO *kinfo;
-	OBJECT *tree = info->tree;
+	XDINFO
+		*info;
 
-	xd_wdupdate(BEG_UPDATE);
+	KINFO
+		*kinfo;
+
+	OBJECT
+		*tree;
+
+	int
+		next_obj,
+		nkeys,
+		kr,
+		cont,
+		key_handled = TRUE;
+
+
+	info = ((XD_NMWINDOW *)w)->xd_info;
+	tree = info->tree;
+
+	xd_begupdate();
 
 	nkeys = ((XD_NMWINDOW *)w)->nkeys;
 	kinfo = ((XD_NMWINDOW *)w)->kinfo;
@@ -66,10 +81,16 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 	if (cont)
 		xd_edit_init(info, next_obj, -1);
 
-	xd_wdupdate(END_UPDATE);
+	xd_endupdate();
 
 	if(!cont)
-		info->func->dialbutton(info, next_obj);
+	{
+		do
+		{
+			info->func->dialbutton(info, next_obj);
+		}
+		while(xd_oldarrow(info));
+	}
 
 	return key_handled;
 }
@@ -82,13 +103,20 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 
 void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 {
-	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
-	int next_obj, cmode, cont;
+	XDINFO
+		*info;
 
+	int
+		next_obj,
+		cmode,
+		cont;
+
+
+	info = ((XD_NMWINDOW *)w)->xd_info;
 
 	if ((next_obj = objc_find(info->tree, ROOT, MAX_DEPTH, x, y)) != -1)
 	{
-		xd_wdupdate(BEG_UPDATE);
+		xd_begupdate();
 
 		if ((cont = xd_form_button(info, next_obj, n, &next_obj)) != FALSE)
 			cmode = x;
@@ -96,10 +124,16 @@ void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 		if(cont)
 			xd_edit_init(info, next_obj, cmode);
 
-		xd_wdupdate(END_UPDATE);
+		xd_endupdate();
 
 		if(!cont)
-			info->func->dialbutton(info, next_obj);
+		{
+			do
+			{
+				info->func->dialbutton(info, next_obj);
+			}
+			while(xd_oldarrow(info));
+		}
 	}
 }
 

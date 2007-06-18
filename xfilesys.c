@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002 W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -76,7 +76,9 @@ static long x_retresult(long result)
 
 int x_checkname(const char *path, const char *name)
 {
-	long nl = 0, mp = sizeof(VLNAME);
+	long
+		nl = 0,
+		mp = sizeof(VLNAME);
 
 
 	if(!x_netob(path))
@@ -141,9 +143,15 @@ char *x_makepath(const char *path, const char *name, int *error)
 
 boolean x_exist(const char *file, int flags)
 {
-	XATTR attr;
-	unsigned int itype;
-	int theflag;
+	XATTR
+		attr;
+
+	unsigned int
+		itype;
+
+	int
+		theflag;
+
 
 #if _MINT_
 	if ( x_attr( (flags & EX_LINK) ? 1 : 0, FS_INQ, file,  &attr) < 0 )
@@ -187,8 +195,11 @@ boolean x_exist(const char *file, int flags)
 
 boolean x_netob(const char *name)
 {
-	int i;
-	static const char *pfx[] = {"http:", "https:", "ftp:", "mailto:"};
+	int
+		i;
+
+	static const char 
+		*pfx[] = {"http:", "https:", "ftp:", "mailto:"};
 
 
 	if(*name && name[1] != ':') /* don't check further if not necessary */
@@ -223,15 +234,22 @@ int x_setpath(const char *path)
 
 char *x_getpath(int drive, int *error)
 {
-	VLNAME tmp;
-	char *buffer = NULL, *t = tmp + 2;
-	long e;
+	VLNAME
+		tmp;
+
+	char
+		*buffer = NULL,
+		*t = tmp;
+
+	long
+		e;
+
 
 	/* Put drive id at the beginning of the temporary buffer */
 
-	tmp[0] = (char)(((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
-	tmp[1] = ':';
-	tmp[2] = 0;
+	*t++ = (char)(((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
+	*t++ = ':';
+	*t = 0; /* t is now tmp + 2 */
 
 #if _MINT_
 	if(mint)
@@ -239,6 +257,7 @@ char *x_getpath(int drive, int *error)
 		/* Use Dgetcwd so that length can be limited */
 
 		e = Dgetcwd(t, drive, (int)sizeof(VLNAME) - 2 );
+
 		if(e == GERANGE)
 			e = EPTHTL;
 	}
@@ -290,14 +309,22 @@ int x_rmdir(const char *path)
 
 static int _fullname(char *buffer)
 {
-	int error = 0, drive = 0;
-	boolean d = isdisk(buffer);
+	int
+		error = 0,
+		drive = 0;
+
+	boolean
+		d = isdisk(buffer);
+
 
 	if(!d || strlen(buffer) < 3)
 	{
 		/* No drive name contained in the name, or no complete path */
 
-		char *def, *save, *n = buffer;
+		char
+			*def,
+			*save,
+			*n = buffer;
 
 		/* Save the name so that it can be copied back */
 
@@ -373,8 +400,12 @@ int x_mklink(const char *linkname, const char *refname)
 
 int x_rdlink( size_t tgtsize, char *tgt, const char *linkname )
 {
-	char *slash;
-	int err = EACCDN;
+	char
+		*slash;
+
+	int
+		err = EACCDN;
+
 
 	if(!x_netob(linkname))
 		err =  xerror( (int)Freadlink( (int)tgtsize, tgt, (char *)linkname ) );
@@ -436,6 +467,7 @@ char *x_fllink( char *linkname )
 	char 
 		*tmp = NULL,
 		*target = NULL;
+
 
 	if ( linkname )
 	{
@@ -513,12 +545,20 @@ long x_setdrv(int drive)
 
 int x_getlabel(int drive, char *label)
 {
-	DTA *olddta, dta;
-	int error;
-	char path[8], lblbuf[LBLMAX];
+	DTA
+		*olddta,
+		dta;
+
+	int
+		error;
+
+	char
+		path[8],
+		lblbuf[LBLMAX];
+
 
 	strcpy(path, "A:\\*.*");
-	path[0] += (char)drive;
+	*path += (char)drive;
 
 #if _MINT_
 	if(mint)
@@ -561,8 +601,8 @@ int x_putlabel(int drive, char *label)
 {
 	char path[4];
 
-	strcpy(path, "A:\\");
-	path[0] += (char)drive;
+	strcpy(path, adrive);
+	*path += (char)drive;
 
 #if _MINT_
 	if(mint)
@@ -755,7 +795,7 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 		attrib->mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
 
 	if (dta->d_attrib & FA_SUBDIR)
-		attrib->mode |= (S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH );
+		attrib->mode |= (S_IFDIR | EXEC_MODE );
 	else if (!(dta->d_attrib & FA_VOLUME))
 		attrib->mode |= S_IFREG;
 
@@ -794,15 +834,15 @@ int x_inq_xfs(const char *path)
 
 	if (mint)
 	{
-		long c, t, m, x, n;
+		long n, t, c, m, x;
 
 		/* Inquire about filesystem details */
 
-		c = Dpathconf(path, DP_CASE); 	/* case-sensitive names? */
-		t = Dpathconf(path, DP_TRUNC);	/* name truncation */
-		m = Dpathconf(path, DP_MODE);	/* valid mode bits */
-		x = Dpathconf(path, DP_XATT);	/* valid XATTR fields */
-		n = Dpathconf(path, DP_NAMEMAX);/* maximum name length */
+		n = Dpathconf(path, DP_NAMEMAX);/* 3: maximum name length */
+		t = Dpathconf(path, DP_TRUNC);	/* 5: name truncation */
+		c = Dpathconf(path, DP_CASE); 	/* 6: case-sensitive names? */
+		m = Dpathconf(path, DP_MODE);	/* 7: valid mode bits */
+		x = Dpathconf(path, DP_XATT);	/* 8: valid XATTR fields */
 
 		/* 
 		 * If information can not be returned, results will be < 0, then
@@ -858,8 +898,12 @@ int x_inq_xfs(const char *path)
 
 XDIR *x_opendir(const char *path, int *error)
 {
-	XDIR *dir;
-	VLNAME p;
+	XDIR
+		*dir;
+
+	VLNAME
+		p;
+
 
 	if ((dir = malloc(sizeof(XDIR))) == NULL)
 		*error = ENSMEM;
@@ -916,12 +960,16 @@ XDIR *x_opendir(const char *path, int *error)
 
 long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib) 
 {
-	static char fspec[sizeof(VLNAME) + 4];
-	long result;
+	long
+		result;
+
+	static char
+		fspec[sizeof(VLNAME) + 4];
+
 
 	/* Prepare some pointer to return in case any error occurs later */
 
-	fspec[0] = 0;
+	*fspec = 0;
 	*buffer = fspec;
 
 
@@ -936,8 +984,10 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 		if (dir->data.gdata.first != 0)
 		{
 			error = make_path(fspec, dir->path, TOSDEFAULT_EXT); /* presets[1] = "*.*"  */	
+
 			if(error == 0)
 				error = xerror(Fsfirst(fspec, FA_ANY));
+
 			dir->data.gdata.first = 0;
 		}
 		else
@@ -950,6 +1000,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 			else
 			{
 				*buffer = dir->data.gdata.dta.d_fname; 
+
 				dta_to_xattr(&dir->data.gdata.dta, attrib);
 			}
 		}
@@ -980,10 +1031,23 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 		result = x_retresult(error);
 	}
 
-	/* Correct mint's arrogant tampering with filenames */
+	/* 
+	 * Correct mint's arrogant tampering with filenames. 
+	 * Also correct stupid assignment of execute rights in Magic.
+	 */
 
-	if ( mint && ((dir->type & FS_CSE) == 0)) /* no need to waste time otherwise */
-		strupr(*buffer);
+	if ( mint )
+	{
+		/* If names are not case-sensitive, use uppercase only */
+
+		if((dir->type & FS_CSE) == 0) /* no need to waste time otherwise */
+			strupr(*buffer);
+
+		/* If access rights are not supported, don't set them */
+
+		if((dir->type & FS_UID) == 0)
+			attrib->mode &= ~EXEC_MODE;
+	}
 
 #endif /* _MINT_ */
 
@@ -1025,14 +1089,17 @@ long x_closedir(XDIR *dir)
 
 /* 
  * Read file atttributes (in the extended sense) 
- * mode=0: follow link; 1: attribute of the link itself
+ * mode=0: follow link; 1: attribute of the link (or object of other type) itself
  * parameter fs_type contains bitflags ( see x_inq_xfs() ):
+ *
  * FS_TOS = 0x0000 : TOS filesystem
  * FS_LFN = 0x0001 : has long filenames
  * FS_LNK = 0x0002 : has links
  * FS_UID = 0x0004 : has user rights
  * FS_CSE = 0x0008 : has case-sensitive names
  * FS_INQ = 0x0100 : inquire about filesystem
+ *
+ * Beware that in Mint or Magic, FS_LNK can be returned for FAT volumes.
  */
 
 long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
@@ -1040,7 +1107,9 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 	long result;
 
 	if ( (fs_type & FS_INQ) != 0 )
-		fs_type |= x_inq_xfs(name); /* this change is local only */ 
+		fs_type |= x_inq_xfs(name); /* this change is local only */
+
+	xattr->mode = 0;	/* clear any existing value, see below about Fxattr() */ 
 
 #if _MINT_
 	if (mint && ((fs_type & FS_ANY) != 0) )
@@ -1049,16 +1118,21 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		 * This is not a FAT filesystem.
 		 * Attempt to set some sensible file attributes 
 		 * from access rights and filename. If noone has
-		 * write permission, set READONLY attribute;
+		 * write permission, set READONLY attribute, but do this only
+		 * on a filesystem that knows of user rights.
 		 * If the name begins with a dot, set HIDDEN attribute.
 		 * It seems that Fxattr() does not set all of xattr->mode (???)
-		 * therefore it is here set to 0 prior to inquiry
+		 * therefore it is above set to 0 prior to inquiry
 		 */
 
-		xattr->mode = 0;
 		result = x_retresult(Fxattr(flag, name, xattr));
 
-		if ( (result >= 0) && ((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0))
+		if
+		(
+			(result >= 0 ) &&
+			((fs_type & FS_UID) != 0) &&
+			((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0)
+		)
 		{
 			if((xattr->mode & S_IFMT)  != S_IFLNK)
 				xattr->attr |= FA_READONLY;
@@ -1088,7 +1162,13 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 #if _MINT_
 	if ((fs_type & FS_UID) == 0 )
 	{
-		/* This is a filesystem without user rights; imagine some */
+		/* 
+		 * This is a filesystem without user rights; imagine some.
+		 * Beware thet Fxattr may set some funny values in Magic;
+		 * therefore, (re)set xattr->mode again below
+		 */
+
+		xattr->mode &= ~DEFAULT_DIRMODE;
 
 		xattr->mode |= (S_IRUSR | S_IRGRP | S_IROTH);
 
@@ -1099,11 +1179,13 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		 * Information about execute rights need not be always
 		 * set; only for file copy. As it happens, in all such
 		 * cases, fs_type parameter will always contain a FS_INQ
-		 * (more-less by accident, but convenient). 
+		 * (more-less by accident, but convenient). This saves
+		 * time, because the list of program types need not be
+		 * always examined.
 		 */
 
-		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(name))
-			xattr->mode |= ( S_IXUSR | S_IXGRP | S_IXOTH ); 
+		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(fn_get_name(name)))
+			xattr->mode |= EXEC_MODE; 
 	}
 #endif
 
@@ -1117,9 +1199,15 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 
 long x_pflags(char *filename)
 {
-	char buf[26];
-	long result;
-	int fh = x_open(filename, O_RDONLY);
+	long
+		result;
+
+	char
+		buf[26];
+
+	int
+		fh = x_open(filename, O_RDONLY);
+
 
 	if (fh >= 0)
 	{
@@ -1216,8 +1304,13 @@ char *xshel_find(const char *file, int *error)
 
 char *xfileselector(const char *path, char *name, const char *label)
 {
-	char *buffer;
-	int error, button;
+	char
+		*buffer;
+
+	int
+		error,
+		button;
+
 
 	if ((buffer = malloc_chk(sizeof(VLNAME))) != NULL)
 	{
@@ -1229,9 +1322,9 @@ char *xfileselector(const char *path, char *name, const char *label)
 			xform_error(error);
 		else
 		{
-			/* A call to a file selector MUST be surrounded by wind_update() */
+			/* A call to a file selector MUST be bracketed by wind_update() */
 
-			xd_wdupdate(BEG_UPDATE);
+			xd_begupdate();
 
 			/* 
 			 * In fact there should be a check here if an alternative file selector
@@ -1240,11 +1333,11 @@ char *xfileselector(const char *path, char *name, const char *label)
 			 */	
 
 			if ( tos_version >= 0x104 )
-				error = fsel_exinput(buffer, name, &button, (char *) label);
+				error = fsel_exinput(buffer, name, &button, (char *)label);
 			else
 				error = fsel_input(buffer, name, &button);
 			
-			xd_wdupdate(END_UPDATE);
+			xd_endupdate();
 
 			if ((error == 0) || (button == 0))
 			{
@@ -1284,7 +1377,7 @@ static int read_buffer(XFILE *file)
 		return (int)n;
 	else
 	{
-		file->write = (int) n;
+		file->write = (int)n;
 		file->read = 0;
 		file->eof = (n != XBUFSIZE) ? TRUE : FALSE;
 
@@ -1304,7 +1397,7 @@ static int write_buffer(XFILE *file)
 	if (file->write != 0)
 	{
 		if ((n = x_write(file->handle, file->write, file->buffer)) < 0)
-			return (int) n;
+			return (int)n;
 
 		else
 		{
@@ -1332,11 +1425,12 @@ static int write_buffer(XFILE *file)
 
 XFILE *x_fopen(const char *file, int mode, int *error)
 {
+	XFILE 
+		*xfile;
+
 	int 
 		rwmode = mode & O_RWMODE;
 
-	XFILE 
-		*xfile;
 
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
 		*error = ENSMEM;
@@ -1346,7 +1440,7 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 		*error = 0;
 
 		xfile->mode = mode;
-		xfile->buffer = (char *) (xfile + 1);
+		xfile->buffer = (char *)(xfile + 1);
 		xfile->bufsize = (int) XBUFSIZE;
 
 		if (rwmode == O_WRONLY)
@@ -1388,6 +1482,7 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 XFILE *x_fmemopen(int mode, int *error)
 {
 #if _CHECK_RWMODE
+	int
 		rwmode = mode & O_RWMODE; /* mode & 0x03 */
 #endif
 
@@ -1427,7 +1522,10 @@ XFILE *x_fmemopen(int mode, int *error)
 
 int x_fclose(XFILE *file)
 {
-	int error, rwmode = file->mode & O_RWMODE;
+	int
+		error,
+		rwmode = file->mode & O_RWMODE;
+
 
 	if (file->memfile)
 	{
@@ -1459,9 +1557,20 @@ int x_fclose(XFILE *file)
 
 long x_fread(XFILE *file, void *ptr, long length)
 {
-	long remd = length, n, size;
-	char *dest = (char *) ptr, *src;
-	int read, write, error;
+	long
+		remd = length,
+		n,
+		size;
+
+	char
+		*dest = (char *)ptr,
+		*src;
+
+	int
+		read,
+		write,
+		error;
+
 
 	if (file->memfile)
 	{
@@ -1557,11 +1666,12 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 
 	char 
 		*dest, 					/* location of the output buffer */
-		*src = (char *) ptr; 	/* position being read from */
+		*src = (char *)ptr; 	/* position being read from */
 
 	int 
 		write,			 		/* position currently written to */
 		error;					/* error code */
+
 
 	/* Don't write into a file opened for reading */
 
@@ -1666,9 +1776,21 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 
 int x_fgets(XFILE *file, char *string, int n)
 {
-	boolean ready = FALSE;
-	int i = 1, read, write, error;
-	char *dest, *src, ch, nl = 0;
+	char
+		*dest,
+		*src,
+		ch,
+		nl = 0;
+
+	int
+		i = 1,
+		read,
+		write,
+		error;
+
+	boolean
+		ready = FALSE;
+
 
 	/* Why ? Just a safety precaution against careless use maybe? */
 

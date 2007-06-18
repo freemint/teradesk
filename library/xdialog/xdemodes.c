@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                                      2002, 2003  H. Robbers,
- *                                            2003  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,7 +31,6 @@
 
 #include "xdialog.h"
 #include "xscncode.h"
-#include "internal.h"
 
 const unsigned char xd_emode_specs[XD_EMODECOUNT] =
 {
@@ -55,7 +54,7 @@ const unsigned char xd_emode_specs[XD_EMODECOUNT] =
 	  __XD_IS_SELTEXT,			/* XD_CYCLBUT(12): IA: cycling button. used with pop-ups mostly. */
 	__XD_IS_ELEMENT,			/* XD_SCRLEDIT(13): HR 021202: scrollable editable texts. */
 	__XD_IS_ELEMENT,			/* XD_FONTTEXT(14): font sample text  */
-	__XD_IS_NOTYETDEF,			/* (15) */
+	__XD_IS_ELEMENT,			/* XD_BCKBOX(15): background box  */
 	__XD_IS_NOTYETDEF,			/* (16) */
 	__XD_IS_NOTYETDEF,			/* (17) */
 	__XD_IS_NOTYETDEF,			/* (18) */

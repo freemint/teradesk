@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -22,6 +22,6 @@
 
 
 char *new_env(const char *newvar, size_t size, int where, size_t *newsize);
+char *make_argv_env(const char *program, const char *cmdline, size_t *size);
 long envlen(void);
 void clr_argv(void);
-char *make_argv_env(const char *program, const char *cmdline, size_t *size);

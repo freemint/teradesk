@@ -11,25 +11,29 @@ General remarks
 
 - After modifying the resource file it is good to compare its structure
   with the original file. 'Compare RSCs' function in Interface can be used.
-  All items should be checked, except object states, texts, and (maybe)
+  All parameters should be checked, except object states, texts, and (maybe)
   sizes and positions.
 
 - Usually, changes in the resource file between subsequent versions are
   small and an existing translated previous version of the resource file
-  can be carefully updated. There is no need to start each time from scratch. 
-  See next section: Changes in ... relative to previous version.
+  can be carefully updated. There is no need to start each time from scratch.
+  See the next section: Changes in V... relative to previous version.
 
 - If translated texts do not fit into available spaces in the dialogs, alerts
-  or the menu, the translator should use his imagination to find the best 
+  or the menu, the translator should use his imagination to find the best
   possible solution for the problem- items can be moved within the dialogs,
-  words or phrases that are not literal translations can be used, etc.
- 
+  sometimes the sizes of objects can be changed, words or phrases that are
+  not literal translations can be used, etc.
 
-Changes in V3.87 relative to previous version
+
+Changes in V3.91 relative to previous version
 ---------------------------------------------
 
-There are no changes; resource file is identical to those of V3.85 and 
-V3.86.
+- Objects FPREV and FRCNT added to tree FLOPPY. Sizes of the relevant parent
+  objects, including the root object of the tree, increased in order to fit
+  the new objects.
+
+  Note: Object FRCNT does -not- go inside the FPAR3 I-box.
 
 
 Naming of object trees
@@ -46,25 +50,28 @@ T*  - some are texts for alerts, other are strings appearing in dialogs.
 P*  - strings with descriptions of program header flags
 A*  - alerts
 
+Note that the file named DESKTOP.RSD must be present in the same directory
+as DESKTOP.RSC in order to make object names visible in the resource editor.
+
 
 About the menu
 --------------
 
 - Care should be taken to leave adequate space for keyboard shortcuts in
-  each menu item (4 characters). This space is marked in menu strings by 
+  each menu item (4 characters). This space is marked in menu strings by
   underline characters as ____
 
 - If possible, it should be tested whether the translated menu fits into
   the screen width in ST-low resolution. TeraDesk is supposed to work in
   all screen resolutions starting from 320x200 (e.g. ST-low).
-  
 
-About dialog-type object trees
-------------------------------
 
-- Dialog sizes can be changed if necessary in order to fit translated texts, 
+About the dialog-type object trees
+----------------------------------
+
+- Dialog sizes can be changed if necessary in order to fit translated texts,
   but should not exceed 312 pixels horizontally by 320 pixels vertically.
-  This is the largest dialog size that fits in the lowest possible screen 
+  This is the largest dialog size that fits in the lowest possible screen
   resolution (320x200) that TeraDesk can handle.
 
 - Sizes (widths) of dialog titles should not be changed unless dialog widths
@@ -72,37 +79,46 @@ About dialog-type object trees
   from English titles.  This is needed in order to correctly display the
   title underline or box across the full width of the dialog.
 
-- Some texts in the INFOBOX dialog (e.g. program version and date of 
+- Some texts in the INFOBOX dialog (e.g. program version and date of
   compilation) are set in the code of the program.
 
 - There are hidden items in dialogs. Visibility of such items should not
-  be changed. A program like RSCTRAN can be used to extract all texts in 
-  order to check whether all hidden items have been found and translated.
+  be changed. A program like RSCTRAN can be used to extract all texts
+  from the resource file in order to check whether all hidden items have
+  been found and translated.
 
 - There are overlapping (invisible) box-type objects in some dialogs. Care
   should be taken not to change the order of these objects and the structure
   of the resource file when editing them (i.e. objects covering other objects
   should -not- be "adopted as children").
 
+
+About the scrolled-editable-text objects
+----------------------------------------
+
 - Scrolled editable text fields (objects with extended type 13) can be
-  modified in length if convenient, because TeraDesk uses them in such a way
-  that it is safe to do so. However, two-characters free spaces should always
-  be left in dialog area both on the left and on the on the right of these
-  objects, because, if a text longer than field length is contained in the
-  object, visible text is bracketed between a pair of "< >" characters that
-  appears on the left and on the right of the object. 
+  modified in length if convenient (e.g. to make them fit into a dialog),
+  because TeraDesk uses them in such a way that it is safe to do so. However,
+  two-characters free spaces should always be left in dialog area both on the
+  left and on the on the right of these objects, because, if a text longer
+  than field length is contained in the object, visible text is bracketed
+  between a pair of "< >" characters that appears on the left and on the right
+  of the object.
+
+- Two highest object flags bits are used in some of the objects of this
+  type for specific purposes. States of these flags should be preserved.
 
 
-About button-type objects
--------------------------
+About the button-type objects
+-----------------------------
 
 - TeraDesk uses higher ob_state bits in button objects to mark hotkeys.
   The "[" character is not recognized for such purpose in button texts.
 
 - Checkbox-button and radio-button objects appearing in groups should be
   set to equal widths, appropriate for the longest button text to fit in.
-  In some AESes, when these objects are set to disabled state,  bounding 
-  rectangles are visible and they look ugly if not set to equal widths. 
+  In some AESes, when these objects are set to disabled state,  bounding
+  rectangles are visible and they look ugly if not set to equal widths.
 
 
 Some specific free-string object trees
@@ -111,13 +127,13 @@ Some specific free-string object trees
 - Strings MISINGUL and MIPLURAL contain parts of the texts that appear in
   info lines of directory windows when one or more objects are visible or
   selected.
- 
+
 - Strings FLINAME to FOINAME contain names of essential icons that should
   always exist in the icons recource files used by TeraDesk. These strings
-  should not be translated unless one wants also to translate icon names 
-  in the icons resource files. 
+  should not be translated unless one wants also to translate icon names
+  in the icons resource files.
 
-- String TLINKTO contains default text that is prepended to file/folder 
+- String TLINKTO contains default text that is prepended to file/folder
   name when a symbolic link to that object is made. It should contain only
   characters that are legal in file/folder names.
 
@@ -127,29 +143,37 @@ Some specific free-string object trees
   the translated texts be not longer than original ones.
 
 - String TBYTES appears in the name-conflict dialog when displaying file
-  sizes. It should contain a trailing space.
+  sizes. It should end with a trailing space.
 
 - Strings TFNVALID and TFNTMPLT contain the validation and the template
   string, respectively, for those FTEXT-type dialog fields that are switched
-  to 8+3 filename format in single-TOS when appropriate. They should not be
-  modified.
+  to 8+3 filename format in single-TOS when appropriate. It is recommended
+  that they are not modified (see also next remark).
+
+- String XFNVALID has a similiar function like TFNVALID, but is used when
+  name masks are entered, and therefore permist additional characters in
+  the filename and the extension. This string contains characters that are
+  not standard characters in validation strings (validation strings in
+  dialogs are processed by TeraDesk). It may be modified to XXXXXXXXXX to
+  permit any character in any place.
 
 - String CANCTXT contains all words that appear on Cancel or Abort buttons
-  in TeraDesk dialogs. Words should be enclosed between "|" characters
+  in TeraDesk dialogs. Words should be enclosed between "|" characters.
+  Any leading or trailing spaces should be included.
 
 - String TDONTEDI contains an informational text that is written into each
   configuration file. It must begin with a ";"
 
 - String TNFILES should be exactly as long as the non-editable beginning
-  of the template string of the FTEXT-type object FLFILES in the FILEINFO 
+  of the template string of the FTEXT-type object FLFILES in the FILEINFO
   dialog.
 
 - Strings TFIALL and TFIMORE are button texts that alternatively appear
   on the leftmost button in the Info... dialog. They must fit into button
-  size, and in both words the characters at the same locations (e.g. the 
+  size, and in both words the characters at the same locations (e.g. the
   first characters) must be usable as hotkeys (shortcuts).
 
-- Some strings are divided by "|" characters. They appear as lines in
-  alerts. If possible, number of divisions in any string should not be 
-  changed, and the length of any line should not exceed 31 characters.
- 
+- Some strings are divided by "|" characters. They appear as separate text
+  lines in alerts. If possible, number of divisions in any string should not
+  be changed, and the length of any line should not exceed 31 characters.
+

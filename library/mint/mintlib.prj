@@ -1,5 +1,7 @@
 ;*
-;* Teradesk. Copyright (c) 1993, 1994, 2002 W. Klaren.
+;* Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
+;*                         2002 - 2003  H. Robbers,
+;*                         2003 - 2007  Dj. Vukovic
 ;*
 ;* This file is part of Teradesk.
 ;*
@@ -32,7 +34,7 @@ mint.lib
 ;.S[-Y -S]
 ;.L[-J -G -Y -V]
 
-; No debug info below
+; No debug info
 
 .C[-C -G -K -I..\..\include]
 .S[-S]

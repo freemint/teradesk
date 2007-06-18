@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -71,21 +71,23 @@ static boolean prtchar
 	long 
 		time;
 
-	boolean
-		ready = FALSE, 
-		result = FALSE;
-
 	int 
 		button,
 		error;
 
+	boolean
+		ready = FALSE, 
+		result = FALSE;
+
 	char 
 		s;
+
 
 	if ( printfile )
 	{
 		s = ch;
 		error = (int)x_fwrite(printfile, &s, 1L);
+
 		if ( error < 1 )
 		{
 			xform_error(error);
@@ -97,7 +99,9 @@ static boolean prtchar
 		do
 		{
 			time = clock() + PTIMEOUT;
+
 			while ((clock() < time) && (Cprnos() == 0));
+
 			if (Cprnos() != 0)
 			{
 				Cprnout(ch);
@@ -108,12 +112,13 @@ static boolean prtchar
 			{
 				button = alert_printf(2, APRNRESP);
 				result = TRUE;
-				ready = (button == 2) ? TRUE : FALSE;
+				ready = (button == 2);
 			}
 		}
-		while (ready == FALSE);
+		while (!ready);
 
 	}
+
 	return result;
 }
 
@@ -262,6 +267,8 @@ static int print_file
 					}
 					else
 					{
+						char *buffi = buffer;
+
 						for (i = 0; i < (int)l; i++)
 						{
 							/* line wrap & new line handling */
@@ -270,19 +277,21 @@ static int print_file
 							{
 								ll++;
 
-								if ( (buffer[i] == (char)13) || (buffer[i] == (char)10) || (buffer[i] == (char)12) )
+								if ( (*buffi == (char)13) || (*buffi == (char)10) || (*buffi == (char)12) )
 									ll = 0; /* reset linelength counter at CR, LF or FF */
 								else if ( ll >= options.plinelen )
 								{
 									ll = 0;
 
-									if (( stop = print_eol() ) == TRUE)
+									if ((stop = print_eol()) == TRUE)
 										break;
 								}
 							}
 
-							if ((stop = prtchar(buffer[i])) == TRUE)
+							if ((stop = prtchar(*buffi)) == TRUE)
 								break;
+
+							buffi++;
 						}
 					}
 
@@ -292,14 +301,14 @@ static int print_file
 						stop = TRUE;
 				}
 				else
-					error = (int) l;
+					error = (int)l;
 			}
 			while ((l == PBUFSIZ) && (stop == FALSE));
 
 			x_close(handle);
 
 			if(printmode != PM_RAW)
-				print_eol();			/* print CR-LF at end of file */
+				stop = print_eol();			/* print CR-LF at end of file */
 		}
 		else
 			error = handle;
@@ -341,8 +350,12 @@ boolean check_print
 	int *list	/* list of item indices */
 )
 {
-	int mes, i;
-	ITMTYPE type;
+	int
+		mes,
+		i;
+
+	ITMTYPE
+		type;
 
 
 	for (i = 0; i < n; i++)
@@ -395,6 +408,10 @@ boolean print_list
 	int function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
 )
 {
+	const char 
+		*path,		/* Item's path */ 
+		*name;		/* Item's name */
+
 	int 
 		i,			/* counter */ 
 		amode,		/* attribute finding mode; 0= follow links */
@@ -406,10 +423,6 @@ boolean print_list
 		type,		/* Item type (file/folder...) */
 		tgttype;	/* Link target type */
 
-	const char 
-		*path,		/* Item's path */ 
-		*name;		/* Item's name */
-
 	XATTR
 		attr;		/* Enhanced file attributes information */
 
@@ -417,7 +430,7 @@ boolean print_list
 		dline;		/* sufficiently long string for a complete directory line */
 
 	boolean
-		noerror = TRUE;		/* true if there is no error */
+		perror = FALSE;		/* true if there is an error in printing */
 
 
 	/* If this is a directory printout, then maybe print direcory title */
@@ -427,11 +440,11 @@ boolean print_list
 		strcpy ( dline, get_freestring(TDIROF) ); 	/* Get "Directory of " string */
 		strcat(dline, ((DIR_WINDOW *)w)->title);	/* Append window title */
 
-		if ( (noerror = !print_line(dline) ) == TRUE )
-			noerror = !print_eol();
+		if ( (perror = print_line(dline) ) == FALSE )
+			perror = print_eol();
 	}
 
-	if ( !noerror )
+	if ( perror )
 		return FALSE;
 
 	/* Repeat print or dir-line print operation for each item in the list */
@@ -480,13 +493,14 @@ boolean print_list
 								printmode = PM_HEX; /* hex-dump */
 
 							upd_copyname(NULL, NULL, name);
-							result = print_file(w, list[i]);
+							result = print_file(w, item);
 
 							printmode = oldmode;
 						}
 
 						*bytes -= attr.size;
 						*files -= 1;
+
 						upd_copyname(NULL, NULL, empty);
 					}
 				}
@@ -494,7 +508,7 @@ boolean print_list
 				{
 					/* Printing of a directory line (all kinds of items) */
 
-					dir_line((DIR_WINDOW *)w, dline,  list[i]);
+					dir_line((DIR_WINDOW *)w, dline, item);
 
 					if ( dline[1] == (char)7 )
 					{
@@ -507,10 +521,10 @@ boolean print_list
 						*bytes -= attr.size;
 					}
 
-					noerror = !print_line(dline);
+					perror = print_line(dline);
 
 					if ( escape_abort( cfdial_open ) )
-						noerror = FALSE;
+						perror = TRUE;
 
 				} /*  function */
 
@@ -522,7 +536,7 @@ boolean print_list
 
 			/* If something is wrong, get out of the loop */
 
-			if ( !noerror )
+			if ( perror )
 				result = XFATAL;
 
 			/* Update information on the number of folders/files/bytes remaining */
@@ -530,25 +544,25 @@ boolean print_list
 			upd_copyinfo(*folders, *files, *bytes);
 		}
 
-		/* Check for user abort */
+		/* Check for user abort (ESC key pressed) */
 
 		check_opabort(&result);
 
-		if ((result == XABORT) || (result == XFATAL))
+		if (mustabort(result))
 			break;
 	}
 
 	/* Print directory summary, if needed */
 
-	if ( result !=XABORT && result != XFATAL && (function == CMD_PRINTDIR) && (options.cprefs & P_HEADER) )
+	if ( !mustabort(result) && (function == CMD_PRINTDIR) && (options.cprefs & P_HEADER) )
 	{
 		strcpy(dline, ((DIR_WINDOW *)w)->info);
 
-		if ( (noerror = !print_eol()) == TRUE )				/* print blank line */
-			if ( ( noerror = !print_line(dline) ) == TRUE )	/* print directory total */
-				if ( (noerror = !print_eol()) == TRUE )		/* print blank line */
-					noerror = prtchar( (char)12 );			/* print formfeed */		
+		if ( (perror = print_eol()) == FALSE )				/* print blank line */
+			if ( ( perror = print_line(dline) ) == FALSE )	/* print directory total */
+				if ( (perror = print_eol()) == FALSE )		/* print blank line */
+					perror = prtchar( (char)12 );			/* print formfeed */		
 	}
 
-	return ((result == XFATAL || !noerror) ? FALSE : TRUE);
+	return ((result == XFATAL || perror) ? FALSE : TRUE);
 }

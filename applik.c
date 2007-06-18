@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -30,7 +30,6 @@
 #include <mint.h>
 #include <library.h>
 #include <xdialog.h>
-#include <internal.h>
 #include <limits.h>
 
 
@@ -58,26 +57,23 @@ APPLINFO
 	awork,			/* work area for editing */ 
 	*applikations;	/* list of installed apps data */
 
+int
+	naap;			/* number of apps assigned to a filetype */
+
 extern PRGTYPE 
 	*prgtypes;   	/* list of executable filetypes */
 
 extern Options 
 	options;		/* need to know cfg file version */
 
-char 
+static char 
 	*defcml = "%f"; /* default command line for programs */
 
 static SNAME
 	prevcall;		/* name of the last started ttp */
 
-static const char
-	qc = 34; 		/* double quote */
-
 static boolean
 	nodocs = FALSE;	/* to copy documenttypes when copying apps */
-
-int
-	naap;			/* number of apps assigned to a filetype */
 
 int trash_or_print(ITMTYPE type);
 
@@ -104,8 +100,10 @@ APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos)
 		{
 			if (pos)
 				(*pos)++;	
+
 			if ( (stricmp(program, h->name) == 0) )
 				return h;
+
 			h = h->next;
 		}
 	}
@@ -173,6 +171,7 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
 static void copy_app( APPLINFO *t, APPLINFO *s )
 {
 	copy_prgtype ( (PRGTYPE *)t, (PRGTYPE *)s );
+
 	t->name = strdup(s->name);
 	t->fkey = s->fkey;
 	t->cmdline = NULL;
@@ -188,6 +187,7 @@ static void copy_app( APPLINFO *t, APPLINFO *s )
 	{
 		t->cmdline = strdup(s->cmdline);
 		t->localenv = strdup(s->localenv);
+
 		copy_all ( (LSTYPE **)(&(t->filetypes)), (LSTYPE **)(&(s->filetypes)), sizeof(FTYPE), copy_ftype);
 	}
 }
@@ -232,7 +232,7 @@ void appinfo_info
 
 		/* Pass the name, if given; otherwise set an empty string */
 
-		appl->name = strdup ( (name) ? name : empty);
+		appl->name = strdup ((name) ? name : empty);
 
 		/* 
 		 * Create default command line and environment; 
@@ -255,11 +255,11 @@ void appinfo_info
 
 boolean check_dup_app( APPLINFO **list, APPLINFO *appl, int pos )
 {
-	int 
-		i = 0;			/* item counter */
-
 	APPLINFO 
 		*f = *list;		/* pointer to current item in the list */
+
+	int 
+		i = 0;			/* item counter */
 
 
 	while (f)
@@ -309,6 +309,7 @@ static void unset_fkey(APPLINFO **list, int fkey)
 	{
 		if ( f->fkey == fkey )
 			f->fkey = 0;
+
 		f = f->next;
 	}
 }
@@ -321,29 +322,32 @@ static void unset_fkey(APPLINFO **list, int fkey)
 
 static boolean check_fkey(APPLINFO **list, int fkey, int pos)
 {
-	int 
-		button,
-		i = 0;			/* item counter */
-
 	APPLINFO 
 		*f = *list;		/* pointer to current item in the list */
 
-	if ( fkey == 0 )
-		return TRUE;
+	int 
+		i;				/* item counter */
 
-	while (f)
+
+	if ( fkey != 0 )
 	{
-		if ( (i != pos) && (f->fkey == fkey) )
-		{
-			button = alert_printf( 2, ADUPFLG, f->shname );
+		i = 0;
 
-			if ( button == 1 )
-				return TRUE;
-			else
-				return FALSE;
+		while (f)
+		{
+			if ( (i != pos) && (f->fkey == fkey) )
+			{
+				/* Some other app is associated with this key */
+
+				if (  alert_printf( 2, ADUPFLG, f->shname ) == 1 )
+					return TRUE;
+				else
+					return FALSE;
+			}
+
+			i++;
+			f = f->next;
 		}
-		i++;
-		f = f->next;
 	}
 
 	return TRUE;
@@ -362,29 +366,28 @@ static boolean check_fkey(APPLINFO **list, int fkey, int pos)
 
 static boolean check_specapp( APPLINFO **list, int flag, int pos )
 {
-	int
-		button,
-		i = 0;
-
 	APPLINFO
 		*f = *list;
 
+	int
+		button = 0,
+		i = 0;
+
 	while( f )
 	{
-		if (i != pos)
+		if ( (i != pos) && ( (f->flags & flag) != NULL ) )
 		{
-			if ( (f->flags & flag) != NULL )
-			{
-				if ( pos != -1 )
-					button = alert_printf( 2, ADUPFLG, f->shname );
+			if ( pos != -1 )
+				button = alert_printf( 2, ADUPFLG, f->shname );
 
-				if ( button != 1 )
-					return FALSE;
-			}
+			if ( button != 1 )
+				return FALSE;
 		}
+
 		i++;
 		f = f->next;
 	}
+
 	return TRUE;
 }
 
@@ -467,6 +470,22 @@ boolean app_dialog
 	int use					/* use of this dialog (add/edit) */
 )
 {
+	XDINFO 
+		info;				/* info structure for the dialog */
+
+	FTYPE
+		*list,				/* working copy of the list of filetypes */
+		*newlist;			/* first same at list, then maybe changed in ft_dialog */
+
+	VLNAME
+		thisname,			/* name of the current application */
+		thispath;			/* path of the current application */
+
+	char
+		*newenv,			/* pointer to the changed text */
+		*newcmd,			/* pointer to the changed text */ 
+		*newpath;			/* pointer to the changed text */
+
 	int
 		i,					/* local counter */ 
 		startob,			/* start object for editing */
@@ -479,26 +498,14 @@ boolean app_dialog
 		stat = FALSE, 
 		qquit = FALSE;		/* true when ok to exit loop */
 
-	VLNAME
-		thisname,			/* name of the current application */
-		thispath;			/* path of the current application */
-
-	char
-		*newenv = NULL,		/* pointer to the changed text */
-		*newcmd = NULL,		/* pointer to the changed text */ 
-		*newpath = NULL;	/* pointer to the changed text */
-
-	XDINFO 
-		info;				/* info structure for the dialog */
-
-	FTYPE
-		*list = NULL,		/* working copy of the list of filetypes */
-		*newlist;			/* first same at list, then maybe changed in ft_dialog */
-
 	static const char 
 		ord[] = {ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW, ISCOMP};
 
 
+	list = NULL;
+	newenv = NULL;
+	newcmd = NULL;
+	newpath = NULL;
 	*thispath = 0;
 	*thisname = 0;
 
@@ -512,6 +519,7 @@ boolean app_dialog
 	{
 		title = DTEDTAPP;
 		startob = APCMLINE;
+
 		copy_all( (LSTYPE **)(&list), (LSTYPE **)(&appl->filetypes), sizeof(FTYPE), copy_ftype);
   	}
 	else
@@ -534,7 +542,9 @@ boolean app_dialog
 	if(*(appl->name))
 	{
 		int error = x_checkname(appl->name, NULL);
+
 		xform_error(error);
+
 		if(!error)
 			split_path( thispath, thisname, appl->name );
 	}
@@ -563,7 +573,7 @@ boolean app_dialog
 		{
 			/* Get button code */
 
-			button = xd_form_do(&info, startob) & 0x7FFF;
+			button = xd_form_do(&info, startob);
 
 			/* Get new application path and name from the dialog */
 
@@ -859,15 +869,17 @@ void app_install(int use, APPLINFO **applist)
 APPLINFO *app_find(const char *file, boolean dial)
 {
 	APPLINFO 
-		*h = applikations, 
-		*d = NULL;	/* temporary list of assigned apps */
+		*h, 
+		*d;
 
 	FTYPE 
-		*t;			/* list of documenttypes */
+		*t;				/* list of documenttypes */
 
-	naap = 0;		/* number of assigned apps */
-	selitem = NULL;	/* nothing found yet */
-	nodocs = TRUE;	/* do not copy documenttypes */
+	h = applikations;
+	d = NULL;			/* temporary list of assigned apps */
+	naap = 0;			/* number of assigned apps */
+	selitem = NULL;		/* nothing found yet */
+	nodocs = TRUE;		/* do not copy documenttypes */
 
 	/* Find all applications associated with this filetype; form a list */
 
@@ -951,7 +963,7 @@ char *app_find_name(const char *fname, boolean full)
 	theapp = app_find(fname, (full) ? TRUE : FALSE);
 
 	if (theapp)
-		return (full) ? theapp-> name : theapp->shname;
+		return (full) ? theapp->name : theapp->shname;
 	else
 		return NULL;
 }
@@ -970,6 +982,7 @@ APPLINFO *find_fkey(int fkey)
 	{
 		if (h->fkey == fkey)
 			return h;
+
 		h = h->next;
 	}
 
@@ -994,7 +1007,7 @@ static char *requote_cmd(char *cmd)
 	if(q)
 	{
 		*q = '*';
-		strcpyrq(q + 1, cmd, qc, &fb);
+		strcpyrq(q + 1, cmd, '"', &fb);
 	}
 
 	return q;
@@ -1018,28 +1031,32 @@ static char *app_build_cml
 )
 {
 	char 
-		h, 					/* pointer to a character in command format */
-		hh,					/* lowercase of the above */
 		*d,					/* pointer to a position in 'build' */
 		*tmp,				/* pointer to a temporary storage */
-		*build = NULL,		/* buffer for building the command name */
-		*realname = NULL,	/* name to be used- either item name or link target */
-		*qformat;			/* requoted command line */
+		*build,				/* buffer for building the command name */
+		*realname,			/* name to be used- either item name or link target */
+		*qformat,			/* requoted command line */
+		h, 					/* pointer to a character in command format */
+		hh;					/* lowercase of the above */
 
 	int 
 		i, 					/* item counter */
-		error = -1,			/* anything */
+		error,				/* anything */
 		mes,				/* message identification */
 		item;				/* item index */
 
+
+	build = NULL;
+	realname = NULL;
+	error = -1;
 
 	/* Convert any quotes in the command line to double quotes */
 
 	if((qformat = requote_cmd((char *)format)) != NULL)
 	{
 		const char *c = qformat;	/* pointer to a position in qformat */
-		ITMTYPE type;				/* current item type */
 		long ml;					/* needed buffer length for the command line */
+		ITMTYPE type;				/* current item type */
 
 		/* 
 		 * Allocate a little more memory, because a couple of characters
@@ -1114,6 +1131,7 @@ static char *app_build_cml
 
 								if(hh == 'n')
 									tmp = np;
+
 								if(hh == 'p')
 									*np = 0;
 
@@ -1130,7 +1148,7 @@ static char *app_build_cml
 									goto error_exit2;
 								}
 							
-								d = strcpyq(d, tmp, qc);
+								d = strcpyq(d, tmp, '"');
 
 								/* This frees the area that tmp points to */
 
@@ -1191,17 +1209,20 @@ static char *app_parpath(char *cmline)
 {
 	char 
 		*p, 			/* current position in the string */
-		*p1 = NULL,
-		fqc = 0;		/* first quote character */
-
-	boolean 
-		q = FALSE;		/* quoting in progress */
+		*p1,
+		fqc;			/* first quote character */
 
 	VLNAME 
 		thepath;		/* extracted path */
 
+	boolean 
+		q = FALSE;		/* quoting in progress */
+
+
 
 	p = cmline;			/* start looking here */
+	p1 = NULL;
+	fqc = 0;
 
 	while(*p)
 	{
@@ -1227,7 +1248,7 @@ static char *app_parpath(char *cmline)
 
 		/* Toggle quoting */
 
-		if ((*p == fqc) || (!fqc && (*p == 39 || *p == 34)) && p[1] != *p)
+		if ((*p == fqc) || (!fqc && (*p == 39 || *p == '"')) && p[1] != *p)
 		{
 			/* This is a single quote */
 
@@ -1271,11 +1292,24 @@ static char *app_parpath(char *cmline)
  */
 
 boolean app_exec
-(const char *program, APPLINFO *app, WINDOW *w, int *sellist, int n, int kstate)
+(
+	const char *program,
+	APPLINFO *app,
+	WINDOW *w,
+	int *sellist,
+	int n,
+	int kstate
+)
 {
-
 	APPLINFO 
 		*appl;					/* Application info of program. */
+
+	PRGTYPE
+		*thework;				/* pointer to edit area for program type */
+
+	long
+		cmllen,					/* length of the command line */
+		limmem;					/* mem.limit in multitask (bytes) */
 
 	const char 
 		*cl_format,				/* Format of commandline. */
@@ -1287,24 +1321,17 @@ boolean app_exec
 		*theenv = NULL,			/* local environment for the application */
 		*thecommand = NULL;		/* command line */
 
-	long
-		cmllen,					/* length of the command line */
-		limmem;					/* mem.limit in multitask (bytes) */
+	ApplType 
+		appl_type;				/* Type of program (GEM or not) */
+
+	SNAME
+		thiscall;				/* name of this ttp */
 
 	boolean 
 		argv,					/* Use ARGV protocol flag. */
 		single,					/* don't multitask (Magic) */
 		back,					/* run in background when possible */
 		result = FALSE;			/* return result */
-
-	ApplType 
-		appl_type;				/* Type of program (GEM or not) */
-
-	PRGTYPE
-		*thework;				/* pointer to edit area for program type */
-
-	SNAME
-		thiscall;				/* name of this ttp */
 
 
 	/* Default command line format... */

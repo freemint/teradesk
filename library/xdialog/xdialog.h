@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -33,6 +33,7 @@
 #ifndef __XWINDOW_H__
  #include "xwindow.h"
 #endif
+
 
 /* Errorcodes. Take care to use same values as in XERROR.H */
 
@@ -68,6 +69,7 @@
 #define XD_CYCLBUT		12		/* IA: cycling button. used with pop-ups mostly. */
 #define XD_SCRLEDIT		13		/* HR 021202: scrolling editable text fields. */
 #define XD_FONTTEXT		14		/* font sample text */
+#define XD_BCKBOX		15		/* window background box */
 #define XD_UP			52		/* Codes voor buttons met bediening cursortoetsen */
 #define XD_DOWN			53
 #define XD_LEFT			54
@@ -175,7 +177,6 @@ int xd_open(OBJECT *tree, XDINFO *info);
 void xd_close(XDINFO *info);
 void xd_enable_menu(int state);
 
-
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
 void xd_draw(XDINFO *info, int start, int depth);
@@ -185,7 +186,7 @@ void xd_change(XDINFO *info, int object, int newstate, int draw);
 void xd_buttnorm(XDINFO *info, int button);
 void xd_drawbuttnorm(XDINFO *info, int button);
 void xd_own_xobjects( int setit );
-void clr_object(RECT *r, int color, int pattern);
+void clr_object(RECT *r, int colour, int pattern);
 void draw_xdrect(int x, int y, int w, int h);
 void xd_vswr_trans_mode(void);
 void xd_vswr_repl_mode(void);
@@ -198,7 +199,6 @@ int xd_form_do_draw(XDINFO *info);
 int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata);
 int xd_dialog(OBJECT *tree, int start);
 
-
 /* Funkties voor initialisatie van een resource. */
 
 int xd_gaddr(int index, void *addr);
@@ -206,13 +206,11 @@ void xd_fixtree(OBJECT *tree);
 void xd_set_userobjects(OBJECT *tree);
 char *xd_set_srcl_text(OBJECT *tree, int item, char *txt);
 
-
 /* Funkties voor het zetten van de verschillende modes */
 
 int xd_setdialmode(int new, int (*hndl_message) (int *message),
 						  OBJECT *menu, int nmnitems, int *mnitems);
 int xd_setposmode(int new);
-
 
 /* Funkties voor initialisatie bibliotheek */
 
@@ -235,7 +233,10 @@ void xd_rect2pxy(RECT *r, int *pxy);
 int xd_obj_parent(OBJECT *tree, int object);
 int xd_xobtype(OBJECT *tree);
 int xd_wdupdate(int mode);
-
+void xd_begupdate(void);
+void xd_endupdate(void);
+void xd_begmctrl(void);
+void xd_endmctrl(void);
 void xd_mouse_off(void);
 void xd_mouse_on(void);
 
@@ -244,6 +245,7 @@ int xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
 void xd_set_child(OBJECT *tree, int rb_parent, int enab);
 
 OBSPEC *xd_get_obspecp(OBJECT *object);
+char *xd_pvalid(OBJECT *object);
 char *xd_ptext(OBJECT *object);
 void xd_zerotext(OBJECT *object);
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec);
@@ -259,6 +261,8 @@ int xd_is_tristate(OBJECT *tree);
 void xd_clip_on(RECT *r);
 void xd_clip_off(void);
 
+int xd_vst_point(int height, int *ch);
+int xd_fnt_point(int height, int *cw, int *ch);
 
 /* Event funkties */
 
@@ -268,12 +272,9 @@ int xe_xmulti(XDEVENT *events);
 int xe_button_state(void);
 int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
 
-
 /* Funkties voor niet modale dialoogboxen. */
 
-int xd_nmopen
-(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs,
-int start, 
+int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, int start, 
 /* int x, int y, not used */ 
 OBJECT *menu, 
 #if _DOZOOM
@@ -289,3 +290,5 @@ void xd_nmclose(XDINFO *info
 );
 
 #endif
+
+#include "internal.h"

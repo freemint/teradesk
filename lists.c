@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -43,9 +43,11 @@
 #include "window.h"
 #include "xscncode.h"
 
-void log_shortname( char *dest, char* appname );
 
 LSTYPE *selitem;
+
+void log_shortname( char *dest, char* appname ); /* from applik.h */
+
 
 
 /*
@@ -55,18 +57,24 @@ LSTYPE *selitem;
 
 static void set_lselector(SLIDER *slider, boolean draw, XDINFO *info) 
 {
-	int i;
-	LSTYPE *f;
-	OBJECT *ob;
+	int
+		i;
+
+	LSTYPE
+		*f;
+
+	OBJECT
+		*ob = &setmask[FTYPE1];
+
 
 	for (i = 0; i < NLINES; i++)
 	{
-		ob = &setmask[FTYPE1 + i];
-
 		if ((f = get_item( slider->list, i + slider->line)) == NULL)
 			*ob->ob_spec.tedinfo->te_ptext = 0;
 		else
 			cv_fntoform(ob, 0, f->filetype );
+
+		ob++;
 	}
 
 	/* Note: this will redraw the slider and also FTYPE1...FTYPEn */
@@ -107,7 +115,7 @@ static void ls_sl_init ( int n, SLIDER *sl, LSTYPE **list )
 
 /* 
  * Find in the list an item presented by a name possibly containing
- * cwildcards; copy the name (if given) and other data (if match found)
+ * wildcards; copy the name (if given) and other data (if match found)
  * to work area. If a name is given, it is stripped off its path component,
  * if there is any.
  */
@@ -975,7 +983,9 @@ int list_edit
 				 * The following two linew will work only if object indices
 				 * for ITFILES to ITPROGRA are in sequence.
 				 */
-				luse = luse | (LS_FIIC << (button - ITFILES)); /* assuming buttons in a sequence */
+
+				luse &= ~(LS_FIIC | LS_FOIC | LS_PRIC);
+				luse |= (LS_FIIC << (button - ITFILES)); /* assuming buttons in a sequence */
 				newlist = &clist[button - ITFILES];
 
 				keep = TRUE;

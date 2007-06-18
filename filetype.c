@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -45,7 +45,9 @@
 
 FTYPE
 	fwork,			/* temp. area for currently edited filetype */ 
-	*filetypes; 	/* List of defined filetype masks */
+	*filetypes, 	/* List of defined filetype masks */
+	*fthis, 
+	**ffthis;
 
 
 
@@ -289,6 +291,7 @@ char *ft_dialog
 	static const int
 		items[] = {MSKATT, FILETYPE, FTTEXT, 0};
 
+
 	/* 
 	 * If necessary, save the previous state of this dialog's root object
 	 * in order to return to proper state after a recursive call
@@ -466,11 +469,6 @@ CfgEntry ft_table[] =
  * loading of -only one- 
  */
  
-FTYPE 
-	*fthis, 
-	**ffthis;
-
-
 CfgNest one_ftype
 {
 	*error = 0;

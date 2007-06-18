@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -64,18 +64,18 @@ int
 
 
 /* 
- * End of line: either <cr> <lf> or <lf> only.
- * Using <cr><lf> is more in line with TOS standard, but can produce
- * significantly larger .INF file. Using only <lf> produces smaller
+ * End of line: either <CR> <LF> or <LF> only.
+ * Using <CR><LF> is more in line with TOS standard, but can produce
+ * significantly larger .INF file. Using only <LF> produces smaller
  * files, is in line with mint standards, but can create problems 
  * when read with some programs -including the Pure-C editor!!!
  */
 
 static const char 
 /* 
-	eol[3] = {'\r','\n', 0}; /* <cr> <lf> */
+	eol[3] = {'\r','\n', 0}; 	/* <CR><LF> */
 */
-	eol[3] = {'\n', 0, 0};   /* <lf>      */
+	eol[2] = {'\n', 0};   		/* <LF>      */
 
 
 /* 
@@ -222,7 +222,7 @@ int CfgSave
 	XFILE *fp,		/* pointer to open file parameters */
 	CfgEntry *tab,	/* pointer to configuration table */
 	int level0,		/* nesting (indent) level */
-	bool emp		/* if true, write empty or zero-value fields */
+	boolean emp		/* if true, write empty or zero-value fields */
 ) 
 {
 	int 
@@ -236,7 +236,7 @@ int CfgSave
 	CFG_TYPE
 		tabtype;
 
-	
+
 	while( tab->type && (error >= 0) )
 	{
 		int lvl = level;
@@ -489,11 +489,11 @@ int CfgLoad
 		r[MAX_CFGLINE], 		/* string read from the file */
 		*s;						/* pointer to a positon in the above */
 
-	boolean
-		skip = FALSE;			/* true while recovering from errors */
-
 	CFG_TYPE
 		tabtype;
+
+	boolean
+		skip = FALSE;			/* true while recovering from errors */
 
 
 	/* Loop while needed. Get next record from the file */
@@ -524,6 +524,7 @@ int CfgLoad
 		if (*s == '}' )				/* end of group; break from the loop */
 		{
 			chklevel--;
+
 			if (level > chklevel) 	/* made so for recovery from errors */
 				break;
 		}
@@ -657,6 +658,7 @@ int CfgLoad
 	
 				break; /* break from further searching, because key found */
 			}
+
 			tab++;
 		}
 	

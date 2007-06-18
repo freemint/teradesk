@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -48,14 +48,13 @@ typedef struct
 	long size;					/* aantal bytes in de tekst */
 	long tlines;				/* aantal regels in de tekst */
 	int tabsize;				/* tab size */
-	int *ntabs;					/* tabs per lines */
 	int twidth;					/* text width incl. tab substitutes */
 	int hexmode;				/* Hexmode flag. */
 
 } TXT_WINDOW;
 
 
-extern FONT txt_font;
+extern XDFONT txt_font;
 extern WINFO textwindows[MAXWINDOWS];	/* some information about open windows */
 extern RECT tmax;
 
@@ -64,15 +63,10 @@ CfgNest text_one;
 boolean txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
 void txt_closed(WINDOW *w);
 void txt_hndlmenu(WINDOW *w, int title, int item);
-
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
-void txt_prtlines(TXT_WINDOW *w, RECT *area, RECT *work);
 void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work);
 int txt_read(TXT_WINDOW *w, boolean setmode);
 boolean txt_reread( TXT_WINDOW *w, char *name, int px, long py);
-
-int read_txtfile(const char *name, char **buffer, long *flength, long *tlines, char ***lines, int **ntabs); 
 int read_txtf(const char *name, char **buffer, long *flength); 
 void compare_files( WINDOW *w, int n, int *list );
 void disp_hex( char *tmp, char *p, long a, long size, boolean toprint );
-

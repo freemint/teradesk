@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -37,9 +37,11 @@ extern FTYPE
 	*fthis, 
 	**ffthis;
 
-CfgNest ft_config;
+extern const char
+	*presets[];
 
-extern const char *presets[];
+
+CfgNest ft_config;
 
 char *wd_filemask(const char *mask);
 void ft_init(void);

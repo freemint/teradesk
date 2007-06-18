@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -109,7 +109,7 @@ void cctoi(unsigned char *out, unsigned char *in)
 
 long onetrack
 (
-	int what, 	/* 8 = write, 9= read */
+	int what, 	/* 8 = read, 9= write */
 	void *buf,	/* Pointer to the buffer used */
 	int devno,	/* device id */
 	int itrack,	/* current track number */
@@ -166,12 +166,53 @@ static boolean checktracks
 
 
 /*
- * Aux. sze-optimization routine
+ * Aux. size-optimization routine
  */
 
 static int fl_atoi(int obj)
 {
 	return atoi(fmtfloppy[obj].ob_spec.tedinfo->te_ptext);
+}
+
+
+/*
+ * Read format parameters from the floppy
+ */
+
+int readfp
+(
+	int dev,
+	unsigned char *sect0,
+	int *bps,
+	int *spt,
+	int *sides,
+	int *tracks,
+	int *dirsize
+)
+{
+	int istat, secs;
+
+	/* Read the boot sector */
+
+	istat = onetrack(8, sect0, dev, 0, 0, 1);
+ 
+	/* Decode format parameters from boot sector */	
+
+	if(istat == 0)
+	{
+		cctoi((unsigned char *)bps, &sect0[0x0b]);
+		cctoi((unsigned char *)(&secs), &sect0[0x13]);
+		cctoi((unsigned char *)spt, &sect0[0x18]);
+		cctoi((unsigned char *)sides, &sect0[0x1a]);
+		cctoi((unsigned char *)dirsize, &sect0[0x11]);
+
+		*tracks = secs /( *spt * (*sides) );
+         
+		if(!checktracks(*sides, *tracks, *spt, 40, *bps))
+			istat = UNKNOWN_MEDIA;
+	}
+
+	return istat;
 }
 
 
@@ -185,6 +226,10 @@ void formatfloppy
 	int format    		/* true for format, false for copy */
 )
 {
+	unsigned char 
+		*sect0,
+		*label;			/* pointer to a position within sect0 */
+    
 	long 
 		filler = 0,		/* unused but required filler */
 		serial,			/* 24-bit disk serial number  */
@@ -211,7 +256,9 @@ void formatfloppy
 		npass,			/* number of copy passes */
 		finished,		/* =1 if successfully finished operation */
 		tpp,        	/* tracks per pass  */
-		i,j,n;			/* aux. counters, etc. */
+		i,j,n,			/* aux. counters, etc. */
+		retrycnt,		/* limit for retry counter */
+		rc;				/* retry counter */
 	
 	static int     		/* keep these from previous call */
 		mspt=11,		/* maximum permitted sectors per track */
@@ -226,12 +273,8 @@ void formatfloppy
 		drive[4],		/* string with drive id */
 		fmtsel;     	/* flag for selected format type */
 
-	unsigned char 
-		*sect0,			/* pointer to work buffer for sector/track data */
-		*label;			/* pointer to a position within sect0 */
-    
 	static unsigned char
-		fat0;			/* first byte of each FAT */
+		fat0 = 0xf9;	/* first byte of each FAT */
 
 	static const unsigned char 
 		hdr[]=			/* MS-DOS compatible header of the boot sector */
@@ -245,8 +288,8 @@ void formatfloppy
 			' ',	/*  [6] OEM */
 			' ',	/*  [7] OEM */
 			0,		/*  [8] placeholder for serial */
-			0,		/*  [9] ditto */
-			0,		/*[0xa] ditto */
+			0,		/*  [9] same */
+			0,		/*[0xa] same */
 			0,		/*[0xb] */
 			0,		/*[0xc] */
 			0x02,	/*[0xd] sectors per cluster */
@@ -342,7 +385,7 @@ void formatfloppy
        
 			if ( format )
 			{
-      			/* 
+		      	/* 
 				 * Read params for diverse floppy disk formats from dialog. 
 				 * Previous values are preserved there. Unless a format type
 				 * is specified, previous valus will be used
@@ -352,11 +395,13 @@ void formatfloppy
 				tspt =    fl_atoi(FSECTORS);
 				ttracks = fl_atoi(FTRACKS);
 				dirsize = fl_atoi(FDIRSIZE);
-
+				fatsize = 0; /* to be calculated later */
+			
 				/* 
 				 * Configure format; always use "optimized" (i.e. smaller) FAT size 
 				 * Previous values will be used if nothing is selected here.
-				 * So, do -not- pull common values out of the switch structure.
+				 * So, -DO NOT- pull values common for several formats out of 
+				 * the switch structure.
 				 */
 			
 				switch (button)
@@ -365,10 +410,8 @@ void formatfloppy
 						fmtsel = 1;
 						tsides = 1;
 						tspt = 9;
-						mspt = 11;
 						ttracks = 80;
 						intleave = 1;
-						fatsize = 3;
 						dirsize = 112;
 						fat0 = 0xf9;
 						break;
@@ -376,10 +419,8 @@ void formatfloppy
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 9;
-						mspt = 11;
 						ttracks = 80;
 						intleave = 1;
-						fatsize = 3;
 						dirsize = 112;
 						fat0 = 0xf9;
 						break;
@@ -387,10 +428,8 @@ void formatfloppy
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 18;
-						mspt = 20;
 						ttracks = 80;
 						intleave = 1;
-						fatsize = 5;
 						dirsize = 224;
 						fat0 = 0xf0;
 						break;
@@ -398,16 +437,40 @@ void formatfloppy
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 36;
-						mspt = 40;		/* is it so? */
 						ttracks = 80;
 						intleave = 1;
-						fatsize = 9;
 						dirsize = 448;  /* is it so? never seen an ED disk */
 						fat0 = 0xf0;	/* is it so? */    
 						break;
+					case FPREV:			/* Previous disk format */
+						fmtsel = 0;
+						hourglass_mouse();
+						if
+						(
+							readfp
+							(
+								tdevno,
+								sect0,
+								&tbps,
+								&tspt,
+								&tsides,
+								&ttracks,
+								&dirsize
+							) == 0
+						)
+						{
+							fat0 = sect0[tbps];
+							fatsize = sect0[0x16];
+							fmtsel = 1;
+						}
+
+						arrow_mouse();
 					default:			/* no change */
-   	       			break;       
+	   	       			break;       
 				} /* switch */
+
+				mspt = tspt + 2; /* maximum physically possible sectors/track */
+  
 			}  /* format ? */
    
   			/* Update displayed params regarding selected or found format */
@@ -416,7 +479,7 @@ void formatfloppy
 				xd_set_child(fmtfloppy, FPAR3, 1);
    
 			fpartoftext( tsides, tspt, ttracks, dirsize );
-  
+
 		} /* while... */
 
 		xd_drawbuttnorm(&fdinfo, button);
@@ -429,15 +492,26 @@ void formatfloppy
 	  
 			if ( format )
 			{
+     		   	/* 
+				 * calculate FAT size; always use optimized 12-bit FATs; 
+				 * for each cluster use 3/2 bytes, add 2 for FAT header. 
+				 * fomula below will generally give 3- and 5-sector FATs 
+				 * for DD and HD respectively 
+				 */
+		   		   						
+				tbps = 512; /* always 512 bytes per sector */
+				sectors = tspt * ttracks * tsides;   /* total sectors  */
+
+				if(fatsize == 0)
+					fatsize = (sectors + 2) * 3 / 2048 + 1; 
+				
 				/*  
 				 *  Max.possible number of dir.entries should not, (for my convenience)
 				 *  exceed end of second track (disk will be zeroed only so far);
 				 *  formula below gives maximum 143 for DD, 287 for HD; 
 				 *  FATs should, for convenience too, remain within first track;
 				 */
-			  
-				tbps = 512; /* always 512 bytes per sector */
-		  
+			  		  
 				if
 				(
 					!checktracks(tsides, ttracks, tspt, mspt, tbps) ||
@@ -457,6 +531,8 @@ void formatfloppy
 			if ( button == 1 )
 			{
 				/* Action confirmed! */
+
+				retrycnt = fl_atoi(FRCNT); /* how many times to retry */
 
 #if _MINT_
 				/* 
@@ -492,7 +568,9 @@ void formatfloppy
 					{       
 						for ( iside = 0; iside < tsides; iside++ )
 						{
-	   	     				retry: /* come here for a retry after formatting error */
+							rc = 0;	/* retry counter */
+
+	   	     				retryf: /* come here for a retry after formatting error */
 
 							/*
 							 * Calling xbios... produces slightly smaller code
@@ -507,14 +585,21 @@ void formatfloppy
 						
 							if ( istat != 0 )
 							{
-								/* Disk protected is the most common error */	
+								/* If something is wrong, first try again */
+
+								rc++;				/* retry count */
+
+								if(rc < retrycnt)
+									goto retryf;
+
+								/* Even after a retry, there is an arror */	
 
 								button = alert_printf( 3, AFMTERR, itrack, get_message((int)istat) );
 
 								switch ( button )
 								{
 									case 1:				/* retry same track */
-										goto retry;
+										goto retryf;
 									case 3:				/* abort */
 										goto endall;
 									default:			/* ignore and continue */
@@ -551,17 +636,6 @@ void formatfloppy
 					sect0[0x0c] = (char)(tbps >> 8);	/* bytes/128 per sector */
 
 					cctoi(&sect0[0x11], (unsigned char *)(&dirsize));
-
-     		   		/* 
-					 * calculate FAT size; always use optimized 12-bit FATs; 
-					 * for each cluster use 3/2 bytes, add 2 for FAT header. 
-					 * fomula below will generally give 3- and 5-sector FATs 
-					 * for DD and HD respectively 
-					 */
-		   		   						
-					sectors = tspt * ttracks * tsides;   /* total sectors  */
-					fatsize = (sectors + 2) * 3 / 2048 + 1; 
-
 					cctoi(&sect0[0x13], (unsigned char *)(&sectors) );
 		        
 					sect0[0x15] = fat0;            			/* media id. */
@@ -587,16 +661,27 @@ void formatfloppy
         
 					/* 
 					 * write and verify complete first  and second track 
-					 * this will surely cover all space used by root dir
+					 * this will surely cover all space used by root dir.
 					 */
 				 				 
 					for ( itrack = 0; itrack < 2; itrack++ )
 					{
+						rc = 0;
+		
+						retryt:;
+
 						label = sect0 + tbps * tspt * itrack; /* start of next track in buffer */ 
 						istat = onetrack(9, (void *)label, tdevno, itrack, 0, tspt);
 
-						if ( istat ) 
+						if ( istat )
+						{
+							rc++;
+						
+							if(rc < retrycnt)
+								goto retryt;
+ 
 							goto abortfmt;
+						}
 					}   
 
 					finished = 1;
@@ -609,41 +694,42 @@ void formatfloppy
 					/* Insert target disk, read boot sector */
         
 					drive[0] = 'A' + tdevno; /* target drive letter */
-					istat = onetrack(8, sect0, tdevno, 0, 0, 1);
- 
-					/* Decode format parameters from boot sector */	
 
-					cctoi((unsigned char *)(&tbps), &sect0[0x0b]);
-					cctoi((unsigned char *)(&sectors), &sect0[0x13]);
-					cctoi((unsigned char *)(&tspt), &sect0[0x18]);
-					cctoi((unsigned char *)(&tsides), &sect0[0x1a]);
-
-					ttracks = sectors /( tspt * tsides );
-          
-					if(!checktracks(tsides, ttracks, tspt, 40, tbps))
-						istat = UNKNOWN_MEDIA;
+					istat = readfp
+					(
+						tdevno,
+						sect0,
+						&tbps,
+						&tspt,
+						&tsides,
+						&ttracks,
+						&dirsize
+					);
 
 					if ( istat ) 
 						goto abortfmt;
 
 					/* Insert source disk, read boot sector */
-        
+
 					drive[0] = 'A' + sdevno; /* source drive letter */
-					istat = onetrack(8, sect0, sdevno, 0, 0, 1);
+
+					istat = readfp
+					(
+						sdevno,
+						sect0,
+						&sbps,
+						&sspt,
+						&ssides,
+						&stracks,
+						&dirsize
+					);
 
 					if ( istat ) 
 						goto abortfmt;
 
-					cctoi((unsigned char *)(&sbps), &sect0[0x0b]);
-					cctoi((unsigned char *)(&sectors), &sect0[0x13]);
-					cctoi((unsigned char *)(&sspt), &sect0[0x18]);
-					cctoi((unsigned char *)(&ssides), &sect0[0x1a]);
-					cctoi((unsigned char *)(&dirsize), &sect0[0x11]);
-
-					stracks = sectors / (sspt * ssides);
-
 					/*  
-					 *  Do source and target  disks have the same format?
+					 *  Do source and target  disks have the same format,
+					 *  or at least the target should be larger.
 					 *  If not, abort all.
 					 *  Note: this will, unfortunately, prevent copying of "data" disks
 					 * 	without a proper boot sector. Maybe it should be disabled?  
@@ -688,7 +774,8 @@ void formatfloppy
 						 * and not pass the end of the floppy disk? 
 						 */
 				   
-						n= ttracks - i;
+						n = ttracks - i;
+
 						if ( n > tpp ) 
 							n = tpp; 
 				  
@@ -698,11 +785,22 @@ void formatfloppy
 						{				  			  
 							for ( iside = 0; iside < tsides; iside++ )
 							{
+								rc = 0;
+
+								retryr:;
+
 								label = sect0 + ((long)tbpt) * ( itrack * ssides + iside );
 								istat = onetrack(8, (void *)label, sdevno, i + itrack, iside, sspt);
  
 								if ( istat ) 
+								{
+									rc++;
+
+									if(rc < retrycnt)
+										goto retryr;
+
 									goto abortfmt;
+								}
 
 								if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 									goto endall;
@@ -718,12 +816,23 @@ void formatfloppy
 						for ( itrack = 0; itrack < n; itrack++ )
 						{
 							for ( iside = 0; iside < tsides; iside++ )
-							{				    	
+							{	
+								rc = 0;
+
+								retryw:;
+			    	
 								label = sect0 + ((long)tbpt) * ( itrack * tsides + iside );
 								istat = onetrack(9, (void *)label, tdevno, j + itrack, iside, tspt);
 
 								if ( istat ) 
+								{
+									rc++;
+
+									if(rc < retrycnt)
+										goto retryw;
+
 									goto abortfmt;
+								}
 
 								if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 									goto endall;	
@@ -764,6 +873,7 @@ void formatfloppy
 		{
 			if ( lstats == 0 )
 				lstats = Dlock( 0, sdevno );
+
 			if ( lstatt == 0 )
 				lstatt = Dlock( 0, tdevno );
 		}
@@ -790,7 +900,7 @@ void formatfloppy
 
 		force_mediach ( drive );
 
-		button = object_info(ITM_DRIVE, drive, NULL, NULL);
+		object_info(ITM_DRIVE, drive, NULL, NULL);
 		closeinfo();
 	}
 }

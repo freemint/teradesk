@@ -1,7 +1,7 @@
 /* 
- * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -29,9 +29,7 @@
 #include <library.h>
 #include <multitos.h>
 
-#include "xwindow.h"
 #include "xdialog.h"
-#include "internal.h"
 
 extern int xd_vhandle;
 extern int xe_mbshift;
@@ -39,10 +37,14 @@ extern int xe_mbshift;
 #define ACC_WIND	19 /* from window.h !!! */
 
 
-static WINDOW *windows = NULL;		/* lijst met windows. */
+static WINDOW 
+	*windows = NULL;		/* lijst met windows. */
 
-WINDOW *xw_deskwin = NULL; 			/* pointer to desktop window */
-int xw_dosend = 1;					/* if 0, xw_send is disabled */
+WINDOW 
+	*xw_deskwin = NULL; 			/* pointer to desktop window */
+
+int
+	xw_dosend = 1;					/* if 0, xw_send is disabled */
 
 #ifdef __PUREC__
 	extern int ap_id;		/* Defined in application. */
@@ -57,6 +59,8 @@ int xw_dosend = 1;					/* if 0, xw_send is disabled */
  * in order to avoid some if-thens
  */
 
+#pragma warn -par
+
 void xw_nop1(WINDOW *w)
 {
 
@@ -67,6 +71,7 @@ void xw_nop2(WINDOW *w, int i)
 
 }
 
+#pragma warn +par
 
 /*
  * Send a message that passes rectangle size
@@ -121,6 +126,7 @@ void xw_send(WINDOW *w, int messid)
 {
 	static const int dummy[] = {0, 0, 0, 0};
 
+
 	xw_send_rect(w, messid, w->xw_ap_id, (RECT *)&dummy[0]);
 }
 
@@ -134,6 +140,7 @@ void xw_send(WINDOW *w, int messid)
 WINDOW *xw_hfind(int handle)
 {
 	WINDOW *w = windows;
+
 
 	while (w)
 	{
@@ -181,8 +188,12 @@ WINDOW *xw_find(int x, int y)
 
 WINDOW *xw_top(void)
 {
-	int thandle;
-	WINDOW *w;
+	WINDOW
+		*w;
+
+	int
+		thandle;
+
 
 	xw_get(NULL, WF_TOP, &thandle);		/* the real top window */
 
@@ -218,8 +229,12 @@ WINDOW *xw_top(void)
 
 WINDOW *xw_bottom(void)
 {
-	int bhandle;
-	WINDOW *w;
+	WINDOW
+		*w;
+
+	int
+		bhandle;
+
 
 	xw_get(NULL, WF_BOTTOM, &bhandle);		/* the real bottom window */
 
@@ -256,6 +271,7 @@ WINDOW *xw_bottom(void)
 int xw_exist( WINDOW *w )
 {
 	WINDOW *h = windows;
+
 
 	while (h)
 	{
@@ -361,8 +377,12 @@ void xw_note_bottom(WINDOW *w)
 
 static void xw_set_topbot(WINDOW *w, int wf)
 {
-	int msg;
-	void(*notef)(WINDOW *w);
+	void
+		(*notef)(WINDOW *w);
+
+	int
+		msg;
+
 
 	if(wf == WF_TOP)
 	{
@@ -438,9 +458,17 @@ static void xw_set_barpos(WINDOW *w)
 
 void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 {
-	RECT r1, r2, in;
-	OBJECT *menu = w->xw_menu;
-	int pxy[4];
+	OBJECT
+		*menu;
+
+	RECT
+		r1, r2, in;
+
+	int
+		pxy[4];
+
+
+	menu = w->xw_menu;
 
 	/* don't redraw in iconified window */
 
@@ -458,7 +486,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 
 		if (xd_rcintersect(r, &r1, &r1))
 		{
-			xd_wdupdate(BEG_UPDATE);
+			xd_begupdate();
 			xd_mouse_off();
 			xd_vswr_trans_mode();
 			set_linedef(1);
@@ -478,7 +506,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 			}
 
 			xd_mouse_on();
-			xd_wdupdate(END_UPDATE);
+			xd_endupdate();
 		}
 	}
 }
@@ -541,11 +569,34 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
 
 static int xw_do_menu(WINDOW *w, int x, int y)
 {
-	int title, otitle, item, p, i, c, exit_mstate, pxy[8], stop, draw;
-	long mem;
-	OBJECT *menu = w->xw_menu;
-	RECT r, box;
-	MFDB bmfdb, smfdb;
+	OBJECT
+		*menu;
+
+	RECT
+		r,
+		box;
+
+	MFDB
+		bmfdb,
+		smfdb;
+
+	long
+		mem;
+
+	int
+		pxy[8],
+		title,
+		otitle,
+		item,
+		p,
+		i,
+		c,
+		exit_mstate,
+		stop,
+		draw;
+
+
+	menu = w->xw_menu;
 
 	/* If no menu, or if window is iconified, return */
 
@@ -563,8 +614,8 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 	if (((title = objc_find(menu, p, MAX_DEPTH, x, y)) >= 0) && (menu[title].ob_type == G_TITLE))
 	{
-		xd_wdupdate(BEG_UPDATE);
-		xd_wdupdate(BEG_MCTRL);
+		xd_begupdate();
+		xd_begmctrl();
 
 		item = -1;
 		stop = FALSE;
@@ -685,8 +736,8 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 		while (xe_button_state() & 1);
 
-		xd_wdupdate(END_MCTRL);
-		xd_wdupdate(END_UPDATE);
+		xd_endmctrl();
+		xd_endupdate();
 
 		if (item >= 0)
 			w->xw_func->wd_hndlmenu(w, title, item);
@@ -1209,6 +1260,9 @@ void xw_getnext(WINDOW *w, RECT *size)
 /*
  * Vervanger van wind_calc(), die rekening houdt met een eventuele
  * menubalk.
+ * Argument w_ctype can be eithe WC_WORK or WC_BORDER; in the first case
+ * work area height is calculated from overall height; in the second case
+ * it is the opposite.
  */
  
 void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output, OBJECT *menu)

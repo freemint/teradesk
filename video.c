@@ -44,8 +44,6 @@
 #include "screen.h"
 
 
-extern GRECT xd_desk;
-extern int xd_nplanes;
 extern int tos_version;
 extern WINDOW *xw_deskwin; 
 extern int aes_version;
@@ -340,8 +338,8 @@ void get_set_video (int set)
 
 				screen_info.dsk.w = max_w;
 				screen_info.dsk.h = max_h - menu_h;
-				xd_desk.g_w = max_w;
-				xd_desk.g_h = max_h - menu_h;
+				xd_desk.w = max_w;
+				xd_desk.h = max_h - menu_h;
 				xw_deskwin->xw_size.w = max_w;
 				xw_deskwin->xw_size.h = max_h;
 
@@ -621,7 +619,7 @@ int voptions(void)
 
 	/* Set button for saving the palette */
 
-	set_opt ( vidoptions, options.vprefs, SAVE_COLORS, SVCOLORS );
+	set_opt ( vidoptions, options.vprefs, SAVE_COLOURS, SVCOLORS );
 	
 	/* Open the dialog... */
 	
@@ -736,7 +734,7 @@ int voptions(void)
 
 				  	/* Set save palette flag */
 
-					get_opt( vidoptions, &options.vprefs, SAVE_COLORS, SVCOLORS );
+					get_opt( vidoptions, &options.vprefs, SAVE_COLOURS, SVCOLORS );
 
 					/* Will resolution be changed? Display an alert */
 

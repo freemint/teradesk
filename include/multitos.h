@@ -1,6 +1,6 @@
 /*
- * Multitos Library for Pure C 1.0. Copyright (c) 1994, 2002 W. Klaren.
- *                                                2002, 2003  H. Robbers
+ * Multitos Library for Pure C 1.0. Copyright (c) 1994 - 2002 W. Klaren.
+ *                                                2002 - 2003 H. Robbers
  *
  * This file is part of Teradesk.
  *
@@ -19,11 +19,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 void aes(void);
 
 int appl_getinfo(int ap_gtype,
 				 int *ap_gout1, int *ap_gout2,
 				 int *ap_gout3, int *ap_gout4);
-int objc_sysvar(int mo, int which, int ivall, int ival2,
-                 int *pival1, int *pval2);
+int objc_sysvar(int mo, int which, int ivall, int ival2, int *pival1, int *pval2);
 int wind_get_nargs(int field);

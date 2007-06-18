@@ -19,7 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 
 #include <np_aes.h>	
 #include <stdlib.h>
@@ -30,8 +30,8 @@
 #include <ctype.h>
 #include <vdi.h>
 #include <xdialog.h>
-#include <internal.h>
 #include <library.h>
+#include <system.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -103,11 +103,11 @@ char *fn_last_backsl(const char *fname)
 
 void split_path( char *path, char *fname, const char *name )
 {
-	char 
-		*np = fn_get_name(name);
-
 	long
 		pl;		/* path length */
+
+	char 
+		*np = fn_get_name(name);
 
 
 	pl = lmin((size_t)(np - (char *)name), sizeof(VLNAME));
@@ -263,16 +263,17 @@ char *fn_make_path(const char *path, const char *name)
 
 char *fn_make_newname(const char *oldn, const char *newn)
 {
-	char 
-		*backsl, 
-		*path; 
-
 	long 
 		l, 
 		tl; 
 
+	char 
+		*backsl, 
+		*path; 
+
 	int 
 		error = 0;
+
 
 	/* Find position of the last backslash  */
 
@@ -369,11 +370,12 @@ char *locate(const char *name, int type)
 		*cfgext,
 		*defext;
 
+	int 
+		ex_flags;
+
 	boolean 
 		result = FALSE;
 
-	int 
-		ex_flags;
 
 	static const int /* don't use const char here! indexes are large */
 		titles[] = {FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT};
@@ -452,6 +454,12 @@ void get_fsel
 	int flags		/* sets whether pathonly or nameonly */
 )
 {
+	char
+		*c,			/* pointer to aft part of the string */
+		*cc,		/* copy of the above */
+		*path,		/* path obtained */
+		*title;		/* Selector title */
+
 	long
 		pl = 0,			/* path length   */
 		fl = 0,			/* name length   */
@@ -462,12 +470,6 @@ void get_fsel
 	int
 		tid = FSTLANY,
 		err = EPTHTL;
-
-	char
-		*c,			/* pointer to aft part of the string */
-		*cc,		/* copy of the above */
-		*path,		/* path obtained */
-		*title;		/* Selector title */
 
 	VLNAME			/* actually a LNAME should be enough */
 		name;		/* name obtained */
@@ -570,8 +572,8 @@ void get_fsel
 
 int chdir(const char *path)
 {
-	int error;
 	char *h = (char *)path;
+	int error;
 
 
 	if(isdisk(path))
@@ -619,35 +621,55 @@ boolean check_drive(int drv)
 
 /* 
  * Compare a string (e.g. a filename) against a wildcard pattern;
- * valid wildcards: * ? ! [<char><char>...] 
+ * 
+ * valid wildcards: 
+ *     *                 = string of any characters
+ *     ?                 = any single character
+ *     [<char><char>...] = any single character from the enclosed list
+ *     !<char>           = any single character except next character
+ *     ~                 = negate match (must be the first char in pattern)
+ *
  * Return TRUE if matched. Comparison is NOT case-sensitive.
  * Note: speed could be improved by always preparing all-uppercase wildcards
  * (wildcards are stored in window icon lists, program type lists and 
  * filemask/documenttype lists, i.e. it is easy to convert to uppercase there).
  *
- * The first two wildcards (* and ?) are valid in single-TOS;
- * the other are valid only in mint.
+ * The first two wildcards (* and ?) are legal in single-TOS;
+ * the other are legal only in mint. However, TeraDesk permits the
+ * use od these other wildcards, within some restictions that are
+ * imposed by the validation string of the editable text fields in dialogs.
  * 
- * Note: There were two alternative routines for matching wildcards,
- * depending on whether the Desktop was multitasking-capable or not:
- * match_pattern() and cmp_part(). The first one was used for 
- * multitasking-capable desktop and the other for single-tos only.
- * This has been changed now so that match_pattern() is always used.
+ * Note: In early versions here were two alternative routines for matching 
+ * wildcards, depending on whether the Desktop was multitasking-capable 
+ * or not: match_pattern() and cmp_part(). The first one was used for 
+ * multitasking-capable desktop and the other for single-tos version only.
+ * This was changed so that match_pattern() is always used now.
  */
 
 boolean match_pattern(const char *t, const char *pat)
 {
-	bool 
-		valid = TRUE;
-
 	char 
-		u, 					/* uppercase character in pat */
-		*d, 
+		*d, 				/* difference in positions */
 		*pe = NULL,		 	/* pointer to pattern end */
 		*te = NULL, 		/* pointer to name end */
-		*pa = NULL;			/* pointer to last astarisk */
+		*pa = NULL,			/* pointer to last astarisk */
+		u, 					/* uppercased character in pat */
+		tu;					/* uppercased *t */
+
+	boolean
+		inv = FALSE, 
+		valid = TRUE;
 
 
+	/* Is this an exception mask? */
+
+	if(*pat == '~')
+	{
+		pat++;
+		inv = TRUE;
+	}
+
+	/* Now match the pattern */
 
 	while(valid && ((*t && *pat) || (!*t && *pat == '*')))	/* HR: catch empty that should be OK */
 	{
@@ -687,70 +709,134 @@ boolean match_pattern(const char *t, const char *pat)
 					t = d;
 			}
 
-			u = (char)touppc(*pat);
+			/* 
+			 * First character that must be matched after the '*' 
+			 * this code could be smaller, but slower
+			 */
 
-			while(*t &&(touppc(*t) != u))
-				t++;
-
-			break;
-#if _MINT_
-		case '!':			/* !X means any character but X */
-			if (mint)
+			if(*pat == '!')
 			{
-				if (touppc(*t) != touppc(pat[1]))
-				{
-					t++;
-					pat += 2;
-				} 
-				else
-					valid = false;
-				break;
-			}
-		case '[':			/* [<chars>] means any one of <chars> */
-			if (mint)
-			{
-				u = touppc(*t);
-				while((*(++pat) != ']') && (u != touppc(*pat)));
-
-				if (*pat == ']')
-					valid = false;
-				else
-					while(*++pat != ']');
 				pat++;
 
-				t++;
+				if(*pat)	/* guard against invalidly specified masks */
+				{
+					u = (char)touppc(pat[1]);	/* the first one after that */ 
+
+					while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+						t++;
+
+					goto exceptch;
+				}
+			}
+			else if(*pat == '[')
+			{
+				d = strchr(pat,']');
+
+				if(d)	/* guard against invalidly specified masks */
+				{
+					u = (char)touppc(d[1]);
+
+					while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+						t++;
+
+					goto anych;
+				}
+			}
+			else
+			{
+				u = (char)touppc(*pat); 
+
+				while(*t &&(touppc(*t) != u))
+					t++;
+
 				break;
 			}
-#endif
-		default:			/* exact match on anything else, case insensitive */
 
-			if (touppc(*t++) != touppc(*pat++))
-				valid = false;
+			valid = FALSE;
 			break;
+
+		case '!':			/* !X means any character but X */
+
+			tu = touppc(*t);
+			pat++;
+
+			exceptch:;
+
+			u = (char)touppc(*pat);
+
+			if (u && tu != u)
+			{
+				t++;
+				pat++;
+				break;
+			} 
+			
+			valid = FALSE;
+			break;
+
+		case '[':			/* [<chars>] means any one of <chars> */
+
+			tu = touppc(*t);
+			d = strchr(pat, ']');
+			
+			if(d)
+			{
+				anych:;
+
+				while(++pat < d && (tu != touppc(*pat)));
+
+				if(pat < d)
+				{
+					pat = d;
+					pat++;
+					t++;
+					break;
+				}
+			}
+
+			valid = FALSE;
+			break;
+
+		default:	/* exact match on anything else, case insensitive */
+
+			if (touppc(*t++) == touppc(*pat++))
+				break;
+
+			valid = FALSE;
 		}
 	}
 
-	return valid && (touppc(*t) == touppc(*pat));
+	return (valid && (touppc(*t) == touppc(*pat))) ^ inv;
 }
 
 
 /* 
  * Compare a filename against a wildcard pattern 
+ * Some special considerations of the '.' character in single-TOS
  */
 
-boolean cmp_wildcard(const char *fname, const char *wildcard)
+boolean cmp_wildcard(const char *fname, const char *pat)
 {
-	boolean matched;
 	char *dot = NULL;
+	boolean matched;
 
 #if _MINT_
 	if (!mint)
 #endif
 	{
-		dot = strchr(wildcard, '.');
+		/* Is there a dot in the wildcard pattern? */
+
+		dot = strchr(pat, '.');
 
 		if (dot)
 		{
+			/* 
+			 * If there is a dot and...
+			 * the rest of the wildcard is '*', and
+			 * there is no dot in the name, ignore the dot
+			 * so that names without it can still be matched
+			 */
+
 			if (dot[1] == '*' && dot[2] == '\0' && strchr(fname, '.') == NULL)
 				*dot = '\0';
 		}
@@ -758,7 +844,9 @@ boolean cmp_wildcard(const char *fname, const char *wildcard)
 			return FALSE;		
 	}
 
-	matched = match_pattern(fname, wildcard);
+	/* Now match the pattern */
+
+	matched = match_pattern(fname, pat);
 
 	if (dot)
 		*dot = '.'; /* restore the dot which was removed earlier */
@@ -778,9 +866,14 @@ static long cdecl Newgetbpb(int d)
 {
 	if (d == chdrv)
 	{
+/*
 		*((Func *)0x472L) = Oldgetbpb;
 		*((Func *)0x476L) = Oldrwabs;
 		*((Func *)0x47eL) = Oldmediach;
+*/
+		hdv_bpb = Oldgetbpb;
+		hdv_rw = Oldrwabs;
+		hdv_mediach = Oldmediach;
 	}
 
 	return (*Oldgetbpb)(d);
@@ -836,13 +929,23 @@ void force_mediach(const char *path)
 		stack = (void *)Super(0L);
 
 		chdrv = drive;
+/*
 		Oldrwabs = *((Func *)0x476L);
 		Oldgetbpb = *((Func *)0x472L);
 		Oldmediach = *((Func *)0x47eL);
+*/
+		Oldrwabs = hdv_rw;
+		Oldgetbpb = hdv_bpb;
+		Oldmediach = hdv_mediach;
 
+/*
 		*((Func *)0x476L) = Newrwabs;
 		*((Func *)0x472L) = Newgetbpb;
 		*((Func *)0x47eL) = Newmediach;
+*/
+		hdv_rw = Newrwabs;
+		hdv_bpb = Newgetbpb;
+		hdv_mediach = Newmediach;
 
 		fname[0] = drive + 'A';
 		r = Fopen(fname, 0);
@@ -852,9 +955,14 @@ void force_mediach(const char *path)
 
 		if (*((Func *)0x476L) == Newrwabs)
 		{
+/*
 			*((Func *)0x472L) = Oldgetbpb;
 			*((Func *)0x476L) = Oldrwabs;
 			*((Func *)0x47eL) = Oldmediach;
+*/
+			hdv_bpb = Oldgetbpb;
+			hdv_rw = Oldrwabs;
+			hdv_mediach = Oldmediach;
 		}
 
 		Super(stack);
@@ -877,6 +985,7 @@ void cv_tos_fn2form(char *dest, const char *source)
 	char
 		*dl = dest + 12,		/* In case a longer name slips through */
 		*d = dest;				/* a location in the destination string */
+
 
 	while (*s && (*s != '.') && d < dl )
 		*d++ = *s++;
@@ -950,17 +1059,24 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 	 * zero termination-byte must fit into it
 	 */
 
-	OBJECT *ob = tree + object;
-	TEDINFO *ti = xd_get_obspecp(ob)->tedinfo;
-	char *dst = ti->te_ptext;
-	long l = (long)(ti->te_txtlen);
+	OBJECT
+		*ob = tree + object;
+
+	TEDINFO
+		*ti = xd_get_obspecp(ob)->tedinfo;
+	char
+		*dst = ti->te_ptext;
+
+	long
+		l = (long)ti->te_txtlen;
+
 
 	/* 
 	 * The only 12-chars long fields in TeraDesk should be 
 	 * for 8+3 names, possibly even if Mint/Magic is around 
 	 */
 
-	if ( l < 13L )
+	if ( l < 13L)
 		cv_tos_fn2form(dst, src);
 	else
 	{	
@@ -968,11 +1084,11 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 		{
 			if(xd_xobtype(ob) == XD_SCRLEDIT)
 			{
-				l = sizeof(VLNAME);
-				xd_init_shift(ob, (char *)src); /* note: won't work ok if strlen(dest) > sizeof(VLNAME) */
+				l = (long)sizeof(VLNAME);
+				xd_init_shift(ob, (char *)src); /* will not work if strlen(dest) > sizeof(VLNAME) */
 			}
 
-			strsncpy(dst, src, l); 		/* term. byte included in l */
+			strsncpy(dst, src, (size_t)l); 		/* term. byte included in l */
 
 			if ( strlen(src) >= l )
 				alert_iprint(TFNTLNG);
@@ -985,23 +1101,26 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 
 /* 
  * Convert filename from the dialog form into a convenient string.
- * This routine does not allocate space for destination. 
+ * This routine does not allocate any space for destination. 
  */
 
-void cv_formtofn(char *dest, OBJECT *tree, int object)
+void cv_formtofn(char *dst, OBJECT *tree, int object)
 {
-	TEDINFO *ti = xd_get_obspecp(tree + object)->tedinfo; 
-	char *source = ti->te_ptext;
-	int l = ti->te_txtlen;
+	TEDINFO
+		*ti = xd_get_obspecp(tree + object)->tedinfo; 
+
+	char
+		*src = ti->te_ptext;
+
 
 	/* 
 	 * The only 12-characters-long fields in TeraDesk should be 
 	 * for 8+3 names, possibly even if Mint/Magic is around 
 	 */
 
-	if (  l < 13 )
-		cv_tos_form2fn(dest, source);
+	if(ti->te_txtlen < 13)
+		cv_tos_form2fn(dst, src);
 	else
-		strip_name(dest, source);
+		strip_name(dst, src);
 }
 	

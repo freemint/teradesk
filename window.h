@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -166,14 +166,13 @@ typedef struct winfo
 }WINFO;
 
 
-
 /* Note: see window.c; CfgNest positions */
 
 typedef struct
 {
 	int i, x, y, ww, wh, ix, iy, iw, ih;
 	WDFLAGS flags;
-	FONT font;
+	XDFONT font;
 	WINFO *windows;
 } NEWSINFO1;
 
@@ -181,9 +180,9 @@ typedef struct
 typedef struct
 {
 	int 
-		index;
+		index,
 		px, 
-	    hexmode, 
+		hexmode, 
 		tabsize;
 	long
 		py; 
@@ -212,7 +211,7 @@ extern CfgEntry
 	positions_table[],
 	wtype_table[];
 
-extern FONT *cfg_font;
+extern XDFONT *cfg_font;
 
 extern WD_FUNC wd_type_functions;
 
@@ -233,7 +232,6 @@ int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib);
 boolean itm_islink(WINDOW *w, int item);
 boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *type);
 boolean itm_open(WINDOW *w, int item, int kstate);
-
 void itm_select(WINDOW *w, int selected, int mode, boolean draw);
 void itm_rselect(WINDOW *w, int x, int y);
 boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
@@ -241,28 +239,22 @@ boolean itm_list(WINDOW *w, int *n, int **list);
 void itm_set_menu ( WINDOW *w );
 void wd_setselection(WINDOW *w);
 void wd_do_dirs(void *func);
-
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
 void wd_update_drv(int drive);
 void wd_restoretop(int code, int *whandle, int *wap_id);
 boolean wd_dirortext(WINDOW *w);
-
-void wd_hndlbutton(WINDOW *w, int x, int y, int n, int button_state,
-				   int keystate);
+void wd_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
 const char *wd_path(WINDOW *w);
 const char *wd_toppath(void);
 void wd_seticons(void);
-
-/* Funkties voor het opvragen van informatie over geselekteerde objecten. */
-
 void wd_reset(WINDOW *w);
 void wd_deselect_all(void);
 void wd_del_all(void);
 void wd_hndlmenu(int item, int keystate);
 void wd_menu_ienable(int item, int enable);
-
 void wd_sizes(void);
+
 #if __USE_MACROS
 #define wd_init wd_default
 #else
@@ -271,22 +263,17 @@ void wd_init(void);
 
 void wd_default(void);
 int wd_load(XFILE *file);
-
 boolean wd_tmpcls(void);
 void wd_reopen(void);
-
 void wd_type_draw(TYP_WINDOW *w, boolean message); 
 void wd_type_sldraw(WINDOW *w);
-boolean wd_type_setfont(int title); 
+boolean wd_type_setfont(int button); 
 void calc_rc(TYP_WINDOW *w, RECT *work); 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork); 
 void wd_calcsize(WINFO *w, RECT *size); 
-
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
-void wd_type_hndlbutton(WINDOW *w, int x, int y, int n,
-						   int button_state, int keystate);
+void wd_type_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
 void wd_set_defsize(WINFO *w); 
-
 void wd_type_close( WINDOW *w, int mode);
 void wd_type_topped (WINDOW *w);		
 void wd_type_bottomed (WINDOW *w);		
@@ -298,7 +285,6 @@ void wd_type_vslider(WINDOW *w, int newpos);
 void wd_type_moved(WINDOW *w, RECT *newpos);
 void wd_type_sized(WINDOW *w, RECT *newsize);
 void wd_type_redraw(WINDOW *w, RECT *area);
-
 void wd_type_title(TYP_WINDOW *w);
 void set_hslsize_pos(TYP_WINDOW *w);
 void set_vslsize_pos(TYP_WINDOW *w);
@@ -309,10 +295,8 @@ void w_pagedown(TYP_WINDOW *w);
 void w_pageleft(TYP_WINDOW *w);
 void w_pageright(TYP_WINDOW *w);
 void w_scroll(TYP_WINDOW *w, int type); 
-
 boolean wd_adapt(WINDOW *w);	
-void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons);
-
+void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, boolean icons);
 void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
 void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, 
 int obj_x, int obj_y, char *name );
@@ -328,9 +312,7 @@ long wd_type_slines(TYP_WINDOW *w);
 void wd_drawall(void);
 int wd_wcount(void);
 boolean itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y, int avkstate);
-
 void arrow_mouse(void);
 void hourglass_mouse(void);
 void w_transptext( int x, int y, char *text);
 boolean isfileprog(ITMTYPE type);
-

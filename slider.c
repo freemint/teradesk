@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -36,9 +36,6 @@
 #include "file.h"
 
 
-OBJECT *dialogo;
-
-
 /* 
  * Set slider size and position 
  */
@@ -48,22 +45,24 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 	int 
 		sh,
 		s,
-		sparent = sl->sparent,
-		slines = sl->lines;
+		sn = sl->n,
+		slines = sl->lines,
+		slh = sl->tree[sl->sparent].r.h;
 
 
-	sl->line = ((sl->n < slines) || (sl->line < 0)) ? 0 : min(sl->line, sl->n - slines);
+	sl->line = ((sn < slines) || (sl->line < 0)) ? 0 : min(sl->line, sn - slines);
 
 	/* Determine slider size. Minimum size is equal to character height */
 
-	if (sl->n > slines)
+	if (sn > slines)
 	{
-		sh = (int)(((long)slines * (long)(sl->tree[sparent].r.h)) / (long) sl->n);
+		sh = (int)(((long)slines * (long)slh) / (long)sn);
+
 		if (sh < screen_info.fnt_h)
 			sh = screen_info.fnt_h;
 	}
 	else
-		sh = sl->tree[sparent].r.h;
+		sh = slh;
 	
 	/* Compensation for 3D effects */
 
@@ -71,58 +70,11 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 
 	/* Determine slider position */
 
-	s = sl->n - slines;
-	sl->tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long)(sl->tree[sparent].r.h - sh) * (long) sl->line) / (long) s) : 0);
+	s = sn - slines;
+	sl->tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
 
 	if (info)
-		xd_drawdeep(info, sparent);
-}
-
-
-static void do_arrows(int button, SLIDER *sl, XDINFO *info)
-{
-	boolean redraw, first = TRUE;
-	int mstate;
-
-	xd_change(info, button, SELECTED, 1);
-
-	do
-	{
-		redraw = FALSE;
-
-		if (button == sl->up_arrow)
-		{
-			if (sl->line > 0)
-			{
-				sl->line--;
-				redraw = TRUE;
-				sl_set_slider(sl, info);
-			}
-		}
-		else
-		{
-			if (sl->line < (sl->n - sl->lines))
-			{
-				sl->line++;
-				redraw = TRUE;
-				sl_set_slider(sl, info);
-			}
-		}
-
-		if (redraw)
-			sl->set_selector(sl, TRUE, info);
-
-		mstate = xe_button_state() & 1;
-
-		if (first && mstate)
-		{
-			wait(ARROW_DELAY);
-			first = FALSE;
-		}
-	}
-	while (mstate);
-
-	xd_drawbuttnorm(info, button);
+		xd_drawdeep(info, sl->sparent);
 }
 
 
@@ -160,12 +112,16 @@ static void do_slider
 	XDINFO *info
 )
 {
-	int newpos;
-	long lines;
+	long
+		lines;
 
-	xd_wdupdate(BEG_MCTRL);
+	int
+		newpos;
+
+
+	xd_begmctrl();
 	newpos = graf_slidebox(sl->tree, sl->sparent, sl->slider, 1);
-	xd_wdupdate(END_MCTRL);
+	xd_endmctrl();
 
 	/* 
 	 * Fix what seems to be a bug in graf_slidebox of Atari AES4.1 ? 
@@ -183,7 +139,14 @@ static void do_slider
 
 static void do_bar(SLIDER *sl, XDINFO *info)
 {
-	int my, oy, dummy, old, maxi, slines = sl->lines;
+	int
+		my,
+		oy,
+		dummy,
+		old,
+		maxi,
+		slines = sl->lines;
+
 
 	graf_mkstate(&dummy, &my, &dummy, &dummy);
 	objc_offset(sl->tree, sl->slider, &dummy, &oy);
@@ -214,73 +177,104 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 }
 
 
+/*
+ * This routine handles movement of the selected item in the selector
+ * with more than one items displayed. If some work gets done in this
+ * routine, it returns 1; if the work is to be done elsewhere, it returns 0.
+ * part of the code acctivated by j <> 0 is only for the use of keyfunc()
+ * in list_edit(); otherwise it is completely redundant
+ */
+
 int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 {
-	boolean redraw = FALSE;
-	int selected;
+	int
+		k = 0,
+		j = 0,
+		selected;
 
 	switch (scancode)
 	{
-	case CTL_CURUP:
-		if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
-		{
-			selected += sl->first;
-			obj_deselect(sl->tree[selected]);
-			obj_select(sl->tree[selected - 1]);
-			redraw = TRUE;
-		}
-		else if (sl->line > 0)
-		{
-			sl->line--;
-			sl_set_slider(sl, info);
-			redraw = TRUE;
-		}
-		break;
-	case CTL_CURDOWN:
-		if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)))
-		{
-			selected += sl->first;
-			obj_deselect(sl->tree[selected]);
-			obj_select(sl->tree[selected + 1]);
-			redraw = TRUE;
-		}
-		else if (sl->line < (sl->n - sl->lines))
-		{
-			sl->line++;
-			sl_set_slider(sl, info);
-			redraw = TRUE;
-		}
-		break;
-	default:
-		return 0;
+		case CTL_CURUP:
+			if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
+				k = -1;
+			else if(sl->line > 0)
+				j = -1;
+			break;
+		case CTL_CURDOWN:
+			if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)) )
+				k = 1;
+			else if (sl->line < (sl->n - sl->lines))
+ 				j = 1;
+		default:
+			break;
 	}
 
-	if (redraw)
+	if(k != 0)
+	{
+		selected += sl->first;
+		obj_deselect(sl->tree[selected]);
+		obj_select(sl->tree[selected + k]);
 		sl->set_selector(sl, TRUE, info);
+		return 1;
+	}
 
-	return 1;
+	if(j != 0)
+	{
+		sl->line += j;
+		sl_set_slider(sl, info);
+		sl->set_selector(sl, TRUE, info);
+		return 1;
+	}
+
+	return 0;
 }
 
 
-int sl_handle_button(int button, SLIDER *sl, XDINFO *dialog)
-{
-	int button2 = button & 0x7FFF;
+/*
+ * This routine handles the pressed arrow buttons in a slider
+ */
 
-	if ((button2 == sl->up_arrow) || (button2 == sl->down_arrow))
-		do_arrows(button2, sl, dialog);
+int sl_handle_button(int button, SLIDER *sl, XDINFO *info)
+{
+	int 
+		j = 0,
+		button2 = button & 0x7FFF;
+
+
+	if (button2 == sl->up_arrow)
+	{
+		if(sl->line > 0)
+			j = -1;
+	}
+	else if (button2 == sl->down_arrow)
+	{
+		if(sl->line < (sl->n - sl->lines))
+			j = 1;
+	}
 	else if (button2 == sl->slider)
 	{
-		do_slider(sl, dialog);
-		(*sl->set_selector) (sl, TRUE, dialog);
+		do_slider(sl, info);
+		sl->set_selector(sl, TRUE, info);
 	}
 	else if (button2 == sl->sparent)
-		do_bar(sl, dialog);
+		do_bar(sl, info);
 	else
 		return FALSE;
+
+	if(j != 0)
+	{
+		sl->line += j;
+		sl_set_slider(sl, info);
+		sl->set_selector(sl, TRUE, info);
+	}
 
 	return TRUE;
 }
 
+
+/*
+ * Note: in case of a double click, bit 0x8000 is set in returned value
+ */
 
 int sl_form_do(int start, SLIDER *sl, XDINFO *info)
 {

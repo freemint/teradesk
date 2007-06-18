@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,8 +23,8 @@
 
 typedef struct fattr
 {
-	unsigned int mode;
 	long size;
+	unsigned int mode;
 	unsigned int mtime, mdate;
 	unsigned int attrib;
 #if _MINT_
@@ -34,10 +34,10 @@ typedef struct fattr
 
 typedef struct
 {
-	boolean selected,
-	        newstate,
-	        visible,
-	        link;
+	boolean selected;
+	boolean newstate;
+	boolean visible;
+	boolean link;
 	int index;
 	struct fattr attrib;
 	ITMTYPE item_type;
@@ -105,7 +105,7 @@ typedef struct
 #define DO_PATH_UPDATE	1
 
 
-extern FONT dir_font;
+extern XDFONT dir_font;
 extern WINFO dirwindows[MAXWINDOWS];		/* some information about open windows */
 extern RECT dmax;	/* maximum window size */
 
@@ -115,26 +115,23 @@ boolean dir_add_window(const char *path, const char *thespec, const char *name);
 boolean dir_add_dwindow(const char *path);
 boolean dir_onalt(int key, WINDOW *w);
 void dir_close(WINDOW *w, int mode);
-
 const char *dir_path(WINDOW *w);
 void dir_filemask(DIR_WINDOW *w);
 void dir_newfolder(WINDOW *w);
 void dir_sort(WINDOW *w);
 void dir_seticons(WINDOW *w);
 void dir_autoselect(DIR_WINDOW *w);
-
 void dir_briefline(char *tstr, XATTR *att);
 void dir_line(DIR_WINDOW *dw, char *s, int item);
 void dir_disp_mode(WINDOW *w);
 void dir_mode(WINDOW *w);
 void dir_newdir( WINDOW *w );
 void dir_reread( DIR_WINDOW *w );
-
 void calc_nlines(DIR_WINDOW *w);		
 int linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
 void dir_info(DIR_WINDOW *w);
-			
+boolean dir_isexec(const char *name, XATTR *attr);
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
 void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
 void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);

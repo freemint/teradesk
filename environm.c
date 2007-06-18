@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -37,8 +37,8 @@
 
 /*
  * Determine the length of the environment, including
- * two terminating zeros. Return length of environment,
- * including two trailing zero bytes.
+ * two terminating zeros. Return this length of environment
+ * (including two trailing zero bytes).
  */
 
 long envlen(void)
@@ -124,7 +124,7 @@ char *new_env
 /*
  * Clear (unset) ARGV environmental variable in the environment string
  * for TeraDesk itself: put a 0 instead of "A" in "ARGV". As there is
- * already a 0 in fronto of "ARGV", now there will be two consecutive 0s
+ * already a 0 in front of "ARGV", now there will be two consecutive 0s
  * which will mean the end of the environment area (ARGV should always
  * be the last variable in the pool).
  * But is the program's environment string always allowed to write into ???
@@ -143,7 +143,7 @@ void clr_argv(void)
 			p--;
 		}
 		
-		*p = '\0';	/* Destroy ARGV, this is now end of environment */
+		*p = '\0';	/* Destroy ARGV, this is now the end of environment */
 	}
 }
 
@@ -211,16 +211,24 @@ char *make_argv_env
 			/* Add ARGV variable. */
 
 			s = name;
+
 			while (*s)
+			{
 				*d++ = *s++;
+			}
+
 			*d++ = 0;				/* Delimiting zero  after ARGV= */
 
 
 			/* Add program name and a zero after it */
 
 			s = program;
+
 			while (*s)
+			{
 				*d++ = *s++;
+			}
+
 			*d++ = 0;
 		}
 

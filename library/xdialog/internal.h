@@ -1,7 +1,7 @@
 /*
- * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -76,12 +76,20 @@
 typedef struct xuserblk
 {
 	int cdecl (*ub_code)(PARMBLK *parmblock);
-	struct xuserblk *ub_parm;		/* Pointer to itself. */
-	int ob_type;					/* Original object type. */
-	int ob_flags;					/* Original object flags. */
-	OBSPEC ob_spec;					/* Original object specifier. */ 
-	long other;						/* can be handy sometimes */
-	int ob_shift;					/* For scrledit: left position of letterbox. */
+	struct xuserblk *ub_parm;		/* Pointer to itself */
+	int ob_type;					/* Original object type */
+	int ob_flags;					/* Original object flags */
+	OBSPEC ob_spec;					/* Original object specifier */
+	union
+	{ 
+		long ptr;					/* a handy pointer to anything */
+		int ob_shift;				/* For scrledit: position of letterbox. */
+		struct
+		{
+			int pattern;			/* background fill pattern */
+			int colour;				/* background fill colour */
+		} fill;
+	}uv;
 } XUSERBLK;
 
 typedef struct xdobjdata
@@ -105,18 +113,24 @@ typedef struct
 
 typedef struct
 {
-	int fnt_id;
-	int fnt_type;
-	int fnt_height;
-	int fnt_chw;
-	int fnt_chh;
-} XD_FONT;
+	int id;
+
+/* currently unused
+	int type;
+*/
+	int size;
+	int colour;
+	int effects;
+	int cw;
+	int ch;
+} XDFONT;
 
 extern int
 	xd_vhandle,
 	xd_nplanes,
-	xd_ncolors,
+	xd_ncolours,
 	xd_npatterns,
+	xd_nfills,
 	xd_pix_height,
 	xd_posmode,
 	xd_min_timer,
@@ -134,9 +148,9 @@ extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
 extern RECT xd_desk;
-extern XD_FONT xd_regular_font, xd_small_font;
+extern XDFONT xd_regular_font, xd_small_font;
 
-extern void set_linedef(int color);
+extern void set_linedef(int colour);
 extern int xd_movebutton(OBJECT *tree);
 extern int xd_abs_curx(OBJECT *tree, int object, int curx);
 extern void xd_cursor_on(XDINFO *info);
@@ -151,12 +165,10 @@ extern void xd_edit_init(XDINFO *info, int object, int curx);
 extern void xd_edit_end(XDINFO *info);
 extern void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode);
 extern int xd_edit_char(XDINFO *info, int key);
-extern int xd_form_keybd(XDINFO *info, int kobnext, int kchar,
-							 int *knxtobject, int *knxtchar);
+extern int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *knxtchar);
 extern int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key);
 extern int xd_set_keys(OBJECT *tree, KINFO *kinfo);
 extern void xw_closeall(void);
-extern void xd_xuserdef(OBJECT *object, XUSERBLK *userblk,
-					   int cdecl(*code) (PARMBLK *parmblock));
+extern void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code)(PARMBLK *parmblock));
 
 #endif

@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
+ *                          2002 - 2003  H. Robbers,
+ *                          2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -45,17 +45,15 @@
 
 #define FWIDTH			256 /* max.possible width of text window in text mode */
 
-#define ASCII_PERC		80
+#define ASCII_PERC		80	/* if so many % of printable chars, it is a text file */
 
 
 WINFO textwindows[MAXWINDOWS]; 
 RECT tmax;
-FONT txt_font;
+XDFONT txt_font;
 
 static int displen = -1;
 
-static void set_menu(TXT_WINDOW *w);
-static void txt_hndlmenu(WINDOW *w, int title, int item);
 
 
 /*
@@ -78,11 +76,6 @@ static long txt_nlines(TXT_WINDOW *w)
 
 static int txt_width(TXT_WINDOW *w, int hexmode)
 {
-	long 
-		i,	/* line counter */
-		mw;	/* maximum line width */
-
-
 	/* 
 	 * If display is in hex mode, return a fixed width (HEXLEN); otherwise
 	 * scan pointers to all lines and find greatest difference between
@@ -94,18 +87,59 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 		return HEXLEN + 1;	/* fixed window width in hex mode */
 	else
 	{
-		/* Length of the last (and first, if there is only one) line in the text */
+		long 
+			i,	/* line counter */
+			ll,	/* current line width */
+			mw;	/* maximum line width */
 
-		mw = (long)(w->lines[0]) + (w->size) - (long)(w->lines[w->tlines - 1])  + (long)(w->ntabs[0]) * (w->tabsize - 1);
+		/* text is scanned only if width had been reset to 0 */
 
-		/* Is length of any other line greater than the above? */
+		if(w->twidth == 0)
+		{
 
-		for ( i = 1; i < w->tlines; i++ ) 
-			mw = lmax(mw, (long)(w->lines[i]) - (long)(w->lines[i - 1])  + (long)(w->ntabs[i]) * (w->tabsize - 1) );
+			char
+				**wl,
+				*p,		/* pointer to the beginning of the current line */
+				*p1;	/* same, but for the next line */
+	
+			int
+				ts = w->tabsize;
+	
+			if(w->tlines > 100)
+				hourglass_mouse();
 
-		/* Add the right margin */
+			wl = w->lines;
+			mw = 0;
 
-		mw += MARGIN;
+			for(i = 0; i < w->tlines; i++)
+			{
+				p = *wl++;
+				p1 = *wl - 1;
+				ll = 0;
+
+				do
+				{
+					ll++;
+
+					if (*p++ == '\t') 
+					{
+						ll += (ts - (ll % ts));
+					}
+				}
+				while (p < p1);
+
+				if(ll > mw)
+					mw = ll;
+			}
+
+			/* Add the right margin */
+
+			mw += MARGIN;
+
+			arrow_mouse();
+		}
+		else
+			mw = w->twidth;
 
 		/* 
 		 * Window width should be at least (arbitrary) 16 characters 
@@ -138,12 +172,16 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 
 static char hexdigit(int x)
 {
-	return (x <= 9) ? x + '0' : x + ('A' - 10);
+	x &= 0x000F;
+
+	/* this is shorter than using a table */
+
+	return (x < 10) ? x + '0' : x + ('A' - 10);
 }
 
 
 /*
- * Create a line in hex mode.
+ * Create a line in hex mode for window display or printing.
  * Note: offset from file beginning will not be displayed correctly
  * for files larger than 256MB.
  */
@@ -174,35 +212,40 @@ void disp_hex
 	}
 
 	/* tmp[0] to tmp[6] display line offset from file beginning */
-	
-	tmp[7] = ':';
-	
+
 	for (i = 6; i >= 0; i--)
 	{
-		tmp[i] = hexdigit((int)(h & 0x0F));
+		tmp[i] = hexdigit((int)h);
 		h >>= 4;
 	}
+
+	tmpj = &tmp[7];
+
+	*tmpj++ = ':';
 
 	/* Hexadecimal (in h) and ASCII (in 58+i) representation of 16 bytes */
 
 	for (i = 0; i < 16; i++)
 	{
-		tmpj = &tmp[8 + i * 3];
 		*tmpj++ = ' ';
 
 		if ((a + (long)i) < size)
 		{
 			pi = p[i];
-			*tmpj++ = hexdigit((int)((pi >> 4) & 0x0F));
-			*tmpj = hexdigit((int)(pi & 0x0F));
-			tmp[58 + i] = ( (pi == 0) || ((toprint == TRUE) && (pi < ' ')) )  ? '.' : pi;
+			*tmpj++ = hexdigit((int)(pi >> 4));
+			*tmpj++ = hexdigit((int)pi);
+
+			if ( (pi == 0) || ((toprint == TRUE) && (pi < ' ')) )
+				pi = '.';
 		}
 		else
 		{
 			*tmpj++  = ' ';
-			*tmpj  = ' ';
-			tmp[58 + i] = ' ';
+			*tmpj++  = ' ';
+			pi = ' ';
 		}
+
+		tmp[58 + i] = pi;
 	}
 
 	tmp[56] = ' ';
@@ -285,16 +328,20 @@ static int txt_line
 		{
 			if ((ch = *s++) == 0)	/* null: ignore */
 				continue;
+
 			if (ch == '\n')			/* linefeed: end of line */
 				break;
+
 			if (ch == '\r')			/* carriage return: ignore */
 				continue;
+
 			if (ch == '\t')			/* tab: substitute */
 			{
 				do
 				{
 					if (cnt >= wpxm )
 						*d++ = ' ';
+
 					cnt++;
 				}
 				while (((cnt % tabsize) != 0) && (cnt < m));
@@ -343,7 +390,7 @@ static int txt_line
 	/* Finish the line with a null */
 
 	*d = 0;
-	return (int) (d - dest);
+	return (int)(d - dest);
 }
 
 
@@ -383,14 +430,23 @@ static void txt_prtchar
 	RECT *work		/* Werkgebied van het window */
 )
 {
-	RECT r, in;
-	int len, c;
-	char s[FWIDTH];
+	RECT 
+		r,
+		in;
+
+	int
+		len, 
+		c;
+
+	char
+		s[FWIDTH];
 
 
 	c = column - w->px;
+
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
+
 	r.x += c * txt_font.cw;
 	r.w = nc * txt_font.cw;
 
@@ -479,17 +535,28 @@ void txt_prtcolumn
 
 /*
  * Functie voor het updaten van het window menu van een tekstwindow.
+ * If a macro is used instead of a function, a couple of bytes
+ * are saved
  */
+
+#if __USE_MACROS
+
+#define set_menu(x) xw_menu_icheck((WINDOW *)x, VMHEX, x->hexmode)
+
+#else
 
 static void set_menu(TXT_WINDOW *w)
 {
-	xw_menu_icheck((WINDOW *) w, VMHEX, w->hexmode);
+	xw_menu_icheck((WINDOW *)w, VMHEX, w->hexmode);
 }
+
+#endif
 
 
 /*
  * Functie voor het instellen van de ASCII of de HEXMODE
- * van een window.
+ * van een window. This routine toggles hexmode on/off
+ * upon each call.
  */
 
 static void txt_mode(TXT_WINDOW *w)
@@ -499,33 +566,46 @@ static void txt_mode(TXT_WINDOW *w)
 	w->columns = txt_width(w, w->hexmode);
 
 	wd_type_sldraw ((WINDOW *)w);
-	set_menu(w);
+	set_menu(w); /* check the hexmode menu item */
 }
 
 
 /*
  * Functie voor het instellen van de tabultorgrootte van een
- * tekstwindow.
+ * tekstwindow. 
  */
 
 static void txt_tabsize(TXT_WINDOW *w)
 {
-	int oldtab;
-	char *vtabsize = stabsize[VTABSIZE].ob_spec.tedinfo->te_ptext;
+	int 
+		oldtab,
+		newtab;
+
+	char 
+		*vtabsize = stabsize[VTABSIZE].ob_spec.tedinfo->te_ptext;
+
 
 	oldtab = w->tabsize;
 
-	itoa(w->tabsize, vtabsize, 10);
+	itoa(oldtab, vtabsize, 10);
+
+	/* Act only if there was an OK in the dialog */
 
 	if (chk_xd_dialog(stabsize, VTABSIZE) == STOK)
 	{
-		if ((w->tabsize = atoi(vtabsize)) < 1)
-			w->tabsize = 1;
+		if ((newtab = atoi(vtabsize)) < 1)
+			newtab = 1;
 
-		if (w->tabsize != oldtab)
+		/* Do it only if tab width has changed */
+
+		if (newtab != oldtab)
 		{
-			w->twidth = txt_width(w, 0);
-			w->columns = (w->hexmode) ? txt_width(w, 1) : w->twidth;
+			w->tabsize = newtab;
+
+			w->twidth = 0;	/* force txt_width */
+
+			w->twidth = txt_width(w, 0); /* in text mode, slower */
+			w->columns = txt_width(w, w->hexmode);
 			wd_type_sldraw((WINDOW *)w); 
 		}
 	}
@@ -539,7 +619,6 @@ static void txt_tabsize(TXT_WINDOW *w)
 static void txt_free(TXT_WINDOW *w)
 {
 		free(w->lines);
-		free(w->ntabs);	
 		free(w->buffer);
 }
 
@@ -590,15 +669,15 @@ void txt_hndlmenu
 	WINDOW *w,	/* pointer to (text) window */
 	int title,	/* menu title id. */
 	int item	/* menu item id. */
-	)
+)
 {
 	switch (item)
 	{
 	case VMTAB:
-		txt_tabsize((TXT_WINDOW *) w);
+		txt_tabsize((TXT_WINDOW *)w);
 		break;
 	case VMHEX:
-		txt_mode((TXT_WINDOW *) w);
+		txt_mode((TXT_WINDOW *)w);
 		break;
 	}
 
@@ -624,13 +703,14 @@ static long count_lines
 	long length		/* buffer (file) length */
 )
 {
-	char 
-		cr = '\n', 
-		*s = buffer;
-
 	long 
 		cnt = length, 
 		n = 1;
+
+	char 
+		*s = buffer,
+		cr = '\n';
+
 
 	do
 	{
@@ -650,14 +730,12 @@ static long count_lines
  * Line end is detected by "\n" character (linefeed)
  * so this will be ok for TOS/DOS and Unix files but not for Mac files
  * (there, lineend is carriage-return only).
- * Number of tabs per lines is returned in *ntabs 
  */
 
 static void set_lines
 (
 	char *buffer,	/* pointer to buffer containing file */
 	char **lines,	/* pointer to array of pointers to line beginnings */
-	int *ntabs,		/* maximum number of tabs in any line */
 	long length		/* file buffer length */
 )
 {
@@ -665,31 +743,22 @@ static void set_lines
 		*s = buffer, 
 		**p = lines;
 
-	int 
-		*t = ntabs;
-
 	long 
 		cnt = length;
 
 
 	*p++ = s;
-	*t = 0;
 
 	do
 	{
-		if (  *s =='\t' ) 	/* count first 255 tabs only */
-		{
-			if (*t < 255)
-				*t += 1;
-		}
-
 		if (*s++ == '\n')	/* find lineends */
 		{
-			*(++t) = 0;
 			*p++ = s;
 		}
 	}
 	while (--cnt > 0);
+
+	*p = buffer + length; 
 }
 
 
@@ -730,8 +799,7 @@ extern long
  * or for any other purpose where found convenient.
  * Function returns error code, if there is any, or 0 for OK.
  * If pointer parameter "tlines" is NULL, it is assumed that the routine will
- * be used for non-display purpose; then lines and tabs will not be 
- * counted and set.
+ * be used for non-display purpose; then lines will not be counted and set.
  * Note: for safety reasons, the routine allocates several bytes 
  * more than needed.
  */
@@ -742,8 +810,7 @@ int read_txtfile
 	char **buffer,		/* location of the buffer to receive text */
 	long *flength,		/* size of the file being read */
 	long *tlines,		/* number of text lines in the file */
-	char ***lines,		/* pointer to array of pointers to beginnings of text lines */
-	int **ntabs			/* a list of numbers of tabs per lines */
+	char ***lines		/* pointer to array of pointers to beginnings of text lines */
 )
 {
 	int 
@@ -801,13 +868,8 @@ int read_txtfile
 						 * then find those beginnings. 
 						 */
 
-						*ntabs = NULL;
-						if 
-						(
-							((*lines = malloc(*tlines * sizeof(char *))) != NULL) &&
-							((*ntabs = malloc((*tlines + 1L) * sizeof(int *))) != NULL)
-						)
-							set_lines(*buffer, *lines, *ntabs, *flength);
+						if(((*lines = malloc((*tlines + 1) * sizeof(char *))) != NULL))
+							set_lines(*buffer, *lines, *flength);
 						else
 						{
 							error = ENSMEM;
@@ -842,7 +904,7 @@ int read_txtf
 	long *flength		/* size of the file being read */
 )
 {
-	return read_txtfile( name, buffer, flength, NULL, NULL, NULL );
+	return read_txtfile( name, buffer, flength, NULL, NULL);
 }
 
 
@@ -869,7 +931,7 @@ static int txt_read
 
 	/* Read complete file */
 
-	error = read_txtfile(w->path, &(w->buffer), &(w->size), &(w->tlines), &(w->lines), &(w->ntabs) );
+	error = read_txtfile(w->path, &(w->buffer), &(w->size), &(w->tlines), &(w->lines));
 
 	arrow_mouse();
 
@@ -880,7 +942,9 @@ static int txt_read
 	}
 	else
 	{
-		w->twidth = txt_width(w, 0);
+		w->twidth = 0; 	/* force txt_width to do something */
+
+		w->twidth = txt_width(w, 0);	/* width in text mode (slower) */
 
 		if (setmode)
 		{
@@ -909,6 +973,9 @@ static int txt_read
 		/* Determine window text length and width */
 
 		w->nlines = txt_nlines(w);
+/*
+		w->columns = (w->hexmode) ? txt_width(w, 1) : w->twidth;
+*/
 		w->columns = txt_width(w, w->hexmode);
 	}
 
@@ -1049,12 +1116,12 @@ void compare_files( WINDOW *w, int n, int *list )
 		nc, 				/* number of bytes to compare */
 		ii;					/* counter of synchronization attempts */
 
+	XDINFO 
+		info;				/* dialog info structure */
+
 	boolean
 		sync = TRUE, 		/* false while attempting to resynchronize */
 		diff = FALSE;		/* true if not equal files */
-
-	XDINFO 
-		info;				/* dialog info structure */
 
 
 	/* 
@@ -1284,9 +1351,15 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 						   long py, int tabsize, boolean hexmode,
 						   boolean setmode, int *error) 
 {
-	TXT_WINDOW *w;
-	RECT oldsize;
-	WDFLAGS oldflags;
+	TXT_WINDOW
+		*w;
+
+	RECT
+		oldsize;
+
+	WDFLAGS
+		oldflags;
+
 
 	wd_in_screen( info );
 
@@ -1343,13 +1416,24 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
 
 boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 {
-	int j = 0, error;
-	const char *file;
+	int 
+		j = 0,
+		error;
 
-	while ((j < MAXWINDOWS - 1) && (textwindows[j].used != FALSE))
+	const char
+		*file;
+
+	WINFO
+		*textwj = textwindows;
+
+
+	while ((j < MAXWINDOWS - 1) && (textwj->used != FALSE))
+	{
 		j++;
+		textwj++;
+	}
 
-	if (textwindows[j].used)
+	if (textwj->used)
 		return alert_iprint(MTMWIND), FALSE;
 
 	if ( thefile )
@@ -1357,7 +1441,7 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 	else if ((file = itm_fullname(w, item)) == NULL)
 		return FALSE;
 
-	if (txt_do_open(&textwindows[j], file, 0, 0, options.tabsize, FALSE, TRUE, &error) == NULL)
+	if (txt_do_open(textwj, file, 0, 0, options.tabsize, FALSE, TRUE, &error) == NULL)
 	{
 		xform_error(error);
 		return FALSE;
@@ -1371,7 +1455,9 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 		long
 			ppy = 0;	/* line in which the string is   */
 
-		TXT_WINDOW *tw = (TXT_WINDOW *)(textwindows[j].typ_window);
+		TXT_WINDOW
+			*tw = (TXT_WINDOW *)(textwj->typ_window);
+
 		search_nsm = 0; /* this search is finished; cancel the finds */
 
 		/* Find in which line and column the found string is */
@@ -1390,7 +1476,6 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 #endif
 
 	return TRUE;
-
 }
 
 
@@ -1427,15 +1512,17 @@ CfgNest text_one
 {
 	if (io == CFG_SAVE)
 	{
-		int i = 0;
-		TXT_WINDOW *tw;
+		int
+			i = 0;
+
+		TXT_WINDOW
+			*tw;
 	
 		/* Identify window's index in WINFO by the pointer to that window */
 
-		while ((WINDOW *) textwindows[i].typ_window != that.w)
+		while ((tw = (TXT_WINDOW *)textwindows[i].typ_window) != (TXT_WINDOW *)that.w)
 			i++;
-	
-		tw = (TXT_WINDOW *)textwindows[i].typ_window;
+
 		that.index = i;
 		that.px = tw->px;
 		that.py = tw->py;

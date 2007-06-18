@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -74,6 +74,7 @@ extern XDINFO
 
 extern int 
 	sl_noop;
+
 
 /*
  * Note: Indexes below must agree with the order of radiobuttons
@@ -237,6 +238,7 @@ static boolean icntype_dialog
 )
 {
 	int 
+		il,
 		button, 
 		theic = it->icon, 
 		title;
@@ -265,14 +267,16 @@ static boolean icntype_dialog
 	switch( use & (LS_FIIC | LS_FOIC | LS_PRIC) )
 	{
 		case LS_FOIC:
-			obj_unhide(addicon[ICSHFLD]); 
+			il = ICSHFLD; 
 			break;
 		case LS_PRIC:
-			obj_unhide(addicon[ICSHPRG]); 
+			il = ICSHPRG; 
 			break;
 		default:	/* LS_FIIC */
-			obj_unhide(addicon[ICSHFIL]);
+			il = ICSHFIL;
 	}
+
+	obj_unhide(addicon[il]);
 
 	/* Set dialog title and initial name */
 
@@ -289,7 +293,7 @@ static boolean icntype_dialog
 	obj_unhide(addicon[ADDBUTT]);
 
 	sl_noop = 0;
-	button = icn_dialog(&sl_info, &theic, ICNTYPE, options.win_pattern, options.win_color);
+	button = icn_dialog(&sl_info, &theic, ICNTYPE, options.win_pattern, options.win_colour);
 	xd_close(&icd_info);
 
 	cv_formtofn(thename, addicon, ICNTYPE);
@@ -465,7 +469,10 @@ static void icnt_move(int to, int from, ICONTYPE *it)
 
 /*
  * Move program icons from/to files or programs group, depending on whether
- * their name mask is currently that of a program or a file
+ * their name mask is currently that of a program or a file.
+ * Icons for program-types files can be set only based on item names or
+ * name masks. Execute rights are not considered here; they do not make sense
+ * in this context anyway.
  */
 
 void icnt_fix_ictypes(void)
@@ -478,6 +485,8 @@ void icnt_fix_ictypes(void)
 	{
 		next = it->next;
 
+		/* Note: a mask only is given to prg_isprogram() below */
+
 		if(prg_isprogram(it->type))
 			icnt_move( PROG_LIST, FILE_LIST, it);
 
@@ -489,6 +498,8 @@ void icnt_fix_ictypes(void)
 	while(it)
 	{
 		next = it->next;
+
+		/* Note: a mask only is given to prg_isprogram() below */
 
 		if(!prg_isprogram(it->type))
 			icnt_move(FILE_LIST, PROG_LIST, it);

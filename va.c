@@ -83,7 +83,7 @@ boolean
 int
 	av_current;				/* ap_id of the currently messaging AV-client */
 
-extern FONT 
+extern XDFONT 
 	dir_font;				/* data for the font used in directories */
 
 AVTYPE 
@@ -96,9 +96,6 @@ static AVSTAT
 
 AVSETW
 	avsetw;					/* size for the next window */
-
-static const char
-	qc = 39;				/* single-quote character */
 
 const char
 	*thisapp = "DESKTOP ";	/* AV-protocol name of this application */
@@ -126,7 +123,7 @@ static const int answertypes[]=
 
 #endif
 
-
+#define SINGLE_Q 39 /* single quote character */
 
 /*
  * Redraw AV-client's wndow
@@ -234,7 +231,7 @@ WINDOW *va_accw(void)
  * windows structures will be deleted 
  */
 
-void va_delall(int ap_id, bool force)
+void va_delall(int ap_id, boolean force)
 {
 	WINDOW *prev, *w = xw_last();
 
@@ -462,7 +459,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 
 				/* Double quotes must be converted to single quotes */
 
-				strcpyrq(global_memory, (char *)cmdl, qc, &fb);
+				strcpyrq(global_memory, (char *)cmdl, SINGLE_Q, &fb);
 				va_clranswer(va_answer);
 
 				va_answer[0] = VA_START;
@@ -573,16 +570,16 @@ boolean va_add_name(int type, const char *name)
 
 		/* Add the name, quoting it if necessary */
 
-		pd = strcpyq(pd, name, qc);
+		pd = strcpyq(pd, name, SINGLE_Q);
 
 		/* Add a trailing backslash to folder names */
 
 		if(*name && (type == ITM_FOLDER || type == ITM_PREVDIR))
 		{
-			if(*(pd - 1) == qc)
+			if(*(pd - 1) == SINGLE_Q)
 			{
 				*(pd - 1) = '\\';
-				*pd++ = qc;
+				*pd++ = SINGLE_Q;
 			}
 			else
 				*pd++ = '\\';
@@ -1316,7 +1313,7 @@ void handle_av_protocol(const int *message)
 			{
 				/* Attempt to extract next item name (possibly quoted) */
 
-				if (*p == qc && *(p + 1) != qc) /* single quote, but not doubled */
+				if (*p == SINGLE_Q && *(p + 1) != SINGLE_Q) /* single quote, but not doubled */
 				{
 					p++;		/* move to the character after the quote */
 					q = TRUE;	/* quoting has been started */
@@ -1325,7 +1322,7 @@ void handle_av_protocol(const int *message)
 				strip_name(p, p);		/* strip leading/trailing blanks */
 				cq = p;
 
-				while((cq = strchr(cq, qc)) != NULL && *(cq + 1) == qc)
+				while((cq = strchr(cq, SINGLE_Q)) != NULL && *(cq + 1) == SINGLE_Q)
 				{
 					cq += 2;		
 				}

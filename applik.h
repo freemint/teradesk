@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -35,19 +35,22 @@ typedef struct appl
 	char *cmdline;
 	char *localenv;
 	char *name;
-	int fkey;
 	FTYPE *filetypes;
+	int fkey;
 } APPLINFO;
 
-extern APPLINFO awork, *applikations;
+extern APPLINFO 
+	awork,
+	*applikations;
 
-extern int naap;
+extern int
+	naap;
+
 
 CfgNest app_config;
 
 void app_init(void);
 void app_default(void);
-
 void app_install(int use, APPLINFO **applist);
 APPLINFO *app_find(const char *file, boolean dial);
 APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);

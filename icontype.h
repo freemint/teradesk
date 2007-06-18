@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -27,12 +27,10 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type);
 void icnt_settypes(void);
 void icnt_init(void);
 void rem_all_icontypes(void);
+void icnt_fix_ictypes(void);
 
 #if __USE_MACROS
 #define icnt_default rem_all_icontypes
 #else
 void icnt_default(void);
 #endif
-
-void icnt_fix_ictypes(void);
-

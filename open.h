@@ -1,6 +1,6 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren.
- *                               2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -20,4 +20,5 @@
  */
 
 extern boolean onfile;
+
 boolean item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );

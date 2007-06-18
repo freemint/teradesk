@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -82,10 +82,12 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 		/* Try .AA, .AB, .AC ... .AZ, .BA, .BB ... .ZZ */
 
 		pipename[18]++;
+
 		if (pipename[18] > 'Z')
 		{
 			pipename[18] = 'A'; 
 			pipename[17]++;
+
 			if (pipename[17] > 'Z')
 				break;
 		}
@@ -175,7 +177,6 @@ int ddstry(int fd, char *ext, char *name, long size)
 				(int)Fwrite(fd, 4L, &size) + 
 				(int)Fwrite(fd, (long)strlen(name) + 1, name) /* in Magic docs there is no + 1 */		
 			)
-
 			== hdrlen
 		) 
 		{

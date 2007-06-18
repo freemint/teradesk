@@ -1,7 +1,7 @@
 
-;  Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren.
-;                                      2002, 2003  H. Robbers,
-;                          2003, 2004, 2005, 2006  Dj. Vukovic
+;  Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
+;                          2002 - 2003  H. Robbers,
+;                          2003 - 2007  Dj. Vukovic
 ;
 ;  This file is part of Teradesk.
 ;
@@ -120,10 +120,14 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 ; -L: local symbols (linker)
 ; -V: verbose output (assembler & linker)
 
-;.C [-W-par]
+
+; without debug info
+
 .C [-C -P -G -Ilibrary\xdialog -Iinclude]
 .S [-S -V -Iinclude]
 .L [-S=8192 -H=512 -V]
+
+; with debug info
 
 ;.C [-Y -C -P -G -Ilibrary\xdialog -Iinclude]
 ;.S [-S -V -Iinclude]

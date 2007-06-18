@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright (c)        1993, 1994, 2002  W. Klaren,
- *                                                            2002, 2003  H. Robbers,
- *                                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                               2002 - 2003  H. Robbers,
+ *                                               2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -23,6 +23,9 @@
 
 #include <string.h>
 
+#define SINGLE_Q 39
+#define DOUBLE_Q '"'
+
 
 /* 
  * Safe string copy- never more than len-1 characters, and
@@ -31,14 +34,14 @@
 
 char *strsncpy(char *dst, const char *src, size_t len)	
 {
-	*dst = 0; /* just in case strncpy doesn't copy empty string */
-	strncpy(dst, src, len - 1);		/* len is typical: sizeof(achararray) */
+	*dst = 0; 					/* just in case strncpy doesn't copy empty string */
+	strncpy(dst, src, len - 1);	/* len is typical: sizeof(achararray) */
 	*(dst + len - 1) = 0;
 	return dst;
 }
 
 
-/*
+/* this is never used in TeraDesk
 
 /*
  * Copy a string 's' and right-justify in a field 'd' with length 'len'. 
@@ -52,8 +55,13 @@ char *strsncpy(char *dst, const char *src, size_t len)
 
 char *strcpyj(char *d, const char *s, size_t len)
 {
-	size_t l, b;
-	int i = 0;
+	size_t
+		l,
+		b;
+
+	int
+		i = 0;
+
 
 	l = strlen(s);
 	if (l > len)
@@ -78,9 +86,15 @@ char *strcpyj(char *d, const char *s, size_t len)
 
 size_t strlenq(const char *name)
 {
-	size_t l = 3;
-	char *p = (char *)name;
-	int q = 0;
+	size_t
+		l = 3;
+
+	char
+		*p = (char *)name;
+
+	int
+		q = 0;
+
 
 	while(*p)
 	{
@@ -89,7 +103,7 @@ size_t strlenq(const char *name)
 		if(*p == ' ')
 			q = 1;					/* quote if space found */
 
-		if(*p == 39 || *p == 34)
+		if(*p == SINGLE_Q || *p == DOUBLE_Q)
 		{
 			q = 1;					/* quote if embedded quote found */
 			l++;					/* and it has to be doubled */
@@ -118,7 +132,7 @@ char *strcpyq(char *d, const char *s, char qc)
 
 	/* If there are embedded blanks or quotes, start quoting */
 
-	if(strchr(s, ' ') || strchr(s, 34) || strchr(s, 39) )
+	if(strchr(s, ' ') || strchr(s, DOUBLE_Q) || strchr(s, SINGLE_Q) )
 	{
 		*d++ = qc;
 		q = 1; 
@@ -160,7 +174,11 @@ char *strcpyq(char *d, const char *s, char qc)
 
 char *strcpyuq(char *d, char *s)
 {
-	char h, fqc = 0, q = 0;
+	char
+		h,
+		fqc = 0,
+		q = 0;
+
 
 	while ((h = *s++) != 0)
 	{
@@ -175,7 +193,7 @@ char *strcpyuq(char *d, char *s)
 
 		/* Is this a quote character (see also va_start_prg() in va.c) */
 
-		else if ((h == fqc) || (!fqc && (h == 39 || h == 34))) /* 34= double quote, 39=single quote */
+		else if ((h == fqc) || (!fqc && (h == SINGLE_Q || h == DOUBLE_Q))) /* 34= double quote, 39=single quote */
 		{
 			/* two consequtive quotes mean that one is part of the string */
 
@@ -223,7 +241,7 @@ char *strcpyrq(char *d, const char *s, char qc, char **fb)
 
 	while(*p)
 	{
-		if( ((*p == fqc) || (!fqc && (*p == 39 || *p == 34))) && p[1] != *p)
+		if( ((*p == fqc) || (!fqc && (*p == SINGLE_Q || *p == DOUBLE_Q))) && p[1] != *p)
 		{
 			/* This is one quote character; start or end quoting */
 

@@ -35,7 +35,6 @@
 #include <mint.h>
 #include <system.h>
 #include <xdialog.h>
-#include <internal.h>
 #include <xscncode.h>
 
 #include "resource.h"
@@ -91,13 +90,23 @@ int
 SCRINFO 
 	screen_info;	/* Screen handle, size rectangle, font size */ 
 
-FONT 
+XDFONT 
 	def_font;		/* Data for the default (system) font */
+
+char
+	*teraenv,		/* pointer to value of TERAENV environment variable */ 
+	*fsdefext,		/* default filename extension in current OS      */
+	*infname,		/* name of V3 configuration file (teradesk.inf)  */ 
+	*palname,		/* name of V3 colour palette file (teradesk.pal) */
+	*global_memory;	/* Globally available buffer for passing params  */
+
+static char
+	*definfname;	/* name of the initial configuration file at startup */
 
 /* Names of menu boxes in the main menu */
 
 static const int 
-	menu_items[6] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
+	menu_items[] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
 
 #if _MINT_
 boolean			/* No need to define values, always set when starting main() */
@@ -115,17 +124,6 @@ static boolean
 	quit = FALSE,		/* true if teradesk should finish       */ 
 	shutdown = FALSE,	/* true if system shutdown is required  */
 	shutting = FALSE;	/* true if started shutting down        */
-
-char
-	*teraenv,		/* pointer to value of TERAENV environment variable */ 
-	*fsdefext,		/* default filename extension in current OS      */
-	*infname,		/* name of V3 configuration file (teradesk.inf)  */ 
-	*palname,		/* name of V3 colour palette file (teradesk.pal) */
-	*global_memory;	/* Globally available buffer for passing params  */
-
-static char
-	*definfname;	/* name of the initial configuration file at startup */
-
 
 #if _LOGFILE
 FILE
@@ -227,9 +225,9 @@ CfgEntry Options_table[] =
 	{CFG_D, "vres", &options.vrez	},			/* video resolution */
 	/* patterns and colours */
 	{CFG_D, "dpat", &options.dsk_pattern},		/* desk pattern */
-	{CFG_D, "dcol", &options.dsk_color	},		/* desk colour  */
+	{CFG_D, "dcol", &options.dsk_colour	},		/* desk colour  */
 	{CFG_D, "wpat", &options.win_pattern},		/* window pattern */
-	{CFG_D, "wcol", &options.win_color	},		/* window colour  */
+	{CFG_D, "wcol", &options.win_colour	},		/* window colour  */
 
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -391,7 +389,10 @@ static void info(void)
 		ttsize = 0L;
 	}
 
-	/* Display currently available memory */
+	/* 
+	 * Display currently available memory. 
+	 * Maximum correctly displayed size is 2GB 
+	 */
 
 	rsc_ltoftext(infobox, INFSTMEM, stsize );
 	rsc_ltoftext(infobox, INFTTMEM, ttsize ); 
@@ -611,49 +612,6 @@ static void ins_shorts(void)
 }
 
 
-/*
- * routine arrow_form_do handles some redraws related to xd_form_do()
- * which are needed to create the effect of a pressed (3d) arrow button
- * on some objects in dialogs
- */
-
-int arrow_form_do
-(
-	XDINFO *treeinfo, 	/* dialog tree info */
-	int *oldbutton		/* previously pressed button, 0 if none */
-)
-{
-	OBJECT *tree = treeinfo->tree;
-	int button;
-
-
-	if ( *oldbutton > 0 )
-	{
-		wait(ARROW_DELAY); 
-
-		if ( (xe_button_state() & 1) == 0 )
-		{
-			obj_deselect(tree[*oldbutton]); 
-			xd_drawthis( treeinfo, *oldbutton ); 
-			*oldbutton = 0;
-		}	
-		else
-			return *oldbutton;
-	}
-
-	button = xd_form_do(treeinfo, ROOT) & 0x7FFF;
-
-	if ( button != *oldbutton )
-	{
-		obj_select(tree[button]);
-		xd_drawthis( treeinfo, button );
-		*oldbutton = button;
-	}
-
-	return button;
-}
-
-
 /* 
  * Handle the "Preferences" dialog for setting some 
  * TeraDesk configuration aspects 
@@ -666,7 +624,6 @@ static void setpreferences(void)
 
 	int 
 		button = OPTMNEXT,	/* current button index */
-		oldbutton = -1,		/* aux for arrow_form_do */
 		mi,					/* menui - MFIRST */
 		redraw = TRUE,		/* true if to redraw menu item and key def */
 		lm,					/* length of text field in current menu item */
@@ -677,14 +634,14 @@ static void setpreferences(void)
 		*tmpmi,
 		tmp[NITEM + 2];		/* temporary kbd shortcuts (until OK'd) */
 
-	char 
-		aux[5];				/* temp. buffer for string manipulation */
-
 	XDINFO 
-		prefinfo;
+		prefinfo;			/* dialog handling structure */
  
 	boolean
 		shok;				/* TRUE if a shortcut is acceptable */
+
+	char
+		aux[5];				/* temp. buffer for string manipulation */
 
 
 	/*  Set state of radio buttons and checkbox button(s) */
@@ -732,7 +689,7 @@ static void setpreferences(void)
 				for ( i= min(lf, lm - 6); i < lf; i++ ) 
 					setprefs[OPTMTEXT].ob_spec.free_string[i] = ' '; 
 
-				/* Display defined shortcut in ASCII form */
+				/* Display defined shortcut and assigned key in ASCII form */
 
 				disp_short( setprefs[OPTKKEY].ob_spec.tedinfo->te_ptext, *tmpmi, TRUE );
         		xd_drawthis( &prefinfo, OPTMTEXT );
@@ -744,7 +701,7 @@ static void setpreferences(void)
 			{
 				shok = TRUE;
 
-				button = arrow_form_do ( &prefinfo, &oldbutton ); 
+				button = xd_form_do ( &prefinfo, ROOT ); 
 
 				/* Interpret shortcut from the dialog */
 
@@ -900,6 +857,9 @@ static void setpreferences(void)
 
 static void copyprefs(void)
 {
+	char 
+		*copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
+
 	int 
 		i, 
 		button;
@@ -907,8 +867,6 @@ static void copyprefs(void)
 	static const int 
 		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_SHOWD, CF_KEEPS, P_HEADER};
  
-	char 
-		*copybuffer = copyoptions[COPYBUF].ob_spec.tedinfo->te_ptext;	
 
 	/* Set states of appropriate options buttons and copy buffer field */
 
@@ -964,13 +922,16 @@ static void opt_default(void)
 	options.attribs = FA_SUBDIR | FA_SYSTEM;
 	options.sexit = SAVE_WIN;					
 #endif
-	options.mode = TEXTMODE;
-	options.aarr = 1;										    
-	options.sort = WD_SORT_NAME;							
+	options.aarr = 1;	
 
-	set_dsk_background((xd_ncolors > 2) ? 7 : 4, GREEN);
+/* There is no need for this because all of options is set to 0 in memclr() above									    
+	options.sort = WD_SORT_NAME;
+	options.mode = TEXTMODE;
+	options.dsk_pattern = 0;
+	option.dsk_colour = 0; 							
 	options.win_pattern = 0;	/* no pattern */
-	options.win_color = WHITE;
+	options.win_colour = WHITE;
+*/
 }
 
 
@@ -1093,8 +1054,8 @@ static CfgNest opt_config
 				/* Block possible junk from some fields in config file */
 
 				options.attribs &= 0x0077;
-				options.dsk_pattern &= 0x0007;
-				options.win_pattern &= 0x0007;
+				options.dsk_pattern = limpattern(options.dsk_pattern);
+				options.win_pattern = limpattern(options.win_pattern);
 /* currently not used
 				options.vrez &= 0x0007;
 */
@@ -1105,7 +1066,7 @@ static CfgNest opt_config
 #if PALETTES
 				/* Load palette. Ignore errors */
 
-				handle_colors(CFG_LOAD);
+				handle_colours(CFG_LOAD);
 #endif
 				/* Set video state but do not change resolution */
 
@@ -1113,7 +1074,7 @@ static CfgNest opt_config
 
 				/* If all is OK so far, start setting TeraDesk */
 
-				set_dsk_background(options.dsk_pattern, options.dsk_color);
+				set_dsk_background(options.dsk_pattern, options.dsk_colour);
 			}
 		}
 	}
@@ -1147,7 +1108,7 @@ static void save_options(const char *fname)
 
 	/* First save the palette (ignore errors) */
 #if PALETTES
-		handle_colors(CFG_SAVE);
+		handle_colours(CFG_SAVE);
 #endif
 
 	/* Then save the configuration */
@@ -1183,7 +1144,7 @@ static void save_options_as(void)
 /* 
  * Load configuration from an explicitely specified config file.
  * If this does not succeed, attempt to recover the state obtained
- * from a previously loaded configuration file.
+ * from a previously loaded configuration file (i.e. reload that file).
  */
 
 void load_settings
@@ -1262,6 +1223,7 @@ static boolean init(void)
 		logname  = strdup(infname);
 		strcpy(strrchr(logname,'.'), ".log");
 		logfile = fopen((const char *)logname, "w");
+
 		if (logfile == NULL)
 			printf("\n CAN'T OPEN LOGFILE");
 		else
@@ -1328,7 +1290,7 @@ static void init_vdi(void)
 	screen_size();
 	vqt_attributes(vdi_handle, lwork_out);
 	fnt_setfont(1, (int) (((long) lwork_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
-	def_font.effects = 0;
+	def_font.effects = FE_NONE;
 	def_font.colour = BLACK;
 }
 
@@ -1457,11 +1419,12 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
  * (some key combinations can can not be differed from others)
  */
 
-int scansh ( int key, int kstate )
+static int scansh ( int key, int kstate )
 {
 	int 
 		a = touppc(key & 0xFF),
 		h = key & 0x80; 		/* upper half of the 255-characters set */
+
 
 	if( key & XD_SCANCODE)
 		return -1;

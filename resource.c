@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -38,7 +38,6 @@
 #include "config.h"
 #include "window.h"
 #include "lists.h" 
-#include "internal.h"
 #include "stringf.h"
 
 OBJECT *menu,
@@ -119,7 +118,10 @@ void rsc_hidemany(OBJECT *tree, int *items)
 
 static void set_menubox(int box)
 {
-	int x, dummy, offset;
+	int
+		x,
+		dummy,
+		offset;
 
 	objc_offset(menu, box, &x, &dummy);
 
@@ -139,8 +141,12 @@ static void set_menubox(int box)
 
 static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 {
-	int h3d2 = 2 * aes_hor3d + 1;
-	OBJECT *ob = &tree[object];
+	OBJECT
+		*ob = &tree[object];
+
+	int
+		h3d2 = 2 * aes_hor3d + 1;
+
 
 	ob->r.x = tree[left ].r.x + tree[left].r.w + h3d2;
 	ob->r.w = tree[right].r.x - ob->r.x - h3d2;
@@ -156,12 +162,18 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 
 static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 {
-	OBJECT *ob = &tree[object];
-	int v3d1 = aes_ver3d + 1;
+	OBJECT
+		*ob = &tree[object];
 
-	ob->r.x -= aes_hor3d;
-	ob->r.w += ( 2 * aes_hor3d - ((aes_hor3d) ? 1 : 0 ) );
-	tree[ob->ob_head].r.x += aes_hor3d;
+	int
+		v3d1 = aes_ver3d + 1;
+
+	if(aes_hor3d)
+	{
+		ob->r.x -= aes_hor3d;
+		ob->r.w += 2 * aes_hor3d - 1;
+		tree[ob->ob_head].r.x += aes_hor3d;
+	}
 
 	ob->r.y = tree[up  ].r.y + tree[up].r.h + v3d1;
 	ob->r.h = tree[down].r.y - ob->r.y - v3d1;
@@ -174,7 +186,7 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 
 
 /*
- * Set object vertical position to n * 1/2 char vertical distance 
+ * Set object vertical position to chalfs * 1/2 char vertical distance 
  * from reference object; in low-res, objects positioned at non-integer
  * vertical positions (in char height units) get badly placed, this
  * is an attempt to fix the flaw. Seems to work ok. 
@@ -201,8 +213,14 @@ void rsc_yfix
 
 static void mn_del(int box, int item)
 {
-	int i, y, ch_h = screen_info.fnt_h;
-	OBJECT *tree = menu;
+	OBJECT
+		*tree = menu;
+
+	int 
+		i,
+	 	y,
+		ch_h = screen_info.fnt_h;
+
 
 	tree[box].r.h -= ch_h;
 	y = tree[item].r.y;
@@ -212,6 +230,7 @@ static void mn_del(int box, int item)
 	{
 		if (tree[i].r.y > y)
 			tree[i].r.y -= ch_h;
+
 		i = tree[i].ob_next;
 	}
 
@@ -235,7 +254,35 @@ static void rsc_fixmenus(void)
 	 * about buffer size
 	 */
 
+	RECT
+		desk,
+		boxrect;
+
+	MFDB
+		mfdb;
+
+	union
+	{
+		long size;
+		struct
+		{
+			int high;
+			int low;
+		} words;
+	} buffer;
+
+	long
+		mnsize = 0;
+
+	int
+		i,
+		n,
+		dummy;
+
+
 #if _MENUDEL
+
+	static const char maxbox[] = {MNVIEWBX, MNOPTBOX};
 
 	/* List of menuboxes and items in them to be deleted (maybe) */
 
@@ -262,22 +309,6 @@ static void rsc_fixmenus(void)
 		MSHDAT,MSHTIM,MSHATT,MSUNSORT,		/* TOS < 1.04 only */
 		MPRGOPT,MWDOPT,MVOPTS,MSAVEAS
 	};
-
-	static const char maxbox[] = {MNVIEWBX, MNOPTBOX};
-
-	int i, n, dummy;
-	long mnsize = 0;
-	RECT desk, boxrect;
-	MFDB mfdb;
-	union
-	{
-		long size;
-		struct
-		{
-			int high;
-			int low;
-		} words;
-	} buffer;
 
 	/* 
 	 * memory needed for the menu is estimated from the
@@ -348,8 +379,8 @@ void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
 
 /*
  * Fix template and validation string for a field converted
- * to 8+3 filename form. New validation and template are
- * taken from the resource.
+ * to 8+3 filename form, validating only characters permitted in TOS
+ * filenames. New validation and template are taken from the resource.
  */
 
 void rsc_tostmplt(TEDINFO *ted)
@@ -369,21 +400,24 @@ void rsc_tostmplt(TEDINFO *ted)
  *  just = 0: no change of position
  *  just > 0: move left edge by "just" characters to the right
  *  just < 0: move right edge by "just"-1 characters to the left
- * 
- * See also (changes in) routines cv_fntoform and cv_formtofn 
  *
+ * id parameter "extra" is true, validation string suitable for masks is used;
+ * otherwise, validation permits only characters valid in TOS filenames.
+ * 
+ * See also routines cv_fntoform() and cv_formtofn() 
  */
  
-static char *tos_fnform( OBJECT *tree, int object, int just )
+static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
 {
-	int
-		dx = 0;
-
 	OBJECT
 		*obj = tree + object;
 
 	TEDINFO 
 		*ted = xd_get_obspecp(obj)->tedinfo; 
+
+	int
+		dx = 0;
+
 
 	/* Fix horizontal position and size */ 
 
@@ -403,13 +437,17 @@ static char *tos_fnform( OBJECT *tree, int object, int just )
 
 	/* Change validation and template strings */
 
-#if _EDITLABELS
-	rsc_tostmplt(ted);
-#else
-	rsc_fixtmplt(ted, get_freestring(TFNVALID), get_freestring(TFNTMPLT));
-#endif
+	rsc_fixtmplt(ted, get_freestring((extra) ? XFNVALID : TFNVALID), get_freestring(TFNTMPLT));
+}
 
-	return ted->te_ptext;
+
+/*
+ * A briefer form of the above, used several times for a saving in size
+ */
+
+static void tos_bform(OBJECT *tree, int object)
+{
+	tos_fnform(tree, object, -1, FALSE);
 }
 
 
@@ -436,10 +474,11 @@ void rsc_init(void)
 		i, 
 		v3d2 = 2 * aes_ver3d + 1;
 
-	static const char /* Beware: indices must be below 127 */ 
+	static const char /* Beware: all these indices must be below 127 */ 
 		xleft[] = {DSKPDOWN, DSKCDOWN, WINPDOWN, WINCDOWN},
 		xitem[] = {DSKPUP, DSKCUP, WINPUP, WINCUP},
-		xright[] = {DSKPAT, DSKPAT, WINPAT, WINPAT};
+		xright[] = {DSKPAT, DSKPAT, WINPAT, WINPAT},
+		xv[] = {DSKCDOWN, DSKCUP, WINCDOWN, WINCUP};
 
 	/* Get pointers to dialog trees in the resource */
 
@@ -511,14 +550,16 @@ void rsc_init(void)
 	rsc_xalign(setprefs, OPTMPREV, OPTMNEXT, OPTMTEXT);
 
 	for(i = 0; i < 4; i++)
+	{
 		rsc_xalign(wdoptions, (int)xleft[i], (int)xitem[i], (int)xright[i]);
+		wdoptions[xv[i]].r.y += v3d2;
+	}
 
-	wdoptions[DSKCUP].r.y   += v3d2;
-	wdoptions[DSKCDOWN].r.y += v3d2;
-	wdoptions[WINCUP].r.y   += v3d2;
-	wdoptions[WINCDOWN].r.y += v3d2;
-	wdoptions[DSKPAT].r.h   += v3d2;
-	wdoptions[WINPAT].r.h   += v3d2;
+	wdoptions[DSKPAT].r.h += v3d2;
+	wdoptions[WINPAT].r.h += v3d2;
+
+	wdoptions[WDDCOLT].r.y = wdoptions[DSKCUP].r.y;
+	wdoptions[WDWCOLT].r.y = wdoptions[WINCUP].r.y;
 
 	addicon[ICONBACK].r.w = addicon[ICSELBOX].r.w - addicon[ICNUP].r.w - 2 * aes_hor3d - 1;
 
@@ -538,12 +579,16 @@ void rsc_init(void)
 	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy-format dialog */		
 	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
-	/* Assuming that filemask dialog and fonts dialog listboxes have the same size... */
+	/*
+	 * Assuming that filemask dialog and fonts dialog listboxes
+	 * both have NLINES elements...
+	 */
 
 	for ( i = 0; i < NLINES; i++)				/* setmask & font dialogs */
 	{
-		rsc_yfix( setmask, FTPARENT, FTYPE1 + i, 2 * i + 1 );
-		rsc_yfix( wdfont, WDPARENT, WDFONT1 + i, 2 * i + 1 ); 
+		int i2 = i * 2 + 1;
+		rsc_yfix( setmask, FTPARENT, FTYPE1 + i, i2 );
+		rsc_yfix( wdfont, WDPARENT, WDFONT1 + i, i2 ); 
 	}		
 
 	/*
@@ -562,28 +607,35 @@ void rsc_init(void)
 
 		/* These are SNAMEs */
 
-		tos_fnform( addicon, ICNTYPE, 3 );
-		tos_fnform( addprgtype, PRGNAME, 3 );
-		tos_fnform( ftydialog, FTYPE0, -1);
-		tos_fnform( setmask, FILETYPE, 3);
+		tos_fnform( addicon, ICNTYPE, 3, TRUE );
+		tos_fnform( addprgtype, PRGNAME, 3, TRUE );
+		tos_fnform( ftydialog, FTYPE0, -1, TRUE);
+		tos_fnform( setmask, FILETYPE, 3, TRUE);
 	
 		for ( i = 0; i < NLINES; i++ )
-			tos_fnform( setmask, FTYPE1 + i, 3 );
+			tos_fnform( setmask, FTYPE1 + i, 3, FALSE );
 
 		/* These are VLNAMEs */
 
-		tos_fnform(fileinfo, FLNAME, -1);
-		tos_fnform(copyinfo, CPFILE, -1);
-		tos_fnform(applikation, APNAME, -1);
-		tos_fnform(nameconflict, NEWNAME, -1);
-		tos_fnform(nameconflict, OLDNAME, -1);
-		tos_fnform(searching, SMASK, -1);
-		tos_fnform(newfolder, DIRNAME, -1);
+		tos_bform(fileinfo, FLNAME);
+		tos_bform(copyinfo, CPFILE);
+		tos_bform(applikation, APNAME);
+		tos_bform(nameconflict, NEWNAME);
+		tos_bform(nameconflict, OLDNAME);
+		tos_bform(newfolder, DIRNAME);
 
-		/* Path should be upppercase only. Icon namemask must allow ".." */
+		tos_fnform(searching, SMASK, -1, TRUE);
 
-		xd_get_obspecp(&applikation[APPATH])->tedinfo->te_pvalid[0] = 'x';
-		xd_get_obspecp(&addicon[ICNTYPE])->tedinfo->te_pvalid[8] = 'P';
+		/* Paths should be upppercase  and contain valid characters only */
+
+		*xd_pvalid(&applikation[APPATH]) = 'p';
+		*xd_pvalid(&compare[CFILE1]) = 'p';
+		*xd_pvalid(&compare[CFILE2]) = 'p';
+		*xd_pvalid(&addicon[IFNAME]) = 'p';
+
+ 		/* Icon namemask must allow ".." */
+
+		xd_pvalid(&addicon[ICNTYPE])[8] = 'p';
 
 		/* 
 		 * Below is substituted "Files and links" with "Files" if no mint.
@@ -618,11 +670,11 @@ void rsc_init(void)
 	 * only at startup of TeraDesk
 	 */
 
-	lblvalid = strdup((char *)fileinfo[FLLABEL].ob_spec.tedinfo->te_pvalid);
+	lblvalid = strdup(xd_pvalid(&fileinfo[FLLABEL]));
 	lbltmplt = strdup((char *)fileinfo[FLLABEL].ob_spec.tedinfo->te_ptmplt);
 #endif
 #else
-	tos_fnform(fileinfo, FLLABEL, -1);
+	tos_bform(fileinfo, FLLABEL);
 #endif
 
 	*drvid = 0;
@@ -662,7 +714,7 @@ void rsc_title(OBJECT *tree, int object, int title)
 /*
  * Write a long integer into a formatted text field. 
  * Text is right-justified and padded with spaces on the left side.
- * Maximum length is 15 digits (no checking done).
+ * Maximum length is 14 decimal digits (no checking done).
  *
  * Parameters:
  *
@@ -682,44 +734,47 @@ void rsc_title(OBJECT *tree, int object, int title)
 
 void rsc_ltoftext(OBJECT *tree, int object, long value)
 {
-	long 
-		l2;
-
 	OBJECT 
 		*ob = tree + object;
 
 	TEDINFO 
 		*ti = xd_get_obspecp(ob)->tedinfo;
 
+	int 
+		l2;					/* length of the string representing the number */
+
 	char 
-		s[16], 
-		*s1 = s,
-		*p = ti->te_ptext;
+		s[16], 				/* temporary buffer for the string */
+		*s1 = s,			/* pointer to real beginning of s */
+		*p = ti->te_ptext;	/* pointer to a location in the destination */
 
 
-	ltoa(value, s, 10);			/* Convert value to ASCII, decimal. */
-	l2 = strlen(s);				/* Length of the number as string.  */
+	ltoa(value, s, 10);		/* Convert value to ASCII, decimal */
+	l2 = (int)strlen(s);	/* Length of this string  */
 
-    if((ob->ob_type & 0xFF) == G_FTEXT)
-	{
-		long 
-			i = 0, 
-			l1 = strlen(ti->te_pvalid);	/* Length of the text field.   */
-
-		while (i < (l1 - l2))
-		{
-			*p++ = ' ';				/* Fill with spaces. */
-			i++;
-		}
-	}
+ 	/* 
+	 * If value is negative, '-' will be ignored, but 'K' will be added,
+	 * so that length will remain the same
+	 */
 
 	if(value < 0)
 	{
-		s1++;
-		s[l2] = 'K';
-		s[l2 + 1] = 0;
+		s1++;			/* ignore the '-' in the string */
+		s[l2++] = 'K';	/* append 'K' to ASCII presentation of number */
+		s[l2] = 0;		/* and a termination 0 after the 'K' */
 	}
 
-	strsncpy(p, s1, l2 + 1);		/* Copy the number */
+   if((ob->ob_type & 0xFF) == G_FTEXT)
+	{
+		int l1 = (int)strlen(ti->te_pvalid) - l2;
+
+		while(l1 > 0)
+		{
+			*p++ = ' ';
+			l1--;
+		}
+	}
+
+	strcpy(p, s1);	/* copy the number. Beware: no checking of overrun */
 }
 

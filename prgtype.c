@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren.
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -71,8 +71,9 @@ void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
  * Find (or create!) information about an executable file or filetype;
  * input: filename of an executable file or a filename mask;
  * output: program type data
- * if filetype has not been defined, default values are set.
- * Also, if there is no list, set default values.
+ * if filetype has not been defined, default values are set. Default program
+ * type is TTP, so that even files that are not recognized by name extensions
+ * can be run. If there is no list, set default values too.
  * Note: a full path can be given as an argument, but only
  * the name proper is considered.
  */
@@ -89,7 +90,7 @@ void prg_info
 	{
 		/* If program type not defined or name not given: default */
 
-		pt->appl_type = PGEM;	/* GEM program */
+		pt->appl_type = PTTP;	/* TTP TOS program */
 		pt->flags = PD_PDIR;	/* Default directory is program directory */
 		pt->limmem = 0L;		/* No memory limit in multitasking */
 	}
@@ -98,22 +99,24 @@ void prg_info
 
 
 /*
- * Check if filename is to be considered as that of a program;
- * return true if name matches one of the masks defined
- * for executable files (programs)
+ * Check if a filename is to be considered as that of a program;
+ * return true if this name matches one of the masks defined for 
+ * executable files (programs). A mask can slao be given instead of name.
+ * Preferably a name only or a name mask should be given, 
+ * complete paths should be avoided.
  * Note: use of find_lsitem() here would bring a minor saving in
- * size 916 bytes) but would slow the program down.
+ * size (16 bytes) but would slow the program down.
  */
 
 boolean prg_isprogram(const char *fname)
 {
 	PRGTYPE *p = prgtypes;
-	char *name = fn_get_name(fname);
 
 	while (p)
 	{
-		if (cmp_wildcard(name, p->name))
+		if (cmp_wildcard(fname, p->name))
 			return TRUE;
+
 		p = p->next;
 	}
 
@@ -185,9 +188,10 @@ boolean prgtype_dialog
 		stop = FALSE;	/* loop until true */
 
 	int 
-		lbl,				/* text "filetype" of "application" */
-		title = DTADDPRG,	/* resource index of title to be used for dialog */
-		button;				/* code of pressed button */
+		*ptflags = &(pt->flags),/* save a few bytes in program size */
+		lbl,					/* text "filetype" of "application" */
+		title = DTADDPRG,		/* resource index of title to be used for dialog */
+		button;					/* code of pressed button */
 
 
 	/* Determine which title to put on dialog, depending on use */
@@ -217,11 +221,11 @@ boolean prgtype_dialog
 	(
 		addprgtype,
 		APTPAR1,
-		(pt->flags & (PD_PDIR | PD_PPAR)) / PD_PDIR + ATWINDOW
+		(*ptflags & (PD_PDIR | PD_PPAR)) / PD_PDIR + ATWINDOW
 	);
 
-	set_opt(addprgtype, pt->flags, PT_ARGV, ATARGV);
-	set_opt(addprgtype, pt->flags, PT_BACK, ATBACKG);
+	set_opt(addprgtype, *ptflags, PT_ARGV, ATARGV);
+	set_opt(addprgtype, *ptflags, PT_BACK, ATBACKG);
 
 #if _MINT_
 	/* 
@@ -229,7 +233,7 @@ boolean prgtype_dialog
 	 * so that the same config file can be edited in mutltitasking/single
 	 */
 
-	set_opt(addprgtype, pt->flags, PT_SING, ATSINGLE);
+	set_opt(addprgtype, *ptflags, PT_SING, ATSINGLE);
 	ltoa(pt->limmem / 1024L, addprgtype[MEMLIM].ob_spec.tedinfo->te_ptext, 10);
 
 #else
@@ -260,11 +264,11 @@ boolean prgtype_dialog
 						/* Get all data back from the dialog */
 
 						pt->appl_type = (ApplType)(xd_get_rbutton(addprgtype, APTPAR2) - APGEM);
-						pt->flags = (xd_get_rbutton(addprgtype, APTPAR1) - ATWINDOW) * PD_PDIR;
+						*ptflags = (xd_get_rbutton(addprgtype, APTPAR1) - ATWINDOW) * PD_PDIR;
 
-						get_opt(addprgtype, &pt->flags, PT_BACK, ATBACKG);
-						get_opt(addprgtype, &pt->flags, PT_ARGV, ATARGV);
-						get_opt(addprgtype, &pt->flags, PT_SING, ATSINGLE);
+						get_opt(addprgtype, ptflags, PT_BACK, ATBACKG);
+						get_opt(addprgtype, ptflags, PT_ARGV, ATARGV);
+						get_opt(addprgtype, ptflags, PT_SING, ATSINGLE);
 
 						strcpy( pt->name, thename);
 #if _MINT_
@@ -458,7 +462,7 @@ static CfgEntry prgty_table[] =
 
 
 /*
- * Configure all programtypes 
+ * Configure all program types 
  */
 
 CfgNest prg_config

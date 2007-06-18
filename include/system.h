@@ -1,6 +1,6 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers
  *
  * This file is part of Teradesk.
  *
@@ -64,7 +64,7 @@ typedef struct
 #define colorptr	( * (void **) 0x45AL )
 
 #define hdv_bpb		( *( long cdecl (**)( int dev ) ) 0x472L )
-#define hdv_rw		( *( long cdecl (**)( int rwflag,void *buf,int cnt,int recnr,int dev ) ) 0x476L )
+#define hdv_rw		( *( long cdecl (**)( int rwflag,void *buf,int cnt,int recnr,int dev,long lrecno)) 0x476L )
 #define hdv_mediach	( *( long cdecl (**)( int dev ) ) 0x47EL )
 
 #define conterm		( * (char *) 0x484L )

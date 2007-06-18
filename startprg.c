@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -162,13 +162,13 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 	int 
 		dummy,
 		error, 
-		*colors = NULL, 
+		*colours = NULL, 
 		stdout_handle, 
 		ostderr_handle;
 
-	/* If 'save color' option is set, save the current colors. */
+	/* If 'save colour' option is set, save the current colours. */
 
-	if ((options.vprefs & SAVE_COLORS) && ((colors = get_colors()) == NULL))
+	if ((options.vprefs & SAVE_COLOURS) && ((colours = get_colours()) == NULL))
 		return ENSMEM;
 
 	/* 
@@ -180,14 +180,14 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 	{
 		if ((stdout_handle = (int)Fdup(1)) < 0)	/* Get a copy of stdout for Fforce. */
 		{
-			free(colors);
+			free(colours);
 			return stdout_handle;
 		}
 
 		if ((ostderr_handle = (int)Fdup(2)) < 0)	/* Duplicate old stderr. */
 		{
 			Fclose(stdout_handle);
-			free(colors);
+			free(colours);
 			return ostderr_handle;
 		}
 
@@ -378,12 +378,12 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 		Fclose(stdout_handle);
 	}
 
-	/* Restore old colors. */
+	/* Restore old colours. */
 
-	if(colors)
+	if(colours)
 	{
-		set_colors(colors);
-		free(colors);
+		set_colours(colours);
+		free(colours);
 	}
 
 	return error;

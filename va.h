@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1997, 2002  W. Klaren.
- *                         2002, 2003  H. Robbers
- *                         2003, 2004  Dj. Vukovic
+ * Teradesk. Copyright (c) 1997 - 2002  W. Klaren.
+ *                         2002 - 2003  H. Robbers
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -89,7 +89,7 @@ extern const char *thisapp;
 
 void va_init(void);
 WINDOW *va_accw(void);
-void va_delall(int ap_id, bool force);
+void va_delall(int ap_id, boolean force);
 void rem_all_avstat(void);
 
 #if __USE_MACROS

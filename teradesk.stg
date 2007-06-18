@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: January 2007
+@$VER: June 2007
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.87
+                User's Manual for Tera Desktop V3.91
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            January 2007
+                               June 2007
 
 @autorefon
 
@@ -441,7 +441,7 @@ desktop icon for drives  A, B and C only,  and, if  that file is used,
 only those disk icons will be shown on the desktop).
 
 If you start  Tera Desktop without  TERADESK.INF in its directory, the
-program will complain that it can not find its configuration file. In
+program will complain  that it can not find its configuration file. In
 order to avoid this message appearing again,  activate "Save settings"
 in the Options menu.  Of course, before saving,  the configuration can
 first  be set  to  any  user's  particular  environment  and  taste by
@@ -635,21 +635,17 @@ selecting them, and then selecting Open... from the @{File link "Menu title: Fil
 4. We  shall  refer to keys  with square brackets enclosing the symbol
 written on the key itself. e.g. [Return], [Q] etc.
 
-5. Sometimes  we  mention  'masks'.  A  mask  is a sequence of symbols
-which  may or may not match a file name. Masks contain the symbols '*'
-and  '?'  as  well  as the standard symbols that  may appear in a file
-name.  In MiNT,  additional specifications like  [<chars>] and !<char>
-are possible.
+5. Sometimes we mention 'masks'.  A  mask  is a sequence of characters
+which may or may not match a filename. Beside the the standard symbols
+that  may appear in a filename,  masks may contain the symbols '*' and
+'?', and also  additional specifications like  [<chars>] and  !<char>.
+All these serve to specify ranges of filenames, e.g:
 
-'*' stands for  any character  or run  of zero  or more  characters so
-that:
+ - '*' stands for  any character  or run  of zero  or more  characters
+   so that A*B matches AB, AAB, ACB, AAAB, ACCB, ABCB etc.  A* matches
+   A, AB,AAA,ABC,ABCD etc.
 
-A*B matches AB, AAB, ACB, AAAB, ACCB, ABCB etc. A* matches A,
-AB,AAA,ABC,ABCD etc.
-
-'?' stands for any single character:
-
-A?B matches AAB, ACB, A B etc.
+ - '?' stands for any single character: A?B matches AAB, ACB, A B etc.
 
 In single-TOS, the default catch-all mask is usually '*.*';  in multi-
 tasking environments with  looser restrictions on names  it is usually
@@ -1382,8 +1378,10 @@ attempting  actual  copying, a check will be made to see if the target
 and  the  source disk have the same format. Therefore, both disks must
 have  valid  boot sectors  containing the information on the number of
 sides, tracks  and sectors.  Beware that this  check may  prevent copy
-of some  specially formatted  floppy disks which  may not  have proper
-boot sectors.
+of some specially formatted floppy disks without proper boot sectors.
+
+If a sector-copy  operation fails,  it is retried  before  an error is
+reported. Number of retries can be specified in the dialog.
 
 A buffer of the size specified in the Copy and print... dialog will be
 used for copying.
@@ -1418,27 +1416,38 @@ the dialog of the Floppy format function appears on the screen.
 
 The dialog offers a number of formatting options:
 
-- Four standard densities:
+- Four standard densities for 3.5" floppy disks:
 
      Single sided    (SSDD -  360 KB)
      Double sided    (DSDD -  720 KB)
      High density    (DSHD - 1440 KB)
      Extra density   (DSED - 2880 MB)
+     
+- Reformatting with existing format parameters read from the floppy.
 
-- For each density chosen, further parameters  can be  specified which
-  will modify the basic format  (editable only after selecting a basic
-  format):
+- For each  format type chosen,  main parameters  can be  edited which
+  modify the basic format  (parameters are editable only after a basic
+  format had been selected, otherwise previous values are used):
 
     .number of sides
     .number of tracks
     .number of sectors per tracks
     .root directory size
     .volume label
-
+    
+- Number  of retries  to  attempt  before a  failed  sector-formatting
+  operation is reported can be specified.
+  
 If the format operation  is used  in a multi-tasking environment (MiNT
 or MagiC),  an attempt is made to lock the floppy drive device  before
 commencing formatting.  If it fails  (e.g. if the device is already in
 use), formatting will not start.
+
+It should be noted that reformatting a floppy disk with the 'Previous'
+format type does not necessarily  reproduce the  original boot sector.
+Only the number of disk sides, number of tracks, number of sectors per
+track,  root directory size and FAT size are read from the floppy disk
+and used.
 
 Formatting can be interrupted by pressing the [Esc] key.
 
@@ -1732,7 +1741,7 @@ See also:  TOS version compatibility  Supported screen resolutions
 
 @{U}4.3.6  Set mask...                                            TeraDesk@{u}
 
-With this  menu item,  you can  select  which files  are shown  in the
+With this  menu item, the user  select  which files  are shown  in the
 current (top) directory  window.  A dialog box is displayed into which
 you can either type a name mask (a pattern for object names which will
 become visible in the window) or select a mask from a predefined list.
@@ -1747,18 +1756,26 @@ The  selected  mask  ONLY  applies  to  the directory window  that was
 current (topped) when this item was selected.  See also  Conventions.
 
 Some characters have special meanings in name masks and enable them to
-be used for a range of object names. Those characters (sometimes named
+be used for ranges of object names.  Those characters (sometimes named
 'wildcards') are:
 
    *                        - any string of characters
    ?                        - any single character
    !<char>                  - any single character but <char>
-   [<char1><char2><...?>]   - any of the <char1>, <char2>...
+   [<char1><char2><...?>]   - any one of the <char1>, <char2>...
 
-In single-TOS, only the first two of these wildcards are legal.
+A complete filename can be specified  for the mask as well,  either by
+entering it manually, or by selecting a name in a directory window and
+then opening this dialog.
+
+It is also possible to specify an exclusion mask: if a tilde character
+'~' is prepended  to  a mask,  all  names  that  do  -not-  match  the
+remaining of the mask string will be shown.
 
 User should beware that, on a slow machine,  specifying a very complex
-name mask may slow the opening of directories considerably.
+name mask may slow the opening of directories considerably. Also, some
+masks do not make sense and  can not be  understood by TeraDesk:  e.g.
+one should not use '!...' or '[...]' between '*' and another wildcard.
 
 If a mask is not set for some  directory window, Tera Desktop will use
 the default mask. In single-TOS,  the default catch-all mask is '*.*';
@@ -1767,9 +1784,10 @@ just '*'.  An explicitly set mask  for a directory window can be reset
 to default  by clearing  the  editable  field  in the dialog  and then
 clicking 'OK'.
 
-A complete filename can be specified  for the mask as well,  either by
-entering it manually, or by selecting a name in a directory window and
-then opening this dialog.
+In single-TOS, only the '*' and '?' wildcards are legal. However, Tera
+Desktop permits the use of  '~', '!...' and '[...]' in single-TOS, but
+within the constraint  that the 8+3  filename structure  of single-TOS
+must be obeyed.
 
 Besides the name mask, one can use the autoselector in order to locate
 items in a directory window. See also: Conventions  Directory windows
@@ -1924,7 +1942,7 @@ See also:  Close  Supported Protocols
       Menus and Dialogs
 @image udo_fo.img 7
          Menu title: Window
-         
+
 @{U}4.4.5  Close all                                              TeraDesk@{u}
 
 The effect of this action  is to completely close all TeraDesk's  open
@@ -2182,9 +2200,9 @@ them from the name and location of a file selected in a window, are:
 
 @{U}4.5.2  Set program types...                                   TeraDesk@{u}
 
-With  this  menu  option  you  can  determine which files Tera Desktop
+With this  menu option  you can  determine  which  files  Tera Desktop
 recognises as executable, and various features for these filetypes can
-be set. A dialog box is displayed in which you can:
+be set. A dialog box is displayed in which one can:
 
 1.Toggle a flag which  indicates whether Tera Desktop  will wait for a
 keypress  after a TOS or TTP program has finished. This is useful when
@@ -2192,8 +2210,8 @@ such  programs  write  something to the screen and you want to read it
 at leisure.
 
 2. Toggle  a  flag which indicates  whether Tera Desktop will redirect
-output to GEMDOS standard handle 2 to the screen.  This is useful when
-you are using programs compiled with GNU C.
+output to GEMDOS standard handle 2 to the screen.  This is useful e.g.
+when using programs compiled with GNU C.
 
 3. Set  which  files  or file types contain programs.  A small listbox
 window  contains a list of file name masks; you can scroll the list or
@@ -2208,11 +2226,19 @@ If you add  or edit a name mask,  The program type dialog box  will be
 shown in which you must define the file type and and other information
 for the program type being defined.
 
+Beside the filetypes  explicitely  specified in this  dialog, TeraDesk
+treats as executable (i.e. programs) all files without name extensions
+for which the 'execute' rights are set, and such files are  assumed to
+be of the  .TTP  type.  This capability  is available  only  for files
+without  name extensions  (i.e.  with  names  not  containing  the "."
+character) and only in  Unix filesystems that recognize access rights;
+therefore it is disabled in single-TOS. 
+
 If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible  due to limitations of this
 TOS version.
 
-See also:  Types of program files  The program type dialog
+See also:  Info...  Types of program files  The program type dialog
 TOS version compatibility  Supported screen resolutions
 Supported Protocols
 
@@ -2502,21 +2528,29 @@ is displayed in which you can:
 
 4. Select a colour for all window backgrounds
 
-5. Select a font, font size and colour for text appearing in directory
-or view windows.  You must  first select  'Directory  font' or 'Viewer
-font'.  The font selector dialog will appear,  so that you can  choose
-the  desired font, its  size  and colour.  Currently, only  monospaced
-fonts are considered.
+5. Select a font  for text appearing in  directory or  viewer windows.
+You must first select the  'Directory  font' or  'Viewer font' button.
+The font selector dialog  will appear,  so that  you can  choose   the
+desired font,  its size, colour and style.  Only monospaced  fonts are
+selectabe  and style  (bold, italic, etc.)  can be  set  only  for the
+viewer windows font.
 
 6. Specify the size of tabs when text is displayed in Text windows.
 
 7. Set whether open windows are to be saved in the configuration file.
 
-The number of  available  patterns  is limited  to eight.  There is no
-limit on the number of colours,  but selection  will be limited to the
-number of  colours available  in the current  video mode. In order for
-the patterns to be  visible in the selector boxes,  colours other than
-white must be selected.
+The number of available  background patterns is limited  to the sum of
+numbers of  fill patterns and hatches  available in VDI.  Selection of
+background colours  is limited to the  number of  colours available in
+the current video mode. In order for the patterns to be visible in the
+selector boxes, colours other than white must be selected.
+
+At least one of the available AESes (i.e. MyAES) has the capability to
+display a desktop background picture instead of the colour and pattern
+specified  for the  desktop  background  object.  In order to use this
+feature, desktop background colour has to be set to white and TeraDesk
+configuration file saved. The background picture will then be shown at
+the next startup of TeraDesk.
 
 The Tab size field permits the setting  of the number of blank columns
 produced in Text windows when a <TAB>  character is  encountered. This
@@ -2774,7 +2808,7 @@ TeraDesk's Directory windows
 
 Set applications... to maintain a list of installed applications
 
-Set program types... to maintain a list of  executable file types
+Set program types... to maintain a list of executable file types
 
 Set window icons... to  maintain lists of  icons assigned  to  certain
 filenames, filetypes, or folder names
@@ -2922,12 +2956,13 @@ See also:  Set desk icons...  Set window icons...  Supported Protocols
 
 @{U}4.10 The font selector dialog                                 TeraDesk@{u}
 
-The  font  selector  dialog    opens  upon  clicking  the  buttons for
-setting  the  directory  window font or the viewer window font. On the
-left side is a scrollable  listbox from which  a font  can be selected
-(only monospaced fonts are displayed).  A box on the right side of the
-dialog shows a sample text in the selected font.  Font size and colour
-can be selected from available ones.
+The font selector  dialog  opens upon clicking the 'Directory font' or
+the 'Viewer font' in the Window options... dialog. On the left side is
+a scrollable listbox from which a font can be chosen  (only monospaced
+fonts are displayed).  A box  on the right side  of the dialog shows a
+sample text in the selected font. Font size and colour can be selected
+from available ones, and additional effects such as bold or underlined
+writing can be specified as well (except for directory window font).
 
 If the displayed sample text  is clicked upon,  it can be previewed in
 the selected state, which can help the user in selecting  a convenient
@@ -2935,7 +2970,10 @@ window font. Text is displayed  on a background  identical to  the one
 selected for windows.
 
 TeraDesk can also open this dialog as a system-wide font selector upon
-receiving the FONT_SELECT message. See The FONT Protocol
+receiving the  FONT_SELECT message.  In such case  proportional  fonts
+are selectable too, beside the monospaced ones.
+
+See The FONT Protocol
 
 @endnode
 
@@ -3144,14 +3182,14 @@ regardless of whether an AES supports them.   See also  Installation.
 @{U}5.1  Objects: introduction                                    TeraDesk@{u}
 
 Several kinds of objects can appear in TeraDesk's Directory windows or
-on  the  desktop.  They are represented  graphically  by icons  or (in 
-Directory windows)  by  name strings.  Objects  can be  manipulated by 
+on  the  desktop.  They are represented  graphically  by icons  or (in
+Directory windows)  by  name strings.  Objects  can be  manipulated by
 moving or  copying them,  by 'opening' them,  or  by 'dragging'  other
 objects onto them. See: Opening objects and icons  Dragging Objects.
 
 Known object types are:
 
-1. Disk volume:  
+1. Disk volume:
 
 It represents  the root directory  of a disk partition. This object is
 always displayed as an icon and can appear  only on  the desktop. Name
@@ -3160,8 +3198,8 @@ a more descriptive name,  up to 12 characters long, can be assigned to
 the icon  as a label. If no icon label is set for a disk volume object
 but a partition it represents  has a volume label assigned to it, this
 string will be shown as the icon label.
-  
-2. Folder:  
+
+2. Folder:
 
 It represents  a (sub)directory  on a disk partition.  When it is in a
 directory window, it can be displayed either as an icon or in the form
@@ -3175,17 +3213,17 @@ at most  127 characters  long in Single-TOS  and up to  255 characters
 long  in more advanced filesystems.  When a folder object is displayed
 as an icon,  its name  is shown  in an abbreviated  form as  the  icon
 label,  and can be at most  12 characters long (icon label can also be
-set to a string different than the actual name  of the object). 
-    
-3. File:  
+set to a string different than the actual name  of the object).
+
+3. File:
 
 It represents  either a normal file  or one of  several special object
 types on the  U:\ drive.  When it is in a  directory window, it can be
 displayed either as an icon or as a string. When it is on the desktop,
 it is always  displayed as an icon.  Rules for naming  of file objects
 are the same as for folder objects (see above).
-    
-4. Symbolic link: 
+
+4. Symbolic link:
 
 In some filesystems it represents  a special file that is a pointer to
 other file or directory.  When it is in a directory window,  it can be
@@ -3193,26 +3231,26 @@ displayed either as an icon or as a string. When on the desktop, it is
 always displayed  as an icon.  This  object type  is not  available in
 Single-TOS.  Rules for naming of symbolic link objects are the same as
 for folder and file objects (see above). See Symbolic Links
-  
-5. Network object:  
+
+5. Network object:
 
 It represents the URL  of an object (e.g. a web page or a ftp site) on
 the network. This object is always displayed as an icon and can appear
 only on the desktop. See Set desk icons...
-  
-6. Printer:  
+
+6. Printer:
 
 It represents a printing device  connected to the parallel port of the
 computer.  Its name can be set  as an  icon label  up to 12 characters
-long. See also Print... 
-  
-7. Trash can:  
+long. See also Print...
+
+7. Trash can:
 
 The purpose of this object  is to visualize the operation  of deletion
 of files and folders.  Objects that are 'dragged' to the trash can are
 deleted.  Name of the  trash can can be set as an icon  label up to 12
 characters long. See also Delete...
-  
+
 See also: Set desk icons...
 
 @endnode
@@ -3237,7 +3275,7 @@ is;  the results  may  be  modified  in several cases  by pressing the
 [Alternate]  key  as you open the object.  Other objects can be opened
 in other ways. The results for the different objects are:
 
-1. Disk volume: 
+1. Disk volume:
 
 A  new  window  which  contains  the  objects in its root directory is
 opened.
@@ -3329,8 +3367,8 @@ Source files or folders will be copied into the folder.
 
 3. File(s), Folder(s), Desktop icon(s) -> Trashcan
 
-The files or the folders together with their  contents are deleted. If 
-source objects are on the desktop,  it is also possible to remove only 
+The files or the folders together with their  contents are deleted. If
+source objects are on the desktop,  it is also possible to remove only
 the icons, not the actual items that they represent.
 
 For the next three destinations, the source can only be a file:
@@ -3523,13 +3561,13 @@ directory window.
 
 Symbolic links can be copied, moved or deleted  just like normal files
 and folders.  During these  operations,  only the links  are copied or
-moved,  not the  actual objects  they  are referencing. This behaviour 
+moved,  not the  actual objects  they  are referencing. This behaviour
 can be modified by setting  'Follow links' in The copy info dialog and
 in the Set desk icons... dialog.  If any of these  options is selected
-the operations are applied to the referenced objects, not on the links
+the operations are applied to the referenced objects, not to the links
 (except deleting,  which removes  both the referenced objects  and the
 links). Note that when a link is deleted, the object it is referencing
-(the target) is NOT deleted. 
+(the target) is NOT deleted.
 
 Users  should  beware that  the  'Follow links'  option is  limited to
 objects directly selected in a directory window or on the desktop. Any

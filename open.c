@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -51,7 +51,6 @@ boolean onfile = FALSE; /* true if app is started to open a file */
 
 int trash_or_print(ITMTYPE type);
 
-static const char qc = 34;
 
 /*
  * Handle the Show/Edit/Run... dialog. Return button index.
@@ -147,7 +146,7 @@ boolean item_open
 		*w;				/* "inw", locally (i.e. maybe changed) */
 
 	DIR_WINDOW
-		simw;
+		simw;			/* pointer to a simulated dir window */
 
 	int 
 		item = initem;	/* "item", locally (i.e. maybe changed) */
@@ -228,7 +227,7 @@ boolean item_open
 				cmline = (char *)empty; /* first, cmline points to an empty string */
 
 				qline = malloc_chk(strlenq(openline));
-				strcpyrq(qline, openline, qc, &blank);
+				strcpyrq(qline, openline, '"', &blank); /* 34 = double quote */
 
 				if(blank)
 				{

@@ -1,7 +1,7 @@
 /* 
- * Xdialog Library. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                            2002, 2003  H. Robbers,
- *                                2003, 2004, 2005, 2006  Dj. Vukovic
+ * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
+ *                                2002 - 2003  H. Robbers,
+ *                                2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -32,7 +32,6 @@
 #include <stddef.h>
 #include <library.h>
 #include "xdialog.h"
-#include "internal.h"
 
 
 
@@ -135,6 +134,9 @@ void xd_userdef(OBJECT *object, USERBLK *userblk, int cdecl(*code) (PARMBLK *par
 
 /* 
  * Funktie voor het installeren van "extended" user-defined objects. 
+ * This routine keeps the 'extended' object type identification, and replaces
+ * the 'basic' type with G_USERDEF. It saves original object flags and
+ * object type into userblk fields.
  */
 
 void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *parmblock))
@@ -143,12 +145,16 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *p
 	userblk->ub_parm = userblk;
 	userblk->ob_type = object->ob_type;
 	userblk->ob_flags = object->ob_flags;
-	userblk->ob_shift = 0;				/* for scrolling editable texts */
+	userblk->uv.ptr = 0L;	/* clear all of .uv */
 	userblk->ob_spec = object->ob_spec;
 
-	object->ob_type = (object->ob_type & 0xFF00) | G_USERDEF;
-/* why ?
-	object->ob_flags &= ~(AES3D_1 | AES3D_2);
+	/* note: it is shorter to set new type in -two- lines of code, as below */
+
+	object->ob_type &= 0xFF00;
+	object->ob_type |= G_USERDEF;
+
+/* no need here
+	object->ob_flags &= ~(AES3D_1 | AES3D_2); /* see XDDRAW.C - xd_set_userobjects */
 */
 	object->ob_spec.userblk = (USERBLK *)userblk;
 }
@@ -194,6 +200,7 @@ int xd_obj_parent(OBJECT *tree, int object)
 			{
 				if (j == object)
 					return i;
+
 				j = tree[j].ob_next;
 			}
 			while (j != i);
@@ -215,12 +222,17 @@ int xd_obj_parent(OBJECT *tree, int object)
 
 int xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
 {
-	int i = tree[rb_parent].ob_head;	/* first child of parent */
-	OBJECT *obj;
+	OBJECT
+		*obj;
+
+	int
+		i = tree[rb_parent].ob_head;	/* first child of parent */
+
 
 	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
 		obj = &tree[i];
+
 		if (obj->ob_flags & RBUTTON)	/* watch radiobuttons only */
 		{
 			if(object == rb_parent)
@@ -261,8 +273,12 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent)
 
 void xd_set_child(OBJECT *tree, int rb_parent, int enab)
 {
-	int i = tree[rb_parent].ob_head;	/* first child of parent */
-	OBJECT *obj;
+	OBJECT
+		*obj;
+
+	int
+		i = tree[rb_parent].ob_head;	/* first child of parent */
+
 
 	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
@@ -297,6 +313,16 @@ OBSPEC *xd_get_obspecp(OBJECT *object)
 	}
 	else
 		return &(object->ob_spec);
+}
+
+
+/*
+ * Return the pointer to the validtion string of an editable field
+ */
+
+char *xd_pvalid(OBJECT *object)
+{
+	return xd_get_obspecp(object)->tedinfo->te_pvalid;
 }
 
 
@@ -357,7 +383,8 @@ int xd_is_tristate(OBJECT *object)
 
 void xd_clip_on(RECT *r)
 {
-	int pxy[4];
+	int
+		pxy[4];
 
 	xd_rect2pxy(r, pxy);
 	vs_clip(xd_vhandle, 1, pxy);
@@ -370,7 +397,33 @@ void xd_clip_on(RECT *r)
 
 void xd_clip_off(void)
 {
-	int pxy[4];
+	int
+		pxy[4];
 
 	vs_clip(xd_vhandle, 0, pxy);
+}
+
+
+/*
+ * Obtain font size with fewer arguments
+ */
+
+int xd_vst_point(int height, int *ch)
+{
+	int
+		dummy;
+
+	return vst_point(xd_vhandle, height, &dummy, &dummy, &dummy, ch);
+}
+
+
+int xd_fnt_point(int height, int *cw, int *ch)
+{
+	int
+		dummy,
+		r;
+
+	r = xd_vst_point(height, ch);
+	vqt_width(xd_vhandle, ' ', cw, &dummy, &dummy);
+	return r;
 }

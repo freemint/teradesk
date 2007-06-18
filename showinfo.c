@@ -1,7 +1,7 @@
 /* 
- * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
- *                                     2002, 2003  H. Robbers,
- *                         2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -244,6 +244,7 @@ static int search_dialog(void)
 	/* Clear all fields */
 
 	*search_txt = 0;				/* string pattern in the dialog */	
+
 	*(searching[SLOSIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHISIZE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SLODATE].ob_spec.tedinfo->te_ptext) = 0;
@@ -277,18 +278,23 @@ static int search_dialog(void)
 				cv_formtofn( search_pattern, searching, SMASK );
 				search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
 				search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
+
 				if ( search_hisize == 0L )
 				{
 					search_hisize = 0x7FFFFFFFL; /* a very large size */
+
 					if (search_losize == 0)
 						nodirs = FALSE;
 				}				
+
 				search_lodate = cv_formtod(searching[SLODATE].ob_spec.tedinfo->te_ptext);
 				search_hidate = cv_formtod(searching[SHIDATE].ob_spec.tedinfo->te_ptext);
+
 				if ( search_hidate == 0 )
 					search_hidate = 32671; 	     /* a very late date  */
 
 				search_length = strlen(search_txt);
+
 				if (search_length > 0)
 					nodirs = TRUE;
 
@@ -384,9 +390,6 @@ boolean searched_found
 	XATTR *attr		/* attributes of the above     */ 
 )
 {
-	boolean 
-		found = FALSE;	/* true if match found */
-
 	char 
 		*fpath = NULL,	/* pointer to full file/folder name */
 		*p;				/* local pointer to string found */
@@ -397,6 +400,9 @@ boolean searched_found
 
 	int 
 		error = 0;		/* error code */
+
+	boolean 
+		found = FALSE;	/* true if match found */
 
 
 	/* Nothing found yet */
@@ -452,8 +458,10 @@ boolean searched_found
 							 */
 
 							for ( i = 0; i < fl; i++ )
+							{
 								if ( search_buf[i] == 0 )
 									search_buf[i] = SUBST_DISP; 
+							}
 
 							/* 
 							 * Allocate memory for pointers to found strings
@@ -470,6 +478,7 @@ boolean searched_found
 								while ( p && search_nsm < MFINDS )
 								{
 									p = find_string(p, (size_t)(search_buf + fl - p) );
+
 									if ( p )
 									{
 										/* Match found! */
@@ -649,7 +658,8 @@ static void disp_smatch( int ism )
 	rsc_ltoftext(fileinfo, NSMATCH, (long)search_nsm);
 
 	disp = fileinfo[MATCH1].ob_spec.tedinfo->te_ptext;	/* pointer to field */
-	fld = (int)strlen(fileinfo[MATCH1].ob_spec.tedinfo->te_pvalid); /* length of */
+
+	fld = (int)strlen(xd_pvalid(&fileinfo[MATCH1])); /* length of */
 
 	/* Completely clear the display field (otherwise it won't work!) */
 
@@ -850,7 +860,6 @@ int object_info
 			/* Set states of some other fields */
 
 			obj_unhide(fileinfo[FLFOLBOX]);
-
 			rsc_title(fileinfo, FLTITLE, DTFOINF);
 			rsc_title(fileinfo, TDTIME, TCRETIM);
 
@@ -974,7 +983,6 @@ int object_info
 			cv_dtoform(date, attr->mdate);
 			rsc_hidemany(fileinfo, items3);
 			obj_unhide(fileinfo[FLNAMBOX]);
-
 #if _MINT_
 			gid = attr->gid;
 			uid = attr->uid;
@@ -1086,7 +1094,6 @@ int object_info
 			/* Set visibility states of other fields */
 
 			rsc_hidemany(fileinfo, items2);
-
 			obj_unhide(fileinfo[FLLABBOX]);
 			obj_unhide(fileinfo[FLSPABOX]);
 			obj_unhide(fileinfo[FLCLSIZ]);
@@ -1376,6 +1383,7 @@ int object_info
 				{
 					error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE);
 					arrow_mouse();
+
 					if(error != 0)
 					{
 						result = si_error(oldn, error);
@@ -1391,6 +1399,7 @@ int object_info
 
 					rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
 					rsc_ltoftext(fileinfo, FLFILES, nfiles);
+
 					obj_unhide(fileinfo[FLFOLBOX]);	/* number of folders and files */
 					obj_hide(fileinfo[FLALL]);
 				}
@@ -1532,7 +1541,7 @@ void item_showinfo
 			result = XSKIP;	/* trash, printer, network */
 		}
 
-		if ((result == XFATAL) || (result == XABORT) || (result == XALL) )
+		if (mustabort(result) || (result == XALL) )
 			break;
 	}
 
@@ -1547,6 +1556,7 @@ void item_showinfo
 		int ntouch = n - i;
 
 		itmlist_wop(w, ntouch, &list[i], CMD_TOUCH);
+
 		if ( xw_type(w) == DIR_WIND )
 			dir_refresh_wd((DIR_WINDOW *)w);
 

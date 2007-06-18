@@ -2,13 +2,129 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2003  H. Robbers
                          2002 - 2007  Dj. Vukovic
 
-Version 3.87  2-01-2007
+
+Version 3.91  18-06-2007
+------------------------
+- Capability added to read previous format of a floppy disk and format it 
+  with identical parameters. It should be noted that this option does not
+  necessarily reproduce the complete boot sector; only the critical
+  parameters, i.e.: the number of sectors per track, number of sides, 
+  number of tracks, root directory size and FAT size are read from the
+  disk and used.
+
+- When formatting or copying floppy disks, a failed operation can now be
+  retried a selectable number of times before an error is reported. It may
+  be of help when copying or formatting old floppy disks. Also, it seems
+  that other utilities behave in a similar way when formatting or copying
+  floppies.
+
+- An obscure noncritical bug related to floppy formatting that could in
+  some very unlikely cases lead to corrupt FATs on the floppy was fixed.
+
+- Fixed the problem of incorrectly truncated lines when displaying in the
+  viewer files containing TAB characters. The old algorithm for finding
+  maximum text (and window) width was only approximate and, besides, was
+  implemented with an error. The new procedure is accurate but may be
+  marginally slower on large files; some speed optimizations made to 
+  reduce the impact of this. 
+
+- Fixed the bug that caused the height of any viewer window to increase by
+  one line each time a menu item was activated in that window (and the
+  same happened in some other operations).
+
+- Fixed a noncritical bug related to window redraw after cancelling a 
+  font selection.
+
+- A number of size optimizations made by using convenient pointers instead
+  of referring to array members by indexes; program size is about 230 bytes
+  smaller than in the previous release.
+
+- Some changes made in the resource file. See RESOURCE.TXT.
+
+- Program is now compiled with slightly newer version of PureC 1.1
+  (March 1993 vs. January 1993).
+
+
+Version 3.90  30-04-2007
+------------------------
+- Some changes made in the resource file. See RESOURCE.TXT.
+
+- Capability added to set font effects (bold, light italic, underlined...) in
+  the font selector. This capability is disabled for directory windows because
+  it would interfere with hard-coded use of effects to distinguish certain item
+  types. Unfortunately it seems that the majority of clients using the font
+  selector through the FONT protocol ignore the 'effects' data (in fact,
+  Kandinsky drawing application is the only one I found that -does- use all
+  this data). Also, it looks as if the 'shadowed' and 'inverse' effects can 
+  not in fact be displayed by the (N)VDI ?
+
+- Full VDI range of colours (up to 256 ?) and fill patterns/hatches is now 
+  available for desktop and window backgrounds. In previous versions the 
+  colours were limited to the first 16 and patterns to the first 8 among 
+  available ones, because of the limited number of bits for that data in AES
+  object specification. 
+
+- In order to use the background desktop picture feature of MyAES, desktop
+  background colour must now be set to white, the configuration saved, and
+  TeraDesk restarted (if desktop is later set to colour other than white, 
+  MyAES background picture will be overdrawn).
+
+- Files for which 'execute' access rights are detected on an adequate type
+  of filesystem, and which have names without extensions (i.e. names do not
+  contain periods) are assumed to be executable (of the .TTP type), even if 
+  their names do not have matches in the list of program types. This 
+  capability is not available in single-TOS.  Users should beware that 
+  desktop icons representing such files may lose the information that their 
+  targets are executable if the partitions on which the target files reside 
+  are not available when Set program types... or Set desk icons... dialogs 
+  are manipulated.
+
+- Added the capability to specify exclusion (i.e. negated) namemasks by
+  prepending '~' to masks. Directory items matching the remainder of the mask
+  (i.e. after the initial '~') will not be displayed.
+
+- Permitted the use of enhanced wildcards '!' and [...] in single-TOS, beside
+  the standard '*' and '?', but within the constraint that the mask string must
+  obey the 8+3 name structure of single-TOS.
+
+- More rigorous validation of paths that are typed into forms in single-TOS;
+  only characters legal in paths are now allowed.
+
+- Improved functionality of the pattern-matching routine so that more complex
+  name masks can be specified, regarding the use !... and [...] wildcards.
+  Fixed the problem of string overrun that could happen in earlier versions if
+  name masks were not properly entered (e.g. a '[' without a ']'). Added some
+  information into the hypertext manual regarding the use and limitations of
+  recognized wildcards.
+
+- Fixed the inconvenience of background of sample text in the Font selector
+  not matching the one selected for windows background until the Window options
+  dialog was closed with an OK.
+
+- Code for handling the 'arrow' buttons in dialogs largely reworked. The
+  old problem of TeraDesk sometimes freezing in Atari AES4.1 while 
+  manipulating arrowed buttons (different handling of evnt_timer() than in
+  other AESes?) seems to have been cured. Among other effects, arrowed 
+  buttons in the font size and font colour selectors are now properly drawn
+  when in the selected state.
+
+- A couple of insignificant bugs was fixed.
+
+- The order of a number of variables in some data structures and routines
+  rearranged for better word alignment and other size optimizations made 
+  so that, in spite of the added features, program has shrunk to a size 
+  smaller than in the previous three releases.
+
+- Corrections and updates were made in the hypertext manual.
+
+
+-Version 3.87  2-01-2007
 -----------------------
 - Improved the application of Window menu functions to AV-protocol clients
   (in previous versions some of them worked well only with accessory-type
   clients). Also fixed a minor problem in window cycling.
 
-- Improved the generation and sending of the VA_PATH_UPDATE AV-protocol 
+- Improved the generation and sending of the VA_PATH_UPDATE AV-protocol
   message.
 
 - Fixed a bug in AV-protocol implementation: incorrect answer to AV_WHAT_IZIT
@@ -33,7 +149,7 @@ Version 3.87  2-01-2007
 
 - Some corrections and updates made in the hypertext manual.
 
-- English text of the hypertext manual reviewed and improved by Derryck 
+- English text of the hypertext manual reviewed and improved by Derryck
   Croker.
 
 

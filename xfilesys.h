@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -62,6 +62,7 @@
 #define S_IXOTH	 0001
 #define DEFAULT_DIRMODE (0777)
 #define DEFAULT_MODE    (0666)
+#define EXEC_MODE		(S_IXUSR | S_IXGRP | S_IXOTH)
 
 /* Filesystem characteristics bitflags */
 
@@ -98,11 +99,11 @@ enum
 	DP_NOTRUNC,
 	DP_AUTOTRUNC,
 	DP_DOSTRUNC,
-	DP_SENSITIVE   = 0,
+	DP_SENSITIVE	= 0,
 	DP_NOSENSITIVE,
 	DP_SAVE_ONLY,
-	DP_LINKS = 1,
-	DP_TRUNC      = 5,
+	DP_LINKS		= 1,
+	DP_TRUNC		= 5,
 	DP_CASE,
 	DP_MODE,
 	DP_XATT
@@ -202,7 +203,6 @@ int x_rename(const char *oldn, const char *newn);
 int x_unlink(const char *file);
 int x_fattrib(const char *file, XATTR *attr);
 int x_datime(DOSTIME *time, int handle, int wflag);
-
 int x_open(const char *file, int mode);
 int x_create(const char *file, XATTR *attr);
 int x_close(int handle);
@@ -213,7 +213,6 @@ long x_seek(long offset, int handle, int seekmode);
 /* Funkties voor het lezen van een directory */
 
 XDIR *x_opendir(const char *path, int *error);
-
 long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib); 
 long x_rewinddir(XDIR *dir);
 long x_closedir(XDIR *dir);

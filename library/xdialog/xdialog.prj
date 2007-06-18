@@ -1,5 +1,7 @@
 ;*
-;* Xdialog Library. Copyright (c) 1993, 1994, 2002 W. Klaren.
+;* Xdialog Library. Copyright (c)  1993 - 2002  W. Klaren.
+;*                                 2002 - 2003  H. Robbers,
+;*                                 2003 - 2007  Dj. Vukovic
 ;*
 ;* This file is part of Teradesk.
 ;*
@@ -30,7 +32,7 @@ xdialog.lib
 
 ; With debug info:
 
-;.C[ -K -Y -G -I..\..\include]
+;.C[ -C -K -Y -G -I..\..\include]
 ;.S[ -Y -S ]
 ;.L[ -J -Y -L -G -V]
 

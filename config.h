@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c)         1993, 1994, 2002  W. Klaren,
- *                                       2002, 2003  H. Robbers,
- *                           2003, 2004, 2005, 2006  Dj. Vukovic
+ * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
+ *                         2002 - 2003  H. Robbers,
+ *                         2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,6 +19,7 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 /* Note: at most 31 entry type can be defined here */
 

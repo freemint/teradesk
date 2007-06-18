@@ -1,7 +1,7 @@
 /*
- * Utility functions for Teradesk. Copyright             1993, 2002  W. Klaren
- *                                                       2002, 2003  H. Robbers,
- *                                           2003, 2004, 2005, 2006  Dj. Vukovic
+ * Utility functions for Teradesk. Copyright 1993 - 2002  W. Klaren
+ *                                           2002 - 2003  H. Robbers,
+ *                                           2003 - 2007  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -46,6 +46,7 @@ void strip_name(char *to, const char *from)
 {
 	const char *last = from + strlen(from) - 1;	/* last nonzero */
 
+
 	while (*from && *from == ' ')  from++;		/* first nonblank */
 
 	if (*from)									/* if not empty string... */
@@ -88,6 +89,7 @@ void cramped_name(const char *s, char *t, size_t ww)
 		l,			/* input string length */ 
 		d,			/* difference between input and output lengths */ 
 		h;			/* length of the first part of the name (before "...") */
+
 
 	strip_name(ts, s);		/* remove leading and trailing blanks; insert term. byte */
 	l = strlen(ts);			/* new (trimmed) string length */
