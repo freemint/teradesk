@@ -43,17 +43,6 @@
 #define obj_enable(x)	x.ob_state &= ~DISABLED
 #define obj_disable(x)	x.ob_state |= DISABLED
 
-/* 
- * Size of global memory buffer is larger for fuller 
- * AV-protocol support 
- */
-
-#if _MORE_AV
-#define GLOBAL_MEM_SIZE sizeof(XLNAME)
-#else
-#define GLOBAL_MEM_SIZE	sizeof(XLNAME) / 2
-#endif
-
 /* Maximum number of Teradesk's windows of one type */
 
 #define MAXWINDOWS 8 
@@ -215,11 +204,6 @@ typedef struct
 extern Options options;
 extern SCRINFO screen_info;
 
-extern int 
-	vdi_handle,		/* workstation handle */ 
-	max_w, max_h, 	/* maximum possible window size */
-	ap_id,			/* application id of TeraDesk itself */ 
-	nfonts;			/* number of available fonts */
 
 extern char 
 		*global_memory;
@@ -229,6 +213,15 @@ extern const char
 		*bslash,
 		*adrive,
 		*prevdir;
+
+extern long 
+	global_mem_size;
+
+extern int 
+	vdi_handle,		/* workstation handle */ 
+	max_w, max_h, 	/* maximum possible window size */
+	ap_id,			/* application id of TeraDesk itself */ 
+	nfonts;			/* number of available fonts */
 
 /* Flags to show a specific OS or AES type (detected from cookies) */
 

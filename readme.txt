@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.91  	Copyright 2003-2007  Dj. Vukovic
+             V3.01 to 3.93  	Copyright 2003-2007  Dj. Vukovic
 
 
-This  is version 3.91 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.93 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -305,12 +305,15 @@ Some Possible Future Developments
 Some Very Unlikely To Happen Future Developments
 ================================================
 
-- There are  no plans  to enable desktop background pictures in TeraDesk. It
+- There are  no plans  to handle desktop background pictures in TeraDesk. It
   would be a completely nonfunctional feature, which would increase  program
   size unacceptably.  Besides, it is the opinion  of the  current maintainer
   that background pictures are in fact distracting  to  the user and a waste
-  of system resources. However, MyAES provides this feature for (almost) any
-  desktop and maybe XaAES will have a similar capability some day.
+  of system resources.  However,  MyAES,  as well as  D.Mequignon's  utility 
+  named PICDESK provide this feature for (almost) any desktop. It seems
+  that this functionality can be built into XaAES without too much trouble.
+  The hypertext manual for TeraDesk explains how TeraDesk should be set
+  to use the background picture provided by an AES or other agent.
 
 
 
@@ -339,6 +342,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; June 18th 2007
+                                            Beograd; August 5th 2007
 
 

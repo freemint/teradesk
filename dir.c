@@ -1676,35 +1676,13 @@ static char *sizestr(char *tstr, long size)
 
 static char *uidstr(char *idstr, int id)
 {
-/*
-	int i, k = 1000;
-
-	for( i = 0; i < 4; i++ )
-	{
-		if(id < 0)
-		{
-			idstr[i] = '-';
-			id = -id;
-		}
-		else
-		{
-			idstr[i] = id / k;
-			id -= k * idstr[i];
-			idstr[i] += '0';
-		}
-
-		k /= 10;
-	}
-
-	return idstr + 4;
-*/
-
 	char
 		*idstri = idstr;
 
 	int
 		i,
 		k = 1000;
+
 
 	for( i = 0; i < 4; i++ )
 	{
@@ -3002,7 +2980,14 @@ static int dir_find(WINDOW *w, int x, int y)
 
 	/* note r2 is available only in icon mode */
 
-	if(inrect(x, y, &r1) || (options.mode != TEXTMODE && inrect(x, y, &r2)))
+	if
+	(
+		xd_inrect(x, y, &r1) || 
+		(
+			options.mode != TEXTMODE && 
+			xd_inrect(x, y, &r2)
+		)
+	)
 		return item;
 	else
 		return -1;

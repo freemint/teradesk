@@ -3,6 +3,71 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2007  Dj. Vukovic
 
 
+Version 3.93  5-08-2007
+-----------------------
+- Search... dialog now stays open while a search is in progress. It is
+  now possible to abort the search by pressing ESC even if there are
+  open windows- which did not work in previous releases.
+
+- Fixed editing of single-key keyboard shortcuts which was accidentally
+  broken in the previous release.
+
+- Fixed shutdown type in the call to shel_write() when Quit/Shutdown menu
+  item  is activated; it was unintentionally left as 'partial shutdown'
+  instead of 'full shutdown' while testing one of the earlier releases. 
+  (note: shutdown in TeraDesk actually reboots the computer; this may 
+  be changed in the next release).
+
+
+Version 3.92  25-07-2007
+------------------------
+- A small change (just five lines of code) made to set TeraDesk in agreement
+  with Didier Mequignon's PICDESK utility for displaying desktop background
+  pictures. Recently, an inquiry from a user made me aware of the existence
+  of PICDESK, and it turned out that TeraDesk was already pretty much 
+  compatible with it- the picture was displayed, but there were some bad 
+  redraws. Only small corrections were needed to fix that. PICDESK and
+  TeraDesk work together in Atari AESes, N.AES, Geneva and MagiC, but hang
+  the system at statup in XaAES. Users should beware that a) TeraDesk has to
+  be properly set for display of background pictures (TeraDesk must start
+  with white desktop colour; therefore, white desktop colour should be set,
+  configuration saved and TeraDesk restarted), and b) redraw of monochrome
+  desktop icons is slowed down dramatically whenever white desktop colour is
+  set. These options are not recommended for users running TeraDesk on slow
+  machines with limited memory. Btw. there seems to be a bug in PICDESK: when
+  set to display monochrome IMG file, at next startup it attempts to load a
+  GEM file instead- and fails, of course.
+
+- Global buffer for AV-protocol and drag & drop data is now differently
+  allocated. Instead of a fixed 4KB size, it is now 0.2% of the largest free
+  memory block at the time of allocation (but always at least 1KB and no 
+  more than 128KB), i.e. it is 1KB with 1MB or less of free RAM, 4KB with
+  2MB of free RAM. If size of the largest free memory block is larger than
+  about 8MB, buffer size is doubled (e.g. it is 64KB with 16MB of free RAM).
+  The reason for this change is that the old size of this buffer sometimes
+  limited too much the number of long-name files that could be handled in 
+  certain operations.
+
+- Two small size- and speed-optimisations made. 
+
+- Copy operation can now be aborted (by pressing [Esc]) after each copy 
+  buffer being read or written, which may be of help when copying very large
+  files (in earlier versions, copying was aborted only after completing the
+  action upon the currently processed file). In case of such abort, current
+  file at destination is deleted, if it already exists.
+
+- Fixed a bug that could, under certain circumstances, lead to incorrect 
+  contents of the destination window in case of failure of a copy/move 
+  operation.
+
+- Fixed a bug that caused, if white desktop background was selected and
+  saved, the default green to appear instead of white after restart.
+
+- Removed an unused object from the resource file. See RESOURCE.TXT.
+
+- Hypertext manual updated.
+   
+
 Version 3.91  18-06-2007
 ------------------------
 - Capability added to read previous format of a floppy disk and format it 

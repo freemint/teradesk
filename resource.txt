@@ -26,14 +26,10 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.91 relative to previous version
+Changes in V3.93 relative to previous version
 ---------------------------------------------
 
-- Objects FPREV and FRCNT added to tree FLOPPY. Sizes of the relevant parent
-  objects, including the root object of the tree, increased in order to fit
-  the new objects.
-
-  Note: Object FRCNT does -not- go inside the FPAR3 I-box.
+- Resource file of V3.93 is identical to that of V3.92.
 
 
 Naming of object trees

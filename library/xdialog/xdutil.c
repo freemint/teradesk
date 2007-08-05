@@ -90,7 +90,13 @@ int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 
 int xd_inrect(int x, int y, RECT *r)
 {
-	if ((x >= r->x) && (x < (r->x + r->w)) && (y >= r->y) && (y < (r->y + r->h)))
+	if
+	(
+		(x >= r->x) &&
+		(x < (r->x + r->w)) && 
+		(y >= r->y) && 
+		(y < (r->y + r->h))
+	)
 		return TRUE;
 	else
 		return FALSE;

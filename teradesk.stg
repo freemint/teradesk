@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: June 2007
+@$VER: August 2007
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.91
+                User's Manual for Tera Desktop V3.93
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                               June 2007
+                              August 2007
 
 @autorefon
 
@@ -1004,10 +1004,10 @@ the directory  (or desktop)  object  (or objects)  that  are currently
 selected:
 
 1. If the selected object is a file, its name, path, the time and date
-it  was last modified, and the number of bytes in it will be displayed.
-If the file or filetype has been associated  with an application,  the
-name of the application is displayed. If the object is recognized as a
-program (executable) file, the state of its header flags is displayed.
+when it was last modified,  and its size is displayed.  If the file or
+filetype  has been  associated  with an application,  the name  of the
+application  is displayed.  If the object  is recognized  as a program
+(executable) file, the state of its header flags is displayed.
 
 The name of the file, its access date and time can be changed. You can
 also   set/unset   the  Write  Protect,  Archive,  Hidden  and  System
@@ -2547,10 +2547,17 @@ selector boxes, colours other than white must be selected.
 
 At least one of the available AESes (i.e. MyAES) has the capability to
 display a desktop background picture instead of the colour and pattern
-specified  for the  desktop  background  object.  In order to use this
-feature, desktop background colour has to be set to white and TeraDesk
-configuration file saved. The background picture will then be shown at
-the next startup of TeraDesk.
+specified for the desktop background object. Similar capability exists
+in at least  one utility:  PICDESK by  D.Mequignon. In order to enable
+display of  background pictures,  TeraDesk must be started  with white
+desktop background colour. In order to have that,  desktop colour must
+be set to  white  and TeraDesk  configuration file  saved.  Background
+picture can be displayed  after the next startup of TeraDesk. 
+
+The user  should beware  that redraw  of monochrome  desktop icons  is
+dramatically slowed down  whenever  white  desktop colour is selected.
+This setting, and in particular, a background desktop picture,  is not
+recommended when running TeraDesk on slower machines with limited RAM.
 
 The Tab size field permits the setting  of the number of blank columns
 produced in Text windows when a <TAB>  character is  encountered. This
@@ -3455,8 +3462,12 @@ appear  in all such  instances  of  a name  conflict  and  can not  be
 switched off.
 
 Finally, note  that a touch, move, copy, delete or print operation can
-be aborted  by pressing the [Esc] key.  The operation  will be aborted
-after the operation upon the currently processed object has completed.
+be aborted by pressing the [Esc] key. Touch and delete operations will
+be aborted  after the action upon the currently  processed object  has 
+been completed.  Copy and move  operations  will be aborted  after the
+currently  processed  contents of  the copy buffer  has  been  read or
+written. If a file  being copied  at  that  moment  already exists  at
+destination, it (i.e. the destination file) will be deleted.
 
 See also  Copy and print...
 
@@ -4100,14 +4111,23 @@ the Desktop program by removing options which are  very unlikely to be
 used in single-TOS.  However,  TeraDesk can be compiled for single-TOS
 with full AV-protocol support.
 
+Certain AV-protocol data is exchanged between Tera Desktop and clients
+through  a globally  available  memory buffer.  Size of this buffer in 
+Tera Desktop is between 0.2% and 0.4% of the largest free memory block
+at time of allocation, but always at least 1KB and no more than 128KB.
+It should be noted  that in  some cases  the size  of this buffer  may
+limit the number of filenames  that can be handled  in one AV-protocol
+operation. 
+
 In a multi-tasking  environment  with  memory protection, TeraDesk may
 run into problems  with some AV-protocol clients,  and  fail with  the
 'memory protection: type private' error.  This  will most  probably be
-a fault of a  badly programmed  AV-protocol client.  In  some cases it
-can be  cured  if  the memory-protection flag  in  the header   of the
-offending AV-protocol client is set to 'readable'  or, if that doesn't
-help,  to  'supervisor'  or  'global'.  Examples of  such programs are
-ST-Guide and aMail.
+a fault of a badly programmed  AV-protocol client that doesn't set its
+data-exchange buffer to be globally available. In some cases it can be
+cured if the  memory-protection flag in  the header   of the offending
+AV-protocol client is  set to 'readable' or, if that doesn't help,  to
+'supervisor'  or  'global'. Examples of such programs are ST-Guide and
+aMail.
 
 Note that the nature of the  AV-protocol is  such that  the  AV-server
 (i.e. TeraDesk in this case) will  crash  first  if  it encounters  an

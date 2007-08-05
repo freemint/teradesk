@@ -56,7 +56,7 @@ int max(int x, int y);
 int minmax(int lo, int i, int hi);
 long lmin(long x, long y);
 long lmax(long x, long y);
-int lminmax(long lo, long i, long hi);
+long lminmax(long lo, long i, long hi);
 void bell(void);
 int touppc(int c);
 void digit(char *s, int x);

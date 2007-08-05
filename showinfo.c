@@ -49,9 +49,11 @@
 
 
 static XDINFO 
-	dinfo; 	
+	sdinfo,					/* information about the search dialog */
+	idinfo;					/* information about the info dialog */ 	
 
-int 
+static boolean
+	searchdopen = FALSE,
 	infodopen = FALSE;    	/* flag that dialog is open */ 
 
 extern boolean
@@ -229,13 +231,11 @@ static int cv_formtot( char *tstr )
 
 /* 
  * Handle dialog to set data relevant for file, folder or string search.
+ * This routine does not close the dialog.
  */
 
 static int search_dialog(void)
 {
-	XDINFO 
-		info;		/* dialog info */
-
 	int 
 		button = 0;		/* code of pressed button */
 
@@ -256,16 +256,15 @@ static int search_dialog(void)
 
 	/* Open the dialog */
 
-	if(chk_xd_open(searching, &info) >= 0)
+	if(chk_xd_open(searching, &sdinfo) >= 0)
 	{
-
 		/* Edit data */
 
 		while (button != SOK && button != SCANCEL)
 		{
 			/* Wait for the appropriate button */
 
-			button = xd_form_do_draw(&info);
+			button = xd_form_do(&sdinfo, ROOT);
 
 			if ( button == SOK )
 			{
@@ -310,6 +309,7 @@ static int search_dialog(void)
 					search_hisize < search_losize	 /* valid size range    */ 
 				)
 				{
+					xd_change(&sdinfo, button, NORMAL, 1);
 					alert_iprint(MINVSRCH);
 					button = 0;
 				}
@@ -320,15 +320,15 @@ static int search_dialog(void)
 					nofound = TRUE;
 					get_opt( searching, &options.xprefs, S_IGNCASE, IGNCASE ); 
 					get_opt( searching, &options.xprefs, S_SKIPSUB, SKIPSUB ); 	
+
 					if ( *search_txt != 0 ) /* search for a string */
 						obj_unhide(fileinfo[MATCHBOX]);
 				}
 			} 		/* ok? */
+			else
+				xd_change(&sdinfo, button, NORMAL, 1);
+
 		} 			/* while */
-
-		/* Close the dialog */
-
-		xd_close( &info );
 	}
 
 	return button;
@@ -532,8 +532,8 @@ boolean searched_found
 
 
 /*
- * Closeinfo closes the object info dialog if it was open.
- * Now, closeinfo must come after object_info because
+ * Closeinfo closes the object info  and object search dialogs
+ * if they were open. Now, closeinfo must come after object_info because
  * object_info does not close the dialog after each item.
  */
 
@@ -541,12 +541,18 @@ void closeinfo(void)
 {
 	if ( infodopen )
 	{
-		xd_close (&dinfo);
+		xd_close (&idinfo);
 		infodopen = FALSE;
 	}
 	
-	obj_hide(fileinfo[MATCHBOX]);	
-	*search_pattern = 0;
+	if(searchdopen)
+	{
+		xd_change(&sdinfo, SOK, NORMAL, 0);
+		xd_close(&sdinfo);
+		searchdopen = FALSE;
+		obj_hide(fileinfo[MATCHBOX]);	
+		*search_pattern = 0;
+	}
 }
 
 
@@ -1122,15 +1128,15 @@ int object_info
 
 		if ( !infodopen )
 		{
-			xd_open( fileinfo, &dinfo );
+			xd_open( fileinfo, &idinfo );
 			infodopen = TRUE;
 		}
 		else
-			xd_drawdeep(&dinfo, ROOT);
+			xd_drawdeep(&idinfo, ROOT);
 
 		/* Wait for a button pressed, then reset button to normal state */
 
-		button = xd_form_do_draw(&dinfo);
+		button = xd_form_do_draw(&idinfo);
 
 		/* Get the (maybe changed) name from the dialog field */
 
@@ -1143,6 +1149,8 @@ int object_info
 		 * to illegal date or time- it can't be unprotected!
 		 * Therefore, it is permitted to keep illegal date/time on
 		 * write protected files.
+		 * Similar problem exists if a flder has illegal creation time/date.
+		 * Such time/date can not be changed from TeraDesk!
 		 */
 
 		optime.date = cv_formtod(fileinfo[FLDATE].ob_spec.tedinfo->te_ptext);
@@ -1161,6 +1169,7 @@ int object_info
 		if 
 		( 
 			(type != ITM_DRIVE) &&
+			(type != ITM_FOLDER) &&
 			(button != FLABORT) && 
 			(button != FLSKIP) && 
 			((attrib & FA_READONLY) == 0 ) && 
@@ -1388,6 +1397,8 @@ int object_info
 					{
 						result = si_error(oldn, error);
 
+						/* Path can be too long in a folder, allow change */
+
 						if( error == EPTHTL || error == EFNTL)
 						{
 							error = 0;
@@ -1452,22 +1463,6 @@ void item_showinfo
 	boolean search 	/* true if search results are displayed */
 ) 
 {
-	int 
-#if _MINT_
-		whandle,	/* saved top window handle */
-		wap_id,		/* saved owner of the top window */
-#endif
-		i,			/* item counter */ 
-		item,		/* dir.index of the current item in the list */ 
-		error = 0, 	/* error code */
-		result = 0;	/* return code: XABORT, XSKIP, XALL... */
-
-	ITMTYPE 
-		type;		/* type of the current item */
-
-	XATTR 
-		attrib;		/* extended item attributes */
-
 	const char 
 		*path,		/* full name of an item */ 
 		*name;		/* name of an item */
@@ -1477,19 +1472,47 @@ void item_showinfo
 		nf, 		/* number of files */
 		nb;			/* number of bytes */
 
+	XATTR 
+		attrib;		/* extended item attributes */
+
+	int 
+		*item,		/* dir.index of the current item in the list */ 
+#if _MINT_
+		whandle,	/* saved top window handle */
+		wap_id,		/* saved owner of the top window */
+#endif
+		i,			/* item counter */ 
+		error,	 	/* error code */
+		result;		/* return code: XABORT, XSKIP, XALL... */
+
+	ITMTYPE 
+		type;		/* type of the current item */
+
+
 	/* Some settings if search is specified... */
 
 #if _MINT_
 	wd_restoretop(0, &whandle, &wap_id); /* remember the top window */
 #endif
 
+	error = 0;
+	result = 0;
 	*search_pattern = 0;
 	nofound = FALSE;
+	item = list;
 
 	/* Open a dialog to input search parameters */
 
-	if ( search && search_dialog() != SOK )
-		return;
+	if (search)
+	{
+		if(search_dialog() != SOK )
+		{
+			xd_close(&sdinfo);
+			return;
+		}
+
+		searchdopen = TRUE;
+	}
 
 	infodopen = FALSE; /* Showinfo dialog is currently closed */ 	
 
@@ -1497,12 +1520,11 @@ void item_showinfo
 
 	for (i = 0; i < n; i++)
 	{
-		item = list[i];
-		type = itm_type(w, item);
+		type = itm_type(w, *item);
 
 		if ( isfile(type) ||  (type == ITM_DRIVE) )
 		{
-			if ((path = itm_fullname(w, item)) == NULL)
+			if ((path = itm_fullname(w, *item)) == NULL)
 				result = XFATAL;
 			else
 			{
@@ -1514,16 +1536,16 @@ void item_showinfo
 				else
 				{
 #if _MINT_
-					if ( itm_islink(w, item) )
+					if ( itm_islink(w, *item) )
 						type = ITM_LINK;
 #endif
 					if (type == ITM_DRIVE)
 						result = object_info(ITM_DRIVE, path, NULL, NULL);
 					else
 					{
-						name = itm_name(w, item);
+						name = itm_name(w, *item);
 						hourglass_mouse();
-						error = itm_attrib(w, item, (type == ITM_LINK ) ? 1 : 0 , &attrib);
+						error = itm_attrib(w, *item, (type == ITM_LINK ) ? 1 : 0 , &attrib);
 						arrow_mouse();
 
 						if (error != 0)
@@ -1543,9 +1565,14 @@ void item_showinfo
 
 		if (mustabort(result) || (result == XALL) )
 			break;
+
+		item++;
 	}
 
-	/* Close the 'Info...' dialog, if it was open (tested inside) */
+	/* 
+	 * Close the 'Info...' and Search dialogs, 
+	 * if they were open (tested inside) 
+	 */
 
 	closeinfo();
 
@@ -1565,6 +1592,7 @@ void item_showinfo
 	else
 	{
 		wd_do_update();
+
 		if (search && nofound)
 			alert_iprint(MSRFINI);
 	}

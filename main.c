@@ -103,6 +103,9 @@ char
 static char
 	*definfname;	/* name of the initial configuration file at startup */
 
+long
+	global_mem_size;/* size of global_memory */ 
+
 /* Names of menu boxes in the main menu */
 
 static const int 
@@ -143,6 +146,8 @@ const char
 
 boolean
 	onekey_shorts;	/* true if any single-key menu shortcuts are defined */
+
+
 
 
 /*
@@ -358,6 +363,31 @@ int chk_xd_open(OBJECT *tree, XDINFO *info)
 }
 
 
+/* 
+ * Inquire about the size of the largest block of free memory. 
+ * At least TOS 2.06 is needed in order to inquire about TT/Alt memory.
+ * Note that MagiC reports as TOS 2.00 only but it is assumed that
+ * Mint and Magic can always handle Alt/TT-RAM
+ */
+
+static void get_freemem(long *stsize, long *ttsize)
+{
+#if _MINT_
+	if ( mint || (tos_version >= 0x206))
+#else
+	if (tos_version >= 0x206)
+#endif
+	{
+		*stsize = (long)Mxalloc( -1L, 0 );	
+		*ttsize = (long)Mxalloc( -1L, 1 );
+	}
+	else
+	{
+		*stsize = (long)Malloc( -1L );
+		*ttsize = 0L;
+	}
+}
+
 /*
  * Show information on current versions of TeraDesk, TOS, AES...
  * Note: constant part of info for this dialog is handled in resource.c 
@@ -368,26 +398,9 @@ static void info(void)
 {
 	long stsize, ttsize; 			/* sizes of ST-RAM and TT/ALT-RAM */
 
-	/* 
-	 * Inquire about memory size. At least TOS 2.06 is needed in order
-	 * to inquire about TT/Alt memory.
-	 * Note that MagiC reports as TOS 2.00 only but it is assumed that
-	 * Mint and Magic can always handle Alt/TT-RAM
-	 */
-#if _MINT_
-	if ( mint || (tos_version >= 0x206) )
-#else
-	if ( tos_version >= 0x206 )
-#endif
-	{
-		stsize = (long)Mxalloc( -1L, 0 );	
-		ttsize = (long)Mxalloc( -1L, 1 );
-	}
-	else
-	{
-		stsize = (long)Malloc( -1L );
-		ttsize = 0L;
-	}
+	/* Inquire about the size of the largest free memory block */
+
+	get_freemem(&stsize, &ttsize);
 
 	/* 
 	 * Display currently available memory. 
@@ -528,9 +541,11 @@ static void disp_short
 	int left		/* left-justify and 0-terminate string if true */
 )
 {
-	char *strp = &string[3];
+	char
+		k = (char)(kbshort & 0x00FF),
+		*strp = &string[3];
 
-	switch ( kbshort & 0x00FF )
+	switch (k)
 	{
 		case BACKSPC: 
 			*strp-- = 'S';
@@ -552,7 +567,7 @@ static void disp_short
 			break;
 		default:				/* Other  */
 			if ( kbshort != 0 ) 
-				*strp-- =  (char)(kbshort & 0x00FF);
+				*strp-- = k;
 			break; 	
 	}
 	
@@ -562,7 +577,7 @@ static void disp_short
 	while(strp >= string)
 		*strp-- = ' ';
 	
-	if (left )		/* if needed- left justify, terminate with 0 */
+	if (left)		/* if needed- left justify, terminate with 0 */
 	{
 		string[4] = 0;
 		strip_name( string, string );
@@ -619,6 +634,9 @@ static void ins_shorts(void)
 
 static void setpreferences(void)
 {
+	XDINFO 
+		prefinfo;			/* dialog handling structure */
+ 
 	static int 				/* Static so as to remember position */
 		menui = MFIRST;		/* .rsc index of currently displayed menu item */
 
@@ -634,9 +652,6 @@ static void setpreferences(void)
 		*tmpmi,
 		tmp[NITEM + 2];		/* temporary kbd shortcuts (until OK'd) */
 
-	XDINFO 
-		prefinfo;			/* dialog handling structure */
- 
 	boolean
 		shok;				/* TRUE if a shortcut is acceptable */
 
@@ -785,7 +800,7 @@ static void setpreferences(void)
 			 * if menu structure is changed, this interval should be redefined too;
 			 * only those menu items with a space in the second char position
 			 * are considered; other items are assumed not to be valid menu texts
-			 * note: below will crash in the (ridiculous) situation when the
+			 * note: this code will crash in the (ridiculous) situation when the
 			 * first or the last menu item is not a good text
 			 */
 
@@ -924,14 +939,11 @@ static void opt_default(void)
 #endif
 	options.aarr = 1;	
 
-/* There is no need for this because all of options is set to 0 in memclr() above									    
-	options.sort = WD_SORT_NAME;
-	options.mode = TEXTMODE;
-	options.dsk_pattern = 0;
-	option.dsk_colour = 0; 							
-	options.win_pattern = 0;	/* no pattern */
-	options.win_colour = WHITE;
-*/
+	/* 
+	 * There is no need to set options.sort, .mode, .dsk_pattern, .dsk_colour,
+     * .win_pattern and .win_colour  because all of options is set to 0 
+	 * in memclr() above
+	 */									    
 }
 
 
@@ -1301,30 +1313,53 @@ static void init_vdi(void)
 
 static int alloc_global_memory(void)
 {
+	long
+		stsize,		/* size of available ST RAM */
+		ttsize;		/* size of available TT RAM */
+
 	/* 
-	 * 0x40: globally readable
 	 * 0x02: Alt/TT-RAM or ST-RAM, prefer ST-RAM
 	 * 0x03: Alt/TT-RAM or ST-RAM, prefer Alt/TT-RAM
+	 * 0x40: globally readable
 	 * Maybe better to use ST-RAM, if some other programs have
 	 * problems knowing of Alt-RAM ???
 	 */
 
-	int mode = 
+	int
+		mode = 0x03;
+
 #if _MINT_
-		( mint ) ? 0x43 : 
+	if(mint)
+		mode |= 0x40;
 #endif
-		0x03;
+
+	/* 
+	 * What is the size of the largest available memory block?
+	 * allocate about 0.2% to 0.4%  of that for the global buffer 
+	 * (or at least 1KB, and no more than 128KB)
+	 */
+
+	get_freemem(&stsize, &ttsize);
+
+	global_mem_size = lmax(stsize, ttsize) / 512000L;
+
+	if(global_mem_size > 16)
+		global_mem_size *= 2;	/* increase by 50% on larger systems */
+
+	/* Always use at least 1KB, but never more than 128KB */
+
+	global_mem_size = lminmax(1L, global_mem_size, 128L) * 1024L;
 
 	/* Note: Mint or Magic can always handle Alt/TT-RAM, I suppose? */
 
 #if _MINT_
-	if ( mint || (tos_version >= 0x206) )
+	if ( mint || (tos_version >= 0x206))
 #else
-	if ( tos_version >= 0x206 )
+	if (tos_version >= 0x206)
 #endif
-		global_memory = Mxalloc(GLOBAL_MEM_SIZE, mode);
+		global_memory = Mxalloc(global_mem_size, mode);
 	else	
-		global_memory = Malloc(GLOBAL_MEM_SIZE);
+		global_memory = Malloc(global_mem_size);
 
 	return (global_memory) ? 0 : ENSMEM;
 }
@@ -1740,7 +1775,7 @@ int main(void)
 	 *
 	 * Currently used:
 	 * D = always draw userdef objects, regardless of AES capabiliites
-	 * A = enforce use of ARGV protocol in passing commands
+	 * A = enforce use of ARGV protocol when passing commands to applications
 	 */
 
 	if ( (teraenv = getenv("TERAENV")) == NULL )
@@ -1984,10 +2019,12 @@ int main(void)
 			 */
 #if _MINT_
 			int ignor = 0;
-/*
+
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
-*/
+
+/* docs for Magic say so
 			quit = shel_write( SHW_SHUTDOWN, TRUE, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
+*/
 #else
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
 #endif

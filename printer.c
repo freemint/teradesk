@@ -408,26 +408,26 @@ boolean print_list
 	int function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
 )
 {
-	const char 
-		*path,		/* Item's path */ 
-		*name;		/* Item's name */
-
-	int 
-		i,			/* counter */ 
-		amode,		/* attribute finding mode; 0= follow links */
-		item,		/* item type (file/folder) */ 
-		error,		/* error code */ 
-		result;		/* TRUE if operation successful */
-
-	ITMTYPE 
-		type,		/* Item type (file/folder...) */
-		tgttype;	/* Link target type */
-
 	XATTR
 		attr;		/* Enhanced file attributes information */
 
 	XLNAME
 		dline;		/* sufficiently long string for a complete directory line */
+
+	const char 
+		*path,		/* Item's path */ 
+		*name;		/* Item's name */
+
+	int 
+		*item,		/* (pointer to) item index */ 
+		i,			/* counter */ 
+		amode,		/* attribute finding mode; 0= follow links */
+		error,		/* error code */ 
+		result;		/* TRUE if operation successful */
+
+	ITMTYPE 
+		type,		/* item type (file/folder...) */
+		tgttype;	/* link target type */
 
 	boolean
 		perror = FALSE;		/* true if there is an error in printing */
@@ -449,107 +449,112 @@ boolean print_list
 
 	/* Repeat print or dir-line print operation for each item in the list */
 
+
+	item = list;
+
 	for (i = 0; i < n; i++)
 	{
-		if ((item = list[i]) < 0)
-			continue;
-
-		name = itm_name(w, item);
-
-		if ((path = itm_fullname(w, item)) == NULL)
-			result = copy_error(ENSMEM, name, function);
-		else
+		if(*item >= 0)
 		{
-			type = itm_type(w, item);
-			tgttype = itm_tgttype(w, item);
-			amode = 0;
+			name = itm_name(w, *item);
 
-			/* Dont follow links for directory printout or network items */
-
-			if(function == CMD_PRINTDIR || tgttype == ITM_NETOB)
-				amode = 1;
-			
-			/* Now do whatever is needed to "print" an item */
-
-			if ((error = itm_attrib(w, item, amode, &attr)) == 0) /* follow links */
+			if ((path = itm_fullname(w, *item)) == NULL)
+				result = copy_error(ENSMEM, name, function);
+			else
 			{
-				if ( function == CMD_PRINT )
+				type = itm_type(w, *item);
+				tgttype = itm_tgttype(w, *item);
+				amode = 0;
+
+				/* Dont follow links for directory printout or network items */
+
+				if(function == CMD_PRINTDIR || tgttype == ITM_NETOB)
+					amode = 1;
+			
+				/* Now do whatever is needed to "print" an item */
+
+				if ((error = itm_attrib(w, *item, amode, &attr)) == 0) /* follow links */
 				{
-					/* 
-					 * Only files can be printed, ignore everything else. 
-					 * Executable files (programs) are hex-dumped.
-					 */
-
-					*folders = 0; 
-
-					if ( isfileprog(type) )
+					if ( function == CMD_PRINT )
 					{
-						int oldmode = printmode;
-						result = 0;
+						/* 
+						 * Only files can be printed, ignore everything else. 
+						 * Executable files (programs) are hex-dumped.
+						 */
 
-						if(tgttype != ITM_NETOB)
+						*folders = 0; 
+
+						if ( isfileprog(type) )
 						{
-							if ( type == ITM_PROGRAM && printmode == PM_TXT )
-								printmode = PM_HEX; /* hex-dump */
+							int oldmode = printmode;
+							result = 0;
 
-							upd_copyname(NULL, NULL, name);
-							result = print_file(w, item);
+							if(tgttype != ITM_NETOB)
+							{
+								if ( type == ITM_PROGRAM && printmode == PM_TXT )
+									printmode = PM_HEX; /* hex-dump */
 
-							printmode = oldmode;
-						}
+								upd_copyname(NULL, NULL, name);
+								result = print_file(w, *item);
 
-						*bytes -= attr.size;
-						*files -= 1;
+								printmode = oldmode;
+							}
+
+							*bytes -= attr.size;
+							*files -= 1;
 
 						upd_copyname(NULL, NULL, empty);
-					}
-				}
-				else
-				{
-					/* Printing of a directory line (all kinds of items) */
-
-					dir_line((DIR_WINDOW *)w, dline, item);
-
-					if ( dline[1] == (char)7 )
-					{
-						dline[1] = '\\';	/* Mark folders with "\" */
-						*folders -= 1;
+						}
 					}
 					else
 					{
-						*files -= 1;
-						*bytes -= attr.size;
-					}
+						/* Printing of a directory line (all kinds of items) */
 
-					perror = print_line(dline);
+						dir_line((DIR_WINDOW *)w, dline, *item);
 
-					if ( escape_abort( cfdial_open ) )
-						perror = TRUE;
+						if ( dline[1] == (char)7 )
+						{
+							dline[1] = '\\';	/* Mark folders with "\" */
+							*folders -= 1;
+						}
+						else
+						{
+							*files -= 1;
+							*bytes -= attr.size;
+						}
 
-				} /*  function */
+						perror = print_line(dline);
 
+						if ( escape_abort( cfdial_open ) )
+							perror = TRUE;
+
+					} /*  function */
+
+				}
+				else
+					result = copy_error(error, name, function);
+
+				free(path);
+
+				/* If something is wrong, get out of the loop */
+
+				if ( perror )
+					result = XFATAL;
+
+				/* Update information on the number of folders/files/bytes remaining */
+
+				upd_copyinfo(*folders, *files, *bytes);
 			}
-			else
-				result = copy_error(error, name, function);
 
-			free(path);
+			/* Check for user abort (ESC key pressed) */
 
-			/* If something is wrong, get out of the loop */
+			check_opabort(&result);
 
-			if ( perror )
-				result = XFATAL;
-
-			/* Update information on the number of folders/files/bytes remaining */
-
-			upd_copyinfo(*folders, *files, *bytes);
+			if (mustabort(result))
+				break;
 		}
 
-		/* Check for user abort (ESC key pressed) */
-
-		check_opabort(&result);
-
-		if (mustabort(result))
-			break;
+		item++;
 	}
 
 	/* Print directory summary, if needed */

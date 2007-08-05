@@ -4002,17 +4002,16 @@ static boolean itm_drop
 )
 {
 #if _MINT_
-
-	int 
-		fd,			/* pipe handle */ 
-		i, 			/* item counter */
-		item, 		/* index of a selected item */
-		apid = -1,	/* destination app id */ 
-		hdl;		/* destination window handle */
-	
 	const char 
 		*path;		/* full name of the dragged item */
 
+	int 
+		*item, 		/* (pointer to) index of a selected item */
+		fd,			/* pipe handle */ 
+		i, 			/* item counter */
+		apid = -1,	/* destination app id */ 
+		hdl;		/* destination window handle */
+	
 	/* Find the owner of the window at x,y */
 
 	if ( (hdl = wind_find(x,y)) > 0)
@@ -4028,22 +4027,27 @@ static boolean itm_drop
 		/* Create a string with filenames to be sent */
 
 		*global_memory = 0;
+		item = list;
 
 		for ( i = 0; i < n; i++ )
 		{
-			if ( (item = list[i]) < 0 )
-				continue;
-
-			path=itm_fullname(w, item);
-
-			/* Concatenate filename(s) */
-
-			if (!va_add_name(itm_type(w, item), path))
+			if(*item >= 0)
 			{
-				free(path);
-				return FALSE;
+
+				path=itm_fullname(w, *item);
+
+				/* Concatenate filename(s) */
+
+				if (!va_add_name(itm_type(w, *item), path))
+				{
+					free(path);
+					return FALSE;
+				}
+
+				free (path);
 			}
-			free (path);
+
+			item++;
 		}
 
 		nsize = (long)strlen(global_memory);

@@ -212,16 +212,15 @@
 #define CPFOLDER         17  /* FTEXT in tree COPYINFO */
 #define CPFILE           18  /* FTEXT in tree COPYINFO */
 #define CPDEST           19  /* FTEXT in tree COPYINFO */
-#define CMK1             20  /* TEXT in tree COPYINFO */
-#define COKBOX           21  /* IBOX in tree COPYINFO */
-#define CPT4             22  /* TEXT in tree COPYINFO */
-#define COPYCAN          23  /* BUTTON in tree COPYINFO */
-#define COPYOK           24  /* BUTTON in tree COPYINFO */
-#define PSETBOX          25  /* IBOX in tree COPYINFO */
-#define PRTXT            26  /* BUTTON in tree COPYINFO */
-#define PRHEX            27  /* BUTTON in tree COPYINFO */
-#define CPRFILE          29  /* BUTTON in tree COPYINFO */
-#define CFOLLNK          30  /* BUTTON in tree COPYINFO */
+#define COKBOX           20  /* IBOX in tree COPYINFO */
+#define CPT4             21  /* TEXT in tree COPYINFO */
+#define COPYCAN          22  /* BUTTON in tree COPYINFO */
+#define COPYOK           23  /* BUTTON in tree COPYINFO */
+#define PSETBOX          24  /* IBOX in tree COPYINFO */
+#define PRTXT            25  /* BUTTON in tree COPYINFO */
+#define PRHEX            26  /* BUTTON in tree COPYINFO */
+#define CPRFILE          28  /* BUTTON in tree COPYINFO */
+#define CFOLLNK          29  /* BUTTON in tree COPYINFO */
 
 #define NAMECONF         8   /* Form/Dialog-box */
 #define RNMTITLE         1   /* STRING in tree NAMECONF */

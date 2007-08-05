@@ -587,7 +587,7 @@ int cnt_items
 
 		if ( search && (result != XSKIP) )
 		{
-			closeinfo();
+			closeinfo(); /* close the info and search dialogs */
 
 			if ( fpath != NULL && result == 0 )
 			{
@@ -833,8 +833,10 @@ static int filecopy(const char *sname, const char *dname, XATTR *src_attrib, DOS
 				{
 					if ((slength = x_read(fh1, size, buffer)) > 0)
 					{
-						dlength = x_write(fh2, slength, buffer);
+						check_opabort(&error);
 
+						dlength = x_write(fh2, slength, buffer);
+	
 						if ((dlength < 0) || (slength != dlength))
 							error = (dlength < 0) ? (int)dlength : EDSKFULL;
 						
@@ -844,7 +846,9 @@ static int filecopy(const char *sname, const char *dname, XATTR *src_attrib, DOS
 						{
 							rbytes -= dlength;
 							upd_copyinfo(-1L, 0, rbytes);
+							check_opabort(&error);
 						}
+
 					}
 					else
 						error = (int)slength; /* a small negative number */
@@ -860,7 +864,9 @@ static int filecopy(const char *sname, const char *dname, XATTR *src_attrib, DOS
 			}
 
 			if (error != 0)
+			{
 				x_unlink(dname);
+			}
 
 			x_close(fh1);
 
@@ -1749,8 +1755,6 @@ static int copy_file
 								/* 
 						 	 	 * Move to another drive is in fact a copy;
 						 	 	 * the original file has to be deleted.
-							 	 * if there is an error, 
-							 	 * update destination window (why?).
 							 	 * Note 1: in this way, if there is an error,
 							 	 * (for example, a write-prottected file)
 							 	 * the file will be copied, not moved.
@@ -1760,9 +1764,17 @@ static int copy_file
 							 	 * with the contents of the link target
  						 	 	 */
 
-								if (((error = chk_access(attr)) != 0) || ((error = x_unlink(sname)) != 0) )
-									wd_set_update(WD_UPD_COPIED, dname, NULL);
+								error = x_unlink(sname);
 							}
+
+							/* 
+							 * If there is an error, destination window must
+							 * be updated because, if the copied file already
+							 * exists at destination, it will be deleted
+							 */
+
+							if(error != 0)
+								wd_set_update(WD_UPD_COPIED, dname, NULL);
 						}
 					}
 				}

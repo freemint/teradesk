@@ -100,9 +100,6 @@ AVSETW
 const char
 	*thisapp = "DESKTOP ";	/* AV-protocol name of this application */
 
-extern boolean
-	infodopen;
-
 /* These are VA_THAT_IZIT answers which correspond to ITMTYPEs */
 
 #if _MORE_AV
@@ -393,7 +390,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 	 * for the command line.
 	 */
 
-	if (strlen(cmdl) < GLOBAL_MEM_SIZE)
+	if (strlen(cmdl) < global_mem_size)
 	{
 		/* 
 		 * Now copy not more than first eight characters of program name (no path) 
@@ -551,7 +548,7 @@ boolean va_add_name(int type, const char *name)
 	 * for in strlenq.
 	 */
 
-	if ( g + strlenq(name) > GLOBAL_MEM_SIZE )
+	if ( g + strlenq(name) > global_mem_size )
 	{
 		alert_iprint(TFNTLNG);		
 		return FALSE;

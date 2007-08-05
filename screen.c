@@ -111,25 +111,6 @@ boolean rc_intersect2(RECT *r1, RECT *r2)
 
 
 /*
- * Determine whether a location is within a rectangle
- */
-
-boolean inrect(int x, int y, RECT *r)
-{
-	if 
-	(   
-		x >= r->x
-	    && x < (r->x + r->w)
-	    && y >= r->y
-	    && y < (r->y + r->h)
-	)
-		return TRUE;
-
-	return FALSE;
-}
-
-
-/*
  * Set default attributes for drawing rectangles
  */
 
