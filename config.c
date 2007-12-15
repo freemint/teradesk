@@ -119,47 +119,70 @@ static void append_fmt
 	switch(cftype)
 	{
 		case CFG_HDR:
+		{
 			strcat(dest, "=");
 			break;
+		}
 		case CFG_BEG:
+		{
 			strcpy(dest, "{");
 			break;
+		}
 		case CFG_END:
+		{
 			strcpy(dest, "}");
 			break;
+		}
 		case CFG_ENDG:
+		{
 			strcpy(dest, "}");
 			strcat(dest, eol);
 			break;
+		}
 		case CFG_FINAL:
+		{
 			strcpy(dest, "end");
 			strcat(dest, eol);
 			break;
-
+		}
 /* currently not used in TeraDesk- but may be used some day
 		case CFG_B:
 		case CFG_C:
+		{
 			strcat(dest, "=%c");
 			break;
+		}
 		case CFG_BD:
 		case CFG_H:
 */
 		case CFG_D:
+		{
 			strcat(dest, "=%d");
 			break;
+		}
 		case CFG_DDD:
+		{
 			strcat(dest,"=%d,%d,%d");
 			break;
+		}
 		case CFG_X:
+		{
 			strcat(dest, "=0x%4x");
 			break;
+		}
 		case CFG_L:
+		{
 			strcat(dest, "=%ld");
 			break;
+		}
 		case CFG_S:
+		{
 			strcat(dest, "=%s");
+		}
 		default:
+		{
 			break;
+		}
 	}
 
 	strcat( dest, eol );
@@ -252,27 +275,37 @@ int CfgSave
 		switch(tabtype)
 		{
 			case CFG_NEST:
+			{
 				/* Go deeper, it is a nest, and all is specified */
 				if ( (tab->a != NULL) && (tab->s != NULL) )
 				{
 					error = 0;
 					(*(CfgNest *)tab->a)(fp, level, 1, &error); 
 				}
+
 				break;
+			}
 			case CFG_HDR:
+			{
 				/* Write a nest header only if there is a keyword */
 				if ( tab->s != NULL )
 					error = fprintf_wtab(fp, --lvl, fmt, tab->s);
+
 				break;
+			}
 			case CFG_BEG:
 		    case CFG_END:
 			case CFG_ENDG:
+			{
 				/* Change nesting level */
 				lvl--;
+			}
 			case CFG_FINAL:
+			{
 				/* Write "end" to configuration file */
 				error = fprintf_wtab(fp, lvl, fmt);
 				break;
+			}
 			default:
 			{
 				if ( !(tab->type & CFG_INHIB) )
@@ -305,6 +338,7 @@ int CfgSave
 
 								error = fprintf_wtab(fp, lvl, fmt, ts);
 							}
+
 							break;
 						}
 /* currently not used
@@ -319,6 +353,7 @@ int CfgSave
 							unsigned int *v = (unsigned int *)tab->a;
 							if (*v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, *v);
+							
 							break;
 						}
 /* Currently not used
@@ -330,6 +365,7 @@ int CfgSave
 
 							if (v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, v);
+							
 							break;
 						}
 */
@@ -340,6 +376,7 @@ int CfgSave
 
 							if (v)
 								error = fprintf_wtab(fp, lvl, fmt, v[0], v[1], v[2]); 
+							
 							break;
 						}
 						case CFG_L:
@@ -349,6 +386,7 @@ int CfgSave
 
 							if (*v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, *v);
+							
 							break;
 						}
 						default:
@@ -357,6 +395,7 @@ int CfgSave
 
 							no_percent(fmt);		/* safety check */
 							error = fprintf_wtab(fp, lvl, fmt  );
+							
 							break;
 						}
 					} /* tab->type ? */
@@ -372,20 +411,6 @@ int CfgSave
 		error = 0;
 
 	return error; 
-}
-
-
-/* 
- * Search for the first non-blank (and non-tab) character in a string; 
- * return pointer to it 
- */
-
-char *nonwhite(char *s)
-{
-	while( ( (*s == '\t') || (*s == ' ') ) && (*s != 0) ) 
-		s++;
-
-	return s;
 }
 
 
@@ -586,7 +611,8 @@ int CfgLoad
 
 				switch(tabtype)
 				{
-					case CFG_NEST: 
+					case CFG_NEST:
+					{
 						/* It is a nest, go one level deeper */
 						/* also remember this keyword for possible error output */
 						lastnest = tab->s;
@@ -598,28 +624,38 @@ int CfgLoad
 							tel++;
 							error = 0;
 						}
+
 						break;
+					}
 					case CFG_S:
+					{
 						/* Decode a string */
 						cfgcpy(tab->a, s, maxs - 1);
 						break;
-
+					}
 /* currently not used in Teradesk but may be used some day
 					case CFG_C:
+					{
 						/* Interprete string as uint */
 						*(uint *)tab->a = *s++;
 						break;
+					}
 					case CFG_B:
+					{
 						/* Decode a character value */
 						*(char *)tab->a = *s++;
 						break;
+					}
 					case CFG_H:
+					{
 						/* Decode a positive decimal byte value */
 						*(char *)tab->a = (char)max(atoi(s), 0);
 						break;
+					}
 					case CFG_BD:
 */
 					case CFG_D:
+					{
 						/* Decode a positive decimal integer value */
 						*(int *)tab->a = max(atoi(s), 0);
 /* Currently not used
@@ -627,6 +663,7 @@ int CfgLoad
 							*(int *)tab->a = 1;
 */
 						break;
+					}
 					case CFG_DDD:
 					{
 						/* Decode a triplet of positive decimal integer values */
@@ -644,13 +681,17 @@ int CfgLoad
 						break;	
 					}					
 					case CFG_X:
+					{
 						/* Decode a hex integer value */
 						*(int *)tab->a = (int)strtol(s, NULL, 16); 
 						break;
+					}
 					case CFG_L:
+					{
 						/* Decode a positive decimal long int value */
 						*(long *)tab->a = lmax(atol(s), 0L);
 						break;
+					}
 					default:
 						break;
 

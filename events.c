@@ -51,6 +51,7 @@ static int event(int evflags, int mstate, int *key)
 			/* 
 			 * Message received; handle AV-protocol and FONT protocol messages, 
 			 * AP_TERM and SH_WDRAW. If AP_TERM is received, -1 will be returned 
+			 * Some day, drag & drop receive messages may be handled here
 			 */
 			if (hndlmessage(events.ev_mmgpbuf) != 0)
 				return -1;

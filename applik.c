@@ -63,9 +63,6 @@ int
 extern PRGTYPE 
 	*prgtypes;   	/* list of executable filetypes */
 
-extern Options 
-	options;		/* need to know cfg file version */
-
 static char 
 	*defcml = "%f"; /* default command line for programs */
 
@@ -75,7 +72,7 @@ static SNAME
 static boolean
 	nodocs = FALSE;	/* to copy documenttypes when copying apps */
 
-int trash_or_print(ITMTYPE type);
+int trash_or_print(ITMTYPE type);	/* from ICON.C */
 
 
 /* 
@@ -243,7 +240,7 @@ void appinfo_info
 		appl->localenv = strdup(empty);
 		appl->filetypes = NULL; 
 		appl->fkey = 0;
-		appl->flags &= ~(AT_EDIT | AT_AUTO | AT_SHUT | AT_VIDE | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW | AT_COMP);
+		appl->flags &= ~(AT_EDIT | AT_AUTO | AT_SHUT | AT_VIDE | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT);
 	}
 }
 
@@ -499,7 +496,7 @@ boolean app_dialog
 		qquit = FALSE;		/* true when ok to exit loop */
 
 	static const char 
-		ord[] = {ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW, ISCOMP};
+		ord[] = {ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW, ISCOMP, ISRBXT};
 
 
 	list = NULL;
@@ -588,195 +585,202 @@ boolean app_dialog
 		
 			switch (button)
 			{
-			case SETUSE:
-				/* 
-				 * Set special use of this application;
-				 * Adjust limit value of i in two loops below
-				 * to be equal to number of checkboxes in the dialog (currently 7)
-				 */
-				for ( i = 0; i < 8; i++ )
-					set_opt(specapp, appl->flags, AT_EDIT << i, (int)ord[i] );
-
-				button2 = chk_xd_dialog(specapp, ROOT);
-
-				if ( button2 == SPECOK )
-				{
-					for ( i = 0; i < 8; i++ )
-						get_opt(specapp, &(appl->flags), AT_EDIT << i, (int)ord[i] );
-				}	
-
-				break;
-
-			case APPFTYPE:
-				/*
-				 * Set associated document types; 
-				 * must recreate dialog title afterwards because the same
-				 * dialog is used
-				 */
-
-				ft_dialog( (const char *)(appl->shname), &newlist, (LS_DOCT | (use & LS_SELA)) );
-				rsc_title(setmask, DTSMASK, title);
-				break;
-
-			case APPPTYPE:			
-				/* 
-				 * Define application execution parameters (program type)
-				 * note: default values have already been set 
-				 */
-
-				prgtype_dialog( NULL, INT_MAX, (PRGTYPE *)appl, LS_APPL | LS_EDIT );
-				break;
-
-			case APOK:
-				/* 
-				 * Changes are accepted, do everything needed to exit dialog
- 				 * First, check for duplicate app installation 
-				 */
-
-				if ( !check_dup_app(applist, appl, pos ) )
-					break;
-
-				/* Then, check for duplicate F-key assignment */
-
-				fkey = atoi(applikation[APFKEY].ob_spec.tedinfo->te_ptext);
-
-				if ( !check_fkey(applist, fkey, pos) )
-					break;
-
-				/* Check for duplicate spec. application assignment */
-
-				if ( !check_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW | AT_COMP)), pos) )
-					break;
-
-				/* 
-				 * Build full application name again,
-				 * because it might have been changed by editing. 
-				 * Use "thispath" and "thisname" as they are not needed anymore.
-				 * Note that actual file is NOT renamed, just 
-				 * the entry in the applications list, but a check is made
-				 * if a file with the new name exists (it must exist)
-				 */
-
-				if ( *thispath  == 0 || *thisname == 0 )
-				{
-					alert_iprint(MFNEMPTY); /* can not be empty! */
-					break;
-				}
-
-				if (make_path( thispath, thispath, thisname ) != 0)
-				{
-					alert_iprint(TPTHTLNG);
-					break;
-				}
-
-				/* Does this application file exist at all ? */
-
-				if ( !x_exist(thispath, EX_FILE) )
-				{
-					alert_printf(1, APRGNFND, appl->shname);
-					break;
-				}
-
-				/* 
-				 * If application path+name have been changed,
-				 * allocate a new one 
-				 */
-
-				if ( strcmp(thispath, appl->name) != 0 )
-				{
-					if ( (newpath = strdup(thispath)) != NULL )
-					{
-						free(appl->name);
-						appl->name = newpath;
-					}
-					else
-						goto exit2;
-				}
-
-				/* 
-				 * If command line string has been changed (only then),
-				 * allocate a new one 
-				 */
-			 
-				if ( (strcmp(cmdline, appl->cmdline) != 0) )
-				{
-					if ((newcmd = strdup(cmdline)) != NULL)
-					{
-						free(appl->cmdline);
-						appl->cmdline = newcmd;
-					}
-					else
-						goto exit2;
-				}
-
-				/* Same for local environment */
-
-				strip_name(envline, envline);
-				if ( (strcmp(envline, appl->localenv) != 0) )
-				{
-					if ((newenv = strdup(envline)) != NULL)
-					{
-						free(appl->localenv);
-						appl->localenv = newenv;
-					}
-					else
-						goto exit2;
-				}
-
-				/* 
-				 * How about documenttypes? If there has been a change in
-				 * address, point to new list, clear old one; otherwise 
-				 * clear the copy. Note: currently there is no check
-				 * whether the same documenttype has been assigned to another
-				 * application, it is only checked (in ft_dialog) whether 
-				 * there are duplicate documenttypes set for this application.
-				 * Anyway, it is possible to assign one documenttype to
-				 * several applications.
-				 */	
-
-				if ( newlist != list )
+				case SETUSE:
 				{
 					/* 
-					 * There have been changes in ft_dialog
-					 * (known because list address has changed)
-					 * remove original list, accept newlist, the
-					 * one pointed to by "list" has been destroyed
-					 * in ft_dialog
+					 * Set special use of this application;
+					 * Adjust limit value of i in two loops below
+					 * to be equal to number of checkboxes in the 
+					 * 'Special Use' dialog (currently 8).
+					 * Dimension of ord[] above must be changed appropriately.
 					 */
-
-					lsrem_all_one((LSTYPE **)(&appl->filetypes));
-					appl->filetypes = newlist;
+					for ( i = 0; i < 9; i++ )
+						set_opt(specapp, appl->flags, AT_EDIT << i, (int)ord[i] );
+	
+					button2 = chk_xd_dialog(specapp, ROOT);
+	
+					if ( button2 == SPECOK )
+					{
+						for ( i = 0; i < 9; i++ )
+							get_opt(specapp, &(appl->flags), AT_EDIT << i, (int)ord[i] );
+					}	
+	
+					break;
 				}
-				else
+				case APPFTYPE:
 				{
-					/* there has been no changes, destroy copy of list */
-
-					lsrem_all_one((LSTYPE **)(&list));
+					/*
+					 * Set associated document types; 
+					 * must recreate dialog title afterwards because the same
+					 * dialog is used
+					 */
+	
+					ft_dialog( (const char *)(appl->shname), &newlist, (LS_DOCT | (use & LS_SELA)) );
+					rsc_title(setmask, DTSMASK, title);
+					break;
 				}
+				case APPPTYPE:			
+				{
+					/* 
+					 * Define application execution parameters (program type)
+					 * note: default values have already been set 
+					 */
+	
+					prgtype_dialog( NULL, INT_MAX, (PRGTYPE *)appl, LS_APPL | LS_EDIT );
+					break;
+				}
+				case APOK:
+				{
+					/* 
+					 * Changes are accepted, do everything needed to exit dialog
+	 				 * First, check for duplicate app installation 
+					 */
+	
+					if ( !check_dup_app(applist, appl, pos ) )
+						break;
+	
+					/* Then, check for duplicate F-key assignment */
+	
+					fkey = atoi(applikation[APFKEY].ob_spec.tedinfo->te_ptext);
+	
+					if ( !check_fkey(applist, fkey, pos) )
+						break;
+	
+					/* Check for duplicate spec. application assignment */
+	
+					if ( !check_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT)), pos) )
+						break;
+	
+					/* 
+					 * Build full application name again,
+					 * because it might have been changed by editing. 
+					 * Use "thispath" and "thisname" as they are not needed anymore.
+					 * Note that actual file is NOT renamed, just 
+					 * the entry in the applications list, but a check is made
+					 * if a file with the new name exists (it must exist)
+					 */
+	
+					if ( *thispath  == 0 || *thisname == 0 )
+					{
+						alert_iprint(MFNEMPTY); /* can not be empty! */
+						break;
+					}
+	
+					if (make_path( thispath, thispath, thisname ) != 0)
+					{
+						alert_iprint(TPTHTLNG);
+						break;
+					}
+	
+					/* Does this application file exist at all ? */
+	
+					if ( !x_exist(thispath, EX_FILE) )
+					{
+						alert_printf(1, APRGNFND, appl->shname);
+						break;
+					}
+	
+					/* 
+					 * If application path+name have been changed,
+					 * allocate a new one 
+					 */
+	
+					if ( strcmp(thispath, appl->name) != 0 )
+					{
+						if ( (newpath = strdup(thispath)) != NULL )
+						{
+							free(appl->name);
+							appl->name = newpath;
+						}
+						else
+							goto exit2;
+					}
+	
+					/* 
+					 * If command line string has been changed (only then),
+					 * allocate a new one 
+					 */
+				 
+					if ( (strcmp(cmdline, appl->cmdline) != 0) )
+					{
+						if ((newcmd = strdup(cmdline)) != NULL)
+						{
+							free(appl->cmdline);
+							appl->cmdline = newcmd;
+						}
+						else
+							goto exit2;
+					}
+	
+					/* Same for local environment */
+	
+					strip_name(envline, envline);
+					if ( (strcmp(envline, appl->localenv) != 0) )
+					{
+						if ((newenv = strdup(envline)) != NULL)
+						{
+							free(appl->localenv);
+							appl->localenv = newenv;
+						}
+						else
+							goto exit2;
+					}
+	
+					/* 
+					 * How about documenttypes? If there has been a change in
+					 * address, point to new list, clear old one; otherwise 
+					 * clear the copy. Note: currently there is no check
+					 * whether the same documenttype has been assigned to another
+					 * application, it is only checked (in ft_dialog) whether 
+					 * there are duplicate documenttypes set for this application.
+					 * Anyway, it is possible to assign one documenttype to
+					 * several applications.
+					 */	
+	
+					if ( newlist != list )
+					{
+						/* 
+						 * There have been changes in ft_dialog
+						 * (known because list address has changed)
+						 * remove original list, accept newlist, the
+						 * one pointed to by "list" has been destroyed
+						 * in ft_dialog
+						 */
+	
+						lsrem_all_one((LSTYPE **)(&appl->filetypes));
+						appl->filetypes = newlist;
+					}
+					else
+					{
+						/* there has been no changes, destroy copy of list */
+	
+						lsrem_all_one((LSTYPE **)(&list));
+					}
+	
+					/* Set also the f-key. (remove all other assignments of this key) */
+	
+					unset_fkey(applist, fkey);
+					appl->fkey = fkey;
+	
+					/* Reset special app flags from other applications */
+	
+					unset_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT)) );
+	
+					qquit = TRUE;
+					stat = TRUE;
+					break;
+				}
+				default:
+				{
+					exit2:
 
-				/* Set also the f-key. (remove all other assignments of this key) */
-
-				unset_fkey(applist, fkey);
-				appl->fkey = fkey;
-
-				/* Reset special app flags from other applications */
-
-				unset_specapp( applist, (appl->flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW | AT_COMP)) );
-
-				qquit = TRUE;
-				stat = TRUE;
-				break;
-
-			default:
-			  exit2:
-
-				/* Anything else, like exit without OK */
-
-				/* Copy of documenttype list has to be destroyed */
-
-				lsrem_all_one((LSTYPE **)(&newlist));
-				qquit = TRUE;
-				break;
+					/* Anything else, like exit without OK */
+	
+					/* Copy of documenttype list has to be destroyed */
+	
+					lsrem_all_one((LSTYPE **)(&newlist));
+					qquit = TRUE;
+				}
 			}
 
 			/* Set all buttons to normal state */
@@ -1020,6 +1024,7 @@ static char *requote_cmd(char *cmd)
  * Return pointer to an allocated space containing the complete command line,
  * including length placeholder in the first byte. Arguments in this
  * command line are separated by blanks.
+ * Note: parameter 'sellist' is locally modified.
  */
 
 static char *app_build_cml
@@ -1042,9 +1047,7 @@ static char *app_build_cml
 	int 
 		i, 					/* item counter */
 		error,				/* anything */
-		mes,				/* message identification */
-		item;				/* item index */
-
+		mes;				/* message identification */
 
 	build = NULL;
 	realname = NULL;
@@ -1054,7 +1057,7 @@ static char *app_build_cml
 
 	if((qformat = requote_cmd((char *)format)) != NULL)
 	{
-		const char *c = qformat;	/* pointer to a position in qformat */
+		char *c = qformat;			/* pointer to a position in qformat */
 		long ml;					/* needed buffer length for the command line */
 		ITMTYPE type;				/* current item type */
 
@@ -1098,8 +1101,7 @@ static char *app_build_cml
 
 						for (i = 0; i < n; i++)
 						{
-							item = sellist[i];
-							type = itm_type(w, item);
+							type = itm_type(w, *sellist);
 
 							if (type != ITM_NETOB && (mes = trash_or_print(type)) != 0)
 							{
@@ -1117,7 +1119,7 @@ static char *app_build_cml
 
 								/* Get the full real name of an item (allocate) */
 
-								if ((realname = itm_tgtname(w, item)) == NULL)
+								if ((realname = itm_tgtname(w, *sellist)) == NULL)
 									goto error_exit2;
 
 								tmp = realname;	/* for hh == 'f' or hh == 'p' */
@@ -1155,13 +1157,15 @@ static char *app_build_cml
 								free(realname);
 								realname = NULL;
 							}
+
+							sellist++;
+
 						} /* for... */
 					}
 					else
 					{
 						/* must get rid of blanks after %f, etc. */
-						while (*c == ' ')
-							c++;
+						c = nonwhite(c);
 					}						
 				}
 				else  /* neither %f nor %n nor %p */
@@ -1781,7 +1785,7 @@ static CfgNest one_app
 				 * a bug, but probably not worth rectifying.
 				 */
 
-				unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_CONS | AT_VIEW | AT_COMP) ) );
+				unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT) ) );
 
 				if (awork.fkey > 20)
 					awork.fkey = 0;
@@ -1870,6 +1874,9 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 
 	while (app != NULL)
 	{
+		if(app->flags & AT_RBXT)
+			xd_rbdclick = 0;
+
 		if ( ( app->flags & flags) != NULL ) /* correct type of application ? */
 		{
 			/* Delay a little bit before the next application */
@@ -1887,3 +1894,5 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 	}
 	return n;
 }
+
+

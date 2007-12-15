@@ -86,6 +86,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 		if (pipename[18] > 'Z')
 		{
 			pipename[18] = 'A'; 
+
 			pipename[17]++;
 
 			if (pipename[17] > 'Z')
@@ -205,7 +206,7 @@ void ddclose(int fd)
 }
 
 
-/* All following code is for the receiver; currently NOT USED
+/* All following code is for TeraDesk as the the receiver; currently NOT USED
 
 /*
  * open a drag & drop pipe

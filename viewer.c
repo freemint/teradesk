@@ -631,7 +631,6 @@ static void txt_rem(TXT_WINDOW *w)
 {
 	txt_free(w);
 	free(w->path);
-
 	w->winfo->used = FALSE;
 	w->winfo->typ_window = NULL; 
 
@@ -671,14 +670,20 @@ void txt_hndlmenu
 	int item	/* menu item id. */
 )
 {
+	/* A switch structue is used in case new menu items are introduced */
+
 	switch (item)
 	{
-	case VMTAB:
-		txt_tabsize((TXT_WINDOW *)w);
-		break;
-	case VMHEX:
-		txt_mode((TXT_WINDOW *)w);
-		break;
+		case VMTAB:
+		{
+			txt_tabsize((TXT_WINDOW *)w);
+			break;
+		}
+		case VMHEX:
+		{
+			txt_mode((TXT_WINDOW *)w);
+			break;
+		}
 	}
 
 	wd_type_nofull(w);
@@ -956,7 +961,7 @@ static int txt_read
 
 			for (i = 0; i < e; i++)
 			{
-				if ( isxprint(b[i]) )
+				if(isxprint(*b++))
 					n++;
 			}
 
@@ -973,9 +978,6 @@ static int txt_read
 		/* Determine window text length and width */
 
 		w->nlines = txt_nlines(w);
-/*
-		w->columns = (w->hexmode) ? txt_width(w, 1) : w->twidth;
-*/
 		w->columns = txt_width(w, w->hexmode);
 	}
 
@@ -1033,36 +1035,43 @@ long compare_buf
 
 	for ( i = 0; i < len; i++ )
 	{
-		if ( buf1[i] != buf2[i] )
-			return i;
-	}
+		if(*buf1++ != *buf2++)
+			break;
+	} 
 
-	return len;
+	return i;
 }
 
 
 /*
  * Copy a number of bytes from source to destination, starting from
- * index "pos", substituting all nulls with something else; 
- * Not more than "displen" bytes will be copied, or less if buffer end 
- * is encountered first. Add a 0 char at the end. In order for all this
- * to work, "displen" must first be given a positive value.
+ * index "pos", substituting all nulls with something else that is printable; 
+ * Not more than "dl" bytes will be copied, or less if buffer end (nul char)
+ * is encountered first. Add a nul char at the end. In order for all this
+ * to work, "dl" must first be given a positive value.
  *
- * Note 1: "pos" should never be larger than "length" !!!! no checking done !
+ * Note: "pos" should never be larger than "length" !!!! no checking done !
  * ("length" is length from the beginning of source, not counted from "pos").
- * Note 2: there is a similar substitution of zeros in showinfo.c;
- * take care to use the same substitute (maybe define a macro)
  */
 
-static void copy_unnull( char *dest, char *source, long length, long pos )
+void copy_unnull
+( 
+	char *dest,		/* pointer to destination */
+	char *source,	/* pointer to source */
+	long length,	/* length of source */
+	long pos,		/* starting position in the soruce */
+	int dl			/* length of the display field */
+)
 {
-	int i, n;
+	int 
+		i,
+		n;
 
 	char
 		*s = source + pos, 
 		*d = dest;
 
-	n = (int)lmin( length - pos, (long)displen );
+	n = (int)lmin( length - pos, (long)dl );
 
 	for ( i = 0; i < n; i++ )
 	{
@@ -1251,8 +1260,8 @@ void compare_files( WINDOW *w, int n, int *list )
 
 								/* Prepare something to display */
 
-								copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1 );
-								copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2 );
+								copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1, displen );
+								copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2, displen );
 								rsc_ltoftext(compare, COFFSET, i1 );
 
 								obj_unhide(compare[CMPIBOX]);

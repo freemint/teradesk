@@ -40,32 +40,34 @@
 #include "lists.h" 
 #include "stringf.h"
 
-OBJECT *menu,
-	   *setprefs,
-	   *addprgtype,
-	   *newfolder,
-	   *fileinfo,
-	   *infobox,
-	   *addicon,
-	   *getcml,
-	   *nameconflict,
-	   *copyinfo,
-	   *setmask,
-	   *applikation,
-	   *loadmods,
-	   *viewmenu,
-	   *stabsize,
-	   *wdoptions,
-	   *wdfont,
-	   *helpno1,
-	   *fmtfloppy,
-	   *vidoptions, 
-	   *copyoptions,
-	   *ftydialog,
-	   *searching,
-	   *specapp,
-	   *openw,
-	   *compare;
+OBJECT 
+	*menu,
+	*setprefs,
+	*addprgtype,
+	*newfolder,
+	*fileinfo,
+	*infobox,
+	*addicon,
+	*getcml,
+	*nameconflict,
+	*copyinfo,
+	*setmask,
+	*applikation,
+	*loadmods,
+	*viewmenu,
+	*stabsize,
+	*wdoptions,
+	*wdfont,
+	*helpno1,
+	*fmtfloppy,
+	*vidoptions, 
+	*copyoptions,
+	*ftydialog,
+	*searching,
+	*specapp,
+	*openw,
+	*compare,
+	*quitopt;
 
 char
 	*oldname, /* must stay */
@@ -125,7 +127,7 @@ static void set_menubox(int box)
 
 	objc_offset(menu, box, &x, &dummy);
 
-	if ((offset = x + menu[box].r.w + 5 * screen_info.fnt_w - max_w) > 0)
+	if ((offset = x + menu[box].r.w + 5 * xd_fnt_w - xd_screen.w) > 0)
 		menu[box].r.x -= offset;
 }
 
@@ -200,7 +202,7 @@ void rsc_yfix
 	int chalfs		/* vertical distance from ref. object - in char half-heights */ 
 )
 {
-	tree[object].r.y = tree[refobject].r.y + screen_info.fnt_h * chalfs / 2;
+	tree[object].r.y = tree[refobject].r.y + xd_fnt_h * chalfs / 2;
 }
 
 
@@ -214,12 +216,13 @@ void rsc_yfix
 static void mn_del(int box, int item)
 {
 	OBJECT
+		*treei,
 		*tree = menu;
 
 	int 
 		i,
 	 	y,
-		ch_h = screen_info.fnt_h;
+		ch_h = xd_fnt_h;
 
 
 	tree[box].r.h -= ch_h;
@@ -228,10 +231,12 @@ static void mn_del(int box, int item)
 
 	while (i != box)
 	{
-		if (tree[i].r.y > y)
-			tree[i].r.y -= ch_h;
+		treei = &tree[i];
 
-		i = tree[i].ob_next;
+		if (treei->r.y > y)
+			treei->r.y -= ch_h;
+
+		i = treei->ob_next;
 	}
 
 	objc_delete(menu, item);
@@ -381,6 +386,8 @@ void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
  * Fix template and validation string for a field converted
  * to 8+3 filename form, validating only characters permitted in TOS
  * filenames. New validation and template are taken from the resource.
+ * This routine is used only in fixing volume labels and, for the 
+ * tima being is normally not compiled: _EDITLABELS is off
  */
 
 void rsc_tostmplt(TEDINFO *ted)
@@ -401,8 +408,9 @@ void rsc_tostmplt(TEDINFO *ted)
  *  just > 0: move left edge by "just" characters to the right
  *  just < 0: move right edge by "just"-1 characters to the left
  *
- * id parameter "extra" is true, validation string suitable for masks is used;
- * otherwise, validation permits only characters valid in TOS filenames.
+ * id parameter "extra" is true, validation string suitable for masks is used
+ * (wildcards are permitted). Otherwise, validation permits only characters
+ * valid in TOS filenames.
  * 
  * See also routines cv_fntoform() and cv_formtofn() 
  */
@@ -426,8 +434,8 @@ static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
 	else
 		dx = just;
 
-	obj->r.x += dx * screen_info.fnt_w;
-	obj->r.w = 12 * screen_info.fnt_w;
+	obj->r.x += dx * xd_fnt_w;
+	obj->r.w = 12 * xd_fnt_w;
 
 	/* Change object type */
 
@@ -442,7 +450,8 @@ static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
 
 
 /*
- * A briefer form of the above, used several times for a saving in size
+ * A briefer form of the above, used several times for a saving in size.
+ * Wildcards are not permitted here.
  */
 
 static void tos_bform(OBJECT *tree, int object)
@@ -507,6 +516,7 @@ void rsc_init(void)
 	xd_gaddr(SPECAPP, &specapp);
 	xd_gaddr(OPENW, &openw);
 	xd_gaddr(COMPARE, &compare);
+	xd_gaddr(QUITOPT, &quitopt);
 
 	/*  
 	 * Define buffers for scrolling editable texts in dialogs. 
@@ -576,6 +586,7 @@ void rsc_init(void)
 	 */  
 
 	rsc_yfix( copyinfo, CPT4, CPT4, 1 );		/* copy-info dialog     */
+	rsc_yfix( searching, SPT4, SPT4, 1 );		/* search dialog     */
 	rsc_yfix( fmtfloppy, FLABEL, FLOT1, 3 );	/* floppy-format dialog */		
 	rsc_yfix( infobox, INFOVERS, INFOSYS, 3 );	/* info box */
 
@@ -604,6 +615,7 @@ void rsc_init(void)
 #endif
 	{
 		char *s;
+		int dh;
 
 		/* These are SNAMEs */
 
@@ -613,7 +625,7 @@ void rsc_init(void)
 		tos_fnform( setmask, FILETYPE, 3, TRUE);
 	
 		for ( i = 0; i < NLINES; i++ )
-			tos_fnform( setmask, FTYPE1 + i, 3, FALSE );
+			tos_fnform( setmask, FTYPE1 + i, 3, TRUE );
 
 		/* These are VLNAMEs */
 
@@ -626,7 +638,10 @@ void rsc_init(void)
 
 		tos_fnform(searching, SMASK, -1, TRUE);
 
-		/* Paths should be upppercase  and contain valid characters only */
+		/*
+		 * Paths should be upppercase  and contain valid characters only;
+		 * wildcards are not permitted, therefore validation is 'p'
+		 */
 
 		*xd_pvalid(&applikation[APPATH]) = 'p';
 		*xd_pvalid(&compare[CFILE1]) = 'p';
@@ -648,11 +663,20 @@ void rsc_init(void)
 
 		/* Modify size, position or visibility of some objects */
 
-		addicon[CHNBUTT].r.y -= addicon[CHNBUTT].r.h;
-		addicon[ADDBUTT].r.y -= addicon[CHNBUTT].r.h;
-		addicon[0].r.h -= addicon[CHNBUTT].r.h;
-
 		mn_del(MNVIEWBX, MSHOWN);
+
+		dh = addicon[CHNBUTT].r.h;
+		addicon[CHNBUTT].r.y -= dh;
+		addicon[ADDBUTT].r.y -= dh;
+		addicon[0].r.h -= dh;
+
+#if !_MINT_
+		dh = addprgtype[MEMLIM].r.y - addprgtype[ATSINGLE].r.y;
+		addprgtype[APTOK].r.y -= dh;
+		addprgtype[APTCANC].r.y -= dh;
+		addprgtype[0].r.h -= dh;
+#endif
+
 	}
 
 #if _MINT_

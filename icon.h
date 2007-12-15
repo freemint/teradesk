@@ -61,6 +61,7 @@ void free_icons(void);
 void remove_icon(int object, boolean draw);
 int limcolour(int col);
 int limpattern(int pat);
+int dsk_defaultpatt(void);
 void set_selcolpat(XDINFO *info, int obj, int col, int pat);
 int rsrc_icon(const char *name);
 boolean isfile(ITMTYPE type);

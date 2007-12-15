@@ -47,7 +47,7 @@ typedef struct
 char *strsncpy(char *dst, const char *src, size_t len);	
 char *strcpyj(char *dst, const char *src, size_t len);
 char *strcpyq(char *d, const char *s, char qc);
-char *strcpyuq(char *d, const char *s);
+char *strcpyuq(char *d, char *s);
 char *strcpyrq(char *d, const char *s, char qc, char **fb);
 size_t strlenq(const char *name);
 
@@ -59,12 +59,13 @@ long lmax(long x, long y);
 long lminmax(long lo, long i, long hi);
 void bell(void);
 int touppc(int c);
-void digit(char *s, int x);
+char *digit(char *s, int x);
 void *memclr(void *s, size_t len); 
 
 
 /* Funkties voor filenamen */
 
+char *nonwhite ( char *s);
 void strip_name (char *dst, const char *src);
 void cramped_name(const char *s, char *t, size_t w);
 

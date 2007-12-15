@@ -58,8 +58,8 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 	{
 		sh = (int)(((long)slines * (long)slh) / (long)sn);
 
-		if (sh < screen_info.fnt_h)
-			sh = screen_info.fnt_h;
+		if (sh < xd_fnt_h)
+			sh = xd_fnt_h;
 	}
 	else
 		sh = slh;
@@ -195,18 +195,24 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
 	switch (scancode)
 	{
 		case CTL_CURUP:
+		{
 			if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
 				k = -1;
 			else if(sl->line > 0)
 				j = -1;
 			break;
+		}
 		case CTL_CURDOWN:
+		{
 			if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)) )
 				k = 1;
 			else if (sl->line < (sl->n - sl->lines))
  				j = 1;
+		}
 		default:
+		{
 			break;
+		}
 	}
 
 	if(k != 0)

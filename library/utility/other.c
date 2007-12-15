@@ -27,15 +27,18 @@
 
 /*
  * Convert a number (range 0:99 only!!!) into a string
- * (leading zeros shown). Attention: no termination 0 byte.
+ * two characters long. (leading zeros shown). 
+ * Return a poiner to the byte after the end of string.
+ * Attention: no termination 0 byte.
  */
 
-void digit(char *s, int x)
+char *digit(char *s, int x)
 {
 	x = x % 100;
-	s[0] = x / 10;
-	s[1] = x - 10 * s[0] + '0'; /* is this faster than % ? */
-	s[0] += '0';
+	*s++ = x / 10;
+	*s++ = x - 10 * s[-1] + '0'; /* is this faster than % ? */
+	s[-2] += '0';
+	return s;
 }
 
 
@@ -52,6 +55,8 @@ void bell(void)
 /*
  * An improved substitute for toupper();
  * This should work for character ASCII codes above 127 as well.
+ * For a certain range of characters it returns characters
+ * with ASCII codes shifted down (or left) by 32.
  */
 
 int touppc(int c)

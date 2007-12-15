@@ -325,7 +325,7 @@ char *ft_dialog
 	switch( (luse & ~LS_SELA) )
 	{
 		case LS_FMSK:
-
+		{
 			/* Use this dialog to set file mask */
 
 			rsc_title(setmask, DTSMASK, DTFTYPES);
@@ -339,9 +339,9 @@ char *ft_dialog
 				set_opt( setmask, options.attribs, (int)fas[j], (int)ois[j]);
 
 			break;
-
+		}
 		case LS_DOCT:
-
+		{
 			/* 
 			 * Use this dialog to set document types for an application;
 			 * must deselect add/delete/change buttons because of a 
@@ -355,10 +355,11 @@ char *ft_dialog
 			obj_deselect(setmask[FTDELETE]);
 			obj_deselect(setmask[FTCHANGE]);
 			break;
-
+		}
 		default:
+		{
 			break;
-
+		}
 	}
 
 	/* Edit the filemasks list: add/delete/change entry */

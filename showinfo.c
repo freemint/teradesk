@@ -29,6 +29,7 @@
 #include <mint.h>
 #include <xdialog.h>
 #include <limits.h>
+#include <ctype.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -53,8 +54,8 @@ static XDINFO
 	idinfo;					/* information about the info dialog */ 	
 
 static boolean
-	searchdopen = FALSE,
-	infodopen = FALSE;    	/* flag that dialog is open */ 
+	searchdopen = FALSE,	/* flag that Search... dialog is open */
+	infodopen = FALSE;    	/* flag that Info... dialog is open */ 
 
 extern boolean
 	can_touch;
@@ -89,6 +90,7 @@ static size_t
 static char 
 	*search_txt,		/* string to search for (directly in dialog field) */
 	*search_buf,		/* buffer to store the file to search the string in */
+	*search_bufend,		/* pointer to the first byte after the search area */
 	**search_finds;		/* pointers to found strings */
 
 static VLNAME 
@@ -112,7 +114,9 @@ static int fi_atoi(int obj)
 }
 
 /* 
- * Convert time to a string to be displayed in a form 
+ * Convert DOS time to a string to be displayed in a form. 
+ * String format is hhmmss, always six characters long 
+ * Terminating 0 is not added. 
  */
 
 static void cv_ttoform(char *tstr, unsigned int time)
@@ -123,14 +127,16 @@ static void cv_ttoform(char *tstr, unsigned int time)
 	h = time >> 5;
 	min = h & 0x3F;
 	hour = (h >> 6) & 0x1F;
-	digit(tstr, hour);
-	digit(tstr + 2, min);
-	digit(tstr + 4, sec);
+	tstr = digit(tstr, hour);
+	tstr = digit(tstr, min);
+	digit(tstr, sec);
 }
 
 
 /* 
- * Convert date to a string to be displayed in a form 
+ * Convert DOS date to a string to be displayed in a form.
+ * String format id ddmmyy, always six characters long.
+ * Terminating 0 is not added. 
  */
 
 static void cv_dtoform(char *tstr, unsigned int date)
@@ -141,92 +147,79 @@ static void cv_dtoform(char *tstr, unsigned int date)
 	h = date >> 5;
 	mon = h & 0xF;
 	year = ((h >> 4) & 0x7F) + 80;
-	digit(tstr, day);
-	digit(tstr + 2, mon);
-	digit(tstr + 4, year);
+	tstr = digit(tstr, day);
+	tstr = digit(tstr, mon);
+	digit(tstr, year);
 }
 
 
 /*
+ * convert a string to DOS date or time.
+ *
+ * If ct = TRUE:
+ * Convert a string (format: hhmmss) to DOS time;
+ * Input string is checked: hour can be 0:23, minute 0:59, second 0:59
+ *
+ * If ct = FALSE:
  * Convert a string (format: ddmmyy) to DOS date; 
  * for brevity, date is only partially checked: 
  * february can be 1:29 in any year, month is 1:12, year is 0:99;
- * return -1 if invalid date is entered; 
- * It is assumed that the input string, if not empty, is always long enough. 
+ *
+ * returns -1 if invalid string is entered; 
  */
 
-static int cv_formtod( char *dstr )
+static int cv_formtodt( char *dtstr, boolean ct )
 {
-	int d, m, y, dd;
-	char b[3];
-	static const char md[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	int
+		d_h,			/* day or hour */
+		m_m,			/* month or minute */
+		y_s;			/* year or second */
 
-	if ( dstr[0] == 0 )
+	char
+		*ds = dtstr,	/* pointer to current position */	
+		b[3];			/* temporary storage */
+
+	static const char 	/* numbers of days in months */
+		md[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+	if ( *ds == 0 )
 		return 0;
 
-	b[0] = dstr[0];
-	b[1] = dstr[1];
-	b[2] = 0;
-	d = atoi(b);
+	if(strlen(dtstr) == 6)
+	{
 
-	b[0] = dstr[2];
-	b[1] = dstr[3];
-	m = atoi(b);
+		b[0] = *ds++;
+		b[1] = *ds++;
+		b[2] = 0;
+		d_h = atoi(b);
 
-	b[0] = dstr[4];
-	b[1] = dstr[5];
+		b[0] = *ds++;
+		b[1] = *ds++;
+		m_m = atoi(b);	
 
-	y = atoi(b);
-	if ( y < 80 )
-		y += 100;
-	y -= 80;
+		b[0] = *ds++;
+		b[1] = *ds;
+		y_s = atoi(b);
 
-	dd = d | (m << 5) | (y << 9);
+		if(ct)
+		{
+			if ( d_h < 24 && m_m < 60 && y_s < 60 )
+				return ((d_h << 11) | (m_m << 5) | (y_s / 2));
+		}
+		else
+		{
+			if ( y_s < 80 )
+				y_s += 100;
 
-	if ( m < 1 || m > 12 || d < 1 || d > md[m] )
-		return -1;
+			y_s -= 80;
 
-	return dd;
+			if ( m_m > 0 && m_m < 13 && d_h > 0 && d_h <= md[m_m] )
+				return (d_h | (m_m << 5) | (y_s << 9));
+		}
+	}
+
+	return -1;
 } 
-
-
-/*
- * Convert a string (format: hhmmss) to DOS time
- * It is assumed that the input string, if not empty, is always long enough. 
- */
-
-static int cv_formtot( char *tstr )
-{
-	int h, m, s, tt;
-
-	char b[3];
-
-	if ( tstr[0] == 0 )
-		return 0;
-
-	b[0] = tstr[4];
-	b[1] = tstr[5];
-	b[2] = 0;
-
-	s = atoi(b);
-
-	b[0] = tstr[2];
-	b[1] = tstr[3];
-
-	m = atoi(b);
-
-	b[0] = tstr[0];
-	b[1] = tstr[1];
-
-	h = atoi(b);
-
-	tt = (h << 11) | (m << 5) | (s / 2); 
-
-	if ( h > 23 || m > 59 || s > 59 )
-		return -1;
-
-	return tt;
-}
 
 
 /* 
@@ -286,8 +279,8 @@ static int search_dialog(void)
 						nodirs = FALSE;
 				}				
 
-				search_lodate = cv_formtod(searching[SLODATE].ob_spec.tedinfo->te_ptext);
-				search_hidate = cv_formtod(searching[SHIDATE].ob_spec.tedinfo->te_ptext);
+				search_lodate = cv_formtodt(searching[SLODATE].ob_spec.tedinfo->te_ptext, FALSE);
+				search_hidate = cv_formtodt(searching[SHIDATE].ob_spec.tedinfo->te_ptext, TRUE);
 
 				if ( search_hidate == 0 )
 					search_hidate = 32671; 	     /* a very late date  */
@@ -336,7 +329,7 @@ static int search_dialog(void)
 
 
 /*
- * Find first occurence of a string in the text read from a file into the buffer;
+ * Find first occurence of a string in the text read from a file into buffer;
  * Currently this is a very primitive and -very- inefficient routine
  * but there's room for improvement (e.g. another basic algorithm, use of 
  * wildcards, etc). Routine returns pointer to the found string, or NULL if 
@@ -346,33 +339,52 @@ static int search_dialog(void)
 
 char *find_string
 ( 
-	char *buffer,	/* buffer in which the string is searched for */ 
-	size_t lb		/* length of data in the buffer */ 
+	char *buffer	/* buffer in which the string is searched for */ 
 )
 {
+	int
+		(*cmpfunc)(const char *s1, const char *s2, size_t n);
+
 	char 
 		*p,			/* pointer to currently examined location              */
-		*pend;		/* pointer to last location to examine (near file end) */
+		*pend,		/* pointer to last location to examine (near file end) */
+		t;			/* uppercase of the first char of the searched string  */	
 
+	p = buffer;									/* start from the beginning */
+	pend = search_bufend - search_length + 1;	/* go to (almost) file end */
+	t = *search_txt & 0xDF;						/* almost uppercase */
 
-	p = buffer;							/* start from the beginning */
-	pend = p + (lb - search_length);	/* go to (almost) file end */
+	/* Select the function for string comparison */
+
+	if ( (options.xprefs & S_IGNCASE) != 0 ) 
+		cmpfunc = strnicmp;
+	else
+		cmpfunc = strncmp;
 
 	while ( p < pend )
 	{
-		if ( (options.xprefs & S_IGNCASE) != 0 ) 
-		{
-			if (strnicmp(p, search_txt, search_length) == 0)
-				return p;
-		}
-		else
-		{
-			if (strncmp(p, search_txt, search_length) == 0)
-				return p;
-		}
+		/* 
+		 * If (uppercase of) the first character of the string does not
+		 * match, there is no point in calling the comparison routine.
+		 * Certain gain in speed is achieved in this way. Actually,
+		 * *p & 0xDF is not always equal to uppercase od *p but as the
+		 * same operation is performed for *t, the comparison is valid.
+		 * It serves to eliminate a lot of unnecessary comparisons.
+		 * Btw. 'ignore case' option does not work correctly for characters
+		 * with codes in the upper half of the 256-bytes table. 
+		 */
+
+		if
+		(
+			((*p & 0xDF) == t) && 
+			(cmpfunc(p, search_txt, search_length) == 0)
+		)
+			return p;	/* found */
+
 		p++;
 	}
-	return NULL;
+
+	return NULL;	/* not found */
 }
 
 
@@ -395,7 +407,6 @@ boolean searched_found
 		*p;				/* local pointer to string found */
 
 	long
-		i,				/* local counter */
 		fl;				/* length of the file just read */
 
 	int 
@@ -441,27 +452,12 @@ boolean searched_found
 					{
 						/* 
 						 * First read complete file 
-						 * (remember to free buffer when finished)
+						 * (remember to free this buffer when finished)
                          */
 
 						if ( (error = read_txtf( fpath,  &search_buf, &fl)) == 0)
 						{
-							/* 
-							 * for the sake of display of found locations,
-							 * and also to enable search to the end of file, 
-							 * convert all 0-chars to something else 
-							 * (should be some char which can't be entered into
-							 * the string from the keyboard, e.g. [DEL])
-							 * Note 2: there is a similar substitution of  
-							 * zeros in viewer.c;
-							 * take care to use the same substitute (maybe define a macro)
-							 */
-
-							for ( i = 0; i < fl; i++ )
-							{
-								if ( search_buf[i] == 0 )
-									search_buf[i] = SUBST_DISP; 
-							}
+							search_bufend = search_buf + fl;
 
 							/* 
 							 * Allocate memory for pointers to found strings
@@ -477,7 +473,7 @@ boolean searched_found
 						
 								while ( p && search_nsm < MFINDS )
 								{
-									p = find_string(p, (size_t)(search_buf + fl - p) );
+									p = find_string(p);
 
 									if ( p )
 									{
@@ -497,7 +493,7 @@ boolean searched_found
 										 * the search is finished sooner 
 										 */
 
-										/* p++; */
+										/* p++; alternative */
 										p = p + search_length;
 									}
 								}
@@ -653,8 +649,7 @@ static void disp_smatch( int ism )
 		nc2;		/* number of chars to display after searched string */
 
 	char
-		*s1,		/* string before searched */
-		*s2,	 	/* string after searched */ 
+		*s,			/* part of string to be displayed */
 		*disp;		/* form string to display */
 
 
@@ -664,38 +659,28 @@ static void disp_smatch( int ism )
 	rsc_ltoftext(fileinfo, NSMATCH, (long)search_nsm);
 
 	disp = fileinfo[MATCH1].ob_spec.tedinfo->te_ptext;	/* pointer to field */
-
 	fld = (int)strlen(xd_pvalid(&fileinfo[MATCH1])); /* length of */
 
 	/* Completely clear the display field (otherwise it won't work!) */
 
 	memclr( disp, (size_t)fld );
+	fld -= 5;
 
 	/* 
-	 * Try to display some text just before found string. 
+	 * Try to copy to display buffer some text just before found string. 
 	 * Must not be before beginning of buffer (i.e. file).
 	 * Out of available length, 5 characters will be wasted
 	 * for the string itself, represented by a "[...]" 
 	 */
 
-	s1 = search_finds[ism] - (fld - 5) / 2;
+	s = search_finds[ism] - fld/ 2;
 
-	if ( s1 < search_buf )
-		s1 = search_buf;				
+	if ( s < search_buf )
+		s = search_buf;				
 
-	nc1 = (int)(search_finds[ism] - s1); /* number of characters to display */
+	nc1 = (int)(search_finds[ism] - s); /* number of characters to display */
 
-	/* 
-	 * Display the text just after the found string. This will be terminated 
-	 * either by field length (i.e. not more than nc2 characters), or by
-	 * a nul char at end of buffer, whichever comes sooner 
-	 */
-
-	s2 = search_finds[ism] + search_length;
-	nc2 = fld - nc1 - 5;				/* not more than field size */
-
-	if ( nc1 > 0 )
-		strncpy(disp, s1, (size_t)nc1);
+	copy_unnull(disp, s, nc1, 0, nc1);
 
 	/*
 	 * For display, substitute the string searched for with "[...]"
@@ -704,7 +689,17 @@ static void disp_smatch( int ism )
 	 */
 
 	strcat(disp, "[...]");				/* substitute for searched text */	
-	strncat(disp, s2, (size_t)nc2);		/* add some text after searched */
+
+	/* 
+	 * Copy to display buffer the text just after the found string. 
+	 * This will be terminated  either by field length (i.e. not more than nc2
+	 * characters), or by the end of the buffer, whichever comes sooner 
+	 */
+
+	s = search_finds[ism] + search_length;
+	nc2 = (int)lmin(search_bufend - s, fld - nc1); /* not more than field size */
+
+	copy_unnull(disp + nc1 + 5, s, nc2, 0, nc2);
 }
 
 
@@ -824,7 +819,7 @@ int object_info
 	switch(type)
 	{
 		case ITM_FOLDER:
-
+		{
 			/* Count the numbers of items in the folder */
 
 			error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE); 
@@ -870,10 +865,10 @@ int object_info
 			rsc_title(fileinfo, TDTIME, TCRETIM);
 
 			goto setmore;
-
+		}
 #if _MINT_
 		case ITM_LINK:
-
+		{
 			rsc_title(fileinfo, FLTITLE, DTLIINF);
 			obj_unhide(fileinfo[FLLIBOX]);
 			memclr(ltgtname, sizeof(ltgtname) );
@@ -888,10 +883,10 @@ int object_info
 
 			cv_fntoform(fileinfo, FLTGNAME, ltgtname);
 			goto evenmore;
+		}
 #endif
-
 		case ITM_PROGRAM:
-
+		{
 			thetitle = DTPRGINF;
 
 			if (*search_pattern == 0)
@@ -931,23 +926,29 @@ int object_info
 				obj_unhide(fileinfo[PFBOX]);
 			}
 			goto settitle;
-
+		}
 		case ITM_FILE:
-
+		{
 #if _MINT_
 			/* Handle some special 'file' objects from drive U */
 
 			switch ( attr->mode & S_IFMT )
 			{
 				case S_IFCHR:
+				{
 					thetitle = DTDEVINF;
 					break;
+				}
 				case S_IFIFO:
+				{
 					thetitle = DTPIPINF;
 					break;
+				}
 				case S_IMEM:
+				{
 					thetitle = DTMEMINF;
 					break;
+				}
 				default:
 
 				{
@@ -1015,9 +1016,9 @@ int object_info
 				obj_hide(fileinfo[FLALL]);
 
 			break;
-
+		}
 		case ITM_DRIVE:
-
+		{
 			rsc_title(fileinfo, FLTITLE, DTDRINF);
 
 #if _EDITLABELS
@@ -1039,7 +1040,10 @@ int object_info
 				)
 				{
 					long 
-						fbytes, tbytes, clsize, k = 1;
+#if _MINT_
+						k = 1,
+#endif
+						fbytes, tbytes, clsize;
 
 					fbytes = diskinfo.b_free,	/* number of free bytes */
 					tbytes = diskinfo.b_total,	/* total number of bytes */
@@ -1105,9 +1109,11 @@ int object_info
 			obj_unhide(fileinfo[FLCLSIZ]);
 
 			break;
-
+		}
 		default:
+		{
 			break;
+		}
 	}
 
 	arrow_mouse();
@@ -1149,18 +1155,22 @@ int object_info
 		 * to illegal date or time- it can't be unprotected!
 		 * Therefore, it is permitted to keep illegal date/time on
 		 * write protected files.
-		 * Similar problem exists if a flder has illegal creation time/date.
+		 * Similar problem exists if a folder has illegal creation time/date.
 		 * Such time/date can not be changed from TeraDesk!
 		 */
 
-		optime.date = cv_formtod(fileinfo[FLDATE].ob_spec.tedinfo->te_ptext);
-		optime.time = cv_formtot(fileinfo[FLTIME].ob_spec.tedinfo->te_ptext);
+		optime.date = cv_formtodt(fileinfo[FLDATE].ob_spec.tedinfo->te_ptext, FALSE);
+		optime.time = cv_formtodt(fileinfo[FLTIME].ob_spec.tedinfo->te_ptext, TRUE);
+
+		/* These will be needed in touch_file()... */
 
 		now.date = Tgetdate();
 		now.time = Tgettime();
 		
+
 		if ( optime.date == 0 )
 			optime.date = now.date;
+
 		if ( optime.time == 0 )
 			optime.time = now.time;
 
@@ -1300,7 +1310,7 @@ int object_info
 									( 
 										( (attrib ^ new_attribs.attr) != FA_READONLY) || 
 										(optime.date != attr->mdate) || 
-										( optime.time != attr->mtime) 
+										(optime.time != attr->mtime) 
 									) 
 								)
 									error = EACCDN;
@@ -1369,14 +1379,14 @@ int object_info
 				break;
 			}
 			case FLABORT:
-
+			{
 				result = XABORT;
 				nofound = FALSE;
 				qquit = TRUE;
 				break; 		
-
+			}
 			case FLSKIP:
-
+			{
 				ism++;
 
 				if ( ism >= search_nsm )
@@ -1385,7 +1395,7 @@ int object_info
 					qquit = TRUE;
 				}
 				break;
-
+			}
 			case FLALL:
 			{
 				if(type == ITM_DRIVE)
@@ -1425,11 +1435,11 @@ int object_info
 					result = XALL;
 					qquit = TRUE;
 				}
-				break;
 			}
 			default:
+			{
 				break;
-
+			}
 		} /* switch(button) */
 
 #if _MORE_AV

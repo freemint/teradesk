@@ -50,7 +50,8 @@ extern	OBJECT
 	*searching,
 	*specapp,
 	*openw,
-	*compare;
+	*compare,
+	*quitopt;
 
 extern char 
 	*oldname,

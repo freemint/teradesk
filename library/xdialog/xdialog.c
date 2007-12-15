@@ -54,12 +54,12 @@ int
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
 	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
 	xd_aes4_0,					/* flag that AES 4 is present    */
-	xd_colaes = 0,				/* more than 4 colours available */
-	xd_has3d = 0,				/* result of appl-getinfo(13...) */
+	xd_colaes    = 0,			/* more than 4 colours available */
+	xd_has3d     = 0,			/* result of appl-getinfo(13...) */
 	aes_hor3d    = 0,			/* 3d enlargement value */
 	aes_ver3d    = 0,			/* 3d enlargement value */
 	xd_fdo_flag = FALSE,		/* Flag voor form_do  */
-	xd_bg_col = WHITE,			/* colour of background object */
+	xd_bg_col  = WHITE,			/* colour of background object */
 	xd_ind_col = LWHITE,		/* colour of indicator object  */
 	xd_act_col = LWHITE,		/* colour of activator object  */
 	xd_sel_col = BLACK;			/* colour of selected object   */
@@ -80,9 +80,12 @@ int
 	xd_vhandle,					/* Vdi handle for library functions */
 	xd_nplanes,					/* Number of planes the current resolution */
 	xd_ncolours,				/* Number of colours in the current resolution */
+	xd_fnt_w,					/* screen font width */
+	xd_fnt_h,					/* screen font height */
 	xd_pix_height,				/* pixel size */
 	xd_npatterns,				/* Number of available patterns */
 	xd_nfills,					/* numbr of available fills */
+	xd_rbdclick = 1,			/* if 1, right button is always doubleclick */
 	xd_min_timer;				/* Minimum time passed to xe_multi(). */
 
 void *(*xd_malloc) (size_t size);
@@ -111,7 +114,7 @@ static int
 	xd_msoff_cnt = 0;		/* Counter for xd_mouse_on/xd_mouse_off */
 
 
-int
+static int
 	xd_oldbutt = -1;
 
 XDOBJDATA 
@@ -121,7 +124,8 @@ XDINFO
 	*xd_dialogs = NULL,		/* Chained list of modal dialog boxes. */
 	*xd_nmdialogs = NULL;	/* List with non modal dialog boxes. */
 
-RECT 
+RECT
+	xd_screen,				/* screen dimensions */ 
 	xd_desk;				/* Dimensions of desktop background. */
 
 XDFONT 
@@ -169,21 +173,21 @@ static WD_FUNC xd_wdfuncs =
 
 static WD_FUNC xd_nmwdfuncs =
 {
-	__xd_hndlkey,
-	__xd_hndlbutton,
-	__xd_redraw,
-	__xd_topped,
-	0L,				/* bottomed */
-	__xd_topped,
-	__xd_closed,
+	__xd_hndlkey,	/* hndlkey */
+	__xd_hndlbutton,/* hndlbutton */
+	__xd_redraw,	/* redraw */
+	__xd_topped,	/* topped */
+	xw_nop1,		/* bottomed */
+	__xd_topped,	/* newtop */
+	__xd_closed,	/* closed */
 	0L,				/* fulled */
-	0L,				/* arrowed */
+	xw_nop2,		/* arrowed */
 	0L,				/* hslid */
 	0L,				/* vslid */
 	0L,				/* sized */
-	__xd_moved,
+	__xd_moved,		/* moved */
 	0L, /* __xd_hndlmenu, currently there are no menus in nonmodal dialogs */
-	__xd_top,
+	__xd_top,		/* top */
 	0L, 			/* uniconify */
 	0L 				/* iconify */
 };
@@ -395,28 +399,33 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 
 		switch (pmode)
 		{
-		case XD_CENTERED:
-			info->drect.x = prev->drect.x + (prev->drect.w - info->drect.w) / 2;
-			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
-			if ( xd_desk.w > 400 && xd_desk.h > 300 )
+			case XD_CENTERED:
 			{
-				/* 
-				 * If there is room on the screen,
-				 * stack dialogs a little to the right & down, for nicer looks 
-				 */
-				info->drect.x += 16;
-				info->drect.y += 16;
+				info->drect.x = prev->drect.x + (prev->drect.w - info->drect.w) / 2;
+				info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
+				if ( xd_desk.w > 400 && xd_desk.h > 300 )
+				{
+					/* 
+					 * If there is room on the screen,
+					 * stack dialogs a little to the right & down, for nicer looks 
+					 */
+					info->drect.x += 16;
+					info->drect.y += 16;
+				}
+				break;
 			}
-			break;
-		case XD_MOUSE:
-			graf_mkstate(&info->drect.x, &info->drect.y, &dummy, &dummy);
-			info->drect.x -= info->drect.w / 2;
-			info->drect.y -= info->drect.h / 2;
-			break;
-		case XD_CURRPOS:
-			info->drect.x = tree->ob_x - brd_l;
-			info->drect.y = tree->ob_y - brd_u;
-			break;
+			case XD_MOUSE:
+			{
+				graf_mkstate(&info->drect.x, &info->drect.y, &dummy, &dummy);
+				info->drect.x -= info->drect.w / 2;
+				info->drect.y -= info->drect.h / 2;
+				break;
+			}
+			case XD_CURRPOS:
+			{
+				info->drect.x = tree->ob_x - brd_l;
+				info->drect.y = tree->ob_y - brd_u;
+			}
 		}
 
 		xd_clip(info, &xd_desk);
@@ -424,6 +433,23 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode)
 		tree->ob_x = info->drect.x + brd_l;
 		tree->ob_y = info->drect.y + brd_u;
 	}
+}
+
+
+/*
+ * Determine screen size by calling vq_extnd
+ */
+
+void xd_screensize(void)
+{
+	int work_out[58];	
+
+	vq_extnd(xd_vhandle, 0, work_out);
+
+	xd_screen.x = 0;
+	xd_screen.y = 0;
+	xd_screen.w = work_out[0] + 1;	/* Screen width (pixels)  */
+	xd_screen.h = work_out[1] + 1;	/* Screen height (pixels) */
 }
 
 
@@ -488,21 +514,29 @@ int xd_wdupdate(int mode)
 {
 	switch (mode)
 	{
-	case BEG_UPDATE:
-		if (++xd_upd_ucnt != 1)
-			return 1;
-		break;
-	case END_UPDATE:
-		if (--xd_upd_ucnt != 0)
-			return 1;
-		break;
-	case BEG_MCTRL:
-		if (++xd_upd_mcnt != 1)
-			return 1;
-		break;
-	case END_MCTRL:
-		if (--xd_upd_mcnt != 0)
-			return 1;
+		case BEG_UPDATE:
+		{
+			if (++xd_upd_ucnt != 1)
+				return 1;
+			break;
+		}
+		case END_UPDATE:
+		{
+			if (--xd_upd_ucnt != 0)
+				return 1;
+			break;
+		}
+		case BEG_MCTRL:
+		{
+			if (++xd_upd_mcnt != 1)
+				return 1;
+			break;
+		}
+		case END_MCTRL:
+		{
+			if (--xd_upd_mcnt != 0)
+				return 1;
+		}
 	}
 
 	return wind_update(mode);
@@ -699,8 +733,11 @@ static int xd_selectable(OBJECT *tree, int object)
 
 
 /* 
- * Find if a key is a hotkey 
+ * Find if a key is a hotkey. Also, handle the HELP key. 
  */
+
+extern char *hyppage;
+extern void opn_hyphelp(void);
 
 int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 {
@@ -708,11 +745,21 @@ int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
 		i,
 		k= (key & 0xFF);
 
+	/* Display a page from the hypertext manual */
+	if
+	(
+		((unsigned int)key == HELP) &&
+		(xd_nmdialogs || (xd_dialmode == XD_WINDOW))  
+	)
+	{
+		opn_hyphelp();
+		return 0;
+	}
 
 	/* Create "uppercase" of characters above 127 for other codepages */
 
 	if ( k > 127 )
-		key = ( (key & 0xFF00) | touppc(key & 0xFF) );
+		key = ( (key & 0xFF00) | touppc(k) );
 
 	for (i = 0; i < nk; i++)
 	{
@@ -731,7 +778,7 @@ int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key)
  ********************************************************************/
 
 /*
- * Find a dialog which is relaed to a window
+ * Find a dialog which is related to a window
  */
 
 XDINFO *xd_find_dialog(WINDOW *w)
@@ -927,6 +974,7 @@ static void str_insert(char *s, int pos, int ch, int curlen, int maxlen)
 /*
  * Return 1 if a key represents a printable character; otherwise return 0.
  * This should cure some problems with German and similar keyboards.
+ * @=64, [=91, \`92, ]=93, {=123, }=125
  */
 
 
@@ -966,45 +1014,52 @@ static int xd_chk_key(char *valid, int pos, int key)
 
 	if(xd_ischar(key))
 	{
-		if(cvalid == 'X')						/* anything */
-			return ch;
-		else if ( cvalid == 'x' )				/* anything uppercase */
+		switch (cvalid)
 		{
-			if (isupper(cch) || (key & 0x80))
-				return cch;
-			else
-				return ch;
-		}
-
-		if (ch < 0x80)							/* more detailed validation */
-		{
-			switch (cvalid)
+			case 'x':				/* anything upeprcase */
 			{
-			case 'N':
-			case 'n':
-			case '9':
+				if (isupper(cch) || (key & 0x80))	/* or national */
+					return cch;
+			}
+			case 'X':				/* anything */
+			{
+				return ch;
+			}	
+			case 'N':				/* uppercase letters, numers and spaces */
+			case 'n':				/* all letters, numbers and spaces */
+			case '9':				/* numbers only */
+			{
 				if(isdigit(ch))
 					return ch;
-				if (cvalid == '9')
+				if (cvalid == '9')	/* if 'N' or 'n' treat as 'A' or 'a' */
 					break;
-			case 'A':
-			case 'a':
-				if (ch == ' ')
+			}
+			case 'A':				/* uppercase letters and spaces */
+			case 'a':				/* all letters and spaces */
+			{
+				if (ch == ' ' || (key & 0x80))
 					return ch;
 				if(isupper(cch))
 					return (cvalid & 0x20) ? ch : cch;
 				break;
-			case 'F':
-			case 'P':
-			case 'p':
-			case '?':
-				if(isupper(cch))	/* A-Z ONLY */
-					return cch;
+			}
+			case 'F':				/* filenames characters incl. wildcards */
+			case 'P':				/* pathnames characters incl. wildcards */
+			case 'f':				/* filenames characters without wildcards */
+			case 'p':				/* pathnames characters without wildcards */
+			{
+				if(isupper(cch))	/* A-Z ONLY; always good */
+					return cch;		/* return unchanged uppercase */
 				if 
 				(
-					(strchr("_:œ-0123456789", ch) != 0) || /* additional permitted characters */
-					((cvalid == '?') && strchr("*?~![]", ch) != 0) ||				/* wildcards */
-					((cvalid == 'P' || cvalid == 'p') && strchr("\\.", ch) != 0)	/* characters for paths */
+					/* 
+					 * note: "{}@" permitted for the sake of German TOS;
+					 * ":" permitted because of network objects
+					 */
+					(strchr("_:-0123456789{}@", ch) != NULL) || /* additional permitted characters */
+					((cvalid == 'P' || cvalid == 'p') && strchr("\\.", ch) != NULL)	 || /* characters for paths */
+					((cvalid == 'F' || cvalid == 'P') && strchr("*?~![]", ch) != NULL) ||	/* wildcards */
+					(key & 0x80)
 				)
 					return ch;
 			}
@@ -1164,119 +1219,140 @@ int xd_edit_char(XDINFO *info, int key)
 
 	switch (key)
 	{
-	case SHFT_CURLEFT:
-		newpos = 0;
-		goto setcursor;
-	case SHFT_CURRIGHT:
-		newpos = curlen;
-		goto setcursor;
-	case CURLEFT:
-		if (oldpos > 0)
-			newpos = oldpos - 1;
-		goto setcursor;
-	case CURRIGHT:
-		if (oldpos < curlen)
-			newpos = oldpos + 1;
-
-		setcursor:;
-
-		if (oldpos != newpos)
+		case SHFT_CURLEFT:
 		{
-			xd_mouse_off();
-			xd_cursor_off(info);
-
-			info->cursor_x = newpos;
-			m_on = TRUE;
-			goto shift_redraw;
+			newpos = 0;
+			goto setcursor;
 		}
-		break;
-	case DELETE:
-		if(oldpos >= curlen)
-			break;
-			goto doshift;
-	case BACKSPC:
-		if( oldpos <= 0 )
-			break;
-	case ESCAPE:
-
-		doshift:;
-
-		xd_mouse_off();
-		xd_cursor_off(info);
-
-		if(key == ESCAPE)
+		case SHFT_CURRIGHT:
 		{
-			*str = 0;
-			info->cursor_x = 0;
-			curlen = 0;
+			newpos = curlen;
+			goto setcursor;
 		}
-		else
+		case CURLEFT:
 		{
-			if(key == BACKSPC)
-				info->cursor_x--;
-			str_delete(str, info->cursor_x);
-			curlen--;		
+			if (oldpos > 0)
+				newpos = oldpos - 1;
+			goto setcursor;
 		}
-		m_on = TRUE;
-		goto shift_redraw;
-	case INSERT: /* call the fileselector */
-		if(blk)
+		case CURRIGHT:
 		{
-			xd_cursor_off(info);
-			get_fsel(info, str, tree[edit_obj].ob_flags);
-			curlen = (int)strlen(str);
-			goto shift_redraw;
-		}
-	case HOME:
-	case HELP:
-		/* These codes have no effect */
-		break;
-	default:
-
-		pos = oldpos;
-		if(oldpos == maxlen)
-			pos--;
-
-		/* For a scrolled editable text use only the first validation character */
-
-		if ((ch = xd_chk_key(val, (blk) ? 0 : pos, key))== 0 && !blk)
-			pos = xd_chk_skip(tree, edit_obj, key);
-
-		if (ch != 0 || pos > 0 )
-		{
-			xd_mouse_off();
-			xd_cursor_off(info);
-
-			if (ch != 0)
+			if (oldpos < curlen)
+				newpos = oldpos + 1;
+	
+			setcursor:;
+	
+			if (oldpos != newpos)
 			{
-				info->cursor_x = pos + 1;
-				str_insert(str, pos, ch, curlen, maxlen);
+				xd_mouse_off();
+				xd_cursor_off(info);
+	
+				info->cursor_x = newpos;
+				m_on = TRUE;
+				goto shift_redraw;
+			}
+			break;
+		}
+		case DELETE:
+		{
+			if(oldpos >= curlen)
+				break;
+				goto doshift;
+		}
+		case BACKSPC:
+		{
+			if( oldpos <= 0 )
+				break;
+		}
+		case ESCAPE:
+		{
+			doshift:;
+	
+			xd_mouse_off();
+			xd_cursor_off(info);
+	
+			if(key == ESCAPE)
+			{
+				*str = 0;
+				info->cursor_x = 0;
+				curlen = 0;
 			}
 			else
 			{
-				int i;
-				info->cursor_x = pos;
-
-				for (i = oldpos; i < pos; i++)
-					str[i] = ' ';
-				str[pos] = 0;
+				if(key == BACKSPC)
+					info->cursor_x--;
+				str_delete(str, info->cursor_x);
+				curlen--;		
 			}
-
 			m_on = TRUE;
-			curlen++;
-
-			shift_redraw:;
-
-			xd_shift(blk, info->cursor_x, flen, curlen); /* scrolling editable texts. */
-			xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
-			xd_cursor_on(info);
-
-			if(m_on)
-				xd_mouse_on();
+			goto shift_redraw;
 		}
-		else
-			result = FALSE;
-		break;
+		case INSERT: /* call the fileselector */
+		{
+			if(blk)
+			{
+				xd_cursor_off(info);
+				get_fsel(info, str, tree[edit_obj].ob_flags);
+				curlen = (int)strlen(str);
+				goto shift_redraw;
+			}
+		}
+		case HOME:
+		case HELP:
+		{
+			/* These codes have no effect */
+			break;
+		}
+		default:
+		{
+			pos = oldpos;
+			if(oldpos == maxlen)
+				pos--;
+	
+			/* For a scrolled editable text use only the first validation character */
+	
+			if ((ch = xd_chk_key(val, (blk) ? 0 : pos, key))== 0 && !blk)
+				pos = xd_chk_skip(tree, edit_obj, key);
+	
+			if (ch != 0 || pos > 0 )
+			{
+				xd_mouse_off();
+				xd_cursor_off(info);
+	
+				if (ch != 0)
+				{
+					info->cursor_x = pos + 1;
+					str_insert(str, pos, ch, curlen, maxlen);
+				}
+				else
+				{
+					int i;
+	
+					info->cursor_x = pos;
+	
+					str += oldpos;
+	
+					for (i = oldpos; i < pos; i++)
+						*str++ = ' ';
+	
+					*str = 0;
+				}
+	
+				m_on = TRUE;
+				curlen++;
+	
+				shift_redraw:;
+	
+				xd_shift(blk, info->cursor_x, flen, curlen); /* scrolling editable texts. */
+				xd_redraw(info, edit_obj, 0, &clip, XD_RDIALOG);
+				xd_cursor_on(info);
+	
+				if(m_on)
+					xd_mouse_on();
+			}
+			else
+				result = FALSE;
+		}
 	}
 
 	return result;
@@ -1365,21 +1441,29 @@ int xd_find_obj(OBJECT *tree, int start, int which)
 
 	switch (which)
 	{
-	case FMD_BACKWARD:
-		inc = -1;
-	case FMD_FORWARD:
-		obj = start + inc;
-		break;
-	case FMD_DEFLT:
-		flag = DEFAULT;
-		break;
+		case FMD_BACKWARD:
+		{
+			inc = -1;
+		}
+		case FMD_FORWARD:
+		{
+			obj = start + inc;
+			break;
+		}
+		case FMD_DEFLT:
+		{
+			flag = DEFAULT;
+			break;
+		}
 	}
 
 	while (obj >= 0)
 	{
 		theflag = tree[obj].ob_flags;
+
 		if ((theflag & flag) && xd_selectable(tree, obj))
 			return obj;
+
 		if (theflag & LASTOB)
 			obj = -1;
 		else
@@ -1469,15 +1553,22 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *kn
 	{
 		case CURUP:
 		case SHFT_TAB:
+		{
 			mode = FMD_BACKWARD;
+		}
 		case CURDOWN:
 		case TAB:
+		{
 			if ((i = xd_find_obj(tree, info->edit_object, mode)) > 0)
 				*knxtobject = i;
 			break;
+		}
 		case RETURN:
+		{
 			i = xd_find_obj(tree, 0, FMD_DEFLT);
+		}
 		case UNDO:
+		{
 			if(i > 0)
 			{
 				xd_change(info, i, SELECTED, TRUE);
@@ -1485,8 +1576,11 @@ int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *kn
 				return FALSE;
 			}
 			break;
+		}
 		default:
+		{
 			*knxtchar = kchar;
+		}	
 	}
 
 	return TRUE;
@@ -1592,15 +1686,21 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 				newstate = xd_get_tristate(oldstate);
 				switch (newstate)
 				{
-				case TRISTATE_0:
-					newstate = xd_set_tristate(oldstate, TRISTATE_1);
-					break;
-				case TRISTATE_1:
-					newstate = xd_set_tristate(oldstate, TRISTATE_2);
-					break;
-				case TRISTATE_2:
-					newstate = xd_set_tristate(oldstate, TRISTATE_0);
-					break;
+					case TRISTATE_0:
+					{
+						newstate = xd_set_tristate(oldstate, TRISTATE_1);
+						break;
+					}
+					case TRISTATE_1:
+					{
+						newstate = xd_set_tristate(oldstate, TRISTATE_2);
+						break;
+					}
+					case TRISTATE_2:
+					{
+						newstate = xd_set_tristate(oldstate, TRISTATE_0);
+						break;
+					}
 				}
 			}
 */
@@ -2374,6 +2474,7 @@ int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata)
 		xd_buttnorm(&info, exit);
 		xd_close(&info);
 	}
+
 	return exit;
 }
 
@@ -2470,7 +2571,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	/* Don't use xw_get() here... */
 
 	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
-	xd_vhandle = graf_handle(&dummy, &dummy, &dummy, &dummy);
+	xd_vhandle = graf_handle(&xd_fnt_w, &xd_fnt_h, &dummy, &dummy);
 
 	/* Open virtual workstation on screen */
 

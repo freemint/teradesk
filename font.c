@@ -83,6 +83,8 @@ static int
 	flblen = 0;
 
 
+extern char *hyppage;
+
 void fnt_setfont(int font, int height, XDFONT *data)
 {
 	data->id = vst_font(vdi_handle, font);
@@ -253,17 +255,32 @@ static void mset_fselector(SLIDER *slider, boolean draw, XDINFO *info)
 #endif
 
 
+/*
+ * Note: fd is locally modified here
+ */
+
 static int set_font(SLIDER *sl_info, int oldfont, int *font, FONTDATA *fd, int nf)
 {
 	int 
-		i = 0,
+		i, j = 0,
 		line;
 
+	/* Find the font; if not found, take the first one */
 
-	while ((fd[i].id != oldfont) && (i < (nf - 1)))
-		i++;
+	for(i = 0; i < nf; i++)
+	{
+		if(fd->id == oldfont)
+		{
+			j = i;
+			break;
+		}
 
-	*font = line = (fd[i].id == oldfont) ? i : 0;
+		fd++;
+	}
+
+	*font = line = j;
+
+	/* Note: sl->info->lines is number of visible lines in the selector */
 
 	if (line > (nf - sl_info->lines))
 	{
@@ -443,6 +460,7 @@ static void do_fd_button
 		case WDFONT2:
 		case WDFONT3:
 		case WDFONT4:
+		{
 			curobj = fbl->fdfont - sl_info->line + WDFONT1;
 
 			if (((newfont = sl_info->line + button - WDFONT1) < fbl->nf) && (curobj != button))
@@ -458,19 +476,28 @@ static void do_fd_button
 			xd_drawdeep(info, WDPARENT);
 
 			break;
+		}
 		case WDFSUP:
+		{
 			if (fbl->cursize < fbl->nfsizes - 1)
 				fbl->cursize += 1;
 			break;
+		}
 		case WDFSDOWN:
+		{
 			if (fbl->cursize > 0)
 				fbl->cursize -= 1;
 			break;
+		}
 		case WDFCUP:
+		{
 			fbl->font.colour += 2;	/* limited further below */
+		}
 		case WDFCDOWN:
+		{
 			fbl->font.colour -= 1; 	/* limited further below */
 			break;
+		}
 		case WDFBOLD:
 		case WDFLIG:
 		case WDFITAL:
@@ -478,10 +505,13 @@ static void do_fd_button
 		case WDFHOLL:
 		case WDFSHAD:
 		case WDFINV:
+		{
 			get_opt(wdfont, &(fbl->font.effects), FE_BOLD << (button - WDFBOLD), button);
+		}
 		default:
+		{
 			drawbutt = FALSE;
-			break;
+		}
 	}
 
 	fbl->font.size = fbl->fsizes[fbl->cursize];
@@ -588,6 +618,7 @@ boolean fnt_dialog(int title, XDFONT *wd_font, boolean prop)
 			switch(button)
 			{
 				case WDFOK:
+				{
 					if 
 					(
 						(fbl.fd[fbl.fdfont].id != wd_font->id) || 
@@ -602,13 +633,16 @@ boolean fnt_dialog(int title, XDFONT *wd_font, boolean prop)
 						*wd_font = *(&fbl.font);
 						ok = TRUE;
 					}
-
+				}
 				case WDFCANC:
+				{
 					stop = TRUE;
 					break;
+				}
 				default:
+				{
 					do_fd_button(&info, &sl_info, &fbl, button);
-					break;
+				}
 			}
 		}
 
@@ -677,6 +711,7 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 	switch (button)
 	{
 		case WDFOK:
+		{
 			/* Unfortunately, message structure is not the same as for VA */
 			*msgp++ = FONT_CHANGED;
 			*msgp++ = ap_id;
@@ -687,13 +722,17 @@ void fnt_hndlbutton(XDINFO *dialog, int button)
 			*msgp++ = thefbl->font.colour;
 			*msgp   = thefbl->font.effects;
 			appl_write(fnt_dial->ap_id, 16, msg);
+		}
 		case WDFCANC:
+		{
 			xd_buttnorm(dialog, button);
 			fnt_close(dialog);
 			break;
+		}
 		default:
+		{
 			do_fd_button(dialog, &fnt_dial->sl_info.slider, thefbl, button);
-			break;
+		}
 	}
 }
 
@@ -809,6 +848,8 @@ void fnt_mdialog(int cl_ap_id, int win, int id, int size, int colour, int effect
 	wtitle = get_freestring(DTFONSEL);
 
 	rsc_title(wdfont, WDFTITLE, DTAFONT);
+
+	hyppage = NULL;
 
 	nonmodal = TRUE;
 

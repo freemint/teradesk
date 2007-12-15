@@ -341,6 +341,7 @@ static int print_file
  * Check if an item can be printed, depending on item type.
  * Drives, folders, network objects or unknown objects can not
  * be printed.
+ * Note: parameter 'list' is locally modified
  */
 
 boolean check_print
@@ -361,20 +362,26 @@ boolean check_print
 	for (i = 0; i < n; i++)
 	{
 		mes = 0;
-		type = itm_type(w, list[i]); 
+		type = itm_type(w, *list); 
 
 		switch (type)
 		{
 			case ITM_DRIVE:
+			{
 				mes = MDRIVE;
 				break;
+			}
 			case ITM_FOLDER:
 			case ITM_PREVDIR:
+			{
 				mes = MFOLDER;
 				break;
+			}
 			default:
+			{
 				mes = trash_or_print(type);
 				break;
+			}
 		}
 
 		if (mes)
@@ -382,6 +389,8 @@ boolean check_print
 			alert_cantdo(mes, MNOPRINT);
 			return FALSE;
 		}
+
+		list++;
 	}
 
 	return TRUE;

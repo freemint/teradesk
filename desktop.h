@@ -306,6 +306,7 @@
 #define MEMLIM           17  /* FTEXT in tree ADDPTYPE */
 #define ATBACKG          18  /* BUTTON in tree ADDPTYPE */
 #define APTOK            19  /* BUTTON in tree ADDPTYPE */
+#define APTCANC          20  /* BUTTON in tree ADDPTYPE */
 
 #define VIEWMENU         12  /* Menu-tree */
 #define VMVIEW           3   /* TITLE in tree VIEWMENU */
@@ -438,6 +439,7 @@
 #define SOK              12  /* BUTTON in tree SEARCH */
 #define SCANCEL          13  /* BUTTON in tree SEARCH */
 #define SKIPSUB          14  /* BUTTON in tree SEARCH */
+#define SPT4             15  /* TEXT in tree SEARCH */
 
 #define SPECAPP          21  /* Form/Dialog-box */
 #define ISSPEC           3   /* IBOX in tree SPECAPP */
@@ -449,7 +451,8 @@
 #define ISSRCH           9   /* BUTTON in tree SPECAPP */
 #define ISCOMP           10  /* BUTTON in tree SPECAPP */
 #define ISFRMT           11  /* BUTTON in tree SPECAPP */
-#define SPECOK           13  /* BUTTON in tree SPECAPP */
+#define ISRBXT           12  /* BUTTON in tree SPECAPP */
+#define SPECOK           14  /* BUTTON in tree SPECAPP */
 
 #define OPENW            22  /* Form/Dialog-box */
 #define OWCANC           3   /* BUTTON in tree OPENW */
@@ -477,6 +480,13 @@
 #define DTEXT1           11  /* TEXT in tree COMPARE */
 #define DTEXT2           12  /* TEXT in tree COMPARE */
 #define COMPWIN          15  /* FTEXT in tree COMPARE */
+
+#define QUITOPT          25  /* Form/Dialog-box */
+#define QUITTIT          1   /* STRING in tree QUITOPT */
+#define QUITSHUT         5   /* BUTTON in tree QUITOPT */
+#define QUITBOOT         6   /* BUTTON in tree QUITOPT */
+#define QUITQUIT         7   /* BUTTON in tree QUITOPT */
+#define QUITCANC         8   /* BUTTON in tree QUITOPT */
 
 #define DTADDMSK         0   /* Free String */
 
@@ -828,32 +838,30 @@
 
 #define AERRACC          174 /* Alert-string */
 
-#define ALRTQUIT         175 /* Alert-string */
+#define ADUPKEY          175 /* Alert-string */
 
-#define ADUPKEY          176 /* Alert-string */
+#define AABOOP           176 /* Alert-string */
 
-#define AABOOP           177 /* Alert-string */
+#define AGENALRT         177 /* Alert-string */
 
-#define AGENALRT         178 /* Alert-string */
+#define AFILEDEF         178 /* Alert-string */
 
-#define AFILEDEF         179 /* Alert-string */
+#define AGFALERT         179 /* Alert-string */
 
-#define AGFALERT         180 /* Alert-string */
+#define AUNKRTYP         180 /* Alert-string */
 
-#define AUNKRTYP         181 /* Alert-string */
+#define AVALIDCF         181 /* Alert-string */
 
-#define AVALIDCF         182 /* Alert-string */
+#define ADUPFLG          182 /* Alert-string */
 
-#define ADUPFLG          183 /* Alert-string */
+#define AWOPERR          183 /* Alert-string */
 
-#define AWOPERR          184 /* Alert-string */
+#define ARESCH           184 /* Alert-string */
 
-#define ARESCH           185 /* Alert-string */
+#define AFABORT          185 /* Alert-string */
 
-#define AFABORT          186 /* Alert-string */
+#define AQUERY           186 /* Alert-string */
 
-#define AQUERY           187 /* Alert-string */
+#define AREMICNS         187 /* Alert-string */
 
-#define AREMICNS         188 /* Alert-string */
-
-#define ACANTDO          189 /* Alert-string */
+#define ACANTDO          188 /* Alert-string */

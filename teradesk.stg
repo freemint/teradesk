@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: August 2007
+@$VER: December 2007
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.93
+                User's Manual for Tera Desktop V3.94
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                              August 2007
+                             December 2007
 
 @autorefon
 
@@ -28,9 +28,10 @@
     5  Objects and Icons
     6  Symbolic Links
     7  TeraDesk Windows
-    8  Configuration Files
-    9  Supported Protocols
-   10  Acknowledgements
+    8  Special Applications
+    9  Configuration Files
+   10  Supported Protocols
+   11  Acknowledgements
 
 @endnode
 
@@ -629,8 +630,12 @@ or <typed characters>* are automatically selected in the window.
 
 3. We shall also refer to 'Opening' a file.  This generally means that
 you  place  the  mouse  cursor on the file (in a directory) and double
-click  with  the  left mouse button. Files can also be opened by first
-selecting them, and then selecting Open... from the @{File link "Menu title: File"} menu.
+click with  the left mouse button.  Instead of a double click with the
+left button,  a single click  with the right mouse button  can be made
+(except if an installed application has been marked for special use as
+'Right button extension'- see Special Applications). Files can also be
+opened by first selecting them,   and then selecting  Open... from the
+@{File link "Menu title: File"} menu.
 
 4. We  shall  refer to keys  with square brackets enclosing the symbol
 written on the key itself. e.g. [Return], [Q] etc.
@@ -738,7 +743,7 @@ parameter dialog box is displayed for GTP and TTP files.
 so that it is started when you double click on it.
 
 3.  The third method  is to install the program as an application, and
-to set up a function key (in the 'Set applications...' dialog) so that
+to set up a function key (in the  Set applications...  dialog) so that
 the program is started when the key is pressed.
 
 4.  The fourth  method is to install the program as an application and
@@ -811,10 +816,11 @@ See also  Set applications...
 4.11 The copy info dialog
 4.12 The name conflict dialog
 4.13 The command line dialog
+4.14 The keyboard help dialog
 
-4.14 Scrolled text fields
+4.15 Scrolled text fields
 
-4.15 Rendering of dialog objects
+4.16 Rendering of dialog objects
 
 @endnode
 
@@ -1117,8 +1123,9 @@ and the operating system support Symbolic Links.
 
 When creating symbolic links, TeraDesk will offer  a name for the link
 in the form: Link_to_<selected object name>; the user can edit this to
-his liking.  The name of  the referenced object will  be displayed and
-editable too.
+his liking (also, on some filesystems the length of this name may have
+to be limited).  The name of  the referenced object will  be displayed
+and editable too.
 
 See also:  Scrolled text fields  Symbolic Links
 
@@ -1201,13 +1208,15 @@ If it is not specified, search will not commence.
 Date and size limits are optional; if left blank, TeraDesk will ignore
 them.
 
-String  to  be  searched for  is optional. If left blank, Tera Desktop
-will only search  for files  and folders matching the pattern mask. If
-any  string is specified, Tera Desktop will search for it in the files
-that match the name pattern.
+String  to be  searched for  is optional.  If left blank, Tera Desktop 
+will only search  for files and folders  having names  that  match the
+name  pattern  mask.  If any string  is specified,  Tera Desktop  will 
+search for it in the files that match the name pattern.
 
-If a  search  string  is specified,  the search  can  be  modified  by
-selecting the option to ignore character case when matching strings.
+If a string is specified, the search can be modified  by selecting the
+option to ignore character case when matching strings (this option may
+not work  correctly  for 'national' characters with ASCII codes in the
+128-255 range).
 
 By default any search will involve all subdirectories of  the selected
 directory or volume.  This can be modified  by selecting the option to
@@ -1469,27 +1478,28 @@ and its dialog in TeraDesk. See Set applications...
 
 @{U}4.2.11 Quit/Shutdown                                          TeraDesk@{u}
 
-Select this menu item to quit Tera Desktop and either:
+Upon selecting  this menu item a dialog  is displayed  in which one of
+the options for quitting TeraDesk can be selected:
 
-1: return to the standard desktop
-2: return to the AES fallback desktop (e.g. Geneva, N.Aes,  AES 4.1 or
-   XaAES)
-3: shut down the computer completely
+  1: Cancel the operation
+  2: Return to the standard desktop or to the AES fallback desktop
+  3: Reboot the computer
+  4: Shut down the computer completely
 
-If option 3 is selected in  a multi-tasking environment,  the shutdown
-procedure is activated.
+If any option but  'Cancel'  is selected,  TeraDesk closes all windows
+and signs-off all  AV-protocol  clients.  If 'Reboot' or 'Shutdown' is
+selected TeraDesk than initiates a system shutdown.  Otherwise it just
+quits.
 
 Note  that  only  a  very  simple  sequence of  shutdown operations is
-performed:  shutdown is invoked by shel_write(...) function,  which is
-supposed to  cleanly  close  all running applications,  but which  may
-not have any effect in older versions of the AES.  After shel_write(),
-TeraDesk waits  for several seconds  to receive a  termination message
-(AP_TERM). If it arrives, TeraDesk quits normally; if the message does
-not arrive and TeraDesk is still alive,  a Shutdown() is initiated (in
-restart mode) if MiNT is present.
-
-If TeraDesk is still alive some time after -that-, a brute-force reset
-is done.
+performed: TeraDesk  first calls  shel_write()  in full shutdown mode; 
+after returning from  this function  and  waiting for 2 seconds  for a 
+message to terminate,  it attempts Shutdown() either in halt/powerdown
+or cold reboot mode (depending on the selected option). If Shutdown()
+has no effect, TeraDesk, depending on  the selected  shutdown  option,
+either disables  some interrupts and  enters into  an endless loop, or
+performs a reset.  TeraDesk is also supposed  to be able  to power-off
+CT60 at shutdown, but this capability has not been tested so far.
 
 If a  more  sophisticated  shutdown  is required, an external Shutdown
 utility should be used. See Set applications...
@@ -1790,9 +1800,10 @@ within the constraint  that the 8+3  filename structure  of single-TOS
 must be obeyed.
 
 Besides the name mask, one can use the autoselector in order to locate
-items in a directory window. See also: Conventions  Directory windows
+items in a directory window.  See also: Conventions  Directory windows
 
-Alongside name masks, four other file masking options can be set:
+Alongside name masks,  four other  file masking options  relevant only 
+for Directory windows can be set:
 
      Hidden              show hidden files
      System              show system files
@@ -1801,6 +1812,12 @@ Alongside name masks, four other file masking options can be set:
 
 These selections are global, i.e. they apply to ALL Directory windows.
 
+It should be noted that, if  Parent  option is set,  the Closer widget 
+will always  completely close any directory window.  If this option is
+disabled, the Closer widget will, if a window displays the contents of
+a (sub)folder,  switch the  displayed directory to  that of the parent
+folder. 
+ 
 @endnode
 
 
@@ -2116,33 +2133,9 @@ them from the name and location of a file selected in a window, are:
 
 - Special use of the application:
   A child dialog opens  in which flags for assigning a special role to
-  the  application  can  be set.  One of the  following  roles  can be
-  assigned to an application:
-
-  . Editor              (only one application can be marked)
-  . Viewer              (only one application can be marked)
-  . Autostart           (more than one application can be marked)
-  . Shutdown            (more than one application can be marked)
-  . Resolution change   (only one application can be marked)
-  . File search         (only one application can be marked)
-  . File comparing      (only one application can be marked)
-  . Floppy format       (only one application can be marked)
-
-  Applications specified for viewer, shutdown, resolution change, file
-  search,  file comparing  and floppy formatting  will,  if specified,
-  substitute TeraDesk's internal routines.
-
-  Applications flagged as 'Autostart' are executed  automatically when
-  TeraDesk starts.  There is  a delay of  a couple of seconds  between
-  each application being started,  to allow the started application to
-  configure itself, shrink used memory, etc.
-
-  Applications flagged as 'Shutdown'  will execute  with a delay  of 6
-  seconds between them, when 'Shutdown' is selected  in the File menu.
-  This (or these)  application(s),  if specified,  have to perform all
-  activities needed for shutdown;  the internal  shutdown procedure of
-  TeraDesk will be disabled.
-
+  the  application (such as the editor, or a file viewer) can  be set.
+  See Special Applications.  
+  
 - Application program type:
   A child dialog  (The program type dialog)  appears in which  you can
   set the type of application program.
@@ -2760,7 +2753,7 @@ See also:  Save settings  Load settings...  Configuration Files
 
 Besides mouse selection,  menu items can also be set to be selected by
 pressing  a  key  or  a  key combination. These keyboard shortcuts are
-set in the Desk preferences... dialog.
+user-definable and can be set in the Desk preferences... dialog.
 
 Likewise,  most  buttons  in  dialog boxes  can also be  selected by a
 key:  Press  and  hold  down [Alternate] and then press the key of the
@@ -2775,14 +2768,23 @@ drive name,  i.e.  characters  A  to  P   or  A  to  Z).  Pressing the
 [Alternate][Shift][?]  combination will open the root directory of the
 specified disk volume in the existing top window.
 
-Pressing the [Help] key invokes a  Help dialog with brief explanations
-of basic keyboard commands.
-
 If the [Shift][Help] key combination is pressed, TeraDesk will attempt
 to call or start the  hypertext-viewer  accessory or program  (usually
 this would be ST-Guide),  if any  is installed  as the application for
-the *.HYP filetype.  The installed program should recognize the syntax
-used by ST-Guide (Tera Desktop's help is opened as "*:\TERADESK.HYP").
+the *.HYP filetype, and display the hypertext manual for Tera Desktop. 
+The installed program  should recognize  the syntax  used by  ST-Guide 
+(Tera Desktop's help is opened as "*:\TERADESK.HYP pagename").
+
+If [Help] only is pressed  while any dialog is open, TeraDesk will, in
+a similar way, attempt to display the page  from the  hypertext manual
+corresponding  to the  currently open dialog.  Dialogs must be  in the
+windowed mode (see Desk preferences...)  for this feature to be active
+(help is not available in  The font selector dialog  when it is called
+by another program).
+
+If [Help] key is pressed  when there are no open dialogs, Tera Desktop  
+will display The keyboard help dialog with brief explanations of basic
+keyboard commands.
 
 [Undo] can be used to deselect all objects  selected on the desktop or
 in the directory windows.
@@ -2904,12 +2906,12 @@ protocol; you can toggle its use on and off by clicking on the box.
 
 If Background option  is checked,  the application  will be started in
 background mode if a multi-tasking environment (e.g. MiNT or MagiC) is
-present.  Only  non-GEM  programs  can be started  in MiNT  this  way;
-else an error  is reported.  This option  is functional in  single-TOS
-as well, and in such case the program activated will be just Pexec()-d
-without closing any windows  or displaying the program title bar. This
-capability turned out to be convenient in  single-TOS e.g.  for sound-
-playing utilities.
+present. Only non-GEM programs can be started in this  way; otherwise,
+an error is reported. This option is functional in single-TOS as well,
+and in such case the program activated will be  just Pexec()-d without
+closing any windows or displaying the program title bar.  This feature
+turned out  to be  convenient  in  single-TOS  e.g. for  sound-playing
+utilities.
 
 Another way  to start a  program in background is by  holding down the
 [Control] key while activating the program.
@@ -2917,7 +2919,8 @@ Another way  to start a  program in background is by  holding down the
 Some older programs  do not behave well in a multi-tasking environment.
 For such program  the  'No multitasking'  option can be set,  in which
 case  the program will be  activated as in single-TOS.  Note that this
-option has not yet been implemented in a completely satisfactory way.
+option has not  yet been implemented in a completely satisfactory way,
+and has some effect only in MagiC.
 
 Memory available  for a program  can  be limited,  which is useful for
 some programs which grab all the available memory  for themselves. Any
@@ -2964,23 +2967,24 @@ See also:  Set desk icons...  Set window icons...  Supported Protocols
 @{U}4.10 The font selector dialog                                 TeraDesk@{u}
 
 The font selector  dialog  opens upon clicking the 'Directory font' or
-the 'Viewer font' in the Window options... dialog. On the left side is
-a scrollable listbox from which a font can be chosen  (only monospaced
-fonts are displayed).  A box  on the right side  of the dialog shows a
-sample text in the selected font. Font size and colour can be selected
-from available ones, and additional effects such as bold or underlined
-writing can be specified as well (except for directory window font).
+the 'Viewer font' in the  Window options... dialog.  On the top of the
+dialog is a scrollable listbox  from which a font can be chosen  (only
+monospaced fonts are displayed).  Below the listbox,  on the left side
+of the dialog,  is shown  sample text in the selected font.  Font size
+and colour can be selected from available ones, and additional effects
+such as  bold or  underlined writing can be  specified as well (except
+for directory window font).
 
 If the displayed sample text  is clicked upon,  it can be previewed in
 the selected state, which can help the user in selecting  a convenient
 window font. Text is displayed  on a background  identical to  the one
 selected for windows.
 
-TeraDesk can also open this dialog as a system-wide font selector upon
-receiving the  FONT_SELECT message.  In such case  proportional  fonts
-are selectable too, beside the monospaced ones.
-
-See The FONT Protocol
+If FONTSELECT  environment  variable  is set  (see The FONT Protocol), 
+TeraDesk  can open this dialog  as a   system-wide  font selector upon
+receiving the  FONT_SELECT message  from another application.  In such
+case  proportional fonts  are selectable too,  beside  the  monospaced
+ones.
 
 @endnode
 
@@ -3088,6 +3092,26 @@ See also  Scrolled text fields.
 
 @endnode
 
+@node "The keyboard help dialog"
+@image udo_fo.img 1
+   Contents
+@image udo_fo.img 4
+      Menus and Dialogs
+
+@{U}4.14 The keyboard help dialog                                 TeraDesk@{u}
+
+If the [Help] key is pressed  when there are no open dialogs, TeraDesk  
+will display a dialog with brief explanations of keyboard commands. As
+this dialog contains more information than can fit on a single screen,
+the user can page through it by clicking the "More" button.
+
+If, however, the [Help] key is pressed when any dialog is open, or if 
+[Shift][Help]  key combination is pressed,  TeraDesk  will attempt to
+display its hypertext User manual. See Keyboard shortcuts.
+
+@endnode
+
+
 @node "Scrolled text fields"
 @alias "scrolled text field"
 @image udo_fo.img 1
@@ -3095,7 +3119,7 @@ See also  Scrolled text fields.
 @image udo_fo.img 4
       Menus and Dialogs
 
-@{U}4.14 Scrolled text fields                                     TeraDesk@{u}
+@{U}4.15 Scrolled text fields                                     TeraDesk@{u}
 
 In many  cases it is needed  to enter a long text (usually a path or a
 long filename) into a dialog text field. However, the practical length
@@ -3137,7 +3161,7 @@ Scrolled-text fields appear in the following dialogs:
 @image udo_fo.img 4
       Menus and Dialogs
 
-@{U}4.15 Rendering of dialog objects                              TeraDesk@{u}
+@{U}4.16 Rendering of dialog objects                              TeraDesk@{u}
 
 Some object types  in  TeraDesk  dialogs,  such as the  circular radio
 buttons, the checkbox buttons, titled frames,  buttons with underlined
@@ -3146,11 +3170,11 @@ display  them on the screen,  the  following approach  is adopted:  An
 inquiry is made  to the AES whether  the WHITEBAK flag in the resource
 file is supported;  if it is, TeraDesk  assumes that the  AES can draw
 all those  objects, and  lets the AES do that.  If not, TeraDesk draws
-the objects itself.  A positive side of letting the AES  do it is that
-the appearance of those objects in TeraDesk  is in style  with objects
+these objects.  A positive side of letting the AES  do it  is that the
+appearance of those objects in TeraDesk is then in style  with objects
 drawn by the  AES in other applications.  A negative side is that some
-objects  drawn  by some  AESes  look uglier  than  they would be,  had
-TeraDesk  drawn  them. Another  drawback is  that  e.g.  Geneva  marks
+objects, when  drawn by some  AESes  look uglier  than  they would be,
+had TeraDesk drawn them. Another drawback is  that  e.g. Geneva  marks
 relevant objects in a different  way  than MagiC, N.AES or XaAES; that
 is not  recognized by TeraDesk,  and so these  capabilities  of Geneva
 are left unused.
@@ -3828,12 +3852,73 @@ See also:  Menu title: File  Keyboard shortcuts  Window options...
 
 @endnode
 
+@node "Special Applications"
+@toc "Main"
+@image udo_fo.img 1
+   Contents
+
+@{U}8 Special Applications                                        TeraDesk@{u}
+
+Tera Desktop can mark  some installed applications  for  special uses,
+such as e.g. an editor or a file viewer. These assignments can be made
+in the Set applications... dialog. 
+
+Currently,  one of the following  special roles can be assigned  to an
+installed application:
+
+  . Editor                 (only one application can be marked)
+  . Viewer                 (only one application can be marked)
+  . Autostart              (more than one application can be marked)
+  . Shutdown               (more than one application can be marked)
+  . Resolution changer     (only one application can be marked)
+  . File search            (only one application can be marked)
+  . File comparing         (only one application can be marked)
+  . Floppy format          (only one application can be marked)
+  . Right button extension (only one application can be marked)
+
+Applications specified for  viewer, shutdown, resolution changer, file
+search,  file comparing  and  floppy formatting  will,  if  specified,
+completely substitute TeraDesk's internal routines  for handling those 
+operations.
+  
+Application flagged  as  'Right button extension'  will  be  activated
+whenever  the right  mouse button  is clicked.  If the  application is 
+already running, VA_START  will be sent to it. If  there are  selected
+objects in  a directory window or on the desktop,  their names will be
+sent to the  application. The user should note that, if an application
+is flagged as 'Right bbutton extension',  normal TeraDesk's  behaviour
+regarding the  right mouse button  clicks  (single  right-click is  by
+default treated as right-button-pressed-plus-left-doubleclick) will be
+disabled. 
+
+Applications flagged as 'Autostart' will be started automatically when
+TeraDesk starts. There will be a delay of a couple of seconds  between
+each application  being  started,  to  allow  the  started application
+to configure itself, shrink used memory, etc.
+
+Applications  flagged as 'Shutdown'  will execute  with  a delay  of 6
+seconds between them,  when 'Shutdown' is selected among Quit/Shutdown
+options in  the dialog activated from the @{File link "Menu title: File"} menu.  This  (or these)
+application(s),  if specified,  have  to perform all activities needed
+for shutdown;  the internal  shutdown  procedure  of TeraDesk  will be
+disabled.
+  
+Some special application uses become effective immediately after being
+set; some become effective upon  next start of TeraDesk (assuming that
+the desktop configuration has been saved meanwhile).
+
+See Set applications...  Running a program
+
+@endnode
+
+
+
 @node "Configuration Files"
 @toc "Main"
 @image udo_fo.img 1
    Contents
 
-@{U}8 Configuration Files                                         TeraDesk@{u}
+@{U}9 Configuration Files                                         TeraDesk@{u}
 
 By default, TeraDesk 3.* uses two configuration files:
 
@@ -3906,7 +3991,7 @@ tasking environments.
 @image udo_fo.img 1
    Contents
 
-@{U}9  Supported Protocols                                        TeraDesk@{u}
+@{U}10  Supported Protocols                                       TeraDesk@{u}
 
 TeraDesk supports  several protocols  for passing information  between
 the applications:
@@ -3926,7 +4011,7 @@ the applications:
 @image udo_fo.img 4
       Supported Protocols
 
-@{U}9.1  The ARGV Protocol                                        TeraDesk@{u}
+@{U}10.1  The ARGV Protocol                                       TeraDesk@{u}
 
 In  GEMDOS the length of a command line is limited  to 125 characters.
 The ARGV protocol  makes  much longer command lines possible.  This is
@@ -3986,7 +4071,7 @@ problems are encountered.
 @image udo_fo.img 4
       Supported Protocols
 
-@{U}9.2  The AV Protocol                                          TeraDesk@{u}
+@{U}10.2  The AV Protocol                                         TeraDesk@{u}
 
 This protocol (first developed for use with the Gemini desktop) allows
 certain blocks  of  information  to  be  passed  between  concurrently
@@ -4145,7 +4230,7 @@ See also:  Installation  TOS version compatibility
 @image udo_fo.img 4
       Supported Protocols
 
-@{U}9.3  The FONT Protocol                                        TeraDesk@{u}
+@{U}10.3  The FONT Protocol                                       TeraDesk@{u}
 
 TeraDesk supports  the most important functions  of the FONT protocol,
 which was introduced by Christian Grunenberg.
@@ -4200,7 +4285,7 @@ See also:  Dragging Objects  The AV Protocol
 @image udo_fo.img 1
    Contents
 
-@{U}10  Acknowledgements                                          TeraDesk@{u}
+@{U}11  Acknowledgements                                          TeraDesk@{u}
 
 The  authors  would like  to  thank  the  following  people  for their
 contribution to various stages in development of the Tera Desktop:

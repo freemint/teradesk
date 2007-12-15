@@ -20,5 +20,7 @@
  */
 
 extern boolean onfile;
+extern char *hyppage;
 
 boolean item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );
+void opn_hyphelp (void);

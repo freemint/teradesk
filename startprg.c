@@ -81,15 +81,15 @@ static void set_title(char *title)
 	dsktitle.ob_spec.tedinfo = &ttd;
 	dsktitle.r.x = 0;
 	dsktitle.r.y = 0;
-	dsktitle.r.w = screen_info.dsk.w;
-	dsktitle.r.h = screen_info.fnt_h + 2;
+	dsktitle.r.w = xd_desk.w;
+	dsktitle.r.h = xd_fnt_h + 2;
 
 	ttd.te_ptext = title;
 	ttd.te_font = 3;
 	ttd.te_just = 2;
 	ttd.te_color = 0x1F0;
 	ttd.te_thickness = 0;
-	ttd.te_txtlen = screen_info.dsk.w / screen_info.fnt_w;
+	ttd.te_txtlen = xd_desk.w / xd_fnt_w;
 
 	draw_tree(&dsktitle, &dsktitle.r);
 }
@@ -356,7 +356,6 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 		/* Draw the desktop and menu bar, then reopen all windows */
 
 		regen_desktop(desktop);
-		menu_bar(menu, 1);
 		wd_reopen();
 	}
 
@@ -476,12 +475,18 @@ void start_prg
 		stask = TRUE,						/* TRUE if singletasking mode */
 		doenv = FALSE,						/* TRUE to process local environment */
 		doargv = FALSE,						/* TRUE to process ARGV */
+		background = back,					/* run in background */
 		catargv;							/* TRUE to append ARGV to local environmen */
 
 
 	/* Determine program type */
 
 	appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0; 
+
+	/* Background program is activated if [Control] is pressed */
+
+	if (kstate & K_CTRL) 
+		background = TRUE;
 
 	/* 
 	 * Prepare local environment string if one is specified - 
@@ -577,7 +582,7 @@ void start_prg
 	 * This is experimental and most probably is a bad thing to do, but better
 	 * than nothing: until starting of a non-multitsking app is coded properly (if ever), 
 	 * launch it as if it were a single-tasking system. This applies to Magic only
-	 * (geneva takes care of the issue by itself), and, in fact, seems to work
+	 * (Geneva takes care of the issue by itself), and, in fact, seems to work
 	 * (more-less). At least programs like DynaCADD and old 1stWord are running
 	 * properly with it, probably mostly because of changing the default directory.
 	 * However, memory limit for such application is not applicable, then.
@@ -606,6 +611,7 @@ void start_prg
 		if(!stask)
 		{
 			pp = strrchr(prgpath,'\\');
+
 			if(!pp || (pp && pp[1] != '\0'))
 				strcat(prgpath, bslash);
 		}
@@ -634,7 +640,7 @@ void start_prg
 
 		/* See note above about singletasking ! */
 
-		if(stask)
+		if(stask || background)
 		{
 			/* 
 			 * AES is not multitasking, use Pexec() to start program,
@@ -642,12 +648,6 @@ void start_prg
 			 */
 
 			COMMAND cl;
-			boolean background = back;
-
-			/* Background program is activated if [Control] is pressed */
-
-			if (kstate & K_CTRL) 
-				background = TRUE;
 
 
 			if ((appl_type == 1) && background)

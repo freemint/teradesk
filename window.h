@@ -69,7 +69,6 @@ typedef struct
 	boolean (*itm_state) (WINDOW *w, int item);
 	ITMTYPE (*itm_type) (WINDOW *w, int item);
 	ITMTYPE (*itm_tgttype) (WINDOW *w, int item);
-	int (*itm_icon) (WINDOW *w, int item);
 	const char *(*itm_name) (WINDOW *w, int item);
 	char *(*itm_fullname) (WINDOW *w, int item);
 	int (*itm_attrib) (WINDOW *w, int item, int mode, XATTR *attr);
@@ -79,8 +78,8 @@ typedef struct
 	        int n, int *list, ICND *icns, int x, int y, int kstate);
 	void (*itm_select) (WINDOW *w, int selected, int mode, boolean draw);
 	void (*itm_rselect) (WINDOW *w, int x, int y);
-	boolean (*itm_xlist) (WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
-	boolean (*itm_list) (WINDOW *w, int *n, int **list);
+	ICND *(*itm_xlist) (WINDOW *w, int *ns, int *nv, int **list, int mx, int my);
+	int *(*itm_list) (WINDOW *w, int *n);
 
 	const char *(*wd_path) (WINDOW *w);
 
@@ -233,9 +232,6 @@ boolean itm_islink(WINDOW *w, int item);
 boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *type);
 boolean itm_open(WINDOW *w, int item, int kstate);
 void itm_select(WINDOW *w, int selected, int mode, boolean draw);
-void itm_rselect(WINDOW *w, int x, int y);
-boolean itm_xlist(WINDOW *w, int *ns, int *nv, int **list, ICND **icns, int mx, int my);
-boolean itm_list(WINDOW *w, int *n, int **list);
 void itm_set_menu ( WINDOW *w );
 void wd_setselection(WINDOW *w);
 void wd_do_dirs(void *func);
@@ -272,7 +268,6 @@ void calc_rc(TYP_WINDOW *w, RECT *work);
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork); 
 void wd_calcsize(WINFO *w, RECT *size); 
 int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
-void wd_type_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
 void wd_set_defsize(WINFO *w); 
 void wd_type_close( WINDOW *w, int mode);
 void wd_type_topped (WINDOW *w);		

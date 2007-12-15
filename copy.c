@@ -174,7 +174,7 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 
 
 	sd = 0;
-	sd1 = copyinfo[COKBOX].r.y - copyinfo[CPT3].r.y - screen_info.fnt_h;
+	sd1 = copyinfo[COKBOX].r.y - copyinfo[CPT3].r.y - xd_fnt_h;
 
 	/* Set default visibility and state of some objects */
 
@@ -189,11 +189,16 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 	switch (function)
 	{
 		case CMD_COPY:
+		{
 			title = (rename_files) ? DTCOPYRN : DTCOPY;
 			goto unhide1;
+		}
 		case CMD_MOVE:
+		{
 			title = (rename_files) ? DTMOVERN : DTMOVE;
-		unhide1:;
+
+			unhide1:;
+
 			mask = CF_COPY;
 			obj_unhide(copyinfo[CPT3]);
 			obj_unhide(copyinfo[CPDEST]);
@@ -201,16 +206,22 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 			obj_unhide(copyinfo[CFOLLNK]);
 #endif
 			goto unhide2;
+		}
 		case CMD_TOUCH:	
+		{
 			mask = CF_TOUCH;
 			title = DTTOUCH;
-		unhide2:;
+
+			unhide2:;
+
 			obj_unhide(copyinfo[CSETBOX]);
 #if_MINT_
 			copyinfo[CFOLLNK].r.y = copyinfo[CSETBOX].r.y;
 #endif
 			break;
+		}
 		case CMD_DELETE:
+		{
 			mask = CF_DEL;
 			title = DTDELETE;
 #if _MINT_	
@@ -219,17 +230,23 @@ int open_cfdialog(long folders, long files, long bytes, int function)
 #endif
 			sd = sd1;
 			break;
+		}
 		case CMD_PRINT:
+		{
 			title = DTPRINT;
 			obj_unhide(copyinfo[PSETBOX]);
 			goto unhide3;
+		}
 		case CMD_PRINTDIR: 
+		{
 			title = DTPRINTD;
-			sd = sd1 - screen_info.fnt_h;
-		unhide3:;
+			sd = sd1 - xd_fnt_h;
+		
+			unhide3:;
+
 			mask = CF_PRINT;
 			obj_unhide(copyinfo[CPRFILE]);
-			break;		
+		}
 	}
 
 #if _MINT_
@@ -929,19 +946,29 @@ int copy_error(int error, const char *name, int function)
 	switch(function)	
 	{
 		case CMD_DELETE:
+		{
 			msg = MEDELETE;
 			break;
+		}
 		case CMD_MOVE:
+		{
 			msg = MEMOVE;
 			break;
+		}
 		case CMD_COPY:
+		{
 			msg = MECOPY;
 			break;
+		}
 		case CMD_TOUCH:
+		{
 			msg = MESHOWIF;
 			break;
+		}
 		default:			/* CMD_PRINT, CMD_PRINTDIR */
+		{
 			msg = MEPRINT;
+		}
 	}
 
 	/* a table would have been even better above ! */
@@ -956,6 +983,7 @@ int copy_error(int error, const char *name, int function)
 /*
  * Routine voor het controleren van het kopieren.
  * Check if all items can be copied (or deleted)
+ * Note: parameter 'list' is locally modified.
  */
 
 static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
@@ -967,8 +995,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 
 	int 
 		i = 0, 
-		mes,
-		item;
+		mes;
 
 	ITMTYPE 
 		type;
@@ -980,15 +1007,13 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 
 	while ((i < n) && result)
 	{
-		item = list[i];
-
 		/* Note: nothing will be checked if dest is NULL */
 
-		if ((((type = itm_type(w, item)) == ITM_FOLDER) || (type == ITM_DRIVE)) && (dest != NULL))
+		if ((((type = itm_type(w, *list)) == ITM_FOLDER) || (type == ITM_DRIVE)) && (dest != NULL))
 		{
 			/* Note: space for path allocated here */
 
-			if ((path = itm_fullname(w, item)) != NULL)
+			if ((path = itm_fullname(w, *list)) != NULL)
 			{
 				l = (long)strlen(path);
 
@@ -1017,6 +1042,7 @@ static boolean check_copy(WINDOW *w, int n, int *list, const char *dest)
 		}
 
 		i++;
+		list++;
 	}
 
 	return result;
@@ -2035,6 +2061,7 @@ static int copy_path
 
 /*
  * Copy, move or touch items specified in the list
+ * Note: parameter 'list' is locally modified
  */
 
 static boolean copy_list
@@ -2052,7 +2079,6 @@ static boolean copy_list
 	int
 		i,
 		error,
-		item,
 		result,
 		tmpres;	
 	
@@ -2086,10 +2112,13 @@ static boolean copy_list
 	{
 		int fa = 0; /* 0=target atributes, 1=link/object attributes */
 
-		if ((item = list[i]) < 0)
+		if (*list < 0)
+		{
+			list++;
 			continue;
+		}
 
-		if(!itm_follow(w, item, &link, (char **)(&path), &type))
+		if(!itm_follow(w, *list, &link, (char **)(&path), &type))
 		{
 #if _MINT_
 			if(link)
@@ -2101,7 +2130,7 @@ static boolean copy_list
 		}
 
 		if (path == NULL) 
-			result = copy_error(ENSMEM, itm_name(w, item), function);
+			result = copy_error(ENSMEM, itm_name(w, *list), function);
 		else
 		{
 			cpath = fn_get_path(path); /* allocate */
@@ -2110,63 +2139,68 @@ static boolean copy_list
 			switch (type)
 			{
 #if _MINT_
-			case ITM_LINK:
+				case ITM_LINK:
 #endif
-			case ITM_FILE:
-			case ITM_PROGRAM:
-				if ((error = itm_attrib(w, item, fa, &attr)) == 0)
+				case ITM_FILE:
+				case ITM_PROGRAM:
 				{
-					upd_copyname( dest, cpath, name );
-#if _MINT_
-					result = copy_file(path, dest, &attr, function, result, TRUE, link, *bytes);
-#else
-					result = copy_file(path, dest, &attr, function, result, TRUE, *bytes);
-#endif
-				}
-				else
-					result = copy_error(error, name, function);
-
-				*files -= 1;
-				*bytes -= attr.size;
-				break;
-			case ITM_FOLDER:
-				if ( function == CMD_TOUCH )	
-					chk = FALSE;
-				else
-					chk = TRUE;
-
-				if ((error = itm_attrib(w, item, fa, &attr)) == 0)
-				{
-					upd_copyname( dest, path, empty);
-
-					if ((tmpres = create_folder(path, dest, &dpath, &attr, folders, files, bytes, function, &chk)) == 0)
+					if ((error = itm_attrib(w, *list, fa, &attr)) == 0)
 					{
-						if (((tmpres = copy_path(path, dpath, name, folders, files, bytes, function, chk)) == 0) && 
-						     (function == CMD_MOVE) && 
-						     ((tmpres = del_folder(path, CMD_MOVE, 0, &attr)) == 0))
-							wd_set_update(WD_UPD_MOVED, path, dpath);
-						else
-							wd_set_update(WD_UPD_COPIED, dpath, NULL);
-						free(dpath);
+						upd_copyname( dest, cpath, name );
+#if _MINT_
+						result = copy_file(path, dest, &attr, function, result, TRUE, link, *bytes);
+#else
+						result = copy_file(path, dest, &attr, function, result, TRUE, *bytes);
+#endif
 					}
-					else if (tmpres == XSKIP)
-						tmpres = 0;
+					else
+						result = copy_error(error, name, function);
+	
+					*files -= 1;
+					*bytes -= attr.size;
+					break;
 				}
-				else
-					tmpres = copy_error(error, name, function);
+				case ITM_FOLDER:
+				{
+					if ( function == CMD_TOUCH )	
+						chk = FALSE;
+					else
+						chk = TRUE;
+	
+					if ((error = itm_attrib(w, *list, fa, &attr)) == 0)
+					{
+						upd_copyname( dest, path, empty);
+	
+						if ((tmpres = create_folder(path, dest, &dpath, &attr, folders, files, bytes, function, &chk)) == 0)
+						{
+							if (((tmpres = copy_path(path, dpath, name, folders, files, bytes, function, chk)) == 0) && 
+							     (function == CMD_MOVE) && 
+							     ((tmpres = del_folder(path, CMD_MOVE, 0, &attr)) == 0))
+								wd_set_update(WD_UPD_MOVED, path, dpath);
+							else
+								wd_set_update(WD_UPD_COPIED, dpath, NULL);
+							free(dpath);
+						}
+						else if (tmpres == XSKIP)
+							tmpres = 0;
+					}
+					else
+						tmpres = copy_error(error, name, function);
+	
+					if (tmpres != 0)
+						result = tmpres;
+	
+					*folders -= 1;
+					break;
+				}
+				case ITM_DRIVE:
+				{
+					upd_copyname(dest, cpath, name );
+					tmpres = copy_path(path, dest, name, folders, files, bytes, function, TRUE);
 
-				if (tmpres != 0)
-					result = tmpres;
-
-				*folders -= 1;
-				break;
-			case ITM_DRIVE:
-				upd_copyname(dest, cpath, name );
-				tmpres = copy_path(path, dest, name, folders, files, bytes, function, TRUE);
-				if (tmpres != 0)
-					result = tmpres;
-				break;
-
+					if (tmpres != 0)
+						result = tmpres;
+				}
 			} /* switch ? */
 
 			free(cpath);
@@ -2178,6 +2212,8 @@ static boolean copy_list
 
 		if(mustabort(result))
 			break;
+
+		list++;
 	}
 
 	return ((result == XFATAL) ? FALSE : TRUE);
@@ -2415,14 +2451,14 @@ static int del_path(const char *path, const char *fname, long *folders, long *fi
 
 
 /* 
- * Delete everything in a list of selected items 
+ * Delete everything in a list of selected items.
+ * Note: parameter 'list' is locally modified
  */
 
 static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files, long *bytes)
 {
 	int 
 		i,
-		item,
 		error = 0,
 		result = 0,
 		tmpres,
@@ -2453,12 +2489,16 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 	for (i = 0; i < n; i++)
 	{
-		if ((item = list[i]) < 0)
+		if (*list < 0)
+		{
+			list++;
 			continue;
+		}
+
 #if _MINT_
-		llink = itm_islink(w, item);
+		llink = itm_islink(w, *list);
 #endif
-		if(itm_follow(w, item, &link, (char **)(&path), &type))
+		if(itm_follow(w, *list, &link, (char **)(&path), &type))
 			fa = 0; 
 		else
 		{
@@ -2468,7 +2508,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 		}
 
 		if (path == NULL)
-			result = copy_error(ENSMEM, itm_name(w, item), CMD_DELETE);
+			result = copy_error(ENSMEM, itm_name(w, *list), CMD_DELETE);
 		else
 		{
 			name = fn_get_name(path);
@@ -2493,7 +2533,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 					upd_copyname(NULL, cpath, name);
 
-					if ((error = itm_attrib(w, item, fa, &attr)) == 0)
+					if ((error = itm_attrib(w, *list, fa, &attr)) == 0)
 					{
 						/* Delete a single file or a link */
 
@@ -2519,7 +2559,7 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 					tmpres = del_path(path, name, folders, files, bytes);
 					if (type == ITM_FOLDER)
 					{
-						if ((error = itm_attrib(w, item, fa, &attr)) == 0)
+						if ((error = itm_attrib(w, *list, fa, &attr)) == 0)
 						{
 							result = (tmpres == 0) ? del_folder(path, CMD_DELETE, result, &attr) : tmpres;
 						}
@@ -2543,13 +2583,13 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 			if(llink)	
 			{
-				lpath = itm_fullname(w, item);
+				lpath = itm_fullname(w, *list);
 				cpath = fn_get_path(lpath);
 				name = fn_get_name(lpath);
 
 				upd_copyname(NULL, cpath, name);
 
-				if ((error = itm_attrib(w, item, 1, &attr)) == 0)
+				if ((error = itm_attrib(w, *list, 1, &attr)) == 0)
 				{
 					/* Delete a single link */
 
@@ -2573,7 +2613,10 @@ static boolean del_list(WINDOW *w, int n, int *list, long *folders, long *files,
 
 		if(mustabort(result))
 			break;
+
+		list++;
 	}
+
 	return ((result == XFATAL) ? FALSE : TRUE);
 }
 
@@ -2651,20 +2694,30 @@ boolean itmlist_op
 	{
 		case CMD_COPY:
 		case CMD_MOVE:
+		{
 			result = check_copy(w, n, list, dest);
 			break;
+		}
 		case CMD_TOUCH:
 		case CMD_DELETE:
+		{
 			result = check_copy(w, n, list, NULL);
 			break;
+		}
 		case CMD_PRINT:
+		{
 			result = check_print(w, n, list);
 			break;
+		}
 		case CMD_PRINTDIR:
+		{
 			result = TRUE;
 			break;
+		}
 		default:
+		{
 			break;
+		}
 	}
 
 	if ( result ) 
@@ -2763,15 +2816,21 @@ boolean itmlist_op
 						case CMD_COPY:
 						case CMD_MOVE:
 						case CMD_TOUCH:
+						{
 							get_opt( copyinfo, &options.cprefs, CF_CTIME, CCHTIME ); 
 							get_opt( copyinfo, &options.cprefs, CF_CATTR, CCHATTR ); 
 							result = copy_list(w, n, list, dest, &folders, &files, &bytes, function);
 							break;
+						}
 						case CMD_DELETE:
+						{
 							result = del_list(w, n, list, &folders, &files, &bytes);
 							break;
+						}
 						case CMD_PRINT:
-						printmode = xd_get_rbutton(copyinfo, PSETBOX) - PRTXT;
+						{
+							printmode = xd_get_rbutton(copyinfo, PSETBOX) - PRTXT;
+						}
 						case CMD_PRINTDIR:
 						{
 							int tofile = 0;
@@ -2798,8 +2857,9 @@ boolean itmlist_op
 							break;
 						}
 						default:
+						{
 							result = FALSE;
-							break;
+						}
 					}
 
 					arrow_mouse();
@@ -2863,33 +2923,37 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kst
 		{
 			switch (type)
 			{
-			case ITM_TRASH:
-				return itmlist_wop(sw, n, list, CMD_DELETE);
-			case ITM_PRINTER:
-				return itmlist_wop(sw, n, list, CMD_PRINT);
-			case ITM_PROGRAM:
-				if ((program = itm_fullname(dw, dobject)) != NULL)
+				case ITM_TRASH:
+				case ITM_PRINTER:
 				{
-					if((kstate & K_ALT) == 0)
-						onfile = TRUE;
-					result = app_exec(program, NULL, sw, list, n, kstate);
-					onfile = FALSE;
-					free(program);
+					return itmlist_wop(sw, n, list, (type == ITM_TRASH) ? CMD_DELETE : CMD_PRINT);
 				}
-				return result;
-			default:
-				alert_printf(1, AILLCOPY);
-				return FALSE;
-			}
+				case ITM_PROGRAM:
+				{
+					if ((program = itm_fullname(dw, dobject)) != NULL)
+					{
+						if((kstate & K_ALT) == 0)
+							onfile = TRUE;
+
+						result = app_exec(program, NULL, sw, list, n, kstate);
+						onfile = FALSE;
+						free(program);
+					}
+
+					return result;
+				}
+				default:
+				{
+					break;
+				}
+			} /* switch */
 		}
 		else
 			return itm_copyit(dw, dobject, sw, n, list, kstate);
 	}
-	else
-	{
-		alert_printf(1, AILLCOPY);
-		return FALSE;
-	}
+
+	alert_printf(1, AILLCOPY);
+	return FALSE;
 }
 
 

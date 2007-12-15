@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.93  	Copyright 2003-2007  Dj. Vukovic
+             V3.01 to 3.94  	Copyright 2003-2007  Dj. Vukovic
 
 
-This  is version 3.93 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.94 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -50,7 +50,7 @@ downloaded from:
 A note on the naming of distribution files:
 
 Binary distributions have names in the form TERAnnnB.ZIP  ("B" for "Binary"), 
-"nnn" being the version number multipled by 100 (as "384" for 3.84).
+"nnn" being the version number multipled by 100 (e.g. as "394" for 3.94).
 
 Source-code  distributions  have  names in  the form  TERAnnnS.ZIP  ("S" for 
 "Source").
@@ -102,7 +102,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the
-last  released  version (3.87). Also, read the manual TERADESK.HYP (you will
+last  released  version (3.93). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -284,16 +284,22 @@ Some Possible Future Developments
   in selected items may present  a problem on higher-end systems, and
   correction of that problem if possible.
 
-- Complete compliance to the AV-protocol and Drag & Drop protocol.
+- Complete compliance to the  AV-protocol and Drag & Drop protocol  (some of
+  rarely used AV-protocol capabilities are currently unsupported).
 
 - Better implementation of memory-limit and no-multitask options.
 
 - Capability to change video mode in AESes earlier than V4.
 
+- Capability to shutdown Aranym from single-TOS.
+
 - Capability to show a 'tree view' directory window of all drives or maybe
   to show any directory window with 'tree view'.
 
 - Integration of a non-modal, windowed, long-names-capable fileselector.
+
+- Integration of a windowed command line interpreter  that will use the code
+  already existing in TeraDesk for most (or all) of its functions.
 
 - Capability to run TOS programs in a window in single-TOS.
 
@@ -342,6 +348,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; August 5th 2007
+                                            Beograd; December 15th 2007
 
 

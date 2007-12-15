@@ -41,7 +41,6 @@
 #include "file.h"
 #include "prgtype.h"
 
-
 #define CFGEXT		"*.IN?" /* default configuration-file extension */
 #define PRNEXT		"*.PRN" /* default print-file extension */
 
@@ -309,7 +308,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 
 
 /* 
- * Check if the beginning of a path is a valid disk name
+ * Check if the BEGINNING of a path is a valid disk name
  * This routine does -not- trim leading blanks.
  * Acceptable forms: X:<0> or X:\<0>
  */
@@ -675,134 +674,135 @@ boolean match_pattern(const char *t, const char *pat)
 	{
 		switch(*pat)
 		{
-		case '?':			/* ? means any single character */
-
-			t++;
-			pat++;
-			break;
-
-		case '*':			/* * means a string of any character */
-
-			if(!te)
-				te = (char *)t + strlen(t);	/* find the end */
-
-			if(!pe)
-			{
-				pe = (char *)pat;
-
-				while(*pe)	/* find the end and the last asterisk */
-				{
-					if(*pe == '*')
-						pa = pe;
-
-					pe++;
-				}
-			}
-
-			pat++;
-
-			if(pat > pa)	/* skip irelevant part */
-			{
-				d = te - (pe - (char *)pat);
-
-				if(d > t)
-					t = d;
-			}
-
-			/* 
-			 * First character that must be matched after the '*' 
-			 * this code could be smaller, but slower
-			 */
-
-			if(*pat == '!')
-			{
-				pat++;
-
-				if(*pat)	/* guard against invalidly specified masks */
-				{
-					u = (char)touppc(pat[1]);	/* the first one after that */ 
-
-					while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
-						t++;
-
-					goto exceptch;
-				}
-			}
-			else if(*pat == '[')
-			{
-				d = strchr(pat,']');
-
-				if(d)	/* guard against invalidly specified masks */
-				{
-					u = (char)touppc(d[1]);
-
-					while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
-						t++;
-
-					goto anych;
-				}
-			}
-			else
-			{
-				u = (char)touppc(*pat); 
-
-				while(*t &&(touppc(*t) != u))
-					t++;
-
-				break;
-			}
-
-			valid = FALSE;
-			break;
-
-		case '!':			/* !X means any character but X */
-
-			tu = touppc(*t);
-			pat++;
-
-			exceptch:;
-
-			u = (char)touppc(*pat);
-
-			if (u && tu != u)
-			{
+			case '?':			/* ? means any single character */
+			{	
 				t++;
 				pat++;
 				break;
-			} 
-			
-			valid = FALSE;
-			break;
-
-		case '[':			/* [<chars>] means any one of <chars> */
-
-			tu = touppc(*t);
-			d = strchr(pat, ']');
-			
-			if(d)
+			}
+			case '*':			/* * means a string of any character */
 			{
-				anych:;
-
-				while(++pat < d && (tu != touppc(*pat)));
-
-				if(pat < d)
+				if(!te)
+					te = (char *)t + strlen(t);	/* find the end */
+	
+				if(!pe)
 				{
-					pat = d;
+					pe = (char *)pat;
+	
+					while(*pe)	/* find the end and the last asterisk */
+					{
+						if(*pe == '*')
+							pa = pe;
+	
+						pe++;
+					}
+				}
+	
+				pat++;
+	
+				if(pat > pa)	/* skip irelevant part */
+				{
+					d = te - (pe - (char *)pat);
+	
+					if(d > t)
+						t = d;
+				}
+	
+				/* 
+				 * First character that must be matched after the '*' 
+				 * this code could be smaller, but slower
+				 */
+	
+				if(*pat == '!')
+				{
 					pat++;
-					t++;
+	
+					if(*pat)	/* guard against invalidly specified masks */
+					{
+						u = (char)touppc(pat[1]);	/* the first one after that */ 
+	
+						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+							t++;
+	
+						goto exceptch;
+					}
+				}
+				else if(*pat == '[')
+				{
+					d = strchr(pat,']');
+	
+					if(d)	/* guard against invalidly specified masks */
+					{
+						u = (char)touppc(d[1]);
+	
+						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+							t++;
+	
+						goto anych;
+					}
+				}
+				else
+				{
+					u = (char)touppc(*pat); 
+	
+					while(*t &&(touppc(*t) != u))
+						t++;
+	
 					break;
 				}
-			}
-
-			valid = FALSE;
-			break;
-
-		default:	/* exact match on anything else, case insensitive */
-
-			if (touppc(*t++) == touppc(*pat++))
+	
+				valid = FALSE;
 				break;
-
-			valid = FALSE;
+			}
+			case '!':			/* !X means any character but X */
+			{
+				tu = touppc(*t);
+				pat++;
+	
+				exceptch:;
+	
+				u = (char)touppc(*pat);
+	
+				if (u && tu != u)
+				{
+					t++;
+					pat++;
+					break;
+				} 
+				
+				valid = FALSE;
+				break;
+			}
+			case '[':			/* [<chars>] means any one of <chars> */
+			{
+				tu = touppc(*t);
+				d = strchr(pat, ']');
+				
+				if(d)
+				{
+					anych:;
+	
+					while(++pat < d && (tu != touppc(*pat)));
+	
+					if(pat < d)
+					{
+						pat = d;
+						pat++;
+						t++;
+						break;
+					}
+				}
+	
+				valid = FALSE;
+				break;
+			}
+			default:	/* exact match on anything else, case insensitive */
+			{
+				if (touppc(*t++) == touppc(*pat++))
+					break;
+	
+				valid = FALSE;
+			}
 		}
 	}
 

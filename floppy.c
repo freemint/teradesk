@@ -407,6 +407,7 @@ void formatfloppy
 				switch (button)
 				{
 					case FSSIDED:		/* SS DD disk */
+					{
 						fmtsel = 1;
 						tsides = 1;
 						tspt = 9;
@@ -415,7 +416,9 @@ void formatfloppy
 						dirsize = 112;
 						fat0 = 0xf9;
 						break;
+					}
 					case FDSIDED:		/* DS DD disk */
+					{
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 9;
@@ -424,7 +427,9 @@ void formatfloppy
 						dirsize = 112;
 						fat0 = 0xf9;
 						break;
+					}
 					case FHSIDED:		/* DS HD disk */
+					{
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 18;
@@ -433,7 +438,9 @@ void formatfloppy
 						dirsize = 224;
 						fat0 = 0xf0;
 						break;
+					}
 					case FESIDED:		/* DS ED disk (not tested) */
+					{
 						fmtsel = 1;
 						tsides = 2;
 						tspt = 36;
@@ -442,7 +449,9 @@ void formatfloppy
 						dirsize = 448;  /* is it so? never seen an ED disk */
 						fat0 = 0xf0;	/* is it so? */    
 						break;
+					}
 					case FPREV:			/* Previous disk format */
+					{
 						fmtsel = 0;
 						hourglass_mouse();
 						if
@@ -465,8 +474,11 @@ void formatfloppy
 						}
 
 						arrow_mouse();
+					}
 					default:			/* no change */
-	   	       			break;       
+	   	       		{
+						break;       
+					}
 				} /* switch */
 
 				mspt = tspt + 2; /* maximum physically possible sectors/track */
@@ -599,16 +611,24 @@ void formatfloppy
 								switch ( button )
 								{
 									case 1:				/* retry same track */
+									{
 										goto retryf;
+									}
 									case 3:				/* abort */
+									{
 										goto endall;
+									}
 									default:			/* ignore and continue */
+									{
 										break;
+									}
 								} /* switch */
 							} /* istat ? */
 							else
+							{
 								if ( escape_abort(FALSE) ) /* FALSE= ignore messages */
 									goto endall;
+							}
 						} /* iside */
           
 						/* Report formatting progress after each track */

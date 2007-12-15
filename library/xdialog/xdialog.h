@@ -167,6 +167,7 @@ extern int
 	xd_colaes,
 	aes_hor3d,
 	aes_ver3d,
+	xd_rbdclick,
 	colour_icons;
 
 
@@ -239,6 +240,7 @@ void xd_begmctrl(void);
 void xd_endmctrl(void);
 void xd_mouse_off(void);
 void xd_mouse_on(void);
+void xd_screensize(void);
 
 int xd_get_rbutton(OBJECT *tree, int rb_parent);
 int xd_set_rbutton(OBJECT *tree, int rb_parent, int object);

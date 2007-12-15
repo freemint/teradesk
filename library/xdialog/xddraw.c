@@ -1970,23 +1970,29 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 		{
 			switch(etype)
 			{
-			case XD_DRAGBOX:	/* dragbox "ear" on a dialog */
-			case XD_BCKBOX:		/* background box */
-			case XD_SCRLEDIT:	/* scrolled text field */
-			case XD_FONTTEXT:	/* sample text in font selector */
-				(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
-				break;
-			case XD_RECTBUT:	/* checkbox button */
-			case XD_ROUNDRB:	/* round radio button */
-			case XD_TITLE:		/* title */
-			case XD_RBUTPAR: 	/* titled fram */
-			case XD_BUTTON :	/* rectangular button with text */
-				if ( must_userdef(object) )
-					(*nx)++;	/* userdef only if unsuported by AES */
-				break;
-			default :
-				(*n)++;			/* not using extended parameter blocks */
-				break;
+				case XD_DRAGBOX:	/* dragbox "ear" on a dialog */
+				case XD_BCKBOX:		/* background box */
+				case XD_SCRLEDIT:	/* scrolled text field */
+				case XD_FONTTEXT:	/* sample text in font selector */
+				{
+					(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
+					break;
+				}
+				case XD_RECTBUT:	/* checkbox button */
+				case XD_ROUNDRB:	/* round radio button */
+				case XD_TITLE:		/* title */
+				case XD_RBUTPAR: 	/* titled fram */
+				case XD_BUTTON :	/* rectangular button with text */
+				{
+					if ( must_userdef(object) )
+						(*nx)++;	/* userdef only if unsuported by AES */
+					break;
+				}
+				default :
+				{
+					(*n)++;			/* not using extended parameter blocks */
+					break;
+				}
 			}
 		}
 
@@ -2081,123 +2087,145 @@ void xd_set_userobjects(OBJECT *tree)
 
 			switch (etype)
 			{
-			case XD_DRAGBOX :
-				/* Dragbox "ear" on the dialogs; always userdefined */ 
-				c_code = ub_drag;
-				break;
-			case XD_ROUNDRB :
-				/* Round radio button */
-				if (must_userdef(c_obj))
-					c_code = ub_roundrb;
-				break;
-			case XD_RECTBUT :
-				/* Rectangular "checkbox" button */
-				if (must_userdef(c_obj))
-					c_code = ub_rectbut;
-				break;
-
-/* Currently not used anywhere in Teradesk
-
-			case XD_RECTBUTTRI :
-				if (must_userdef(c_obj))
-					c_code = ub_rectbuttri;
-				break;
-			case XD_CYCLBUT :
-				c_code = ub_cyclebut;
-				break;
-*/
-			case XD_BUTTON :
-				/* 
-				 * Rectangular button with (possibly) underlined text;   
-				 * This object should have a minimum height in order   
-				 * to accomodate the underline inside the button.
-				 * Modification should affect both userdefined and 
-				 * AES-supported objects.
-				 */
-				hmin = xd_regular_font.ch + 2; /* minimum height */
-
-				if ( xd_has3d && (aes_ver3d == 0) ) /* 3D but without enlargements */
-					hmin += 2;
-
-				if ( c_obj->ob_height < hmin )
+				case XD_DRAGBOX :
 				{
-					c_obj->ob_y -= (hmin - c_obj->ob_height) / 2;
-					c_obj->ob_height = hmin;
+					/* Dragbox "ear" on the dialogs; always userdefined */ 
+					c_code = ub_drag;
+					break;
 				}
-
-				if (must_userdef(c_obj))
-					c_code = ub_button;
-
-				break;
-			case XD_RBUTPAR :
-				/* 
-				 * Frame with a title on the upper contour;
-				 * Increase object height slightly, because
-				 * the upper side will alwas be drawn about
-				 * 1/2 character heights inside the object;
-				 * withut increasing object size, the upper
-				 * edge would be too close to objects  
-				 * inside. This affects both userdefined and
-				 * AES-supported objects.
-				 */
-				d = xd_regular_font.ch / 2;
-
-				c_obj->ob_y -= d;
-				c_obj->ob_height += d;
-				xd_translate(tree, object, d);
-
-				if (must_userdef(c_obj)) 
-					c_code = ub_rbutpar;
-
-				break;
-			case XD_TITLE :
-				/* 
-				 * Dialog title; object height must always be
-				 * increased a little bit, for better look.
-				 * E.g. otherwise, in magic/low-res/colour, the
-				 * underline gets too close to the text
-				 * (in fact, it is drawn OVER the text)
-				 */
-
-				if (must_userdef(c_obj))
-					c_code = ub_title;
-
-				d = ( xd_colaes && (aes_ver3d == 0) ) ? 3 : 1;
-				c_obj->ob_height += 2 * d; 
-				c_obj->ob_y -= d + 1;
-				break;
-			case XD_SCRLEDIT:	
-				/* Scrolled editable text; always userdefined */
-				c_code = ub_scrledit;
-				break;
-			case XD_FONTTEXT:
-				/* 
-				 * Sample text in the font selector dialog;
-				 * ub_drag is replaced later by a pointer to
-				 * actual code; see font.c
-				 */
-
-				c_code = ub_drag;	/* does not matter, so use any existing one */
-				break;
-			case XD_BCKBOX:
-				/* window background box. Always userdefined  */
-
-				if(c_obj->ob_flags & AES3D_1)
+				case XD_ROUNDRB :
 				{
-					c_obj->ob_y -= 1;
-					c_obj->ob_height += 2;
+					/* Round radio button */
+					if (must_userdef(c_obj))
+						c_code = ub_roundrb;
+					break;
 				}
-
-				c_code = ub_bckbox;	
-				break;
-
-/* this should never happen
-			default:
-				/* Yet unknown userdef; this should never happen! */
-				c_code = ub_unknown;
-				xuserblk = FALSE;
-				break;
-*/
+				case XD_RECTBUT :
+				{
+					/* Rectangular "checkbox" button */
+					if (must_userdef(c_obj))
+						c_code = ub_rectbut;
+					break;
+				}
+	/* Currently not used anywhere in Teradesk
+	
+				case XD_RECTBUTTRI :
+				{
+					if (must_userdef(c_obj))
+						c_code = ub_rectbuttri;
+					break;
+				}
+				case XD_CYCLBUT :
+				{
+					c_code = ub_cyclebut;
+					break;
+				}
+	*/
+				case XD_BUTTON :
+				{
+					/* 
+					 * Rectangular button with (possibly) underlined text;   
+					 * This object should have a minimum height in order   
+					 * to accomodate the underline inside the button.
+					 * Modification should affect both userdefined and 
+					 * AES-supported objects.
+					 */
+					hmin = xd_regular_font.ch + 2; /* minimum height */
+	
+					if ( xd_has3d && (aes_ver3d == 0) ) /* 3D but without enlargements */
+						hmin += 2;
+	
+					if ( c_obj->ob_height < hmin )
+					{
+						c_obj->ob_y -= (hmin - c_obj->ob_height) / 2;
+						c_obj->ob_height = hmin;
+					}
+	
+					if (must_userdef(c_obj))
+						c_code = ub_button;
+	
+					break;
+				}
+				case XD_RBUTPAR :
+				{
+					/* 
+					 * Frame with a title on the upper contour;
+					 * Increase object height slightly, because
+					 * the upper side will alwas be drawn about
+					 * 1/2 character heights inside the object;
+					 * withut increasing object size, the upper
+					 * edge would be too close to objects  
+					 * inside. This affects both userdefined and
+					 * AES-supported objects.
+					 */
+					d = xd_regular_font.ch / 2;
+	
+					c_obj->ob_y -= d;
+					c_obj->ob_height += d;
+					xd_translate(tree, object, d);
+	
+					if (must_userdef(c_obj)) 
+						c_code = ub_rbutpar;
+	
+					break;
+				}
+				case XD_TITLE :
+				{
+					/* 
+					 * Dialog title; object height must always be
+					 * increased a little bit, for better look.
+					 * E.g. otherwise, in magic/low-res/colour, the
+					 * underline gets too close to the text
+					 * (in fact, it is drawn OVER the text)
+					 */
+	
+					if (must_userdef(c_obj))
+						c_code = ub_title;
+	
+					d = ( xd_colaes && (aes_ver3d == 0) ) ? 3 : 1;
+					c_obj->ob_height += 2 * d; 
+					c_obj->ob_y -= d + 1;
+					break;
+				}
+				case XD_SCRLEDIT:	
+				{
+					/* Scrolled editable text; always userdefined */
+					c_code = ub_scrledit;
+					break;
+				}
+				case XD_FONTTEXT:
+				{
+					/* 
+					 * Sample text in the font selector dialog;
+					 * ub_drag is replaced later by a pointer to
+					 * actual code; see font.c
+					 */
+	
+					c_code = ub_drag;	/* does not matter, so use any existing one */
+					break;
+				}
+				case XD_BCKBOX:
+				{
+					/* window background box. Always userdefined  */
+	
+					if(c_obj->ob_flags & AES3D_1)
+					{
+						c_obj->ob_y -= 1;
+						c_obj->ob_height += 2;
+					}
+	
+					c_code = ub_bckbox;	
+					break;
+				}
+	/* this should never happen
+				default:
+				{
+					/* Yet unknown userdef; this should never happen! */
+					c_code = ub_unknown;
+					xuserblk = FALSE;
+					break;
+				}
+	*/
 			}
 
 			if (c_code)	

@@ -139,7 +139,6 @@ void dir_refresh_wd(DIR_WINDOW *w);
 void dir_refresh_all(void);
 void dir_trim_slash ( char *path );
 boolean dir_do_path( char *path, int action );
-void dir_readnew(DIR_WINDOW *w);
 OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boolean smode, RECT *work);
 void draw_tree(OBJECT *tree, RECT *clip);
 void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type);

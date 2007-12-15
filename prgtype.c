@@ -230,7 +230,8 @@ boolean prgtype_dialog
 #if _MINT_
 	/* 
 	 * these settings have no effect in single-tos but are left editable
-	 * so that the same config file can be edited in mutltitasking/single
+	 * so that the same config file can be edited in all cases. However,
+	 * settings are hidden in the single-TOS version.
 	 */
 
 	set_opt(addprgtype, *ptflags, PT_SING, ATSINGLE);
@@ -284,6 +285,7 @@ boolean prgtype_dialog
 
 			xd_drawbuttnorm(&info, button);
 		}
+
 		xd_close(&info);
 	}
 

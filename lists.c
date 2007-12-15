@@ -663,20 +663,28 @@ int list_edit
 			switch( itype )
 			{
 				case ITM_FILE:
+				{
 					luse = use | LS_FIIC;
 					list = &lists[0];
 					break;
+				}
 				case ITM_PREVDIR:
 				case ITM_FOLDER:
+				{
 					luse = use | LS_FOIC;
 					list = &lists[1];
 					break;
+				}
 				case ITM_PROGRAM:
+				{
 					luse = use | LS_PRIC;
 					list = &lists[2];
 					break;
+				}
 				default:
+				{
 					goto exitnow;
+				}
 			}
 		}
 		else
@@ -792,12 +800,12 @@ int list_edit
 		{
 			case FTOK:
 			case FTCANCEL:
-
+			{
 				stop = TRUE;
 				break;
-
+			}
 			case FTADD:
-	
+			{
 				/*
 			 	 * Add (install) a new item in the list;
 			 	 * First, set appropriate default values, if needed
@@ -848,9 +856,9 @@ int list_edit
 
 				} /* ls_dialog ? */
 				break;
-
+			}
 			case FTDELETE: 
-
+			{
 				/* 
 		 	 	 * Delete an item from the list
 		 	 	 * Note: currently this operation can't be accessed 
@@ -866,9 +874,9 @@ int list_edit
 					sl_set_slider(&sl_info, &info); 
 				}
 				break;
-
+			}
 			case FTCHANGE:
-			
+			{	
 				/* Edit an existing item in the list */
 
 				if (!wsel)
@@ -897,9 +905,9 @@ int list_edit
 					}
 				}
 				break;
-
+			}
 			case FTMOVEUP:
-
+			{
 				/* Move an item up in the list, unless it is the first one */
 
 				pos = pos0;
@@ -922,9 +930,9 @@ int list_edit
 				}
 
 				break;
-
+			}
 			case FTMOVEDN:
-
+			{
 				/* Move an item down in the list, unless it is the last one */
 
 				pos = pos0;
@@ -948,12 +956,12 @@ int list_edit
 				}
 
 				break;
-
+			}
 			case FTYPE1:
 			case FTYPE2:
 			case FTYPE3:
 			case FTYPE4:
-			
+			{
 				/* Select one of the items in the listbox */
 							
 				keep = TRUE;
@@ -975,10 +983,11 @@ int list_edit
 				}
 
 				break;
-
+			}
 			case ITFILES:
 			case ITFOLDER:
 			case ITPROGRA:
+			{
 				/*
 				 * The following two linew will work only if object indices
 				 * for ITFILES to ITPROGRA are in sequence.
@@ -997,10 +1006,12 @@ int list_edit
 					ls_sl_init( cnt_types(list), &sl_info, list); 
 				}
 				break;
-
+			}
 			default:
+			{
 				break;
 
+			}
 		}		/* add/delete/change or else */
 
 		if ( !wsel )

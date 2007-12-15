@@ -47,81 +47,128 @@ char *get_freestring( int stringid )
 
 /* 
  * Retrieve a text string related to some errors, identified by error code.
- * Anything undefined is "TOS error #%d".
+ * Anything undefined is "TOS error #%d" or (X)BIOS error #%d.
  * Beware that in such a case the resulting string should not be longer 
  * than 39 characters. There is no checking of buffer overflow!
+ * Possibly an error-vs-message table could be used here instead of the 
+ * case structure. However, gain appears to be small (about 40 bytes) and
+ * there is a loss in clarity.
  */
 
 char *get_message(int error)
 {
-	static char buffer[40];
-	int msg;
+	static char 
+		buffer[40];
+
+	int
+		msg;
+
 
 	switch (error)
 	{
-	case UNKNOWN_MEDIA:
-		msg = TUNKM;
-		break;
-	case SEEK_ERROR:
-	case SECTOR_NOT_FOUND:
-		msg = TSEEKE;
-		break;
-	case WRITE_PROTECT:
-		msg = TWPROT;
-		break;
-	case BAD_SECTORS:
-		msg = TBADS;
-		break;
-	case EFILNF:
-		msg = TFILNF;
-		break;
-	case DRIVE_NOT_READY:
-	case EDRIVE:
-	case EPTHNF:
-		msg = TPATHNF;
-		break;
-	case EACCDN:
-		msg = TACCDN;
-		break;
-	case ENSMEM:
-		msg = TENSMEM;
-		break;
-	case EDSKFULL:
-		msg = TDSKFULL;
-		break;
-	case ELOCKED:
-		msg = TLOCKED;
-		break;
-	case EPLFMT:
-		msg = TPLFMT;
-		break;
-	case EFNTL:
-		msg = TFNTLNG;
-		break;
-	case EPTHTL:
-		msg = TPTHTLNG;
-		break;
-	case EREAD:
-		msg = TREAD;
-		break;
-	case EEOF:
-		msg = TEOF;
-		break;
-	case EFRVAL:
-		msg = TFRVAL;
-		break;
-	case ECOMTL:
-		msg = TCMDTLNG;
-		break;
-	case XDNMWINDOWS:
-		msg = MTMWIND;
-		break;
-	case XDVDI:
-		msg = MVDIERR;
-		break;
-	default:
-		sprintf(buffer, get_freestring((error < INSERT_DISK) ? TERROR : TXBERROR), error);
-		return buffer;
+		case UNKNOWN_MEDIA: 	/* -7 */
+		{
+			msg = TUNKM;
+			break;
+		}
+		case SEEK_ERROR:		/* -6 */
+		case SECTOR_NOT_FOUND:	/* -8 */
+		{
+			msg = TSEEKE;
+			break;
+		}
+		case WRITE_PROTECT: 	/* -13 */
+		{
+			msg = TWPROT;
+			break;
+		}
+		case BAD_SECTORS:		/* -16 */
+		{
+			msg = TBADS;
+			break;
+		}
+		case EFILNF:			/* -33 */
+		{
+			msg = TFILNF;
+			break;
+		}
+		case DRIVE_NOT_READY:	/* -2 */
+		case EDRIVE:			/* -46 */
+		case EPTHNF:			/* -34 */
+		{
+			msg = TPATHNF;
+			break;
+		}
+		case EACCDN:			/* -36 */
+		{
+			msg = TACCDN;
+			break;
+		}
+		case ENSMEM:			/* -39 */
+		{
+			msg = TENSMEM;
+			break;
+		}
+		case ELOCKED:			/* -58 */
+		{
+			msg = TLOCKED;
+			break;
+		}
+		case EPLFMT:			/* -66 */
+		{
+			msg = TPLFMT;
+			break;
+		}
+		case EREAD:				/* -2049 */
+		{
+			msg = TREAD;
+			break;
+		}
+		case EDSKFULL:			/* -2050 */
+		{
+			msg = TDSKFULL;
+			break;
+		}
+		case EEOF:				/* -2051 */
+		{
+			msg = TEOF;
+			break;
+		}
+		case EFRVAL:			/* -2053 */
+		{
+			msg = TFRVAL;
+			break;
+		}
+		case ECOMTL:			/* -2064 */
+		{
+			msg = TCMDTLNG;
+			break;
+		}
+		case EPTHTL:			/* -2065 */
+		{
+			msg = TPTHTLNG;
+			break;
+		}
+		case EFNTL:				/* -2066 */
+		{
+			msg = TFNTLNG;
+			break;
+		}
+		case XDVDI:				/* -4096 */
+		{
+			msg = MVDIERR;
+			break;
+		}
+		case XDNMWINDOWS:		/* -4097 */
+		{
+			msg = MTMWIND;
+			break;
+		}
+		default:
+		{
+			sprintf(buffer, get_freestring((error < INSERT_DISK) ? TERROR : TXBERROR), error);
+			return buffer;
+		}
 	}
 	
 	return get_freestring(msg);

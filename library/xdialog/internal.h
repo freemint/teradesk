@@ -131,6 +131,8 @@ extern int
 	xd_ncolours,
 	xd_npatterns,
 	xd_nfills,
+	xd_fnt_w,
+	xd_fnt_h,
 	xd_pix_height,
 	xd_posmode,
 	xd_min_timer,
@@ -147,7 +149,7 @@ extern XDOBJDATA *xd_objdata;
 extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
-extern RECT xd_desk;
+extern RECT xd_screen, xd_desk;
 extern XDFONT xd_regular_font, xd_small_font;
 
 extern void set_linedef(int colour);

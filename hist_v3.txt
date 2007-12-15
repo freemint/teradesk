@@ -3,6 +3,107 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2007  Dj. Vukovic
 
 
+Version 3.94  15-12-2007
+------------------------
+
+- Shutdown options reworked. There are now 'Shutdown', 'Reboot', 'Quit' and
+ 'Cancel', and they appear in a dialog, not in an alert box. With the first
+  two options TeraDesk issues a shel_write() for a full shutdown and, if it
+  does not receive a termination message within a short while (AFAIK this
+  message can come only in MyAES), it performes either a system-halt/power-
+  down shutdown by a call to Shutdown() or a cold-reboot shutdown. If 
+  Shutdown() function does not work on the system (e.g. in single-TOS),
+  TeraDesk, waits for 5 seconds and then, depending on the selected option,
+  either enters into an endless loop, or performs a cold reset. TeraDesk is
+  also supposed to be able to switch-off power of CT60 at shutdown, but
+  this capability has not yet been tested. Btw. there was no success in 
+  attempts to solve the problem of shutdown in Magic, in which external 
+  shutdown programs appear to work correctly only if Magixdesk is set as 
+  the shell (e.g. behaviour of the SHUTDOWN program is similar and incorrect
+  both in Thing and TeraDesk).
+
+- Appropriate page from the hypertext manual can now be called from any open
+  dialog by pressing the [HELP] key. This feature works only if dialogs are
+  in windowed mode- and not in the systemwide font selector dialog. In order
+  for the feature to work, chapter titles in the hypertext manual must 
+  exactly match texts of menu items used to open paricular dialogs- or else
+  the first page of the hypertext manual will be displayed. This should
+  be paid attention to when translating TeraDesk resource and manual.
+
+- A new type of 'special use' application added: the 'Right mouse button
+  extension'. If an installed application is marked so, normal behaviour
+  of TeraDesk upon a right-button click is disabled (i.e. a right click is
+  no more recognized as a right-button-pressed-plus-left-click) and the
+  marked application is activated upon each right button single-click. If
+  there are selected desktop or directory objects at the time of the right-
+  click, their names are sent to the application (VA_START is attempted).
+  The installed application can be anything that can do something sensible
+  with (a list of) object names. It should be noted that the marked
+  application is recognized only upon the next startup of TeraDesk 
+  (assuming that the configuration has been saved meanwhile).
+
+- If 'Show parent' option is active in the Set mask... dialog, i.e. if ".." 
+  is shown in directory windows, closer widget now always closes a directory
+  window completely (if 'Show parent' is inactive, the closer switches the 
+  window to the parent directory, or, if there is none, closes it completely).
+  The convenience of this change may be somewhat debatable. If it does not
+  prove itself well, it may yet be removed in a future release.
+
+- Symbolic links to folders, when shown in directory windows, are now opened
+  more like real folders, i.e. in the same window, except if [Alt] is pressed
+  while opening, when they are opened in a new window.  If a symbolic
+  link is opened in this way, it is not possible to go back (by clicking
+  on the Closer) to the folder containing the symbolic link- the parent
+  direcory of the link-referenced folder is opened. Same as with the 
+  prevous change (above), the convenience of this one is debatable.   
+
+- Appropriate changes made in the resource file. See RESOURCE.TXT.
+
+- Improved validation of strings for date and time in the Info... and 
+  Search... dialogs.
+
+- Slightly relaxed validation of filenames in dialog fields for the sake of
+  German TOS which appears to be tolerant of some rather illegal characters.
+
+- Improved code for finding strings in files; actual search time (excluding
+  file reading time) reduced by about 50% (depending on file contents).
+  
+- Fixed a bug that disabled string search from finding its target if it was
+  at the very end of a file.
+
+- Fixed a bug that crashed TeraDesk if WM_ARROWED message was received
+  (e.g. from a wheeled mouse) while the system-wide font-selector was open.
+
+- Fixed a bug in reverse sorting of directory items which manifested itself
+  when there was an even number of items in a window (two items in the
+  middle of the list were not resorted).
+
+- Fixed the problem of not being able to enter characters with ASCII codes
+  above 127 in the autoselector.  It seems that such characters are
+  permitted in long filenames (?).
+
+- Fixed activation of background TOS programs in Mint or Magic (which seems
+  to have never worked correctly in any TeraDesk V3.* ???)
+
+- Fixed the bug that inconveniently caused only the topped directory window
+  to be updated when global file masking options (show parent, system,
+  hidden...) were changed.
+
+- Fixed unwanted behaviour upon pressing UNDO when autoselector was active
+  and more than one directory window was open (autoselector text was
+  transferred to the next open window).
+
+- Several size optimizations made, mostly by removing certain variables that
+  duplicated the functionality of some others, by disposing of some small
+  routines used only once, and by integrating some routines always used 
+  together. Also, a number of references to array members by index were
+  replaced by suitable pointers.
+
+- Some tidying-up of the source code; more comments added into code.
+
+- Hypertext manual updated to reflect the latest changes in the program.
+
+
 Version 3.93  5-08-2007
 -----------------------
 - Search... dialog now stays open while a search is in progress. It is

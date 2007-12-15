@@ -142,7 +142,7 @@ static void icnt_info
 {
 	if ( !find_wild( (LSTYPE **)list, filetype, (LSTYPE *)it, copy_icntype ) )
 	{
-		/* Attempt o divine the icon from a possibly defined desktop icon */
+		/* Attempt to divine the icon from a possibly defined desktop icon */
 
 		it->icon = icn_iconid(filetype);
 
@@ -191,17 +191,23 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
 	{
 		case ITM_PREVDIR:
 		case ITM_FOLDER:
+		{
 			i = 1;
 			deficon = FOINAME;
 			break;
+		}
 		case ITM_PROGRAM:
+		{
 			i = 2;
 			deficon = APINAME;
 			break;
+		}
 		default:	/* ITM_FILE or ITM_LINK */
+		{
 			i = 0;
 			deficon = FIINAME;
-	}
+		}
+}
 
 	if ((icon = find_icon(name, iconlists[i])) < 0)
 	{
@@ -267,13 +273,19 @@ static boolean icntype_dialog
 	switch( use & (LS_FIIC | LS_FOIC | LS_PRIC) )
 	{
 		case LS_FOIC:
+		{
 			il = ICSHFLD; 
 			break;
+		}
 		case LS_PRIC:
+		{
 			il = ICSHPRG; 
 			break;
+		}
 		default:	/* LS_FIIC */
+		{
 			il = ICSHFIL;
+		}
 	}
 
 	obj_unhide(addicon[il]);
@@ -626,8 +638,9 @@ static CfgNest file_cfg
 
 static CfgNest folder_cfg
 {
-	pthis = iconlists[1];
 	ppthis = &iconlists[1];
+	pthis = iconlists[1];
+
 	icngrp_table[0].s = "folders";
 	defictype = ITM_FOLDER;
 	icngrp_cfg(file, lvl, io, error);

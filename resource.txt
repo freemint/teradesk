@@ -26,10 +26,24 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.93 relative to previous version
+Changes in V3.94 relative to previous version
 ---------------------------------------------
 
-- Resource file of V3.93 is identical to that of V3.92.
+- String SPT4 added to tree SEARCH
+
+- Alert ALRTQUIT deleted
+
+- Tree QUITOPT added
+
+- Object ISRBXT added to tree SPECAPP
+
+- String-type trees MDEXISTS, MCOPYSLF and TWPROT modified
+
+- Texts in string-type trees TFNVALID and XFNVALID changed; when these
+  were introduced in V3.90, rules for validation strings were not applied
+  correctly.
+
+- 'Cancel' button in tree ADDPTYPE named APTCANC
 
 
 Naming of object trees
@@ -55,11 +69,16 @@ About the menu
 
 - Care should be taken to leave adequate space for keyboard shortcuts in
   each menu item (4 characters). This space is marked in menu strings by
-  underline characters as ____
+  underline characters as '____'
 
 - If possible, it should be tested whether the translated menu fits into
   the screen width in ST-low resolution. TeraDesk is supposed to work in
   all screen resolutions starting from 320x200 (e.g. ST-low).
+
+- TeraDesk can display appropriate page from the hypertext manual if [Help]
+  key is pressed while a dialog is open. In order for this feature to work,
+  chapter titles in the hypertext manual must exactly match texts of menu
+  items used to open paricular dialogs.
 
 
 About the dialog-type object trees
@@ -147,15 +166,14 @@ Some specific free-string object trees
   that they are not modified (see also next remark).
 
 - String XFNVALID has a similiar function like TFNVALID, but is used when
-  name masks are entered, and therefore permist additional characters in
-  the filename and the extension. This string contains characters that are
-  not standard characters in validation strings (validation strings in
-  dialogs are processed by TeraDesk). It may be modified to XXXXXXXXXX to
-  permit any character in any place.
+  name masks are entered, and therefore permits additional characters 
+  (used as wildcards) in the filename and the extension. It may be changed
+  to XXXXXXXXXX to permit any character in any place.
 
 - String CANCTXT contains all words that appear on Cancel or Abort buttons
   in TeraDesk dialogs. Words should be enclosed between "|" characters.
-  Any leading or trailing spaces should be included.
+  Any leading or trailing spaces should be included. Maximum possible
+  length of any of these words is 13 characters.
 
 - String TDONTEDI contains an informational text that is written into each
   configuration file. It must begin with a ";"

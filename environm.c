@@ -241,7 +241,7 @@ char *make_argv_env
 		 * or double quotes
 		 */
 
-		d = strcpyuq(d, cmdl);
+		d = strcpyuq(d, (char *)cmdl);
 
 		*d = 0;	  /* second trailing zero */
 

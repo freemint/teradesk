@@ -1015,63 +1015,93 @@ int xw_hndlmessage(int *message)
 
 	switch (message[0])
 	{
-	case WM_REDRAW:
-		xw_redraw_menu(w, w->xw_bar, (RECT *)m4);
-		func->wd_redraw(w, (RECT *)m4);
-		break;
-	case WM_CLOSED:
-		if(xd_dialogs)
+		case WM_REDRAW:
 		{
-			if(w != xd_dialogs->window)
+			xw_redraw_menu(w, w->xw_bar, (RECT *)m4);
+			func->wd_redraw(w, (RECT *)m4);
+			break;
+		}
+		case WM_CLOSED:
+		{
+			if(xd_dialogs)
 			{
-				bell();
-				xw_set(xd_dialogs->window, WF_TOP);
-			}
-			else
-				return FALSE; /* closer in dialog window handled differently */
-		}	
-		func->wd_closed(w, 0);
-		break;
-	case WM_FULLED:
-		func->wd_fulled(w, xe_mbshift);
-		break;
-	case WM_ARROWED:
-		/* a wheeled mouse can send this even if there are no arrow widgets */
-		func->wd_arrowed(w, *m4);
-		break;
-	case WM_HSLID:
-		func->wd_hslider(w, *m4);
-		break;
-	case WM_VSLID:
-		func->wd_vslider(w, *m4);
-		break;
-	case WM_SIZED:
-		func->wd_sized(w, (RECT *)m4);
-		break;
-	case WM_MOVED:
-		func->wd_moved(w, (RECT *)m4);
-		break;
-	case WM_TOPPED:
-		wwfunc->wd_topped(ww);
-		break;
-	case WM_NEWTOP:
-		wwfunc->wd_newtop(ww);
-		break;
-	case WM_ONTOP:
-	case WM_UNTOPPED:
-		xw_top(); /* just find the new top window ? */
-		break;
-	case WM_BOTTOMED:
-		func->wd_bottomed(w);
-		break;
-	case WM_ICONIFY:
-		func->wd_iconify(w, (RECT *)m4);
-		break;
-	case WM_UNICONIFY:
-		func->wd_uniconify(w, (RECT *)m4);
-		break;
-	default :
-		return FALSE;
+				if(w != xd_dialogs->window)
+				{
+					bell();
+					xw_set(xd_dialogs->window, WF_TOP);
+				}
+				else
+					return FALSE; /* closer in dialog window handled differently */
+			}	
+			func->wd_closed(w, 0);
+			break;
+		}
+		case WM_FULLED:
+		{
+			func->wd_fulled(w, xe_mbshift);
+			break;
+		}
+		case WM_ARROWED:
+		{
+			/* a wheeled mouse can send this even if there are no arrow widgets */
+			func->wd_arrowed(w, *m4);
+			break;
+		}
+		case WM_HSLID:
+		{
+			func->wd_hslider(w, *m4);
+			break;
+		}
+		case WM_VSLID:
+		{
+			func->wd_vslider(w, *m4);
+			break;
+		}
+		case WM_SIZED:
+		{
+			func->wd_sized(w, (RECT *)m4);
+			break;
+		}
+		case WM_MOVED:
+		{
+			func->wd_moved(w, (RECT *)m4);
+			break;
+		}
+		case WM_TOPPED:
+		{
+			wwfunc->wd_topped(ww);
+			break;
+		}
+		case WM_NEWTOP:
+		{
+			wwfunc->wd_newtop(ww);
+			break;
+		}
+		case WM_ONTOP:
+		case WM_UNTOPPED:
+		{
+			xw_top(); /* just find the new top window ? */
+			break;
+		}
+		case WM_BOTTOMED:
+		{
+			func->wd_bottomed(w);
+			break;
+		}
+		case WM_ICONIFY:
+		{
+			func->wd_iconify(w, (RECT *)m4);
+			break;
+		}
+		case WM_UNICONIFY:
+		{
+			func->wd_uniconify(w, (RECT *)m4);
+			break;
+		}
+		default :
+		{
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -1095,31 +1125,36 @@ void xw_set(WINDOW *w, int field,...)
 
 	switch (field)
 	{
-	case WF_ICONIFY: 
-	case WF_UNICONIFY:
-	case WF_CURRXYWH:
-		/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
-		r = va_arg(p, RECT *);
-		w->xw_size = *r;
-		wind_set(w->xw_handle, field, w->xw_size.x,
-				 w->xw_size.y, w->xw_size.w, w->xw_size.h);
-		wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.x,
-				 &w->xw_size.y, &w->xw_size.w, &w->xw_size.h);
-		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
-				 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
-		xw_set_barpos(w); /* irelevant but harmless in an iconified window */
-		break;
-	case WF_TOP:
-	case WF_BOTTOM:
-		xw_set_topbot(w, field);
-		break;
-	default:
-		p1 = va_arg(p, int);
-		p2 = va_arg(p, int);
-		p3 = va_arg(p, int);
-		p4 = va_arg(p, int);
-		wind_set(w->xw_handle, field, p1, p2, p3, p4);
-		break;
+		case WF_ICONIFY: 
+		case WF_UNICONIFY:
+		case WF_CURRXYWH:
+		{
+			/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
+			r = va_arg(p, RECT *);
+			w->xw_size = *r;
+			wind_set(w->xw_handle, field, w->xw_size.x,
+					 w->xw_size.y, w->xw_size.w, w->xw_size.h);
+			wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.x,
+					 &w->xw_size.y, &w->xw_size.w, &w->xw_size.h);
+			wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
+					 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
+			xw_set_barpos(w); /* irelevant but harmless in an iconified window */
+			break;
+		}
+		case WF_TOP:
+		case WF_BOTTOM:
+		{
+			xw_set_topbot(w, field);
+			break;
+		}
+		default:
+		{
+			p1 = va_arg(p, int);
+			p2 = va_arg(p, int);
+			p3 = va_arg(p, int);
+			p4 = va_arg(p, int);
+			wind_set(w->xw_handle, field, p1, p2, p3, p4);
+		}
 	}
 
 	va_end(p);
@@ -1174,46 +1209,53 @@ void xw_get(WINDOW *w, int field,...)
 
 	switch (field)
 	{
-	case WF_WORKXYWH:
-		if (handle != 0)
+		case WF_WORKXYWH:
 		{
-			r = va_arg(p, RECT *);
-			*r = w->xw_work;
-
-			if (w->xw_menu != NULL)
+			if (handle != 0)
 			{
-				int height = w->xw_menu[w->xw_bar].ob_height + 1;
-
-				r->y += height;
-				r->h -= height;
+				r = va_arg(p, RECT *);
+				*r = w->xw_work;
+	
+				if (w->xw_menu != NULL)
+				{
+					int height = w->xw_menu[w->xw_bar].ob_height + 1;
+	
+					r->y += height;
+					r->h -= height;
+				}
+				break;
 			}
-			break;
 		}
-	case WF_CURRXYWH:
-		if (handle != 0)
+		case WF_CURRXYWH:
+		{
+			if (handle != 0)
+			{
+				r = va_arg(p, RECT *);
+				*r = w->xw_size;
+				break;
+			}
+		}
+		case WF_FIRSTXYWH:
+		case WF_NEXTXYWH:
+		case WF_FULLXYWH:
+		case WF_PREVXYWH:
+		case WF_ICONIFY:
 		{
 			r = va_arg(p, RECT *);
-			*r = w->xw_size;
+			wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 			break;
 		}
-	case WF_FIRSTXYWH:
-	case WF_NEXTXYWH:
-	case WF_FULLXYWH:
-	case WF_PREVXYWH:
-	case WF_ICONIFY:
-		r = va_arg(p, RECT *);
-		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
-		break;
-	default:
-		parms = wind_get_nargs(field);
-
-		for (i = 0; i < parms; i++)
-			parm[i] = va_arg(p, int *);
-		for (;i < 4;i++)
-			parm[i] = &dummy;
-
-		wind_get(handle, field, parm[0], parm[1], parm[2], parm[3]);
-		break;
+		default:
+		{
+			parms = wind_get_nargs(field);
+	
+			for (i = 0; i < parms; i++)
+				parm[i] = va_arg(p, int *);
+			for (;i < 4;i++)
+				parm[i] = &dummy;
+	
+			wind_get(handle, field, parm[0], parm[1], parm[2], parm[3]);
+		}
 	}
 	va_end(p);
 }

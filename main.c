@@ -78,18 +78,6 @@ extern char
 Options 
 	options;			/* configuration options */
 
-int 
-	tos_version,	/* detected version of TOS; interpret in hex format */
-	aes_version,	/* detected version of AES; interpret in hex format */
-	ap_id,			/* application id. of this program (TeraDesk) */
-	vdi_handle, 	/* current VDI station handle   */
-	max_w,			/* screen width in pixel units  */ 
-	max_h,			/* screen height in pixel units */ 
-	nfonts;			/* number of available fonts    */
-
-SCRINFO 
-	screen_info;	/* Screen handle, size rectangle, font size */ 
-
 XDFONT 
 	def_font;		/* Data for the default (system) font */
 
@@ -103,40 +91,8 @@ char
 static char
 	*definfname;	/* name of the initial configuration file at startup */
 
-long
-	global_mem_size;/* size of global_memory */ 
-
-/* Names of menu boxes in the main menu */
-
-static const int 
-	menu_items[] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
-
-#if _MINT_
-boolean			/* No need to define values, always set when starting main() */
-	mint, 		/* True if Mint  is present  */
-	magx,		/* True if MagiC is present  */	
-	naes,		/* True if N.AES is present  */
-	geneva;		/* True if Geneva is present */
-
-int 
-	have_ssystem = 0;
-#endif
-
-static boolean
-	chrez = FALSE, 		/* true if resolution should be changed */
-	quit = FALSE,		/* true if teradesk should finish       */ 
-	shutdown = FALSE,	/* true if system shutdown is required  */
-	shutting = FALSE;	/* true if started shutting down        */
-
-#if _LOGFILE
-FILE
-	*logfile = NULL;
-char
-	*logname;
-#endif
-
 static const char
-	*infide = "TeraDesk-inf"; /* File identifier header */
+	*infide = "TeraDesk-inf"; 	/* File identifier header */
 
 const char
 	*empty = "\0",		/* often used string */
@@ -144,8 +100,54 @@ const char
 	*adrive = "A:\\",	/* often used string */
 	*prevdir = "..";	/* often used string */
 
+long
+	global_mem_size;/* size of global_memory */ 
+
+int 
+	tos_version,	/* detected version of TOS; interpret in hex format */
+	aes_version,	/* detected version of AES; interpret in hex format */
+	ap_id,			/* application id. of this program (TeraDesk) */
+	vdi_handle, 	/* current VDI station handle   */
+	nfonts;			/* number of available fonts    */
+
+static int
+	shutopt = 0;	/* shutdown type: system halt/poweroff */
+
+/* Names of menu boxes in the main menu */
+
+static const int 
+	menu_items[] = {MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIONS};
+
+#if _MINT_
+
+int 
+	have_ssystem = 0;
+
+boolean			/* No need to define values, always set when starting main() */
+	mint, 		/* True if Mint  is present  */
+	magx,		/* True if MagiC is present  */	
+	naes,		/* True if N.AES is present  */
+	geneva;		/* True if Geneva is present */
+
+#endif
+
+static boolean
+	ct60,				/* True if this is a CT60 machine */
+	chrez = FALSE, 		/* true if resolution should be changed */
+	quit = FALSE,		/* true if teradesk should finish       */ 
+    reboot = FALSE,		/* true if a reboot should happen       */
+	shutdown = FALSE,	/* true if system shutdown is required  */
+	shutting = FALSE;	/* true if started shutting down        */
+
 boolean
 	onekey_shorts;	/* true if any single-key menu shortcuts are defined */
+
+#if _LOGFILE
+FILE
+	*logfile = NULL;
+char
+	*logname;
+#endif
 
 
 
@@ -157,17 +159,16 @@ boolean
  */
 
 static const char 
-	msg_resnfnd[] =  "[1][Unable to find the resource file.|"
-					 "Resource file niet gevonden.|"
-					 "Impossible de trouver le|fichier resource.|"
-					 "Resource Datei nicht gefunden.][ OK ]";
+	msg_resnfnd[] =  "[1][Can not find the resource file.|"
+                         "Resource Datei nicht gefunden.|"
+					     "Resource file niet gevonden.|"
+					     "Impossible de trouver le|fichier resource.][ OK ]";
 
 static XDEVENT 
 	loopevents;		/* events awaited for in the main loop */
 
 
-void
-	Shutdown(long mode);
+void Shutdown(long mode);
 
 static CfgNest				/* Elsewhere defined configuration routines */ 
 	opt_config, 
@@ -225,9 +226,9 @@ CfgEntry Options_table[] =
 	{CFG_D, "aarr", &options.aarr		}, 		/* auto arrange */
 	{CFG_X, "attr", &options.attribs	},		/* Bit flags !!! global attributes to show */
 	{CFG_X, "flds", &options.fields		},		/* Bit flags !!! dir. fields to show  */
-	/* video options (options.vrez currently not used) */
+	/* video options */
 	{CFG_X, "vidp", &options.vprefs	}, 			/* Bit flags ! */
-	{CFG_D, "vres", &options.vrez	},			/* video resolution */
+	{CFG_D, "vres", &options.vrez	},			/* video resolution  (currently unused) */
 	/* patterns and colours */
 	{CFG_D, "dpat", &options.dsk_pattern},		/* desk pattern */
 	{CFG_D, "dcol", &options.dsk_colour	},		/* desk colour  */
@@ -335,7 +336,8 @@ void *malloc_chk(size_t size)
 
 
 /*
- * Display a dialog, but check for errors and display an alert.
+ * Display a dialog, but check for errors when opening and display an alert.
+ * This routine ends only when the dialog is closed.
  */
 
 int chk_xd_dialog(OBJECT *tree, int start)
@@ -418,13 +420,8 @@ static void info(void)
  * If HELP is pressed, display consecutive boxes of text in a dialog,
  * or, if <Shift><Help> is pressed, try to call the .HYP file viewer
  * (usually this is ST-GUIDE program or accessory).
- * Note 1: currently, there is no notification if the call to the viewer
+ * Currently, there is no notification if the call to the viewer
  * is successful.
- * Note 2: according to AV-protocol documentation, all filenames
- * must be input in capitals with complete paths (at least the documentation
- * for ST-Guide says so. How does this comply with unixoid filesystems? 
- * Maybe should use lowercase after all?)
- * Note 3: ST-guide supports a special path "*:\" meaning "all known paths" 
  */
 
 static void showhelp (unsigned int key) 		
@@ -432,15 +429,12 @@ static void showhelp (unsigned int key)
 	static const char 
 		hbox[] = {HLPBOX1, HLPBOX2, HLPBOX3, HLPBOX4};
 
+
+	hyppage = (char *)empty;
+
 	if ( key & XD_SHIFT )
 	{
-		APPLINFO *helpprg = app_find("*.HYP", FALSE);
-
-		if(helpprg)
-		{
-			onfile = TRUE;
-			app_exec(NULL, helpprg, NULL, (int *)("*:\\TERADESK.HYP"), -1, 0);
-		}
+		opn_hyphelp(); 
 	}
 	else
 	{
@@ -485,7 +479,7 @@ static void showhelp (unsigned int key)
 
 
 /* 
- * Generalized set_opt to change display of any options button from bitflags
+ * Generalized set_opt() to change display of any options button from bitflags
  * In fact it can set option buttons from boolean variables as well
  * (then set "opt" to 1, and "button" is a boolean variable)
  */
@@ -547,28 +541,37 @@ static void disp_short
 
 	switch (k)
 	{
-		case BACKSPC: 
+		case BACKSPC:
+		{
 			*strp-- = 'S';
 			*strp-- = 'B';
 			break;
-		case TAB: 
+		}
+		case TAB:
+		{ 
 			*strp-- = 'B';
 			*strp-- = 'A';
 			*strp-- = 'T';
 			break;
-		case SPACE: 
+		}
+		case SPACE:
+		{ 
 			*strp-- = 'P';
 			*strp-- = 'S';
 			break;
-		case DELETE: 
+		}
+		case DELETE:
+		{ 
 			*strp-- = 'L';
 			*strp-- = 'E';
 			*strp-- = 'D';
 			break;
+		}
 		default:				/* Other  */
+		{
 			if ( kbshort != 0 ) 
 				*strp-- = k;
-			break; 	
+		} 	
 	}
 	
 	if ( kbshort & XD_CTRL )	/* Preceded by ^ ? */
@@ -729,11 +732,16 @@ static void setpreferences(void)
 				switch ( i )
 				{
 					case 0:						/* nothing defined */
+					{
 						break;
+					}
 					case 1:						/* single-character shortcut */
+					{
 						*tmpmi = aux[0] & 0x00FF;
 						break;
+					}
 					case 2:						/* two-character ^something shortcut or BS */
+					{
 						if 
 						(    
 							(aux[0] == '^')  &&
@@ -749,7 +757,9 @@ static void setpreferences(void)
 						else
 							*tmpmi = XD_CTRL;  /* illegal/ignored menu object */
 						break;	
+					}
 					default:					/* longer shortcuts */
+					{
 						if ( aux[0] == '^' )
 						{
 							*tmpmi = XD_CTRL;
@@ -770,7 +780,8 @@ static void setpreferences(void)
 
 						if(*tmpmi == 0)
 							*tmpmi = XD_CTRL;
-				}
+					}
+				}		/* switch */
 
 				/* Now check for duplicate keys */
 
@@ -807,23 +818,31 @@ static void setpreferences(void)
 			switch ( button )
 			{
 				case OPTMPREV:
+				{
 					while ( menui > MFIRST && menu[--menui].ob_type != G_STRING);
 					if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
 						menui--;
 					redraw = TRUE;
 					break;
+				}
 				case OPTMNEXT:
+				{
 					while ( menui < MLAST && menu[++menui].ob_type != G_STRING);
 					if ( menu[menui].ob_spec.free_string[1] != ' ' ) 
 						menui++;
 					redraw = TRUE;
 					break;
+				}
 				case OPTKCLR:
+				{
 					memclr( &tmp[0], (NITEM + 2) * sizeof(int) );
 					redraw = TRUE;
 					break;
+				}
 				default:
+				{
 					break;
+				}
 			}
 		} /* while... */
 
@@ -949,11 +968,10 @@ static void opt_default(void)
 
 /* 
  * Define some default keyboard shortcuts ... 
- * those offered here have become a de-facto standard
- * in other applications. On the other hand, they are different
- * from those which Atari has adopted for the in-built TOS desktop.
- * Personally, I would prefer some other ones, e.g. "?" for "Info..."
- * and "*" for "Select all"
+ * those offered here have become a de-facto standard in other applications.
+ * On the other hand, they are different from those which Atari has adopted
+ * for the in-built TOS desktop.Personally, I would prefer some other ones,
+ * e.g. "?" for "Info..." and "*" for "Select all"
  */
 
 static void short_default(void)
@@ -1188,8 +1206,11 @@ void load_settings
 
 boolean find_cfgfiles(char **cfgname)
 {
-	char *fullname;
-	int error;
+	char
+		*fullname;
+
+	int
+		error;
 
 	if ((fullname = xshel_find(*cfgname, &error)) != NULL)
 	{
@@ -1221,7 +1242,7 @@ static boolean init(void)
 {
 	/* Get screen work area */
 
-	xw_getwork(NULL, &screen_info.dsk);
+	xw_getwork(NULL, &xd_desk);
 
 	/* Find configuration files */
 
@@ -1254,14 +1275,16 @@ static boolean init(void)
 		va_init();				/* AV-protocol    */
 		wd_init();				/* windows        */
 
+		hyppage = (char *)empty;
+
 		menu_bar(menu, 1);
 
-	/* 
-	 * Force the name of the single-tasking program to DESKTOP 
-	 * this call to menu_register() is documented only since AES4
-	 * but in fact works in all Atari AESes.
-	 * Must come after menu_bar()
-	 */
+		/* 
+	 	 * Force the name of the single-tasking program to DESKTOP 
+	 	 * this call to menu_register() is documented only since AES4
+	 	 * but in fact works in all Atari AESes.
+	 	 * Must come after menu_bar()
+	 	 */
 
 #if _MINT_
 		/* no need to do anything here ? */
@@ -1294,12 +1317,11 @@ static boolean init(void)
 
 static void init_vdi(void)
 {
-	int dummy, lwork_out[10];
+	int lwork_out[10];
 
 	/* Note: graf_handle returns screen physical handle, but it is not needed */
 
-	graf_handle(&screen_info.fnt_w, &screen_info.fnt_h, &dummy, &dummy);
-	screen_size();
+	xd_screensize();
 	vqt_attributes(vdi_handle, lwork_out);
 	fnt_setfont(1, (int) (((long) lwork_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
 	def_font.effects = FE_NONE;
@@ -1344,7 +1366,7 @@ static int alloc_global_memory(void)
 	global_mem_size = lmax(stsize, ttsize) / 512000L;
 
 	if(global_mem_size > 16)
-		global_mem_size *= 2;	/* increase by 50% on larger systems */
+		global_mem_size *= 2;	/* double allocation size on larger systems */
 
 	/* Always use at least 1KB, but never more than 128KB */
 
@@ -1378,66 +1400,99 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 
 	if ((menu[item].ob_state & DISABLED) == 0)
 	{
+		hyppage = menu[item].ob_spec.free_string;
+
 		switch (item)
 		{
-		case MINFO:
-			info();
-			break;
-		case MQUIT:	
-		{
-			int qbutton;
-
-			bell();
-			wait(150);
-			bell();
-			qbutton = alert_printf(3, ALRTQUIT);
-
-			switch (qbutton)
+			case MINFO:
 			{
-				case 2:		/* shutdown */
-					if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
+				info();
+				break;
+			}
+			case MQUIT:	
+			{
+				int qbutton;
+
+				bell();
+				wait(150);
+				bell();
+				qbutton = chk_xd_dialog(quitopt, ROOT);
+
+				switch (qbutton)
+				{
+					case QUITBOOT:		/* reboot */
+					{
+						reboot = TRUE;
+						shutopt = 2;
+						goto toshut;
+					}
+					case QUITSHUT:		/* shutdown */
+						if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
+							break;
+						toshut:;
+						shutdown = TRUE;
+					case QUITQUIT:		/* quit */      
+					{
+						quit = TRUE;
+					}
+					case QUITCANC:		/* cancel */
+					{
 						break;
-					else
-						shutdown=TRUE;
-				case 1:		/* quit */      
-					quit = TRUE;
-				case 3:		/* cancel */
-					break;
-			}
-			break;
-		}
-		case MOPTIONS:
-			setpreferences();
-			break;
-		case MPRGOPT:
-			prg_setprefs();
-			break;
-		case MSAVESET:
-			save_options(definfname);
-			break;
-		case MSAVEAS:
-			save_options_as();
-			break;
-		case MAPPLIK:
-			app_install(LS_APPL, &applikations);
-			break;
-		case MCOPTS:
-			copyprefs();
-			break;
-		case MWDOPT:
-			dsk_options();
-			break;	
-		case MVOPTS:
-			if ( !app_specstart(AT_VIDE, NULL, NULL, 0, 0) )
+					}
+				}
+				break;
+			}				/* MQUIT ? */				
+			case MOPTIONS:
 			{
-				chrez = voptions();
-				if ( chrez ) 
-					quit = TRUE;
+				setpreferences();
+				break;
 			}
-			break;
-		default:
-			wd_hndlmenu(item, kstate);	/* handle all the rest in window.c */
-			break;
+			case MPRGOPT:
+			{
+				prg_setprefs();
+				break;
+			}
+			case MSAVESET:
+			{
+				save_options(definfname);
+				break;
+			}
+			case MSAVEAS:
+			{
+				save_options_as();
+				break;
+			}
+			case MAPPLIK:
+			{
+				app_install(LS_APPL, &applikations);
+				break;
+			}
+			case MCOPTS:
+			{
+				copyprefs();
+				break;
+			}
+			case MWDOPT:
+			{
+				dsk_options();
+				break;
+			}	
+			case MVOPTS:
+			{
+				if ( !app_specstart(AT_VIDE, NULL, NULL, 0, 0) )
+				{
+					chrez = voptions();
+
+					if ( chrez ) 
+						quit = TRUE;
+				}
+
+				break;
+			}
+			default:
+			{
+				wd_hndlmenu(item, kstate);	/* handle all the rest in window.c */
+			}
 		}
 	}
 
@@ -1489,10 +1544,16 @@ static int scansh ( int key, int kstate )
 
 static void hndlkey(int key, int kstate)
 {
-	int i = 0, k;
-	unsigned int uk = (unsigned int)key;
-	APPLINFO *appl;
-	int title; 					/* rsc index of current menu title */
+	APPLINFO
+		*appl;		/* pointer to data for application assigned to F-key */
+
+	int
+		i = 0,		/* aux. counter */ 
+		k,			/* key code with CTRL masked */
+		title; 		/* rsc index of current menu title */
+
+	unsigned int
+		uk = (unsigned int)key;
 
 #if _LOGFILE
 fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
@@ -1506,11 +1567,10 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 	if(uk == UNDO)
 		wd_deselect_all();
 
-
 	k = key & ~XD_CTRL; 
 
-	if ((( uk >= 0x803B) && ( uk <= 0x8044)) ||
-		(( uk >= 0x8154) && ( uk <= 0x815D)))
+	if ((( uk >= 0x803B) && ( uk <= 0x8044)) ||	/* these are function keys codes  */
+		(( uk >= 0x8154) && ( uk <= 0x815D)))	/* same for shifted function keys */
 	{
 		/* Function key ? */
 
@@ -1554,7 +1614,7 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
 			if(dir_onalt(key, NULL))
 				autoloc_off();
 		}
-	}
+	}		/* uk ? */
 }
 
 
@@ -1584,9 +1644,11 @@ fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exi
 		switch (message[0])
 		{
 			case AP_TERM:
+			{
 #if _LOGFILE
 fprintf(logfile,"\n  AP_TERM");
 #endif
+
 				if (allow_exit)
 				{
 					/* This will cause an exit from TeraDesk's main loop */
@@ -1596,21 +1658,26 @@ fprintf(logfile,"\n  AP_TERM");
 				{
 					/* Tell the AES that TeraDesk can't terminate just now */
 					int ap_tfail[8] = {AP_TFAIL, 0, 0, 0};
+
 					ap_tfail[1] = ap_id; /* ??? */
 					shel_write(SHW_AESSEND, 0, 0, (char *) ap_tfail, NULL); /* send message to AES */
 				}
 				return -1;
-
+			}
 			case SH_WDRAW:
+			{
 				/* Windows will be updated */
 				wd_update_drv(message[3]);
 				break;
 
+			}
 /* currently not used
 
 #if _MINT_
 			case AP_DRAGDROP:
+			{
 				break;
+			}
 #endif
 
 */
@@ -1621,9 +1688,9 @@ fprintf(logfile,"\n  AP_TERM");
 }
 
 
-/*
- * Similar to above, but with one argument only.
- * Return -1 upon AP_TERM message, return 0 otherwise
+/* 
+ * Similar to the above, but with one argument only.
+ * this is needed for some xdialog routines
  */
 
 int hndlmessage(int *message)
@@ -1725,9 +1792,9 @@ static void evntloop(void)
 
 
 /*
- * If AP_TERM is received within 3 seconds after starting this routine
+ * If AP_TERM is received within 2 seconds after starting this routine
  * then set shutting = true and return TRUE. 
- * If another message is received within that time, wait 3 seconds more.
+ * If another message is received within that time, wait 2 seconds more.
  * (no other action is performed for other messages).
  * Theoretically this may get into an endless loop if some application
  * starts sending messages endlessly
@@ -1740,7 +1807,7 @@ boolean wait_to_quit(void)
 	xd_clrevents(&loopevents);
 
 	loopevents.ev_mflags = MU_TIMER | MU_MESAG;
-	loopevents.ev_mtlocount = 3000; /* 3 seconds */
+	loopevents.ev_mtlocount = 2000; /* 2 seconds */
 
 	do
 	{
@@ -1759,8 +1826,38 @@ boolean wait_to_quit(void)
 }
 
 
+/*
+ * A couple of routines used to put the computer into a coma.
+ * a number of endless loops is set.
+ * Possibly not implemented correctly?
+ */
+
+void loopcpu(void)
+{
+	for(;;);
+}
+
+
+void lobo(void)
+{
+	if(ct60)
+		*((int *)0xFA000000L) = 1;			/* turn off CT60 */	
+	else
+	{
+		Setexc(0x070, (void (*)())loopcpu);		/* vert.blank */
+		Setexc(0x070, (void (*)())loopcpu);		/* hor. blank */
+		Setexc(0x114, (void (*)())loopcpu); 	/* 200 Hz */
+	}
+
+	loopcpu();
+}
+
+
 /* 
- * Main TeraDesk routine- the program itself 
+ * Main TeraDesk routine- the desktop program itself.
+ * The main routine contains initialisation and shutdown stuff.
+ * It calls evntloop() for all the work that has to be done
+ * while the desktop is running. 
  */
 
 int main(void)
@@ -1801,16 +1898,24 @@ int main(void)
 	have_ssystem = (Ssystem(-1, 0L, 0L) == 0);		/* use Ssystem where possible */
 
 	/* 
-	 * Attempt to divine from some cookies the versions of TOS and AES.
-	 * this can NOT detect: MyAES, XaAES and Atari AES 4.1
+	 * Attempt to divine from cookies the versions of TOS and AES.
+	 * this can NOT detect: MyAES, XaAES and Atari AES 4.1, but is
+	 * OK for Mint, Magic, Geneva  and N.AES.
+	 * Also, try to detect CT60 because it can be switched off
+	 * by a direct register access at shutdown
 	 */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
 	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;
 	naes   = (find_cookie('nAES') == -1) ? FALSE : TRUE;
+	ct60   = (find_cookie('CT60') == -1) ? FALSE : TRUE;
 
-	/* In most cases behaviour in Magic should be the same as in Mint */
+	/* 
+	 * In most cases behaviour of this program in Magic should be the same
+	 * as in Mint. When Magic-particular action is required, existence of
+	 * magx cookie should be checked.
+	 */
 
 	mint  |= magx;			/* Quick & dirty */
 
@@ -1826,7 +1931,10 @@ int main(void)
 
 	x_init();
 
-	/* Register this app with GEM; get its application id */
+	/* 
+	 * Register this app with GEM; get its application id.
+	 * If this fails, there is no point in continuing
+	 */
 
 	if ((ap_id = appl_init()) < 0)
 		return -1;
@@ -1839,7 +1947,13 @@ int main(void)
 	tos_version = get_tosversion();
 	aes_version = get_aesversion();
 
-	/* Load the dekstop.rsc resource file */
+	/* 
+	 * Load the dekstop.rsc resource file. Another required resource file
+	 * (the icons file) is loded in load_icons() below (defined in ICONS.C).
+	 * file desktop.rsc is language-dependent as it contains all texts
+	 * displayed by Teradesk. Files icons.rsc and cicons.rsc only weakly
+	 * language-dependent: the only texts they contain are icon names 
+	 */
 
 	if (rsrc_load(RSRCNAME) == 0)
 	{
@@ -1848,16 +1962,13 @@ int main(void)
 	}
 	else
 	{
-		/* 
-		 * The resource file has been loaded.
-		 * Initialize x-dialogs 
-		 */
+		/* The resource file has been loaded. Initialize x-dialogs. */
 
-		if 
-		(
-			(error = init_xdialog(&vdi_handle, malloc_chk, free,
-								  get_freestring(DWTITLE), 1, &nfonts)) < 0
-		)
+		error = init_xdialog(&vdi_handle, malloc_chk, free, get_freestring(DWTITLE), 1, &nfonts);
+
+		/* Proceed only if successful */
+
+		if(error < 0)
 			xform_error(error);
 		else
 		{
@@ -1892,11 +2003,14 @@ int main(void)
 			 * AES should supply a reasonable font size for this to work
 			 */
 
-			if (((max_w / screen_info.fnt_w) < 40) || ((max_h / screen_info.fnt_h) < 25))
+			if (((xd_screen.w / xd_fnt_w) < 40) || ((xd_screen.h / xd_fnt_h) < 25))
 				alert_abort(MRESTLOW);
 			else
 			{
-				/* Proceed only if global memory is allocated OK */
+				/* 
+				 * Proceed only if global memory is allocated OK
+				 * This will be used for the AV- and Drag & Drop protocols
+				 */
 
 				if ((error = alloc_global_memory()) == 0)
 				{
@@ -1938,7 +2052,7 @@ int main(void)
 
 								/* 
 								 * Start quitting / shutting down 
-								 * (remove AV-windows before save)
+								 * (remove AV-windows before saving config)
 								 */
 
 								va_checkclient();		/* remove nonexistent clients */
@@ -1947,12 +2061,26 @@ int main(void)
 								if ((options.sexit & SAVE_CFG) != 0)	/* save config */
 									save_options(definfname);
 
-								wd_del_all();		/* remove windows        */
+								wd_del_all();		/* remove all windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
 							}
 
 							free_icons();
 							regen_desktop(NULL);
+
+							/* This is a cosmetic clearing of the screen at the end */
+
+							if
+							( 
+								shutdown
+#if _MINT_ 
+									&& (magx || !mint)
+#endif
+							)
+							{
+								xd_mouse_off();
+								clr_object(&xd_screen, BLACK, 4);
+							} 
 						}
 					}
 
@@ -2003,8 +2131,8 @@ int main(void)
 		{
 			/* 
 			 * Change the screen resolution if needed;
-			 * A call to shel-write to change resolution
-			 * in get_set_video also closes all applications
+			 * A call to shel_write() to change resolution
+			 * in get_set_video() also closes all applications
 			 */
 			get_set_video(2); /* contains shel_write(SHW_RESCHNG,...) */
 		}
@@ -2016,75 +2144,108 @@ int main(void)
 			 * but it was found out that Magic and XaAES do not react to
 			 * it properly: Magic just restarts the desktop and XaAES goes
 			 * to shutdown. Therefore it is not done now for resolution change.
+			 * After shel_write() TeraDesk waits for a termination message
+			 * in case an AES decides to complete the shutdown by itself
+			 * (AFAIK only MyAES does that). If the message arrives, TeraDesk 
+			 * just quits. Otherwise it attempts to shut down the system.
+			 *
+			 * THERE SEEMS TO BE SOME CONFUSION IN THE DOCS AS TO WHICH
+			 * PARAMETER TO shel_write() CONTROLS SHUTDOWN TYPE!
 			 */
 #if _MINT_
 			int ignor = 0;
 
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
-
-/* docs for Magic say so
-			quit = shel_write( SHW_SHUTDOWN, TRUE, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
-*/
 #else
 			quit = shel_write( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
 #endif
-			wait_to_quit();	/* for three seconds */
+			wait_to_quit();	/* wait 2 seconds for a termination message */
 		}
 
-		wait(1000);
+		wait(500);
 
 		/* 
-		 * If a shutdown was initiated but no termination message received,
-		 * and also if this is not a resolution change, TeraDesk must
-		 * kill the system on its own. So perform a reset
+		 * If a shutdown was initiated but no termination message was received,
+		 * and also if this is not a resolution change, TeraDesk will attempt
+		 * to kill the system on its own. 
 		 */
 
 		if(!shutting && !chrez)		
 		{
-			/*
-			 * Perform a reset here. 
-			 * Note: maybe use Ssystem here as well, when appropriate?
-			 */
-
 			long (*rv)();		/* reset vector */
 
 #if _MINT_
-			Shutdown(2L);		/* Ignored if unrecognized */ 
-			wait(1000);
-#endif
-			/* This will execute only without Mint... */
+			/* shutopt: 0 = halt/poweroff,  1 = reset,  2 = coldreset */ 
 
-			Super ( 0L );	/* Get into supervisor; old stack won't be needed again */
-			memval = 0L;	/* Spoil some variables to cause a reset */ 				
-			memval2 = 0L;	/* same... */
-			resvector = 0L;	/* same... */
-			resvalid = 0L;	/* same... */
-			(long)rv = *((long *)os_start + 4);	/* pointer to reset handler */
-			Supexec(rv);						/* execute it */
+			Shutdown((long)shutopt);
+#endif			
+			wait(5000);
 
-			/* At this point this machine will reset... */
+			/* 
+			 * If execution of the program comes to this point, it means
+			 * that Shutdown() was not known of on the system, or that it
+			 * has failed. In any case, now attempt to stop or reset the
+			 * system by brute force. This is supposed to happen only 
+			 * without mint. Case of Magic is unclear (?).
+			 */
+
+			/* Get into supervisor mode; old stack will not be needed again */
+
+			Super(0L);
+
+			if(reboot)
+			{
+				(long)rv = *((long *)os_start + 4);	/* pointer to reset handler */
+				memval = 0L;	/* corrupt some variables for a reset */				
+				memval2 = 0L;	/* same... */
+				resvector = 0L;	/* same... */
+				resvalid = 0L;	/* same... */
+			}
+			else
+			{
+				/* 
+				 * An endless loops routine is used to 'stop' the cpu
+				 * in an attempt to completely freeze the computer.
+				 * This is admittedly a very stupid way to handle the
+				 * problem- it actually lobotomizes the computer.
+				 * btw. CT60 is supposed to be powered-off by
+				 * a write to $FA000000
+				 */
+
+				(long)rv = (long)(lobo);
+			}
+
+			/* 
+			 * At this moment the machine will either reset, or stop. 
+			 * Stopping is currently simulated by an endless loop
+			 */
+			
+			Supexec(rv);
 		}
 	}
 	
 	/* Just quit the desktop */		
-	
+
 	appl_exit();
-	
 	return 0;
 }
 
 /* That's all ! */
 
 
+
+
+
+
+/*
+
 /* 
  * This routine displays the incrementation of the 200Hz timer; 
  * it is to be used only for evaluation of the duration of some 
- ( operations during development.
+ * operations during development.
  * Call this twice, first with mode=0 (reset timer counter), 
  * then with mode=1 (display timer count)
  */
-
-/* 
 
 long show_timer(int mode)
 {

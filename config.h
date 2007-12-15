@@ -85,4 +85,3 @@ int	CfgLoad(XFILE *f, CfgEntry *tab, int maxs, int lvl);
 int CfgSave(XFILE *f, CfgEntry *tab, int lvl, boolean emp);
 int handle_cfg(XFILE *f, CfgEntry *tab, int lvl0, int emp, int io, void *ini, void *def);
 int handle_cfgfile( char *name,	CfgEntry *tab, const char *ident,	int io);
-char *nonwhite ( char *s);

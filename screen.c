@@ -44,22 +44,6 @@ int palsize = 0;	/* new (as read from the file) palette size */
 int *palette = 0; 	/* Pointer to current palette */
 
 
-
-/*
- * Determine screen size by making an inquiry to the VDI
- */
-
-void screen_size(void)
-{
-	int work_out[58];	
-
-	vq_extnd(vdi_handle, 0, work_out);
-
-	max_w = work_out[0] + 1;	/* Screen width (pixels)  */
-	max_h = work_out[1] + 1;	/* Screen height (pixels) */
-}
-
-
 /* 
  * Clip een rechthoek op de grenzen van de desktop.
  * Als de rechthoek geheel buiten de desktop ligt, wordt
@@ -68,7 +52,7 @@ void screen_size(void)
 
 boolean clip_desk(RECT *r)
 {
-	return xd_rcintersect(r, &screen_info.dsk, r);
+	return xd_rcintersect(r, &xd_desk, r);
 }
 
 
@@ -76,7 +60,7 @@ void clipdesk_on(void)
 {
 	int clip_rect[4];
 
-	xd_rect2pxy(&screen_info.dsk, clip_rect);
+	xd_rect2pxy(&xd_desk, clip_rect);
 	vs_clip(vdi_handle, 1, clip_rect);
 }
 
@@ -132,7 +116,7 @@ void set_rect_default(void)
 void draw_rect(int x1, int y1, int x2, int y2)
 {
 	xd_mouse_off();
-	xd_clip_on(&screen_info.dsk);
+	xd_clip_on(&xd_desk);
 	draw_xdrect(x1, y1, x2 - x1, y2 - y1);
 	xd_clip_off();
 	xd_mouse_on();

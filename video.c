@@ -162,7 +162,7 @@ void get_set_video (int set)
 	{
 		/* What is the size of the screen ? (call vq_extnd() etc.) */
 
-		screen_size();
+		xd_screensize();
 
    		/* Which is the current standard resolution ? */
 	
@@ -241,9 +241,9 @@ void get_set_video (int set)
 
 				if ( ovrstat < 0 )
 				{
-					ov_max_w = max_w;
-					ov_max_h = max_h;
-					menu_h = max_h - screen_info.dsk.h; 
+					ov_max_w = xd_screen.w;
+					ov_max_h = xd_screen.h;
+					menu_h = xd_screen.h - xd_desk.h; 
 				}
 
 				/* Detect nonstandard overscanned resolution */
@@ -251,11 +251,11 @@ void get_set_video (int set)
 				ovrstat = 0;
 				for ( idi = 0; idi < 3; idi++ )
 				{
-					if ( max_h > std_y[idi] && max_h < std_y[idi + 1] )
+					if ( xd_screen.h > std_y[idi] && xd_screen.h < std_y[idi + 1] )
 					{
-						ov_max_w = max_w;
-						ov_max_h = max_h;
-						menu_h = max_h - screen_info.dsk.h;
+						ov_max_w = xd_screen.w;
+						ov_max_h = xd_screen.h;
+						menu_h = xd_screen.h - xd_desk.h;
 						ovrstat = 1;
 						break;
 					}
@@ -320,15 +320,15 @@ void get_set_video (int set)
 				{
 					*acia = 0xD6; /* value for the acia reg- switch overscan ON */
 					ovrstat = 1;
-					max_h = ov_max_h;
-					max_w = ov_max_w;
+					xd_screen.h = ov_max_h;
+					xd_screen.w = ov_max_w;
 				}
 				else
 				{
 					*acia = 0x96; /* value for the acia reg- switch overscan OFF */
 					ovrstat = 0;
-					max_w = std_x[idi];
-					max_h = std_y[idi];
+					xd_screen.w = std_x[idi];
+					xd_screen.h = std_y[idi];
 				}
 
 				/* 
@@ -336,12 +336,10 @@ void get_set_video (int set)
 				 * provoke Lacescan to adapt 
 				 */
 
-				screen_info.dsk.w = max_w;
-				screen_info.dsk.h = max_h - menu_h;
-				xd_desk.w = max_w;
-				xd_desk.h = max_h - menu_h;
-				xw_deskwin->xw_size.w = max_w;
-				xw_deskwin->xw_size.h = max_h;
+				xd_desk.w = xd_screen.w;
+				xd_desk.h = xd_screen.h - menu_h;
+				xw_deskwin->xw_size.w = xd_screen.w;
+				xw_deskwin->xw_size.h = xd_screen.h;
 
 				/* Note: return from supervisor before Setscreen()... */
 
@@ -379,7 +377,6 @@ void get_set_video (int set)
 
 			menu_bar(menu, 0);
 			regen_desktop(desktop);
-			menu_bar(menu, 1);
 			clean_up();      
 			arrow_mouse();
 		}
@@ -543,6 +540,7 @@ int voptions(void)
 	switch( vdohi )
 	{
 		case ST_VIDEO:
+		{
 
 #if _OVSCAN 
 			/* Overscan */
@@ -553,9 +551,9 @@ int voptions(void)
   				set_opt( vidoptions, options.vprefs, VO_OVSCAN, VOVERSCN ); 
 			}
 #endif
-
+		}
 		case STE_VIDEO:
-	   
+	   	{
 			if ( currez == ST_HIGHRES )   	/* st-high? disable low and med res */
 				obj_enable(vidoptions[VSTHIGH]);
 			else               				/* st-low/med? disable hi res */
@@ -570,19 +568,19 @@ int voptions(void)
 			}
 
 			break;
-
+		}
 		case TT_VIDEO:
-	
+		{
 			if ( currez ==TT_HIGHRES )   /* tt-high? disable low and med res */
 				obj_enable(vidoptions[VTTHIGH]); 
 			else               			/* tt-low/med? disable hi res */
 				vd_enable_rez(VTTMED); 	/* ST-Low to TT-Med */
 			break;
-
+		}
 		case FAL_VIDEO:
 		case MIL_VIDEO:
 		case ARA_VIDEO:
-
+		{
 			vd_setstring(VTTLOW, TFALLOW);
 			vd_setstring(VTTMED, TFALMED);
 			vd_setstring(VBLITTER, TINTERL);
@@ -607,14 +605,13 @@ int voptions(void)
 			set_opt(vidoptions, newmode, VM_DBLINE, VBLITTER);
 
 			break;
-
+		}
 		default:
-
+		{
 			/* For the time being, just enable all */
 
 			vd_enable_rez(VTTHIGH);
-
-			break;
+		}
 	}
 
 	/* Set button for saving the palette */
@@ -672,17 +669,23 @@ int voptions(void)
 				switch(newrez)
 				{
 					case ST_LOWRES:
+					{
 						npmin = 4;
 						npmax = 4;
 						break;
+					}
 					case ST_MEDRES:
+					{
 						npmin = 2;
 						npmax = 2;
 						break;
+					}
 					case ST_HIGHRES:
+					{
 						npmin = 1;
 						npmax = 1;
 						break;
+					}
 					default:
 					{
 						if (fmtype == VGA_MON)
@@ -694,7 +697,6 @@ int voptions(void)
 						}
 						break;
 					}
-
 				}
 
 				np = minmax(npmin, np, npmax);
@@ -722,14 +724,19 @@ int voptions(void)
 			switch(button)
 			{
 				case VNCOLUP:
+				{
 					if ( np < npmax )
 						np <<= 1;
 					break;
+				}
 				case VNCOLDN:
+				{
 					if ( np > npmin )
 						np >>= 1;
 					break;
+				}
 				case VIDOK:
+				{
 					qquit = TRUE;
 
 				  	/* Set save palette flag */
@@ -749,14 +756,17 @@ int voptions(void)
 					}
 
 					break;								
-
+				}
 				case VIDCANC:
+				{
 					options.vprefs = vprefsold;
 					qquit = TRUE;
 					break;
-
+				}
 				default:
+				{
 					break;
+				}
 			}
 
 			next:;

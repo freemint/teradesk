@@ -47,7 +47,12 @@
 #include "applik.h"
 #include "prgtype.h"
 
-boolean onfile = FALSE; /* true if app is started to open a file */
+boolean
+	onfile = FALSE; 	/* true if app is started to open a file */
+
+char
+	*hyppage = NULL;	/* name of the hypertext page to display */
+
 
 int trash_or_print(ITMTYPE type);
 
@@ -75,19 +80,28 @@ int open_dialog(void)
 		switch(button)
 		{
 			case OWRUN:
+			{
 				prg_info(NULL, empty, 0, (PRGTYPE *)&awork);
 				log_shortname(awork.shname, awork.name);
+
 				if (!prgtype_dialog(NULL, 0, (PRGTYPE *)&awork, LS_APPL | LS_EDIT))
 					button = 0;
+
 				break;
+			}
 			case OWUSE:
+			{
 				log_shortname(fwork.filetype, awork.name);
 				selitem = NULL;
 				app_install(LS_SELA, &applikations); /* selitem is nonnull only if successful here */
+			
 				if (!selitem)
 					button = 0;			
+			}
 			default:
+			{
 				break;
+			}
 		}
 
 		xd_buttnorm(&owinfo, thebutton);
@@ -115,42 +129,40 @@ boolean item_open
 	char *thecommand	/* command line if the item is a program */
 )
 {
-	char
-		*realname = NULL,	/* link target name */ 
-		*path;				/* constructed path of the item to open */
-
-	VLNAME 
-		epath,			/* Path of the item specified in "Open" */ 
-		ename;			/* name of the item specified in "Open" */
-
-	char
-		*qline = NULL,	/* requoted content of openline */
-		*blank,			/* pointer to a ' ' in the name */ 
-		*cmline = NULL;	/* Command passed to application from "Open" dialog" */
-
-	int 
-		error,
-		button;			/* index of the button pressed */
-
-	ITMTYPE 
-		type;			/* item type (file, folder, program...) */
-
-	APPLINFO 
-		*appl;			/* Pointer to information on the app to run */
-
-	boolean 
-		alternate= FALSE, 
-		deselect = FALSE;
-
 	WINDOW
 		*w;				/* "inw", locally (i.e. maybe changed) */
 
 	DIR_WINDOW
 		simw;			/* pointer to a simulated dir window */
 
-	int 
-		item = initem;	/* "item", locally (i.e. maybe changed) */
+	APPLINFO 
+		*appl;			/* Pointer to information on the app to run */
 
+	char
+		*qline = NULL,		/* requoted content of openline */
+		*cmline = NULL,		/* Command passed to application from "Open" dialog" */
+		*realname = NULL,	/* link target name */ 
+		*blank,				/* pointer to a ' ' in the name */ 
+		*path;				/* constructed path of the item to open */
+
+	VLNAME 
+		epath,			/* Path of the item specified in "Open" */ 
+		ename;			/* name of the item specified in "Open" */
+
+	int 
+		item,			/* "initem", locally (i.e. maybe changed) */
+		error,
+		button;			/* index of the button pressed */
+
+	boolean 
+		alternate= FALSE, 
+		deselect = FALSE;
+
+	ITMTYPE 
+		type;			/* item type (file, folder, program...) */
+
+
+	item = initem;
 
 	autoloc_off();
 
@@ -299,13 +311,14 @@ boolean item_open
 		case ITM_TRASH:
 		case ITM_PRINTER:
 		case ITM_NOTUSED:
-
+		{
 			/* Object is a trah can or a printer (or unknown) and can not be opened */
 
 			alert_cantdo(trash_or_print(type), MNOOPEN);
 			break;
+		}
 		default:
-	
+		{	
 			/* Separate "realname" into "ename" and "epath" */
 
 			if(type == ITM_NETOB)
@@ -324,7 +337,7 @@ boolean item_open
 			w = (WINDOW *)&simw;
 			dir_simw(&simw, epath, ename, type);
 			item = 0;
-			break;		
+		}
 	}
 
 	free(realname);
@@ -337,7 +350,7 @@ boolean item_open
 	switch (type)
 	{
 		case ITM_DRIVE:
-
+		{
 			/* Object is a disk volume (codes 0 to 25 for check_drive() ) */
 
 			if ( ( path = itm_fullname(w, item) ) != NULL )
@@ -355,9 +368,9 @@ boolean item_open
 				deselect = FALSE;
 
 			break;
-
+		}
 		case ITM_PREVDIR:
-
+		{
 			/* Object is a parent folder */
 
 			if ((path = fn_get_path(wd_path(w))) != NULL)
@@ -366,9 +379,9 @@ boolean item_open
 				deselect = FALSE;
 
 			break;
-
+		}
 		case ITM_FOLDER:
-
+		{
 			/* Object is a folder */
 
 			if ((path = itm_fullname(w, item)) != NULL)
@@ -377,9 +390,9 @@ boolean item_open
 				deselect = FALSE;
 
 			break;
-
+		}
 		case ITM_PROGRAM:
-
+		{
 			/* Object is a program */
 
 			if (( path = itm_fullname(w, item) ) != NULL )
@@ -389,10 +402,10 @@ boolean item_open
 			}
 
 			break;
-
+		}
 		case ITM_NETOB:
 		case ITM_FILE:
-
+		{
 			/* Object is a file */
 
 			naap = 0; /* see app_find() */
@@ -417,41 +430,94 @@ boolean item_open
 				switch (button)
 				{
 					case OWSHOW:
+					{
 						/* Call the viewer program or open a text window */
 						if ( (deselect = app_specstart(AT_VIEW, w, &item, 1, kstate)) == 0 )
 							deselect = txt_add_window(w, item, kstate, NULL);
 						break;
+					}
 					case OWEDIT:
+					{
 						/* Call the editor program */
 						if ( (deselect = app_specstart(AT_EDIT, w, &item, 1, kstate)) == 0 )
 							alert_iprint(TNOEDIT);
 						break;
+					}
 					case OWRUN:
+					{
 						/* Run this file as a program/application */
 						onfile = FALSE;
 						deselect = app_exec(NULL, &awork, NULL, NULL, 0, kstate);
 						break;
+					}
 					case OWUSE:
+					{
 						/* Open this file with the selected application */
 						deselect = app_exec(NULL, (APPLINFO *)selitem, w, &item, 1, kstate);
 						break;
+					}
 					default:
+					{
 						/* Do nothing */
 						break;
+					}
 				}
+
 				free(awork.name);
 			}
 
 			onfile = FALSE;
 			break;
-
+		}
 		default: 
-
+		{
 			/* Object is a trashcan, printer, or not recognized */
 
 			deselect = FALSE;
+		}
 	}
 
 	free(qline);
 	return deselect;
 }
+
+
+/* 
+ * Open a page from the hypertext User manual. 
+ * The hypertext viewer application is detected and a command is sent to it.
+ * The command will typically be a menu text which is supposed to be
+ * identical to a page name in the hypertext except for two leading blanks
+ * and possibly an appended keyboard shortcut. All these will be stripped
+ * in this routine. Therefore, the "page" string must be at least 
+ * 6 characters long
+ * Note 1: according to AV-protocol documentation, all filenames
+ * must be input in capitals with complete paths (at least the documentation
+ * for ST-Guide says so. How does this comply with unixoid filesystems? 
+ * Maybe should use lowercase after all?)
+ * Note 2: ST-guide supports a special path "*:\" meaning "all known paths" 
+ */
+
+void opn_hyphelp(void)
+{
+	APPLINFO *helpprg = app_find("*.HYP", FALSE);
+
+	if(helpprg && hyppage)
+	{
+		LNAME cmd;
+
+		onfile = TRUE;
+
+		/* ST-Guide accepts only exactly one blank between filename and pagename */
+
+		strcpy(cmd, "*:\\TERADESK.HYP");
+
+		if(*hyppage)
+		{
+			strcat(cmd, &hyppage[1]);
+			cmd[strlen(cmd) - 5] = '\0';
+		}
+
+		app_exec(NULL, helpprg, NULL, (int *)cmd, -1, 0);
+	}
+}
+

@@ -87,9 +87,7 @@ static int		dir_find	(WINDOW *w, int x, int y);
 static boolean	dir_state	(WINDOW *w, int item);
 static ITMTYPE	dir_itmtype	(WINDOW *w, int item);
 static ITMTYPE	dir_tgttype	(WINDOW *w, int item);
-static int		dir_icon	(WINDOW *w, int item);
-static const
-       char    *dir_itmname	(WINDOW *w, int item);
+static const char *dir_itmname(WINDOW *w, int item);
 static char    *dir_fullname(WINDOW *w, int item);
 static int		dir_attrib	(WINDOW *w, int item, int mode, XATTR *attrib);
 static boolean	dir_islink	(WINDOW *w, int item);
@@ -97,13 +95,14 @@ static boolean	dir_open	(WINDOW *w, int item, int kstate);
 static boolean	dir_copy	(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
 static void		dir_select	(WINDOW *w, int selected, int mode, boolean draw);
 static void		dir_rselect	(WINDOW *w, int x, int y);
-static boolean	dir_xlist	(WINDOW *w, int *nselected, int *nvisible, int **sel_list, ICND **icns, int mx, int my);
-static boolean	dir_list	(WINDOW *w, int *n, int **list);
+static ICND *dir_xlist	(WINDOW *w, int *nselected, int *nvisible, int **sel_list, int mx, int my);
+static int *dir_list	(WINDOW *w, int *n);
 static void		dir_set_update	(WINDOW *w, wd_upd_type type, const char *fname1, const char *fname2);
 static void		dir_do_update	(WINDOW *w);
 static void		dir_newfolder	(WINDOW *w);
 static void		dir_seticons	(WINDOW *w);
 static void 	dir_showfirst(DIR_WINDOW *dw, int i);
+
 
 static ITMFUNC itm_func =
 {
@@ -111,7 +110,6 @@ static ITMFUNC itm_func =
 	dir_state,					/* itm_state */
 	dir_itmtype,				/* itm_type */
 	dir_tgttype,				/* target item type */
-	dir_icon,					/* itm_icon */
 	dir_itmname,				/* itm_name */
 	dir_fullname,				/* itm_fullname */
 	dir_attrib,					/* itm_attrib */
@@ -344,18 +342,20 @@ static SortProc unsorted
 void revord(NDTA **buffer, int n)
 {
 	NDTA 
+		**b1 = &buffer[0],
+		**b2 = &buffer[n - 1],
 		*s;
 
 	int 
 		i, 
-		j = (n - 1);
+		k = n / 2;
 
 
-	for (i = 0; i < j / 2; i++ )
+	for (i = 0; i < k; i++ )
 	{
-		s = buffer[i];
-		buffer[i] = buffer[j - i];
-		buffer[j - i] = s;		
+		s = *b1;
+		*b1++ = *b2;
+		*b2-- = s;		
 	} 
 }
 
@@ -1027,18 +1027,6 @@ boolean dir_do_path( char *path, int action )
 }
 
 
-/* 
- * Refresh a directory  window and return sliders to 0
- */
-
-void dir_readnew(DIR_WINDOW *w)
-{
-	w->py = 0;
-	w->px = 0;
-	dir_refresh_wd(w);
-}
-
-
 /*
  * Funktie om te controleren of het pad van file fname gelijk is
  * aan path.
@@ -1230,6 +1218,7 @@ void dir_newdir(WINDOW *w)
 void dir_filemask(DIR_WINDOW *w)
 {
 	char *newmask;
+	int oa = options.attribs;
 
 	if ((newmask = wd_filemask(w->fspec)) != NULL)
 	{
@@ -1251,13 +1240,14 @@ void dir_filemask(DIR_WINDOW *w)
 				free(newmask);
 		}
 
-		dir_newdir((WINDOW *)w);
+		if(options.attribs == oa) /* otherwise dir_newdir will be done elsewhere */
+			dir_newdir((WINDOW *)w); 
 	}
 }
 
 
 /*
- * Create a new folder or a link.
+ * Create a new folder or a symbolic link.
  */
 
 
@@ -1352,12 +1342,21 @@ static void newlinksize(int dy)
 
 void dir_newlink(WINDOW *w, char *target)
 {
+	char dsk[] = {0, 0};
+
 	int dy = newfolder[NEWDIRTO].r.y - newfolder[DIRNAME].r.y;
 
 	/* The string pointed to by dirname is a LNAME */
 
+	*dsk = *target; /* to get the name of a disk volume */
+	
 	strcpy(dirname, get_freestring(TLINKTO));
-	strncat(dirname, fn_get_name(target), lmax(XD_MAX_SCRLED - strlen(dirname) - 1L, 0) ); 
+	strncat
+	(
+		dirname,
+		(isroot(target)) ? dsk : fn_get_name(target), 
+		lmax(XD_MAX_SCRLED - strlen(dirname) - 1L, 0) 
+	); 
 	strcpy(envline, openline); /* reuse existing space to save openine */
 	strsncpy(openline, target, sizeof(VLNAME));	/* this is a fullpath */
 
@@ -1411,7 +1410,7 @@ void calc_nlines(DIR_WINDOW *dw)
 		{
 			/* at least 8/8 - 6/8 = 2/8 of dir item name have to be visible */
 
-			mcol = (max_w / dir_font.cw - BORDERS) / ll; /* max. columns to fit on screen */
+			mcol = (xd_screen.w / dir_font.cw - BORDERS) / ll; /* max. columns to fit on screen */
 			dc = minmax(1, min( (dw->ncolumns + dw->llength * 6 / 8) / ll, mcol), nvisible);
 		}
 		else
@@ -1423,10 +1422,11 @@ void calc_nlines(DIR_WINDOW *dw)
 	else
 	{
 		/* at least 8/8 - 5/8 = 3/8 of icon column have to be visible */
+
 		if (options.aarr)
  			dc = (dw->xw_work.w + ICON_W * 5 / 8);		
 		else
- 			dc = (max_w - XOFFSET);		
+ 			dc = (xd_screen.w - XOFFSET);		
 
 		dc = minmax(1, dc / ICON_W, nvisible); /* will never be less than 1 */
 		dw->dcolumns = dc;
@@ -1586,7 +1586,7 @@ static char *datimstr(char *tstr, unsigned int t, boolean parent, char s)
 		int i;
 
 		for(i = 0; i < 10; i++)
-			tstr[i] = ' ';
+			*tstr++ = ' '; /* tstr[i] */
 	}
 	else
 	{
@@ -1601,19 +1601,19 @@ static char *datimstr(char *tstr, unsigned int t, boolean parent, char s)
 		else			/* date */
 		{
 			tdh = t & 0x1F;
-			tmm = h & 0xF;
+			tmm = h & 0x0F;
 			tys = (((h >> 4) & 0x7F) + 80) % 100;
 		}
 
-		digit(tstr, tdh);
-		tstr[2] = s;
-		digit(tstr + 3, tmm);
-		tstr[5] = s;
-		digit(tstr + 6, tys);
-		tstr[8] = ' ';
+		tstr = digit(tstr, tdh);		/* days or hours */
+		*tstr++ = s;
+		tstr = digit(tstr, tmm);	/* months or minutes */
+		*tstr++ = s;
+		tstr = digit(tstr, tys);	/* years or seconds */
+		*tstr++ = ' ';
 	}
 
-	return tstr + 9;
+	return tstr;
 }
 
 
@@ -1917,29 +1917,42 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 			{
 				/* these attributes handle diverse item types  */
 				case S_IFDIR :	/* directory (folder) */
+				{
 					*d++ = 'd';
 					break;
+				}
 				case S_IFREG :	/* regular file */
+				{
 					*d++ = '-';
 					break;
+				}
 #if _MINT_
 				case S_IFCHR :	/* BIOS special character file */
+				{
 					*d++ = 'c';
 					break;
+				}
 				case S_IFIFO :	/* pipe */
+				{
 					*d++ = 'p';
 					break;
+				}
 				case S_IFLNK :	/* symbolic link */
+				{
 					*d++ = 'l';
 					break;
+				}
 				case S_IMEM :	/* shared memory or process data */
+				{
 					*d++ = 'm';
 					break;
+				}
 #endif
 				default : 
+				{
 					*d++ = '?';
-					break;
 				}
+			}
 #if _MINT_
 			if ((dw->fs_type & FS_UID) != 0)
 			{
@@ -2416,6 +2429,27 @@ void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work)
 
 
 /*
+ * Renew the path of a directory window. 
+ * Memory for old path is deallocated. Memory for new path
+ * has to be allocated before calling this routine.
+ * This routine substitutes earlier routine dir_readnew().
+ */
+
+static void dir_newpath(DIR_WINDOW *w, char *newpath)
+{
+	free(w->path);
+
+	w->path = newpath;
+	w->py = 0;
+	w->px = 0;
+
+	dir_refresh_wd(w);
+}
+
+
+
+
+/*
  * Remove a directory and its window from memory
  */
 
@@ -2434,7 +2468,10 @@ static void dir_rem(DIR_WINDOW *w)
 
 /*
  * Either close a directory window completely, or go one level up.
- * If mode > 0 window is closed completely.
+ * If mode > 0 the window is closed completely.
+ * If mode < 0 the window is closed to the parent directory
+ * If mode = 0 the window is closed either completely or to the parent
+ * directory, depending on the state of the 'Show parent' option.
  */
 
 void dir_close(WINDOW *w, int mode)
@@ -2448,7 +2485,10 @@ void dir_close(WINDOW *w, int mode)
 		((TYP_WINDOW *)w)->winfo->flags.iconified = 0;
 		autoloc_off();
 
-		if (isroot(thepath) || mode)
+		if( (mode == 0) && (options.attribs & FA_PARDIR) != 0 )
+			mode = 1;
+
+		if (isroot(thepath) || (mode > 0) )
 		{
 			/* 
 			 * Either this is a root window, or it should be closed entirely;
@@ -2477,13 +2517,12 @@ void dir_close(WINDOW *w, int mode)
 				((DIR_WINDOW *)w)->py = ((DIR_WINDOW *)w)->par_py;
 
 				dir_reread((DIR_WINDOW *)w);
-				wd_reset((WINDOW *)w);
+				wd_reset((WINDOW *)w); /* remove selection; autolocator off */
 
 				if(((DIR_WINDOW *)w)->par_itm < 0)
 					dir_showfirst((DIR_WINDOW *)w, -(((DIR_WINDOW *)w)->par_itm));
 				else
 					wd_type_draw((TYP_WINDOW *)w, TRUE );
-
 			}
 		}
 	}
@@ -2756,12 +2795,11 @@ boolean dir_onalt(int key, WINDOW *w)
 		{
 			if ((newpath = strdup(adrive)) != NULL)
 			{
-				newpath[0] = (char) i + 'A';
+				newpath[0] = (char)i + 'A';
+
 				if(w)
 				{
-					free(((DIR_WINDOW *) w)->path);
-					((DIR_WINDOW *) w)->path = newpath;
-					dir_readnew((DIR_WINDOW *) w);
+					dir_newpath((DIR_WINDOW *)w, newpath);
 				}
 				else
 					dir_add_dwindow(newpath);
@@ -3021,12 +3059,6 @@ static ITMTYPE dir_tgttype(WINDOW *w, int item)
 }
 
 
-static int dir_icon(WINDOW *w, int item)
-{
-	return (*((DIR_WINDOW *) w)->buffer)[item]->icon;
-}
-
-
 /* 
  * Funktie die de naam van een directory item teruggeeft. 
  */
@@ -3080,7 +3112,11 @@ static int dir_attrib(WINDOW *w, int item, int mode, XATTR *attr)
 
 static boolean dir_islink(WINDOW *w, int item)
 {
+#if _MINT_
 	return (*((DIR_WINDOW *) w)->buffer)[item]->link;
+#else
+	return FALSE;
+#endif
 }
 
 
@@ -3134,7 +3170,7 @@ void dir_setnws(DIR_WINDOW *w, boolean draw)
  * See also dsk_drawsel() ! Functionality is somewhat duplicated
  * for the sake of colour icons when the background object has to be
  * redrawn as well. An attempt is made to optimize the drawing for speed,
- * depending on the number of icons to be drawn
+ * depending on the number of icons to be drawn (switch mode at MSEL)
  */
 
 #define MSEL 8 /* if so many icons change state, draw complete window */
@@ -3665,25 +3701,22 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 
 /*
  * Create a list of (visible ?) selected items
- * This routine will return FALSE and a NULL list pointer
- * if no list has been created.
+ * This routine will return a NULL list pointer if no list has been created.
  * Note: at most 32767 items can be returned because 'nselected'  and
  * 'nvisible' are 16 bits long
- * This routine can select FALSE even if there are selected items
- * (if list allocation failed).
  */
 
-static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_list)
+static int *get_list(DIR_WINDOW *w, int *nselected, int *nvisible)
 {
 	int 
-		j = 0, 
-		n = 0, 	/* number of selected items */
-		nv = 0, 
-		*list,	/* list of selected items */ 
-		s,		/* first visible item */ 
-		h,		/* estimated number of visible items */
-		i, 		/* item index */
-		m;		/* number of visible items in window specification */
+		n = 0, 		/* number of selected items */
+		nv = 0, 	/* number of visible items */
+		*sel_list,	/* pointer to list of selected items */
+		*list,		/* pointer to an item in the list of selected items */ 
+		s,			/* first visible item */ 
+		h,			/* estimated number of visible items */
+		i, 			/* item index */
+		m;			/* number of visible items in window specification */
 
 	RPNDTA 
 		*d;
@@ -3710,40 +3743,41 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
 		if ((*d)[i]->selected)
 		{
 			n++;
+
 			if ((i >= s) && (i < h))
 				nv++;
 		}
 	}
 
 	*nvisible = nv;
-	*nselected = n;
 
 	/* Return FALSE if nothing has been selected */
 
-	if (n == 0)
+	if (n)
 	{
-		*sel_list = NULL;
-		return FALSE;
-	}
+		/* Fill the list */
 
-	/* Fill the list */
+		list = malloc_chk(n * sizeof(int));
 
-	list = malloc_chk(n * sizeof(int));
+		sel_list = list;
 
-	*sel_list = list;
-
-	if (list != NULL)
-	{
-		for (i = 0; i < m; i++)
+		if (list)
 		{
-			if ((*d)[i]->selected)
-				list[j++] = i;
-		}
+			*nselected = n;
 
-		return TRUE;
+			for (i = 0; i < m; i++)
+			{
+				if ((*d)[i]->selected)
+					*list++ = i;
+			}
+
+			return sel_list;
+		}
 	}
 
-	return FALSE;
+	*nselected = 0;
+
+	return NULL;
 }
 
 
@@ -3751,18 +3785,18 @@ static boolean get_list(DIR_WINDOW *w, int *nselected, int *nvisible, int **sel_
  * Routine voor het maken van een lijst met geselekteerde items. 
  */
 
-static boolean dir_xlist
+static ICND *dir_xlist
 (
 	WINDOW *w,
 	int *nselected,
 	int *nvisible,
 	int **sel_list,
-	ICND **icns,
 	int mx,
 	int my
 )
 {
 	ICND
+		*icns,
 		*icnlist;
 
 	RPNDTA
@@ -3771,9 +3805,6 @@ static boolean dir_xlist
 	long
 		i;
 
-	int
-		j = 0;
-
 
 /* No need if there is no menu in dir windows 
 	RECT work;
@@ -3781,45 +3812,49 @@ static boolean dir_xlist
 	xw_getwork(w, &work); /* work area modified by menu height */
 */
 
-	/* if *nvisible is FALSE get_list() will return FALSE */
+	/* if *nvisible is FALSE get_list() will return NULL */
 
-	if (get_list((DIR_WINDOW *)w, nselected, nvisible, sel_list) == FALSE)
-		return FALSE;
-
-	if (nselected == 0)
+	if ((*sel_list = get_list((DIR_WINDOW *)w, nselected, nvisible)) != NULL)
 	{
-		*icns = NULL;
-		return TRUE;
-	}
+/* this can never happen ?
 
-	/* *nvisible will always be larger than 0 here */
-
-	icnlist = malloc_chk(*nvisible * sizeof(ICND));
-
-	*icns = icnlist;
-
-	if (icnlist != NULL)
-	{
-		int s, n, h;
-
-		calc_vitems((DIR_WINDOW *)w, &s, &n);
-		h = s + n;
-		d = ((DIR_WINDOW *) w)->buffer;
-
-		for (i = s; (int) i < h; i++)
+		if (nselected == 0)
 		{
-			if ((*d)[i]->selected)
-/* see above
-				get_itmd((DIR_WINDOW *)w, (int)i, &icnlist[j++], mx, my, &work);
-*/
-				get_itmd((DIR_WINDOW *)w, (int)i, &icnlist[j++], mx, my, &(w->xw_work));
+			*icns = NULL;
+			return TRUE;
 		}
+*/
+		/* *nvisible will always be larger than 0 here */
 
-		return TRUE;
+		icnlist = malloc_chk(*nvisible * sizeof(ICND));
+
+		if (icnlist)
+		{
+			int s, n, h;
+
+			icns = icnlist;
+
+			calc_vitems((DIR_WINDOW *)w, &s, &n);
+
+			h = s + n;
+			d = ((DIR_WINDOW *)w)->buffer;
+
+			for (i = s; (int)i < h; i++)
+			{
+				if ((*d)[i]->selected)
+/* see above
+					get_itmd((DIR_WINDOW *)w, (int)i, icnlist++, mx, my, &work);
+*/
+					get_itmd((DIR_WINDOW *)w, (int)i, icnlist++, mx, my, &(w->xw_work));
+			}
+
+			return icns;
+		}
+	
+		free(*sel_list);
 	}
 
-	free(*sel_list);
-	return FALSE;
+	return NULL;
 }
 
 
@@ -3828,49 +3863,89 @@ static boolean dir_xlist
  * Note: at most 32767 items can be returned because 'n' is 16 bits long
  */
 
-static boolean dir_list(WINDOW *w, int *n, int **list)
+static int *dir_list(WINDOW *w, int *n)
 {
-	int dummy;
+	int	dummy;
 
-	return get_list((DIR_WINDOW *)w, n, &dummy, list);
+	return get_list((DIR_WINDOW *)w, n, &dummy);
 }
 
+
+/*
+ * Open an item in a directory window. If ALT is pressed, open
+ * item in a new window, or whatever. If ALT is -not- pressed,
+ * item may be opened in the smae window if it is of the right type
+ */
 
 static boolean dir_open(WINDOW *w, int item, int kstate)
 {
-	char *newpath;
-	int px;
-	long py;
-
-	if ((dir_itmtype(w, item) == ITM_FOLDER) && ((kstate & 8) == 0))
+	if((kstate & K_ALT) == 0)
 	{
-		if((newpath = dir_fullname(w, item)) != NULL)
+		ITMTYPE
+			thetype = dir_tgttype(w, item);
+
+		if (thetype == ITM_FOLDER)
 		{
-			px = ((DIR_WINDOW *)w)->px,
-			py = ((DIR_WINDOW *)w)->py;
-			autoloc_off();
-			free(((DIR_WINDOW *) w)->path);
-			((DIR_WINDOW *) w)->path = newpath;
-			dir_readnew((DIR_WINDOW *) w);
-			((DIR_WINDOW *)w)->par_px = px;
-			((DIR_WINDOW *)w)->par_py = py;
-			((DIR_WINDOW *)w)->par_itm = item;
+			char
+				*newpath = NULL,
+				*name = dir_fullname(w, item);
+
+			long
+				py;
+
+			int
+				px;
+
+			if(dir_islink(w, item))
+			{
+				newpath = x_fllink(name); /* NULL if name is NULL */
+				free(name);
+				px = 0;
+				py = 0;
+				item = 0;
+			}
+			else
+			{
+				newpath = name;
+				px = ((DIR_WINDOW *)w)->px,
+				py = ((DIR_WINDOW *)w)->py;
+			}
+
+			if(newpath)
+			{
+				autoloc_off();
+				dir_newpath((DIR_WINDOW *)w, newpath);
+				((DIR_WINDOW *)w)->par_px = px;
+				((DIR_WINDOW *)w)->par_py = py;
+				((DIR_WINDOW *)w)->par_itm = item;
+			}
+
+			return FALSE;
 		}
 
-		return FALSE;
+		if (thetype == ITM_PREVDIR)
+		{
+			dir_close(w, -1);
+			return FALSE;
+		}
 	}
-	else if ((dir_itmtype(w, item) == ITM_PREVDIR) && ((kstate & 8) == 0))
-	{
-		dir_close(w, 0);
-		return FALSE;
-	}
-	else
-		return item_open(w, item, kstate, NULL, NULL);
+		
+	return item_open(w, item, kstate, NULL, NULL);
 }
 
 
-static boolean dir_copy(WINDOW *dw, int dobject, WINDOW *sw, int n,
-						int *list, ICND *icns, int dummyx, int dummyy, int kstate)
+static boolean dir_copy
+(
+	WINDOW *dw,
+	int dobject,
+	WINDOW *sw,
+	int n,
+	int *list,
+	ICND *dummyicns,
+	int dummyx,
+	int dummyy,
+	int kstate
+)
 {
 	return item_copy(dw, dobject, sw, n, list, kstate);
 }

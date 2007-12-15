@@ -21,7 +21,6 @@
  */
 
 
-void screen_size(void);
 boolean clip_desk(RECT *r);
 void clipdesk_on(void);
 void pclear(RECT *r);

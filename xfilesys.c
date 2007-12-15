@@ -168,15 +168,21 @@ boolean x_exist(const char *file, int flags)
 		switch(itype)
 		{
 			case S_IFDIR:
+			{
 				theflag = EX_DIR;
 				break;
+			}
 #if _MINT_
 			case S_IFLNK:
+			{
 				theflag = EX_LINK;
 				break;
+			}
 #endif
 			default:
+			{
 				theflag = EX_FILE;
+			}
 		}
 
 		if ( (flags & theflag) == 0 )
@@ -457,7 +463,7 @@ char *x_pathlink( char *tgtname, char *linkname )
 /*
  * Obtain the name of the object referenced by a link (link target); 
  * if "linkname" is not the name of a link, or, if some other error happens, 
- * just copy the name.This routine allocates space for the output of real 
+ * just copy the name. This routine allocates space for the output of real 
  * object name. If the name of the target does not contain a path, prepend
  * the path of the link.
  */

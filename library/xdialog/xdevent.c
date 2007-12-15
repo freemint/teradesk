@@ -124,8 +124,9 @@ int xd_isdopen(void)
 			xw_top() == xd_nmdialogs->window
 		)
 	)
-		return 1;
-	return 0;
+		return 1;	/* normal dialog open */
+
+	return 0;		/* not open or nonmodal on top */
 }
 
 
@@ -256,7 +257,7 @@ int xe_xmulti(XDEVENT *events)
 
 	if ((r & MU_BUTTON) && !xd_isdopen() && (level == 1))
 	{
-		if (events->ev_mmobutton == 2)
+		if (xd_rbdclick && events->ev_mmobutton == 2)
 			events->ev_mbreturn = 2;	/* right button is double click */
 
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,

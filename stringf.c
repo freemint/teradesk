@@ -110,74 +110,80 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 
 				switch (*s)
 				{
-				case 's':
-					/* alphanumeric string format */
-
-					h = va_arg(argpoint, char *);
-					goto copyit;
-
-				case 'l':
-					/* next numeric output will be of a 'long' variable */
-
-					lng = TRUE;
-					break;
-
-				case 'x':
-					/* override radix and fill for hexadecimal output */
-					radix = 16;
-					fill = '0';
-				case 'd':
-					/* decimal or hexadecimal numeric output */
-
-					if ( lng )					
-						ltoa(va_arg(argpoint, long), tmp, radix);
-					else
-						itoa(va_arg(argpoint, int), tmp, radix);
-
-					h = tmp;
-
-					copyit:;
-
-					ls = (int)strlen(h);
-
-					if(maxl == 0)
-						maxl = ls;
-
-					maxl = min(maxl, 255 - (int)(d - buffer)); 
-
-					/* pad with zeros or blanks */
-
-					i = maxl - ls;
-					ls = 0;
-
-					if (maxl && i) /* use maxl for d as well */
+					case 's':
 					{
-						while (i--)
+						/* alphanumeric string format */
+	
+						h = va_arg(argpoint, char *);
+						goto copyit;
+					}
+					case 'l':
+					{
+						/* next numeric output will be of a 'long' variable */
+	
+						lng = TRUE;
+						break;
+					}
+					case 'x':
+					{
+						/* override radix and fill for hexadecimal output */
+						radix = 16;
+						fill = '0';
+					}
+					case 'd':
+					{
+						/* decimal or hexadecimal numeric output */
+	
+						if ( lng )					
+							ltoa(va_arg(argpoint, long), tmp, radix);
+						else
+							itoa(va_arg(argpoint, int), tmp, radix);
+	
+						h = tmp;
+	
+						copyit:;
+	
+						ls = (int)strlen(h);
+	
+						if(maxl == 0)
+							maxl = ls;
+	
+						maxl = min(maxl, 255 - (int)(d - buffer)); 
+	
+						/* pad with zeros or blanks */
+	
+						i = maxl - ls;
+						ls = 0;
+	
+						if (maxl && i) /* use maxl for d as well */
 						{
-							*d++ = fill;
+							while (i--)
+							{
+								*d++ = fill;
+								ls++;
+							}
+						}
+	
+						/* copy data to output */
+	
+						while (*h && (ls < maxl))
+						{
+							*d++ = *h++;
 							ls++;
 						}
-					}
-
-					/* copy data to output */
-
-					while (*h && (ls < maxl))
-					{
-						*d++ = *h++;
-						ls++;
-					}
-
-					ready = TRUE;
-					break;
-
-				default:
-					/* interpret length specifier if given */
-
-					if (isdigit(*s))
-						maxl = maxl * 10 + (int)(*s - '0');
-					else
+	
 						ready = TRUE;
-					break;
+						break;
+					}
+					default:
+					{
+						/* interpret length specifier if given */
+	
+						if (isdigit(*s))
+							maxl = maxl * 10 + (int)(*s - '0');
+						else
+							ready = TRUE;
+					}
 				}
 				s++;
 			}

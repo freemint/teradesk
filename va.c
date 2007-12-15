@@ -224,8 +224,8 @@ WINDOW *va_accw(void)
  * when a program is started).
  * If force is FALSE, pseudowindows will be just closed (by sending
  * messages to relevant applicatons) and TeraDesk will rely on those
- * applications to send AV_ACCWINDCLOSED; if force is TRUE, the pseudo-
- * windows structures will be deleted 
+ * applications to send AV_ACCWINDCLOSED; if force is TRUE, 
+ * the pseudo-windows structures in TeraDesk will be deleted 
  */
 
 void va_delall(int ap_id, boolean force)
@@ -336,7 +336,7 @@ void va_checkclient(void)
 
 	while(f)
 	{
-		next = f->next;
+		next = f->next; /* f is about to be destroyed, so save f->next */
 
 		if (appl_find(f->name) < 0)
 			rem_avtype(&avclients, f);
@@ -420,7 +420,8 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 
 /* disabled for the time being
 
-		theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i ); 
+		theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i );
+ 
 		if (type != PACC && (!theclient || (theclient->avcap3 & VV_START) != 0) )
 			return FALSE; /* this is not a VA_START capable client */
 */
@@ -598,7 +599,7 @@ boolean va_add_name(int type, const char *name)
  * If composing of another VA_ mesage is in progress,
  * messages will not be sent; instead. windows will be marked
  * for sending the message.
- * Retiurn TRUE if messages sent.
+ * Return TRUE if messages sent.
  * Take care to use this routine only for directory windows.
  */
 
@@ -631,7 +632,8 @@ boolean va_pathupdate( WINDOW *w )
 
 /*
  * Drop items onto an accwindow using AV/VA protocol.
- * Note: client window has to be signed-on for this to work
+ * Note 1: client window has to be signed-on for this to work
+ * Note 2: parameter 'list' is locally modified
  */
 
 boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y)
@@ -663,8 +665,8 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 
 			if 
 			(
-				((itype = itm_type(sw, list[i])) == ITM_NOTUSED ) ||
-				((thename = itm_fullname(sw, list[i])) == NULL )  ||
+				((itype = itm_type(sw, *list)) == ITM_NOTUSED ) ||
+				((thename = itm_fullname(sw, *list)) == NULL )  ||
 				(!va_add_name(itype, thename))
 			)
 			{
@@ -679,6 +681,8 @@ boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, 
 			 */
 
 			free(thename);
+
+			list++;
 		}
 
 		/* Create a message and send it */
@@ -812,658 +816,673 @@ void handle_av_protocol(const int *message)
 
 	switch(message[0])
 	{
-	case AV_PROTOKOLL:
-
-		/*
-		 * Client signing on.
-		 * Mostly ignore the features send by the (sender) client.
-		 * Return the server-supported features.
-		 * Maybe the name should be converted to uppercase here ? 
-		 * Hopefully not- AV protocol requires that names be sent in uppercase.
-		 */
-
-		strcpy(avwork.name, pp6);
-
-		avwork.ap_id = appl_find( (const char *)avwork.name );
-		avwork.avcap3 = m3; /* notify client-supported features */
-		avwork.flags = 0;
-
-		/* 
-		 * Add the client to the list- but it seems that some clients 
-		 * (e.g. ST-GUIDE) may sign-on more than once without signing off. 
-		 * Avoid this.
-		 */
-
-		if (!theclient && av_current != ap_id)
+		case AV_PROTOKOLL:
 		{
-			if (!lsadd_end((LSTYPE **)&avclients, sizeof(AVTYPE), (LSTYPE *)(&avwork), copy_avtype ))
-				reply = FALSE; /* can't add client */
-		}
-
-		if (reply) 
-		{
-			strcpy(global_memory, thisapp); /* must be exactly 8 characters long */
-
-			answer[0] = VA_PROTOSTATUS;
-			answer[3] = AA_SENDKEY |
-						AA_ASKFILEFONT |
-						AA_ASKCONFONT |
-						AA_COPY_DRAGGED |
-						AA_STARTPROG |
-						AA_ACCWIND | 
-						AA_EXIT |
-#if _MORE_AV
-						AA_SRV_QUOTING |
-
-						AA_STATUS |
-						AA_XWIND |
-						AA_OPENWIND |
-						AA_DRAG_ON_WINDOW | /* also for AV_WHAT_IZIT and AV_PATH_UPDATE */
-						AA_FILE| /* for FILEINFO */
-						AA_FONTCHANGED |
-#endif
-						AA_STARTED;
-
-			answer[4] =	
-#if _MORE_AV
-						AA_COPY |
-						AA_DELETE |
-						AA_SETWINDPOS | 
-#endif
-						AA_VIEW ;
-
-			*(char **)(answer + 6) = global_memory;
-		}
-		break;
-
-	case AV_EXIT:
-
-		/* 
-		 * Note: do not send to an AV client the instructions to close its
-		 * windows. It is supposed that now it will do that by itself.
-		 * Therefore xw_dosend = 0 temporarily
-		 */
-
-		rem_avtype(&avclients, va_findclient(av_current));
-		reply = FALSE;
-		break;
-
-	case AV_ASKCONFONT:
-
-		/* 
-		 * Return the id and size of the console window font.
-		 * Reply to this is currently the same as for directory window font 
-		 */
-
-	case AV_ASKFILEFONT:
-
-		/* 
-		 * Return the id and size of the currently selected directory font. 
-		 * Message is composed and sent in va_fontreply(); there is no need
-		 * for an additional reply
-		 */
-
-		theclient->avcap3 |= VV_FONTASKED;
-
-		va_fontreply( (message[0] == AV_ASKCONFONT) ? VA_CONFONT : VA_FILEFONT, message[1]); 
-		reply = FALSE;
-		break;
-
-	case AV_ACCWINDOPEN:
-
-		/* 
-		 * Create an av-client pseudowindow; 
-		 * use "flags" parameter to pass the window handle
-		 * that the client supplied in message [3]
-		 */
-
-		aw = xw_create(ACC_WIND, &aw_functions, m3, NULL, sizeof(ACC_WINDOW), NULL, &error );
-		aw->xw_xflags |= XWF_OPN;
-		aw->xw_ap_id = av_current;
-
-		reply = FALSE;
-		break;
-
-	case AV_ACCWINDCLOSED:
-
-		/* 
-		 * Client has closed a window, identified by its handle.
-		 * Now delete the data structire for this window
-		 */
-
-		xw_delete(xw_hfind(m3));
-
-		reply = FALSE;
-		break;
-
-	case AV_COPY_DRAGGED:
-
-		/* Confirmation of copying to an acc window */
-
-		if ( theclient->flags & AVCOPYING )
-		{
-			answer[0] = VA_COPY_COMPLETE;
-			answer[3] = 1;
-			theclient->flags &= ~AVCOPYING;
-		}
-		else
-			reply = FALSE;
-
-		break;
-
-#if _MORE_AV
-	case AV_XWIND:
-
-		/* 
-		 * Open a directory window with additional features.
-		 * Action is currently similar to that for just opening a window.
-		 * It is not entirely clear whether this message is 
-		 * correctly supported 
-		 */
-
-		answer[0] = VA_XOPEN;
-		goto getwpath;
-
-	case AV_OPENWIND:
-
-		/* Open a directory window. (name lengths are checked in dir_add_window() ) */
-
-		answer[0] = VA_WINDOPEN;
-
-		getwpath:;
-
-		path = strdup(pp3); /* path must be kept */
-
-		if ( path )
-		{
-			dir_trim_slash(path);
-			stat = 1;
-
-			/* If an existing window can not be topped, open a new one */
-
-			if ( !( message[0] == AV_XWIND && (message[7] & 0x01) && dir_do_path(path, DO_PATH_TOP)) )
+	
+			/*
+			 * Client signing on.
+			 * Mostly ignore the features send by the (sender) client.
+			 * Return the server-supported features.
+			 * Maybe the name should be converted to uppercase here ? 
+			 * Hopefully not- AV protocol requires that names be sent in uppercase.
+			 */
+	
+			strcpy(avwork.name, pp6);
+	
+			avwork.ap_id = appl_find( (const char *)avwork.name );
+			avwork.avcap3 = m3; /* notify client-supported features */
+			avwork.flags = 0;
+	
+			/* 
+			 * Add the client to the list- but it seems that some clients 
+			 * (e.g. ST-GUIDE) may sign-on more than once without signing off. 
+			 * Avoid this.
+			 */
+	
+			if (!theclient && av_current != ap_id)
 			{
-				mask = strdup(mp5);	/* mask must be kept too */
-
-				/* 
-				 * In case of an error (e.g. too long string), path and mask are 
-				 * deallocated in dir_add_window()
-				 */
-
-				if( mask )
-					stat = (int)dir_add_window(path, mask, NULL);
+				if (!lsadd_end((LSTYPE **)&avclients, sizeof(AVTYPE), (LSTYPE *)(&avwork), copy_avtype ))
+					reply = FALSE; /* can't add client */
+			}
+	
+			if (reply) 
+			{
+				strcpy(global_memory, thisapp); /* must be exactly 8 characters long */
+	
+				answer[0] = VA_PROTOSTATUS;
+				answer[3] = AA_SENDKEY |
+							AA_ASKFILEFONT |
+							AA_ASKCONFONT |
+							AA_COPY_DRAGGED |
+							AA_STARTPROG |
+							AA_ACCWIND | 
+							AA_EXIT |
+	#if _MORE_AV
+							AA_SRV_QUOTING |
+	
+							AA_STATUS |
+							AA_XWIND |
+							AA_OPENWIND |
+							AA_DRAG_ON_WINDOW | /* also for AV_WHAT_IZIT and AV_PATH_UPDATE */
+							AA_FILE| /* for FILEINFO */
+							AA_FONTCHANGED |
+	#endif
+							AA_STARTED;
+	
+				answer[4] =	
+	#if _MORE_AV
+							AA_COPY |
+							AA_DELETE |
+							AA_SETWINDPOS | 
+	#endif
+							AA_VIEW ;
+	
+				*(char **)(answer + 6) = global_memory;
+			}
+			break;
+		}
+		case AV_EXIT:
+		{
+			/* 
+			 * Note: do not send to an AV client the instructions to close its
+			 * windows. It is supposed that now it will do that by itself.
+			 * Therefore xw_dosend = 0 temporarily
+			 */
+	
+			rem_avtype(&avclients, va_findclient(av_current));
+			reply = FALSE;
+			break;
+		}
+		case AV_ASKCONFONT:
+		{
+			/* 
+			 * Return the id and size of the console window font.
+			 * Reply to this is currently the same as for directory window font 
+			 */
+		}
+		case AV_ASKFILEFONT:
+		{
+			/* 
+			 * Return the id and size of the currently selected directory font. 
+			 * Message is composed and sent in va_fontreply(); there is no need
+			 * for an additional reply
+			 */
+	
+			theclient->avcap3 |= VV_FONTASKED;
+	
+			va_fontreply( (message[0] == AV_ASKCONFONT) ? VA_CONFONT : VA_FILEFONT, message[1]); 
+			reply = FALSE;
+			break;
+		}
+		case AV_ACCWINDOPEN:
+		{
+			/* 
+			 * Create an av-client pseudowindow; 
+			 * use "flags" parameter to pass the window handle
+			 * which the client has supplied in message[3]
+			 */
+	
+			aw = xw_create(ACC_WIND, &aw_functions, m3, NULL, sizeof(ACC_WINDOW), NULL, &error );
+			aw->xw_xflags |= XWF_OPN;
+			aw->xw_ap_id = av_current;
+	
+			reply = FALSE;
+			break;
+		}
+		case AV_ACCWINDCLOSED:
+		{
+			/* 
+			 * Client has closed a window, identified by its handle.
+			 * Now delete the data structire for this window
+			 */
+	
+			xw_delete(xw_hfind(m3));
+	
+			reply = FALSE;
+			break;
+		}
+		case AV_COPY_DRAGGED:
+		{
+			/* Confirmation of copying to an acc window */
+	
+			if ( theclient->flags & AVCOPYING )
+			{
+				answer[0] = VA_COPY_COMPLETE;
+				answer[3] = 1;
+				theclient->flags &= ~AVCOPYING;
+			}
+			else
+				reply = FALSE;
+	
+			break;
+		}
+	#if _MORE_AV
+		case AV_XWIND:
+		{
+			/* 
+			 * Open a directory window with additional features.
+			 * Action is currently similar to that for just opening a window.
+			 * It is not entirely clear whether this message is 
+			 * correctly supported 
+			 */
+	
+			answer[0] = VA_XOPEN;
+			goto getwpath;
+		}
+		case AV_OPENWIND:
+		{
+			/* Open a directory window. (name lengths are checked in dir_add_window() ) */
+	
+			answer[0] = VA_WINDOPEN;
+	
+			getwpath:;
+	
+			path = strdup(pp3); /* path must be kept */
+	
+			if ( path )
+			{
+				dir_trim_slash(path);
+				stat = 1;
+	
+				/* If an existing window can not be topped, open a new one */
+	
+				if ( !( message[0] == AV_XWIND && (message[7] & 0x01) && dir_do_path(path, DO_PATH_TOP)) )
+				{
+					mask = strdup(mp5);	/* mask must be kept too */
+	
+					/* 
+					 * In case of an error (e.g. too long string), path and mask are 
+					 * deallocated in dir_add_window()
+					 */
+	
+					if( mask )
+						stat = (int)dir_add_window(path, mask, NULL);
+					else
+					{
+						free(path);
+						stat = 0;
+					}
+				}
 				else
 				{
+					/* This was AV_XWIND; path was just used for comparison */
 					free(path);
-					stat = 0;
 				}
 			}
 			else
-			{
-				/* This was AV_XWIND; path was just used for comparison */
-				free(path);
-			}
+				stat = 0;
+	
+			answer[3] = stat;	/* status */
+			break;
 		}
-		else
-			stat = 0;
-
-		answer[3] = stat;	/* status */
-		break;
-
-#endif
-	case VA_START:
-
-		/* 
-		 * TeraDesk can understand about inf files being sent to it by itself.
-		 * There is no point in sending the reply message back
-		 * because AV_STARTED is ignored anyway.
-		 * Name of the file must be kept. 
-		 * This command is ignored if it does not come from TeraDesk?
-		 */
-		 
-		reply = FALSE;
-
-		if(av_current == ap_id)
-			load_settings(strdup(pp3)); 
-
-		break;
-
-	case AV_STARTPROG:
-
-		/* 
-		 * Start a program with possibly a command line. Instead of a
-		 * program name, a filename may be passed, and an application
-		 * should be found for it
-		 */
-
-		mask = strdup(mp5);
-		answer[0] = VA_PROGSTART;
-		answer[7] = message[7];
-		goto openit;
-	case AV_VIEW:
-
-		/* 
-		 * Activate a viewer for one file. Currently, TeraDesk does not
-		 * differentiate between a viewer and a processing program;
-		 * so, behaviour for AV_VIEW and AV_STARTPROG is essentially
-		 * the same.
-		 * If the application is already running, parameters will be
-		 * passed to it.
-		 * Parameter "mask" may contain the command line
-		 */
-
-		answer[0] = VA_VIEWED;
-
-		openit:;
-
-		onfile = TRUE;
-		path = strdup(pp3); 
-
-		if ( path )
+	#endif
+		case VA_START:
 		{
 			/* 
-			 * Internet access programs may send very longs strings. 
-			 * Some special provisions for those. Find which application
-			 * is to be used, and use the recieved string as a command.
+			 * TeraDesk can understand about inf files being sent to it by itself.
+			 * There is no point in sending the reply message back
+			 * because AV_STARTED is ignored anyway.
+			 * Name of the file must be kept. 
+			 * This command is ignored if it does not come from TeraDesk?
 			 */
-
-			if(!mask && x_netob(path) && strlen(path) >= sizeof(VLNAME))
-			{
-				char *app = app_find_name(path, TRUE);
-
-				if(app)
-				{
-					mask = path;
-					path = strdup(app);
-				}
-			}
-
-			/* Now open the item */
-
-			stat = item_open( NULL, 0, 0, path, mask );
+			 
+			reply = FALSE;
+	
+			if(av_current == ap_id)
+				load_settings(strdup(pp3)); 
+	
+			break;
 		}
-		else
-			stat = 0;
-
-		free(path);
-		free(mask);
-
-		answer[3] = stat;
-		break;
-
-#if _MORE_AV
-
-	case AV_SETWINDPOS:
-
-		avsetw.flag = TRUE;
-		avsetw.size = *( (RECT *)(&message[3]) ); /* shorter */
-		reply = FALSE;
-		break;
-
-	case AV_PATH_UPDATE:
-
-		/* 
-		 * Update a dir window. probably there is no need to check path
-		 * because that string is just compared to existing paths
-		 */
-
-		path = strdup(pp3); /*duplicate because it will be modified */
-
-		if ( path && !x_netob(path) )
+		case AV_STARTPROG:
 		{
-			dir_trim_slash(path);
-			dir_do_path(path, DO_PATH_UPDATE);
+			/* 
+			 * Start a program with possibly a command line. Instead of a
+			 * program name, a filename may be passed, and an application
+			 * should be found for it
+			 */
+	
+			mask = strdup(mp5);
+			answer[0] = VA_PROGSTART;
+			answer[7] = message[7];
+			goto openit;
 		}
-
-		free(path);
-
-		reply = FALSE; /* no reply to this message */
-		break;
-
-	case AV_STATUS: 
-
-		/* Note: "path" has to be kept; it contains the status string */
-
-		path = strdup(pp3);
-
-		thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
-
-		if ( path )
+		case AV_VIEW:
 		{
-			/* A status string is supplied by the client */
-
-			if ( thestatus )
+			/* 
+			 * Activate a viewer for one file. Currently, TeraDesk does not
+			 * differentiate between a viewer and a processing program;
+			 * so, behaviour for AV_VIEW and AV_STARTPROG is essentially
+			 * the same.
+			 * If the application is already running, parameters will be
+			 * passed to it.
+			 * Parameter "mask" may contain the command line
+			 */
+	
+			answer[0] = VA_VIEWED;
+	
+			openit:;
+	
+			onfile = TRUE;
+			path = strdup(pp3); 
+	
+			if ( path )
 			{
-				/* Yes, there is status string for this client */
-
-				if ( strcmp(thestatus->stat, path) == 0 )
-					/* string is the same, no need to keep "path" */
-					free(path);
-				else
-				{
-					/* string changed; replace pointer to status string */
-					free(thestatus->stat);
-					thestatus->stat = path;
-				}
-			}
-			else	
-			{
-				/* add this status string to the pool */
-				strcpy(avswork.name, theclient->name);
-				avswork.stat = path;
-
-				if (!lsadd_end((LSTYPE **)&avstatus, sizeof(AVSTAT), (LSTYPE *)(&avswork), copy_avstat ))
-					free(path);
-			}
-		}
-
-		reply = FALSE;
-		break;
-		
-	case AV_GETSTATUS:
-
-		answer[0] = VA_SETSTATUS;
-
-		/* 
-		 * Note: if status is not available, NULL is supposed to be
-		 * returned as a pointer to the string. Maybe it would be better
-		 * to supply an empty string ???
-		 */
-
-		thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
-		if ( thestatus && thestatus->stat )
-		{
-			strcpy(global_memory, thestatus->stat);
-			*(char **)(answer + 3) = global_memory;
-		}
-
-		break;
-
-	case AV_WHAT_IZIT:
-	{
-		int item, wind_ap_id;
-
-		*global_memory = 0; /* clear any old strings */
-
-		/* Find the owner of the window (can't be always done in single-tos) */
-
-		wind_get( wind_find(m3, message[4]), WF_OWNER, &wind_ap_id);
-
-		/* Note: it is not clear what should be returned in answer[3] */
-
-		answer[3] = wind_ap_id;
-
-		if ( wind_ap_id != ap_id ) /* this is not TeraDesk's window */
-			answer[4] = VA_OB_WINDOW;
-		else
-		{
-			answer[4] = VA_OB_UNKNOWN;
-
-			if ( (aw = xw_find(m3, message[4])) != NULL )
-			{
-				/* Yes, this is TeraDesk's window */
-
-				if ( xw_type(aw) == TEXT_WIND )
-				{
-					/* this is a text window  and might as well belong to another app */
-					answer[4] = VA_OB_WINDOW;
-				}
-				else if ( (item = itm_find(aw, m3, message[4])) >= 0 )
-				{
-					/* An item can be located in a desktop or directory window */
-
-					ITMTYPE itype = itm_type(aw, item);
-
-					if ( itype >= ITM_NOTUSED && itype <= ITM_NETOB )
-					{
-						answer[4] = answertypes[itype];
-
-						/* 
-						 * Fortunately, single item names are always shorter
-						 * than global memory buffer. No need to check size. 
-						 */
-						if (  isfile(itype) || itype == ITM_DRIVE )
-						{
-							/* Should fullname or just name be used below ? */
-
-							if ( (path = itm_fullname(aw, item)) != NULL)
-							{
-								va_add_name(itype, path);
-								*(char **)(answer + 5) = global_memory;
-								free(path);
-							}
-						}			/* A file or a volume; has path ? */
-					}			/* Recognized item type ? */
-				}			/* Not a text window ? */
-				else if(xw_type(aw) == DIR_WIND)
-				{
-					/* this is a directory window background */
-					answer[4] = VA_OB_FOLDER;
-					va_add_name(ITM_FOLDER, ((DIR_WINDOW *)aw)->path);
-					*(char **)(answer + 5) = global_memory;
-				}
-			}			/* Window found ? */
-		}			/* TeraDesk's window ? */
-
-		answer[0] = VA_THAT_IZIT;			
-		break;
-	} /* what is it ? */
-
-	case AV_DRAG_ON_WINDOW:
-
-		/* Drag one or several files to the path of a window */
-
-		answer[0] = VA_DRAG_COMPLETE;
-		path = strdup(pp6);	/* source; duplicate because it will be modified */
-		goto processname;
-
-	case AV_COPYFILE:
-
-		/* Copy one or several files to a path */
-
-		answer[0] = VA_FILECOPIED;
-		mask = strdup(mp5);	/* destination */
-		goto getpath;
-
-	case AV_DELFILE:
-		answer[0] = VA_FILEDELETED;
-		goto getpath;
-
-	case AV_FILEINFO:
-
-		/* Delete one or several files or return information about it/them */
-
-		answer[0] = VA_FILECHANGED;
-
-		getpath:;
-
-		path = strdup(pp3);	/* source; duplicate because it will be modified */
-
-		processname:;
-
-		if ( path )
-		{
-			char 
-				*p = path,		/* current position in the string */
-				*wpath = NULL,	/* simulated window path */
-				*cs, *cq, 		/* position of the next " " and "'" */
-				*pp = NULL;		/* position of the next name */
-
-			boolean 
-				q = FALSE;		/* true if name is quoted */
-
-			ITMTYPE 
-				itype;			/* type of the item */
-
-			DIR_WINDOW 
-				ww;				/* structure for the simulated window */
-
-			int 
-				list = 0;		/* simulated selected item */
-
-			*global_memory = 0;	/* clear the string in the buffer */
-			stat = 1;			/* all is well for the time being */
-
-			/* In this loop, items in the message are processed one by one */
-
-			while(stat && p && *p)
-			{
-				/* Attempt to extract next item name (possibly quoted) */
-
-				if (*p == SINGLE_Q && *(p + 1) != SINGLE_Q) /* single quote, but not doubled */
-				{
-					p++;		/* move to the character after the quote */
-					q = TRUE;	/* quoting has been started */
-				}
-
-				strip_name(p, p);		/* strip leading/trailing blanks */
-				cq = p;
-
-				while((cq = strchr(cq, SINGLE_Q)) != NULL && *(cq + 1) == SINGLE_Q)
-				{
-					cq += 2;		
-				}
-
-				if ( q && cq )			/* quoted and unquote exists ? */
-					*cq++ = 0;			/* terminate string at quote */
-				else 
-					cq = p;
-
-				cs = strchr(cq, ' ');	/* space after the quote */
-				pp = NULL;
-
-				if ( cs )				/* there is a next space */
-				{
-					pp = cs + 1L; 		/* character after the space */
-					*cs = 0;
-				}
-
 				/* 
-				 * Try to determine the type of the item.
-				 * This is done by examining the name and by
-				 * analyzing the object attributes (i.e. data
-				 * from the disk are being read here)- if the
-				 * object does not exist an error alert will be
-				 * displayed and ITM_NOTUSED returned.
+				 * Internet access programs may send very longs strings. 
+				 * Some special provisions for those. Find which application
+				 * is to be used, and use the recieved string as a command.
 				 */
-
-				dir_trim_slash(p);
-				itype = diritem_type(p);
-
-				if ( itype != ITM_NOTUSED && itype != ITM_NETOB )
+	
+				if(!mask && x_netob(path) && strlen(path) >= sizeof(VLNAME))
 				{
-					wpath = fn_get_path(p);
-
-					dir_simw(&ww, wpath, fn_get_name(p), itype);
-
-					/* 
-					 * Some routines will perform differently when
-					 * working as a response to a VA-protocol command.
-					 * This is set through va_reply.
-					 * Note: these four messages may also provoke
-					 * a VA_PATH_UPDATE response	
-					 */
-
-					va_reply = TRUE;
-
-					switch(message[0])
+					char *app = app_find_name(path, TRUE);
+	
+					if(app)
 					{
-						case AV_DRAG_ON_WINDOW:
-							stat = 
-							(int)itm_move
-							( 
-								(WINDOW *)&ww, 
-								0, 
-								m3,
-								message[4],
-								message[5]
-							);	
-							break;
-						case AV_COPYFILE:
-						{
-							/* 
-							 * Note: this is still not fully compliant to the
-							 * AV-protocol: links can not be created
-							 */
-							int old_prefs = options.cprefs;
-							options.cprefs = (message[7] & 0x0004) ? old_prefs : (old_prefs & ~CF_OVERW);
-							rename_files = (message[7] & 0x0002) ? TRUE : FALSE;
-							stat = (mask) ?
-							(int)itmlist_op
-							(
-								(WINDOW *)&ww, 
-								1, 
-								&list, 
-								mask, 
-								( message[7] & 0x0001) ? CMD_MOVE : CMD_COPY
-							) : 0;
-							options.cprefs = old_prefs;
-							break;
-						}
-						case AV_DELFILE:
-							stat = 
-							(int)itmlist_wop
-							(
-								(WINDOW *)&ww, 
-								1, 
-								&list, 
-								CMD_DELETE
-							);
-							break;
-						case AV_FILEINFO:
-							*(char **)(answer + 6) = global_memory;	
-							item_showinfo((WINDOW *)&ww, 1, &list, FALSE);
-							stat = 1; /* but it is not always so! */
-							break;
+						mask = path;
+						path = strdup(app);
 					}
-
-					wd_noselection();
-					free(wpath);
 				}
-				else
-					stat = 0;
-
-				p = pp;
-			} /* while */
+	
+				/* Now open the item */
+	
+				stat = item_open( NULL, 0, 0, path, mask );
+			}
+			else
+				stat = 0;
+	
+			free(path);
+			free(mask);
+	
+			answer[3] = stat;
+			break;
 		}
-		else
-			stat = 0;
+	#if _MORE_AV
+	
+		case AV_SETWINDPOS:
+		{
+			avsetw.flag = TRUE;
+			avsetw.size = *( (RECT *)(&message[3]) ); /* shorter */
+			reply = FALSE;
+			break;
+		}
+		case AV_PATH_UPDATE:
+		{
+			/* 
+			 * Update a directory window. Probably there is no need to check path
+			 * because that string is just compared to existing paths
+			 */
+	
+			path = strdup(pp3); /*duplicate because it will be modified */
+	
+			if ( path && !x_netob(path) )
+			{
+				dir_trim_slash(path);
+				dir_do_path(path, DO_PATH_UPDATE);
+			}
+	
+			free(path);
+	
+			reply = FALSE; /* no reply to this message */
+			break;
+		}
+		case AV_STATUS: 
+		{
+			/* Note: "path" has to be kept; it contains the status string */
+	
+			path = strdup(pp3);
+	
+			thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
+	
+			if ( path )
+			{
+				/* A status string is supplied by the client */
+	
+				if ( thestatus )
+				{
+					/* Yes, there is status string for this client */
+	
+					if ( strcmp(thestatus->stat, path) == 0 )
+						/* string is the same, no need to keep "path" */
+						free(path);
+					else
+					{
+						/* string changed; replace pointer to status string */
+						free(thestatus->stat);
+						thestatus->stat = path;
+					}
+				}
+				else	
+				{
+					/* add this status string to the pool */
+					strcpy(avswork.name, theclient->name);
+					avswork.stat = path;
+	
+					if (!lsadd_end((LSTYPE **)&avstatus, sizeof(AVSTAT), (LSTYPE *)(&avswork), copy_avstat ))
+						free(path);
+				}
+			}
+	
+			reply = FALSE;
+			break;
+		}	
+		case AV_GETSTATUS:
+		{
+			answer[0] = VA_SETSTATUS;
+	
+			/* 
+			 * Note: if status is not available, NULL is supposed to be
+			 * returned as a pointer to the string. Maybe it would be better
+			 * to supply an empty string ???
+			 */
+	
+			thestatus = (AVSTAT *)find_lsitem((LSTYPE **)&avstatus, theclient->name, &j);
+			if ( thestatus && thestatus->stat )
+			{
+				strcpy(global_memory, thestatus->stat);
+				*(char **)(answer + 3) = global_memory;
+			}
+	
+			break;
+		}
+		case AV_WHAT_IZIT:
+		{
+			int item, wind_ap_id;
+	
+			*global_memory = 0; /* clear any old strings */
+	
+			/* Find the owner of the window (can't be always done in single-tos) */
+	
+			wind_get( wind_find(m3, message[4]), WF_OWNER, &wind_ap_id);
+	
+			/* Note: it is not clear what should be returned in answer[3] */
+	
+			answer[3] = wind_ap_id;
+	
+			if ( wind_ap_id != ap_id ) /* this is not TeraDesk's window */
+				answer[4] = VA_OB_WINDOW;
+			else
+			{
+				answer[4] = VA_OB_UNKNOWN;
+	
+				if ( (aw = xw_find(m3, message[4])) != NULL )
+				{
+					/* Yes, this is TeraDesk's window */
+	
+					if ( xw_type(aw) == TEXT_WIND )
+					{
+						/* this is a text window  and might as well belong to another app */
+						answer[4] = VA_OB_WINDOW;
+					}
+					else if ( (item = itm_find(aw, m3, message[4])) >= 0 )
+					{
+						/* An item can be located in a desktop or directory window */
+	
+						ITMTYPE itype = itm_type(aw, item);
+	
+						if ( itype >= ITM_NOTUSED && itype <= ITM_NETOB )
+						{
+							answer[4] = answertypes[itype];
+	
+							/* 
+							 * Fortunately, single item names are always shorter
+							 * than global memory buffer. No need to check size. 
+							 */
+							if (  isfile(itype) || itype == ITM_DRIVE )
+							{
+								/* Should fullname or just name be used below ? */
+	
+								if ( (path = itm_fullname(aw, item)) != NULL)
+								{
+									va_add_name(itype, path);
+									*(char **)(answer + 5) = global_memory;
+									free(path);
+								}
+							}			/* A file or a volume; has path ? */
+						}			/* Recognized item type ? */
+					}			/* Not a text window ? */
+					else if(xw_type(aw) == DIR_WIND)
+					{
+						/* this is a directory window background */
+						answer[4] = VA_OB_FOLDER;
+						va_add_name(ITM_FOLDER, ((DIR_WINDOW *)aw)->path);
+						*(char **)(answer + 5) = global_memory;
+					}
+				}			/* Window found ? */
+			}			/* TeraDesk's window ? */
+	
+			answer[0] = VA_THAT_IZIT;			
+			break;
+		} /* what is it ? */
+	
+		case AV_DRAG_ON_WINDOW:
+		{
+			/* Drag one or several files to the path of a window */
+	
+			answer[0] = VA_DRAG_COMPLETE;
+			path = strdup(pp6);	/* source; duplicate because it will be modified */
+			goto processname;
+		}
+		case AV_COPYFILE:
+		{
+			/* Copy one or several files to a path */
+	
+			answer[0] = VA_FILECOPIED;
+			mask = strdup(mp5);	/* destination */
+			goto getpath;
+		}
+		case AV_DELFILE:
+		{
+			answer[0] = VA_FILEDELETED;
+			goto getpath;
+		}
+		case AV_FILEINFO:
+		{
+			/* Delete one or several files or return information about it/them */
+	
+			answer[0] = VA_FILECHANGED;
+	
+			getpath:;
+	
+			path = strdup(pp3);	/* source; duplicate because it will be modified */
+	
+			processname:;
+	
+			if ( path )
+			{
+				char 
+					*p = path,		/* current position in the string */
+					*wpath = NULL,	/* simulated window path */
+					*cs, *cq, 		/* position of the next " " and "'" */
+					*pp = NULL;		/* position of the next name */
+	
+				boolean 
+					q = FALSE;		/* true if name is quoted */
+	
+				ITMTYPE 
+					itype;			/* type of the item */
+	
+				DIR_WINDOW 
+					ww;				/* structure for the simulated window */
+	
+				int 
+					list = 0;		/* simulated selected item */
+	
+				*global_memory = 0;	/* clear the string in the buffer */
+				stat = 1;			/* all is well for the time being */
+	
+				/* In this loop, items in the message are processed one by one */
+	
+				while(stat && p && *p)
+				{
+					/* Attempt to extract next item name (possibly quoted) */
+	
+					if (*p == SINGLE_Q && *(p + 1) != SINGLE_Q) /* single quote, but not doubled */
+					{
+						p++;		/* move to the character after the quote */
+						q = TRUE;	/* quoting has been started */
+					}
+	
+					strip_name(p, p);		/* strip leading/trailing blanks */
+					cq = p;
+	
+					while((cq = strchr(cq, SINGLE_Q)) != NULL && *(cq + 1) == SINGLE_Q)
+					{
+						cq += 2;		
+					}
+	
+					if ( q && cq )			/* quoted and unquote exists ? */
+						*cq++ = 0;			/* terminate string at quote */
+					else 
+						cq = p;
+	
+					cs = strchr(cq, ' ');	/* space after the quote */
+					pp = NULL;
+	
+					if ( cs )				/* there is a next space */
+					{
+						pp = cs + 1L; 		/* character after the space */
+						*cs = 0;
+					}
+	
+					/* 
+					 * Try to determine the type of the item.
+					 * This is done by examining the name and by
+					 * analyzing the object attributes (i.e. data
+					 * from the disk are being read here)- if the
+					 * object does not exist an error alert will be
+					 * displayed and ITM_NOTUSED returned.
+					 */
+	
+					dir_trim_slash(p);
+					itype = diritem_type(p);
+	
+					if ( itype != ITM_NOTUSED && itype != ITM_NETOB )
+					{
+						wpath = fn_get_path(p);
+	
+						dir_simw(&ww, wpath, fn_get_name(p), itype);
+	
+						/* 
+						 * Some routines will perform differently when
+						 * working as a response to a VA-protocol command.
+						 * This is set through va_reply.
+						 * Note: these four messages may also provoke
+						 * a VA_PATH_UPDATE response	
+						 */
+	
+						va_reply = TRUE;
+	
+						switch(message[0])
+						{
+							case AV_DRAG_ON_WINDOW:
+							{
+								stat = 
+								(int)itm_move
+								( 
+									(WINDOW *)&ww, 
+									0, 
+									m3,
+									message[4],
+									message[5]
+								);	
+								break;
+							}
+							case AV_COPYFILE:
+							{
+								/* 
+								 * Note: this is still not fully compliant to the
+								 * AV-protocol: links can not be created
+								 */
+								int old_prefs = options.cprefs;
+								options.cprefs = (message[7] & 0x0004) ? old_prefs : (old_prefs & ~CF_OVERW);
+								rename_files = (message[7] & 0x0002) ? TRUE : FALSE;
+								stat = (mask) ?
+								(int)itmlist_op
+								(
+									(WINDOW *)&ww, 
+									1, 
+									&list, 
+									mask, 
+									( message[7] & 0x0001) ? CMD_MOVE : CMD_COPY
+								) : 0;
+								options.cprefs = old_prefs;
+								break;
+							}
+							case AV_DELFILE:
+							{
+								stat = 
+								(int)itmlist_wop
+								(
+									(WINDOW *)&ww, 
+									1, 
+									&list, 
+									CMD_DELETE
+								);
+								break;
+							}
+							case AV_FILEINFO:
+							{
+								*(char **)(answer + 6) = global_memory;	
+								item_showinfo((WINDOW *)&ww, 1, &list, FALSE);
+								stat = 1; /* but it is not always so! */
+							}
+						}
+	
+						wd_noselection();
+						free(wpath);
+					}
+					else
+						stat = 0;
+	
+					p = pp;
+				} /* while */
+			}
+			else
+				stat = 0;
+	
+			answer[3] = stat;
+	
+			va_reply = FALSE;				
+	
+			if ( message[0] == AV_FILEINFO )
+				closeinfo(); 
+	
+			strip_name(global_memory, (const char *)global_memory);
+	
+			free(path);
+			free(mask);
+	
+			break;
+		}
+	#endif
 
-		answer[3] = stat;
-
-		va_reply = FALSE;				
-
-		if ( message[0] == AV_FILEINFO )
-			closeinfo(); 
-
-		strip_name(global_memory, (const char *)global_memory);
-
-		free(path);
-		free(mask);
-
-		break;
-#endif
-
-#if _FONT_SEL
-
-	case FONT_SELECT:
-
-		/* Select a font for the client (FONT protocol) */
-
-		fnt_mdialog(message[1], m3, message[4], message[5],
-					message[6], message[7], 1);
-		reply = FALSE;
-		break;
-#endif
-
-	default:
-		/* 
-		 * Beside the unsupported messages, this also handles
-		 * those (mostly acknowledge) messages which do not require 
-		 * any action
-		 */
-		reply = FALSE;
-		break;
+	#if _FONT_SEL
+	
+		case FONT_SELECT:
+		{
+	
+			/* 
+			 * Select a font for the client (FONT protocol)
+			 * message[4] = current font id of the client 
+			 */
+	
+			fnt_mdialog(message[1], m3, message[4], message[5],
+						message[6], message[7], 1);
+			reply = FALSE;
+			break;
+		}
+	#endif
+	
+		default:
+		{
+			/* 
+			 * Beside the unsupported messages, this also handles
+			 * those (mostly acknowledge) messages which do not require 
+			 * any action
+			 */
+			reply = FALSE;
+		}
 	}
 
 	if ( reply )

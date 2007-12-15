@@ -22,6 +22,7 @@
 
 
 #include <string.h>
+#include <library.h>
 
 #define SINGLE_Q 39
 #define DOUBLE_Q '"'
@@ -187,8 +188,7 @@ char *strcpyuq(char *d, char *s)
 			/* If not between quotes, substitute blanks with a single 0 */
 
 			*d++ = 0;
-			while (*s == ' ')
-				s++;
+			s = nonwhite(s);
 		}
 
 		/* Is this a quote character (see also va_start_prg() in va.c) */

@@ -191,35 +191,24 @@ typedef struct
 	int coords[18];				/* coordinaten van schaduw */
 } ICND;
 
-typedef struct
-{
-	int phy_handle;
-	int vdi_handle;
-	RECT dsk;
-	int fnt_w;
-	int fnt_h;
-} SCRINFO;
-
-
-extern Options options;
-extern SCRINFO screen_info;
-
+extern Options
+	options;
 
 extern char 
-		*global_memory;
+	*global_memory;
 
 extern const char
-		*empty,
-		*bslash,
-		*adrive,
-		*prevdir;
+	*nopage,
+	*empty,
+	*bslash,
+	*adrive,
+	*prevdir;
 
 extern long 
 	global_mem_size;
 
 extern int 
 	vdi_handle,		/* workstation handle */ 
-	max_w, max_h, 	/* maximum possible window size */
 	ap_id,			/* application id of TeraDesk itself */ 
 	nfonts;			/* number of available fonts */
 

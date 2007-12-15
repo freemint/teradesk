@@ -25,6 +25,18 @@
 #include <stddef.h>
 #include <library.h>
 
+/* 
+ * Search for the first non-blank (and non-tab) character in a string; 
+ * return pointer to it 
+ */
+
+char *nonwhite(char *s)
+{
+	while( ( (*s == '\t') || (*s == ' ') ) && (*s != 0) ) 
+		s++;
+
+	return s;
+}
 
 /********************************************************************
  *																	*
@@ -46,8 +58,7 @@ void strip_name(char *to, const char *from)
 {
 	const char *last = from + strlen(from) - 1;	/* last nonzero */
 
-
-	while (*from && *from == ' ')  from++;		/* first nonblank */
+	from = nonwhite((char *)from);
 
 	if (*from)									/* if not empty string... */
 	{

@@ -70,3 +70,4 @@ boolean txt_reread( TXT_WINDOW *w, char *name, int px, long py);
 int read_txtf(const char *name, char **buffer, long *flength); 
 void compare_files( WINDOW *w, int n, int *list );
 void disp_hex( char *tmp, char *p, long a, long size, boolean toprint );
+void copy_unnull(char *dest, char *source, long length, long pos, int dl);
