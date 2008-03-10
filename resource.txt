@@ -26,24 +26,11 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.94 relative to previous version
+Changes in V3.95 relative to previous version
 ---------------------------------------------
 
-- String SPT4 added to tree SEARCH
-
-- Alert ALRTQUIT deleted
-
-- Tree QUITOPT added
-
-- Object ISRBXT added to tree SPECAPP
-
-- String-type trees MDEXISTS, MCOPYSLF and TWPROT modified
-
-- Texts in string-type trees TFNVALID and XFNVALID changed; when these
-  were introduced in V3.90, rules for validation strings were not applied
-  correctly.
-
-- 'Cancel' button in tree ADDPTYPE named APTCANC
+There are no changes- the resource file of TeraDesk V3.95 is identical
+to that of V3.94.
 
 
 Naming of object trees

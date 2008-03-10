@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
  *                          2002 - 2003  H. Robbers,
- *                          2003 - 2007  Dj. Vukovic
+ *                          2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,13 +21,13 @@
  */
 
 
-#define CFG_VERSION		0x0394		/* current version id. of inf file */ 
+#define CFG_VERSION		0x0395		/* current version id. of inf file */ 
 
 #define MIN_VERSION		0x0360		/* min. acceptabe version id. of inf file */	 
 
-#define INFO_VERSION	"Tera Desktop V3.94  15-DEC-2007"		/* program version */
+#define INFO_VERSION	"Tera Desktop V3.95  10-MAR-2008"		/* program version */
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"	/* authors         */
-#define INFO_OTHER "1991-1994, 2002-2007"						/* release date    */
+#define INFO_OTHER "1991-1994, 2002-2008"						/* release date    */
 
 
 

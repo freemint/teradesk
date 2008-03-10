@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,7 +19,6 @@
  * along with Teradesk; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 
 #include <np_aes.h>	
 #include <vdi.h>
@@ -53,23 +52,6 @@ static XDINFO
 	sdinfo,					/* information about the search dialog */
 	idinfo;					/* information about the info dialog */ 	
 
-static boolean
-	searchdopen = FALSE,	/* flag that Search... dialog is open */
-	infodopen = FALSE;    	/* flag that Info... dialog is open */ 
-
-extern boolean
-	can_touch;
-
-extern const char 
-	fas[];			/* file attributes flags */
-
-static const char
-	ois[] = {ISWP, ISARCHIV, ISHIDDEN, ISSYSTEM};
-
-/*
- * Search parameters: pattern, string, date range, size range...
- */
-
 long
 	find_offset;	/* offset of found string from file start */
 
@@ -80,7 +62,7 @@ static long
 	search_losize,	/* low end of file size range for search, inclusive */
 	search_hisize;	/* high end of file size range for search, inclusive */
 
-static int 
+static unsigned int 
 	search_lodate,	/* low end of file/folder date for search, inclusive */
 	search_hidate;	/* high end of file/folder date for search, inclusive */
 
@@ -96,12 +78,27 @@ static char
 static VLNAME 
 	search_pattern = {0}; /* store filename pattern for search */
 
+static const char
+	ois[] = {ISWP, ISARCHIV, ISHIDDEN, ISSYSTEM};
+
 static boolean
+	searchdopen = FALSE,	/* flag that Search... dialog is open */
+	infodopen = FALSE,   	/* flag that Info... dialog is open */ 
 	nodirs,					/* TRUE if directory names are not to be searched */
 	nofound = TRUE;			/* TRUE if no items founnd */
 
+extern boolean
+	can_touch;
+
+extern const char 
+	fas[];			/* file attributes flags */
+
+
 
 char *app_find_name(const char *fname, boolean full);
+
+
+#define BADTIME (unsigned int)0xFFFF /* marks illegal date/time */
 
 
 /*
@@ -116,12 +113,16 @@ static int fi_atoi(int obj)
 /* 
  * Convert DOS time to a string to be displayed in a form. 
  * String format is hhmmss, always six characters long 
- * Terminating 0 is not added. 
+ * Terminating 0-byte is not added. 
  */
 
 static void cv_ttoform(char *tstr, unsigned int time)
 {
-	unsigned int sec, min, hour, h;
+	unsigned int
+		sec,
+		min,
+		hour,
+		h;
 
 	sec = (time & 0x1F) * 2;
 	h = time >> 5;
@@ -136,12 +137,17 @@ static void cv_ttoform(char *tstr, unsigned int time)
 /* 
  * Convert DOS date to a string to be displayed in a form.
  * String format id ddmmyy, always six characters long.
- * Terminating 0 is not added. 
+ * Terminating 0-byte is not added. 
  */
 
 static void cv_dtoform(char *tstr, unsigned int date)
 {
-	unsigned int day, mon, year, h;
+	unsigned int
+		day,
+		mon,
+		year,
+		h;
+
 
 	day = date & 0x1F;
 	h = date >> 5;
@@ -162,13 +168,17 @@ static void cv_dtoform(char *tstr, unsigned int date)
  *
  * If ct = FALSE:
  * Convert a string (format: ddmmyy) to DOS date; 
- * for brevity, date is only partially checked: 
- * february can be 1:29 in any year, month is 1:12, year is 0:99;
+ * for brevity, date is not fully checked checked: 
+ * February date can be 1:29 in any year, month is 1:12, year is 0:99;
  *
- * returns -1 if invalid string is entered; 
+ * returns 0xFFFF (i.e. BADTIME) if invalid string is entered; 
  */
 
-static int cv_formtodt( char *dtstr, boolean ct )
+static unsigned int cv_formtodt
+(
+	char *dtstr,	/* date or time as a string; formats: ddmmyy or hhmmss */
+	boolean ct		/* if TRUE this is time being converted */
+)
 {
 	int
 		d_h,			/* day or hour */
@@ -182,8 +192,13 @@ static int cv_formtodt( char *dtstr, boolean ct )
 	static const char 	/* numbers of days in months */
 		md[] = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
+
+	/* in case of an emty input string, return 0 */
+
 	if ( *ds == 0 )
 		return 0;
+
+	/* In case of a non-empty input string, decode date or time */
 
 	if(strlen(dtstr) == 6)
 	{
@@ -191,34 +206,40 @@ static int cv_formtodt( char *dtstr, boolean ct )
 		b[0] = *ds++;
 		b[1] = *ds++;
 		b[2] = 0;
-		d_h = atoi(b);
+		d_h = atoi(b);	/* day or hour */
 
 		b[0] = *ds++;
 		b[1] = *ds++;
-		m_m = atoi(b);	
+		m_m = atoi(b);	/* month or minute */	
 
 		b[0] = *ds++;
 		b[1] = *ds;
-		y_s = atoi(b);
+		y_s = atoi(b);	/* year or second */
 
 		if(ct)
 		{
+			/* convert time */
+
 			if ( d_h < 24 && m_m < 60 && y_s < 60 )
 				return ((d_h << 11) | (m_m << 5) | (y_s / 2));
 		}
 		else
 		{
+			/* convert date */
+
 			if ( y_s < 80 )
 				y_s += 100;
 
 			y_s -= 80;
 
-			if ( m_m > 0 && m_m < 13 && d_h > 0 && d_h <= md[m_m] )
+			if ( m_m > 0 && m_m < 13 && d_h > 0 && d_h <= (int)(md[m_m]) )
 				return (d_h | (m_m << 5) | (y_s << 9));
 		}
 	}
 
-	return -1;
+	/* conversion failed */
+
+	return BADTIME;
 } 
 
 
@@ -234,7 +255,7 @@ static int search_dialog(void)
 
 	search_txt = searching[SGREP].ob_spec.tedinfo->te_ptext;
 
-	/* Clear all fields */
+	/* Clear all relevant fields */
 
 	*search_txt = 0;				/* string pattern in the dialog */	
 
@@ -243,7 +264,6 @@ static int search_dialog(void)
 	*(searching[SLODATE].ob_spec.tedinfo->te_ptext) = 0;
 	*(searching[SHIDATE].ob_spec.tedinfo->te_ptext) = 0;
 
-	nodirs = TRUE;
 	set_opt( searching, options.xprefs, S_IGNCASE, IGNCASE); 
 	set_opt( searching, options.xprefs, S_SKIPSUB, SKIPSUB); 
 
@@ -255,6 +275,8 @@ static int search_dialog(void)
 
 		while (button != SOK && button != SCANCEL)
 		{
+			nodirs = TRUE;
+
 			/* Wait for the appropriate button */
 
 			button = xd_form_do(&sdinfo, ROOT);
@@ -263,13 +285,18 @@ static int search_dialog(void)
 			{
 				/* 
 				 * OK, get data out of dialog, but check it.
-				 * Directory names will be searched for only if size range is not set
-				 * and search string is not set
+				 * Directory names will be searched for only if
+				 * size range is not set and search string is not set
 				 */
 
 				cv_formtofn( search_pattern, searching, SMASK );
 				search_losize = atol(searching[SLOSIZE].ob_spec.tedinfo->te_ptext);
 				search_hisize = atol(searching[SHISIZE].ob_spec.tedinfo->te_ptext);
+
+				/* 
+				 * If high size limit is not specified, 
+				 * specify a ridiculously high limit here 
+				 */
 
 				if ( search_hisize == 0L )
 				{
@@ -280,26 +307,26 @@ static int search_dialog(void)
 				}				
 
 				search_lodate = cv_formtodt(searching[SLODATE].ob_spec.tedinfo->te_ptext, FALSE);
-				search_hidate = cv_formtodt(searching[SHIDATE].ob_spec.tedinfo->te_ptext, TRUE);
+				search_hidate = cv_formtodt(searching[SHIDATE].ob_spec.tedinfo->te_ptext, FALSE);
 
 				if ( search_hidate == 0 )
-					search_hidate = 32671; 	     /* a very late date  */
+					search_hidate = 0xFFFE; 	     /* a very late date  */
 
 				search_length = strlen(search_txt);
 
 				if (search_length > 0)
-					nodirs = TRUE;
+					nodirs = TRUE;		/* Don't consider directory names */
 
 				/* Check if parameters entered have sensible values */
 
 				if 
 				(  
 					x_checkname(empty, search_pattern) || 
-					*search_pattern == 0 ||			 /* must have a pattern */
-					search_lodate == -1  ||			 /* valid low date      */ 
-					search_hidate == -1  ||			 /* valid high date     */
-					search_hidate < search_lodate || /* valid date range    */
-					search_hisize < search_losize	 /* valid size range    */ 
+					*search_pattern == 0 ||			 				/* must have a pattern */
+					search_lodate == BADTIME  ||	 				/* invalid low date?   */ 
+					search_hidate == BADTIME  ||	 				/* invalid high date?  */
+					(long)search_hidate < (long)search_lodate ||	/* valid date range?   */
+					search_hisize < search_losize	 				/* invalid size range? */ 
 				)
 				{
 					xd_change(&sdinfo, button, NORMAL, 1);
@@ -308,7 +335,7 @@ static int search_dialog(void)
 				}
 				else
 				{
-					/* OK, can commence search */
+					/* OK, TeraDesk can commence searching */
 
 					nofound = TRUE;
 					get_opt( searching, &options.xprefs, S_IGNCASE, IGNCASE ); 
@@ -349,6 +376,7 @@ char *find_string
 		*p,			/* pointer to currently examined location              */
 		*pend,		/* pointer to last location to examine (near file end) */
 		t;			/* uppercase of the first char of the searched string  */	
+
 
 	p = buffer;									/* start from the beginning */
 	pend = search_bufend - search_length + 1;	/* go to (almost) file end */
@@ -673,7 +701,7 @@ static void disp_smatch( int ism )
 	 * for the string itself, represented by a "[...]" 
 	 */
 
-	s = search_finds[ism] - fld/ 2;
+	s = search_finds[ism] - fld / 2;
 
 	if ( s < search_buf )
 		s = search_buf;				
@@ -950,7 +978,6 @@ int object_info
 					break;
 				}
 				default:
-
 				{
 #else
 			{
@@ -1183,7 +1210,7 @@ int object_info
 			(button != FLABORT) && 
 			(button != FLSKIP) && 
 			((attrib & FA_READONLY) == 0 ) && 
-			(optime.time == -1 || optime.date == -1 || strlen(nfname) < 1 )
+			(optime.time == BADTIME || optime.date == BADTIME || strlen(nfname) < 1 )
 		)
 		{
 			button = 0;
@@ -1353,7 +1380,7 @@ int object_info
 
 					/* 
 					 * Unfortunately label-handling functions in mint
-					 * and magic appears to have different behaviour. In mint,
+					 * and magic appears to behave differently. In mint,
 					 * there should not be the dot in the label on FAT fs, and
 					 * also, there should be no blanks. At least the dot
 					 * is handled here.

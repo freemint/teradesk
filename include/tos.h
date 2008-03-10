@@ -460,14 +460,14 @@ typedef struct
         long           size;
         long           blksize;
         long           nblocks;
-        int            mtime;
-        int            mdate;
-        int            atime;
-        int            adate;
-        int            ctime;
-        int            cdate;
-        int            attr;
-        int            reserved2;
+        unsigned int   mtime;
+        unsigned int   mdate;
+        unsigned int   atime;
+        unsigned int   adate;
+        unsigned int   ctime;
+        unsigned int   cdate;
+        unsigned int   attr;
+        unsigned int   reserved2;
         long           reserved3[2];
 } XATTR;
 

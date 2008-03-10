@@ -3,6 +3,42 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2007  Dj. Vukovic
 
 
+Version 3.95  10-03-2008
+------------------------
+
+- Fixed a bug that sometimes caused incorrect comparision and sorting
+  of dates and times
+
+- Fixed a bug (dating several releases back) that disabled entering of 
+  dates later than 23rd into search dialog as the high date limit. 
+
+- Fixed incorrect sorting of parent directory when 'Sort by date'
+
+- Fixed incorrect column alignment of attributes displayed for parent 
+  directories in directory windows
+
+- Powering off CT60 at shutdown (in single-TOS) now works OK.
+
+- Changed behaviour related to 'special' applications: it makes sense to
+  assume that, for certain types of these applications, only one instance
+  should be running at a time. Those types are: autostart, shutdown, 
+  video-mode changer and floppy-formatter. In earlier releases of TeraDesk,
+  situations could arise when more than one instance of those applications
+  were initiated- e.g. if TeraDesk was restarted while an autostart-marked
+  application was still running, an attempt was made to start the application
+  again (in fact, to send it the VA_START message). Now, if such an 
+  application is found to be already running when a 'special use' is required,
+  a request to start it again as 'special' is silently ignored.  This change
+  applies only to situations when the application is started as 'special' 
+  (e.g. at TeraDesk startup, or shutdown or...). The user can still activate
+  multiple instances of an autostart (or other type) application by
+  double-clicking on it. 
+
+- A new page added to the hypertext user manual, highlighting some TeraDesk-
+  specific features. Hypertext user manual also updated to reflect other
+  changes.
+
+
 Version 3.94  15-12-2007
 ------------------------
 

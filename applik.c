@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -1886,10 +1886,20 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 
 			n++;
 
-			/* Start a marked application */
+			/* 
+			 * Start a marked application. Beware that some
+			 * types should not be started twice
+			 */
+
+
+			if(app->flags & (AT_AUTO | AT_SHUT | AT_VIDE | AT_FFMT))
+				onone = TRUE;
 
 			app_exec(NULL, app, w, list, nn, kstate);
+
+			onone = FALSE;
 		}
+
 		app = app->next;
 	}
 	return n;

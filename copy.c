@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -1196,31 +1196,34 @@ static int hndl_nameconflict
 	int function		/* function to perform */
 )
 {
-	int 
-		sd, st,					/* source date and time */
-		dd, dt,					/* destination date and time */
-		smode,
-		button, 
-		result, 
-		oldmode,
-		dmode;
-
 	XDINFO 
-		xdinfo;
+		xdinfo;			/* dialog parameters */
 
 	VLNAME
-		dupl;
+		dupl;			/* name of the duplicate item */
 
 	char
-		*dnameonly; 
+		*dnameonly; 	/* name of the destination item */
 
 	XATTR
-		dxattr;
+		dxattr;			/* attributes of the item at destination */
+
+	unsigned int 
+		sd, st,			/* source date and time */
+		dd, dt;			/* destination date and time */
+
+	int
+		smode,			/* item attributes and access modes */
+		button, 		/* id of the button clicked in the dialog */
+		result, 		/* result return code */
+		oldmode,		/* dialog position code */
+		dmode;			/* dialog position code */
 
 	boolean 
-		again, 
-		stop, 
-		first = TRUE;
+		again,			/* exit the outermost loop if false */ 
+		stop, 			/* exit the inner loop if true */
+		first = TRUE;	/* first time in the loop */
+
 
 	smode = (attr->mode) & S_IFMT;
 	result = 0;
@@ -1231,7 +1234,7 @@ static int hndl_nameconflict
 
 	/* 
 	 * If copying is in update mode (newer files only) check dates/times
-	 * and skip file if needed.
+	 * and skip the file if needed.
 	 * If copying in restore mode, treate dates/times the opposite way.
 	 *
 	 * Currently this does not apply to folders, because they are
@@ -1417,9 +1420,12 @@ static int hndl_nameconflict
 	}
 	while (again && ((result = exist(sname, smode, *dname, &dmode, &dxattr, function)) == XEXIST));
 
+	/* Close the dialog and tidy-up */
+
 	xd_close(&xdinfo);
 	set_oldpos = TRUE; 
 	redraw_after();
+
 	return result;
 }
 
@@ -1461,7 +1467,7 @@ static int hndl_rename(char *name, XATTR *attr)
 	
 	oldmode = set_posmode(XD_CURRPOS);
 
-	/* Now do the dialog */
+	/* Now do the dialog stuff */
 
 	button = chk_xd_dialog(nameconflict, NEWNAME);
 
@@ -1511,7 +1517,7 @@ static int chk_access(XATTR *attr)
  * Note: currently can not be used on folders or links
  * EXCEPT if a link is to be "touched" with the current date/time
  * in which case a new link is effectively made.
- * Note3: Attribute FA_READONLY is artificially set in TeraDesk's
+ * Note2: Attribute FA_READONLY is artificially set in TeraDesk's
  * structures for readonly files even on not-FAT filesystems
  */
 
@@ -1608,14 +1614,14 @@ int touch_file
 
 static int copy_file
 (
-	const char *sname, 
-	const char *dpath, 
-	XATTR *attr, 
-	int function, 
+	const char *sname,	/* name of the source item */ 
+	const char *dpath, 	/* destination path */
+	XATTR *attr, 		/* source (extended) attributes */
+	int function,		/* function to perform */ 
 	int prev, 
-	boolean chk, 
+	boolean chk,		/* check for nameconflict */ 
 #if _MINT_
-	boolean link,
+	boolean link,		/* true if item is a link */
 #endif 
 	long rbytes
 )
@@ -1846,13 +1852,13 @@ static int create_folder
 (
 	const char *sname,	/* source path+name */
 	const char *dpath,	/* destination path */
-	char **dname, 
-	XATTR *attr, 
-	long *folders,
-	long *files, 
-	long *bytes, 
+	char **dname, 		/* name at estination */
+	XATTR *attr,		/* source attributes */ 
+	long *folders,		/* (pointer to) folders count */
+	long *files,		/* (pointer to) files count */ 
+	long *bytes,		/* (pointer to) byutes count */ 
 	int function,		/* operation code (CMD_COPY...etc.) */
-	boolean *chk
+	boolean *chk		/* if true, check for nameconflict */
 )
 {
 	int 
@@ -1928,7 +1934,7 @@ static int copy_path
 	long *files,		/* number of files acted upon */
 	long *bytes,		/* number of bytes acted upon */
 	int function,		/* what to do */
-	boolean chk
+	boolean chk			/* if true, check for nameconflict */
 )
 {
 	COPYDATA

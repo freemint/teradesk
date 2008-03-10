@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -195,8 +195,9 @@ boolean x_exist(const char *file, int flags)
 
 /*
  * Check if a name points to a network object, to be accessed
- * as http:, https:, ftp: or mailto: target. Return TRUE if it is.
- * Comparison is case insensitive.
+ * as http:, https:, ftp:, mailto: or telnet: target. Return TRUE if it is.
+ * Comparison is case insensitive. If a new network object type is added,
+ * take care to change loop exit count below.
  */
 
 boolean x_netob(const char *name)
@@ -205,12 +206,12 @@ boolean x_netob(const char *name)
 		i;
 
 	static const char 
-		*pfx[] = {"http:", "https:", "ftp:", "mailto:"};
+		*pfx[] = {"http:", "https:", "ftp:", "mailto:", "telnet:"};
 
 
 	if(*name && name[1] != ':') /* don't check further if not necessary */
 	{
-		for(i = 0; i < 4; i++)
+		for(i = 0; i < 5; i++)
 		{
 			if( strnicmp(name, pfx[i], strlen(pfx[i])) )
 				return TRUE;

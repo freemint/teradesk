@@ -48,6 +48,7 @@
 #include "prgtype.h"
 
 boolean
+	onone = FALSE,		/* true if only one instance should run */
 	onfile = FALSE; 	/* true if app is started to open a file */
 
 char

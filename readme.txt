@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.94  	Copyright 2003-2007  Dj. Vukovic
+             V3.01 to 3.95  	Copyright 2003-2008  Dj. Vukovic
 
 
-This  is version 3.94 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.95 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -50,7 +50,7 @@ downloaded from:
 A note on the naming of distribution files:
 
 Binary distributions have names in the form TERAnnnB.ZIP  ("B" for "Binary"), 
-"nnn" being the version number multipled by 100 (e.g. as "394" for 3.94).
+"nnn" being the version number multipled by 100 (e.g. as "395" for 3.95).
 
 Source-code  distributions  have  names in  the form  TERAnnnS.ZIP  ("S" for 
 "Source").
@@ -316,7 +316,7 @@ Some Very Unlikely To Happen Future Developments
   size unacceptably.  Besides, it is the opinion  of the  current maintainer
   that background pictures are in fact distracting  to  the user and a waste
   of system resources.  However,  MyAES,  as well as  D.Mequignon's  utility 
-  named PICDESK provide this feature for (almost) any desktop. It seems
+  named PICDESK provide this feature for (almost) any desktop. It also seems
   that this functionality can be built into XaAES without too much trouble.
   The hypertext manual for TeraDesk explains how TeraDesk should be set
   to use the background picture provided by an AES or other agent.
@@ -348,6 +348,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; December 15th 2007
+                                            Beograd; March 10th 2008
 
 

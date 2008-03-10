@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1997 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -360,7 +360,7 @@ void va_checkclient(void)
  * program	- name of the program.
  * cmdl	- commandline.
  *
- * If flag 'onfile' is set to TRUE elsewhere, this routine will ask
+ * If flag 'onfile' is set to TRUE elsewhere, this routine will not ask
  * about starting another instance of an already running application
  *
  * Result: TRUE if command has been passed using VA_START.
@@ -434,9 +434,19 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 		{
 			/* 
 			 * Yes, this applicaton already runs. Should it be
-			 * started again (do not ask this if this application is
-			 * to be used to open a file- in that case always assume that the
-			 * parameters will be passed to the running application)
+			 * started again? If this is a certain kind of special app,
+			 * just ignore it if it already runs, but behave as if it
+			 * has been started
+			 */
+
+			if(onone)
+				return TRUE;
+
+			/*			
+			 * Consider again: should the application be started anew?
+			 * Do not ask this if this application is to be used to open
+			 * a file- in that case always assume that the parameters will be
+			 * passed to the running application)
 			 */
 
 			if ( onfile || (alert_query(MDUPAPP) != 1) )

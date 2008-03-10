@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -183,10 +183,10 @@ static SortProc _s_folder
 	if ((h = _s_visible(ee1, ee2)) != 0)
 		return h;
 
-	if (e1dir && !e2dir)
+	if (e1dir && (!e2dir || (strcmp(e1->name, prevdir) == 0)))
 		return -1;
 
-	if (e2dir && !e1dir)
+	if (e2dir && (!e1dir || (strcmp(e2->name, prevdir) == 0)))
 		return 1;
 
 	return 0;
@@ -230,13 +230,6 @@ static SortProc sortext
 
 	if ((h = _s_folder(ee1, ee2)) != 0)
 		return h;
-
-	if (strcmp(e1->name, prevdir) == 0)
-		return -1;
-
-	if (strcmp(e2->name, prevdir) == 0)
-		return 1;
-
 
 	ext1 = strchr(e1->name, '.');
 	ext2 = strchr(e2->name, '.');
@@ -1558,10 +1551,10 @@ static void dir_comparea
 											}
 
 /*
- * Convert a time to a string (format HH:MM:SS) or
- * convert a date to a string (format DD-MM-YY).
+ * Convert a GEMDOS time to a string (format HH:MM:SS) or
+ * convert a GEMDOS date to a string (format DD-MM-YY).
  * This string is always 9 characters long, including a trailing space. 
- * Attention: no termination 0 byte!
+ * Attention: no termination 0-byte!
  *
  * Parameters:
  *
@@ -1581,11 +1574,11 @@ static char *datimstr(char *tstr, unsigned int t, boolean parent, char s)
 		h;
 
 
-	if(parent)			/* just fill with blanks or a parent directory */
+	if(parent)			/* just fill with blanks for a parent directory */
 	{
 		int i;
 
-		for(i = 0; i < 10; i++)
+		for(i = 0; i < 9; i++)
 			*tstr++ = ' '; /* tstr[i] */
 	}
 	else
@@ -1605,11 +1598,11 @@ static char *datimstr(char *tstr, unsigned int t, boolean parent, char s)
 			tys = (((h >> 4) & 0x7F) + 80) % 100;
 		}
 
-		tstr = digit(tstr, tdh);		/* days or hours */
+		tstr = digit(tstr, tdh);	/* days or hours     */
 		*tstr++ = s;
 		tstr = digit(tstr, tmm);	/* months or minutes */
 		*tstr++ = s;
-		tstr = digit(tstr, tys);	/* years or seconds */
+		tstr = digit(tstr, tys);	/* years or seconds  */
 		*tstr++ = ' ';
 	}
 

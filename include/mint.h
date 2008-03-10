@@ -33,11 +33,11 @@ typedef struct xattr
 	unsigned short	gid;
 	long	size;
 	long	blksize, nblocks;
-	short	mtime, mdate;
-	short	atime, adate;
-	short	ctime, cdate;
-	short	attr;
-	short	reserved2;
+	unsigned short	mtime, mdate;
+	unsigned short	atime, adate;
+	unsigned short	ctime, cdate;
+	unsigned short	attr;
+	unsigned short	reserved2;
 	long	reserved3[2];
 } XATTR;
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren. 
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -132,7 +132,7 @@ boolean			/* No need to define values, always set when starting main() */
 #endif
 
 static boolean
-	ct60,				/* True if this is a CT60 machine */
+	ct60,				/* True if this is a CT60 machine       */
 	chrez = FALSE, 		/* true if resolution should be changed */
 	quit = FALSE,		/* true if teradesk should finish       */ 
     reboot = FALSE,		/* true if a reboot should happen       */
@@ -1828,8 +1828,11 @@ boolean wait_to_quit(void)
 
 /*
  * A couple of routines used to put the computer into a coma.
- * a number of endless loops is set.
- * Possibly not implemented correctly?
+ * Some endless loops are set.
+ * This is probaly not a very bright idea, and, besides, 
+ * it is possible that it is not implemented correctly.
+ * These routines should only come into effect in single-TOS.
+ * In multittasking environments, proper shutdown is used.
  */
 
 void loopcpu(void)
@@ -1841,7 +1844,9 @@ void loopcpu(void)
 void lobo(void)
 {
 	if(ct60)
-		*((int *)0xFA000000L) = 1;			/* turn off CT60 */	
+	{
+		*((char *)0xFA800000L) = 1;				/* turn off CT60 */	
+	}
 	else
 	{
 		Setexc(0x070, (void (*)())loopcpu);		/* vert.blank */
@@ -2195,6 +2200,8 @@ int main(void)
 
 			if(reboot)
 			{
+				/* This is supposed to be a cold reset */
+
 				(long)rv = *((long *)os_start + 4);	/* pointer to reset handler */
 				memval = 0L;	/* corrupt some variables for a reset */				
 				memval2 = 0L;	/* same... */
@@ -2209,7 +2216,7 @@ int main(void)
 				 * This is admittedly a very stupid way to handle the
 				 * problem- it actually lobotomizes the computer.
 				 * btw. CT60 is supposed to be powered-off by
-				 * a write to $FA000000
+				 * a write to $FA800000
 				 */
 
 				(long)rv = (long)(lobo);
