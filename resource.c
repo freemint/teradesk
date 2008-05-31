@@ -786,6 +786,7 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 		s1++;			/* ignore the '-' in the string */
 		s[l2++] = 'K';	/* append 'K' to ASCII presentation of number */
 		s[l2] = 0;		/* and a termination 0 after the 'K' */
+		l2--;
 	}
 
    if((ob->ob_type & 0xFF) == G_FTEXT)

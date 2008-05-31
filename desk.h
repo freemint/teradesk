@@ -224,6 +224,10 @@ extern boolean
 extern int have_ssystem;
 #endif
 
+extern boolean
+	shutdown,		/* shutdown has been initiated */
+	startup;		/* startup is in progress */
+
 
 long btst(long x, int bit);
 void *malloc_chk(size_t size);

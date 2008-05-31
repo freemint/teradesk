@@ -2461,8 +2461,9 @@ void wd_type_bottomed(WINDOW *w)
 
 /*
  * Set window title. For the sake of size optimization, 
- * also set window sliders, because in previous versions that routine was always 
- * (except in one place once) called immediately after setting the title.
+ * also set window sliders, because in previous versions of TeraDesk
+ * that routine was always (except in one place once) called immediately
+ * after setting the title.
  */
 
 void wd_type_title(TYP_WINDOW *w)
@@ -3506,7 +3507,8 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 								if((x_inq_xfs(((DIR_WINDOW *)w)->path) & FS_LFN) == 0)
 #endif
 								{
-									/* 
+									/*
+									 * Only 8+3 names are possible. 
 									 * Compose a name mask obeying the 8+3 rule 
 								 	 * (append either "*.*" or ".*" or "*")
 								 	 */
@@ -5105,7 +5107,10 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 #endif
 	}
 
-	/* Set window title and open the window */
+	/* 
+	 * Set window title and open the window
+	 * Also set sliders- but this is not accepted in TOS 4?
+	 */
 
 	wd_type_title((TYP_WINDOW *)w);
 
@@ -5117,8 +5122,9 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 
 	if ( icf ) 
 		wd_type_iconify(w, &size);
-
+	else
 #endif
+		set_sliders((TYP_WINDOW *)w);
 
 	xw_note_top(w);
 

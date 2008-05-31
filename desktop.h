@@ -139,7 +139,7 @@
 
 #define FILEINFO         6   /* Form/Dialog-box */
 #define FLITITLE         1   /* STRING in tree FILEINFO */
-#define FLBYTES          4   /* TEXT in tree FILEINFO */
+#define FLBYTES          4   /* FTEXT in tree FILEINFO */
 #define ATTRBOX          5   /* IBOX in tree FILEINFO */
 #define ISWP             6   /* BUTTON in tree FILEINFO */
 #define ISHIDDEN         7   /* BUTTON in tree FILEINFO */
@@ -389,6 +389,7 @@
 #define FLABEL           21  /* FTEXT in tree FLOPPY */
 #define PROGRBOX         22  /* BOX in tree FLOPPY */
 #define FPROGRES         23  /* FTEXT in tree FLOPPY */
+#define FQWIK            24  /* BUTTON in tree FLOPPY */
 
 #define VOPTIONS         17  /* Form/Dialog-box */
 #define VREZOL           3   /* BUTTON in tree VOPTIONS */

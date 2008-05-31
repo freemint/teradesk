@@ -866,14 +866,9 @@ static long cdecl Newgetbpb(int d)
 {
 	if (d == chdrv)
 	{
-/*
-		*((Func *)0x472L) = Oldgetbpb;
-		*((Func *)0x476L) = Oldrwabs;
-		*((Func *)0x47eL) = Oldmediach;
-*/
-		hdv_bpb = Oldgetbpb;
-		hdv_rw = Oldrwabs;
-		hdv_mediach = Oldmediach;
+		hdv_bpb = Oldgetbpb;		/*  *((Func *)0x472L)  */
+		hdv_rw = Oldrwabs;			/*  *((Func *)0x476L)  */
+		hdv_mediach = Oldmediach;	/*  *((Func *)0x47eL)  */
 	}
 
 	return (*Oldgetbpb)(d);

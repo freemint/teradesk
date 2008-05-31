@@ -26,11 +26,13 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.95 relative to previous version
+Changes in V3.96 relative to previous version
 ---------------------------------------------
 
-There are no changes- the resource file of TeraDesk V3.95 is identical
-to that of V3.94.
+- Type of FLBYTES object in FILEINFO tree changed ftom Text to FText.
+  Entered default value and mask (9999999999).
+
+- Object FQWIK added to tree FLOPPY and object positions rearranged.
 
 
 Naming of object trees

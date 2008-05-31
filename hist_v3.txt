@@ -3,6 +3,36 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2007  Dj. Vukovic
 
 
+Version 3.96  31-05-2008
+------------------------
+
+- Cosmetic fix of display of size and free capacity for large disk
+  partitions (corrected left/right justification).
+
+- Added "quick format" option for formatting floppy disk (only the first
+  two tracks are formatted, rewriting the boot sector, FATs and directory).
+  Use of this feature should be avoided when the numbers of tracks or
+  sectors per track are set differently than in the previous format.
+
+- Enabled CT60 power-off in single-TOS version of TeraDesk. 
+
+- Improved behaviour of startup and shutdown applications regarding
+  prevention of multiple starting.
+
+- Fixed "previous" format option which produced disks that were readable
+  on Atari but reported as unformatted in DOS.
+
+- Fixed incorrectly written volume label if no label entered when formatting
+  floppy disks.
+
+- Fixed incorrect positioning and sizing of sliders when (re)opening windows
+  in TOS 4.* AESes. 
+
+- Changes made in the resource file. See RESOURCE.TXT
+
+- Hypertext user manual updated.
+
+
 Version 3.95  10-03-2008
 ------------------------
 

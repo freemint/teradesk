@@ -131,12 +131,15 @@ boolean			/* No need to define values, always set when starting main() */
 
 #endif
 
+boolean
+	shutdown = FALSE,	/* true if system shutdown is required  */
+	startup = TRUE;		/* true if desktop is starting */
+
 static boolean
 	ct60,				/* True if this is a CT60 machine       */
 	chrez = FALSE, 		/* true if resolution should be changed */
 	quit = FALSE,		/* true if teradesk should finish       */ 
     reboot = FALSE,		/* true if a reboot should happen       */
-	shutdown = FALSE,	/* true if system shutdown is required  */
 	shutting = FALSE;	/* true if started shutting down        */
 
 boolean
@@ -1303,6 +1306,7 @@ static boolean init(void)
 		/* Start applications which have been defined as autostart */
 
 		app_specstart(AT_AUTO, NULL, NULL, 0, 0);
+		startup = FALSE;
 
 		return TRUE;
 	}
@@ -1424,13 +1428,17 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
 					{
 						reboot = TRUE;
 						shutopt = 2;
+						shutdown = TRUE;
 						goto toshut;
 					}
 					case QUITSHUT:		/* shutdown */
-						if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
-							break;
-						toshut:;
 						shutdown = TRUE;
+						if ( app_specstart(AT_SHUT, NULL, NULL, 0, 0) )
+						{
+							shutdown = FALSE;
+							break;
+						}
+						toshut:;
 					case QUITQUIT:		/* quit */      
 					{
 						quit = TRUE;
@@ -1906,15 +1914,12 @@ int main(void)
 	 * Attempt to divine from cookies the versions of TOS and AES.
 	 * this can NOT detect: MyAES, XaAES and Atari AES 4.1, but is
 	 * OK for Mint, Magic, Geneva  and N.AES.
-	 * Also, try to detect CT60 because it can be switched off
-	 * by a direct register access at shutdown
 	 */
 
 	mint   = (find_cookie('MiNT') == -1) ? FALSE : TRUE;
 	magx   = (find_cookie('MagX') == -1) ? FALSE : TRUE;
 	geneva = (find_cookie('Gnva') == -1) ? FALSE : TRUE;
 	naes   = (find_cookie('nAES') == -1) ? FALSE : TRUE;
-	ct60   = (find_cookie('CT60') == -1) ? FALSE : TRUE;
 
 	/* 
 	 * In most cases behaviour of this program in Magic should be the same
@@ -1951,6 +1956,13 @@ int main(void)
 
 	tos_version = get_tosversion();
 	aes_version = get_aesversion();
+
+	/* 
+	 * Try to detect CT60 hardware: it can be switched off
+	 * by a direct register access at shutdown
+	 */
+
+	ct60 = (find_cookie('CT60') == -1) ? FALSE : TRUE;
 
 	/* 
 	 * Load the dekstop.rsc resource file. Another required resource file

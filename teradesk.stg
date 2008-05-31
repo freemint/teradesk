@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: March 2008
+@$VER: May 2008
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.95
+                User's Manual for Tera Desktop V3.96
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            March 2008
+                             May 2008
 
 @autorefon
 
@@ -1505,10 +1505,10 @@ The dialog offers a number of formatting options:
 
 - Four standard densities for 3.5" floppy disks:
 
-     Single sided    (SSDD -  360 KB)
-     Double sided    (DSDD -  720 KB)
-     High density    (DSHD - 1440 KB)
-     Extra density   (DSED - 2880 MB)
+    .Single sided    (SSDD -  360 KB)
+    .Double sided    (DSDD -  720 KB)
+    .High density    (DSHD - 1440 KB)
+    .Extra density   (DSED - 2880 MB)
      
 - Reformatting with existing format parameters read from the floppy.
 
@@ -1525,16 +1525,22 @@ The dialog offers a number of formatting options:
 - Number  of retries  to  attempt  before a  failed  sector-formatting
   operation is reported can be specified.
   
+- Option to perform a 'quick format' is available. When it is selected
+  only the  first two tracks of the floppy  will be reformatted. These
+  tracks contain the boot sector, the FATs and the root directory. Use
+  of this feature should be avoided  when numbers of tracks or sectors
+  per track are set differently than in the previous format.
+  
 If the format operation  is used  in a multi-tasking environment (MiNT
 or MagiC),  an attempt is made to lock the floppy drive device  before
 commencing formatting.  If it fails  (e.g. if the device is already in
 use), formatting will not start.
 
 It should be noted that reformatting a floppy disk with the 'Previous'
-format type does not necessarily  reproduce the  original boot sector.
-Only the number of disk sides, number of tracks, number of sectors per
-track,  root directory size and FAT size are read from the floppy disk
-and used.
+format type does not necessarily  exactly reproduce the  original boot
+sector.  Only the number of  disk sides,  number of tracks,  number of
+sectors per track,  and root directory size  are read  from the floppy
+disk and used.
 
 Formatting can be interrupted by pressing the [Esc] key.
 
@@ -1556,7 +1562,7 @@ and its dialog in TeraDesk. See Set applications...
 
 @{U}4.2.11 Quit/Shutdown                                          TeraDesk@{u}
 
-Upon selecting  this menu item a dialog  is displayed  in which one of
+Upon selecting this menu item  a dialog  is displayed  in which one of
 the options for quitting TeraDesk can be selected:
 
   1: Cancel the operation

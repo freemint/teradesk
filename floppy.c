@@ -66,6 +66,7 @@ static void fpartoftext
 	rsc_ltoftext(fmtfloppy, FDIRSIZE,  (long)dirsize );
 
 	xd_drawdeep( &fdinfo, FPAR3);
+	xd_drawdeep(&fdinfo, FLABEL);
 } 
 
 
@@ -156,7 +157,7 @@ static boolean checktracks
 	( 
 		( tsides  <  1  ) || ( tsides > 2 )   ||	/* number of sides: 1 or 2 */
 		( ttracks <  1 )  || ( ttracks > 84 ) ||	/* 84=extreme physical limit, most often it is 83 */
-		( tspt < 3 )      || ( tspt > mspt )  ||	/* mspt depends on disk type; max. 40 for ED disk */
+		( tspt < 8 )      || ( tspt > mspt )  ||	/* mspt depends on disk type; max. 40 for ED disk */
 		( tbps < 128 )    || ( tbps > 4096 )		/* sensible values for bytes per sector? usually 512 */
 	)
 		return FALSE;
@@ -194,19 +195,19 @@ int readfp
 
 	/* Read the boot sector */
 
-	istat = onetrack(8, sect0, dev, 0, 0, 1);
+	istat = onetrack(8, sect0, dev, 0, 0, 8); /* read 8 sectors */
  
 	/* Decode format parameters from boot sector */	
 
 	if(istat == 0)
 	{
-		cctoi((unsigned char *)bps, &sect0[0x0b]);
-		cctoi((unsigned char *)(&secs), &sect0[0x13]);
-		cctoi((unsigned char *)spt, &sect0[0x18]);
-		cctoi((unsigned char *)sides, &sect0[0x1a]);
+		*bps = ((int)sect0[0x0c]) << 8;
 		cctoi((unsigned char *)dirsize, &sect0[0x11]);
+		cctoi((unsigned char *)(&secs), &sect0[0x13]);
+		*spt = sect0[0x18];
+		*sides = sect0[0x1a];
 
-		*tracks = secs /( *spt * (*sides) );
+		*tracks = secs / ( *spt * (*sides) );
          
 		if(!checktracks(*sides, *tracks, *spt, 40, *bps))
 			istat = UNKNOWN_MEDIA;
@@ -227,6 +228,7 @@ void formatfloppy
 )
 {
 	unsigned char 
+		fc,
 		*sect0,
 		*label;			/* pointer to a position within sect0 */
     
@@ -244,6 +246,7 @@ void formatfloppy
 		button,			/* index of activeded button */
 		sectors,		/* total number of disk sectors */
 		itrack,			/* current track (counter) */
+		ftracks,		/* how many tracks to format */
 		iside,			/* current side (counter) */
 		sbps,			/* source disk bytes per sector */
 		tbps,			/* target disk bytes per sector */
@@ -347,6 +350,7 @@ void formatfloppy
 		obj_unhide(fmtfloppy[FPAR3]); 				/* show editable fields */
 		obj_unhide(fmtfloppy[FLABEL]); 				/* show label field */
 		obj_enable(fmtfloppy[FLABEL]); 				/* it is editable */
+		obj_unhide(fmtfloppy[FQWIK]);				/* quick format */
 		tdevno = (int)fdrive - 'A';					/* target drive */
 	}
 	else 			/* copy disk */
@@ -356,6 +360,7 @@ void formatfloppy
 		obj_hide(fmtfloppy[FPAR3]);				/* hide format param fields */
 		xd_set_child(fmtfloppy, FFTYPE, 0);
 		obj_hide(fmtfloppy[FLABEL]);			/* hide label field */
+		obj_hide(fmtfloppy[FQWIK]);				/* quick format */
 		sdevno = (int)fdrive - 'A';				/* source drive */
 		tdevno = 1 & (1 ^ sdevno);  			/* target is the other one */
 		drive[0] = tdevno + 'A';    			/* target drive letter */
@@ -468,9 +473,16 @@ void formatfloppy
 							) == 0
 						)
 						{
-							fat0 = sect0[tbps];
+							fat0 = sect0[0x15];
 							fatsize = sect0[0x16];
-							fmtsel = 1;
+							fmtsel = 2;
+							intleave = 1;
+							strncpy
+							(
+								fmtfloppy[FLABEL].ob_spec.tedinfo->te_ptext,
+								(char *)(&sect0[(2 * fatsize + 1) * tbps]),
+								11
+							);
 						}
 
 						arrow_mouse();
@@ -508,13 +520,14 @@ void formatfloppy
 				 * calculate FAT size; always use optimized 12-bit FATs; 
 				 * for each cluster use 3/2 bytes, add 2 for FAT header. 
 				 * fomula below will generally give 3- and 5-sector FATs 
-				 * for DD and HD respectively 
+				 * for DD and HD respectively. If previous format is
+				 * selected, fatsize is read from the floppy 
 				 */
 		   		   						
 				tbps = 512; /* always 512 bytes per sector */
 				sectors = tspt * ttracks * tsides;   /* total sectors  */
 
-				if(fatsize == 0)
+				if(fmtsel < 2 || fatsize == 0)
 					fatsize = (sectors + 2) * 3 / 2048 + 1; 
 				
 				/*  
@@ -575,8 +588,13 @@ void formatfloppy
 					/* Now format each track... */
 				
 					prdisp ( -1, 100 );
+
+					if ( fmtfloppy[FQWIK].ob_state & SELECTED )
+						ftracks = 2;
+					else
+						ftracks = ttracks;
           
-					for ( itrack = 0; itrack < ttracks; itrack++ )
+					for ( itrack = 0; itrack < ftracks; itrack++ )
 					{       
 						for ( iside = 0; iside < tsides; iside++ )
 						{
@@ -633,7 +651,7 @@ void formatfloppy
           
 						/* Report formatting progress after each track */
           
-						prdisp ( itrack, ttracks );
+						prdisp ( itrack, ftracks );
 					} /* itrack */
         
 					/* 
@@ -675,13 +693,22 @@ void formatfloppy
        
 					i = (2 * fatsize + 1) * tbps;	/* locate at start of root dir */
 
-					strcpy ( (char *)(sect0 + (long)i), fmtfloppy[FLABEL].ob_spec.tedinfo->te_ptext ); 
+					for(j = 0; j < 11; j++)
+					{
+						fc = fmtfloppy[FLABEL].ob_spec.tedinfo->te_ptext[j];
+
+						if(fc == 0)
+							fc = ' ';
+						
+						sect0[i++] = fc;						
+					}
         
-					sect0[i + 11] = 0x08;			/* next, insert label attribute */
+					sect0[i] = 0x08;			/* next, insert label attribute */
         
 					/* 
 					 * write and verify complete first  and second track 
-					 * this will surely cover all space used by root dir.
+					 * this will surely cover all space used by FATs and
+					 * the root directory.
 					 */
 				 				 
 					for ( itrack = 0; itrack < 2; itrack++ )

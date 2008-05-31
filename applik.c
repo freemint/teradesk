@@ -1860,9 +1860,13 @@ CfgNest app_config
 
 int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 {
-	APPLINFO *app = applikations;
+	APPLINFO
+		*app = applikations;
 
-	int	n = 0, delayt = 1000;
+	int
+		n = 0,
+		delayt = 1000;
+
 
 	if ( (flags & AT_SHUT) || (flags & AT_VIDE) )
 		delayt = 6000;
@@ -1887,13 +1891,17 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 			n++;
 
 			/* 
-			 * Start a marked application. Beware that some
-			 * types should not be started twice
+			 * Start a marked application. Beware that in some
+			 * situations certain types should not be started twice
 			 */
 
-
-			if(app->flags & (AT_AUTO | AT_SHUT | AT_VIDE | AT_FFMT))
-				onone = TRUE;
+			if
+			(
+				(startup && (app->flags & AT_AUTO)) ||
+				(shutdown && (app->flags & AT_SHUT)) ||
+				(app->flags & (AT_VIDE | AT_FFMT))
+			)
+				onone = TRUE;	/* ignore this app if alrady running */
 
 			app_exec(NULL, app, w, list, nn, kstate);
 
