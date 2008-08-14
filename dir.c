@@ -82,6 +82,7 @@ RECT dmax;
 boolean clearline = TRUE;
 
 extern XUSERBLK wxub;
+extern boolean autoloc_upd;
 
 static int		dir_find	(WINDOW *w, int x, int y);
 static boolean	dir_state	(WINDOW *w, int item);
@@ -2513,9 +2514,15 @@ void dir_close(WINDOW *w, int mode)
 				wd_reset((WINDOW *)w); /* remove selection; autolocator off */
 
 				if(((DIR_WINDOW *)w)->par_itm < 0)
+				{
+					autoloc_upd = TRUE; /* to activate update in w_page() */
 					dir_showfirst((DIR_WINDOW *)w, -(((DIR_WINDOW *)w)->par_itm));
+					autoloc_upd = FALSE;
+				}
 				else
+				{
 					wd_type_draw((TYP_WINDOW *)w, TRUE );
+				}
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -300,6 +300,25 @@ static void incr_pos(int *x, int *y)
 		*y += 1;
 	}
 }
+
+
+/* 
+ * Hide an object (e.g. "Skip" button) is there is only one 
+ * object selected in a list
+ */
+
+void hideskip(int n, OBJECT *obj)
+{
+	if(n < 2)
+	{
+		obj->ob_flags |= HIDETREE;
+	}
+	else
+	{
+		obj->ob_flags &= ~HIDETREE;
+	}
+}
+
 
 
 /*
@@ -1445,6 +1464,7 @@ static boolean icn_open(WINDOW *w, int item, int kstate)
 			}
 
 			sl_noop = 0;
+			obj_hide(addicon[CHICNSK]);
 			button = chng_icon(item);
 			xd_close(&icd_info);
 			dsk_do_update();
@@ -1475,7 +1495,6 @@ int default_icon(ITMTYPE type)
 	int
 		it,
 		ic = 0;
-
 
 	if (!noicons)
 	{
@@ -1520,6 +1539,7 @@ int default_icon(ITMTYPE type)
 			it = 0;
 		}
 	}
+
 
 	/* 
 	 * Retrieve icon index from icon name. If icon with the specified
@@ -2153,6 +2173,8 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 		icd_islink = FALSE;
 		name = NULL;
 
+		hideskip(n, &addicon[CHICNSK]);
+
 		if(n > 0)
 		{
 			ITMTYPE ttype;
@@ -2169,6 +2191,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 				obj_unhide(addicon[IFOLLNK]);
 			}
 #endif
+
 			ttype = itm_tgttype(w, *list);
 
 			itm_follow(w, *list, &link, (char **)(&name), &itype);
@@ -3106,6 +3129,8 @@ void dsk_chngicon(int n, int *list, boolean dialog)
 		i = 0;
 
 	sl_noop = 0;
+
+	hideskip(n, &addicon[CHICNSK]);
 
 	while ((i < n) && (button != CHNICNAB))
 	{

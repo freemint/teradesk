@@ -26,13 +26,12 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.96 relative to previous version
+Changes in V3.97 relative to previous version
 ---------------------------------------------
 
-- Type of FLBYTES object in FILEINFO tree changed ftom Text to FText.
-  Entered default value and mask (9999999999).
-
-- Object FQWIK added to tree FLOPPY and object positions rearranged.
+- Rearranged the positions of buttons in FILEINFO, ADDICON and
+  NAMECONF dialogs so that OK is next to Cancel in the lower right part
+  of the dialog, consistent with other dialogs.
 
 
 Naming of object trees

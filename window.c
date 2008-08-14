@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -117,8 +117,9 @@ XUSERBLK
 	wxub;
 
 boolean
-	autoloc = FALSE,	/* true if autolocator is in effect */
-	can_iconify,		/* true if current AES supports iconification */ 
+	autoloc_upd = FALSE,	
+	autoloc = FALSE,		/* true if autolocator is in effect */
+	can_iconify,			/* true if current AES supports iconification */ 
 	can_touch;
 
 static boolean 
@@ -235,6 +236,8 @@ void autoloc_off(void)
 	WINDOW *w = xw_top();
 
 	autoloc = FALSE;
+	autoloc_upd = FALSE;
+
 	aml = 0;
 	*automask = 0;
 
@@ -1488,7 +1491,7 @@ void wd_hndlmenu(int item, int keystate)
 					cv_fntoform(searching, SMASK, itm_name(ww, list[0]));
 	
 				if ( item == MSHOWINF || !app_specstart( AT_SRCH, ww, list, n, 0 ) )
-					item_showinfo(ww, n, list, (item == MSHOWINF) ? FALSE : TRUE);
+					item_showinfo(ww, n, list, (item == MSEARCH) );
 	
 				if(w == NULL) /* deselect all in a simulated window */
 					wd_noselection();
@@ -2926,29 +2929,57 @@ void set_sliders(TYP_WINDOW *w)
 
 
 /*
- * Page window. If autolocator is turned on, enable
- * action even if positions have not changed.
+ * Page window up/down or left/right. If autolocator is turned on,
+ * enable action even if positions have not changed.
  */
 
 void w_page(TYP_WINDOW *w, int newpx, long newpy)
 {
-	boolean doit = FALSE;
+	long
+		dpy = newpy - w->py;
 
-	if ( newpx != w->px )
+	int
+		arrow,
+		dpx = newpx - w->px;
+
+	boolean
+		doit = FALSE;
+
+	if ( dpx != 0 )
 	{
-		w->px = newpx;
-		set_hslsize_pos((TYP_WINDOW *)w); 
-		doit = TRUE;
+		if(dpx == 1)
+			arrow = WA_RTLINE;
+		else if(dpx == -1)
+			arrow = WA_LFLINE;
+		else
+		{
+			arrow = 0;
+			w->px = newpx;
+			set_hslsize_pos((TYP_WINDOW *)w); 
+			doit = TRUE;
+		}
+
+		w_scroll((TYP_WINDOW *)w, arrow); /* if arrow == 0 nothing happens */
 	}
 
-	if ( newpy != w->py )
+	if ( dpy != 0 )
 	{
-		w->py = newpy;
-		set_vslsize_pos((TYP_WINDOW *)w);
-		doit = TRUE;
+		if(dpy == 1)
+			arrow = WA_DNLINE;
+		else if(dpy == -1)
+			arrow = WA_UPLINE;
+		else
+		{
+			arrow = 0;
+			w->py = newpy;
+			set_vslsize_pos((TYP_WINDOW *)w);
+			doit = TRUE;
+		}
+
+		w_scroll((TYP_WINDOW *)w, arrow); /* if arrow == 0 nothing happens */
 	} 
 
-	if (autoloc || doit)
+	if (autoloc_upd || doit)
 		wd_type_draw(w, FALSE);
 }
 
@@ -3468,6 +3499,8 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 								lm = 12; /* override error (?) in x_pathconf */
 							else
 								lm = lmin(lm, (long)sizeof(LNAME) - 1);
+
+							autoloc_upd = TRUE;
 	
 							if 
 							(

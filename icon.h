@@ -65,6 +65,7 @@ int dsk_defaultpatt(void);
 void set_selcolpat(XDINFO *info, int obj, int col, int pat);
 int rsrc_icon(const char *name);
 boolean isfile(ITMTYPE type);
+void hideskip(int n, OBJECT *obj);
 int trash_or_print(ITMTYPE type);
 int icn_iconid(const char *name);
 int rsrc_icon_rscid(int id, char *name );

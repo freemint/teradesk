@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
  *                          2002 - 2003  H. Robbers,
- *                          2003 - 2007  Dj. Vukovic
+ *                          2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -114,7 +114,7 @@ static int txt_width(TXT_WINDOW *w, int hexmode)
 			for(i = 0; i < w->tlines; i++)
 			{
 				p = *wl++;
-				p1 = *wl - 1;
+				p1 = *wl;
 				ll = 0;
 
 				do

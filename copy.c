@@ -102,6 +102,7 @@ static boolean
 static int del_folder(const char *name, int function, int prev, XATTR *attr);
 static int chk_access(XATTR *attr);
 int trash_or_print(ITMTYPE type);
+static void hideskip(int n, OBJECT *obj); /* from icon.h */
 
 
 /*
@@ -494,7 +495,9 @@ int cnt_items
 		found = FALSE,		/* match not found yet */
 		gosub = ( !search || ((options.xprefs & S_SKIPSUB) == 0) ),
 		ready = FALSE, 
-		eod = FALSE;
+		eod = FALSE,
+		nodir = FALSE;
+
 
 	type = 0;
 	*folders = 0;			/* folder count */
@@ -506,22 +509,32 @@ int cnt_items
 	hourglass_mouse();
 
 	if ((error = push(&stack, path, NULL, FALSE)) != 0)
-		return error;
+	{
+		if(search && error == EPTHNF )
+		{
+			nodir = TRUE;
+error = 0;
+		}
+		else
+			return error;
+	}
 
 	do
 	{
-		if (error == 0)
+		if (/* nodir || */ error == 0)
 		{
 			inftype = 0;
 			found = FALSE;
 
-			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
+			if (!nodir && ((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
 				type = attr.mode & S_IFMT;
+				nodir = FALSE;
 
 				if ( search )
 				{
 					/* Has a search match been found ? */
+
 
 					if ( (found = searched_found( stack->spath, name, &attr)) == TRUE )
 						fpath = x_makepath(stack->spath, name, &error);
@@ -552,9 +565,9 @@ int cnt_items
 					inftype = ITM_FILE;
 				}
 			} /* error == 0 ? */
-			else if(search && !eod && error == EPTHNF)
+			else if(search && !eod && (nodir || error == EPTHNF))
 			{
-				/* this branch is only for searching in a list od files */
+				/* this branch is only for searching in a list of files */
 
 				char *pathonly = NULL;
 
@@ -567,10 +580,13 @@ int cnt_items
 
 						if ((found = searched_found(pathonly, name, &attr)) != 0 )
 							fpath= strdup(path);
+
+						ready = TRUE;
 					}
 
 					result = error = XSKIP;
 				}
+
 				free(pathonly);
 
 				inftype = ITM_FILE;
@@ -592,9 +608,9 @@ int cnt_items
 				else if (found)
 					hourglass_mouse();
 			}
-		}
+		} /* error == 0 ? */
 
-		if (eod || (error != 0) || (result == XABORT) )
+		if (!nodir && (eod || (error != 0) || (result == XABORT)) )
 		{
 			if ((ready = pull(&stack, &dummy)) == FALSE)
 				free(stack->sname);
@@ -668,7 +684,9 @@ static boolean count_items
 
 	long 
 		dfolders, 
-		dfiles, 
+		dfiles;
+
+	long 
 		length;
 
 	XATTR 
@@ -700,7 +718,7 @@ static boolean count_items
 
 	while ((i < n) && ok)
 	{
-		/* Restore all indexes to positive values */
+		/* Restore all indices to positive values */
 
 		if(*listi < 0)
 		{
@@ -2728,12 +2746,7 @@ boolean itmlist_op
 
 	if ( result ) 
 	{
-
-		/* 
-		 * Count the items to work upon. Are there any at all? 
-		 * Note: in a future development, a check for free space on the
-		 * destination can be made here after count_items()
-		 */
+		/* Count the items to work upon. Are there any at all? */
 
 		cont = count_items(w, n, list, &folders, &files, &bytes, function );
 
@@ -2816,6 +2829,9 @@ boolean itmlist_op
 					/* Copy/move/touch/delete a list of files */
 
 					hourglass_mouse();
+					
+					hideskip(n, &nameconflict[NCSKIP]);
+					hideskip(n, &nameconflict[NCALL]);
 
 					switch(function)
 					{

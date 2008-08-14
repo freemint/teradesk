@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.96  	Copyright 2003-2008  Dj. Vukovic
+             V3.01 to 3.97  	Copyright 2003-2008  Dj. Vukovic
 
 
-This  is version 3.96 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 3.97 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -280,9 +280,7 @@ Some Possible Future Developments
 
 - Improvement of the algorithm for file copying when floppies are involved.
 
-- Check whether the limits of 32767  selected items and 2GB total byte count
-  in selected items may present  a problem on higher-end systems, and
-  correction of that problem if possible.
+- Removal of the 2 GB limitation for manageable folder sizes
 
 - Complete compliance to the  AV-protocol and Drag & Drop protocol  (some of
   rarely used AV-protocol capabilities are currently unsupported).
@@ -348,6 +346,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; May 31st 2008
+                                            Beograd; August 14th 2008
 
 

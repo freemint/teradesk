@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
-@author "Wout Klaren, Henk Robbers, Djordje Vukovic"
-@$VER: May 2008
+@author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
+@$VER: Augut 2008
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.96
+                User's Manual for Tera Desktop V3.97
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                             May 2008
+                             Augut 2008
 
 @autorefon
 
@@ -405,7 +405,7 @@ In no particular order, some of those features are:
 - Desktop icons  and / or symbolic links  can be created for network
   objects defined by  http://, ftp://, mailto://, etc. URLs and such
   objects can be set as 'document types' for installed applications.
-  See Symbolic links  Set desk icons...  Set applications...
+  See Symbolic Links  Set desk icons...  Set applications...
 
 - The file selector  can be opened  upon  pressing a key in order to
   insert a filename or a foldername into editable fields in dialogs.
@@ -1121,6 +1121,10 @@ access  rights  are shown  instead of  FAT attributes, the same as for
 files.
 
 With TOS version 1.04 and above, the folder name can be changed.
+
+Users should beware thet current version of TeraDesk can not correctly
+display information about a folder  larger than 2GB or containing more
+than 32767 files. See TOS version compatibility.
 
 3. If the selected object is a symbolic link, its  name, the time  and
 date of creation  and its size will be displayed.  File attributes are
@@ -2992,10 +2996,10 @@ If Background option  is checked,  the application  will be started in
 background mode if a multi-tasking environment (e.g. MiNT or MagiC) is
 present. Only non-GEM programs can be started in this  way; otherwise,
 an error is reported. This option is functional in single-TOS as well,
-and in such case the program activated will be  just Pexec()-d without
-closing any windows or displaying the program title bar.  This feature
-turned out  to be  convenient  in  single-TOS  e.g. for  sound-playing
-utilities.
+and in such case  the program will be just activated using the Pexec()
+function, without closing any windows  or displaying the program title
+bar.  This feature turned out to be convenient in single-TOS  e.g. for
+sound-playing utilities.
 
 Another way  to start a  program in background is by  holding down the
 [Control] key while activating the program.
@@ -3209,7 +3213,7 @@ In many  cases it is needed  to enter a long text (usually a path or a
 long filename) into a dialog text field. However, the practical length
 of a dialog text field is limited by dialog size and video mode.
 
-To overcome  this difficulty,  a new object type  has been implemented:
+To overcome this difficulty,  a new object type  has been implemented:
 an input field  which is able to receive  more characters  than can be
 made visible.  Whether parts of the text are invisible is indicated by
 the characters  '<' and '>' appearing around the field. Use the [Left]
@@ -4088,10 +4092,10 @@ tasking environments.
 TeraDesk supports  several protocols  for passing information  between
 the applications:
 
-  9.1 The ARGV Protocol
-  9.2 The AV Protocol
-  9.3 The FONT Protocol
-  9.4 The Drag & Drop Protocol
+  10.1 The ARGV Protocol
+  10.2 The AV Protocol
+  10.3 The FONT Protocol
+  10.4 The Drag & Drop Protocol
 
 @endnode
 
@@ -4355,7 +4359,7 @@ See also  Installation
 @image udo_fo.img 4
       Supported Protocols
 
-@{U}9.4  The Drag & Drop Protocol                                 TeraDesk@{u}
+@{U}10.4  The Drag & Drop Protocol                                TeraDesk@{u}
 
 This protocol was introduced by Atari for MultiTOS, and it can be used
 only in a multi-tasking environment.

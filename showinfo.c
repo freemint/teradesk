@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <np_aes.h>	
 #include <vdi.h>
 #include <stdlib.h>
@@ -1551,7 +1552,13 @@ void item_showinfo
 		searchdopen = TRUE;
 	}
 
-	infodopen = FALSE; /* Showinfo dialog is currently closed */ 	
+	infodopen = FALSE; /* Showinfo dialog is currently closed */ 
+
+	if(search)
+		obj_unhide(fileinfo[FLSKIP]);
+	else
+		hideskip(n, &fileinfo[FLSKIP]);
+	
 
 	/* Proceed, for each item in the list */
 
@@ -1559,9 +1566,11 @@ void item_showinfo
 	{
 		type = itm_type(w, *item);
 
-		if ( isfile(type) ||  (type == ITM_DRIVE) )
+		if ( isfile(type) ||  (type == ITM_DRIVE) ) /* file, program, folder, link, drive */
 		{
-			if ((path = itm_fullname(w, *item)) == NULL)
+			path = itm_fullname(w, *item);
+
+			if (path == NULL) 
 				result = XFATAL;
 			else
 			{
@@ -1591,6 +1600,7 @@ void item_showinfo
 							result = object_info( type, path, name, &attrib );
 					}
 				}
+
 				free(path);
 			}
 		}

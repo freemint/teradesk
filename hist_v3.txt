@@ -3,6 +3,40 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2007  Dj. Vukovic
 
 
+Version 3.97  14-08-2008
+------------------------
+
+- Made a modification that diminished the blinking effect that showed when
+  real-time paging a directory window with selected items. The blinking 
+  was mostly visible in XaAES.
+
+- Changed behaviour regarding "Save windows" option: the default is now 
+  -not- to save windows unless the option is selected in "Window options".
+  This option could not be properly deselected in previous versions and
+  became active at each start of TeraDesk.
+
+- Rearranged the positions of buttons in some dialogs so that "OK" is
+  next to "Cancel" in the lower right areas of those dialogs, in the same
+  position as in other dialogs.
+
+- "Skip" and "All" buttons made invisible in some dialogs when number of 
+  selected objects is one.
+
+- Fixed the problem of being unable to perform string search in a file
+  displayed in a text window, or in a number of files selected in a 
+  directory window. The problem manifested itself only in Mint or Magic.
+
+- Fixed the bug that sometimes disabled display of the last byte in the
+  line when displaying a file in a text window.
+
+- Fixed the bug that sometimes caused incorrect update of directory
+  windows when closing them up into parent directories.
+
+- Started adjustments that should enable correct display of information
+  for folders larger than 2 GB. Hopefully, this will become available in
+  the next release.
+
+
 Version 3.96  31-05-2008
 ------------------------
 

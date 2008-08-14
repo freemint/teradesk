@@ -172,11 +172,24 @@ static void icnt_info
  * If icontype is not equal to icon target type, link is assumed.
  */
 
-int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
+int icnt_geticon
+(
+	const char *name,
+	ITMTYPE type,		/* type of the item */
+	ITMTYPE tgt_type	/* type of the tartet item of a link */
+)
 {
-	int icon, deficon, i;
-	boolean more = (type != tgt_type && tgt_type != ITM_NOTUSED);
-	ITMTYPE thetype = type;
+	int
+		icon,
+		deficon,
+		i;
+
+	ITMTYPE
+		thetype = type;
+
+	boolean
+		more = (type != tgt_type && tgt_type != ITM_NOTUSED);
+
 
 	/* 
 	 * Find a related icon, depending on item type (folder/file/program) 
@@ -207,7 +220,7 @@ int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type)
 			i = 0;
 			deficon = FIINAME;
 		}
-}
+	}
 
 	if ((icon = find_icon(name, iconlists[i])) < 0)
 	{

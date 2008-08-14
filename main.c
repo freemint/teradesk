@@ -957,14 +957,13 @@ static void opt_default(void)
 	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT | WD_SHOWN;    
 	options.plinelen = DEF_PLINE; 							
 	options.attribs = FA_SUBDIR | FA_SYSTEM;
-	options.sexit = SAVE_WIN;					
 #endif
 	options.aarr = 1;	
 
 	/* 
-	 * There is no need to set options.sort, .mode, .dsk_pattern, .dsk_colour,
-     * .win_pattern and .win_colour  because all of options is set to 0 
-	 * in memclr() above
+	 * There is no need to set options.sort, .mode, .sexit, .dsk_pattern, 
+	 * .dsk_colour, .win_pattern and .win_colour  because all of options
+	 * is set to 0 in memclr() above
 	 */									    
 }
 
