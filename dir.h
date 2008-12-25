@@ -65,9 +65,9 @@ typedef struct
 	char info[80];			/* info line of window */
 #endif
 	const char *fspec;		/* filename mask for the window */
-	long usedbytes;			/* total size of files in the dir. */
-	long visbytes;			/* total size of visible files */
-	long selbytes;			/* total size of selected items */
+	LSUM usedbytes;			/* total size of files in the dir. */
+	LSUM visbytes;			/* total size of visible files */
+	LSUM selbytes;			/* total size of selected items */
 	int fs_type;			/* We need to know the filesystem type for formatting purposes. */
 	int nfiles;				/* number of files in directory */
 	int nvisible;			/* number of visible files in directory */

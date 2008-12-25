@@ -1,7 +1,7 @@
 /*
  * Utility functions for Teradesk. Copyright 1993 - 2002  W. Klaren,
  *                                           2002 - 2003  H. Robbers,
- *                                           2003 - 2007  Dj. Vukovic
+ *                                           2003 - 2008  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -54,7 +54,7 @@ int get_aesversion(void)
 #ifdef __PUREC__
 	return _GemParBlk.glob.version;
 #else
-	return _global[0;
+	return _global[0];
 #endif
 }
 

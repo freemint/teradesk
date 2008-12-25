@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to 3.97  	Copyright 2003-2008  Dj. Vukovic
+             V3.01 to V4.00  	Copyright 2003-2008  Dj. Vukovic
 
 
-This  is version 3.97 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.00 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -29,7 +29,7 @@ Tera Desktop binary distribution currently consists of the following files:
         ICONS.RSC     (Essential Mono icons)
         CICONS.RSC    (Essential Colour icons)
         README.TXT    (This file)
-        HIST_V3.TXT   (Log of changes since Version 3.0)
+        HIST_V34.TXT  (Log of changes since Version 3.0)
         TERADESK.HYP  (English manual in ST-Guide hypertext)
         TERADESK.REF  (Reference file for the hypertext manual)
         TERADESK.INF  (Sample configuration file)
@@ -37,9 +37,9 @@ Tera Desktop binary distribution currently consists of the following files:
 
 There  also  exists a source distribution which contains the complete source
 tree of TeraDesk,  to be compiled and linked with Pure-C 1.1;  it is located
-at the web homepage of TeraDesk 3:
+at the web homepage of TeraDesk 3 and TeraDesk 4:
 
-	http://solair.eunet.yu/~vdjole/teradesk.htm
+	http://solair.eunet.rs/~vdjole/teradesk.htm
 
 Source of the AHCM memory-allocation system that is  used in TeraDesk can be
 downloaded from:
@@ -101,8 +101,8 @@ unnecessary limitations or else try to activate features which may not work.
 New Features in This Version
 ============================
 
-Please, see  HIST_V3.TXT  for a list of new features and bug fixes since the
-last  released  version (3.95). Also, read the manual TERADESK.HYP (you will
+Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
+last  released  version (3.97). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -338,7 +338,7 @@ PLEASE  read the manual and  the development-history file before you use the
 program. You will need ST-Guide  (not supplied with Tera Desktop) or another
 .HYP file viewer to read the manual.
 
-For the time being, comments should be sent to: vdjole@EUnet.yu
+For the time being, comments should be sent to: vdjole@EUnet.rs
 
 If  you  intend to use TeraDesk, it will be appreciated if you send an 
 e-mail to the above address; I may at some time ask a question or two
@@ -346,6 +346,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; August 14th 2008
+                                            Beograd; December 26th 2008
 
 

@@ -38,6 +38,7 @@
 #include "font.h"
 #include "config.h"
 #include "window.h" 
+#include "copy.h"
 #include "dir.h"
 #include "error.h"
 #include "events.h"
@@ -48,7 +49,6 @@
 #include "icon.h"
 #include "screen.h"
 #include "showinfo.h"
-#include "copy.h"
 #include "icontype.h"
 #include "open.h"
 #include "va.h"
@@ -65,11 +65,11 @@
 
 #define MAXLENGTH		128		/* Maximum length of a filename to display in a window. HR: 128 */
 #define MINLENGTH		12		/* Minimum length of a filename to display in a window. */
-#define ITEMLEN			44		/* Length of a line, without the filename. */
 #define	DRAGLENGTH		16		/* Length of a name rectangle drawn while dragging items (was 12 earlier) */
 
-#define TOSITEMLEN		51		/* Length of a line. */
-#define SIZELEN 8 /* length of field for file size, i.e. max 99999999 ~100 MB */
+/* Beware that SIZELEN must be in accordance with DISP_KBMB in RESOURCE.H */
+
+#define SIZELEN 8 /* 1 + length of field for file size, i.e. for max. 9999999 ~10 MB, otherwise add sufix K or M */
 
 
 
@@ -83,6 +83,8 @@ boolean clearline = TRUE;
 
 extern XUSERBLK wxub;
 extern boolean autoloc_upd;
+
+extern char *fmt_size(long value, int *l);
 
 static int		dir_find	(WINDOW *w, int x, int y);
 static boolean	dir_state	(WINDOW *w, int item);
@@ -103,6 +105,7 @@ static void		dir_do_update	(WINDOW *w);
 static void		dir_newfolder	(WINDOW *w);
 static void		dir_seticons	(WINDOW *w);
 static void 	dir_showfirst(DIR_WINDOW *dw, int i);
+static char *sizestr(char *tstr, long size);
 
 
 static ITMFUNC itm_func =
@@ -428,10 +431,14 @@ boolean dir_isexec(const char *name, XATTR *attr)
 void dir_info(DIR_WINDOW *w)
 {
 	int
+		l,
 		n,
 		m;
 
 	long
+		total;
+
+	LSUM
 		bytes;
 
 #if _MINT_
@@ -442,6 +449,8 @@ void dir_info(DIR_WINDOW *w)
 		mask = {0};
 #endif
 
+	char
+		*p;
 
 	if(autoloc)
 	{
@@ -463,12 +472,15 @@ void dir_info(DIR_WINDOW *w)
 		n = w->nvisible;
 	}
 
+	size_sum(&total, &bytes);
+	p = fmt_size(total, &l);
+
 	sprintf
 	(
 		w->info, 
 		get_freestring(m), 
 		mask, 
-		bytes, 
+		p, 
 		n, 
 		get_freestring( (n == 1) ? MISINGUL : MIPLURAL )
 	);
@@ -509,8 +521,10 @@ static void set_visible(DIR_WINDOW *w)
 	if (w->buffer != NULL)
 	{
 		long 
-			i, 
-			v = 0L;
+			i;
+
+		LSUM 
+			v;
 
 		NDTA
 			*b;
@@ -518,6 +532,9 @@ static void set_visible(DIR_WINDOW *w)
 		int 
 			oa = options.attribs,
 			n = 0;
+
+		v.bytes = 0;
+		v.kbytes = 0;
 
 		for (i = 0; i < w->nfiles; i++)
 		{
@@ -545,7 +562,7 @@ static void set_visible(DIR_WINDOW *w)
 			)
 			{
  				if((b->attrib.mode & S_IFMT) != S_IFDIR) 
-					v += b->attrib.size;
+					add_size (&v, b->attrib.size);
 			
 				b->visible = TRUE;
 				n++;
@@ -685,8 +702,10 @@ static int read_dir(DIR_WINDOW *w)
 	long 
 		bufsiz, 
 		memused = 0,
-		length = 0, 
 		n = 0;
+
+	LSUM
+		length; 
 
 	int 
 		error = 0, 
@@ -697,6 +716,9 @@ static int read_dir(DIR_WINDOW *w)
 		tgtattr = {0},
 #endif
 		attr = {0};
+
+	length.kbytes = 0;
+	length.bytes = 0;
 
 	dir_free_buffer(w); /* clear and release old buffer, if it exists */
 
@@ -815,7 +837,7 @@ static int read_dir(DIR_WINDOW *w)
 
 					    if (error >= 0)
 						{
-							length += attr.size;
+							add_size(&length, attr.size);
 							memused += error;
 							if (error > maxl)
 								maxl = error;
@@ -853,8 +875,10 @@ static int read_dir(DIR_WINDOW *w)
 		dir_free_buffer(w);
 		w->nfiles = 0;
 		w->nvisible = 0;
-		w->usedbytes = 0;
-		w->visbytes = 0;
+		w->usedbytes.kbytes = 0;
+		w->usedbytes.bytes = 0;
+		w->visbytes.kbytes = 0;
+		w->visbytes.bytes = 0;
 	}
 	else
 	{
@@ -876,7 +900,8 @@ static int read_dir(DIR_WINDOW *w)
 static void dir_setinfo(DIR_WINDOW *w)
 {
 	w->nselected = 0;
-	w->selbytes = 0;
+	w->selbytes.kbytes = 0;
+	w->selbytes.bytes = 0;
 	w->refresh = FALSE;
 	calc_rc((TYP_WINDOW *)w, &(w->xw_work));
 	dir_info(w);
@@ -1614,44 +1639,36 @@ static char *datimstr(char *tstr, unsigned int t, boolean parent, char s)
 
 /*
  * Represent object size as a right-justified string. 
- * If object size is larger than what would fit into SIZELEN decimal places, 
- * divide by 1024 and add suffix 'K'.
+ * If object size is larger than DISP_KBMB, 
+ * divide by 1024 or 1048576 and add suffix 'K' or 'M'.
  * Return pointer to the END of the string.
  * Attention: no termination 0 byte.
- * Note: SIZELEN, if set to "8", permits maximum
- * size of about 99 MB (99999999 bytes) to be displayed.
- * Size of larger files will be displayed in kilobytes
- * e.g. as 1234K, which permits up to about 9 GB,
- * which is above the 32bit long integer limit anyway.
- * Larger than -that- would produce incorrect display.
  * This string always includes a trailing blank
+ * Note: 'size' is limited to 2 GB
  */
 
 static char *sizestr(char *tstr, long size)
 {
-	int 
-		i = 0; 
+	int
+		j,
+		i = 0;
 
 	char 
-		t[SIZELEN + 4],
-		*d = tstr,
-		*p = t;
+		*t,
+		*d = tstr;
 
 	size &= 0x7FFFFFFFL;
 
-	if ( size > 99999999L )
-	{
-		size = size / 1024;
-		ltoa(size, t, 10);
-		strcat(t, "K");
-	}
-	else
-		ltoa(size, t, 10);
+	if ( size > DISP_KBMB )
+		size = ((1 - KBMB) - size) / KBMB;
 
-	FILL_UNTIL(d, i, SIZELEN - (int)strlen(t));
+	t = fmt_size(size, &j);
+	j = SIZELEN - j;
 
-	while (*p)
-		*d++ = *p++;
+	FILL_UNTIL(d, i, j);
+
+	while (*t)
+		*d++ = *t++;
 
 	*d++ = ' ';
 
@@ -1730,7 +1747,7 @@ void dir_briefline(char *tstr, XATTR *att)
 	}
 	else
 	{
-		d = sizestr(d, att->size);
+		d = sizestr(d, att->size); /* note: this will be in B, KB or MB */
 		strcpy(d, b);
 		d += l;
 	}
@@ -1814,6 +1831,7 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 			 * (long or case-sensitive names are permitted)
 			 * Copy the filename. '..' is handled like everything else 
 			 */
+			int v = minmax(MINLENGTH, dw->namelength, MAXLENGTH) + 2;
 
 			while ((*p) && (i < MAXLENGTH))
 			{
@@ -1823,7 +1841,7 @@ void dir_line(DIR_WINDOW *dw, char *s, int item)
 
 			/* this fill includes two separating blanks */
 
-	        FILL_UNTIL(d, i, minmax(MINLENGTH, dw->namelength, MAXLENGTH) + 2)
+	        FILL_UNTIL(d, i, v)
 		}
 		else
 #endif
@@ -2039,8 +2057,8 @@ static long start_ic(DIR_WINDOW *w, int sl)
 /*
  * Tell how many icons have to be drawn in a window.
  * Note: this routine does not actuallu -count- the icons, 
- * but calculates their number. This may sometimes give a 
- * too big number.
+ * but calculates their number. This may sometimes give an 
+ * incorrect (too big) number.
  */
 
 long count_ic( DIR_WINDOW *dw, int sl, int lines )
@@ -2078,7 +2096,7 @@ OBJECT *make_tree
 		oi = 0,		/* index of an object in the tree */
 		lo,			/* offset of labels area from root object */
 		n,			/* approximate number of objects to draw */ 
-		start, 
+		start,		/* first icon to be drawn */ 
 		i;			/* counter */
 
 	OBJECT 
@@ -2558,8 +2576,13 @@ static WINDOW *dir_do_open
 
 	/* Create a window. Note: window structure is completely zeroed here */
 
-	if (*path == 0 || (w = (DIR_WINDOW *)xw_create(DIR_WIND, &wd_type_functions, DFLAGS, &dmax,
-									  sizeof(DIR_WINDOW), NULL, error)) == NULL)
+	if
+	(
+		(*path == 0) || 
+		(
+			w = (DIR_WINDOW *)xw_create(DIR_WIND, &wd_type_functions, DFLAGS, &dmax, sizeof(DIR_WINDOW), NULL, error)
+		) == NULL
+	)
 	{
 		free(path);
 		free(fspec);
@@ -3134,8 +3157,12 @@ void dir_setnws(DIR_WINDOW *w, boolean draw)
 		hh,
 		n = 0;
  
-	long 
-		bytes = 0;
+	LSUM 
+		bytes;
+
+	
+	bytes.bytes = 0;
+	bytes.kbytes = 0;
 
 	hh = w->nvisible;
 	pb = w->buffer;
@@ -3152,7 +3179,7 @@ void dir_setnws(DIR_WINDOW *w, boolean draw)
 		{
 			n++;
 			if((h->attrib.mode & S_IFMT) != S_IFDIR)
-				bytes += h->attrib.size;
+				add_size(&bytes, h->attrib.size);
 		}
 	}
 

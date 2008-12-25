@@ -44,6 +44,7 @@
 #include "prgtype.h"
 #include "font.h"
 #include "window.h"
+#include "copy.h"
 #include "dir.h"
 #include "lists.h"
 #include "slider.h" 

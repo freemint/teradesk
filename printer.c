@@ -36,14 +36,14 @@
 #include "desk.h"
 #include "error.h"
 #include "xfilesys.h"
-#include "printer.h"
 #include "font.h"
 #include "config.h"
 #include "window.h"
 #include "file.h"
+#include "copy.h"
 #include "dir.h"
 #include "events.h"
-#include "copy.h"
+#include "printer.h"
 #include "viewer.h"
 
 #define PBUFSIZ	1024L /* Should be divisible by 16 !!! */
@@ -413,7 +413,7 @@ boolean print_list
 	int *list, 		/* list of item indices */
 	long *folders,	/* count of selected files */ 
 	long *files,	/* count of selected files */
-	long *bytes,	/* total size of selected items */
+	LSUM *bytes,	/* total size of selected items */
 	int function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
 )
 {
@@ -509,8 +509,8 @@ boolean print_list
 								printmode = oldmode;
 							}
 
-							*bytes -= attr.size;
 							*files -= 1;
+							sub_size(bytes, attr.size);
 
 						upd_copyname(NULL, NULL, empty);
 						}
@@ -529,7 +529,7 @@ boolean print_list
 						else
 						{
 							*files -= 1;
-							*bytes -= attr.size;
+							sub_size(bytes, attr.size);
 						}
 
 						perror = print_line(dline);
@@ -552,7 +552,7 @@ boolean print_list
 
 				/* Update information on the number of folders/files/bytes remaining */
 
-				upd_copyinfo(*folders, *files, *bytes);
+				upd_copyinfo(*folders, *files, bytes);
 			}
 
 			/* Check for user abort (ESC key pressed) */

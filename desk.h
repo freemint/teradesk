@@ -62,9 +62,10 @@
 #define CF_PRINT		0x0008 	/* confirm print             */
 #define CF_TOUCH		0x0010  /* confirm touch (not used)  */
 #define CF_KEEPS		0x0020	/* keep selection after copy */
-								/* unused 0x0040     */
+#define CF_TRUNN		0x0040	/* truncate long names if needed */
 #define P_GDOS			0x0080	/* use GDOS device for printing; currently NOT used */
-								/* unused 0x0100 0x0200 */
+								/* unused 0x0100 */
+								/* unused 0x0200 */
 #define CF_CTIME		0x0400	/* change date & time */
 #define CF_CATTR		0x0800  /* change file attributes */
 #define CF_SHOWD		0x1000 	/* always show copyinfo dialog */

@@ -764,7 +764,9 @@ int object_info
 
 	long 
 		nfolders, 		/* number of subfolders */
-		nfiles,			/* number of files   */ 
+		nfiles;			/* number of files   */ 
+
+	LSUM
 		nbytes;			/* sum of bytes used */
 
 	int 
@@ -851,6 +853,8 @@ int object_info
 		{
 			/* Count the numbers of items in the folder */
 
+			long total;
+
 			error = cnt_items(oldn, &nfolders, &nfiles, &nbytes, 0x11 | options.attribs, FALSE); 
 			arrow_mouse();
 
@@ -869,9 +873,11 @@ int object_info
 					return result;
 			}
 
+			size_sum(&total, &nbytes);
+
 			rsc_ltoftext(fileinfo, FLFOLDER, nfolders);
 			rsc_ltoftext(fileinfo, FLFILES, nfiles);
-			rsc_ltoftext(fileinfo, FLBYTES, nbytes);
+			rsc_ltoftext(fileinfo, FLBYTES, total);
 
 			/* 
 			 * Folders could not be renamed before TOS 1.4 
@@ -958,6 +964,8 @@ int object_info
 		}
 		case ITM_FILE:
 		{
+			long fsize;
+
 #if _MINT_
 			/* Handle some special 'file' objects from drive U */
 
@@ -1005,8 +1013,13 @@ int object_info
 #if _MINT_
 			evenmore:;
 #endif
+			fsize = attr->size;
+
+			if(fsize > DISP_KBMB)
+				fsize = ((1- KBMB) - fsize) / KBMB;
+
 			rsc_title(fileinfo, TDTIME, TACCTIM);
-			rsc_ltoftext(fileinfo, FLBYTES, attr->size);
+			rsc_ltoftext(fileinfo, FLBYTES, fsize);
 
 			setmore:;
 
@@ -1067,15 +1080,15 @@ int object_info
 					((error = x_dfree(&diskinfo, drive + 1)) == 0)
 				)
 				{
-					long 
+					long
 #if _MINT_
 						k = 1,
 #endif
-						fbytes, tbytes, clsize;
+						clsize, fbytes, tbytes;								/* up to cca 4 * 10^9 each */
 
-					fbytes = diskinfo.b_free,	/* number of free bytes */
-					tbytes = diskinfo.b_total,	/* total number of bytes */
-					clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;
+					fbytes = diskinfo.b_free,						/* number of free clusters */
+					tbytes = diskinfo.b_total,						/* total number of clusters */
+					clsize = diskinfo.b_secsiz * diskinfo.b_clsiz;	/* cluster size in bytes */
 
 #if _EDITLABELS
 #if _MINT_
@@ -1086,37 +1099,45 @@ int object_info
 						rsc_tostmplt(lblted);
 #endif
 					cv_fntoform(fileinfo, FLLABEL, dskl);
-					rsc_ltoftext(fileinfo, FLCLSIZ, clsize);
+					rsc_ltoftext(fileinfo, FLCLSIZ, (long)clsize);
 
 					/* 
 					 * Make some arrangements for partitions larger
 					 * than 2GB, which can not be normally displayed
 					 * because sizes do not fit into 32-bit integers.
-					 * In such cases display data in kilobytes.
+					 * In such cases display data in kilobytes or megabytes.
 					 * See rsc_ltoftext() for meaning of negative parameters.
 					 * This is probably relevant only in non-TOS fs
 					 * i.e. mint or magic would have to be present,
 					 * and so it can be excluded for the single-TOS version.
-					 * This should correctly display partition sizes up to 1TB,
-					 * but would be incorrect if cluster size is not a multiple
-					 * of 512 bytes. 
+					 * This should correctly display partition sizes up to
+					 * at least 1TB, but would be incorrect if cluster size
+					 * is not a multiple of KBMB / 2 or vice-versa. 
 					 */
 #if _MINT_
-					if( tbytes > (LONG_MAX / 2) / clsize )
+					if( tbytes > DISP_KBMB / clsize )
 					{
-						clsize /= -512;
-						k = 2;
+						if(clsize < (KBMB / 2))
+						{
+							k = KBMB / clsize;
+							clsize = 1;
+						}
+						else
+						{
+							k = 2;
+							clsize /= -(KBMB / 2);
+						}
 					}
 #endif
-					tbytes *= clsize;
-					fbytes *= clsize;
+					tbytes *= clsize;	/* if small, size in bytes */
+					fbytes *= clsize;	/* if small, size in bytes */
 #if _MINT_
 					tbytes /= k;
 					fbytes /= k;
 #endif
-					nbytes = (tbytes - fbytes);	
+					nbytes.bytes = (long)(tbytes - fbytes);	
 
-					rsc_ltoftext(fileinfo, FLBYTES, nbytes);
+					rsc_ltoftext(fileinfo, FLBYTES, nbytes.bytes);
 					rsc_ltoftext(fileinfo, FLFREE, fbytes);
 					rsc_ltoftext(fileinfo, FLSPACE, tbytes);
 
@@ -1507,7 +1528,9 @@ void item_showinfo
 
 	long 
 		nd, 		/* number of directories */
-		nf, 		/* number of files */
+		nf; 		/* number of files */
+
+	LSUM
 		nb;			/* number of bytes */
 
 	XATTR 

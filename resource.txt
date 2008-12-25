@@ -26,12 +26,14 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V3.97 relative to previous version
+Changes in V4.00 relative to previous version
 ---------------------------------------------
 
-- Rearranged the positions of buttons in FILEINFO, ADDICON and
-  NAMECONF dialogs so that OK is next to Cancel in the lower right part
-  of the dialog, consistent with other dialogs.
+- Changed MITEMS and MSITEMS strings (%s format specifier instead of %ld)
+
+- Added new object CTRUNC in tree COPTIONS; height of root objects
+  increased so that the new button can be fitted. Objects in the CPAR1
+  box sorted anew from top to bottom.
 
 
 Naming of object trees

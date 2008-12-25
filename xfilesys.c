@@ -81,20 +81,20 @@ int x_checkname(const char *path, const char *name)
 		mp = sizeof(VLNAME);
 
 
-	if(!x_netob(path))
+	if(!x_netob(path))	/* only if this is not a network object... */
 	{
-		if(*path)
+		if(*path)		/* and a path is given */
 		{
-			if(!isdisk(path))
+			if(!isdisk(path))	/* if it is not on a disk, return error */
 				return EPTHNF;
 
-			mp = x_pathconf(path, DP_PATHMAX);
+			mp = x_pathconf(path, DP_PATHMAX);	/* maximum possible length */
 
 			if(mp < 0) 
 				return xerror((int)mp);
 		}
 
-		nl = (long)strlen((name) ? name : fn_get_name(path));
+		nl = (long)strlen((name) ? name : fn_get_name(path)); /* name length */
 
 		/* Avoid needless interrogation of drive if no name given */
 
@@ -213,8 +213,10 @@ boolean x_netob(const char *name)
 	{
 		for(i = 0; i < 5; i++)
 		{
-			if( strnicmp(name, pfx[i], strlen(pfx[i])) )
+			if( strnicmp(name, pfx[i], strlen(pfx[i])) == 0 )
+			{
 				return TRUE;
+			}
 		}
 	}
 
@@ -223,7 +225,8 @@ boolean x_netob(const char *name)
 
 
 /* 
- * Set a directory path 
+ * Set a directory path. This works on current drive only, and
+ * 'path' hould bagin with a backslash, not wioth a drive letter
  */
 
 int x_setpath(const char *path)
@@ -236,7 +239,7 @@ int x_setpath(const char *path)
  * Get current default path on the specified drive, return pointer to
  * this new-allocated string. If drive is specified as 0, also get 
  * default drive. The resulting path will not be longer than VLNAME.
- * Drive 1 = A: 2 = B: 3 = C: , etc.
+ * Drive 1 = A: 2 = B: 3 = C: , etc. Beware: for x_getdrv() 0=A: 1=B; 2=C: ...
  */
 
 char *x_getpath(int drive, int *error)
@@ -430,25 +433,63 @@ int x_rdlink( size_t tgtsize, char *tgt, const char *linkname )
 /*
  * Prepend path of the link 'linkname' to a link target definition 'tgtname', 
  * if it is not given. Return a path + name string (memory allocated here).
- * Do not add anything for a network object
+ * Perform similar tasks for the ".\" and "..\" paths.
+ * Do not add anything for a network object or id a path is explicitely 
+ * given.
  */
 
 char *x_pathlink( char *tgtname, char *linkname )
 {
 	char
-		*target,
-		*lpath;
+		*target = NULL,
+		*lpath,				/* path of the link */
+		*lppath,			/* parent path of the link */
+		*b,					/* position of the first backslash, or after it */
+		*p = tgtname;		/* pointer to the backslash */
 
 	int
 		error;
 
-	if ( !x_netob(tgtname) && (strchr(tgtname,'\\') == NULL) )
-	{
-		/* referenced name does not contain a path, use that of the link */
 
+	/* beware: comparison below depends on the order of execution */
+
+	if
+	(
+		!x_netob(tgtname) &&
+		(
+			( (b = strchr(tgtname, '\\')) == NULL) || 	/* no '\' in the path */
+			(
+				( *p++ == '.') &&					/* first is '.' */
+				(
+					(*p == '\\') ||					/* second is '\' or... */
+					(*p++ == '.' && *p == '\\')		/* second is '.' and third is '\\' */ 
+				)
+			)
+		)
+	) 
+	{
 		if ( (lpath = fn_get_path(linkname)) != NULL )
 		{
-			target = x_makepath(lpath, tgtname, &error);
+			if(b == NULL)		/* object path does not contain '\' */
+				b = tgtname;
+			else				/* first character after the '\' */
+			{
+				b = p + 1;
+			}
+
+			if(p == tgtname + 2)   /*  it is a "..\"  */
+			{
+				lppath = fn_get_path(lpath);
+				free(lpath);
+				lpath = lppath;
+			}
+
+			/* 
+			 * referenced name does not contain an explicit path, 
+			 * use that of the link, or link parent path 
+			 */
+
+			target = x_makepath(lpath, b, &error);
 			free(lpath);
 		}
 	}
@@ -475,7 +516,6 @@ char *x_fllink( char *linkname )
 		*tmp = NULL,
 		*target = NULL;
 
-
 	if ( linkname )
 	{
 #if _MINT_
@@ -494,8 +534,11 @@ char *x_fllink( char *linkname )
 					/* this is not a link, just copy the name */
 					target = strdup(linkname);
 				else
+				{
 					/* this is a link */
 					target = x_pathlink(tmp, linkname);
+
+				}
 			}
 		}
 
@@ -511,7 +554,12 @@ char *x_fllink( char *linkname )
 
 
 /* 
- * Get information about free space on a disk volume 
+ * Get information about free space on a disk volume.
+ * this information is returned in *diskinfo as:
+ * - number of flree clusters
+ * - total number of clusters
+ * - sector size in bytes
+ * number of sectors in a cluster 
  */
 
 int x_dfree(DISKINFO *diskinfo, int drive)
@@ -521,7 +569,8 @@ int x_dfree(DISKINFO *diskinfo, int drive)
 
 
 /* 
- * Get the id of the current default drive 
+ * Get the id of the current default drive
+ * 0=A: 1=B: 2=C: 3=D: ... 
  */
 
 int x_getdrv(void)
@@ -532,6 +581,7 @@ int x_getdrv(void)
 
 /* 
  * Set new default drive 
+ * 0=A: 1=B: 2=C: ...
  */
 
 long x_setdrv(int drive)
@@ -564,7 +614,9 @@ int x_getlabel(int drive, char *label)
 		lblbuf[LBLMAX];
 
 
-	strcpy(path, "A:\\*.*");
+	strcpy(path, adrive);
+	strcat(path, "*.*");
+
 	*path += (char)drive;
 
 #if _MINT_
@@ -579,7 +631,7 @@ int x_getlabel(int drive, char *label)
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 
-		if (((error = Fsfirst(path, 0x3F)) == 0) && (dta.d_attrib & FA_VOLUME)) 
+		if (((error = Fsfirst(path, FA_VOLUME)) == 0)) 
 			strsncpy(lblbuf, dta.d_fname, (size_t)LBLMAX);
 		else
 			error = EFILNF;
@@ -858,13 +910,17 @@ int x_inq_xfs(const char *path)
 
 		if ( m < 0 )
 			m = 0;
+
 		if ( x < 0 )
 			x = 0;
+
 		if (c < 0 )
 			c = 0;
-		if ( t < 0)
+
+		if ( t < 0 )
 			t = 0;
-		if ( n < 0)
+
+		if ( n < 0 )
 			n = 255;
 
 		/* 
@@ -929,7 +985,7 @@ XDIR *x_opendir(const char *path, int *error)
 		if (dir->type == 0)
 		{
 #endif
-			/* Dos file system */
+			/* FAT file system */
 
 			dir->data.gdata.first = 1;
 			dir->data.gdata.old_dta = Fgetdta();
@@ -1555,7 +1611,7 @@ int x_fclose(XFILE *file)
 
 
 /* This routine (a pair with x_fwrite) is never used in TeraDesk
-   and not maintained anymore
+   and not maintained anymore. Code below may be obsolete and nonworking
 
 /* 
  * Read file contents (not more than "length" bytes).

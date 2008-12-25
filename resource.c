@@ -665,18 +665,19 @@ void rsc_init(void)
 
 		mn_del(MNVIEWBX, MSHOWN);
 
+		obj_hide(copyoptions[CTRUNC]);
+		obj_hide(addprgtype[ATSINGLE]);
+		obj_hide(addprgtype[MEMLIM]);
+
 		dh = addicon[CHNBUTT].r.h;
 		addicon[CHNBUTT].r.y -= dh;
 		addicon[ADDBUTT].r.y -= dh;
 		addicon[0].r.h -= dh;
 
-#if !_MINT_
 		dh = addprgtype[MEMLIM].r.y - addprgtype[ATSINGLE].r.y;
 		addprgtype[APTOK].r.y -= dh;
 		addprgtype[APTCANC].r.y -= dh;
 		addprgtype[0].r.h -= dh;
-#endif
-
 	}
 
 #if _MINT_
@@ -736,15 +737,84 @@ void rsc_title(OBJECT *tree, int object, int title)
 
 
 /*
+ * A routine for formatting large file,folder or partition sizes
+ * and conveting them to an ascii string.
+ *
+ * If value is nonnegative, it will be converted to string
+ * as it is; 
+ *
+ * If value is negative, either 'K' will be appended to the
+ * formatted string, or value will be divided by 1024 and 'M'
+ * will be appended (the "-" will be discarded), depending on
+ * whether the value is larger than DISP_KBMB
+ *
+ * If KBMB is defined as 1048576 instead of 1024, 'M' and 'G'
+ * suffixes will be used instead of current 'K' and 'M'
+ *
+ * The routine will return a pointer to a static
+ * internal buffer for the formatted sting.
+ */
+
+char *fmt_size(long value, int *l)
+{
+	int
+		i,
+		j;
+
+	char
+		suf;
+
+	static char
+		buf[12];
+
+	if(value < 0)
+	{
+#if _MINT_
+		if(value < -DISP_KBMB)	/* divide by 1024 more  and change suffix */
+		{
+			value = (1023 - value) / 1024;
+#if KBMB == 1024
+			suf = 'M';
+#else
+			suf = 'G';
+#endif
+		}
+		else
+#endif
+		{
+			value = -value;
+
+#if KBMB == 1024
+			suf = 'K';
+#else
+			suf = 'M';
+#endif
+		}
+
+		i = 1;
+	}
+	else /* value >= 0 */
+	{
+		suf = '\0';
+		i = 0;
+	}
+
+	ltoa(value, buf, 10);
+	j = (int)strlen(buf);
+
+	buf[j] = suf;
+	j += i;
+	buf[j] = 0;
+	*l  = j;
+
+	return &buf[0];
+}
+
+
+/*
  * Write a long integer into a formatted text field. 
  * Text is right-justified and padded with spaces on the left side.
- * Maximum length is 14 decimal digits (no checking done).
  *
- * Parameters:
- *
- * tree		- object tree.
- * object	- index of formatted text field.
- * value	- value to convert.
  * This routine works with G_TEXT and G_FTEXT objects.
  * Note1: a good validation string must exist for the G_FTEXT field, 
  * it is used to determine field length
@@ -752,11 +822,16 @@ void rsc_title(OBJECT *tree, int object, int title)
  * try to write too many bytes.
  * Note2: it would be possible to use strcpyj() but there would be
  * almost no gain in size.
- * If a negative number is entered, a 'K' will be appended to the
- * absolute value of the number.
+ * If a negative number is entered, a 'K' or a 'M' will be 
+ * appended to the absolute value of the number
  */
 
-void rsc_ltoftext(OBJECT *tree, int object, long value)
+void rsc_ltoftext
+(
+	OBJECT *tree,	/* object tree */
+	int object,		/* index of formatted text fild */
+	long value		/* value to be written */
+)
 {
 	OBJECT 
 		*ob = tree + object;
@@ -764,42 +839,31 @@ void rsc_ltoftext(OBJECT *tree, int object, long value)
 	TEDINFO 
 		*ti = xd_get_obspecp(ob)->tedinfo;
 
-	int 
-		l2;					/* length of the string representing the number */
+	int
+		s2;					/* length of the string s */
 
 	char 
-		s[16], 				/* temporary buffer for the string */
-		*s1 = s,			/* pointer to real beginning of s */
+		*s, 				/* temporary buffer for the string */
 		*p = ti->te_ptext;	/* pointer to a location in the destination */
 
 
-	ltoa(value, s, 10);		/* Convert value to ASCII, decimal */
-	l2 = (int)strlen(s);	/* Length of this string  */
-
- 	/* 
-	 * If value is negative, '-' will be ignored, but 'K' will be added,
-	 * so that length will remain the same
-	 */
-
-	if(value < 0)
-	{
-		s1++;			/* ignore the '-' in the string */
-		s[l2++] = 'K';	/* append 'K' to ASCII presentation of number */
-		s[l2] = 0;		/* and a termination 0 after the 'K' */
-		l2--;
-	}
+	s = fmt_size(value, &s2);
 
    if((ob->ob_type & 0xFF) == G_FTEXT)
 	{
-		int l1 = (int)strlen(ti->te_pvalid) - l2;
+		int 
+			s1 = (int)(strlen(ti->te_pvalid) - s2);
 
-		while(l1 > 0)
+		while(s1)
 		{
 			*p++ = ' ';
-			l1--;
+			s1--;
 		}
 	}
 
-	strcpy(p, s1);	/* copy the number. Beware: no checking of overrun */
+	while(*s)
+		*p++ = *s++;
+
+	*p = 0;
 }
 

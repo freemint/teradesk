@@ -341,8 +341,15 @@ int xhndl_error(int msg, int error, const char *file)
 		{
 			/* Display the appropriate alert-box */
 
-			if ((error == EFILNF) || (error == EACCDN) || (error == ELOCKED))
-				/* For: File not found, Access denied, File locked: */
+			if 
+			(
+				(error == EFILNF) || 
+				(error == EACCDN) || 
+				(error == ELOCKED) ||
+				(error == EFNTL) ||
+				(error == EPTHTL)
+			)
+				/* For: File not found, Access denied, File locked, Name too long: */
 				txtid = TSKIPABT;
 			else if ( error != ENOMSG )
 				/* For all the rest... */

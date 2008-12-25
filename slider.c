@@ -137,6 +137,11 @@ static void do_slider
 }
 
 
+/*
+ * This routine handles clicking on the slider parent object
+ * i.e. paging up or down through a list with a slider
+ */
+
 static void do_bar(SLIDER *sl, XDINFO *info)
 {
 	int
@@ -147,7 +152,6 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 		maxi,
 		slines = sl->lines;
 
-
 	graf_mkstate(&dummy, &my, &dummy, &dummy);
 	objc_offset(sl->tree, sl->slider, &dummy, &oy);
 
@@ -157,12 +161,13 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 
 		if (my < oy)
 		{
+			maxi = sl->line;
 			sl->line -= slines;
 		}
 		else
 		{
-			sl->line += slines;
 			maxi = sl->n - slines;
+			sl->line += slines;
 		}
 
 		sl->line = minmax(0, sl->line, maxi);

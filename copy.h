@@ -30,7 +30,14 @@
 #define CMD_PRINTDIR 4
 #define CMD_TOUCH    8 
 
+
 #define mustabort(x) ((x == XABORT) || (x == XFATAL))
+
+typedef struct
+{
+	long kbytes;
+	long bytes;
+}LSUM;
 
 extern DOSTIME 
 		now,
@@ -52,12 +59,15 @@ extern boolean
 unsigned int Tgettime(void);	/* from tos.h */
 unsigned int Tgetdate(void);	/* from tos.h */
 
-int cnt_items(const char *path, long *folders, long *files, long *bytes, int attrib, boolean search);
+void add_size(LSUM *nbytes, long fsize);
+void sub_size(LSUM *nbytes, long fsize);
+void size_sum(long *total, LSUM *bytes);
+int cnt_items(const char *path, long *folders, long *files, LSUM *bytes, int attrib, boolean search);
 void check_opabort (int *result);
 boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
-int open_cfdialog(long folders, long files, long bytes, int function);
+int open_cfdialog(long folders, long files, LSUM *bytes, int function);
 void close_cfdialog(int button);
-void upd_copyinfo(long folders, long files, long bytes);
+void upd_copyinfo(long folders, long files, LSUM *bytes);
 void upd_copyname(const char *dest, const char *path, const char *name);
 int copy_error(int error, const char *name, int function);
 boolean itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);

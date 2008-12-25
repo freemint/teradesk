@@ -39,6 +39,7 @@
 #include "font.h"
 #include "config.h"
 #include "window.h"	/* before dir.h and viewer.h */
+#include "copy.h"
 #include "dir.h"
 #include "file.h"
 #include "lists.h"
@@ -46,7 +47,6 @@
 #include "filetype.h"
 #include "icon.h"
 #include "icontype.h"
-#include "copy.h"
 #include "prgtype.h"
 #include "viewer.h"
 #include "applik.h"
@@ -3440,7 +3440,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 			if ( wt == DIR_WIND )
 			{
 				/* refresh a directory window */
-	
+
 				force_mediach(((DIR_WINDOW *) w)->path);
 				dir_refresh_wd((DIR_WINDOW *)w);
 			}

@@ -34,6 +34,7 @@
 #include "error.h"
 #include "open.h"
 #include "xfilesys.h"
+#include "copy.h"
 #include "printer.h"
 #include "font.h"
 #include "config.h"

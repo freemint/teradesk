@@ -1,6 +1,68 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2003  H. Robbers
-                         2002 - 2007  Dj. Vukovic
+                         2002 - 2008  Dj. Vukovic
+
+
+Version 4.00  25-12-2008
+------------------------
+
+- Removed the 2 GB limit for the sum of file sizes in a selection or in a
+  partition. New limit is 2 TB.  Provisions made in the code to easily
+  change the limit to 2 EB at compilation time, but then large sums 
+  and sizes will have to be displayed in megabytes (which may become more
+  appropriate in a year or so). Size limit for a partition is now 1 billion
+  clusters which is at least a couple of TB. Size limit for one individual
+  file is still 2 GB, because of the limitations of the operating system(s).
+  The single-tasking version of TeraDesk is not fully enabled for the 
+  extended size limits, whish are above the single-TOS possible partition
+  sizes anyway.
+
+- Improved formatting when displaying large file or folder sizes. They will
+  be displayed in kilobytes (for values larger than cca 9.9 MB) or in 
+  megabytes (for values larger than about 9.9 GB)- appropriate suffix 'K'
+  or 'M' will be added. Numericl string lengths should never exceed 
+  7 decimal places.    
+
+- Enabled the use of links referencing paths relative to the directory of
+  the link, i.e. paths starting with ".\" and "..\".
+
+- Permitted overwriting of symbolic links with regular files (and v.v.)
+  in copy operations. In previous versions only items of identical types
+  could be overwritten.
+
+- Fixed the problem of file-copying aborting when a long-filename item was
+  copied to a partition with 8+3 names. An option to skip the file has been
+  added, similar to options appearing in case of other errors that should
+  not stop the complete operation. 
+
+- Added the option to truncate long filenames when copying to a FAT (8+3)
+  partition instead of skipping such items (option is in the Copy & Print 
+  dialog). In order to avoid confusing names appearing in the TeraDesk's 
+  dialogs (the short name has to be known before an operation is attempted),
+  truncating is done by TeraDesk, not by the underlying filesystem (if
+  it is possible to get a 'preview' of the truncated name from the
+  operating system before attempting the operation, this will be changed).
+
+- Fixed a very old bug of Show info... for a partition -sometimes- not 
+  showing the volume label.
+
+- Fixed an old but hitherto unnoticed bug which caused improper operation
+  of the slider in the icon-selector dialog (paging up did not work well).
+
+- Fixed the problem of not being able to save and load the disabled 
+  states of some options.
+
+- Fixed some bugs that disabled the use of links to network objects.
+
+- Fixed some typo errors in certain portions of the code that were only
+  conditionally compiled.
+
+- Done a certain amount of cleanup of the source code. Corrected the types
+  of some variables.
+
+- Changes made in the resource file. See RESOURCE.TXT. 
+
+- Updated the hypertext manual
 
 
 Version 3.97  14-08-2008

@@ -28,4 +28,4 @@ extern int printmode;		/* see above */
 extern XFILE *printfile;	/* print file; if NULL print to port */
 
 boolean check_print( WINDOW *w, int n, int *list); 
-boolean print_list(WINDOW *w, int n, int *list, long *folders, long *files, long *bytes, int function);
+boolean print_list(WINDOW *w, int n, int *list, long *folders, long *files, LSUM *bytes, int function);

@@ -48,6 +48,7 @@
 #include "xfilesys.h"
 #include "config.h"
 #include "window.h"
+#include "copy.h"
 #include "dir.h"
 #include "file.h"
 #include "lists.h"
@@ -143,7 +144,7 @@ static boolean
 	shutting = FALSE;	/* true if started shutting down        */
 
 boolean
-	onekey_shorts;	/* true if any single-key menu shortcuts are defined */
+	onekey_shorts;		/* true if any single-key menu shortcuts are defined */
 
 #if _LOGFILE
 FILE
@@ -173,9 +174,9 @@ static XDEVENT
 
 void Shutdown(long mode);
 
-static CfgNest				/* Elsewhere defined configuration routines */ 
-	opt_config, 
-	short_config; 
+static CfgNest		/* Elsewhere defined configuration routines */ 
+	opt_config, 	/* Options */
+	short_config; 	/* Menu shortcuts */
 
 CfgNest
 	dsk_config;
@@ -393,6 +394,7 @@ static void get_freemem(long *stsize, long *ttsize)
 	}
 }
 
+
 /*
  * Show information on current versions of TeraDesk, TOS, AES...
  * Note: constant part of info for this dialog is handled in resource.c 
@@ -409,7 +411,10 @@ static void info(void)
 
 	/* 
 	 * Display currently available memory. 
-	 * Maximum correctly displayed size is 2GB 
+	 * Maximum correctly displayed size is 2GB.
+	 * If display of larger sizes (or a formatted display)
+	 * is desired it is necessary to change the signs
+	 * of stsize and ttsize, and to divide them by KBMB 
 	 */
 
 	rsc_ltoftext(infobox, INFSTMEM, stsize );
@@ -487,7 +492,13 @@ static void showhelp (unsigned int key)
  * (then set "opt" to 1, and "button" is a boolean variable)
  */
 
-void set_opt( OBJECT *tree, int flags, int opt, int button)
+void set_opt
+(
+	OBJECT *tree,	/* pointer to the object tree */
+	int flags,		/* variable containing bit flags */
+	int opt,		/* mask for the bitflag */
+	int button		/* button object index */
+)
 {
 	if ( flags & opt )
 		obj_select(tree[button]);
@@ -500,7 +511,13 @@ void set_opt( OBJECT *tree, int flags, int opt, int button)
  * Inverse function to the above- set bit flag from button id. 
  */
 
-void get_opt( OBJECT *tree, int *flags, int opt, int button)
+void get_opt
+(
+	OBJECT *tree,	/* pointer to the object tree */
+	int *flags,		/* variable containing the bit flags */
+	int opt,		/* mask of the bit flag */
+	int button		/* button object index */
+)
 {
 	if ( tree[button].ob_state & SELECTED )
 		*flags |= opt;
@@ -902,7 +919,7 @@ static void copyprefs(void)
 		button;
 
 	static const int 
-		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_SHOWD, CF_KEEPS, P_HEADER};
+		bitflags[] = {CF_COPY, CF_OVERW, CF_DEL, CF_PRINT, CF_SHOWD, CF_KEEPS, CF_TRUNN, P_HEADER};
  
 
 	/* Set states of appropriate options buttons and copy buffer field */
@@ -1049,7 +1066,7 @@ static CfgNest opt_config
 		options.version = CFG_VERSION;
 		get_set_video(0);			/* get current video mode */
 
-		*error = CfgSave(file, Options_table, lvl, CFGEMP); 
+		*error = CfgSave(file, Options_table, lvl, TRUE); /* save empty/0 fields as well  */
 	}
 	else
 	{
@@ -1071,7 +1088,8 @@ static CfgNest opt_config
 				options.plinelen = DEF_PLINE; 
 
 			if 
-			(   options.version < MIN_VERSION 
+			(
+			       options.version < MIN_VERSION 
 				|| options.version > CFG_VERSION 
 				|| (options.sort & ~WD_REVSORT) > WD_NOSORT
 				|| options.plinelen > MAX_PLINE
@@ -1395,7 +1413,12 @@ static int alloc_global_memory(void)
  * (but not all of it, some items are handled in window.c) 
  */
 
-static void hndlmenu(int title, int item, int kstate)
+static void hndlmenu
+(
+	int title,	/* index of menu title */
+	int item,	/* index of menu item  */
+	int kstate	/* current keyboard-pressed state */
+)
 {
 #if _LOGFILE
 fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
@@ -1516,10 +1539,14 @@ fprintf(logfile,"\n hndlmenu %i %i %i", title, item, kstate);
  * (some key combinations can can not be differed from others)
  */
 
-static int scansh ( int key, int kstate )
+static int scansh 
+( 
+	int key,		/* code of the key pressed (see XD_ routines)  */
+	int kstate 		/* keyboard state: shifted, etc */
+)
 {
 	int 
-		a = touppc(key & 0xFF),
+		a = touppc(key & 0xFF),	/* turn to (8-bit) uppercase */
 		h = key & 0x80; 		/* upper half of the 255-characters set */
 
 
@@ -1549,7 +1576,11 @@ static int scansh ( int key, int kstate )
  * Handle keyboard commands 
  */
 
-static void hndlkey(int key, int kstate)
+static void hndlkey
+(
+	int key,		/* code of the key pressed */
+	int kstate		/* keyboard shift state */
+)
 {
 	APPLINFO
 		*appl;		/* pointer to data for application assigned to F-key */
@@ -1678,7 +1709,7 @@ fprintf(logfile,"\n  AP_TERM");
 				break;
 
 			}
-/* currently not used
+/* currently not used; TeraDesk can only be a sender
 
 #if _MINT_
 			case AP_DRAGDROP:
@@ -2135,7 +2166,9 @@ int main(void)
 	 * The following segment handles final system shutdown and resolution change
 	 * If a resolution change is required, shutdown is (supposed to be)
 	 * performed first (but it did not work as planned... see below).
-	 * If only shutdown is required, the system will reset at the end.
+	 * If only shutdown is required, the system will reset at the end,
+	 * or else go into an endless loop.
+	 *
 	 * Note that if an external application is set to perform shutdown,
 	 * all this will -not- be executed: upon receiving AP_TERM, TeraDesk
 	 * will just quit.
@@ -2155,7 +2188,7 @@ int main(void)
 		else
 		{
 			/* 
-			 * Tell all GEM applications which would understand it to end.
+			 * Tell all GEM applications whichunderstand this message to end.
 			 * This was supposed to be done also before resolution change,
 			 * but it was found out that Magic and XaAES do not react to
 			 * it properly: Magic just restarts the desktop and XaAES goes

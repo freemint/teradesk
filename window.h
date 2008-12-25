@@ -122,7 +122,7 @@ typedef struct
 
 
 /*
- * Some fields in the commonpart of DIR_WINDOW and TXT_WINDOW structures
+ * Some fields in the common part of DIR_WINDOW and TXT_WINDOW structures
  */
 
 #define WD_VARS 	int scolumns;  \

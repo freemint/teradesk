@@ -422,10 +422,11 @@
 #define CPRINT           7   /* BUTTON in tree COPTIONS */
 #define CSHOWD           8   /* BUTTON in tree COPTIONS */
 #define CKEEPS           9   /* BUTTON in tree COPTIONS */
-#define CPPHEAD          10  /* BUTTON in tree COPTIONS */
-#define COPTOK           12  /* BUTTON in tree COPTIONS */
-#define COPYBUF          13  /* FTEXT in tree COPTIONS */
-#define CPPLINE          14  /* FTEXT in tree COPTIONS */
+#define CTRUNC           10  /* BUTTON in tree COPTIONS */
+#define CPPHEAD          11  /* BUTTON in tree COPTIONS */
+#define COPTOK           13  /* BUTTON in tree COPTIONS */
+#define COPYBUF          14  /* FTEXT in tree COPTIONS */
+#define CPPLINE          15  /* FTEXT in tree COPTIONS */
 
 #define SEARCH           20  /* Form/Dialog-box */
 #define ST1              3   /* STRING in tree SEARCH */

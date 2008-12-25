@@ -259,7 +259,9 @@ void dsk_draw(void)
 
 
 /*
- * Determine whether an icon item is a file/folder/program/link or not
+ * Determine whether an icon item is a file/folder/program/link or not.
+ * This is determined by analyzing the stored item type, not by
+ * actually inquiring the item represented by the icon.
  */
 
 boolean isfile(ITMTYPE type)
@@ -2631,8 +2633,8 @@ static void set_dsk_obtype(int type)
 /*
  * Set desktop background pattern and colour. This routine does -not-
  * actually change display, just sets colour and pattern indices
- * in TeraDesk. It also sets background (desktop) object type
- * to userdef if colour is 0 (white) and pattern is #1
+ * in TeraDesk. It can also set background (desktop) object type
+ * to userdef, depending on colour (in order to display more colours)
  */
 
 void set_dsk_background(int pattern, int colour)

@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: Augut 2008
+@$VER: December 2008
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V3.97
+                User's Manual for Tera Desktop V4.00
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                             Augut 2008
+                             December 2008
 
 @autorefon
 
@@ -86,7 +86,7 @@ Version  1.42 was the first version published under the General Public
 License in 2002.
 
 Version 2.0 was an adaptation by Henk Robbers to modern AESes, such as
-N.AES,  XaAES  & MagiC, near the end of 2002.
+N.AES,  XaAES and MagiC, near the end of 2002.
 
 Version 2.3  was the first result of the joint efforts of Henk Robbers
 and Djordje Vukovic, and comprised a number of new features.
@@ -115,7 +115,7 @@ Tera Desktop files (included in the binary distribution) are:
              ICONS.RSC        Monochrome icons resource file
              CICONS.RSC       Colour icons resource file
              README.TXT       Introduction in English
-             HIST_V3.TXT      Development history in English
+             HIST_V34.TXT     Development history in English
              TERADESK.HYP     ST-Guide manual in English
              TERADESK.REF     Reference file for the above
              TERADESK.INF     Sample configuration file
@@ -292,12 +292,16 @@ e.g.  not recognising  certain  keyboard key codes,  not being able to
 show directories in 'unsorted' order,  or encountering strange file or
 directory owner IDs and file protection states.
 
-Users should beware that  the current version of  Tera Desktop has the
+Users should be aware that the current version of Tera Desktop has the
 limitation that the number of items  in a directory,  or the number of
 selected items in  a directory tree should not exceed 32767,  and that
-the total size of  items in a directory  or in a selection  should not
-exceed 2 GB.  The maximum  disk partition size  that  can be correctly
-displayed is 1024 GB.
+the total size of all items in a directory (not counting  the sizes of
+objects in subdirectories)  or of all objects included  in a selection
+should not exceed 2047 GB (2 TB). The maximum disk partition size that
+can be  correctly displayed is one billion clusters, which is at least
+1 TB;  there are some provisions in the code  to increase those limits
+to 2 EB in the future.  Maximum permitted  size of one individual file
+is 2 GB.
 
 See also  Supported screen resolutions
 
@@ -1122,10 +1126,6 @@ files.
 
 With TOS version 1.04 and above, the folder name can be changed.
 
-Users should beware thet current version of TeraDesk can not correctly
-display information about a folder  larger than 2GB or containing more
-than 32767 files. See TOS version compatibility.
-
 3. If the selected object is a symbolic link, its  name, the time  and
 date of creation  and its size will be displayed.  File attributes are
 also  displayed,  but changing  them will  NOT affect the link itself.
@@ -1137,10 +1137,7 @@ link will in fact be deleted and a new one created.
 volume label, the numbers of used and  available bytes, the total free
 space on it,  and the  cluster size  will be displayed. If the disk is
 empty it is possible  that the total space  and the free space will be
-different; this is caused by a bug in TOS.  Note that if the volume is
-larger than 1 GB, its size,  used and free space  will be displayed in
-kilobytes, not in bytes.  If the volume  is larger than 1 TB, TeraDesk
-will not correctly display this data.
+different; this is caused by a bug in TOS.  
 
 If the button  'More' is pressed,  the numbers of  files (or files and
 links) and folders  on the volume  will  be displayed.  Note that on a
@@ -1150,6 +1147,18 @@ large volume this counting may take some time.
 information  on the disk volume of the top directory window, if any is
 open, or  on the text file in the top  text window if any  is open. If
 there are no open windows, this menu item is disabled.
+
+If the selected object is  larger than 9999999 bytes, its size will be
+shown in kilobytes  (1 KB = 1024 B)  or megabytes  (1 MB = 1048576 B),
+not in bytes; if the size is not  an exact multiple of  the unit used,
+it will be rounded  to the larger value.  If the object is larger than
+2 TB  (or one billion clusters,  if the object  is a  disk partition),
+TeraDesk will not correctly display its size.
+
+Users should beware thet current version of TeraDesk can not correctly
+display information about a folder or a disk partition containing more
+than 32767 files. See TOS version compatibility.
+
 
 It is  possible  to select  more than one object  before invoking this
 menu  item;  the content of the  dialog box will change to show fields
@@ -1788,7 +1797,10 @@ ticked.
 
 Selection applies to all open Directory windows.
 
-Size is shown in bytes.
+Size is shown in bytes,  unless it is more than 9999999 bytes. In such
+case it is shown  either in kilobytes  (1 KB = 1024 B) or in megabytes
+(1 MB = 1048576 B);  if the size is not an  exact multiple of the unit
+used, it will be rounded to the larger value.
 
 Date is shown in the 'dd-mm-yy' (day, month, year) format.
 
@@ -2564,11 +2576,14 @@ box is displayed. In this you can:
 
 6. Control whether selected items remain selected after a  copy action
    is finished.
+   
+7. Control whether long filenames  are truncated  when copied to a FAT
+   partition which permits only DOS 8+3 names.
 
-7. Control the printing  of headers  and separators  before/after each
+8. Control the printing  of headers  and separators  before/after each
    item being printed
 
-8. Set  the  size of the copy buffer.  This is an area of RAM which is
+9. Set  the  size of the copy buffer.  This is an area of RAM which is
    used  to  store  the  contents  of files  being copied. In general,
    the larger  you set it,  the faster  will be  the copying  of large
    files.
@@ -3098,11 +3113,12 @@ selected item) and, if appropriate, the  destination path.
 For copy, touch and move/rename operations, three checkbox buttons are
 shown in the dialog:
 
-- Renew date and time
-- Reset attributes (and access rights)
+- Set date and time
+- Set attributes (and access rights)
 - Follow links (for copy, move/rename and delete operations)
+- Shorten names (for copy and move/rename operations)
 
-If 'Renew date and time' is set, all files acted upon  will have their
+If 'Reset date and time' is set, all files acted upon  will have their
 date and time  stamp  changed to current values (system date and time)
 or, in the case of the  'touch' operation,  to values specified in the
 Info... dialog).
@@ -3723,8 +3739,7 @@ creation and manipulation of such objects should be avoided.
 
 When a symbolic link contains only the name of  the referenced object,
 TeraDesk will supply the path of the link itself  (and append the name
-of  the referenced  object).  Paths  containing  '.\' or '..'  are not
-supported in the current version of TeraDesk.
+of  the referenced  object).  
 
 Symbolic links to network objects such as  web pages and ftp sites can
 be created. For the time being, this cannot be done directly; instead,
@@ -3837,6 +3852,9 @@ See also: Keyboard shortcuts  Dragging Objects   Menus and Dialogs
 The  contents  (folders  and files) of a directory are shown as in the
 standard  desktop.  Files and folders can be displayed in text mode or
 icon mode (see Show as icons).
+
+The amount of information  displayed in a  window can be controlled by 
+settings in the View menu. See Menu title: View 
 
 In text mode,  all folder names in a directory windows are preceded by
 a special character (the 'fuller' mark), the same as the  built-in TOS
@@ -4016,7 +4034,7 @@ See Set applications...  Running a program
 
 @{U}9 Configuration Files                                         TeraDesk@{u}
 
-By default, TeraDesk 3.* uses two configuration files:
+By default, TeraDesk 4.* uses two configuration files:
 
 TERADESK.INF holds the complete configuration of the Desktop.
 TERADESK.PAL holds the colour palette.
@@ -4030,7 +4048,7 @@ TERADESK.INF  first  in  the  current  directory,  then  in  the  root
 directory,  then in the directories specified by the  PATH environment
 variable, and lastly in the directory of the (Tera Desktop) program.
 
-The configuration files of TeraDesk V3.* are in plain ASCII text form.
+The configuration files of TeraDesk V4.* are in plain ASCII text form.
 Information in the files is divided  into blocks which  are  delimited
 by { } parentheses and identified by keywords, for example:
 
@@ -4295,9 +4313,9 @@ with full AV-protocol support.
 Certain AV-protocol data is exchanged between Tera Desktop and clients
 through  a globally  available  memory buffer.  Size of this buffer in 
 Tera Desktop is between 0.2% and 0.4% of the largest free memory block
-at time of allocation, but always at least 1KB and no more than 128KB.
-It should be noted  that in  some cases  the size  of this buffer  may
-limit the number of filenames  that can be handled  in one AV-protocol
+at the time of allocation,  but always at least  1KB and no  more than 
+128KB. It should be noted  that in  some cases the size of this buffer
+may limit the number of names  that can be handled  in one AV-protocol
 operation. 
 
 In a multi-tasking  environment  with  memory protection, TeraDesk may

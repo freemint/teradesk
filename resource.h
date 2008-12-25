@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define DISP_KBMB 9999999L 	/* sizes larger than this to be shown in KB or MB */
+#define KBMB 1024			/* kilo or mega */
 
 #include "desktop.h"
 

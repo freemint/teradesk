@@ -9,7 +9,7 @@ copy -n desktop.rsd e:\tera3b\
 copy -n readme.txt e:\tera3b\
 copy -n .\newicons\icons.rsc e:\tera3b\
 copy -n .\newicons\cicons.rsc e:\tera3b\
-copy -n hist_v3.txt e:\tera3b\doc\
+copy -n hist_v34.txt e:\tera3b\doc\
 copy -n copying. e:\tera3b\doc\
 copy -n j:\st_guide\teradesk.hyp e:\tera3b\doc\
 copy -n j:\st_guide\teradesk.ref e:\tera3b\doc\
