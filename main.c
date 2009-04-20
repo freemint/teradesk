@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren. 
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -152,8 +152,6 @@ FILE
 char
 	*logname;
 #endif
-
-
 
 
 /*
@@ -1686,7 +1684,6 @@ fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exi
 #if _LOGFILE
 fprintf(logfile,"\n  AP_TERM");
 #endif
-
 				if (allow_exit)
 				{
 					/* This will cause an exit from TeraDesk's main loop */
@@ -1842,23 +1839,44 @@ boolean wait_to_quit(void)
 {
 	int event = 0;
 
+
 	xd_clrevents(&loopevents);
 
 	loopevents.ev_mflags = MU_TIMER | MU_MESAG;
-	loopevents.ev_mtlocount = 2000; /* 2 seconds */
+	loopevents.ev_mtlocount = 2000; /* wait 2 seconds */
 
 	do
 	{
+		Syield(); /* some other shutdown apps do this? */
+
 		event = xe_xmulti(&loopevents);
 
-		if((event & MU_MESAG)  && (loopevents.ev_mmgpbuf[0] == AP_TERM))
+		if((event & MU_MESAG))
 		{
-			shutting = TRUE;
-			return TRUE;
+			int m = loopevents.ev_mmgpbuf[0];
+
+			if (m == AP_TERM)
+			{
+				shutting = TRUE;
+				return TRUE;
+			}
+			else if(m == RESCH_COMPLETED)
+			{
+				shutting = TRUE;
+				return TRUE;
+			}
+			else if(m == SHUT_COMPLETED )
+			{
+				shutting = FALSE;
+				return FALSE;
+			}
 		}
 
 		if((event & MU_TIMER))
+		{
+			shutting = FALSE;
 			return FALSE;
+		}
 	}
 	while(TRUE);
 }
@@ -2200,16 +2218,18 @@ int main(void)
 			 *
 			 * THERE SEEMS TO BE SOME CONFUSION IN THE DOCS AS TO WHICH
 			 * PARAMETER TO shel_write() CONTROLS SHUTDOWN TYPE!
+			 * Therefore, BOTH wiscgr and wiscr are set to 'full shutdown'.
 			 */
 #if _MINT_
 			int ignor = 0;
 
-			quit = shel_write( SHW_SHUTDOWN, 2, 0, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
+			quit = shel_write( SHW_SHUTDOWN, 2, 2, (naes) ? (void *)&ignor : NULL, NULL ); 	/* complete shutdown */
 #else
-			quit = shel_write( SHW_SHUTDOWN, 2, 0, NULL, NULL ); 	/* complete shutdown */
+			quit = shel_write( SHW_SHUTDOWN, 2, 2, NULL, NULL ); 	/* complete shutdown */
 #endif
-			wait_to_quit();	/* wait 2 seconds for a termination message */
+			wait_to_quit();	/* wait several seconds for a termination message */
 		}
+
 
 		wait(500);
 
@@ -2224,12 +2244,14 @@ int main(void)
 			long (*rv)();		/* reset vector */
 
 #if _MINT_
+			Syield();
+			wait(2000);
+			appl_exit();
+
 			/* shutopt: 0 = halt/poweroff,  1 = reset,  2 = coldreset */ 
 
 			Shutdown((long)shutopt);
 #endif			
-			wait(5000);
-
 			/* 
 			 * If execution of the program comes to this point, it means
 			 * that Shutdown() was not known of on the system, or that it
@@ -2278,13 +2300,11 @@ int main(void)
 	/* Just quit the desktop */		
 
 	appl_exit();
+
 	return 0;
 }
 
 /* That's all ! */
-
-
-
 
 
 

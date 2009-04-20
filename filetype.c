@@ -143,11 +143,8 @@ static void rem_all_filetypes(void)
 
 /*
  * Handle the dialog for entering a filetype for file mask; 
- * return data in *ft; if operation is canceled, entry values
+ * return edited data in *ft; if operation is canceled, entry values
  * in *ft are unchanged.
- * This routine was practically rewritten, 
- * old code was removed completely
- * 
  */
 
 static boolean filetype_dialog
@@ -158,16 +155,16 @@ static boolean filetype_dialog
 	int use			/* use of this dialog (filetype or doctype, add or edit) */
 )
 {
+	XDINFO
+		info;			/* dialog info structure */
+
 	int 
-		title, 	/* rsc index of dialog title string */
-		button;	/* code of pressed button */
+		title, 			/* rsc index of dialog title string */
+		button;			/* code of pressed button */
 
 	boolean
 		stat = FALSE,	/* changes accepted or not */
 		stop = FALSE;	/* true to exit from dialog */
-
-	XDINFO
-		info;			/* dialog info structure */
 
 
 	/* Set dialog title (add/edit) */
@@ -283,7 +280,7 @@ char *ft_dialog
 		newmask;		/* newly specified filemask */
 
 	char 
-		*result = NULL;	/* to be return value of this routine */
+		*result = NULL;	/* to be the return value of this routine */
 
 	static const char 
 		ois[] = {0, 0, MSKHID, MSKSYS, MSKDIR, MSKPAR};

@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: December 2008
+@$VER: April 2009
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.00
+                User's Manual for Tera Desktop V4.01
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                             December 2008
+                            April 2009
 
 @autorefon
 
@@ -1112,8 +1112,12 @@ rights, as well as the special flags  (Sticky, SetGID, SetUID) for the
 world, group and user (owner) respectively. User (owner) and group IDs
 are also shown and can be set.
 
-Note: The  state of  SetGID and SetUID flags  should be  changed  with
+Note 1: The  state of SetGID and SetUID flags  should be changed  with
 extreme caution. See the documentation for the Fchmod() function.
+
+Note 2: Setting of user access rights and user/group IDs  may silently
+fail when attempted on some (not all)  network file systems that  have
+user-id-mapping activated. 
 
 2. If the selected object is a folder, its name, the time  and date of
 its creation, the number of files and folders in it, and the number of
@@ -1155,9 +1159,9 @@ it will be rounded  to the larger value.  If the object is larger than
 2 TB  (or one billion clusters,  if the object  is a  disk partition),
 TeraDesk will not correctly display its size.
 
-Users should beware thet current version of TeraDesk can not correctly
-display information about a folder or a disk partition containing more
-than 32767 files. See TOS version compatibility.
+Users should remember  that the  current  version of TeraDesk  can not 
+correctly  display  information  about  a folder  or a  disk partition
+containing more than 32767 files. See TOS version compatibility.
 
 
 It is  possible  to select  more than one object  before invoking this
@@ -2564,31 +2568,31 @@ By  selecting this menu item, you can set your preferences just as you
 can in  the standard desktop.  When you select the menu item, a dialog
 box is displayed. In this you can:
 
-1. Toggle confirmation of copies and moves.
+ 1. Toggle confirmation of copies and moves.
 
-2. Toggle confirmation of overwrites.
+ 2. Toggle confirmation of overwrites.
 
-3. Toggle confirmation of deletes.
+ 3. Toggle confirmation of deletes.
 
-4. Toggle confirmation of print operations.
+ 4. Toggle confirmation of print operations.
 
-5. Control whether The copy info dialog will appear.
+ 5. Control whether The copy info dialog will appear.
 
-6. Control whether selected items remain selected after a  copy action
-   is finished.
+ 6. Control whether selected items remain selected after a copy action
+    is finished.
    
-7. Control whether long filenames  are truncated  when copied to a FAT
-   partition which permits only DOS 8+3 names.
+ 7. Control whether long filenames  are truncated when copied to a FAT
+    partition which permits only DOS 8+3 names.
 
-8. Control the printing  of headers  and separators  before/after each
-   item being printed
+ 8. Control the printing  of headers  and separators before/after each
+    item being printed
 
-9. Set  the  size of the copy buffer.  This is an area of RAM which is
-   used  to  store  the  contents  of files  being copied. In general,
-   the larger  you set it,  the faster  will be  the copying  of large
-   files.
+ 9. Set  the  size of the copy buffer. This is an area of RAM which is
+    used  to store  the  contents of files  being copied.  In general,
+    the larger  you set it,  the faster will be  the copying  of large
+    files.
 
-9. Set printer line length; lines longer than this size are wrapped.
+10. Set printer line length; lines longer than this size are wrapped.
 
 The  dialog  boxes  displayed  when  a  confirmation  is necessary are
 similar to those  in the standard desktop,  but they offer  additional
@@ -3110,11 +3114,11 @@ This dialog displays  the number of  folders  and files  on which  the
 operation is to be performed,  the initial source  path  (of the first
 selected item) and, if appropriate, the  destination path.
 
-For copy, touch and move/rename operations, three checkbox buttons are
+For copy, touch and  move/rename operations, four checkbox buttons are
 shown in the dialog:
 
-- Set date and time
-- Set attributes (and access rights)
+- Reset date and time
+- Reset attributes (and access rights)
 - Follow links (for copy, move/rename and delete operations)
 - Shorten names (for copy and move/rename operations)
 
@@ -4072,7 +4076,7 @@ terminated by <LF> only (this can be easily changed during compilation
 of the  program). However, TeraDesk will not complain of <CR><LF> line
 termination either.
 
-The configuration files  of TeraDesk 3.* are  in text  form,  but they
+The configuration files  of TeraDesk 4.* are  in text  form,  but they
 are NOT intended to be  edited by hand,  although it is possible to do
 so. The text form  of the  configuration files is  a consequence of an
 implementation of the 'keyword  =  value'  concept which  enables easy
@@ -4447,7 +4451,7 @@ contribution to various stages in development of the Tera Desktop:
    Markus Lutz
    Miro Kropacek
    Odd Skancke
-   and others              For testing and reporting on TeraDesk 3.*
+   and others              For testing and reporting on TeraDesk
 
 @endnode
 

@@ -26,14 +26,10 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V4.00 relative to previous version
+Changes in V4.01 relative to previous version
 ---------------------------------------------
 
-- Changed MITEMS and MSITEMS strings (%s format specifier instead of %ld)
-
-- Added new object CTRUNC in tree COPTIONS; height of root objects
-  increased so that the new button can be fitted. Objects in the CPAR1
-  box sorted anew from top to bottom.
+Resource files of TeraDesk V4.00 and V4.01 are identical.
 
 
 Naming of object trees

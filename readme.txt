@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to V4.00  	Copyright 2003-2008  Dj. Vukovic
+             V3.01 to V4.01  	Copyright 2003-2009  Dj. Vukovic
 
 
-This  is version 4.00 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.01 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -102,7 +102,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (3.97). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.00). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -346,6 +346,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; December 26th 2008
+                                            Beograd; April 20th 2009
 
 

@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -4883,13 +4883,13 @@ static void icw_draw(WINDOW *w)
 	const char 
 		*wpath = wd_path(w);
 
-	INAME 
-		icname;			/* name of icon in desktop.rsc */
-	
 	int 
 		dx, dy,			/* icon offsets in the root object */
 		icon_no, 		/* icon identifier in resource files */
 		icon_ind;		/* icon identifier in resource files */
+	
+	INAME 
+		icname;			/* name of icon in desktop.rsc */
 	
 
 	/* allocate memory for objects: background + 1 icon */

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -80,6 +80,8 @@ int
 	opmode, 
 	opuid, 
 	opgid,
+	curruid = 0,
+	currgid = 0,
 #endif
 	opattr; 
 
@@ -1737,6 +1739,7 @@ static int chk_access(XATTR *attr)
  * in which case a new link is effectively made.
  * Note2: Attribute FA_READONLY is artificially set in TeraDesk's
  * structures for readonly files even on not-FAT filesystems
+ * If attr is NULL, do not set attributes
  */
 
 int touch_file
@@ -1896,14 +1899,15 @@ static int copy_file
 			 * when operation was started, or set in the show-info dialog
 			 */
 
-			oldattr = attr->attr;
+			oldattr = attr->attr;	/* keep original */
 
-			if ( (options.cprefs & CF_CATTR) != 0 ) 
+			if ( (options.cprefs & CF_CATTR) != 0 ) /* reset atributes ? */
 			{
-				attr->attr = opattr;
+				attr->attr = opattr;	/* as set in the fileinfo dialog */
 				theattr = attr;
 #if _MINT_
 				attr->mode &= ~(DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX); /* remove permissions and sticky bit */
+
 				if(function == CMD_TOUCH)
 				{
 					attr->mode |= (opmode & (DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX));
@@ -1915,16 +1919,16 @@ static int copy_file
 #endif
 			}
 			else
-				theattr = NULL;
+				theattr = NULL;	/* do not reset attributes */
 
-			if ((options.cprefs & CF_CTIME) != 0) 
+			if ((options.cprefs & CF_CTIME) != 0)	/* reset date/time ? */ 
 			{
 				time.time = optime.time;
 				time.date = optime.date;
 				thetime = &time;
 				theattr = attr; /* attributes must be recreated after setting file time */
 			}
-			else
+			else	/* do not reset date/time */
 			{
 				time.time = attr->mtime;
 				time.date = attr->mdate;
@@ -1938,7 +1942,7 @@ static int copy_file
 
 			if ((result == 0) || (result == XOVERWRITE))
 			{
-				if ((function == CMD_MOVE) && (sname[0] == dname[0]))
+				if ((function == CMD_MOVE) && (sname[0] == dname[0]) /* same drive */ )
 				{
 					/* 
 					 * Move to the same drive is actually a rename.
@@ -1987,7 +1991,7 @@ static int copy_file
 					{
 						/* Check for a write-protected object at destination */
 
-						XATTR dattr;
+						XATTR dattr, oattr;
 						error = 0;
 						dattr.mode = 0;						
 
@@ -2011,13 +2015,19 @@ static int copy_file
 							if(error == 0)
 #endif
 							{
-
+								oattr = *attr;
 #if _MINT_
+								if(function == CMD_COPY)
+								{								
+									oattr.gid = currgid;
+									oattr.uid = curruid;
+								}
+							
 								if ( link )
-									error = linkcopy(sname, dname, attr, &time);
+									error = linkcopy(sname, dname, &oattr, &time);
 								else
 #endif
-									error = filecopy(sname, dname, attr, &time, rbytes);
+									error = filecopy(sname, dname, &oattr, &time, rbytes);
 							}
 
 							if ((function == CMD_MOVE) && (error == 0))
@@ -2941,14 +2951,16 @@ boolean itmlist_op
 	 * deslect those objects. 
 	 */
 
-/*
-	set_opt(copyinfo, options.cprefs, CF_CTIME, CCHTIME); 
-	set_opt(copyinfo, options.cprefs, CF_CATTR, CCHATTR); 
-*/
 	obj_deselect(copyinfo[CCHTIME]);
 	obj_deselect(copyinfo[CCHATTR]);
 
 #if _MINT_
+	if(mint)
+	{
+		curruid = Pgetuid();
+		currgid = Pgetgid();
+	}
+
 	/* If state of the 'follow link' is changed, one must return here */
 
 	recalc:;

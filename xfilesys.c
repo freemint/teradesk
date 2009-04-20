@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -701,17 +701,38 @@ int x_unlink(const char *file)
 /* 
  * Set GEMDOS file attributes and access rights.
  * Note: Applying Fattrib() to folders in Mint will fail
- * on -some- FAT partitions (why?) 
+ * on -some- FAT partitions (why?).
  */
 
-int x_fattrib(const char *file, XATTR *attr)
+int x_fattrib
+(
+	const char *file,	/* file name */
+	XATTR *attr			/* extended attributes */
+)
 {
 	int
 #if _MINT_
 		mode,
+		hasuid,	/* true if access rights  are settable */
 #endif
-		mask = (FA_READONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE),
-		error;
+		mask,	/* mask for changeable ms-dos attributes */
+		error;	/* error code */
+
+
+	/* 
+	 * The following change is of V4.01. If file access rights
+	 * are available, do not fail if it is impossible set MS-DOS 
+	 * file attributes - user acces rights are probaly the only
+	 * relevant protection.  Previous version failed when attempting 
+	 * to access files on a network file system because Fattrib
+	 * did not work. 
+	 */
+
+#if _MINT_
+	hasuid = ((x_inq_xfs(file) & FS_UID) != 0);
+#endif
+
+	mask = (FA_READONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE);
 
 	if((attr->mode & S_IFMT) == S_IFDIR)
 		mask |= FA_SUBDIR;
@@ -719,25 +740,49 @@ int x_fattrib(const char *file, XATTR *attr)
 	error = xerror((int)Fattrib(file, 1, (attr->attr & mask) ));
 
 #if _MINT_
-		mode = attr->mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
+
+	if(hasuid)
+		error = 0;
 
 	if(mint)
 	{
-		/* Quietly fail if necessary in Mint (why?) */
+		mode = attr->mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
+
+		/* Quietly fail on folders if necessary in Mint (why?) */
 
 		if(!magx && (attr->mode & S_IFMT) == S_IFDIR && error == EFILNF)
 			error = 0;
 
 		/* Set access rights and owner IDs if possible */
 
-		if ( error >= 0 && ((x_inq_xfs(file) & FS_UID) != 0) )
+		if ( error >= 0 && hasuid != 0 )
 		{
 			/* Don't use Fchmod() on links; target will be modified! */
 
 			if ( (attr->mode & S_IFLNK) != S_IFLNK ) 
 				error = xerror( (int)Fchmod((char *)file, mode) );
+
+			/* 
+			 * This (and above) may cause a problem with network file systems.
+			 * on accessing -some- remote systems, Fchown and/or Fchmod
+			 * may fail, depending on the settings of user-id-mapping.
+			 * Therefore, such errors are quietly ignored.
+			 */
+
 			if ( error >= 0 )
 				error = xerror( (int)Fchown((char *)file, attr->uid, attr->gid) );
+				
+			if(error == EACCDN)
+			{
+				char b[8];
+				const char *c= "U:\\NFS\\";
+
+				strsncpy(b, file, 8);
+				strupr(b);
+
+				if(strcmp(b, c) == 0)
+					error = 0;
+			}
 		}
 	}
 #endif
@@ -1300,15 +1345,14 @@ long x_pathconf(const char *path, int which)
 #if _MINT_
 	if (mint)
 		return x_retresult(Dpathconf(path, which));
-	else
 #endif
-	{
-		if (which == DP_PATHMAX)
-			 return PATH_MAX;			/* = 128 in TOS */
-		else if (which == DP_NAMEMAX)
-			return 12;					/* 8 + 3 in TOS */
-		return 0;
-	}
+
+	if (which == DP_PATHMAX)
+		 return PATH_MAX;			/* = 128 in TOS */
+	else if (which == DP_NAMEMAX)
+		return 12;					/* 8 + 3 in TOS */
+
+	return 0;
 }
 
 

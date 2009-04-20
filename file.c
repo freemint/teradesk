@@ -204,8 +204,11 @@ char *fn_get_name(const char *path)
 
 char *fn_get_path(const char *path)
 {
-	char *backsl;
-	long l;
+	char
+		*backsl;	/* pointer to the last backslash */
+
+	long
+		l;			/* string length */
 
 
 	/* If there is no backslash in the name, just take the whole path */
@@ -817,8 +820,11 @@ boolean match_pattern(const char *t, const char *pat)
 
 boolean cmp_wildcard(const char *fname, const char *pat)
 {
-	char *dot = NULL;
-	boolean matched;
+	char
+		*dot = NULL;
+
+	boolean
+		matched;
 
 #if _MINT_
 	if (!mint)
@@ -901,7 +907,9 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 
 void force_mediach(const char *path)
 {
-	int drive, p = *path;
+	int 
+		drive,
+		p = *path;
 
 	if(!isdisk(path))
 		return;
@@ -1059,6 +1067,7 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 
 	TEDINFO
 		*ti = xd_get_obspecp(ob)->tedinfo;
+
 	char
 		*dst = ti->te_ptext;
 

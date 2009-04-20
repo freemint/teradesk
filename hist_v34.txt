@@ -1,27 +1,59 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2003  H. Robbers
-                         2002 - 2008  Dj. Vukovic
+                         2002 - 2009  Dj. Vukovic
+
+
+Version 4.01  20-04-2009
+------------------------
+
+- An improvement was (hopefully) made in the shutdown procedure. Probably 
+  because of ambiguous documentation, different AESes use different 
+  parameters (wiscr vs. wisgr) in shel_write() to activate shutdown! 
+  TeraDesk now tries better to account for these differences by setting 
+  all of the alternative parameters.  Btw. it seems that, in fact, none 
+  of the AESes implements whutdown procedure completely and as it looks 
+  to have been designed to be (e.g. what about 'shutdown completed'
+  message?) 
+
+- When copying files to filesystems that know of user/group ids, TeraDesk 
+  now sets current user uid/gid instead of keeping the original one. 
+  This is tought to be more appropriate.  When moving files, the original
+  uid/gid is kept.
+
+- (Almost) fixed a problem with copying files to network file systems. 
+  The problem was caused by denial of access to change destination file 
+  attributes and access rights. An improvement has been made and this mostly
+  works correct now, but a problem remains with some (not all) network 
+  file systems if they have user-id-mapping activated. In that case, an 
+  attempt to set uid/gid on destination through Fchown() fails. It seemed
+  at first that Dpathconf() could be used to divine whether uid/gid is
+  available for setting, but, unfortunately, no useful information could
+  be detected this way. As a very ugly last measure, TeraDesk now ignores
+  errors from Fchown() if destination path is at u:\nfs\.....
+
+- Some mistakes in the hypertext manual have been corrected.
 
 
 Version 4.00  25-12-2008
 ------------------------
 
-- Removed the 2 GB limit for the sum of file sizes in a selection or in a
-  partition. New limit is 2 TB.  Provisions made in the code to easily
-  change the limit to 2 EB at compilation time, but then large sums 
-  and sizes will have to be displayed in megabytes (which may become more
-  appropriate in a year or so). Size limit for a partition is now 1 billion
-  clusters which is at least a couple of TB. Size limit for one individual
-  file is still 2 GB, because of the limitations of the operating system(s).
-  The single-tasking version of TeraDesk is not fully enabled for the 
-  extended size limits, whish are above the single-TOS possible partition
-  sizes anyway.
-
 - Improved formatting when displaying large file or folder sizes. They will
   be displayed in kilobytes (for values larger than cca 9.9 MB) or in 
   megabytes (for values larger than about 9.9 GB)- appropriate suffix 'K'
-  or 'M' will be added. Numericl string lengths should never exceed 
-  7 decimal places.    
+  or 'M' will be added. Numerical string lengths are never supposed to 
+  exceed 7 decimal places.    
+
+- Removed the 2 GB limit for the sum of file sizes in a selection or in a
+  partition. New limit is 2 TB.  Provisions made in the code to easily
+  change the limit to 2 EB at compilation time, but then large sums and
+  sizes will have to be displayed in megabytes instead of kilobytes (which 
+  may become more appropriate in a year or so). Size limit for a partition
+  is now 1 billion clusters which is at least a couple of TB. Size limit for
+  one individual file is still 2 GB, because of the limitations of the 
+  operating system(s). The improvement works only on the multitasking 
+  version of TeraDesk. The single-tasking is not fully enabled for the 
+  extended size limits, whish are above the single-TOS possible partition
+  sizes anyway.
 
 - Enabled the use of links referencing paths relative to the directory of
   the link, i.e. paths starting with ".\" and "..\".
@@ -49,8 +81,8 @@ Version 4.00  25-12-2008
 - Fixed an old but hitherto unnoticed bug which caused improper operation
   of the slider in the icon-selector dialog (paging up did not work well).
 
-- Fixed the problem of not being able to save and load the disabled 
-  states of some options.
+- Fixed the problem of not being able to save and load the disabled states 
+  of some options.
 
 - Fixed some bugs that disabled the use of links to network objects.
 
