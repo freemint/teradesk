@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -61,16 +61,18 @@ static void  *oldpipesig;
 
 int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
 {
-	int 
-		fd,			/* pipe handle */ 
-		msg[8],		/* message buffer */
-		*mp = msg;	/* pointer to */
-
 	long 
 		fd_mask;
 
+	int 
+		msg[8],		/* message buffer */
+		*mp = msg,	/* pointer to */
+		fd;			/* pipe handle */ 
+
 	char
 		c = 0;
+
+#if _MINT_
 
 	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
 
@@ -141,6 +143,9 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	}
 
 	Fclose(fd);
+
+#endif
+
 	return -1;
 }
 
@@ -162,6 +167,8 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 int ddstry(int fd, char *ext, char *name, long size)
 {
 	char c;
+
+#if _MINT_
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
@@ -187,6 +194,8 @@ int ddstry(int fd, char *ext, char *name, long size)
 				return (int)c;
 		}
 	}
+
+#endif
 
 	return DD_NAK;
 }
@@ -279,8 +288,12 @@ int ddopen(int ddnam, char *preferext)
 
 int ddrtry(int fd, char *name, char *whichext, long *size)
 {
-	int hdrlen, i;
-	char buf[80];
+	int
+		hdrlen,
+		i;
+
+	char
+		buf[80];
 
 	if ((int)Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
 		return -1;

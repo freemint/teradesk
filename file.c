@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
- *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2002 - 2009  H. Robbers,
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -59,6 +59,7 @@ int make_path( char *name, const char *path, const char *fname )
 {
 	long l = (long)strlen(path);
 
+
 	/* "-1" below because a backlash may be added to the string */
 
 	if(l + (long)strlen(fname) >= (long)sizeof(VLNAME) - 1)
@@ -84,6 +85,7 @@ int make_path( char *name, const char *path, const char *fname )
 char *fn_last_backsl(const char *fname)
 {
 	char *e;
+
 
 	if ((e = strrchr(fname, '\\')) == NULL)
 		e = (char *)fname;
@@ -143,6 +145,7 @@ void path_to_disp ( char *fpath )
 
 	char *nend = strrchr( fpath, '\\' );
 		
+
 	if ( nend > fpath ) /* otherwise nend[-1] below would not be possible */
 	{
 		char *p, *q;
@@ -183,17 +186,17 @@ void path_to_disp ( char *fpath )
 
 char *fn_get_name(const char *path)
 {
-	char *h;
+	if(path)
+	{
+		char *h = fn_last_backsl(path); /* h == path if no backslash found */
 
-	if (!path)
-		return NULL;
+		if ( h != path || *path == '\\' )
+			h++;
 
-	h = fn_last_backsl(path); /* h == path if no backslash found */
+		return h;
+	}
 
-	if ( h != path || *path == '\\' )
-		h++;
-
-	return h;
+	return NULL;
 }
 
 
@@ -247,8 +250,12 @@ char *fn_get_path(const char *path)
 
 char *fn_make_path(const char *path, const char *name)
 {
-	int error;
-	char *result;
+	char
+		*result;
+
+	int
+		error;
+
 
 	if ((result = x_makepath(path, name, &error)) == NULL)
 		xform_error(error);
@@ -318,7 +325,9 @@ char *fn_make_newname(const char *oldn, const char *newn)
 
 boolean isdisk(const char *path)
 {
-	char *p = (char *)path;
+	char
+		*p = (char *)path;
+
 
 	/*
 	 * If address exists, index 0 can be examined
@@ -342,7 +351,9 @@ boolean isdisk(const char *path)
 
 boolean isroot(const char *path)
 {
-	char *d = nonwhite((char *)path);
+	char
+		*d = nonwhite((char *)path);
+
 
 	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
 		return TRUE; 
@@ -574,8 +585,11 @@ void get_fsel
 
 int chdir(const char *path)
 {
-	char *h = (char *)path;
-	int error;
+	char
+		*h = (char *)path;
+	
+	int
+		error;
 
 
 	if(isdisk(path))
@@ -826,6 +840,7 @@ boolean cmp_wildcard(const char *fname, const char *pat)
 	boolean
 		matched;
 
+
 #if _MINT_
 	if (!mint)
 #endif
@@ -868,6 +883,27 @@ static long cdecl (*Oldgetbpb) (int);
 static long cdecl (*Oldmediach) (int);
 static long cdecl (*Oldrwabs) (int, void *, int, int, int, long);
 
+/* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
+
+#if __AHCC__
+static long __asm__ cdecl Newgetbpb(int d)
+{
+	movem.l	d2-d3,-(a7)
+	move	12(sp),d3		; 4(sp) + 8
+	cmp		chdrv.l,d3
+	bne.s	L44
+	move.l	Oldgetbpb.l,1138
+	move.l	Oldrwabs.l,1142
+	move.l	Oldmediach.l,1150
+L44:
+	move	d3,-(a7)
+	movea.l	Oldgetbpb.l,a0
+	jsr		(a0)
+	addq	#2,a7
+	movem.l	(a7)+,d2-d3
+	rts
+}
+#else
 static long cdecl Newgetbpb(int d)
 {
 	if (d == chdrv)
@@ -879,8 +915,35 @@ static long cdecl Newgetbpb(int d)
 
 	return (*Oldgetbpb)(d);
 }
+#endif
 
 
+/* 
+ * HR:
+ * The following 2 functions didnt suffer, but I have done the same
+ * and then disabled. Rwabs is a very dangerous function :-) 
+ */
+
+#if 0 /* __AHCC__ */
+static long __asm__ cdecl Newmediach(int d)
+{
+	movem.l	d2-d3,-(a7)
+	move	12(sp),d3		; 4(sp) + 8
+	cmp		chdrv.l,d3
+	bne.s	L94
+	moveq	#2,d0
+L86:
+	movem.l	(a7)+,d2-d3
+	rts
+
+L94:
+	move	d3,-(a7)
+	movea.l	Oldmediach.l,a0
+	jsr		(a0)
+	addq	#2,a7
+	bra.s	L86
+}
+#else
 static long cdecl Newmediach(int d)
 {
 	if (d == chdrv)
@@ -888,8 +951,35 @@ static long cdecl Newmediach(int d)
 	else
 		return (*Oldmediach)(d);
 }
+#endif
 
 
+#if 0 /* __AHCC__ */
+static long __asm__ cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
+{
+	move.l	sp,a0			; stackframe pointer --> a0
+	movem.l	d2-d3,-(a7)
+	move	12(sp),d3		; 4(sp) + 8
+	cmp		chdrv.l,d3
+	bne.s	L158
+	moveq	#-14,d0
+L150:
+	movem.l	(a7)+,d2-d3
+	rts
+
+L158:
+	move.l	16(a0),-(a7)	; l
+	move	14(a0),-(a7)	; c
+	move	12(a0),-(a7)	; b
+	move	10(a0),-(a7)	; a
+	move.l	 6(a0),-(a7)	; buf
+	move	 4(a0),-(a7)	; d
+	movea.l	Oldrwabs.l,a0
+	jsr		(a0)
+	lea 	16(a7),a7
+	bra.s	L150
+}
+#else
 static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 {
 	if (d == chdrv)
@@ -897,12 +987,13 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 	else
 		return (*Oldrwabs)(d, buf, a, b, c, l);
 }
+#endif
 
 
 /* 
  * Force media change on drive contained in path.
- * This routine is used only so that there is no chance of
- * path being undefined or too short 
+ * This routine is used un such a way that there is no chance 
+ * of path being undefined or too short 
  */
 
 void force_mediach(const char *path)
@@ -932,7 +1023,9 @@ void force_mediach(const char *path)
 		stack = (void *)Super(0L);
 
 		chdrv = drive;
-/*
+
+/*		replaced with equivalent code 
+
 		Oldrwabs = *((Func *)0x476L);
 		Oldgetbpb = *((Func *)0x472L);
 		Oldmediach = *((Func *)0x47eL);
@@ -941,7 +1034,8 @@ void force_mediach(const char *path)
 		Oldgetbpb = hdv_bpb;
 		Oldmediach = hdv_mediach;
 
-/*
+/*		replaced with equivalent code 
+
 		*((Func *)0x476L) = Newrwabs;
 		*((Func *)0x472L) = Newgetbpb;
 		*((Func *)0x47eL) = Newmediach;
@@ -958,7 +1052,8 @@ void force_mediach(const char *path)
 
 		if (*((Func *)0x476L) == Newrwabs)
 		{
-/*
+/*		replaced with equivalent code 
+
 			*((Func *)0x472L) = Oldgetbpb;
 			*((Func *)0x476L) = Oldrwabs;
 			*((Func *)0x47eL) = Oldmediach;

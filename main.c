@@ -1318,7 +1318,11 @@ static boolean init(void)
 
 		load_options();
 
-		/* Start applications which have been defined as autostart */
+		/* 
+		 * Start applications which have been defined as autostart.
+		 * app_specstart must be executed here in order to set
+		 * the xd_rbdcklick flag.
+		 */
 
 		app_specstart(AT_AUTO, NULL, NULL, 0, 0);
 		startup = FALSE;
@@ -1761,20 +1765,13 @@ static void evntloop(void)
 		 * In order to properly execute in Single-TOS some items
 		 * related to AV-protocol, window- and menu-updates,
 		 * the loop has to be executed every once in a while-
-		 * like every 500ms defined below. It looks as if this 
-		 * is not needed in a multitasking environment.
+		 * like every 500ms defined below. It looked at first as if this 
+		 * was not needed in a multitasking environment, but later it became
+		 * obvious that it was.
 		 * Do this only if there are open accessory (AV-client) windows.
 		 */
 
-		if
-		(
-/* it IS needed in multitasking, after all- but will it degrade speed?
-#if _MINT_
-			!mint &&
-#endif
-*/
-			va_accw()
-		)
+		if( va_accw() )
 		{
 			loopevents.ev_mtlocount = 500;		/* 500ms */
 			loopevents.ev_mflags |= MU_TIMER;	/* with timer events */
@@ -1901,7 +1898,7 @@ void lobo(void)
 {
 	if(ct60)
 	{
-		*((char *)0xFA800000L) = 1;				/* turn off CT60 */	
+		*((char *)0xFA800000L) = 1;				/* turn off CT60 power */	
 	}
 	else
 	{
@@ -1930,6 +1927,8 @@ int main(void)
 	 * which may in the future set various aspects of TeraDesk.
 	 * Options should be defined as uppercase letters or
 	 * uppercase letters immediately followed by a number.
+	 * These options should come into effect even BEFORE any
+	 * configuration file is read.
 	 *
 	 * Currently used:
 	 * D = always draw userdef objects, regardless of AES capabiliites
@@ -2015,8 +2014,8 @@ int main(void)
 	/* 
 	 * Load the dekstop.rsc resource file. Another required resource file
 	 * (the icons file) is loded in load_icons() below (defined in ICONS.C).
-	 * file desktop.rsc is language-dependent as it contains all texts
-	 * displayed by Teradesk. Files icons.rsc and cicons.rsc only weakly
+	 * File desktop.rsc is language-dependent as it contains all texts
+	 * displayed by Teradesk. Files icons.rsc and cicons.rsc are only weakly
 	 * language-dependent: the only texts they contain are icon names 
 	 */
 
@@ -2201,6 +2200,7 @@ int main(void)
 			 * A call to shel_write() to change resolution
 			 * in get_set_video() also closes all applications
 			 */
+
 			get_set_video(2); /* contains shel_write(SHW_RESCHNG,...) */
 		}
 		else

@@ -4654,7 +4654,6 @@ static boolean in_window(WINDOW *w, int x, int y)
 /* 
  * Button handling routine. 
  * This is called in desktop, directory and text windows.
- * Note: bstate never used in this routine ? 
  * Parameters:
  *
  * w			- Pointer naar window

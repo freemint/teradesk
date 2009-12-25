@@ -1,6 +1,21 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
-                         2002 - 2003  H. Robbers
+                         2002 - 2009  H. Robbers
                          2002 - 2009  Dj. Vukovic
+
+
+Version 4.02  25-12-2009
+------------------------
+
+- Fixed undesired behaviour that occured when right moue button
+  was pressed for a long time insteead of just clicked.
+
+- Added several corrections by H.Robbers in order to enable
+  correct compilation with AHCC
+
+- Some small optimizations made in the code. Program size
+  reduced by a couple of bytes.
+
+- Tidying-up of the source code. A number of comments added.
 
 
 Version 4.01  20-04-2009
@@ -1230,7 +1245,7 @@ Version 3.60  2-08-2005
   as per Unix convention.
 
 - Directory window icons of invisible files are displayed faded. Currently
-  this works only if window background colour is white- the 'disabled' flag
+  this`works only if window background colour is white- the 'disabled' flag
   is used to display them, and for a disabled object the complete object
   rectangle is disabled by all AESes, which looks very ugly with a window
   background pattern.  The inconvenience is similar to one appearing for

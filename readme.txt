@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to V4.01  	Copyright 2003-2009  Dj. Vukovic
+             V3.01 to V4.02  	Copyright 2003-2009  Dj. Vukovic
 
 
-This  is version 4.01 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.02 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -36,8 +36,8 @@ Tera Desktop binary distribution currently consists of the following files:
         TERADESK.PAL  (Sample palette file)
 
 There  also  exists a source distribution which contains the complete source
-tree of TeraDesk,  to be compiled and linked with Pure-C 1.1;  it is located
-at the web homepage of TeraDesk 3 and TeraDesk 4:
+tree of TeraDesk,  to be compiled and linked with Pure-C 1.1 or AHCC.  It is
+located at the web homepage of TeraDesk 3 and TeraDesk 4:
 
 	http://solair.eunet.rs/~vdjole/teradesk.htm
 
@@ -102,7 +102,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (4.00). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.01). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -346,6 +346,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; April 20th 2009
+                                            Beograd; December 25th 2009
 
 

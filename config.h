@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -67,7 +67,7 @@ typedef struct
  * set to 254. Probably about 20 characters more should be enough: 
  */
  
-#define MAX_CFGLINE 275
+#define MAX_CFGLINE 274
 
 /*
  * Maximum possible keyword length is defined below

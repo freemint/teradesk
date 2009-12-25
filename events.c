@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -34,8 +34,12 @@
 
 static int event(int evflags, int mstate, int *key)
 {
-	XDEVENT events;
-	int result;
+	XDEVENT
+		events;
+
+	int
+		result;
+
 
 	xd_clrevents(&events);
 
@@ -176,7 +180,10 @@ int clr_msg_buf(void)
 
 boolean escape_abort( boolean hndl_msg )
 {
-	int key, r;
+	int
+		key,
+		r;
+
 
 	if ((r = key_state(&key, hndl_msg)) > 0)
 	{

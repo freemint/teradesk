@@ -1,7 +1,7 @@
 /*
  * Xdialog Library. Copyright (c) 1993 - 2002  W. Klaren,
  *                                2002 - 2003  H. Robbers,
- *                                2003 - 2007  Dj. Vukovic
+ *                                2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -239,8 +239,8 @@ int xe_xmulti(XDEVENT *events)
 	if (r & MU_MESAG)
 	{
 		if ((events->ev_mmgpbuf[0] == MN_SELECTED) && xd_dialogs)
-		{
-/* no need 
+		{ 
+/* no need
 			if (xd_menu)
 */
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
@@ -257,13 +257,28 @@ int xe_xmulti(XDEVENT *events)
 
 	if ((r & MU_BUTTON) && !xd_isdopen() && (level == 1))
 	{
-		if (xd_rbdclick && events->ev_mmobutton == 2)
+		int mmobutton = events->ev_mmobutton;
+
+		if (xd_rbdclick && mmobutton == 2)
 			events->ev_mbreturn = 2;	/* right button is double click */
 
+		/* complete handling of the button press(es) happens within this call */
+
 		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
-						  events->ev_mbreturn, events->ev_mmobutton,
+						  events->ev_mbreturn, mmobutton,
 						  events->ev_mmokstate))
 			r &= ~MU_BUTTON;
+
+		/* 
+		 * This should fix the problem that occured when right mouse
+		 * button was pressed for a long time - multiple VA_START
+		 * messages were sent to the right-button-extension application.
+		 * Teradesk now waits until the button is released 
+		 * before proceeding further
+		 */
+
+		if(mmobutton == 2)
+			while(xe_button_state());
 	}
 
 	events->ev_mflags = old_mflags;

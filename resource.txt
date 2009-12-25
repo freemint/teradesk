@@ -26,10 +26,10 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V4.01 relative to previous version
+Changes in V4.02 relative to previous version
 ---------------------------------------------
 
-Resource files of TeraDesk V4.00 and V4.01 are identical.
+Resource files of TeraDesk V4.0, V4.01 and V4.02 are identical.
 
 
 Naming of object trees

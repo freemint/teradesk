@@ -56,6 +56,7 @@ extern boolean va_reply;
 
 extern boolean prg_isprogram(const char *name);
 
+
 /* 
  * Aux. function for size optimization when returning results
  * of some GEMDOS operations.

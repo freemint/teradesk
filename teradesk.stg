@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: April 2009
+@$VER: December 2009
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.01
+                User's Manual for Tera Desktop V4.02
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            April 2009
+                            December 2009
 
 @autorefon
 

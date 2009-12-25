@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -43,8 +43,12 @@
 
 long envlen(void)
 {
-	char *p = _BasPag->p_env;
-	long l = 0;
+	char
+		*p = _BasPag->p_env;
+	
+	long
+		l = 0;
+
 
 	do
 	{
@@ -85,6 +89,7 @@ char *new_env
 		*newto,					/* where to put the old string */
 		*oldto,					/* where to put the new string */
 		*p = _BasPag->p_env;	/* where is the old environment */
+
 
 	*newsize = 0;
 

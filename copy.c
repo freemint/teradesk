@@ -136,7 +136,9 @@ void check_opabort (int *result)
 
 void upd_copyinfo(long folders, long files, LSUM *bytes)	
 {
-	long total;
+	long 
+		total;
+
 
 	if (folders >= 0)
 	{
@@ -406,7 +408,9 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean 
 
 static boolean pull(COPYDATA **stack, int *result)
 {
-	COPYDATA *top = *stack;
+	COPYDATA 
+		*top = *stack;
+
 
 	x_closedir(top->dir);
 	*result = top->result;
@@ -459,14 +463,16 @@ static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
 
 
 /*
- * Two routine fur summing or subtracting file sizes, 
+ * Two routines for summing or subtracting file sizes, 
  * sum possibly exceeding 32-bit limit. Kilobytes are summed
  * separately from the remainders
  */
 
 void add_size(LSUM *nbytes, long fsize)
 {
-	long k, b;
+	long
+		k, b;
+
 
 	fsize &= 0x7FFFFFFFL;	/* guard against 31bit overflow ? */
 
@@ -535,6 +541,7 @@ void size_sum(long *total, LSUM *bytes)
 		*total = bytes->kbytes * KBMB + bytes->bytes;
 	}
 }
+
 
 /*																
  * Routine for counting the files and directories and summing thir sizes.						                                *
@@ -937,6 +944,7 @@ static int filecopy
 		fh2 = -1,
 		error = 0;
 
+
 	/* 
 	 * Create a buffer for copying: If it is not possible to create the
 	 * buffer as specified, find the largest free block and leave 8KB.
@@ -1024,9 +1032,11 @@ static int filecopy
 static int linkcopy
 (
 	const char *sname,	/* source name */
-	const char *dname,	/* destination name */
-	XATTR *src_attrib,	/* source attributes */
+	const char *dname	/* destination name */
+/* currently unused
+	,XATTR *src_attrib,	/* source attributes */
 	DOSTIME *time		/* time stamp */
+*/
 )
 {
 	char
@@ -1072,6 +1082,7 @@ int copy_error
 		msg,	/* message identifier */ 
 		irc;	/* return code */
 
+
 	switch(function)	
 	{
 		case CMD_DELETE:
@@ -1105,6 +1116,7 @@ int copy_error
 	arrow_mouse();
 	irc = xhndl_error(msg, error, name);
 	hourglass_mouse();
+
 	return irc;
 }
 
@@ -1196,7 +1208,9 @@ int frename
 	XATTR *attr				/* attributes */
 )
 {
-	int error = chk_access(attr);
+	int
+		error = chk_access(attr);
+
 
 	if(!error)
 		error = x_rename(oldfname, newfname);
@@ -1258,6 +1272,7 @@ static int _rename(char *old, XATTR *attr)
 		}
 		free(new);
 	}
+
 	return result;
 }
 
@@ -1272,12 +1287,12 @@ static int exist
 	int function			/* what operation is being attempted */
 )
 {
+	XATTR
+		attr;
+
 	int
 		error,
 		attmode;
-
-	XATTR
-		attr;
 
 
 	attmode = ( options.cprefs & CF_FOLL ) ? 0 : 1;
@@ -1321,10 +1336,6 @@ int set_posmode(int mode)
 
 static void redraw_after(void)
 {
-/* it seems that there is no need anymore to do this
-	wd_drawall();
-*/
-
 	if (cfdial_open)
 		xd_drawdeep(&cfdial, ROOT);
 }
@@ -1343,6 +1354,7 @@ int truncate (const char *path, char *name)
 {
 	int 
 		result = x_checkname(path, name);
+
 
 	if(result == EFNTL  && ((options.cprefs & CF_TRUNN) != 0) )
 	{
@@ -1659,6 +1671,7 @@ static int hndl_rename(char *name, XATTR *attr)
 	int 
 		oldmode,
 		button;
+
 
 	/* Write filenames to dialog fields */
 
@@ -2024,7 +2037,7 @@ static int copy_file
 								}
 							
 								if ( link )
-									error = linkcopy(sname, dname, &oattr, &time);
+									error = linkcopy(sname, dname /* , &oattr, &time */); /* two paameters currently unused in linkcopy and disabled */
 								else
 #endif
 									error = filecopy(sname, dname, &oattr, &time, rbytes);
@@ -2357,6 +2370,7 @@ static boolean copy_list
 		link,
 		chk;
 
+
 	result = 0;
 
 	/* Initial destination name */
@@ -2571,7 +2585,9 @@ static boolean itm_copyit
 
 static int del_file(const char *name, int prev_result, XATTR *attr)
 {
-	int error = chk_access(attr); /* Is it write-protected? */
+	int
+		error = chk_access(attr); /* Is it write-protected? */
+
 
 	/* Attempt to delete the specified object. It can be a file or a link */
 
@@ -2632,6 +2648,7 @@ static int del_path
 	boolean
 		ready = FALSE,
 		eod = FALSE;
+
 
 	if ((error = push(&stack, path, NULL, FALSE)) != 0)
 		return copy_error(error, fname, CMD_DELETE);
@@ -2729,13 +2746,6 @@ static boolean del_list
 	LSUM *bytes
 )
 {
-	int 
-		i,
-		error = 0,
-		result = 0,
-		tmpres,
-		fa;	
-
 	const char 
 		*cpath, 
 		*path, 
@@ -2746,6 +2756,13 @@ static boolean del_list
 
 	XATTR 
 		attr;
+
+	int 
+		i,
+		error = 0,
+		result = 0,
+		tmpres,
+		fa;	
 
 	ITMTYPE 
 		type;
@@ -2920,8 +2937,8 @@ boolean itmlist_op
 		button = COPYCAN;	/* button code */
 
 	char
-		anypath[6],			/* Dummy destination path when it does not matter */
-		*spath;				/* initial source path */
+		*spath,				/* initial source path */
+		anypath[6];			/* Dummy destination path when it does not matter */
 
 	boolean 
 		cont,				/* true if there is some action to perform */
@@ -3185,10 +3202,18 @@ boolean itmlist_wop(WINDOW *w, int n, int *list, int function)
 
 boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate)
 {
-	const char *program;
-	ITMTYPE type;
-	int wtype;
-	boolean result = FALSE;
+	const char
+		*program;
+
+	ITMTYPE
+		type;
+
+	int
+		wtype;
+
+	boolean
+		result = FALSE;
+
 
 	wtype = xw_type(dw);	/* Destination window type */
 

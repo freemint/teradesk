@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -162,7 +162,8 @@ void rem_appl(APPLINFO **list, APPLINFO *appl)
  * for name, commandline, environment and documenttypes, memory is allocated.  
  * This routine actually copies the list of associated filetypes,
  * as well as the other strings (i.e. it doesn't just copy pointers).
- * If 'nodocs' is true, documenttypes, command line and environment are not copied.
+ * If 'nodocs' is true, documenttypes, command line and environment 
+ * are not copied.
  * Note: NULL pointers are checked for in strdup() and returned
  */
  
@@ -288,6 +289,7 @@ static void set_fkey(int fkey)
 	char 
 		*applfkey = applikation[APFKEY].ob_spec.tedinfo->te_ptext;
 
+
 	if (fkey)						/* assigned */
 		itoa(fkey, applfkey, 10);	/* convert integer to string */
 	else
@@ -301,7 +303,8 @@ static void set_fkey(int fkey)
 
 static void unset_fkey(APPLINFO **list, int fkey)
 {
-	APPLINFO *f = *list;
+	APPLINFO 
+		*f = *list;
 
 	while (f)
 	{
@@ -397,8 +400,10 @@ static boolean check_specapp( APPLINFO **list, int flag, int pos )
 
 static void unset_specapp(APPLINFO **list, int flags)
 {
-	APPLINFO *app = *list;
+	APPLINFO
+		*app = *list;
 	
+
 	while(app)
 	{
 		app->flags &= ~flags;
@@ -874,14 +879,13 @@ void app_install(int use, APPLINFO **applist)
 APPLINFO *app_find(const char *file, boolean dial)
 {
 	APPLINFO 
-		*h, 
-		*d;
+		*h = applikations, 
+		*d = NULL;		/* temporary list of assigned apps */
 
 	FTYPE 
 		*t;				/* list of documenttypes */
 
-	h = applikations;
-	d = NULL;			/* temporary list of assigned apps */
+
 	naap = 0;			/* number of assigned apps */
 	selitem = NULL;		/* nothing found yet */
 	nodocs = TRUE;		/* do not copy documenttypes */
@@ -963,7 +967,9 @@ APPLINFO *app_find(const char *file, boolean dial)
 
 char *app_find_name(const char *fname, boolean full)
 {
-	APPLINFO *theapp;
+	APPLINFO
+		*theapp;
+
 
 	theapp = app_find(fname, (full) ? TRUE : FALSE);
 
@@ -981,7 +987,9 @@ char *app_find_name(const char *fname, boolean full)
 
 APPLINFO *find_fkey(int fkey)
 {
-	APPLINFO *h = applikations;
+	APPLINFO
+		*h = applikations;
+
 
 	while (h)
 	{
@@ -1008,6 +1016,7 @@ static char *requote_cmd(char *cmd)
 	char
 		*fb, 
 		*q = malloc_chk(strlenq(cmd));
+
 
 	if(q)
 	{
@@ -1049,6 +1058,7 @@ static char *app_build_cml
 		i, 					/* item counter */
 		error,				/* anything */
 		mes;				/* message identification */
+
 
 	build = NULL;
 	realname = NULL;
@@ -1465,8 +1475,10 @@ boolean app_exec
 
 	if((thework->flags & PT_ARGV) != 0)
 		argv = TRUE;
+
 	if ((thework->flags & PT_SING) != 0)
 		single = TRUE;
+
 	if((thework->flags & PT_BACK) != 0)
 		back = TRUE;
 
@@ -1782,8 +1794,8 @@ static CfgNest one_app
 				 * are cleared here, so only the last assignment remains.
 				 * Note: if adding the application to the list fails
 				 * a few lines later, this will leave Teradesk without
-				 * a spec app or this Fkey assignment. Might be called
-				 * a bug, but probably not worth rectifying.
+				 * a spec app or this Fkey assignment. Might be considered
+				 * to be a bug, but probably not worth rectifying.
 				 */
 
 				unset_specapp(&applikations, (awork.flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT) ) );
@@ -1879,6 +1891,14 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 
 	while (app != NULL)
 	{
+		/* 
+		 * Note: it i essential that app_specstart() be executed
+		 * once at TeraDesk startup in order for the two line below
+		 * to be executed and xd_rbdckick set to 0 if necessary.
+		 * This i done when TeraDesk searches for applications
+		 * marked with AT_AUTO.
+		 */
+
 		if(app->flags & AT_RBXT)
 			xd_rbdclick = 0;
 

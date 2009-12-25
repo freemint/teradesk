@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -75,11 +75,11 @@ static const char
 /* 
 	eol[3] = {'\r','\n', 0}; 	/* <CR><LF> */
 */
-	eol[2] = {'\n', 0};   		/* <LF>      */
+	eol[2] = {'\n', 0};   		/* <LF>     */
 
 
 /* 
- * Substitute all "%" in a string with  "$" ?? 
+ * Substitute all "%" in a string with  "$"  
  */
 
 static void no_percent
@@ -89,7 +89,7 @@ static void no_percent
 {
 	while (*s)
 	{
-		if (*s == '%');
+		if (*s == '%')
 			*s = '$';
 
 		s++;
@@ -109,7 +109,9 @@ static void append_fmt
 	char *src			/* input string       */
 )
 {
-	CFG_TYPE cftype = cfgtype & CFG_MASK;
+	CFG_TYPE 
+		cftype = cfgtype & CFG_MASK;
+
 
 	if ( src != NULL )
 		strcpy(dest, src);
@@ -764,13 +766,13 @@ int handle_cfg
 	void *def			/* default setup routine */
 ) 
 {
-	int 
-		error = 0;
-	
 	void 
 		(*initial_setup)(void) = ini,
 		(*default_setup)(void) = def;
 
+	int 
+		error = 0;
+	
 
 	if ( io == CFG_SAVE )
 	{
@@ -831,19 +833,17 @@ int handle_cfgfile
 	XFILE 
 		*file;
 
-	int 
-		n, 
-		error;
-
 	char 
 		*savecname,
 		*savelastnest;
 
-	int
-		savechklevel;
-
 	static char
 		*fmt1 = "%s%s%s";
+
+	int
+		n, 
+		error,
+		savechklevel;
 
 
 	/* Remember last nest name for error tracing */

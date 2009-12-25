@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -40,6 +40,8 @@
 char *get_freestring( int stringid )
 {
 	OBSPEC s;
+
+
 	rsrc_gaddr(R_STRING, stringid, &s);
 	return s.free_string;
 }
@@ -184,9 +186,16 @@ char *get_message(int error)
 
 int alert_msg(const char *string, ...)
 {
-	char alert[256], s[256];
-	va_list argpoint;
-	int button;
+	char
+		alert[256],
+		s[256];
+
+	va_list
+		argpoint;
+
+	int
+		button;
+
 
 	sprintf(alert, "[1][ %s ][ Ok ]", string);
 	va_start(argpoint, string);
@@ -328,6 +337,7 @@ int xhndl_error(int msg, int error, const char *file)
 
 	char 
 		shnam[30];
+
 
 	cramped_name(file, shnam, sizeof(shnam));
 

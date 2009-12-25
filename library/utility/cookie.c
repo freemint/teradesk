@@ -1,7 +1,7 @@
 /*
  * Utility functions for Teradesk. Copyright 1993 - 2002  W. Klaren,
- *                                           2002 - 2003  H. Robbers,
- *                                           2003 - 2007  Dj. Vukovic
+ *                                           2002 - 2009  H. Robbers,
+ *                                           2003 - 2009  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -37,7 +37,15 @@ extern int have_ssystem;
 long o_resvalid;
 void (*o_resvector)( void );
 
+#if __AHCC__
+void __asm__ jmpa6(void)
+{
+	addq.l	#4, sp			; adjust stack, jmpa6 is called
+	jmp 	(a6)
+}
+#else
 void jmpa6( void ) 0x4ED6;
+#endif
 
 
 /*

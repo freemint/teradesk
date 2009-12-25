@@ -1,6 +1,6 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren
- *                         2002 - 2003  H. Robbers,
+ *                         2002 - 2009	H. Robbers, Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -19,8 +19,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #ifndef __MINT__
 #define __MINT__
+
+/* HR: these undefines supress a number of warnings */
+
+#undef SIG_DFL
+#undef SIG_ERR
+#undef SIG_IGN
 
 typedef struct xattr
 {
