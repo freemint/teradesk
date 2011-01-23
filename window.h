@@ -292,7 +292,7 @@ void w_pageright(TYP_WINDOW *w);
 void w_scroll(TYP_WINDOW *w, int type); 
 boolean wd_adapt(WINDOW *w);	
 void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, boolean icons);
-void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, int yoffset, RECT *work );
+void wd_set_obj0( OBJECT *obj, boolean smode, int row, int lines, /* int yoffset, DjV 4.03 */ RECT *work );
 void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, 
 int obj_x, int obj_y, char *name );
 void wd_type_iconify(WINDOW *w, RECT *r);

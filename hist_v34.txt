@@ -1,6 +1,28 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2009  H. Robbers
-                         2002 - 2009  Dj. Vukovic
+                         2002 - 2011  Dj. Vukovic
+
+
+
+Version 4.03  23-01-2011
+------------------------
+
+- Removed what seems to be some unnecessary code related to handling
+  windows and desktop icons. Hopefully nothing was broken.
+
+- Added capability to define offsets of desktop icons from the
+  upper and left edge of the desktop area. Offsets can be defined
+  by two new parameters in the configuration file: xoff= and yoff=
+  in the deskicons{} section. These parameters can only be changed
+  by manually modifying the configuration file. Program size
+  increased by 70 bytes only.
+
+- Tidying-up of the source code.
+
+- Source of the AHCM library linked into TeraDesk is included by
+  permission from Henk Robbers. Users should note that there is a
+  newer version of AHCM at Henk's web site. That version will produce
+  a somewhat larger executable of TeraDesk.
 
 
 Version 4.02  25-12-2009

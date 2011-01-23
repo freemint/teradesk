@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2010  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -111,9 +111,9 @@ extern int
 	xe_mbshift;
 
 int 
-	*icon_data, 
-	sl_noop,	 /* if 1, do not open icon dialog- it is already open */
-	n_icons;	/* number of icons in the icons file */
+	*icon_data,
+	sl_noop,	 	/* if 1, do not open icon dialog- it is already open */
+	n_icons;		/* number of icons in the icons file */
 
 INAME 
 	iname;
@@ -131,6 +131,8 @@ static XUSERBLK
 static int 
 	m_icnx, 
 	m_icny, 
+	icn_xoff = 0, 
+	icn_yoff = 0,
 	max_icons;
 
 static ITMTYPE 
@@ -1755,8 +1757,8 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 				)
 					deskto->ob_state |= DISABLED;
 
-				deskto->r.x = ix * ICON_W;
-				deskto->r.y = iy * ICON_H;
+				deskto->r.x = ix * ICON_W + icn_xoff; /* DjV test */
+				deskto->r.y = iy * ICON_H + icn_yoff; /* DjV test */
 				deskto->ob_spec.ciconblk = h;
 				*h = *icons[icon_no].ob_spec.ciconblk;
 
@@ -1831,12 +1833,12 @@ static void comp_icnxy(int mx, int my, int *x, int *y)
 {
 	/* Note: do not use min() here, this is shorter */
 
-	*x = (mx - xd_desk.x) / ICON_W;
+	*x = (mx - xd_desk.x - icn_xoff) / ICON_W; /* DjV test */
 
 	if (*x > m_icnx)
 		*x = m_icnx;
 
-	*y = (my - xd_desk.y) / ICON_H;
+	*y = (my - xd_desk.y - icn_yoff) / ICON_H; /* DjV  test */
 
 	if (*y > m_icny)
 		*y = m_icny;
@@ -2443,8 +2445,8 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 		obj = icnsi->item;
 		redraw_icon(obj, 1); /* erase icon */
 
-		x = (mx + icnsi->m_x - xd_desk.x) / ICON_W;
-		y = (my + icnsi->m_y - xd_desk.y) / ICON_H;
+		x = (mx + icnsi->m_x - xd_desk.x - icn_xoff) / ICON_W;
+		y = (my + icnsi->m_y - xd_desk.y - icn_yoff) / ICON_H;
 
 		/* Note: do not use min() here, this is shorter */
 
@@ -2456,8 +2458,8 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 
 		desk_icons[obj].x = x;
 		desk_icons[obj].y = y;
-		desktop[obj + 1].r.x = x * ICON_W;
-		desktop[obj + 1].r.y = y * ICON_H;
+		desktop[obj + 1].r.x = x * ICON_W + icn_xoff; /* DjV test */
+		desktop[obj + 1].r.y = y * ICON_H + icn_yoff; /* DjV test */
 
 		redraw_icon(obj, 2); /* draw icon */
 
@@ -2832,6 +2834,8 @@ static CfgEntry DskIcons_table[] =
 {
 	{CFG_HDR,  "deskicons" },
 	{CFG_BEG},
+	{CFG_D,  "xoff", &icn_xoff},
+	{CFG_D,  "yoff", &icn_yoff},
 	{CFG_NEST, "icon", icon_cfg },		/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
@@ -2949,8 +2953,8 @@ boolean dsk_init(void)
 		 * can be loaded even in ST-Low resolution
 		 */
 
-		m_icnx = xd_desk.w / ICON_W;
-		m_icny = xd_desk.h / ICON_H;
+		m_icnx = (xd_desk.w - icn_xoff) / ICON_W; /* DjV test */
+		m_icny = (xd_desk.h - icn_yoff) / ICON_H; /* DjV test */
 		max_icons = max(m_icnx * m_icny * 3 / 2, 64);
 		m_icnx--;	/* because index starts from 0 */
 		m_icny--;	/* same */

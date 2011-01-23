@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: December 2009
+@$VER: January 2011
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.02
+                User's Manual for Tera Desktop V4.03
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            December 2009
+                            January 2011
 
 @autorefon
 
@@ -4085,15 +4085,22 @@ upgrades. Editing of configuration files  by  hand,  unless  you  know
 -exactly-  what you  are doing,  can cause undesired effects,  or even
 crash TeraDesk.
 
-However, currently there is  one item  in the configuration file  that
-can be changed -only- by  editing the file  (but normally there  would
-not be any need to do so). This is:
+However, there are  three items in the  configuration file that can be 
+changed -only- by editing  the file  (but normally there  would not be
+any need to do so). These are:
 
-maxd=256      (initial number of directory entries in windows).
+maxd=256 - initial number of directory entries in windows
+xoff=0   - desktop icons offset in pixels (in the deskicons{} group)
+yoff=0   - desktop icons offset in pixels (in the deskicons{} group)
 
-This can be changed to  a lower value  in order to save some memory in
-very  tight  RAM configurations,  or to  a higher  value  for  quicker
+Item maxd can be changed to a lower value in order to save some memory
+in very tight  RAM configurations,  or to  a higher value  for quicker 
 directory opening, if directories with many files are expected.
+
+Items xoff and yoff define positions (in pixels)  of icons relative to 
+the desktop work area.  Setting them to other than  default values can
+sometimes lead to a better-looking desktop (if xoff or yoff are set to
+0, they may not be initially present in the configuration file).
 
 The palette file is optional and can be used to restore colour palette
 after programs  that may corrupt it,  or to set  some specific palette

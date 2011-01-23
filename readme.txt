@@ -1,10 +1,10 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 and V3.0 	Copyright 2003       H. Robbers, Dj. Vukovic
-             V3.01 to V4.02  	Copyright 2003-2009  Dj. Vukovic
+             V3.01 to V4.03  	Copyright 2003-2011  Dj. Vukovic
 
 
-This  is version 4.02 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.03 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -41,8 +41,8 @@ located at the web homepage of TeraDesk 3 and TeraDesk 4:
 
 	http://solair.eunet.rs/~vdjole/teradesk.htm
 
-Source of the AHCM memory-allocation system that is  used in TeraDesk can be
-downloaded from:
+Source of the AHCM memory-allocation system of a version newert than
+the one that is  used in TeraDesk can be downloaded from:
 
 	http://members.ams.chello.nl/h.robbers/ahcm.zip
 
@@ -102,7 +102,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (4.01). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.02). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -338,7 +338,7 @@ PLEASE  read the manual and  the development-history file before you use the
 program. You will need ST-Guide  (not supplied with Tera Desktop) or another
 .HYP file viewer to read the manual.
 
-For the time being, comments should be sent to: vdjole@EUnet.rs
+Comments should be sent to: vdjole@EUnet.rs
 
 If  you  intend to use TeraDesk, it will be appreciated if you send an 
 e-mail to the above address; I may at some time ask a question or two
@@ -346,6 +346,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; December 25th 2009
+                                            Beograd; January 24th 2011
 
 

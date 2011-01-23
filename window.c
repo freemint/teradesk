@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2009  Dj. Vukovic
+ *                         2003 - 2010  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -2209,10 +2209,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 		if (w->flags.fullfull)
 		{
 			/* Full to the whole screen */
-/* not exactly
-			def.w =xd_screen.w - (tw->xw_size.w - tw->xw_work.w);
-			def.h = xd_screen.h - (tw->xw_size.h - tw->xw_work.h);
-*/
+
 			def.w = dtmax->w;
 			def.h = dtmax->h;
 		}
@@ -2223,9 +2220,9 @@ void wd_calcsize(WINFO *w, RECT *size)
 			def.w = tw->columns * cw;
 
 			/* 
-			 * Add some empty lines to fulled directory directory windows
+			 * Add some empty lines to fulled directory windows
 			 * This will make draging of items into windows more comfortable. 
-			 * Add one line in text mode, or one row in icons mode.
+			 * Add one line in text mode, or some width in icons mode.
 			 */
 
 			if (wtype == DIR_WIND)
@@ -4808,7 +4805,7 @@ void wd_set_obj0
 	boolean smode,	/* smode=1: G_IBOX, smode=0: G_BOX */
 	int row,		
 	int lines,		/* how many icon lines will be drawn */
-	int yoffset, 	/* icons offset from the top of work area */
+	/* int yoffset, DjV 4.03 */	/* icons offset from the top of work area */
 	RECT *work		/* window work area dimensions and position*/
 )
 {
@@ -4824,7 +4821,7 @@ void wd_set_obj0
 	wxub.uv.fill.pattern = options.win_pattern;
 
 	obj[0].r.x = work->x;
-	obj[0].r.y = row + work->y + YOFFSET - yoffset;
+	obj[0].r.y = row + work->y /* + YOFFSET - yoffset DjV 4.03 */;
 	obj[0].r.w = work->w;
 	obj[0].r.h = minmax(ICON_H, lines * ICON_H, work->h);
 }
@@ -4903,7 +4900,7 @@ static void icw_draw(WINDOW *w)
 
 	/* Set background object. It is needed for background colour / pattern */
 
-	wd_set_obj0(obj, FALSE, 0, 2, YOFFSET, &(w->xw_work));
+	wd_set_obj0(obj, FALSE, 0, 2, /* YOFFSET, DjV 4.03 */  &(w->xw_work));
 
 	/* Decide which icon to use: file, floppy, disk or folder */
 

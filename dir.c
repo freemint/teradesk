@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2010  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -2112,7 +2112,7 @@ OBJECT *make_tree
 		icon_no,
 		j,
 		ci,			/* column in which an icon is drawn */
-		yoffset, 
+/* 		yoffset, DjV 4.03 */
 		row;
 
 	boolean
@@ -2142,15 +2142,20 @@ OBJECT *make_tree
 	if((obj = malloc_chk(lo + n * sizeof(INAME))) != NULL)
 	{
 		labels = (INAME *)((char *)(obj) + lo);
+		row = (sl - dw->py) * ICON_H;
 
-		if ((row = (sl - dw->py) * ICON_H) == 0)
+/* DjV 4.03
+
+		if (row == 0)
 			yoffset = YOFFSET;
 		else
+
 			yoffset = 0;
+*/
 
 		/* Set background object */
 
-		wd_set_obj0( obj, smode, row, lines, yoffset, work );
+		wd_set_obj0( obj, smode, row, lines, /* yoffset, DjV 4.03 */ work );
 
 		/* Note: code below must agree whith dir_drawsel() */
 
@@ -2192,7 +2197,7 @@ OBJECT *make_tree
 					h->link,
 					icon_no, 	
 					(ci - dw->px) * ICON_W + XOFFSET,
-					(j / dw->columns - sl) * ICON_H + yoffset,
+					(j / dw->columns - sl) * ICON_H /* + yoffset DjV 4.03 */ +YOFFSET,
 					labels[i]
 				);
 			}
