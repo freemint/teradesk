@@ -30,13 +30,16 @@ typedef struct
 } ldiv_t;
 
 
+#if ! __AHCC__
 double  atof( const char *str );
-int     atoi( const char *str );
-long    atol( const char *str );
-
 char    *ecvt( double d, int ndig, int *dec, int *sign );
 char    *fcvt( double d, int ndig, int *dec, int *sign );
 char    *gcvt( double value, int dec, char * buf );
+double  strtod( const char *s, char **endptr );
+#endif
+
+int     atoi( const char *str );
+long    atol( const char *str );
 
 char    *itoa( int value, char *string, int radix );
 char    *ltoa( long value, char *string, int radix );
@@ -55,7 +58,6 @@ ldiv_t  ldiv( long n, long d );
 int     rand( void );
 void    srand( unsigned int seed );
 #define random( x ) (rand() % (x))
-double  strtod( const char *s, char **endptr );
 
 int     system( const char *command );
 

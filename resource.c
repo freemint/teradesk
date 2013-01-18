@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2008  Dj. Vukovic
+ *                         2003 - 2011  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -260,7 +260,11 @@ static void rsc_fixmenus(void)
 	 */
 
 	RECT
-		desk,
+		desk;
+
+#if _MENUDEL
+
+	RECT
 		boxrect;
 
 	MFDB
@@ -284,8 +288,6 @@ static void rsc_fixmenus(void)
 		n,
 		dummy;
 
-
-#if _MENUDEL
 
 	static const char maxbox[] = {MNVIEWBX, MNOPTBOX};
 
@@ -663,7 +665,9 @@ void rsc_init(void)
 
 		/* Modify size, position or visibility of some objects */
 
+#if _MENUDEL
 		mn_del(MNVIEWBX, MSHOWN);
+#endif
 
 		obj_hide(copyoptions[CTRUNC]);
 		obj_hide(addprgtype[ATSINGLE]);
@@ -683,7 +687,10 @@ void rsc_init(void)
 #if _MINT_
 	if(!xd_aes4_0)
 #endif
+
+#if _MENUDEL
 		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
+#endif
 
 #if _EDITLABELS
 #if _MINT_
@@ -708,7 +715,11 @@ void rsc_init(void)
 	/* Fill-in the constant part of the info-box dialog */
 
 #if _MINT_
+#if __COLDFIRE__
+	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TCFIRE);
+#else
 	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TMULTI);
+#endif
 #endif
 	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = INFO_VERSION;
 	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = INFO_COPYRIGHT;

@@ -1,7 +1,7 @@
-/* 
+/*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
- *                         2002 - 2009  H. Robbers,
- *                         2003 - 2009  Dj. Vukovic
+ *                         2002 - 2011  H. Robbers,
+ *                         2003 - 2011  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -21,7 +21,7 @@
  */
 
 
-#include <np_aes.h>	
+#include <np_aes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>			/* for wildcards */
@@ -47,7 +47,7 @@
 void wd_drawall(void);
 
 
-/* 
+/*
  * Concatenate a path+filename string "name" from a path "path" and
  * a filename "fname"; Add a "\" between the path and the name if needed.
  * Space for resultant string has to be allocated before the call
@@ -100,14 +100,14 @@ char *fn_last_backsl(const char *fname)
  * Root path is always finished with a "\"
  * It is assumed that "path" is at least VLNAME and
  * that "fname" is at least LNAME.
- */ 
+ */
 
 void split_path( char *path, char *fname, const char *name )
 {
 	long
 		pl;		/* path length */
 
-	char 
+	char
 		*np = fn_get_name(name);
 
 
@@ -120,21 +120,17 @@ void split_path( char *path, char *fname, const char *name )
 		if(fn_last_backsl(name) == name + 2)
 			pl++;
 
-		strsncpy(path, name, pl); 
+		strsncpy(path, name, pl);
 	}
-/*
-	else
-		strcpy(path, "\\"); /* why ? try without. */
-*/
 }
 
 
-/* 
- * Trim the path to be displayed in order to remove 
+/*
+ * Trim the path to be displayed in order to remove
  * item name and backslash, so that more of the path can fit into field
  * (insert a null character at the appropriate location).
- * Do not trim the backslash if it is a path to a root directory. 
- * Note: there is already a similar routine but it doesn't do 
+ * Do not trim the backslash if it is a path to a root directory.
+ * Note: there is already a similar routine but it doesn't do
  * quite the same thing.
  * This routine also handles the cases of '\.\' or '\.' in the path
  */
@@ -144,7 +140,7 @@ void path_to_disp ( char *fpath )
 	/* find the last '\' */
 
 	char *nend = strrchr( fpath, '\\' );
-		
+
 
 	if ( nend > fpath ) /* otherwise nend[-1] below would not be possible */
 	{
@@ -152,7 +148,7 @@ void path_to_disp ( char *fpath )
 
 		/* If '\' is preceded by a ':' keep it, otherwise truncate */
 
-		if ( nend[-1] == ':' ) 
+		if ( nend[-1] == ':' )
 			nend++;
 
 		*nend = 0;
@@ -162,7 +158,7 @@ void path_to_disp ( char *fpath )
 		while((p = strstr( fpath, "\\.")) != NULL)
 		{
 			q = p + 2L;
-	
+
 			/* If found, remove it */
 
 			if(*q == '\\' || *q == '\0')
@@ -170,18 +166,18 @@ void path_to_disp ( char *fpath )
 				*p = 0;
 				strcat(fpath, q);
 			}
-		} 
+		}
 	}
 }
 
 
-/* 
+/*
  * This routine returns a pointer to the beginning of the name proper
- * in an existing fullname string. It is identified as the string after 
- * the last backslash in the name. If there is no backslash in the name, 
- * it returns pointer to the beginning of the string. If the fullname 
+ * in an existing fullname string. It is identified as the string after
+ * the last backslash in the name. If there is no backslash in the name,
+ * it returns pointer to the beginning of the string. If the fullname
  * string does not exist, returns NULL.
- * It doesn't allocate any memory for the name. 
+ * It doesn't allocate any memory for the name.
  */
 
 char *fn_get_name(const char *path)
@@ -200,8 +196,8 @@ char *fn_get_name(const char *path)
 }
 
 
-/* 
- * Extract the path part of a full name. 
+/*
+ * Extract the path part of a full name.
  * Space is allocated for the extracted path here
  */
 
@@ -218,7 +214,7 @@ char *fn_get_path(const char *path)
 
 	backsl = fn_last_backsl(path);
 
-	/* 
+	/*
 	 * Compute path length. Treat special case for the root path:
 	 * add one to the length so that "\" is included
 	 */
@@ -228,9 +224,9 @@ char *fn_get_path(const char *path)
 
 	l++; /* for the trailing zero byte */
 
-	/* 
-	 * Allocate memory for the new path, then copy the relevant part of 
-	 * the path to the new location 
+	/*
+	 * Allocate memory for the new path, then copy the relevant part of
+	 * the path to the new location
 	 */
 
 	if ((backsl = malloc_chk(l)) != NULL)
@@ -264,7 +260,7 @@ char *fn_make_path(const char *path, const char *name)
 }
 
 
-/* 
+/*
  * Compose a new name from old fullname "oldn" and a new name "newn".
  * I.e. concatenate the new name and the old path.
  * Space is allocated for the result.
@@ -272,15 +268,15 @@ char *fn_make_path(const char *path, const char *name)
 
 char *fn_make_newname(const char *oldn, const char *newn)
 {
-	long 
-		l, 
-		tl; 
+	long
+		l,
+		tl;
 
-	char 
-		*backsl, 
-		*path; 
+	char
+		*backsl,
+		*path;
 
-	int 
+	int
 		error = 0;
 
 
@@ -317,7 +313,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 }
 
 
-/* 
+/*
  * Check if the BEGINNING of a path is a valid disk name
  * This routine does -not- trim leading blanks.
  * Acceptable forms: X:<0> or X:\<0>
@@ -339,14 +335,14 @@ boolean isdisk(const char *path)
 
 	if( p && isalpha(*(p++)) && *(p++) == ':' && (*p == '\\' || *p == '\0') )
 		return TRUE;
-	
+
 	return FALSE;
 }
 
 
-/* 
- * Check if a path is to a root directory on drive. This is determined only 
- * by analyzing the name. No check of the actual directory is made. 
+/*
+ * Check if a path is to a root directory on drive. This is determined only
+ * by analyzing the name. No check of the actual directory is made.
  */
 
 boolean isroot(const char *path)
@@ -356,13 +352,13 @@ boolean isroot(const char *path)
 
 
 	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
-		return TRUE; 
+		return TRUE;
 
 	return FALSE;
 }
 
 
-/* 
+/*
  * Locate an EXISTING file using the file-selector.
  * (for saving configuration and for printing, the file need not exist).
  * Return pointer to a full path+name specification (allocated inside).
@@ -375,18 +371,18 @@ char *locate(const char *name, int type)
 	VLNAME
 		fname; /* can this be a LNAME ? */
 
-	char 
-		*newpath, 
-		*newn, 
-		*fspec, 
+	char
+		*newpath,
+		*newn,
+		*fspec,
 		*title,
 		*cfgext,
 		*defext;
 
-	int 
+	int
 		ex_flags;
 
-	boolean 
+	boolean
 		result = FALSE;
 
 
@@ -514,9 +510,9 @@ void get_fsel
 
 	/* If a path is specified, get rid of wildcards in it */
 
-	if ( path ) 
+	if ( path )
 	{
-		/* 
+		/*
 		 * There will always be something after the last "\"
 		 * so, after trimming in path_to_disp, it is safe to add
 		 * a "\" again, if a name has to be concatenated
@@ -556,7 +552,7 @@ void get_fsel
 			{
 				tl += fl;
 
-				if(tl > ml) 
+				if(tl > ml)
 					goto freepath;
 
 				strcat( result, name );
@@ -566,7 +562,7 @@ void get_fsel
 			{
 				strcat( result, cc );
 				free(cc);
-			} 
+			}
 
 			info->cursor_x += (int)tl;
 			err = 0;
@@ -579,15 +575,15 @@ void get_fsel
 }
 
 
-/* 
- * Change current directory to "path" 
+/*
+ * Change current directory to "path"
  */
 
 int chdir(const char *path)
 {
 	char
 		*h = (char *)path;
-	
+
 	int
 		error;
 
@@ -608,8 +604,8 @@ int chdir(const char *path)
 }
 
 
-/* 
- * Get bitflags for existing drives 
+/*
+ * Get bitflags for existing drives
  */
 
 long drvmap(void)
@@ -618,7 +614,7 @@ long drvmap(void)
 }
 
 
-/* 
+/*
  * Check if drive "drv" exists. Display an alert if it does not.
  * Note: 26 drives are supported (A to Z),
  * but defined by numbers 0 to 25.
@@ -635,10 +631,10 @@ boolean check_drive(int drv)
 }
 
 
-/* 
+/*
  * Compare a string (e.g. a filename) against a wildcard pattern;
- * 
- * valid wildcards: 
+ *
+ * valid wildcards:
  *     *                 = string of any characters
  *     ?                 = any single character
  *     [<char><char>...] = any single character from the enclosed list
@@ -647,24 +643,24 @@ boolean check_drive(int drv)
  *
  * Return TRUE if matched. Comparison is NOT case-sensitive.
  * Note: speed could be improved by always preparing all-uppercase wildcards
- * (wildcards are stored in window icon lists, program type lists and 
+ * (wildcards are stored in window icon lists, program type lists and
  * filemask/documenttype lists, i.e. it is easy to convert to uppercase there).
  *
  * The first two wildcards (* and ?) are legal in single-TOS;
  * the other are legal only in mint. However, TeraDesk permits the
  * use od these other wildcards, within some restictions that are
  * imposed by the validation string of the editable text fields in dialogs.
- * 
- * Note: In early versions here were two alternative routines for matching 
- * wildcards, depending on whether the Desktop was multitasking-capable 
- * or not: match_pattern() and cmp_part(). The first one was used for 
+ *
+ * Note: In early versions here were two alternative routines for matching
+ * wildcards, depending on whether the Desktop was multitasking-capable
+ * or not: match_pattern() and cmp_part(). The first one was used for
  * multitasking-capable desktop and the other for single-tos version only.
  * This was changed so that match_pattern() is always used now.
  */
 
 boolean match_pattern(const char *t, const char *pat)
 {
-	char 
+	char
 		*d, 				/* difference in positions */
 		*pe = NULL,		 	/* pointer to pattern end */
 		*te = NULL, 		/* pointer to name end */
@@ -673,7 +669,7 @@ boolean match_pattern(const char *t, const char *pat)
 		tu;					/* uppercased *t */
 
 	boolean
-		inv = FALSE, 
+		inv = FALSE,
 		valid = TRUE;
 
 
@@ -692,7 +688,7 @@ boolean match_pattern(const char *t, const char *pat)
 		switch(*pat)
 		{
 			case '?':			/* ? means any single character */
-			{	
+			{
 				t++;
 				pat++;
 				break;
@@ -701,73 +697,73 @@ boolean match_pattern(const char *t, const char *pat)
 			{
 				if(!te)
 					te = (char *)t + strlen(t);	/* find the end */
-	
+
 				if(!pe)
 				{
 					pe = (char *)pat;
-	
+
 					while(*pe)	/* find the end and the last asterisk */
 					{
 						if(*pe == '*')
 							pa = pe;
-	
+
 						pe++;
 					}
 				}
-	
+
 				pat++;
-	
+
 				if(pat > pa)	/* skip irelevant part */
 				{
 					d = te - (pe - (char *)pat);
-	
+
 					if(d > t)
 						t = d;
 				}
-	
-				/* 
-				 * First character that must be matched after the '*' 
+
+				/*
+				 * First character that must be matched after the '*'
 				 * this code could be smaller, but slower
 				 */
-	
+
 				if(*pat == '!')
 				{
 					pat++;
-	
+
 					if(*pat)	/* guard against invalidly specified masks */
 					{
-						u = (char)touppc(pat[1]);	/* the first one after that */ 
-	
+						u = (char)touppc(pat[1]);	/* the first one after that */
+
 						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
 							t++;
-	
+
 						goto exceptch;
 					}
 				}
 				else if(*pat == '[')
 				{
 					d = strchr(pat,']');
-	
+
 					if(d)	/* guard against invalidly specified masks */
 					{
 						u = (char)touppc(d[1]);
-	
+
 						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
 							t++;
-	
+
 						goto anych;
 					}
 				}
 				else
 				{
-					u = (char)touppc(*pat); 
-	
+					u = (char)touppc(*pat);
+
 					while(*t &&(touppc(*t) != u))
 						t++;
-	
+
 					break;
 				}
-	
+
 				valid = FALSE;
 				break;
 			}
@@ -775,18 +771,18 @@ boolean match_pattern(const char *t, const char *pat)
 			{
 				tu = touppc(*t);
 				pat++;
-	
+
 				exceptch:;
-	
+
 				u = (char)touppc(*pat);
-	
+
 				if (u && tu != u)
 				{
 					t++;
 					pat++;
 					break;
-				} 
-				
+				}
+
 				valid = FALSE;
 				break;
 			}
@@ -794,13 +790,13 @@ boolean match_pattern(const char *t, const char *pat)
 			{
 				tu = touppc(*t);
 				d = strchr(pat, ']');
-				
+
 				if(d)
 				{
 					anych:;
-	
+
 					while(++pat < d && (tu != touppc(*pat)));
-	
+
 					if(pat < d)
 					{
 						pat = d;
@@ -809,7 +805,7 @@ boolean match_pattern(const char *t, const char *pat)
 						break;
 					}
 				}
-	
+
 				valid = FALSE;
 				break;
 			}
@@ -817,7 +813,7 @@ boolean match_pattern(const char *t, const char *pat)
 			{
 				if (touppc(*t++) == touppc(*pat++))
 					break;
-	
+
 				valid = FALSE;
 			}
 		}
@@ -827,8 +823,8 @@ boolean match_pattern(const char *t, const char *pat)
 }
 
 
-/* 
- * Compare a filename against a wildcard pattern 
+/*
+ * Compare a filename against a wildcard pattern
  * Some special considerations of the '.' character in single-TOS
  */
 
@@ -851,7 +847,7 @@ boolean cmp_wildcard(const char *fname, const char *pat)
 
 		if (dot)
 		{
-			/* 
+			/*
 			 * If there is a dot and...
 			 * the rest of the wildcard is '*', and
 			 * there is no dot in the name, ignore the dot
@@ -861,8 +857,8 @@ boolean cmp_wildcard(const char *fname, const char *pat)
 			if (dot[1] == '*' && dot[2] == '\0' && strchr(fname, '.') == NULL)
 				*dot = '\0';
 		}
-		else if (strchr(fname, '.') != NULL) 
-			return FALSE;		
+		else if (strchr(fname, '.') != NULL)
+			return FALSE;
 	}
 
 	/* Now match the pattern */
@@ -884,23 +880,29 @@ static long cdecl (*Oldmediach) (int);
 static long cdecl (*Oldrwabs) (int, void *, int, int, int, long);
 
 /* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
+/*     04'10 Coldfire */
 
 #if __AHCC__
 static long __asm__ cdecl Newgetbpb(int d)
 {
-	movem.l	d2-d3,-(a7)
+	move.l	d2,-(a7)
+	move.l	d3,-(a7)
 	move	12(sp),d3		; 4(sp) + 8
 	cmp		chdrv.l,d3
 	bne.s	L44
-	move.l	Oldgetbpb.l,1138
-	move.l	Oldrwabs.l,1142
-	move.l	Oldmediach.l,1150
+	lea 	1138,a0
+	move.l	Oldgetbpb.l,(a0)
+	lea 	1142,a0
+	move.l	Oldrwabs.l,(a0)
+	lea 	1150,a0
+	move.l	Oldmediach.l,(a0)
 L44:
 	move	d3,-(a7)
 	movea.l	Oldgetbpb.l,a0
 	jsr		(a0)
-	addq	#2,a7
-	movem.l	(a7)+,d2-d3
+	addq.l	#2,a7
+	move.l	(a7)+,d3
+	move.l	(a7)+,d2
 	rts
 }
 #else
@@ -918,10 +920,10 @@ static long cdecl Newgetbpb(int d)
 #endif
 
 
-/* 
+/*
  * HR:
  * The following 2 functions didnt suffer, but I have done the same
- * and then disabled. Rwabs is a very dangerous function :-) 
+ * and then disabled. Rwabs is a very dangerous function :-)
  */
 
 #if 0 /* __AHCC__ */
@@ -990,15 +992,15 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 #endif
 
 
-/* 
+/*
  * Force media change on drive contained in path.
- * This routine is used un such a way that there is no chance 
- * of path being undefined or too short 
+ * This routine is used un such a way that there is no chance
+ * of path being undefined or too short
  */
 
 void force_mediach(const char *path)
 {
-	int 
+	int
 		drive,
 		p = *path;
 
@@ -1024,7 +1026,7 @@ void force_mediach(const char *path)
 
 		chdrv = drive;
 
-/*		replaced with equivalent code 
+/*		replaced with equivalent code below
 
 		Oldrwabs = *((Func *)0x476L);
 		Oldgetbpb = *((Func *)0x472L);
@@ -1034,7 +1036,7 @@ void force_mediach(const char *path)
 		Oldgetbpb = hdv_bpb;
 		Oldmediach = hdv_mediach;
 
-/*		replaced with equivalent code 
+/*		replaced with equivalent code below
 
 		*((Func *)0x476L) = Newrwabs;
 		*((Func *)0x472L) = Newgetbpb;
@@ -1052,7 +1054,7 @@ void force_mediach(const char *path)
 
 		if (*((Func *)0x476L) == Newrwabs)
 		{
-/*		replaced with equivalent code 
+/*			replaced with equivalent code below
 
 			*((Func *)0x472L) = Oldgetbpb;
 			*((Func *)0x476L) = Oldrwabs;
@@ -1077,8 +1079,8 @@ void force_mediach(const char *path)
 
 void cv_tos_fn2form(char *dest, const char *source)
 {
-	const char 
-		*s = source;			/* a location in the source string */ 
+	const char
+		*s = source;			/* a location in the source string */
 
 	char
 		*dl = dest + 12,		/* In case a longer name slips through */
@@ -1103,14 +1105,14 @@ void cv_tos_fn2form(char *dest, const char *source)
 }
 
 
-/* 
+/*
  * Convert from a justified form string into TOS (8+3) filename.
  * Insert "." between the name and the extension (after 8 characters)
  */
 
 static void cv_tos_form2fn(char *dest, const char *source)
 {
-	const char  
+	const char
 		*s = source;
 
 	char
@@ -1141,8 +1143,8 @@ static void cv_tos_form2fn(char *dest, const char *source)
 }
 
 
-/* 
- * Wrapper function for editable and possibly userdef fields. 
+/*
+ * Wrapper function for editable and possibly userdef fields.
  * Fit a (possibly long) filename or path into a form (dialog) field
  * Note: now it is assumed that if the field is 12 characters long,
  * then it will be for a 8+3 format (see also routine tos_fnform in resource.c)
@@ -1151,9 +1153,9 @@ static void cv_tos_form2fn(char *dest, const char *source)
 
 void cv_fntoform(OBJECT *tree, int object, const char *src)
 {
-	/* 
-	 * Determine destination and what is the available length 
-	 * Beware: "l" is the complete allocated length, 
+	/*
+	 * Determine destination and what is the available length
+	 * Beware: "l" is the complete allocated length,
 	 * zero termination-byte must fit into it
 	 */
 
@@ -1170,15 +1172,15 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 		l = (long)ti->te_txtlen;
 
 
-	/* 
-	 * The only 12-chars long fields in TeraDesk should be 
-	 * for 8+3 names, possibly even if Mint/Magic is around 
+	/*
+	 * The only 12-chars long fields in TeraDesk should be
+	 * for 8+3 names, possibly even if Mint/Magic is around
 	 */
 
 	if ( l < 13L)
 		cv_tos_fn2form(dst, src);
 	else
-	{	
+	{
 		if (ob->ob_flags & EDITABLE )
 		{
 			if(xd_xobtype(ob) == XD_SCRLEDIT)
@@ -1194,27 +1196,27 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 		}
 		else
 			cramped_name(src, dst, l); 	/* term. byte included */
-	}	
-} 
+	}
+}
 
 
-/* 
+/*
  * Convert filename from the dialog form into a convenient string.
- * This routine does not allocate any space for destination. 
+ * This routine does not allocate any space for destination.
  */
 
 void cv_formtofn(char *dst, OBJECT *tree, int object)
 {
 	TEDINFO
-		*ti = xd_get_obspecp(tree + object)->tedinfo; 
+		*ti = xd_get_obspecp(tree + object)->tedinfo;
 
 	char
 		*src = ti->te_ptext;
 
 
-	/* 
-	 * The only 12-characters-long fields in TeraDesk should be 
-	 * for 8+3 names, possibly even if Mint/Magic is around 
+	/*
+	 * The only 12-characters-long fields in TeraDesk should be
+	 * for 8+3 names, possibly even if Mint/Magic is around
 	 */
 
 	if(ti->te_txtlen < 13)
@@ -1222,4 +1224,3 @@ void cv_formtofn(char *dst, OBJECT *tree, int object)
 	else
 		strip_name(dst, src);
 }
-	

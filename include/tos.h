@@ -10,6 +10,8 @@
 #if !defined( __TOS )
 #define __TOS
 
+#include <trap.h>		/* AHCC: __syscall__ */
+
 typedef struct          /* used by Cconrs */
 {
         unsigned char maxlen;
@@ -226,150 +228,152 @@ typedef struct _syshdr
 extern BASPAG *_BasPag;
 extern long _PgmSize;
 
-long    gemdos( void, ... );
-long    bios( void, ... );
-long    xbios( void, ... );
+long    TRAP( 1)	gemdos( void, ... );
+long    TRAP(13)	bios  ( void, ... );
+long    TRAP(14)	xbios ( void, ... );
 
 /****** Tos *************************************************************/
 
-void    Pterm0( void );
-long    Cconin( void );
-void    Cconout( int c );
-int     Cauxin( void );
-void    Cauxout( int c );
-int     Cprnout( int c );
-long    Crawio( int w );
-long    Crawcin( void );
-long    Cnecin( void );
-int     Cconws( const char *buf );
-void    Cconrs( LINE *buf );
-int     Cconis( void );
-long    Dsetdrv( int drv );
-int     Cconos( void );
-int     Cprnos( void );
-int     Cauxis( void );
-int     Cauxos( void );
-int     Dgetdrv( void );
-void    Fsetdta( DTA *buf );
-long    Super( void *stack );
-unsigned int  Tgetdate( void );
-unsigned int Tsetdate( unsigned int date );
-unsigned int  Tgettime( void );
-unsigned int  Tsettime( unsigned int time );
-DTA     *Fgetdta( void );
-int     Sversion( void );
-void    Ptermres( long keepcnt, int retcode );
-int     Dfree( DISKINFO *buf, int driveno );
-int     Dcreate( const char *path );
-int     Ddelete( const char *path );
-int     Dsetpath( const char *path );
-long    Fcreate( const char *filename, int attr );
-long    Fopen( const char *filename, int mode );
-int     Fclose( int handle );
-long    Fread( int handle, long count, void *buf );
-long    Fwrite( int handle, long count, void *buf );
-int     Fdelete( const char *filename );
-long    Fseek( long offset, int handle, int seekmode );
-int     Fattrib( const char *filename, int wflag, int attrib );
-long    Fdup( int handle );
-int     Fforce( int stch, int nonstdh );
-int     Dgetpath( char *path, int driveno );
-void    *Malloc( long number );
-int     Mfree( void *block );
-int     Mshrink( int zero, void *block, long newsiz );
-long    Pexec( int mode, char *ptr1, void *ptr2, void *ptr3 );
-void    Pterm( int retcode );
-int     Fsfirst( const char *filename, int attr );
-int     Fsnext( void );
-int     Frename( int zero, const char *oldname, const char *newname );
-int     Fdatime( DOSTIME *timeptr, int handle, int wflag );
+void    GEMDOS(0)	Pterm0( void );
+long    GEMDOS(1)	Cconin( void );
+void    GEMDOS(2)	Cconout( int c );
+int     GEMDOS(3)	Cauxin( void );
+void    GEMDOS(4)	Cauxout( int c );
+int     GEMDOS(5)	Cprnout( int c );
+long    GEMDOS(6)	Crawio( int w );
+long    GEMDOS(7)	Crawcin( void );
+long    GEMDOS(8)	Cnecin( void );
+int     GEMDOS(9)	Cconws( const char *buf );
+void    GEMDOS(10)	Cconrs( LINE *buf );
+int     GEMDOS(11)	Cconis( void );
+long    GEMDOS(14)	Dsetdrv( int drv );
+int     GEMDOS(16)	Cconos( void );
+int     GEMDOS(17)	Cprnos( void );
+int     GEMDOS(18)	Cauxis( void );
+int     GEMDOS(19)	Cauxos( void );
+int     GEMDOS(25)	Dgetdrv( void );
+void    GEMDOS(26)	Fsetdta( DTA *buf );
+long    GEMDOS(32)	Super( void *stack );
+unsigned int GEMDOS(42)	Tgetdate( void );
+unsigned int GEMDOS(43)	Tsetdate( unsigned int date );
+unsigned int GEMDOS(44)	Tgettime( void );
+unsigned int GEMDOS(45)	Tsettime( unsigned int time );
+DTA *	GEMDOS(47)	Fgetdta( void );
+int     GEMDOS(48)	Sversion( void );
+void    GEMDOS(49)	Ptermres( long keepcnt, int retcode );
+int     GEMDOS(54)	Dfree( DISKINFO *buf, int driveno );
+int     GEMDOS(57)	Dcreate( const char *path );
+int     GEMDOS(58)	Ddelete( const char *path );
+int     GEMDOS(59)	Dsetpath( const char *path );
+long    GEMDOS(60)	Fcreate( const char *filename, int attr );
+long    GEMDOS(61)	Fopen( const char *filename, int mode );
+int     GEMDOS(62)	Fclose( int handle );
+long    GEMDOS(63)	Fread( int handle, long count, void *buf );
+long    GEMDOS(64)	Fwrite( int handle, long count, void *buf );
+int     GEMDOS(65)	Fdelete( const char *filename );
+long    GEMDOS(66)	Fseek( long offset, int handle, int seekmode );
+int     GEMDOS(67)	Fattrib( const char *filename, int wflag, int attrib );
+long    GEMDOS(69)	Fdup( int handle );
+int     GEMDOS(70)	Fforce( int stch, int nonstdh );
+int     GEMDOS(71)	Dgetpath( char *path, int driveno );
+void *	GEMDOS(72)	Malloc( long number );
+int     GEMDOS(73)	Mfree( void *block );
+int     GEMDOS(74)	Mshrink( int zero, void *block, long newsiz );
+long    GEMDOS(75)	Pexec( int mode, char *ptr1, void *ptr2, void *ptr3 );
+void    GEMDOS(76)	Pterm( int retcode );
+int     GEMDOS(78)	Fsfirst( const char *filename, int attr );
+int     GEMDOS(79)	Fsnext( void );
+int     GEMDOS(86)	Frename( int zero, const char *oldname, const char *newname );
+int     GEMDOS(87)	Fdatime( DOSTIME *timeptr, int handle, int wflag );
 
 /****** TOS 030 Gemdos Extension ****************************************/
 
-void    *Mxalloc( long number, int mode );
-long    Maddalt( void *start, long size );
+void *	GEMDOS(68)	Mxalloc( long number, int mode );
+long    GEMDOS(20)	Maddalt( void *start, long size );
 
 /****** Network Gemdos Extension ****************************************/
 
-long    Flock( int handle, int mode, long start, long length );
+long    GEMDOS(92)	Flock( int handle, int mode, long start, long length );
 
 /****** Bios ************************************************************/
 
-void    Getmpb( MPB *ptr );
-int     Bconstat( int dev );
-long    Bconin( int dev );
-void    Bconout( int dev, int c );
-long    Rwabs( int rwflag, void *buf, int cnt, int recnr, int dev );
-void    (*Setexc( int number, void (*exchdlr)() )) ();
-long    Tickcal( void );
-BPB     *Getbpb( int dev );
-long    Bcostat( int dev );
-long    Mediach( int dev );
-long    Drvmap( void );
-long    Kbshift( int mode );
-
+void    BIOS( 0)	Getmpb( MPB *ptr );
+int     BIOS( 1)	Bconstat( int dev );
+long    BIOS( 2)	Bconin( int dev );
+void    BIOS( 3)	Bconout( int dev, int c );
+long    BIOS( 4)	Rwabs( int rwflag, void *buf, int cnt, int recnr, int dev );
+void    (* BIOS(5)	Setexc( int number, void (*exchdlr)() )) ();
+long    BIOS( 6)	Tickcal( void );
+BPB *	BIOS( 7)	Getbpb( int dev );
+long    BIOS( 8)	Bcostat( int dev );
+long    BIOS( 9)	Mediach( int dev );
+long    BIOS(10)	BIOS(10)	Drvmap( void );
+long    BIOS(11)	Kbshift( int mode );
+long    BIOS(12)	Lrwabs( short rwflag, void *buf, short cnt, short recnr, short dev );
 
 /****** XBios ***********************************************************/
 
-void    Initmouse( int type, MOUSE *par, void (*mousevec)() );
-void    *Ssbrk( int count );
-void    *Physbase( void );
-void    *Logbase( void );
-int     Getrez( void );
-void    Setscreen( void *laddr, void *paddr, int rez );
-void    Setpalette( void *pallptr );
-int     Setcolor( int colornum, int color );
-int     Floprd( void *buf, void *filler, int devno, int sectno,
+void    XBIOS(0)	Initmouse( int type, MOUSE *par, void (*mousevec)() );
+void *	XBIOS(1)	Ssbrk( int count );
+void *	XBIOS(2)	Physbase( void );
+void *	XBIOS(3)	Logbase( void );
+int     XBIOS(4)	Getrez( void );
+void    XBIOS(5)	Setscreen( void *laddr, void *paddr, int rez );
+void    XBIOS(6)	Setpalette( void *pallptr );
+int     XBIOS(7)	Setcolor( int colornum, int color );
+int     XBIOS(8)	Floprd( void *buf, void *filler, int devno, int sectno,
                int trackno, int sideno, int count );
-int     Flopwr( void *buf, void *filler, int devno, int sectno,
+int     XBIOS(9)	Flopwr( void *buf, void *filler, int devno, int sectno,
                int trackno, int sideno, int count );
-int     Flopfmt( void *buf, void *filler, int devno, int spt, int trackno,
+int     XBIOS(10)	Flopfmt( void *buf, void *filler, int devno, int spt, int trackno,
                 int sideno, int interlv, long magic, int virgin );
-void    Midiws( int cnt, void *ptr );
-void    Mfpint( int erno, void (*vector)() );
-IOREC   *Iorec( int dev );
-long    Rsconf( int baud, int ctr, int ucr, int rsr, int tsr, int scr );
-KEYTAB  *Keytbl( void *unshift, void *shift, void *capslock );
-long    Random( void );
-void    Protobt( void *buf, long serialno, int disktype, int execflag );
-int     Flopver( void *buf, void *filler, int devno, int sectno,
+void    XBIOS(12)	Midiws( int cnt, void *ptr );
+void    XBIOS(13)	Mfpint( int erno, void (*vector)() );
+IOREC *	XBIOS(14)	Iorec( int dev );
+long    XBIOS(15)	Rsconf( int baud, int ctr, int ucr, int rsr, int tsr, int scr );
+KEYTAB *XBIOS(16)	Keytbl( void *unshift, void *shift, void *capslock );
+long    XBIOS(17)	Random( void );
+void    XBIOS(18)	Protobt( void *buf, long serialno, int disktype, int execflag );
+int     XBIOS(19)	Flopver( void *buf, void *filler, int devno, int sectno,
                 int trackno, int sideno, int count );
-void    Scrdmp( void );
-int     Cursconf( int func, int rate );
-void    Settime( unsigned long time );
-unsigned long  Gettime( void );
-void    Bioskeys( void );
-void    Ikbdws( int count, void *ptr );
-void    Jdisint( int number );
-void    Jenabint( int number );
-char    Giaccess( char data, int regno );
-void    Offgibit( int bitno );
-void    Ongibit( int bitno );
-void    Xbtimer( int timer, int control, int data, void (*vector)() );
-void    *Dosound( void *buf );
-int     Setprt( int config );
-KBDVBASE *Kbdvbase( void );
-int     Kbrate( int initial, int repeat );
-void    Prtblk( PBDEF *par );
-void    Vsync( void );
-long    Supexec( long (*func)() );
-void    Puntaes( void );
-int     Floprate( int devno, int newrate );
-int     Blitmode( int mode );
+void    XBIOS(20)	Scrdmp( void );
+int     XBIOS(21)	Cursconf( int func, int rate );
+void    XBIOS(22)	Settime( unsigned long time );
+unsigned
+long	XBIOS(23)	Gettime( void );
+void    XBIOS(24)	Bioskeys( void );
+void    XBIOS(25)	Ikbdws( int count, void *ptr );
+void    XBIOS(26)	Jdisint( int number );
+void    XBIOS(27)	Jenabint( int number );
+char    XBIOS(28)	Giaccess( char data, int regno );
+void    XBIOS(29)	Offgibit( int bitno );
+void    XBIOS(30)	Ongibit( int bitno );
+void    XBIOS(31)	Xbtimer( int timer, int control, int data, void (*vector)() );
+void *	XBIOS(32)	Dosound( void *buf );
+int     XBIOS(33)	Setprt( int config );
+KBDVBASE * XBIOS(34)Kbdvbase( void );
+int     XBIOS(35)	Kbrate( int initial, int repeat );
+void    XBIOS(36)	Prtblk( PBDEF *par );
+void    XBIOS(37)	Vsync( void );
+typedef long Supfunc(void);
+long    XBIOS(38)	Supexec( Supfunc *func);
+void    XBIOS(39)	Puntaes( void );
+int     XBIOS(41)	Floprate( int devno, int newrate );
+int     XBIOS(64)	Blitmode( int mode );
 
 /* TOS030 XBios */
-int     DMAread( long sector, int count, void *buffer, int devno );
-int     DMAwrite( long sector, int count, void *buffer, int devno );
-int     NVMaccess( int opcode, int start, int count, void *buffer );
-long    Bconmap( int devno );
-int     Esetshift( int shftMode );
-int     Egetshift( void );
-int     EsetBank( int bankNum );
-int     EsetColor( int colorNum, int color );
-void    EsetPalette( int colorNum, int count, int *palettePtr );
-void    EgetPalette( int colorNum, int count, int *palettePtr );
-int     EsetGray( int swtch );
-int     EsetSmear( int swtch );
+int     XBIOS(42)	DMAread( long sector, int count, void *buffer, int devno );
+int     XBIOS(43)	DMAwrite( long sector, int count, void *buffer, int devno );
+long    XBIOS(44)	Bconmap( int devno );
+int     XBIOS(46)	NVMaccess( int opcode, int start, int count, void *buffer );
+int     XBIOS(80)	Esetshift( int shftMode );
+int     XBIOS(81)	Egetshift( void );
+int     XBIOS(82)	EsetBank( int bankNum );
+int     XBIOS(83)	EsetColor( int colorNum, int color );
+void    XBIOS(84)	EsetPalette( int colorNum, int count, int *palettePtr );
+void    XBIOS(85)	EgetPalette( int colorNum, int count, int *palettePtr );
+int     XBIOS(86)	EsetGray( int swtch );
+int     XBIOS(87)	EsetSmear( int swtch );
 
 /* MinT Gemdos */
 
@@ -482,66 +486,67 @@ typedef struct
 } SIGACTION;
 
 
-int     Syield( void );
-int     Fpipe( int *usrh );
-int     Fcntl( int f, long arg, int cmd );
-long    Finstat( int f );
-long    Foutstat( int f );
-long    Fgetchar( int f, int mode );
-long    Fputchar( int f, long c, int mode );
-long    Pwait( void );
-int     Pnice( int delta );
-int     Pgetpid( void );
-int     Pgetppid( void );
-int     Pgetpgrp( void );
-int     Psetpgrp( int pid, int newgrp );
-int     Pgetuid( void );
-int     Psetuid( int id );
-int     Pkill( int pid, int sig );
-void    *Psignal( int sig, void *handler );
-int     Pvfork( void );
-int     Pgetgid( void );
-int     Psetgid( int id );
-long    Psigblock( long mask );
-long    Psigsetmask( long mask );
-long    Pusrval( long arg );
-int     Pdomain( int newdom );
-void    Psigreturn( void );
-int     Pfork( void );
-long    Pwait3( int flag, long *rusage );
-int     Fselect( unsigned int timeout, long *rfds, long *wfds, long *xfds );
-void    Prusage( long *r );
-long    Psetlimit( int lim, long value );
-long    Talarm( long secs );
-void    Pause( void );
-long    Sysconf( int n );
-long    Psigpending( void );
-long    Dpathconf(const char *name, int n );
-long    Pmsg( int mode, long mbox, MSG *msg );
-long    Fmidipipe( int pid, int in, int out );
-int     Prenice( int pid, int delta );
-long    Dopendir(const char *name, int flag );
-long    Dreaddir( int buflen, long dir, char *buf );
-long	Dxreaddir( short len, long handle, char * buf, long xattr, long *xret );	/* GEMDOS 0x142 */
-long	Dreadlabel(const char *path, char *label, int size);
-long	Dwritelabel(const char *path, const char *label);
-long    Drewinddir( long dir );
-long    Dclosedir( long dir );
-long    Fxattr( int flag, const char *name, XATTR *buf );
-long    Flink( char *oldname, char *newname );
-long    Fsymlink( char *oldname, char *newname );
-long    Freadlink( int size, char *buf, char *name );
-long    Dcntl( int cmd, char *name, long arg );
-long    Fchown( char *name, int uid, int gid );
-long    Fchmod( char *name, int mode );
-long    Pumask( unsigned int mode );
-long    Psemaphore( int mode, long id, long timeout );
-long    Dlock( int mode, int drive );
-void    Psigpause( unsigned long mask );
-long    Psigaction( int sig, SIGACTION *act, SIGACTION *oact );
-int     Pgeteuid( void );
-int     Pgetegid( void );
-long    Pwaitpid( int pid, int flag, long *rusage );
+int     GEMDOS(0xff)	Syield( void );
+int     GEMDOS(0x100)	Fpipe( int *usrh );
+int     GEMDOS(0x104)	Fcntl( int f, long arg, int cmd );
+long    GEMDOS(0x105)	Finstat( int f );
+long    GEMDOS(0x106)	Foutstat( int f );
+long    GEMDOS(0x107)	Fgetchar( int f, int mode );
+long    GEMDOS(0x108)	Fputchar( int f, long c, int mode );
+long    GEMDOS(0x109)	Pwait( void );
+int     GEMDOS(0x10a)	Pnice( int delta );
+int     GEMDOS(0x10b)	Pgetpid( void );
+int     GEMDOS(0x10c)	Pgetppid( void );
+int     GEMDOS(0x10d)	Pgetpgrp( void );
+int     GEMDOS(0x10e)	Psetpgrp( int pid, int newgrp );
+int     GEMDOS(0x10f)	Pgetuid( void );
+int     GEMDOS(0x110)	Psetuid( int id );
+int     GEMDOS(0x111)	Pkill( int pid, int sig );
+void *	GEMDOS(0x112)	Psignal( int sig, void *handler );
+int     GEMDOS(0x113)	Pvfork( void );
+int     GEMDOS(0x114)	Pgetgid( void );
+int     GEMDOS(0x115)	Psetgid( int id );
+long    GEMDOS(0x116)	Psigblock( long mask );
+long    GEMDOS(0x117)	Psigsetmask( long mask );
+long    GEMDOS(0x118)	Pusrval( long arg );
+int     GEMDOS(0x119)	Pdomain( int newdom );
+void    GEMDOS(0x11a)	Psigreturn( void );
+int     GEMDOS(0x11b)	Pfork( void );
+long    GEMDOS(0x11c)	Pwait3( int flag, long *rusage );
+int     GEMDOS(0x11d)	Fselect( unsigned int timeout, long *rfds, long *wfds, long *xfds );
+void    GEMDOS(0x11e)	Prusage( long *r );
+long    GEMDOS(0x11f)	Psetlimit( int lim, long value );
+long    GEMDOS(0x120)	Talarm( long secs );
+void    GEMDOS(0x121)	Pause( void );
+long    GEMDOS(0x122)	Sysconf( int n );
+long    GEMDOS(0x123)	Psigpending( void );
+long    GEMDOS(0x124)	Dpathconf(const char *name, int n );
+long    GEMDOS(0x125)	Pmsg( int mode, long mbox, MSG *msg );
+long    GEMDOS(0x126)	Fmidipipe( int pid, int in, int out );
+int     GEMDOS(0x127)	Prenice( int pid, int delta );
+long    GEMDOS(0x128)	Dopendir(const char *name, int flag );
+long    GEMDOS(0x129)	Dreaddir( int buflen, long dir, char *buf );
+long    GEMDOS(0x12a)	Drewinddir( long dir );
+long    GEMDOS(0x12b)	Dclosedir( long dir );
+long    GEMDOS(0x12c)	Fxattr( int flag, const char *name, XATTR *buf );
+long    GEMDOS(0x12d)	Flink( char *oldname, char *newname );
+long    GEMDOS(0x12e)	Fsymlink( char *oldname, char *newname );
+long    GEMDOS(0x12f)	Freadlink( int size, char *buf, char *name );
+long    GEMDOS(0x130)	Dcntl( int cmd, char *name, long arg );
+long    GEMDOS(0x131)	Fchown( char *name, int uid, int gid );
+long    GEMDOS(0x132)	Fchmod( char *name, int mode );
+long    GEMDOS(0x133)	Pumask( unsigned int mode );
+long    GEMDOS(0x134)	Psemaphore( int mode, long id, long timeout );
+long    GEMDOS(0x135)	Dlock( int mode, int drive );
+void    GEMDOS(0x136)	Psigpause( unsigned long mask );
+long    GEMDOS(0x137)	Psigaction( int sig, SIGACTION *act, SIGACTION *oact );
+int     GEMDOS(0x138)	Pgeteuid( void );
+int     GEMDOS(0x139)	Pgetegid( void );
+long    GEMDOS(0x13a)	Pwaitpid( int pid, int flag, long *rusage );
+
+long	GEMDOS(0x142)	Dxreaddir( short len, long handle, char * buf, long xattr, long *xret );	/* GEMDOS 0x142 */
+long	GEMDOS(0x152)	Dreadlabel(const char *path, char *label, int size);
+long	GEMDOS(0x153)	Dwritelabel(const char *path, const char *label);
 
 /* Falcon */
 
@@ -647,7 +652,9 @@ enum		/* Ssystem() codes */
 	S_SETCOOKIE
 };
 
-long	Ssystem(int code, long arg1, long arg2);
+long	GEMDOS(0x154)	Ssystem(int code, long arg1, long arg2);
+void	GEMDOS(0x151)	Shutdown( long restart );
+long	GEMDOS(0x13b)	Dgetcwd( char *path, short drv, short size );
 
 #define __MINT__ 1		/* for mint.h */
 #endif

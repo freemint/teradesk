@@ -49,8 +49,9 @@ clock_t      clock( void );
 size_t       strftime( char *s, size_t max_size, const char *format,
                        const struct tm *timeptr );
 
+#if ! __AHCC__
 double       difftime( time_t time2, time_t time1 );
-
+#endif
 
 #endif
 

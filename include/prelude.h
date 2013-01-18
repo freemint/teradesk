@@ -29,10 +29,11 @@
 	#define elif else if
 	#define othw }else{
 	#define od while(1);		/* ; no mistake */
-	typedef double extended;
-	typedef float single;
 
-	#if ! __AHCC__
+#if ! __AHCC__
+	  typedef double extended;
+	  typedef float single;
+
 	/* these are otherwise built in */
 		#define nil 0L
 		typedef double real;

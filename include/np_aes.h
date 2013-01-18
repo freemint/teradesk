@@ -1,12 +1,12 @@
 /*	AES.H
-	
+
 	GEM AES Definitions
-	
+
 	Copyright (c) Borland International 1990
 	All Rights Reserved.
-	
+
 	mrt 1992 H. Robbers Amsterdam:
-	
+
 	space --> tabs.
 	prefixes in structs removed.
 	lists of #defines replaced by enums.
@@ -26,7 +26,7 @@
 	And if that is not of convenience you should rethink the whole idee
 	of promoting int to 32,
 	Of course for the other compiler you must recompile the package.
-	
+
 	The integral item's that are passed directly to the OS are parameterized.
 	These are G_i, G_u, G_l & G_ul.
 	The sizes of pointers are not paramaterized.
@@ -178,7 +178,7 @@ typedef enum
 	DD_TRASH,
 	DD_PRINTER,
 	DD_CLIPBOARD,
-	
+
 	DD_TIMEOUT = 2000,			/* Timeout in ms */
 	DD_EXTSIZE = 32,			/* L„nge des Formatfelds */
 	DD_NAMEMAX = 128,			/* maximale L„nge eines Formatnamens */
@@ -227,7 +227,7 @@ typedef enum
 typedef struct /* Special type for EventMulti */
 {
 	/* input parameters */
-	G_i     flags, bclicks, bmask, bstate, m1flags;
+	G_i     flags, bclicks, bmask, bstate, m1flags,
 	        m1x, m1y,
 	        m1width, m1height, m2flags,
 	        m2x, m2y,
@@ -419,7 +419,7 @@ typedef struct objc_coloours
 #if XAAES
 typedef struct
 {
-	char	*te_ptext,     
+	char	*te_ptext,
 			*te_ptmplt,
 			*te_pvalid;
 	G_i		te_font,
@@ -435,7 +435,7 @@ typedef struct
 #elif G_PRFXS
 typedef struct
 {
-	char	*te_ptext,     
+	char	*te_ptext,
 			*te_ptmplt,
 			*te_pvalid;
 	G_i		te_font,
@@ -722,8 +722,8 @@ typedef struct
 } MN_SET;
 
 typedef struct
-{	
-	char	*string;		/* etwa "TOS|KAOS|MAG!X"          */	
+{
+	char	*string;		/* etwa "TOS|KAOS|MAG!X"          */
 	G_i     num,			/* Nr. der aktuellen Zeichenkette */
 			maxnum;			/* maximal erlaubtes <num>        */
 } SWINFO;
@@ -855,7 +855,7 @@ typedef struct mfstr
 
 /****** Window definitions **********************************************/
 
-typedef enum 
+typedef enum
 {
 	NAME		=0x0001,
 	CLOSE		=0x0002,
@@ -1146,7 +1146,7 @@ typedef struct {
 } XSHW_COMMAND;
 
 /*
- *	XaAES/oAESis Extended Shell Write structure 
+ *	XaAES/oAESis Extended Shell Write structure
  *	- Extra fields for UID/GID setting of spawned clients.
  *  Different naming.
  */

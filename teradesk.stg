@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: January 2011
+@$VER: August 2011
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.03
+                User's Manual for Tera Desktop V4.04
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            January 2011
+                            January 2013
 
 @autorefon
 
@@ -98,6 +98,9 @@ extensive redesign.
 
 After Version 3.0 development has been continued mostly by Dj.Vukovic.
 
+Since version 4.04 a Coldfire-compatible binary can be built using the
+AHCC compiler developed by H. Robbers.
+
 This program with its accompanying files is  Freeware and Open Source.
 It may  be  copied  and distributed freely provided  that the terms of
 the  GNU General Public License  (GPL; see  accompanying file COPYING)
@@ -110,6 +113,7 @@ Tera Desktop files (included in the binary distribution) are:
              COPYING          Copy of the GPL
              DESKTOP.PRG      The Tera Desktop program
              DESKTOS.PRG      Smaller version for single TOS ONLY
+             DESK_CF.PRG      Coldfire-compatible version
              DESKTOP.RSC      English resource file
              DESKTOP.RSD      English resource definitions file
              ICONS.RSC        Monochrome icons resource file
@@ -123,7 +127,9 @@ Tera Desktop files (included in the binary distribution) are:
 @autorefon
 
 There also exists  a source distribution  that  contains  the complete
-source tree of Tera Desktop, to be compiled and linked with PureC 1.1.
+source tree of Tera Desktop, to be compiled and linked with PureC 1.1,
+except for the Coldfire-compartible version that must be compiled with
+the AHCC compiler.
 
 @endnode
 
@@ -158,6 +164,8 @@ source tree of Tera Desktop, to be compiled and linked with PureC 1.1.
 Tera Desktop  can be  used on any Atari ST series  computer  and their
 offspring, TT, Falcon, Hades, Milan or emulators. It uses about 200 to
 300 KB of memory (depending on the complexity of the configuration).
+
+Since Version 4.04 a Coldfire-specific version exists as well.
 
 TT-RAM or Alt-RAM, if installed, is recognised and used by TeraDesk.
 
@@ -495,7 +503,8 @@ root directory of a disk volume.
 2. Copy into this folder the files:
 
        DESKTOP.PRG  (if  you  intend  to use multi-tasking)  OR
-       DESKTOS.PRG  (if you  will  work  in  single-TOS  ONLY)
+       DESKTOS.PRG  (if you  will  work  in  single-TOS  ONLY) OR
+       DESK_CF.PRG  (if you need a Coldfire-specific version)
        DESKTOP.RSC
        ICONS.RSC    (if you will use monochrome icons) AND/OR
        CICONS.RSC   (ONLY if your AES can support colour icons)
@@ -513,9 +522,16 @@ If only DESKTOS.PRG is  to be used  it may be  renamed to  DESKTOP.PRG
 after copying,  but this  is not required.  The program will  register
 itself with the AES as "DESKTOP" anyway.
 
+On a Coldfire system, the DESK_CF.PRG  program  should be used instead
+of DESKTOP.PRG. Same as with DESKTOS.PRG the program can be renamed to
+DESKTOP.PRG but this is not required.
+
+The Coldfire-specific  version should be compatible with  MC68020  and
+higher processors as well.
+
 You can  (but need not) also copy  into this folder  the configuration
 files TERADESK.INF and  TERADESK.PAL  from the  \EXAMPLES folder. Note
-that these files are set for a hypothetical computer  configuration,
+that these files are set  for a hypothetical  computer  configuration,
 and may not  be appropriate for your setup  (Tera Desktop will attempt
 to  obey all that is  specified  in the configuration file,  no matter
 what the  actual  environment is,  e.g. the example  TERADESK.INF  has
@@ -532,8 +548,8 @@ defining additional desktop and window icons, filetypes, etc.
 If you would feel more comfortable with  Tera Desktop  translated into
 some other language, you can replace DESKTOP.RSC  (and maybe ICONS.RSC
 and  CICONS.RSC)  with  translated files.  All text  strings  used  by
-Tera Desktop are located in DESKTOP.RSC  (except default filenames and
-a warning that DESKTOP.RSC can not be found).  It is thus possible  to
+Tera Desktop are located in DESKTOP.RSC,  except default filenames and
+a warning that DESKTOP.RSC can not be found.  It is  thus possible  to
 completely  adapt Tera Desktop  to other languages by using translated
 resource files.  Check the links on TeraDesk's  webpage  for currently
 available translations, or make one yourself, using a resource editor.
@@ -2933,8 +2949,8 @@ Set document types... to maintain lists of  document types assigned to
 applications.  This is  a child dialog  and it is activated  from  the
 Set applications... dialog.
 
-Listbox content  is manipulated by five buttons  (Add,  Edit,  Delete,
-Up-arrow and Down-arrow).
+Listbox content  is manipulated by five buttons:  Add,  Edit,  Delete,
+Up-arrow and Down-arrow.
 
 Add:  opens a child dialog  to enter  data  for an item  which will be
 added to the list at the highlighted  position. Depending  on the type
@@ -2953,7 +2969,11 @@ Down-arrow: moves an item down the list.
 The  purpose  of  the  last two  buttons is to enable editing the item
 order.  TeraDesk searches all lists starting from the beginning, until
 the   first   match  is  found.  It  may  be  desirable  to   put  the
-oft-needed items nearer to the top of the list, for faster response.
+oft-needed items  nearer to the top of the list,  for faster response.
+Also, if more than one list item are defined for similar objects, more 
+specific items should be placed in a list above the more general ones.
+This is the case, for example, with documenttype assignments for files
+with specific names, as exceptions to generally assigned types.
 
 Items  can  be added (or edited) in all of TeraDesk's lists, except in
 the lists of  document-types  assigned  to applications, in two  ways:

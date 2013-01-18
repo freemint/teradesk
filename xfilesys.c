@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2009  Dj. Vukovic
+ *                         2003 - 2011  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -47,7 +47,7 @@
 
 #define _CHECK_RWMODE 0
 
-long Dgetcwd(char *path, int drive, int size);
+long Dgetcwd(char *path, short drive, short size); /* int changed to short for V4.04 to mach mint.h */
 
 static boolean flock;
 extern int tos_version, aes_version;

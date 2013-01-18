@@ -42,7 +42,10 @@ char    *strrev( char *s );
 char    *strset( char *s, int c );
 char    *strnset( char *s, int c, size_t n );
 
+#if ! __AHCC__
 double  strtod( const char *s, char **endptr );
+#endif
+
 long    strtol( const char *str, char **ptr, int base );
 unsigned long   strtoul( const char *str, char **ptr, int base );
 

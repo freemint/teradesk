@@ -1346,7 +1346,7 @@ static void init_vdi(void)
 
 	xd_screensize();
 	vqt_attributes(vdi_handle, lwork_out);
-	fnt_setfont(1, (int) (((long) lwork_out[7] * (long)xd_pix_height * 72L + 12700L) / 25400L), &def_font);
+	fnt_setfont(1, (int) (((long) lwork_out[7] * xd_pix_height * 72L + 12700L) / 25400L), &def_font);
 	def_font.effects = FE_NONE;
 	def_font.colour = BLACK;
 }

@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
  *                          2002 - 2003  H. Robbers,
- *                          2003 - 2008  Dj. Vukovic
+ *                          2003 - 2011  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -129,12 +129,12 @@ static const char rmap[10] = {VSTLOW, VSTMED, VSTHIGH, 0, VTTMED, 0, VTTHIGH, VT
  
 void get_set_video (int set) 
 {
+#if _OVSCAN
 	long
 		s,						/* superv.stack pointer */
 		logb,       			/* logical screen base  */
 		phyb;       			/* physical screen base */
 
-#if _OVSCAN
 	char
 		*acia;
 
@@ -155,8 +155,10 @@ void get_set_video (int set)
 
 	/* Where is the screen ? */
 
+#if _OVSCAN
 	logb = xbios(3); 				/* Logbase();  */
 	phyb = xbios(2);				/* Physbase(); */
+#endif
 
 	if ( set == 0 )					 /* get data */
 	{

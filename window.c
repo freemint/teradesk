@@ -3064,7 +3064,7 @@ void w_pageright(TYP_WINDOW *w)
 
 static long find_firstlast(int wy, int ay, int ah, boolean *prev, int ch, int last)
 {
-	long line;
+	int line;
 
 	line = ay - wy;
 

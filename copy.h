@@ -1,7 +1,7 @@
 /*
- * Teradesk. Copyright (c) 1993, 1994, 2002  W. Klaren,
- *                               2002, 2003  H. Robbers,
- *                         2003, 2004, 2005  Dj. Vukovic
+ * Teradesk. Copyright (c)       1993, 1994, 2002  W. Klaren,
+ *                               2002, 2003, 2011  H. Robbers,
+ *                         2003, 2004, 2005, 2011  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,7 +28,7 @@
 #define CMD_DELETE	 2
 #define CMD_PRINT    3
 #define CMD_PRINTDIR 4
-#define CMD_TOUCH    8 
+#define CMD_TOUCH    8
 
 
 #define mustabort(x) ((x == XABORT) || (x == XFATAL))
@@ -39,26 +39,26 @@ typedef struct
 	long bytes;
 }LSUM;
 
-extern DOSTIME 
+extern DOSTIME
 		now,
-		optime;	
+		optime;
 
 extern int
 #if _MINT_
-	opmode, 
-	opuid, 
+	opmode,
+	opuid,
 	opgid,
 #endif
-	opattr, 
+	opattr,
 	tos_version;
 
-extern boolean 
+extern boolean
 	cfdial_open,
 	rename_files;
-
+/*	06'11 HR: needs tos.h (__syscall__)
 unsigned int Tgettime(void);	/* from tos.h */
 unsigned int Tgetdate(void);	/* from tos.h */
-
+*/
 void add_size(LSUM *nbytes, long fsize);
 void sub_size(LSUM *nbytes, long fsize);
 void size_sum(long *total, LSUM *bytes);

@@ -1,6 +1,6 @@
 ;
 ;  Teradesk. Copyright (c)       1993 - 2002  W. Klaren.
-;                                2002 - 2003  H. Robbers,
+;                                2002 - 2011  H. Robbers,
 ;                                2003 - 2011  Dj. Vukovic
 ;
 ;  This file is part of Teradesk.
@@ -22,8 +22,8 @@
 ;
 ; Name of the created executable file:
 
-desktop.prg				; with _MINT_=1  for all systems
-
+desk_cf.prg				; with _MINT_=1  for all systems
+.C [-27]				; Coldfire/68020 comapatible
 
 ; Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
 
@@ -41,14 +41,15 @@ desktop.prg				; with _MINT_=1  for all systems
 ; as it does not behave consistently in Mint vs. Magic and may be
 ; confusing.
 
-.C [-D_EDITLABELS=0] 	
+.C [-D_EDITLABELS=0]
 
 
 ; Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.
 ; Relevant only for ST-series machines.
-; It is of no use for anyone who doesn't have this hardware installed.
+; It is of no use for anyone who doesn't have this hardware installed,
+; and therefore of no use on a Coldfire system.
 
-.C [-D_OVSCAN=1] ;
+.C [-D_OVSCAN=0] ;
 
 
 ; Define __USE_MACROS as 1 to use macros instead of some function calls
@@ -88,8 +89,9 @@ desktop.prg				; with _MINT_=1  for all systems
 ; Define _MENUDEL as 1 to delete some menu items in TOS 1.4 and older which
 ; have a limited screen buffer size. If TeraDesk will not be used with these
 ; tos versions, it can be set to 0 to reduce slightly the size of the program.
+; Probably safe to set to 0 for a Coldfire system 
 
-.C [-D_MENUDEL=1]
+.C [-D_MENUDEL=0]
 
 
 ;Define _FONT_SEL as 1 to compile the system-wide font selector (FONT protocol)
@@ -135,7 +137,7 @@ desktop.prg				; with _MINT_=1  for all systems
 
 ; Standard startup code
 
-pcstart.o
+ahcstart.o
 
 ; Note: set autodependencies in Pure-C shell options
 
@@ -191,23 +193,17 @@ btst.s
 
 ;Specific libraries:
 
-;Note: AHCM source is not part of the TeraDesk package.
-;binary only is provided; for the source see:
-;http://members.ams.chello.nl/h.robbers/ahcm.zip
-;If some other library is used, it must be able to execute free(NULL) 
-;without bad effects (i.e. no action should occur in such case)
+;AHCM is part of AHCC libs
+;If some other memory  management library is used, it must be able 
+;to execute free(NULL) without bad effects (i.e. no action should
+;occur in such case)
 
-library\ahcm\ahcm.prj
-library\xdialog\xdialog.prj
-library\multitos\multitos.prj
-library\mint\mintlib.prj
-library\utility\library.prj
-
+library\xdialog\xdial_cf.prj
+library\utility\lib_cf.prj
 
 ;Standard libraries
 
-pcstdlib.lib
-pctoslib.lib
-pcgemlib.lib
+ahccstdf.lib
+ahccgemf.lib
 
-;pcextlib.lib ; may be needed for debugging only
+

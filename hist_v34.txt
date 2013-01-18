@@ -1,8 +1,27 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
-                         2002 - 2009  H. Robbers
-                         2002 - 2011  Dj. Vukovic
+                         2002 - 2011  H. Robbers
+                         2002 - 2013  Dj. Vukovic
 
 
+Version 4.04  18-01-2013
+------------------------
+
+- A number of changes made by H. Robbers to enable compilation for Coldfire
+  using AHCC. Project file DESK_CF.PRJ should be used to build the program.
+  Unlike the other project files (DESKTOP.PRJ and DESKTOS.PRJ), this project 
+  file is for the AHCC compiler only; PureC can not be used.  The Coldfire
+  binary is supposed to be compatible with 68020 and higher processors.
+
+- Fixed an error that appeared with _MENUDEL option disabled in the project.
+
+- Fixed some insignificant errors and warnings which showed when compiling
+  with AHCC source.
+  
+- Fixed missing buttons in the name-conflict dialog when copying a single
+  folder-type item.
+  
+- Made several updates in the hypertext manual.
+  
 
 Version 4.03  23-01-2011
 ------------------------

@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * If KBMB is defined as 1048576 instead of 1024, 'M' and 'G'
+ * suffixes will be used to display large file sizes
+ * instead of current 'K' and 'M'
+ */
+
 #define DISP_KBMB 9999999L 	/* sizes larger than this to be shown in KB or MB */
 #define KBMB 1024			/* kilo or mega */
 

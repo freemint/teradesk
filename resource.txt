@@ -17,19 +17,24 @@ General remarks
 - Usually, changes in the resource file between subsequent versions are
   small and an existing translated previous version of the resource file
   can be carefully updated. There is no need to start each time from scratch.
-  See the next section: Changes in V... relative to previous version.
+  See the next section: Changes in V4... relative to previous version.
 
 - If translated texts do not fit into available spaces in the dialogs, alerts
-  or the menu, the translator should use his imagination to find the best
+  or the menu, the translator should use his/her imagination to find the best
   possible solution for the problem- items can be moved within the dialogs,
   sometimes the sizes of objects can be changed, words or phrases that are
   not literal translations can be used, etc.
 
 
-Changes in V4.03 relative to previous version
----------------------------------------------
+Changes in V4.04 relative to previous versions
+----------------------------------------------
 
-Resource files of TeraDesk V4.0, to V4.03 are identical.
+String TCFIRE has been added. If a translated resource file is being
+prepared, and a translated file from a previous version already exists,
+it is best to add a string-type tree with the name TCFIRE and containing 
+the appropriate translated text to the existing resource file for V4.03 
+and to compare the structure of the modified translated file with that 
+from the V4.04 distribution. 
 
 
 Naming of object trees
@@ -100,9 +105,9 @@ About the scrolled-editable-text objects
 - Scrolled editable text fields (objects with extended type 13) can be
   modified in length if convenient (e.g. to make them fit into a dialog),
   because TeraDesk uses them in such a way that it is safe to do so. However,
-  two-characters free spaces should always be left in dialog area both on the
-  left and on the on the right of these objects, because, if a text longer
-  than field length is contained in the object, visible text is bracketed
+  two-characters-long free spaces should always be left in dialog area both
+  on the left and on the on the right of these objects, because, if a text
+  longer than field length is contained in the object, visible text is bracketed
   between a pair of "< >" characters that appears on the left and on the right
   of the object.
 
@@ -114,7 +119,7 @@ About the button-type objects
 -----------------------------
 
 - TeraDesk uses higher ob_state bits in button objects to mark hotkeys.
-  The "[" character is not recognized for such purpose in button texts.
+  The "[" character is NOT recognized for such purpose in button texts.
 
 - Checkbox-button and radio-button objects appearing in groups should be
   set to equal widths, appropriate for the longest button text to fit in.

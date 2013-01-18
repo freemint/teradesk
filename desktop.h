@@ -822,48 +822,50 @@
 
 #define XFNVALID         165 /* Free String */
 
-#define ALOADCFG         166 /* Alert-string */
+#define TCFIRE           166 /* Free String */
 
-#define APRGNFND         167 /* Alert-string */
+#define ALOADCFG         167 /* Alert-string */
 
-#define AAPPNFND         168 /* Alert-string */
+#define APRGNFND         168 /* Alert-string */
 
-#define AILLCOPY         169 /* Alert-string */
+#define AAPPNFND         169 /* Alert-string */
 
-#define AILLDEST         170 /* Alert-string */
+#define AILLCOPY         170 /* Alert-string */
 
-#define APRNRESP         171 /* Alert-string */
+#define AILLDEST         171 /* Alert-string */
 
-#define AERADISK         172 /* Alert-string */
+#define APRNRESP         172 /* Alert-string */
 
-#define AFMTERR          173 /* Alert-string */
+#define AERADISK         173 /* Alert-string */
 
-#define AERRACC          174 /* Alert-string */
+#define AFMTERR          174 /* Alert-string */
 
-#define ADUPKEY          175 /* Alert-string */
+#define AERRACC          175 /* Alert-string */
 
-#define AABOOP           176 /* Alert-string */
+#define ADUPKEY          176 /* Alert-string */
 
-#define AGENALRT         177 /* Alert-string */
+#define AABOOP           177 /* Alert-string */
 
-#define AFILEDEF         178 /* Alert-string */
+#define AGENALRT         178 /* Alert-string */
 
-#define AGFALERT         179 /* Alert-string */
+#define AFILEDEF         179 /* Alert-string */
 
-#define AUNKRTYP         180 /* Alert-string */
+#define AGFALERT         180 /* Alert-string */
 
-#define AVALIDCF         181 /* Alert-string */
+#define AUNKRTYP         181 /* Alert-string */
 
-#define ADUPFLG          182 /* Alert-string */
+#define AVALIDCF         182 /* Alert-string */
 
-#define AWOPERR          183 /* Alert-string */
+#define ADUPFLG          183 /* Alert-string */
 
-#define ARESCH           184 /* Alert-string */
+#define AWOPERR          184 /* Alert-string */
 
-#define AFABORT          185 /* Alert-string */
+#define ARESCH           185 /* Alert-string */
 
-#define AQUERY           186 /* Alert-string */
+#define AFABORT          186 /* Alert-string */
 
-#define AREMICNS         187 /* Alert-string */
+#define AQUERY           187 /* Alert-string */
 
-#define ACANTDO          188 /* Alert-string */
+#define AREMICNS         188 /* Alert-string */
+
+#define ACANTDO          189 /* Alert-string */

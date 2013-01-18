@@ -1,6 +1,6 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren
- *                         2002 - 2009	H. Robbers, Dj. Vukovic
+ *                         2002 - 2011	H. Robbers, Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -22,6 +22,8 @@
 
 #ifndef __MINT__
 #define __MINT__
+
+#include <trap.h>		/* AHCC: __syscall__ */
 
 /* HR: these undefines supress a number of warnings */
 
@@ -286,42 +288,45 @@ typedef void cdecl (*Sigfunc)( long signal );
 
 /* Process functions. */
 
-short Pgetpid(void);
-short Pgetppid(void);
-short Pgetpgrp(void);
-short Psetpgrp(short pid, short grp);
-short Pgetuid(void);
-short Psetuid(short id);
-short Pgetgid(void);
-short Psetgid(short id);
-short Pfork(void);
-long Pwaitpid(short pid, short nohang, long *rusage);
+short GEMDOS(0x10b)	Pgetpid(void);
+short GEMDOS(0x10c)	Pgetppid(void);
+short GEMDOS(0x10d)	Pgetpgrp(void);
+short GEMDOS(0x10e)	Psetpgrp(short pid, short grp);
+short GEMDOS(0x10f)	Pgetuid(void);
+short GEMDOS(0x110)	Psetuid(short id);
+short GEMDOS(0x114)	Pgetgid(void);
+short GEMDOS(0x115)	Psetgid(short id);
+short GEMDOS(0x11b)	Pfork(void);
+long  GEMDOS(0x13a)	Pwaitpid(short pid, short nohang, long *rusage);
 
 /* Signal functions. */
 
 short Pkill(short pid, short sig);
-Sigfunc Psignal(short sig, Sigfunc handler);
-unsigned long Psigblock(unsigned long mask);
-unsigned long Psigsetmask(unsigned long mask);
-void Psigreturn(void);
-long Talarm(long seconds);
-void Pause(void);
+Sigfunc GEMDOS(0x112)	Psignal(short sig, Sigfunc handler);
+unsigned long GEMDOS(0x116)	Psigblock(unsigned long mask);
+unsigned long GEMDOS(0x117)	Psigsetmask(unsigned long mask);
+void GEMDOS(0x11a)	Psigreturn(void);
+long GEMDOS(0x120)	Talarm(long seconds);
+void GEMDOS(0x121)	Pause(void);
 
 /* File functions. */
 
-long Finstat( int f );
-long Foutstat( int f );
-long Fgetchar( int f, int mode );
-long Fputchar( int f, long c, int mode );
-long Pwait3(int flag, long *rusage);
-int Fselect(unsigned int timeout, long *rfds, long *wfds, long *xfds);
-long Fcntl(short fh, long arg, short cmd);
+long GEMDOS(0x105)	Finstat( int f );
+long GEMDOS(0x106)	Foutstat( int f );
+long GEMDOS(0x107)	Fgetchar( int f, int mode );
+long GEMDOS(0x108)	Fputchar( int f, long c, int mode );
+long GEMDOS(0x11c)	Pwait3(int flag, long *rusage);
+int  GEMDOS(0x11d)	Fselect(unsigned int timeout, long *rfds, long *wfds, long *xfds);
+long GEMDOS(0x104)	Fcntl(short fh, long arg, short cmd);
 #define Fcntl(fh, arg, cmd)		Fcntl(fh, (long) arg, cmd)
-int Dlock(int mode, int drive);
+int  GEMDOS(0x135)	Dlock(int mode, int drive);
+long GEMDOS(0x13b)	Dgetcwd( char *path, short drv, short size );
 
 /* General functions. */
 
-short Pdomain(short newdomain);
+void GEMDOS(0x151)	Shutdown( long restart );
+short GEMDOS(0x119)	Pdomain(short newdomain);
+
 enum		/* Ssystem() codes */
 {
 	S_OSNAME,
@@ -332,7 +337,7 @@ enum		/* Ssystem() codes */
 };
 
 
-long Ssystem(short mode, long arg1, long arg2);    /* GEMDOS 0x154 */
+long GEMDOS(0x154)	Ssystem(short mode, long arg1, long arg2);    /* GEMDOS 0x154 */
 
 /* Standard library replacements. */
 
