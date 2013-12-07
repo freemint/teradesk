@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: August 2011
+@$VER: December 2013
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.04
+                User's Manual for Tera Desktop V4.05
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                            January 2013
+                           December 2013
 
 @autorefon
 
@@ -2653,7 +2653,9 @@ viewer windows font.
 
 6. Specify the size of tabs when text is displayed in Text windows.
 
-7. Set whether open windows are to be saved in the configuration file.
+7. Specify distances betwen icons (in windows and on the desktop).
+
+8. Set whether open windows are to be saved in the configuration file.
 
 The number of available  background patterns is limited  to the sum of
 numbers of  fill patterns and hatches  available in VDI.  Selection of
@@ -2668,7 +2670,7 @@ in at least  one utility:  PICDESK by  D.Mequignon. In order to enable
 display of  background pictures,  TeraDesk must be started  with white
 desktop background colour. In order to have that,  desktop colour must
 be set to  white  and TeraDesk  configuration file  saved.  Background
-picture can be displayed  after the next startup of TeraDesk. 
+picture can be displayed after the next startup of TeraDesk. 
 
 The user  should beware  that redraw  of monochrome  desktop icons  is
 dramatically slowed down  whenever  white  desktop colour is selected.
@@ -2679,6 +2681,23 @@ The Tab size field permits the setting  of the number of blank columns
 produced in Text windows when a <TAB>  character is  encountered. This
 is a global  default setting;  Tab size  for each of the  text windows
 can be changed in the menu of that window.
+
+This dialog can also be used to  adjust  the  horizontal and  vertical
+distances  between icons on the desktop and in the windows. Beside the
+horizontal and vertical icon grid pitch, the offsets of the icons from
+the upper left corner of the icon area can be adjusted. The parameters
+are set in the following format:
+
+     Hor.grid: aaa +x
+     Ver.grid: bbb +y
+
+where "aaa" and "bbb" are the distances, in pixels, between  the icons, 
+in the  horizontal and vertical directions respectively, while "x"  and 
+"y" are the offsets from the corner, in pixels, in the same directions.
+
+The default, and minimum permitted, values of these parameters are: 
+
+aaa=80 bbb=46 x=0 y=0 
 
 If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible  because of the limitations
@@ -4105,22 +4124,15 @@ upgrades. Editing of configuration files  by  hand,  unless  you  know
 -exactly-  what you  are doing,  can cause undesired effects,  or even
 crash TeraDesk.
 
-However, there are  three items in the  configuration file that can be 
+However,  there is  one  item in the  configuration  file that  can be 
 changed -only- by editing  the file  (but normally there  would not be
 any need to do so). These are:
 
 maxd=256 - initial number of directory entries in windows
-xoff=0   - desktop icons offset in pixels (in the deskicons{} group)
-yoff=0   - desktop icons offset in pixels (in the deskicons{} group)
 
 Item maxd can be changed to a lower value in order to save some memory
 in very tight  RAM configurations,  or to  a higher value  for quicker 
 directory opening, if directories with many files are expected.
-
-Items xoff and yoff define positions (in pixels)  of icons relative to 
-the desktop work area.  Setting them to other than  default values can
-sometimes lead to a better-looking desktop (if xoff or yoff are set to
-0, they may not be initially present in the configuration file).
 
 The palette file is optional and can be used to restore colour palette
 after programs  that may corrupt it,  or to set  some specific palette

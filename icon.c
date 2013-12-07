@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2011  Dj. Vukovic
+ *                         2003 - 2013  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1307  USA
  */
 
 
@@ -112,6 +112,8 @@ extern int
 
 int
 	*icon_data,
+	iconw = ICON_W,	/* icon sell size */
+	iconh = ICON_H,	/* icon cell size */
 	sl_noop,	 	/* if 1, do not open icon dialog- it is already open */
 	n_icons;		/* number of icons in the icons file */
 
@@ -147,9 +149,11 @@ boolean
 
 
 static void dsk_diskicons(int *x, int *y, int ic, char *name);
+static void dsk_do_update(void);
 static void set_dsk_obtype(int type);
 static int dsk_defaultpatt(void);
 static int chng_icon(int object);
+static void redraw_icon(int object, int mode);
 int cdecl ub_bckbox(PARMBLK *pb);
 
 
@@ -177,6 +181,7 @@ static WD_FUNC dsk_functions =
 	0L,				/* iconify */
 	0L 				/* uniconify */
 };
+
 
 /*
  * Functions that apply to desktop items
@@ -257,6 +262,70 @@ void dsk_draw(void)
 {
 	form_dialall(FMD_START);
 	form_dialall(FMD_FINISH);
+}
+
+
+/* 
+ * Some toutines to manipulate setting desktop icon grid
+ */
+
+static int icn_atoi(int obj)
+{
+	return atoi(wdoptions[obj].ob_spec.tedinfo->te_ptext);
+}
+
+
+static void icn_itoa(int val, int obj)
+{
+	itoa(val, wdoptions[obj].ob_spec.tedinfo->te_ptext, 10 ); 
+}
+
+
+static void set_maxicons(void)
+{
+	m_icnx = (xd_desk.w - icn_xoff) / iconw - 1; 
+	m_icny = (xd_desk.h - icn_yoff) / iconh - 1; 
+}
+
+
+/*
+ * A routine to set desktop icons in a new grid
+ */
+
+void put_newgrid(void)
+{
+	int 
+		i;
+
+	ICON
+		*icn = desk_icons;
+
+	OBJECT 
+		*deskto = &desktop[1];
+
+
+	for (i = 0; i < max_icons; i++)
+	{
+		if (icn->item_type != ITM_NOTUSED)
+		{
+
+			redraw_icon(i, 1); /* erase at old position */
+
+			if(icn->x > m_icnx)
+				icn->x = m_icnx;
+
+			if(icn->y > m_icny)
+				icn->y = m_icny;
+
+			deskto->r.x = icn->x * iconw + icn_xoff;
+			deskto->r.y = icn->y * iconh + icn_yoff;
+
+			redraw_icon(i, 2);	/* draw at new position */
+		}
+
+		deskto++;
+		icn++;
+	}
 }
 
 
@@ -1586,7 +1655,7 @@ int rsrc_icon(const char *name)
 
 			h = ic->ob_spec.ciconblk;
 
-			if (strnicmp(h->monoblk.ib_ptext, name, 12) == 0)
+			if (strnicmp(h->monoblk.ib_ptext, name, sizeof(INAME) - 1) == 0)
 				return i;
 		}
 
@@ -1669,8 +1738,8 @@ void init_obj(OBJECT *obj, int otype)
 	obj->ob_flags = NONE;
 	obj->ob_state = NORMAL;
 	obj->ob_type = otype;
-	obj->r.w = ICON_W;
-	obj->r.h = ICON_H;
+	obj->r.w = iconw; 
+	obj->r.h = iconh; 
 }
 
 
@@ -1757,8 +1826,8 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 				)
 					deskto->ob_state |= DISABLED;
 
-				deskto->r.x = ix * ICON_W + icn_xoff; /* DjV test */
-				deskto->r.y = iy * ICON_H + icn_yoff; /* DjV test */
+				deskto->r.x = ix * iconw + icn_xoff;
+				deskto->r.y = iy * iconh + icn_yoff;
 				deskto->ob_spec.ciconblk = h;
 				*h = *icons[icon_no].ob_spec.ciconblk;
 
@@ -1833,12 +1902,12 @@ static void comp_icnxy(int mx, int my, int *x, int *y)
 {
 	/* Note: do not use min() here, this is shorter */
 
-	*x = (mx - xd_desk.x - icn_xoff) / ICON_W; /* DjV test */
+	*x = (mx - xd_desk.x - icn_xoff) / iconw; 
 
 	if (*x > m_icnx)
 		*x = m_icnx;
 
-	*y = (my - xd_desk.y - icn_yoff) / ICON_H; /* DjV  test */
+	*y = (my - xd_desk.y - icn_yoff) / iconh; 
 
 	if (*y > m_icny)
 		*y = m_icny;
@@ -2299,9 +2368,11 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 	} /* loop */
 
 	xd_close(&icd_info);
+
 	dsk_do_update();
+
 	obj_unhide(addicon[CHICNRM]);
-	obj_hide(addicon[IFOLLNK]);
+ 	obj_hide(addicon[IFOLLNK]); 
 }
 
 
@@ -2445,8 +2516,8 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 		obj = icnsi->item;
 		redraw_icon(obj, 1); /* erase icon */
 
-		x = (mx + icnsi->m_x - xd_desk.x - icn_xoff) / ICON_W;
-		y = (my + icnsi->m_y - xd_desk.y - icn_yoff) / ICON_H;
+		x = (mx + icnsi->m_x - xd_desk.x - icn_xoff) / iconw;
+		y = (my + icnsi->m_y - xd_desk.y - icn_yoff) / iconh;
 
 		/* Note: do not use min() here, this is shorter */
 
@@ -2458,8 +2529,8 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 
 		desk_icons[obj].x = x;
 		desk_icons[obj].y = y;
-		desktop[obj + 1].r.x = x * ICON_W + icn_xoff; /* DjV test */
-		desktop[obj + 1].r.y = y * ICON_H + icn_yoff; /* DjV test */
+		desktop[obj + 1].r.x = x * iconw + icn_xoff; 
+		desktop[obj + 1].r.y = y * iconh + icn_yoff;
 
 		redraw_icon(obj, 2); /* draw icon */
 
@@ -2777,7 +2848,7 @@ static CfgNest icon_cfg
 			(
 				this.ic.icon_name[0] == 0
 				|| ((it < ITM_DRIVE || it > ITM_FILE) && it != ITM_NETOB)
-				|| this.ic.icon_dat.drv > 'Z' - 'A'
+				|| this.ic.icon_dat.drv > ('Z' - 'A')
 			)
 				*error = EFRVAL;
 			else
@@ -2836,7 +2907,10 @@ static CfgEntry DskIcons_table[] =
 	{CFG_BEG},
 	{CFG_D,  "xoff", &icn_xoff},
 	{CFG_D,  "yoff", &icn_yoff},
-	{CFG_NEST, "icon", icon_cfg },		/* Repeating group */
+	{CFG_D,  "iconw", &iconw},
+	{CFG_D,  "iconh", &iconh},
+	{CFG_NEST, "icon", icon_cfg },	
+	/* Repeating group */
 	{CFG_ENDG},
 	{CFG_LAST}
 };
@@ -2875,6 +2949,8 @@ boolean load_icons(void)
 	 * cicons.rsc from TeraDesk folder. Geneva 6 seems to work ok.
 	 * Colour icons can be loaded only if this capability has
 	 * previously been detected.
+	 * 
+	 * Do not simplify the first statement below.
 	 */
 
 	if (!colour_icons || !rsrc_load("cicons.rsc")) 	/* try to load colour icons */
@@ -2953,11 +3029,8 @@ boolean dsk_init(void)
 		 * can be loaded even in ST-Low resolution
 		 */
 
-		m_icnx = (xd_desk.w - icn_xoff) / ICON_W; /* DjV test */
-		m_icny = (xd_desk.h - icn_yoff) / ICON_H; /* DjV test */
-		max_icons = max(m_icnx * m_icny * 3 / 2, 64);
-		m_icnx--;	/* because index starts from 0 */
-		m_icny--;	/* same */
+		set_maxicons(); 
+		max_icons = max((m_icnx + 1) * (m_icny + 1) * 3 / 2, 64);
 
 		if
 		(
@@ -3025,7 +3098,7 @@ static void dsk_diskicons(int *x, int *y, int ic, char *iname)
 
 	/* Check all drive letters A to Z (drives '0' to '9' not supported) */
 
-	for (i = 0; i < ('Z' - 'A'); i++)
+	for (i = 0; i <= ('Z' - 'A'); i++)
 	{
 		d = 'A' + i;
 		have = FALSE;
@@ -3217,9 +3290,6 @@ void set_selcolpat(XDINFO *info, int obj, int col, int pat)
 
 void dsk_options(void)
 {
-	char
-		*tabsize = wdoptions[TABSIZE].ob_spec.tedinfo->te_ptext;
-
 	XUSERBLK
 		*xubd = (XUSERBLK *)(wdoptions[DSKPAT].ob_spec.userblk),
 		*xubw = (XUSERBLK *)(wdoptions[WINPAT].ob_spec.userblk);
@@ -3236,13 +3306,19 @@ void dsk_options(void)
 
 	boolean
 		ok = FALSE,
+		icn_rearr = FALSE,
 		stop = FALSE,
 		draw = FALSE;
 
 
 	/* Initial values... */
 
-	itoa(options.tabsize, tabsize, 10);
+	icn_itoa(options.tabsize, TABSIZE);
+	icn_itoa(iconw, IXGRID); 
+	icn_itoa(iconh, IYGRID); 
+	icn_itoa(icn_xoff, IXOF); 
+	icn_itoa(icn_yoff, IYOF); 
+
 	set_opt( wdoptions, options.sexit, SAVE_WIN, SOPEN);
 
 	xubd->uv.fill.pattern = options.dsk_pattern;
@@ -3345,8 +3421,43 @@ void dsk_options(void)
 
 					/* Tab size */
 
-					if ((options.tabsize = atoi(tabsize)) < 1)
+					options.tabsize = icn_atoi(TABSIZE);
+
+					if (options.tabsize < 1)
 						options.tabsize = 1;
+
+					/* Icon grid size */
+
+					{
+						int
+							iw, 
+							ih, 
+							xo,
+							yo;
+
+						iw = icn_atoi(IXGRID);
+						ih = icn_atoi(IYGRID);
+
+						if(iw < ICON_W/2)
+							iw = ICON_W/2;
+
+						if(ih < ICON_H/2)
+							ih = ICON_H/2;
+
+						xo = icn_atoi(IXOF);
+						yo = icn_atoi(IYOF);
+
+					 	if( iconw != iw || iconh != ih || icn_xoff != xo || icn_yoff != yo) 
+						{
+							iconw = iw;
+							iconh = ih;
+							icn_xoff = xo;
+							icn_yoff = yo;
+							icn_rearr = TRUE;
+
+							set_maxicons(); /* how many icons can be in a row or column */
+						}
+					}
 
 					/* Save open windows? */
 
@@ -3362,7 +3473,13 @@ void dsk_options(void)
 		xd_buttnorm(&info, button);
 		xd_close(&info);
 
-		/* Updates must not be done before the dialogs are closed */
+		/* 
+		 * Updates must not be done before the dialogs are closed.
+		 * Update only what is needed 
+		 */
+
+		if(icn_rearr)
+			put_newgrid();
 
 		if (draw)
 			redraw_desk(&xd_desk);

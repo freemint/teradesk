@@ -26,17 +26,22 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V4.04 relative to previous versions
-----------------------------------------------
+Changes in V4.05 relative to previous version (V4.04)
+-----------------------------------------------------
 
-String TCFIRE has been added. If a translated resource file is being
-prepared, and a translated file from a previous version already exists,
-it is best to add a string-type tree with the name TCFIRE and containing 
-the appropriate translated text to the existing resource file for V4.03 
-and to compare the structure of the modified translated file with that 
-from the V4.04 distribution. 
+There were modifications in the WOPTIONS dialog tree. If a translated 
+resource file is being prepared from a file for TeraDesk V4.04, it may be 
+convenient for the editor to duplicate the sequence of modifications below:
 
+- Height of the WOPTIONS dialog was changed from 16 to 18 character units
+- Button WOPTOK was moved down 2 character units
+- Cancel button was named WOPTCAN and moved down 2 units
+- F-text objects IXGRID and IXOF were added, in that order
+- F-text objects IYGRID and IYOF were added, in that order
+- F-text object TABSIZE was lengthened by inserting one space character
 
+Be sure to set the "background" flag on new F-text objects.
+ 
 Naming of object trees
 ----------------------
 

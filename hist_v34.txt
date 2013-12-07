@@ -3,6 +3,27 @@ Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2013  Dj. Vukovic
 
 
+Version 4.05  7-12-2013
+-----------------------
+
+- Fixed several errors that, together, disabled the use of the drive 'Z'
+  (only A-Y were possible).
+
+- Added capability to alter vertical and horizontal icon distance on the desktop,
+  as well as the offset of icons from the upper left corner of the desktop. 
+  This is set in the Window Options dialog. The capability is of interest 
+  when TeraDesk is run in high screen resolutions, when larger icons 
+  can be used.
+  
+- Removed unnecessary modification of the height of the Set Desk Icons 
+  dialog.
+  
+- Updated text headers related to GPL in all files.
+  
+- Updated the hypertext manual.
+
+
+
 Version 4.04  18-01-2013
 ------------------------
 

@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2010  Dj. Vukovic
+ *                         2003 - 2013  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1307  USA
  */
 
 
@@ -358,8 +358,8 @@ void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, boolean icons)
 		}
 		else if(icons)
 		{
-			*cw = ICON_W;
-			*ch = ICON_H;
+			*cw = iconw; 
+			*ch = iconh;
 		}
 		else
 		{
@@ -2310,7 +2310,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 			{
 				int nc = ((DIR_WINDOW *)w)->ncolumns;
 
-				if ( work.w % ICON_W != XOFFSET)
+				if ( work.w % iconw != XOFFSET)
 					nc++;
 
 				if ((obj = make_tree
@@ -3037,7 +3037,7 @@ void w_pageright(TYP_WINDOW *w)
 /*
  * More window scrolling routines ;
  * for text window: ch= txt_font.ch;
- * for dir window: ch is either dir_font.ch + DELTA or ICON_H
+ * for dir window: ch is either dir_font.ch + DELTA or ICON_H (iconh)
  */
 
 /*
@@ -4805,7 +4805,6 @@ void wd_set_obj0
 	boolean smode,	/* smode=1: G_IBOX, smode=0: G_BOX */
 	int row,		
 	int lines,		/* how many icon lines will be drawn */
-	/* int yoffset, DjV 4.03 */	/* icons offset from the top of work area */
 	RECT *work		/* window work area dimensions and position*/
 )
 {
@@ -4821,9 +4820,9 @@ void wd_set_obj0
 	wxub.uv.fill.pattern = options.win_pattern;
 
 	obj[0].r.x = work->x;
-	obj[0].r.y = row + work->y /* + YOFFSET - yoffset DjV 4.03 */;
+	obj[0].r.y = row + work->y;
 	obj[0].r.w = work->w;
-	obj[0].r.h = minmax(ICON_H, lines * ICON_H, work->h);
+	obj[0].r.h = minmax( iconh, lines * iconh, work->h);
 }
 
 
@@ -4895,12 +4894,12 @@ static void icw_draw(WINDOW *w)
 
 	/* Center the icon in the window work area */
 
-	dx = (w->xw_work.w - ICON_W + XOFFSET) / 2;
-	dy = (w->xw_work.h - ICON_H + YOFFSET) / 2;
+	dx = (w->xw_work.w - iconw  + XOFFSET) / 2;
+	dy = (w->xw_work.h - iconh + YOFFSET) / 2;
 
 	/* Set background object. It is needed for background colour / pattern */
 
-	wd_set_obj0(obj, FALSE, 0, 2, /* YOFFSET, DjV 4.03 */  &(w->xw_work));
+	wd_set_obj0(obj, FALSE, 0, 2,  &(w->xw_work));
 
 	/* Decide which icon to use: file, floppy, disk or folder */
 

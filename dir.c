@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2010  Dj. Vukovic
+ *                         2003 - 2013  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1307  USA
  */
 
 
@@ -1443,11 +1443,11 @@ void calc_nlines(DIR_WINDOW *dw)
 		/* at least 8/8 - 5/8 = 3/8 of icon column have to be visible */
 
 		if (options.aarr)
- 			dc = (dw->xw_work.w + ICON_W * 5 / 8);		
+ 			dc = (dw->xw_work.w + iconh * 5 / 8);		
 		else
  			dc = (xd_screen.w - XOFFSET);		
 
-		dc = minmax(1, dc / ICON_W, nvisible); /* will never be less than 1 */
+		dc = minmax(1, dc / iconw, nvisible); /* will never be less than 1 */
 		dw->dcolumns = dc;
 		dw->columns = dc;
 	}
@@ -2112,7 +2112,6 @@ OBJECT *make_tree
 		icon_no,
 		j,
 		ci,			/* column in which an icon is drawn */
-/* 		yoffset, DjV 4.03 */
 		row;
 
 	boolean
@@ -2142,20 +2141,11 @@ OBJECT *make_tree
 	if((obj = malloc_chk(lo + n * sizeof(INAME))) != NULL)
 	{
 		labels = (INAME *)((char *)(obj) + lo);
-		row = (sl - dw->py) * ICON_H;
-
-/* DjV 4.03
-
-		if (row == 0)
-			yoffset = YOFFSET;
-		else
-
-			yoffset = 0;
-*/
+		row = (sl - dw->py) * iconh; 
 
 		/* Set background object */
 
-		wd_set_obj0( obj, smode, row, lines, /* yoffset, DjV 4.03 */ work );
+		wd_set_obj0( obj, smode, row, lines, work );
 
 		/* Note: code below must agree whith dir_drawsel() */
 
@@ -2196,8 +2186,8 @@ OBJECT *make_tree
 					hidden,
 					h->link,
 					icon_no, 	
-					(ci - dw->px) * ICON_W + XOFFSET,
-					(j / dw->columns - sl) * ICON_H /* + yoffset DjV 4.03 */ +YOFFSET,
+					(ci - dw->px) * iconw + XOFFSET,
+					(j / dw->columns - sl) * iconh + YOFFSET,
 					labels[i]
 				);
 			}
@@ -2271,8 +2261,8 @@ static void icn_comparea
 		x = columns + x;
 	}
 
-	x = work->x + x * ICON_W + XOFFSET;
-	y = work->y + y * ICON_H + YOFFSET;
+	x = work->x + x * iconw + XOFFSET;
+	y = work->y + y * iconh + YOFFSET;
 
 	h = icons[(*dw->buffer)[item]->icon].ob_spec.ciconblk;
 
@@ -2420,8 +2410,8 @@ void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work)
 	}
 	else
 	{
-		r.w = nc * ICON_W;
-		r.x = work->x + (column - dw->px) * ICON_W + XOFFSET;
+		r.w = nc * iconw; 
+		r.x = work->x + (column - dw->px) * iconw + XOFFSET;
 
 		if (xd_rcintersect(area, &r, &in))
 			draw_icons(dw, column, nc, (int)(dw->py), dw->rows, &in, FALSE, work);
@@ -3723,8 +3713,8 @@ static void get_itmd(DIR_WINDOW *wd, int obj, ICND *icnd, int mx, int my, RECT *
 		tr.h -= 1;
 
 		icnd->item = obj;
-		icnd->m_x = work->x + (s % columns - wd->px) * ICON_W + ICON_W / 2 - mx;
-		icnd->m_y = work->y + (s / columns) * ICON_H + ICON_H / 2 - my;
+		icnd->m_x = work->x + (s % columns - wd->px) * iconw + iconw / 2 - mx;
+		icnd->m_y = work->y + (s / columns) * iconh + iconh / 2 - my;
 
 		icn_coords(icnd, &tr, &ir); 
 	}
@@ -3848,6 +3838,7 @@ static ICND *dir_xlist
 
 	if ((*sel_list = get_list((DIR_WINDOW *)w, nselected, nvisible)) != NULL)
 	{
+
 /* this can never happen ?
 
 		if (nselected == 0)

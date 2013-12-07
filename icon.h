@@ -32,6 +32,8 @@ extern WINDOW
 	*desk_window;
 
 extern int 
+	iconw,	/* icon sell size */
+	iconh,	/* icon cell size */
 	n_icons;
  
 extern INAME

@@ -4,6 +4,7 @@ cd e:\teradesk
 
 copy -n desktop.prg e:\tera3b\
 copy -n desktos.prg e:\tera3b\
+copy -n desk_cf.prg e:\tera3b\
 copy -n desktop.rsc e:\tera3b\
 copy -n desktop.rsd e:\tera3b\
 copy -n readme.txt e:\tera3b\

@@ -335,6 +335,10 @@
 #define WINCUP           20  /* BOXCHAR in tree WOPTIONS */
 #define TABSIZE          21  /* FTEXT in tree WOPTIONS */
 #define SOPEN            22  /* BUTTON in tree WOPTIONS */
+#define IXGRID           23  /* FTEXT in tree WOPTIONS */
+#define IXOF             24  /* FTEXT in tree WOPTIONS */
+#define IYGRID           25  /* FTEXT in tree WOPTIONS */
+#define IYOF             26  /* FTEXT in tree WOPTIONS */
 
 #define WDFONT           15  /* Form/Dialog-box */
 #define WDFTITLE         1   /* STRING in tree WDFONT */

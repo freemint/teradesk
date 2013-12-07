@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2011  H. Robbers,
- *                         2003 - 2011  Dj. Vukovic
+ *                         2003 - 2013  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1307  USA
  */
 
 
@@ -622,7 +622,7 @@ long drvmap(void)
 
 boolean check_drive(int drv)
 {
-	if ((drv >= 0) && (drv < ('Z' - 'A')) && (btst(drvmap(), drv)))
+	if ((drv >= 0) && (drv <= ('Z' - 'A')) && (btst(drvmap(), drv)))
 		return TRUE;
 
 	alert_iprint(MDRVEXIS);

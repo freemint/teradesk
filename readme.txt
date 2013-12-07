@@ -1,9 +1,9 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
-             V2.3 to V4.04  	Copyright 2003-2013  H. Robbers, Dj. Vukovic
+             V2.3 to V4.05  	Copyright 2003-2013  H. Robbers, Dj. Vukovic
 
 
-This  is version 4.04 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.05 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -49,7 +49,7 @@ distribution of the AHCC compiler developerd by H. Robbers at:
 
 	http://members.ams.chello.nl/h.robbers
 
-(the newer version of AHCM will produce slightly larger TeraDesk bionary).
+(the newer version of AHCM will produce slightly larger TeraDesk binary).
  
 A note on the naming of distribution files:
 
@@ -107,7 +107,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (4.03). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.04). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -121,13 +121,13 @@ also be a good idea to make a backup of the current configuration files.
 Installation
 ============
 
-1.  A  folder named e.g. DESKTOP or TERADESK can be created anywhere on your
+1.  A folder named e.g. DESKTOP or TERADESK  can be created anywhere on your
 floppy  or  hard  disk,  or in a RAM disk, to hold Tera Desktop files. It is
 also  possible,  although  a  bit  untidy, to put Tera Desktop into the root
 directory of a disk volume/partition.
 
 
-2.  The  following  files  should  be  copied  to the location specified for
+2.  The following  files  should  be  copied  to the location specified  for
 TeraDesk:
 
        DESKTOP.PRG  (if  you  intend  to use multitasking)  OR
@@ -261,7 +261,7 @@ possible,  by editing this file, to change the names by which the icons will
 be searched for in the icon resource file(s).
 
 
-8.  When  used  in an environment which is supposed to support colour icons,
+8.  When used  in an environment  which is supposed to support colour icons,
 TeraDesk  tries  to load  the colour icon file CICONS.RSC.  If this file can
 not be found, TeraDesk falls back to monochrome icons file ICONS.RSC.
 
@@ -326,10 +326,9 @@ Some Very Unlikely To Happen Future Developments
   would be a completely nonfunctional feature, which would increase  program
   size unacceptably.  Besides, it is the opinion  of the  current maintainer
   that background pictures are in fact distracting  to  the user and a waste
-  of system resources.  However,  MyAES,  as well as  D.Mequignon's  utility 
-  named PICDESK provide this feature for (almost) any desktop. It also seems
-  that this functionality can be built into XaAES without too much trouble.
-  The hypertext manual for TeraDesk explains how TeraDesk should be set
+  of system  resources.  However,  MyAES,  XaAES,  as well as  D.Mequignon's
+  utility named PICDESK provide this feature for (almost) any desktop. 
+  The hypertext manual  for TeraDesk  explains   how TeraDesk s hould be set
   to use the background picture provided by an AES or other agent.
 
 
@@ -353,12 +352,12 @@ program. You will need ST-Guide  (not supplied with Tera Desktop) or another
 
 Comments should be sent to: vdjole@EUnet.rs
 
-If  you  intend to use TeraDesk, it will be appreciated if you send an 
-e-mail to the above address; I may at some time ask a question or two
+If  you  intend to use TeraDesk, it will be appreciated if you send an e-mail
+to the above address; I may at some time ask a question or two 
 about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; Augut 18th 2011
+                                            Beograd; December 7th 2013
 
 

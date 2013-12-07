@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2011  Dj. Vukovic
+ *                         2003 - 2013  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Teradesk; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1307  USA
  */
 
 
@@ -673,11 +673,12 @@ void rsc_init(void)
 		obj_hide(addprgtype[ATSINGLE]);
 		obj_hide(addprgtype[MEMLIM]);
 
+/* disabled in V4.05 as unnecesaary
 		dh = addicon[CHNBUTT].r.h;
 		addicon[CHNBUTT].r.y -= dh;
 		addicon[ADDBUTT].r.y -= dh;
 		addicon[0].r.h -= dh;
-
+*/
 		dh = addprgtype[MEMLIM].r.y - addprgtype[ATSINGLE].r.y;
 		addprgtype[APTOK].r.y -= dh;
 		addprgtype[APTCANC].r.y -= dh;
