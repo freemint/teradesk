@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2014  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -161,6 +161,26 @@ static SortProc _s_visible
 }
 
 
+/*
+ * Sort filename strings case sensitive or insensitive,
+ * depending on the flag in options.sort
+ */
+
+int strfncmp(const char *s1, const char *s2)
+{
+#if _MINT_
+	if(options.sort & WD_NOCASE)
+    {
+      return stricmp(s1,s2);
+    }
+    else
+#endif
+    {
+      return strcmp(s1, s2);
+    }
+}
+
+
 /* 
  * Sort folders before files.
  * Link target type has to be taken into account in order 
@@ -187,10 +207,10 @@ static SortProc _s_folder
 	if ((h = _s_visible(ee1, ee2)) != 0)
 		return h;
 
-	if (e1dir && (!e2dir || (strcmp(e1->name, prevdir) == 0)))
+	if (e1dir && (!e2dir || (strfncmp(e1->name, prevdir) == 0)))
 		return -1;
 
-	if (e2dir && (!e1dir || (strcmp(e2->name, prevdir) == 0)))
+	if (e2dir && (!e1dir || (strfncmp(e2->name, prevdir) == 0)))
 		return 1;
 
 	return 0;
@@ -212,7 +232,7 @@ static SortProc sortname
 	if ((h = _s_folder(ee1, ee2)) != 0)
 		return h;
 
-	return strcmp(e1->name, e2->name);
+	return strfncmp(e1->name, e2->name);
 }
 
 
@@ -246,11 +266,11 @@ static SortProc sortext
 		if (ext2 == NULL)
 			return 1;
 
-		if ((h = strcmp(ext1, ext2)) != 0)
+		if ((h = strfncmp(ext1, ext2)) != 0)
 			return h;
 	}
 
-	return strcmp(e1->name, e2->name);
+	return strfncmp(e1->name, e2->name);
 }
 
 
@@ -275,7 +295,7 @@ static SortProc sortlength
 	if (e2->attrib.size > e1->attrib.size)
 		return -1;
 
-	return strcmp(e1->name, e2->name);
+	return strfncmp(e1->name, e2->name);
 }
 
 
@@ -306,7 +326,7 @@ static SortProc sortdate
 	if (e2->attrib.mtime < e1->attrib.mtime)
 		return -1;
 
-	return strcmp(e1->name, e2->name);
+	return strfncmp(e1->name, e2->name);
 }
 
 

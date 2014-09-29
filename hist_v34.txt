@@ -1,6 +1,14 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2011  H. Robbers
-                         2002 - 2013  Dj. Vukovic
+                         2002 - 2014  Dj. Vukovic
+
+
+Version 4.06  29-09-2014
+------------------------
+
+- Added option for case-insensitive directory sorting.
+
+- Updated the hypertext manual.
 
 
 Version 4.05  7-12-2013

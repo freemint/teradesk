@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: December 2013
+@$VER: September 2014
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.05
+                User's Manual for Tera Desktop V4.06
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                           December 2013
+                           September 2014
 
 @autorefon
 
@@ -1640,8 +1640,9 @@ folders and files in a directory are displayed in a window.
  4.3.2  Auto arrange
  4.3.3  Sort by...
  4.3.4  Reverse order
- 4.3.5  Show options
- 4.3.6  Set mask...
+ 4.3.5  Case insensitive
+ 4.3.6  Show options
+ 4.3.7  Set mask...
 
 @endnode
 
@@ -1743,9 +1744,13 @@ in a window are sorted. The possibilities are:
                5.   View unsorted
 
 Items  are sorted in  the ascending order  of the  selected parameter.
-Note that 'Sort by size' and  'Sort by date' modes is  contrary to the
-TOS desktop, which lists first the largest and newest files.  See also
-Reverse order.
+If that parameter  is the name  or name extension, sorting can be made
+case-sensitive (default behaviour) or otherwise. See Case insensitive.
+Sorting order can be reversed by checking the Reverse order option.
+
+Note that the behaviour of the 'Sort by size' and 'Sort by date' modes
+is  contrary to the  TOS desktop,  which lists  first  the largest and 
+newest files.  
 
 If you select  'View unsorted',  items are displayed  in the  order in
 which they were stored on the disk;  note that this is not necessarily
@@ -1794,6 +1799,30 @@ See also:  Sort by...  Supported screen resolutions
 @endnode
 
 
+@node "Case insensitive"
+@toc "Menu title: View"
+@image udo_fo.img 1
+   Contents
+@image udo_fo.img 4
+      Menus and Dialogs
+@image udo_fo.img 7
+         Menu title: View
+
+@{U}4.3.4  Case insensitive                                       TeraDesk@{u}
+
+When 'Case insensitive'  option is checked,  TeraDesk will not discern
+between  uppercase  and  lowercase  characters  when sorting  items in
+Directory windows.
+
+This option is of interest only on filesystems that support mixed-case
+filenames (i.e. not in single-TOS).  Therefore, it is not available in
+the single-TOS version of TeraDesk.
+
+See also:  Sort by... 
+
+@endnode
+
+
 @node "Show options"
 @toc "Menu title: View"
 @image udo_fo.img 1
@@ -1803,7 +1832,7 @@ See also:  Sort by...  Supported screen resolutions
 @image udo_fo.img 7
          Menu title: View
 
-@{U}4.3.5  Show options                                           TeraDesk@{u}
+@{U}4.3.6  Show options                                           TeraDesk@{u}
 
 With  these  items  you  can  select  the  amount of information shown
 alongside  the object name when in text mode. The selected options are
@@ -1869,7 +1898,7 @@ See also:  TOS version compatibility  Supported screen resolutions
 @image udo_fo.img 7
          Menu title: View
 
-@{U}4.3.6  Set mask...                                            TeraDesk@{u}
+@{U}4.3.7  Set mask...                                            TeraDesk@{u}
 
 With this  menu item, the user  select  which files  are shown  in the
 current (top) directory  window.  A dialog box is displayed into which
@@ -2653,7 +2682,7 @@ viewer windows font.
 
 6. Specify the size of tabs when text is displayed in Text windows.
 
-7. Specify distances betwen icons (in windows and on the desktop).
+7. Specify distances between icons (in windows and on the desktop).
 
 8. Set whether open windows are to be saved in the configuration file.
 
@@ -2691,13 +2720,18 @@ are set in the following format:
      Hor.grid: aaa +x
      Ver.grid: bbb +y
 
-where "aaa" and "bbb" are the distances, in pixels, between  the icons, 
-in the  horizontal and vertical directions respectively, while "x"  and 
-"y" are the offsets from the corner, in pixels, in the same directions.
+where "aaa" and   "bbb"  are the  distances,  in pixels,  between  the
+icons,  in the  horizontal and vertical directions respectively, while
+"x"  and "y"  are the offsets from the corner,  in pixels, in the same
+directions.
 
 The default, and minimum permitted, values of these parameters are: 
 
 aaa=80 bbb=46 x=0 y=0 
+
+Increasing these values can be of interest  primarily to users running  
+TeraDesk in   higher screen resolutions,  where  larger-size icons can
+make sense.
 
 If you are running Tera Desktop in low or medium screen resolution and
 TOS 1.0, this menu item may not be visible  because of the limitations
@@ -3900,8 +3934,8 @@ The amount of information  displayed in a  window can be controlled by
 settings in the View menu. See Menu title: View 
 
 In text mode,  all folder names in a directory windows are preceded by
-a special character (the 'fuller' mark), the same as the  built-in TOS
-desktop. The names of all executable files are preceded by a '-'.
+a special character (the 'fuller' mark),  the same as in the  built-in 
+TOS desktop. The names of all executable files are preceded by a '-'.
 
 An  autoselector  feature is available in  directory windows;  objects
 in windows can be automatically selected when parts of their names are

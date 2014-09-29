@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2014  Dj. Vukovic
  *
  * This file is part of Teradesk. 
  *
@@ -482,16 +482,16 @@ static void menu_checkone(int n, int obj, int i)
  * Note: it is tacitly assumed here that "sorting" 
  * menu items follow in a fixed sequence after "sort by name" and
  * that there are exactly five sorting options. 
+ * Reverse order and case insensitive sort are treated separately.
  */
 
 static void wd_set_sort(int type)
 {
-	int
-		i = 1 - (type >> 4);
-
-
-	menu_checkone( 5, MSNAME, (type & ~WD_REVSORT) );
-	menu_checkone( 1, MREVS,  i);
+ 	menu_checkone( 5, MSNAME, (type & ~(WD_REVSORT | WD_NOCASE) ) );
+	menu_checkone(1, MREVS,   (type & WD_REVSORT) ? 0 : 1);
+#if _MINT_
+	menu_checkone(1, MNOCASE, (type & WD_NOCASE)  ? 0 : 1);
+#endif
 }
 
 
@@ -1645,7 +1645,7 @@ void wd_hndlmenu(int item, int keystate)
 		case MSSIZE:
 		case MSUNSORT:
 		{
-			wd_sort( (item - MSNAME) | (options.sort & WD_REVSORT) );
+			wd_sort( (item - MSNAME) | (options.sort & (WD_REVSORT | WD_NOCASE) ) );
 			break;
 		}
 		case MREVS:
@@ -1654,6 +1654,14 @@ void wd_hndlmenu(int item, int keystate)
 			wd_sort(options.sort);
 			break;
 		}
+#if _MINT_
+        case MNOCASE:
+		{
+			options.sort ^= WD_NOCASE;
+			wd_sort(options.sort);
+			break;
+		}
+#endif
 		case MSHSIZ: /* beware of the order of cases vs flag values */
 		case MSHDAT:
 		case MSHTIM:

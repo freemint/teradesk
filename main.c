@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren. 
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2014  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -284,6 +284,9 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, "ssiz", &options.kbshort[MSSIZE		- MFIRST]	},
 	{CFG_X, "suns", &options.kbshort[MSUNSORT	- MFIRST]	},
 	{CFG_X, "revo", &options.kbshort[MREVS		- MFIRST]	},
+#if _MINT_
+	{CFG_X, "noca", &options.kbshort[MNOCASE	- MFIRST]	},
+#endif
 	{CFG_X, "asiz", &options.kbshort[MSHSIZ		- MFIRST]	},
 	{CFG_X, "adat", &options.kbshort[MSHDAT		- MFIRST]	},
 	{CFG_X, "atim", &options.kbshort[MSHTIM		- MFIRST]	},
@@ -294,7 +297,6 @@ CfgEntry Shortcut_table[] =
 	{CFG_X, "smsk", &options.kbshort[MSETMASK	- MFIRST]	},
 
 	/* Window menu */
-
 	{CFG_X, "wico", &options.kbshort[MICONIF	- MFIRST]	},
 	{CFG_X, "wful", &options.kbshort[MFULL		- MFIRST]	},
 	{CFG_X, "clos", &options.kbshort[MCLOSE		- MFIRST]	},
@@ -1089,7 +1091,7 @@ static CfgNest opt_config
 			(
 			       options.version < MIN_VERSION 
 				|| options.version > CFG_VERSION 
-				|| (options.sort & ~WD_REVSORT) > WD_NOSORT
+				|| (options.sort & ~(WD_REVSORT | WD_NOCASE)) > WD_NOSORT
 				|| options.plinelen > MAX_PLINE
 				|| options.max_dir < 32 
 				|| (options.dial_mode & DIAL_MODE) > XD_WINDOW

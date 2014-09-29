@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2007  Dj. Vukovic
+ *                         2003 - 2014  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -88,6 +88,7 @@
 #define WD_SORT_LENGTH	0x03	/* sort directory by file size  */
 #define WD_NOSORT		0x04	/* don't sort directory         */
 #define WD_REVSORT	 	0x10	/* reverse sort order (bitflag) */
+#define WD_NOCASE	 	0x20	/* sort case insensitive (bitflag) */
 
 /* Option bitflags for elements to be shown in directory windows */
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2014  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -299,7 +299,7 @@ static void rsc_fixmenus(void)
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,
 		MNOPTBOX,MNOPTBOX,MNOPTBOX,
 		MNFILEBX,MNFILEBX,
-		MNVIEWBX,MNVIEWBX,
+		MNVIEWBX,MNVIEWBX,MNVIEWBX,
 
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX, /* TOS < 1.04 only */
 		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
@@ -311,7 +311,7 @@ static void rsc_fixmenus(void)
 		SEP4,SEP5,SEP6,
 		SEP7,SEP8,SEP9,
 		MDELETE,MFCOPY,
-		MSHSIZ,MREVS,
+		MSHSIZ,MREVS,MNOCASE,
 
 		MSHDAT,MSHTIM,MSHATT,MSUNSORT,		/* TOS < 1.04 only */
 		MPRGOPT,MWDOPT,MVOPTS,MSAVEAS
@@ -336,12 +336,12 @@ static void rsc_fixmenus(void)
 	if ( aes_version >= 0x140 )
 	{
 		wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
-		n = 13;
+		n = 14; /* count the items above to set this */
 	}
-	else
+	else /* older TOSes */
 	{
 		buffer.size = 8000L;
-		n = 21;
+		n = 22; /* count the items above to set this */
 	}
 
 	if (mnsize >= buffer.size)
@@ -666,19 +666,19 @@ void rsc_init(void)
 		/* Modify size, position or visibility of some objects */
 
 #if _MENUDEL
-		mn_del(MNVIEWBX, MSHOWN);
+		mn_del(MNVIEWBX, MSHOWN); /* show owner */
+
+#if _MINT_
+#else
+	    mn_del(MNVIEWBX, MNOCASE); /* case insensitive */
+#endif
+
 #endif
 
 		obj_hide(copyoptions[CTRUNC]);
 		obj_hide(addprgtype[ATSINGLE]);
 		obj_hide(addprgtype[MEMLIM]);
 
-/* disabled in V4.05 as unnecesaary
-		dh = addicon[CHNBUTT].r.h;
-		addicon[CHNBUTT].r.y -= dh;
-		addicon[ADDBUTT].r.y -= dh;
-		addicon[0].r.h -= dh;
-*/
 		dh = addprgtype[MEMLIM].r.y - addprgtype[ATSINGLE].r.y;
 		addprgtype[APTOK].r.y -= dh;
 		addprgtype[APTCANC].r.y -= dh;
