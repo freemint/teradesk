@@ -26,10 +26,10 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V4.06 relative to previous version (V4.05)
+Changes in V4.07 relative to previous version (V4.06)
 -----------------------------------------------------
 
-String MNOCASE was added to the View menu.
+There were no changes in the resource file.
 
  
 Naming of object trees

@@ -1,7 +1,7 @@
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
 @author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
-@$VER: September 2014
+@$VER: November 2016
 @width 70
 @default Main
 
@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.06
+                User's Manual for Tera Desktop V4.07
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                           September 2014
+                           November 2016
 
 @autorefon
 
@@ -64,13 +64,12 @@
 Tera Desktop (TeraDesk) is a replacement for the ST, STE, TT or Falcon
 desktop. It provides more facilities than the built-in TOS desktop.
 
-TeraDesk is  currently  the  only  open-source desktop  available  for
-16-bit and 32-bit  Atari computers.  The developers' goal has  been to
-maintain TeraDesk as a small, simple, fast and reliable desktop, which
-would be  functional  in  modern  multi-tasking  environments and  all
-flavours  and versions of  TOS-compatible  operating   system(s),  yet
-retaining,  as much  as possible,  familiarity  with  the original TOS
-desktop.
+TeraDesk is an  open-source desktop  for all  16-bit and 32-bit  Atari
+computers.  The developers' goal  has been  to maintain  TeraDesk as a
+small, simple, fast and reliable desktop, which would be functional in
+modern  multi-tasking  environments and  all flavours  and versions of
+TOS-compatible operating  systems, yet retaining, as much as possible,
+familiarity  with  the original TOS desktop.
 
 TeraDesk is NOT intended  to be a direct replacement for the excellent
 but  resource-demanding desktops like  Thing or Jinnee, but instead is
@@ -345,6 +344,7 @@ resolutions):
        -Print...
        -View unsorted
        -Reverse order
+       -Case insensitive
        -Copy disk...
        -Show size
        -Show date
@@ -3515,6 +3515,13 @@ the effect is to  replace  the contents of the window by  this higher-
 level directory. If you do this holding down [Alternate], a new window
 is created containing the higher-level directory.
 
+If a folder  or a disk volume  is opened  from  a  symbolic link  in a
+directory  window,  path of the  opened window will  be a continuation
+of the path of  the directory where the link is.  However, if the left
+[Shift] key is kept pressed while opening the link,  the  path  of the
+opened window will be that of the  actual opened directory.
+
+
 3. File:
 
 A.  If  the file  is  recognized  as a  program,  the program  will be
@@ -3791,6 +3798,12 @@ links in the subdirectories  of a  selected object  are manipulated as
 links (that is,  they are never followed  to the referenced  objects);
 Othwerwise,  uncontrolled file operations and endless recursions might
 occur.
+
+If a  directory window is opened  from a link  in a  directory window, 
+path of the opened window  will be a continuation  of the  path of the
+directory  where the link is. However, if the left [Shift] key is kept
+pressed while opening the link,  the  path  of the  opened window will
+be  that of the  actual opened directory.
 
 Information on symbolic links can be found through the Info... dialog.
 It will permit renaming  of the link,  or changing  of the path to the

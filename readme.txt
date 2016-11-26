@@ -1,9 +1,9 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
-             V2.3 to V4.06  	Copyright 2003-2014  H. Robbers, Dj. Vukovic
+             V2.3 to V4.07  	Copyright 2003-2016  H. Robbers, Dj. Vukovic
 
 
-This  is version 4.06 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.07 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -107,7 +107,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (4.04). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.06). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -284,6 +284,11 @@ Read the hypertext manual for more information.
 Some Possible Future Developments
 =================================
 
+Here follows a list  of ideas  that  were considered  as  likely  courses of
+further development  of  TeraDesk.  Unfortunately,  as time   passes and the
+author/maintainer  is  not  getting  any  younger,  it becomes less and less
+likely that they will be implemented.
+
 - Further  optimization  of  code to reduce size and memory use and increase
   speed.
 
@@ -292,6 +297,7 @@ Some Possible Future Developments
   files or opening flying dialogs).
 
 - Improvement of the algorithm for file copying when floppies are involved.
+  (this has become practically irelevant as floppies have disappeared).
 
 - Removal of the 2 GB limitation for manageable folder sizes
 
@@ -307,9 +313,16 @@ Some Possible Future Developments
 - Capability to show a 'tree view' directory window of all drives or maybe
   to show any directory window with 'tree view'.
 
-- Integration of a non-modal, windowed, long-names-capable fileselector.
+- Integration of a non-modal, windowed, long-names-capable fileselector  by
+  producing a special directory window with a menu bar. TeraDesk's already-
+  existing capabilities for selecting and  sorting directory items would be
+  used,  so  a duplication of effort  and memory waste  that exists  when a 
+  separate file-selector is used would be avoided.  File-selector should be 
+  Selectric compatible.  AV-protocol capabilities of  TeraDesk  may be used 
+  (or abused) here  and a   small  auxilliary  accessory  may be needed for
+  operation in Single-TOS.
 
-- Integration of a windowed command line interpreter  that will use the code
+- Integration of a windowed command-line interpreter that will use the code
   already existing in TeraDesk for most (or all) of its functions.
 
 - Capability to run TOS programs in a window in single-TOS.
@@ -328,7 +341,7 @@ Some Very Unlikely To Happen Future Developments
   that background pictures are in fact distracting  to  the user and a waste
   of system  resources.  However,  MyAES,  XaAES,  as well as  D.Mequignon's
   utility named PICDESK provide this feature for (almost) any desktop. 
-  The hypertext manual  for TeraDesk  explains   how TeraDesk s hould be set
+  The hypertext manual  for TeraDesk  explains   how TeraDesk  should be set
   to use the background picture provided by an AES or other agent.
 
 

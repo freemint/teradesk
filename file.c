@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2011  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2016  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -349,7 +349,6 @@ boolean isroot(const char *path)
 {
 	char
 		*d = nonwhite((char *)path);
-
 
 	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
 		return TRUE;

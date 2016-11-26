@@ -1,7 +1,7 @@
 /* 
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2016  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -28,7 +28,6 @@
 #include <mint.h>
 #include <library.h>
 #include <xdialog.h>
-
 #include "resource.h"
 #include "desk.h"
 #include "error.h"
@@ -371,22 +370,22 @@ boolean item_open
 
 			break;
 		}
-		case ITM_PREVDIR:
+		case ITM_FOLDER:
 		{
-			/* Object is a parent folder */
+			/* Object is a folder */
 
-			if ((path = fn_get_path(wd_path(w))) != NULL)
+			if ((path = itm_fullname(w, item)) != NULL)
 				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;
 
 			break;
 		}
-		case ITM_FOLDER:
+		case ITM_PREVDIR:
 		{
-			/* Object is a folder */
+			/* Object is a parent folder */
 
-			if ((path = itm_fullname(w, item)) != NULL)
+			if ((path = fn_get_path(wd_path(w))) != NULL)
 				deselect = dir_add_dwindow(path); 
 			else
 				deselect = FALSE;

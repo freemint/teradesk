@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2014  Dj. Vukovic
+ *                         2003 - 2015  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -293,13 +293,15 @@ static void rsc_fixmenus(void)
 
 	/* List of menuboxes and items in them to be deleted (maybe) */
 
+
 	static const char mnbx[] = 
 	{
 		MNFILEBX,MNFILEBX,MNFILEBX,
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,
 		MNOPTBOX,MNOPTBOX,MNOPTBOX,
+
 		MNFILEBX,MNFILEBX,
-		MNVIEWBX,MNVIEWBX,MNVIEWBX,
+		MNVIEWBX,MNVIEWBX,
 
 		MNVIEWBX,MNVIEWBX,MNVIEWBX,MNVIEWBX, /* TOS < 1.04 only */
 		MNOPTBOX,MNOPTBOX,MNOPTBOX,MNOPTBOX
@@ -310,12 +312,29 @@ static void rsc_fixmenus(void)
 		SEP1,SEP2,SEP3,
 		SEP4,SEP5,SEP6,
 		SEP7,SEP8,SEP9,
+
 		MDELETE,MFCOPY,
-		MSHSIZ,MREVS,MNOCASE,
+		MSHSIZ,MREVS,
 
 		MSHDAT,MSHTIM,MSHATT,MSUNSORT,		/* TOS < 1.04 only */
 		MPRGOPT,MWDOPT,MVOPTS,MSAVEAS
 	};
+
+
+
+#if _MINT_
+	if(  (!mint) ||  (aes_version < 0x140) )
+#endif
+{
+		mn_del(MNVIEWBX, MSHOWN); /* show owner */
+	    mn_del(MNVIEWBX, MNOCASE); /* case insensitive */
+}
+
+#if _MINT_
+	if(!xd_aes4_0)
+#endif
+		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
+
 
 	/* 
 	 * memory needed for the menu is estimated from the
@@ -336,12 +355,14 @@ static void rsc_fixmenus(void)
 	if ( aes_version >= 0x140 )
 	{
 		wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
-		n = 14; /* count the items above to set this */
+
+		n = 13; /* count the items in mnbx[] above to set this */
 	}
 	else /* older TOSes */
 	{
 		buffer.size = 8000L;
-		n = 22; /* count the items above to set this */
+
+		n = 21; /* count the items in mnit[] above to set this */
 	}
 
 	if (mnsize >= buffer.size)
@@ -349,6 +370,8 @@ static void rsc_fixmenus(void)
 		for ( i = 0; i < n; i++ )
 			mn_del((int)mnbx[i], (int)mnit[i]);
 	}
+
+
 #endif
 
 	/* Move some menu boxes left to fit the screen (if needed) */
@@ -663,17 +686,7 @@ void rsc_init(void)
 		s = get_freestring(TNFILES);
 		memcpy(fileinfo[FLFILES].ob_spec.tedinfo->te_ptmplt, s, strlen(s));
 
-		/* Modify size, position or visibility of some objects */
-
-#if _MENUDEL
-		mn_del(MNVIEWBX, MSHOWN); /* show owner */
-
-#if _MINT_
-#else
-	    mn_del(MNVIEWBX, MNOCASE); /* case insensitive */
-#endif
-
-#endif
+		/* Modify size, position or visibility of some objects in dialogs */
 
 		obj_hide(copyoptions[CTRUNC]);
 		obj_hide(addprgtype[ATSINGLE]);
@@ -685,13 +698,6 @@ void rsc_init(void)
 		addprgtype[0].r.h -= dh;
 	}
 
-#if _MINT_
-	if(!xd_aes4_0)
-#endif
-
-#if _MENUDEL
-		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
-#endif
 
 #if _EDITLABELS
 #if _MINT_

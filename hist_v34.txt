@@ -1,6 +1,31 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2011  H. Robbers
-                         2002 - 2014  Dj. Vukovic
+                         2002 - 2016  Dj. Vukovic
+
+
+Version 4.07  26-11-2016
+-------------------------
+
+- Added a choice of behaviour when opening links to directories. 
+  The default behaviour of TeraDesk has been changed: If a  directory 
+  window is opened  from a link in a directory window, path of the 
+  opened window will now be a continuation of the path of the directory
+  where the link is. However, if the left [Shift] key is kept pressed 
+  while opening the link, the path of the opened window will be that of the
+  actual opened directory (which is the behaviour of previous versions of 
+  TeraDesk. Currently, this feature exists only for directory windows. 
+  Links to directories opened from desktop icons retain the previous behaviour,
+  which may or may not make sense, depending on one's point of view. It should
+  be noted that, if "Show parent" option is set, links of root directories will
+  not show the "parent" item (..). 
+     
+- Fixed a problem with deleting twice a menu-item when simplifying
+  the menus in single-tasking version.
+
+- Fixed a division by zero when opening an empty folder (strangely,
+  this was very old but was not noticed before).
+  
+- Updated the hypertext manual.
 
 
 Version 4.06  29-09-2014

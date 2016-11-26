@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c)  1993 - 2002  W. Klaren,
  *                          2002 - 2003  H. Robbers,
- *                          2003 - 2014  Dj. Vukovic
+ *                          2003 - 2016  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -25,9 +25,9 @@
 
 #define MIN_VERSION		0x0360		/* min. acceptabe version id. of inf file */	 
 
-#define INFO_VERSION	"Tera Desktop V4.06 29-SEP-2014"		    /* program version */
+#define INFO_VERSION	"Tera Desktop V4.07 26-NOV-2016"		/* program version */
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"	/* authors         */
-#define INFO_OTHER "1991-1994, 2002-2014"						/* release date    */
+#define INFO_OTHER "1991-1994, 2002-2016"						/* release date    */
 
 
 

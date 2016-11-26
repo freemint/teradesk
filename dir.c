@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2014  Dj. Vukovic
+ *                         2003 - 2016  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -30,6 +30,8 @@
 #include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
+
+/* #include <stdio.h> for TEST only */
 
 #include "resource.h"
 #include "desk.h"
@@ -588,8 +590,11 @@ static void set_visible(DIR_WINDOW *w)
 				n++;
 			}
 			else
+			{
 				b->visible = FALSE;
+			}
 		}
+
 
 		w->nvisible = n;
 		w->visbytes = v;
@@ -965,7 +970,6 @@ void dir_reread(DIR_WINDOW *w)
 		error, 
 		oldn = w->nvisible, 
 		oldl = w->llength;
-
 
 	error = dir_readandset(w);
 
@@ -1435,9 +1439,6 @@ void calc_nlines(DIR_WINDOW *dw)
 		dc,
 		nvisible = dw->nvisible;
 
-
-	/* Note: in V3.85 this was reworked to optimize for size and speed */
-
 	if (options.mode == TEXTMODE)
 	{
 		int mcol, ll = linelength(dw);
@@ -1571,9 +1572,9 @@ static void dir_comparea
 		col; 
 
 
-	/* Find item's column and its x-position */
+	/* Find item's column and its x-position. Avoid division by zero */
 
-	col = item / dw->nlines; /* if this item exists, there is at least one line, and no divide by 0 */
+	col = (dw->nlines) ? item / dw->nlines : 0;
 
 	r->x = work->x  + (col * ll + TOFFSET - dw->px) * dir_font.cw; 
 	r->y = DELTA + work->y + (int) ( (item - dw->nlines * col ) - dw->py) * (dir_font.ch + DELTA);
@@ -2512,8 +2513,18 @@ void dir_close(WINDOW *w, int mode)
 		((TYP_WINDOW *)w)->winfo->flags.iconified = 0;
 		autoloc_off();
 
+		/* 
+		 * Closing a directory window behaves differently, 
+		 * depending on whether "Show parent" option is active.
+		 */ 
+
 		if( (mode == 0) && (options.attribs & FA_PARDIR) != 0 )
-			mode = 1;
+		{
+
+			if(isroot(thepath))
+				mode = 1;
+		}
+
 
 		if (isroot(thepath) || (mode > 0) )
 		{
@@ -3917,7 +3928,10 @@ static int *dir_list(WINDOW *w, int *n)
 /*
  * Open an item in a directory window. If ALT is pressed, open
  * item in a new window, or whatever. If ALT is -not- pressed,
- * item may be opened in the smae window if it is of the right type
+ * item may be opened in the same window if it is of the right type.
+ * IF LSHIFT is pressed and the item is a link to a directory,
+ * the item will be opened in the actual directory path, not
+ * in the path of the link.
  */
 
 static boolean dir_open(WINDOW *w, int item, int kstate)
@@ -3939,7 +3953,7 @@ static boolean dir_open(WINDOW *w, int item, int kstate)
 			int
 				px;
 
-			if(dir_islink(w, item))
+			if(dir_islink(w, item) && (kstate & K_LSHIFT) )
 			{
 				newpath = x_fllink(name); /* NULL if name is NULL */
 				free(name);
@@ -3975,7 +3989,6 @@ static boolean dir_open(WINDOW *w, int item, int kstate)
 		
 	return item_open(w, item, kstate, NULL, NULL);
 }
-
 
 static boolean dir_copy
 (
