@@ -26,8 +26,8 @@ General remarks
   not literal translations can be used, etc.
 
 
-Changes in V4.07 relative to previous version (V4.06)
------------------------------------------------------
+Changes in V4.08 relative to previous versions (V4.06 and V4.07)
+----------------------------------------------------------------
 
 There were no changes in the resource file.
 

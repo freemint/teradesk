@@ -1,9 +1,9 @@
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
-             V2.3 to V4.07  	Copyright 2003-2016  H. Robbers, Dj. Vukovic
+             V2.3 to V4.08  	Copyright 2003-2017  H. Robbers, Dj. Vukovic
 
 
-This  is version 4.07 of the Tera Desktop, a replacement for the builtin TOS
+This  is version 4.08 of the Tera Desktop, a replacement for the builtin TOS
 desktop  for 16-bit and 32-bit Atari computers. This program is Freeware and
 Open Source.  It is published under General Public License (GPL) which means
 that it  may be  copied  and  modified freely,  providing that  the original
@@ -107,7 +107,7 @@ New Features in This Version
 ============================
 
 Please, see  HIST_V34.TXT for a list of new features and bug fixes since the
-last  released  version (4.06). Also, read the manual TERADESK.HYP (you will
+last  released  version (4.07). Also, read the manual TERADESK.HYP (you will
 need ST-Guide for this) for more detailed information.
 
 Before installing any  new version of TeraDesk,  you are advised to load and
@@ -281,13 +281,13 @@ Read the hypertext manual for more information.
 
 
 
-Some Possible Future Developments
-=================================
+Some Possible (but not peobable anymore) Future Developments
+============================================================
 
 Here follows a list  of ideas  that  were considered  as  likely  courses of
-further development  of  TeraDesk.  Unfortunately,  as time   passes and the
+further development  of  TeraDesk.  Unfortunately,  as time  passes  and the
 author/maintainer  is  not  getting  any  younger,  it becomes less and less
-likely that they will be implemented.
+likely that they will ever be implemented.
 
 - Further  optimization  of  code to reduce size and memory use and increase
   speed.
@@ -371,6 +371,6 @@ about TeraDesk's behaviour.
 
 
                                             Djordje Vukovic
-                                            Beograd; December 7th 2013
+                                            Beograd; February 19th 2017
 
 

@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2017  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -178,8 +178,6 @@ char *get_message(int error)
 
 
 
-#if DEBUG
-
 /* 
  * Display an alert box while debugging 
  */
@@ -205,8 +203,6 @@ int alert_msg(const char *string, ...)
 
 	return button;
 }
- 
-#endif
 
 
 /* 

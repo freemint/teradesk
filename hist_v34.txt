@@ -1,8 +1,28 @@
 Tera Desktop. Copyright  1991 - 1995  W. Klaren
                          2002 - 2011  H. Robbers
-                         2002 - 2016  Dj. Vukovic
+                         2002 - 2017  Dj. Vukovic
 
 
+
+
+Version 4.08  19-02-2017
+------------------------
+
+- Fixed a bug accidentally introduced in previous version.
+  If "show parent firectory" was active, the closer widget
+  did not close the window completely anymore; instead,
+  the window switched to the parent directory.
+  
+- Changed behaviour: options "Show subdirectories" and
+  "Show parent" are completely separated. Earlier behaviour was
+  that, if "Show subfolders" was not active, the parent (..) 
+  was not shown either.
+  
+- Fixing of a bug that froze Teradesk when copying a file from
+  a folder in a path containing a hidden folder did NOT succeed.
+  The bug remains, unfortunately.
+  
+  
 Version 4.07  26-11-2016
 -------------------------
 
@@ -23,7 +43,7 @@ Version 4.07  26-11-2016
   the menus in single-tasking version.
 
 - Fixed a division by zero when opening an empty folder (strangely,
-  this was very old but was not noticed before).
+  this was a very old bug that was not noticed before by anyone).
   
 - Updated the hypertext manual.
 

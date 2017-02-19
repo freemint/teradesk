@@ -13,11 +13,11 @@
 @{U}Contents                                                      TeraDesk@{u}
 
 @autorefoff
-                User's Manual for Tera Desktop V4.07
+                User's Manual for Tera Desktop V4.08
 
              Wout Klaren, Henk Robbers, Djordje Vukovic
 
-                           November 2016
+                           February 2017
 
 @autorefon
 
@@ -217,7 +217,7 @@ than 1.04 (1.4) because of limitations on the size of menus.
 Since Version 2  TeraDesk runs in modern  multi-tasking  environments,
 such as  MagiC,  TOS with Geneva,  MiNT with N.AES,  XaAES,  MyAES  or
 Atari AES 4.1. It can be run with memory protection;  however, in such
-environments  problems  may  occur  with  some  incorrectly-programmed
+environments, problems  may  occur  with  some  incorrectly-programmed
 or set AV-protocol clients  which can cause  TeraDesk to crash  if run
 with memory protection. See The AV Protocol.
 
@@ -266,6 +266,8 @@ The program should work  (with some restrictions) on TOS 1.0, but more
 recent versions  of Tera Desktop  were  not tested thoroughly with it.
 The possibility of  encountering  hitherto  undetected  problems  with
 this TOS version can not be excluded, but please report such problems.
+Also, newest versions of TeraDesk were not tested on -all- variants of
+operating system(s) listed above.
 
 Tera Desktop may fail  on versions of  MiNT or MagiC  previous to 1.12
 and 3.0 respectively.
@@ -293,11 +295,12 @@ XaAES or MyAES), occasional unwanted behaviour  may occur  due to some
 features of these AESes that are not yet fully functional. Such issues
 are usually resolved with new releases of the AESes.
 
-If TeraDesk is used  on an emulator,  some of its functionality may be
+If TeraDesk is used  on an emulator,  part of its functionality may be
 lost because of sometimes incomplete emulation. Such cases may include
 e.g.  not recognising  certain  keyboard key codes,  not being able to
-show directories in 'unsorted' order,  or encountering strange file or
-directory owner IDs and file protection states.
+show directories in the 'unsorted' order, encountering problems in the
+creation  of symbolic links  or encountering strange file or directory
+owner IDs and file protection states.
 
 Users should be aware that the current version of Tera Desktop has the
 limitation that the number of items  in a directory,  or the number of
@@ -4281,7 +4284,8 @@ This protocol (first developed for use with the Gemini desktop) allows
 certain blocks  of  information  to  be  passed  between  concurrently
 running applications, and actions to be performed on the basis of that
 information.  In order to utilize this protocol, an 'AV-Server' has to
-be declared through an environment variable, e.g. for TeraDesk:
+be declared through an environment variable, e.g. if TeraDesk is to be
+the AV-Server, the environment variable AVSERVER should be set to:
 
   AVSERVER=DESKTOP
 
@@ -4369,9 +4373,9 @@ AV_COPYFILE/VA_FILECOPIED   Tell the server  to  copy  some files.  In
 
 VA_PATH_UPDATE              Inform clients of a change in a directory.
 
-AV_STATUS                   Ask the server to save the client's status.
+AV_STATUS                   Ask the server to save the client's status
 
-AV_GETSTATUS/VA_SETSTATUS   Aks the server about saved client status.
+AV_GETSTATUS/VA_SETSTATUS   Ask the server about saved client status.
 
 AV_SETWINDPOS               Fix  the  position  of   the  next  client
                             window to be opened.

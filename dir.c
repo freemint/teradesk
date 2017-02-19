@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2016  Dj. Vukovic
+ *                         2003 - 2017  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -31,7 +31,7 @@
 #include <xdialog.h>
 #include <xscncode.h>
 
-/* #include <stdio.h> for TEST only */
+/* #include <stdio.h>  for TEST only */
 
 #include "resource.h"
 #include "desk.h"
@@ -564,6 +564,10 @@ static void set_visible(DIR_WINDOW *w)
 			b->selected = FALSE;
 			b->newstate = FALSE;
 
+			/* Note: by adding the line of code /***    ...  ***/
+			 * options "Show subfolders" and "show parent"
+			 * became independent. Ths is new behaviour as of V4.08 */
+
 			if 
 			(   
 				(   (oa & FA_HIDDEN) != 0 					/* permit hidden */
@@ -574,6 +578,7 @@ static void set_visible(DIR_WINDOW *w)
 				) && 
 				(   (oa & FA_SUBDIR) != 0 					/* permit subdirectory */
 			        || (b->attrib.attrib & FA_SUBDIR) == 0 	/* or item is not subdirectory */
+					|| strcmp(b->name, prevdir) == 0       	/*** or item is parent dir ***/ 
 				) && 
 				(   (oa & FA_PARDIR) != 0 					/* permit parent dir */  
 					|| strcmp(b->name, prevdir) != 0       	/* or item is not parent dir */ 
@@ -1311,13 +1316,14 @@ static int dir_makenew(DIR_WINDOW *dw, int title)
 
 		/* Is the new name perhaps too long ? */
 
+
 		if ((error = x_checkname(dw->path, name)) == 0)
 		{
 			if ((thename = fn_make_path(dw->path, name)) != NULL)
 			{
 				hourglass_mouse();
 #if _MINT_			
-				if (title == DTNEWLNK && *openline)
+				if ((title == DTNEWLNK) && *openline)
 					error = x_mklink(thename, openline);
 				else
 #endif
@@ -2521,7 +2527,7 @@ void dir_close(WINDOW *w, int mode)
 		if( (mode == 0) && (options.attribs & FA_PARDIR) != 0 )
 		{
 
-			if(isroot(thepath))
+		/*	if(isroot(thepath))  */ /* this produced problems in V4.07 */
 				mode = 1;
 		}
 

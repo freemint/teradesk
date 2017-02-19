@@ -1,7 +1,7 @@
 /*
  * Teradesk. Copyright (c) 1993 - 2002  W. Klaren,
  *                         2002 - 2003  H. Robbers,
- *                         2003 - 2013  Dj. Vukovic
+ *                         2003 - 2017  Dj. Vukovic
  *
  * This file is part of Teradesk.
  *
@@ -32,6 +32,7 @@
 #include <xdialog.h>
 #include <xscncode.h>
 #include <limits.h>
+
 
 #include "resource.h"
 #include "desk.h"
@@ -70,6 +71,8 @@ typedef struct copydata
 #if _SHOWFIND
 extern int search_nsm;
 #endif
+
+
 
 DOSTIME
 	now,
@@ -943,7 +946,6 @@ static int filecopy
 		fh1,
 		fh2 = -1,
 		error = 0;
-
 
 	/*
 	 * Create a buffer for copying: If it is not possible to create the
