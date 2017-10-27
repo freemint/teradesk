@@ -2602,11 +2602,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 		vsf_perimeter(xd_vhandle, 0);		/* no borders in v_bar() */
 
-#ifdef __GNUC_INLINE__
-		if (load_fonts && vq_vgdos())
-#else
 		if (load_fonts && vq_gdos())
-#endif
 			*nfonts = vst_load_fonts(xd_vhandle, 0);
 		else
 			*nfonts = 0;
