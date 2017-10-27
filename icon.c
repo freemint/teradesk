@@ -2951,6 +2951,37 @@ CfgNest dsk_config
 }
 
 
+static int aes_supports_coloricons(void)
+{
+	OBJECT *tree = NULL;
+	OBJECT *obj;
+
+	if (!rsrc_gaddr(R_TREE, 0, &tree) || tree == NULL || tree[0].ob_type != G_BOX)
+		return FALSE;
+	obj = &tree[1];
+	/*
+	 * The ob_spec of a coloricon has an index, not a file offset,
+	 * therefore the ob_spec of the first coloricon has
+	 * a value of zero in the resource file.
+	 * If after loading it is still zero, or points to the resource header,
+	 * or the object type was changed, assume there is no coloricon support
+	 */
+	if (obj->ob_type != G_CICON)
+	{
+		return FALSE;
+	}
+	if (obj->ob_spec.index == 0)
+	{
+		return FALSE;
+	}
+	if ((void *)obj->ob_spec.index == _AESrscmem)
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
 /*
  * Load the icon file. Result: TRUE if no error
  * Use standard functions of the AES
@@ -2974,8 +3005,15 @@ bool load_icons(void)
 	 * Do not simplify the first statement below.
 	 */
 
-	if (!colour_icons || !rsrc_load("cicons.rsc")) 	/* try to load colour icons */
+	/* try to load colour icons */
+	if (!rsrc_load("cicons.rsc"))
+	{
 		colour_icons = FALSE;
+	} else if (!aes_supports_coloricons())
+	{
+		colour_icons = FALSE;
+		rsrc_free();
+	}
 
 	if (!colour_icons && !rsrc_load("icons.rsc"))	/* try to load mono icons */
 	{

@@ -2710,7 +2710,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 			{
 				aes_hor3d = 2;
 				aes_ver3d = 2;
-				colour_icons = TRUE;
 				xd_aes4col();
 			}
 

@@ -3282,7 +3282,6 @@ static void dir_drawsel(DIR_WINDOW *w)
 		/* Attempt to optimize (slow) redraw of animated colour icons */
 
 		if ( colour_icons )
-
 		{
 			/* Count how many icons have to be redrawn */
 
