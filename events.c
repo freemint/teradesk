@@ -99,39 +99,6 @@ int key_state(int *key, bool hndl_msg)
 }
 
 
-/* As this is, after all, used only once, call directly key_state
-
-/*
- * Clear the keyboard buffer.
- * Note: no events but the keyboard and the timer are processed here
- * because of FALSE below; 
- */
-
-
-void clr_key_buf(void)
-{
-	int dummy;
-
-	while (key_state(&dummy, FALSE) > 0);
-}
-
-*/
-
-
-/* This routine is never used in Teradesk
-
-/*
- * Wait for a button click
- */
-
-void wait_button(void)
-{
-	while (xe_button_state());
-}
-
-*/
-
-
 /*
  * Wait dt milliseconds
  */
@@ -140,29 +107,6 @@ void wait(int dt)
 {
 	evnt_timer(dt);
 }
-
-
-/* This is never used in TeraDesk
-
-/*
- * Handle (ignore) all messages still in the message buffer.
- *
- * Result	: 0 OK
- *			 -1 if a message is received which terminates the program
- */
-
-int clr_msg_buf(void)
-{
-	int dummy;
-
-	if (event(MU_MESAG, 0, &dummy) < 0)
-		return -1;
-	else
-		return 0;
-}
-
-*/
-
 
 
 /*
