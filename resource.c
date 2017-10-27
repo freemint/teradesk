@@ -94,6 +94,9 @@ extern int
 	tos_version,	/* tos version, hex encoded */ 
 	aes_version;	/* aes version, hex encoded */
 
+extern int
+	aes_wfunc;	/* result of appl_getinfo(11, ...) */
+
 
 /*
  * Hide some dialog objects
@@ -177,7 +180,7 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 
 	/* Change fill pattern in sliders to full dark gray when appropriate */
 
-	if ( xd_aes4_0 && xd_colaes )
+	if ( xd_colaes )
 		ob->ob_spec.obspec.fillpattern = 7; 
 }
 
@@ -324,7 +327,7 @@ static void rsc_fixmenus(void)
 }
 
 #if _MINT_
-	if(!xd_aes4_0)
+	if(!(aes_wfunc & 0x80))
 #endif
 		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
 

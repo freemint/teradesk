@@ -2489,7 +2489,7 @@ void wd_type_title(TYP_WINDOW *w)
 	 * if there is nonzero aes_hor3d
 	 */
 
-	if(xd_aes4_0)
+	if(xd_colaes)
 		d = 5 + aes_hor3d / 2;
 #endif
 

@@ -338,7 +338,6 @@ static bool xd_is3dobj(int flags)
 	( 
 		f3d
 		&& (f3d != AES3D_2)   
-		&& (xd_aes4_0) 
 		&& (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes ) 
 	)
 		return TRUE;
@@ -467,7 +466,6 @@ static void xd_drawbox
 	if 
 	( 
 		!xd_colaes
-		|| !xd_aes4_0 
 		|| xtype == XD_BUTTON 
 		|| xtype == XD_DRAGBOX 
 		|| xtype == XD_BCKBOX 
@@ -1209,7 +1207,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 
 	tmode  = MD_REPLACE;
 
-	if ( xd_aes4_0 && xd_colaes ) 
+	if ( xd_colaes ) 
 	{
 		if ( aes_hor3d == 0 && ted->te_thickness != 0 && get_aesversion() == 0x399)
 			/* hopefully this branch is valid for Magic only */

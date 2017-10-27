@@ -39,7 +39,6 @@ int
 	colour_icons = 0,   		/* result of appl_getinfo(2,,,)  */
 	aes_wfunc    = 0,			/* result of appl_getinfo(11,,,) */
 	aes_ctrl	 = 0,			/* result of appl_getinfo(65,,,) */
-	xd_aes4_0,					/* flag that AES 4 is present    */
 	xd_colaes    = 0,			/* more than 4 colours available */
 	xd_has3d     = 0,			/* result of appl-getinfo(13...) */
 	aes_hor3d    = 0,			/* 3d enlargement value */
@@ -2549,12 +2548,9 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 	/* 
 	 * Note: Magic (V6.20 at least) returns AES version 3.99.
 	 * In that case, after an inquiry ?AGI has been made,
-	 * xd_aes4_0 is set to true.
 	 * On the other hand, TOS 4.0 returns AES version 3.40
 	 * but still is a "3D" AES
 	 */
-
-	xd_aes4_0  = (get_aesversion() >= 0x400);
 
 	xd_min_timer = 5;	/* Minimum time passed to xe_multi(); was 10 earlier */
 
@@ -2622,7 +2618,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 		/* if ( appl_find( "?AGI" ) == 0 )	*/	/* appl_getinfo() supported? */
 
-		if ( xd_aes4_0 || (appl_find("?AGI") == 0) )
+		if ( appl_find("?AGI") == 0)
 			aes_flags |= GAI_INFO;
 
 		/* If appl_getinfo is supported, then get diverse information: */
@@ -2631,29 +2627,25 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		{
 			int ag1, ag2, ag3, ag4;
 
-			/* This is surely (or hopefully?) some sort of "3D" AES 4 */
-
-			xd_aes4_0 = TRUE;
-
 			/* Assume some colour settings */
 
 			xd_aes4col();
 
 			/* Information on "normal" AES font */
 
-			appl_getinfo(0, &xd_regular_font.size, &xd_regular_font.id,
+			appl_xgetinfo(APG_FONT, &xd_regular_font.size, &xd_regular_font.id,
 						 &dummy, &dummy);
 #if _SMALL_FONT
 
 			/* Information on "small" AES font */
 
-			appl_getinfo(1, &xd_small_font.size, &xd_small_font.id,
+			appl_xgetinfo(APG_SMLFONT, &xd_small_font.size, &xd_small_font.id,
 						 &dummy, &dummy);
 
 #endif
 			/* Information on colour icons and supported rsc format */
 
-			appl_getinfo(2, &ag1, &ag2, &colour_icons, &dummy);
+			appl_xgetinfo(APG_REZ, &ag1, &ag2, &colour_icons, &dummy);
 
 			/* 
 			 * Information on supported window handling capabilities;
@@ -2662,11 +2654,11 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 			 * (AES 4.0 ?) recognizes these inquiries anyway
 			 */
 
-			appl_getinfo(11, &aes_wfunc, &dummy, &dummy, &dummy );
+			appl_xgetinfo(APG_WINDOWS, &aes_wfunc, &dummy, &dummy, &dummy );
 
 			/* Information on object handling capabilites */
 
-			if ( appl_getinfo( 13, &xd_has3d, &ag2, &ag3, &ag4 ))
+			if ( appl_xgetinfo(APG_OBJECTS, &xd_has3d, &ag2, &ag3, &ag4 ))
 			{
 				if ( ag4 & 0x08 )				/* G_SHORTCUT untersttzt ? */
 					aes_flags |= GAI_GSHORTCUT;
@@ -2702,7 +2694,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 			/* Is appl_control supported ? */
 
-			if (appl_getinfo(65, &ag1, &ag2, &ag3, &ag4))
+			if (appl_xgetinfo(AES_NAES, &ag1, &ag2, &ag3, &ag4))
 				aes_ctrl = ag1;
 		}
 		else
@@ -2716,7 +2708,6 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 			if ( get_tosversion() >= 0x400 && get_aesversion() >= 0x330 )
 			{
-				xd_aes4_0 = TRUE; 
 				aes_hor3d = 2;
 				aes_ver3d = 2;
 				colour_icons = TRUE;

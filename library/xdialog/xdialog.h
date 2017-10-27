@@ -179,7 +179,6 @@ typedef struct
 typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
 
 extern int
-	xd_aes4_0,
 	xd_colaes,
 	aes_hor3d,
 	aes_ver3d,
