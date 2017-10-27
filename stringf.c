@@ -21,14 +21,8 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <vdi.h>
-#include <xdialog.h>
 #include <library.h>
+#include <xdialog.h>
 
 #include "desktop.h"
 #include "desk.h"
@@ -78,7 +72,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 		fill,		/* padding character */
 		tmp[16];	/* temporary buffer */
 
-	boolean 
+	bool 
 		lng, 		/* true if a numeric variable is of a long type */
 		ready;		/* true when conversionn is finished */
 

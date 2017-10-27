@@ -20,14 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
-
+#include <library.h>
 
 #include "xdialog.h"
 #include "xscncode.h"

@@ -21,20 +21,6 @@
  */
 
 
-#include <np_aes.h>
-#ifdef __PUREC__
- #include <tos.h>
- #include <vdi.h>
- #include <multitos.h>
-#else
- #include <aesbind.h>
- #include <osbind.h>
- #include <vdibind.h>
- #include "applgeti.h"
-#endif
-
-#include <ctype.h>
-#include <string.h>
 #include <library.h>
 
 #include "xscncode.h"
@@ -1128,7 +1114,7 @@ void xd_init_shift(OBJECT *obj, char *text)
  * The object need not be of the scrolled type.
  */
 
-static boolean xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
+static bool xd_shift(XUSERBLK *blk, int pos, int flen, int clen)
 {
 	if (blk)
 	{
@@ -1209,7 +1195,7 @@ int xd_edit_char(XDINFO *info, int key)
 		clip.x -= xd_regular_font.cw + 2;		/* HR: This temporary until ub_scrledit() handles templates properly. */
 		clip.w += 2 * xd_regular_font.cw + 4;
 		clip.h += 4;
-		maxlen = XD_MAX_SCRLED;
+		maxlen = (int)XD_MAX_SCRLED;
 	}
 	else
 		maxlen = flen;
@@ -1712,7 +1698,7 @@ int xd_form_button(XDINFO *info, int object, int clicks, int *result)
 			events.ev_mbmask = 1;
 			events.ev_mm1flags = 1;
 
-			xd_objrect(tree, object, &events.ev_mm1);
+			xd_objrect(tree, object, (RECT *)&events.ev_mm1);
 			xd_change(info, object, newstate, TRUE);
 
 
@@ -1826,7 +1812,7 @@ int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata)
 		s,
 		cmode;
 
-	boolean
+	bool
 		inw = TRUE;
 
 	KINFO
@@ -2077,6 +2063,8 @@ static int xd_open_wzoom
 		error;
 
 
+	(void)menu;
+	
 	prev = xd_dialogs;
 	dialmode = xd_dialmode;
 	error = 0;
@@ -2318,6 +2306,8 @@ RECT *xywh, int zoom,
 const char *title
 )
 {
+	(void)menu;
+	(void)start;
 #if _DOZOOM
 	return xd_open_wzoom(tree, info, funcs, 0, /* -1, -1, not used */ NULL, NULL, FALSE, wtitle);
 #else
@@ -2628,9 +2618,9 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 		 * do not react to "?AGI" but in fact support appl_getinfo;
 		 * So below is forcing to use appl_getinfo with any AES 4.
 		 * In fact this is not so bad; a document on TOS recommends:
-		 *	has_agi = ((_GemParBlk.global[0] == 0x399 && get_cookie ("MagX", &dummy))
-         *	|| (_GemParBlk.global[0] == 0x400 && type < 4)
-         *	|| (_GemParBlk.global[0] > 0x400)
+		 *	has_agi = ((_AESversion == 0x399 && get_cookie ("MagX", &dummy))
+         *	|| (_AESversion == 0x400 && type < 4)
+         *	|| (_AESversion > 0x400)
          *	|| (appl_find ("?AGI") >= 0));
 		 */
 
@@ -2691,7 +2681,7 @@ int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
 
 				if ( xd_has3d && ag2 )					/* 3D-Objekte und objc_sysvar() vorhanden? */
 				{
-					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-enlargements   */
+					objc_sysvar( 0, AD3DVALUE, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-enlargements   */
 					objc_sysvar( 0, BACKGRCOL, 0, 0, &xd_bg_col, &dummy); 		/* background colour */
 				}
 			}

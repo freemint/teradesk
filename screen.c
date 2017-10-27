@@ -21,13 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <vdi.h>
-#include <xdialog.h>
-#include <mint.h>
-#include <string.h>			/* for load_colours */
 #include <library.h>
+#include <xdialog.h>
 #include <xdialog.h>
 
 #include "resource.h"
@@ -50,7 +45,7 @@ int *palette = 0; 	/* Pointer to current palette */
  * als resultaat FALSE teruggegeven. 
  */
 
-boolean clip_desk(RECT *r)
+bool clip_desk(RECT *r)
 {
 	return xd_rcintersect(r, &xd_desk, r);
 }
@@ -72,7 +67,7 @@ void clipdesk_on(void)
 
 void pclear(RECT *r)
 {
-	boolean doo = options.win_pattern && options.win_colour;
+	bool doo = options.win_pattern && options.win_colour;
 
 	if(doo)
 		clr_object(r, options.win_colour, options.win_pattern);
@@ -86,7 +81,7 @@ void pclear(RECT *r)
  * Find if two rectangles intersect. Return TRUE if they do.
  */
 
-boolean rc_intersect2(RECT *r1, RECT *r2)
+bool rc_intersect2(RECT *r1, RECT *r2)
 {
 	RECT r;
 

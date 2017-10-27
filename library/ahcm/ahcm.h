@@ -27,8 +27,8 @@
 #else
 #define _XA_MEMORY_H
 
-#include <prelude.h>
 #include <stdlib.h>		/* size_t */
+#include <stdbool.h>
 
 #define XA_lib_replace 1
 

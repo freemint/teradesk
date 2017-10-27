@@ -21,13 +21,12 @@
  */
 
 
-#include <np_aes.h>
+#include <portaes.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include <tos.h>
-#include <vdi.h>
-#include <mint.h>
+#include <portvdi.h>
+#include <mintbind.h>
 #include <library.h>
 #include <xdialog.h>
 #include <limits.h>
@@ -70,7 +69,7 @@ static char
 static SNAME
 	prevcall;		/* name of the last started ttp */
 
-static boolean
+static bool
 	nodocs = FALSE;	/* to copy documenttypes when copying apps */
 
 int trash_or_print(ITMTYPE type);	/* from ICON.C */
@@ -210,6 +209,7 @@ void appinfo_info
 	APPLINFO
 		*a;
 
+	(void)dummy;
 	/* Is this application already installed ? */
 
 	a = find_appl( list, name, NULL );	/* HR 120803 allow NULL when pos not needed */
@@ -252,7 +252,7 @@ void appinfo_info
  * from check_dup in lists.c in that the full app path+name is compared.
  */
 
-boolean check_dup_app( APPLINFO **list, APPLINFO *appl, int pos )
+bool check_dup_app( APPLINFO **list, APPLINFO *appl, int pos )
 {
 	APPLINFO 
 		*f = *list;		/* pointer to current item in the list */
@@ -321,7 +321,7 @@ static void unset_fkey(APPLINFO **list, int fkey)
  * Return TRUE if it is OK to set F-key now
  */
 
-static boolean check_fkey(APPLINFO **list, int fkey, int pos)
+static bool check_fkey(APPLINFO **list, int fkey, int pos)
 {
 	APPLINFO 
 		*f = *list;		/* pointer to current item in the list */
@@ -365,7 +365,7 @@ static boolean check_fkey(APPLINFO **list, int fkey, int pos)
  * Note: bit flags can be combined.
  */
 
-static boolean check_specapp( APPLINFO **list, int flag, int pos )
+static bool check_specapp( APPLINFO **list, int flag, int pos )
 {
 	APPLINFO
 		*f = *list;
@@ -376,7 +376,7 @@ static boolean check_specapp( APPLINFO **list, int flag, int pos )
 
 	while( f )
 	{
-		if ( (i != pos) && ( (f->flags & flag) != NULL ) )
+		if ( (i != pos) && ( (f->flags & flag) != 0 ) )
 		{
 			if ( pos != -1 )
 				button = alert_printf( 2, ADUPFLG, f->shname );
@@ -465,7 +465,7 @@ void log_shortname( char *dest, char *appname )
  * **applist serves for checking against duplicates, etc.
  */
 
-boolean app_dialog
+bool app_dialog
 (
 	APPLINFO **applist, 	/* list to check for duplicates in */
 	int pos,				/* position of item in the list */ 
@@ -497,7 +497,7 @@ boolean app_dialog
 		button2,			/* for a subdialog */
 		fkey;				/* code of associated F-key */
 
-	boolean
+	bool
 		stat = FALSE, 
 		qquit = FALSE;		/* true when ok to exit loop */
 
@@ -876,7 +876,7 @@ void app_install(int use, APPLINFO **applist)
  * the listbox dialog is opened so that the application can be selected.
  */
 
-APPLINFO *app_find(const char *file, boolean dial)
+APPLINFO *app_find(const char *file, bool dial)
 {
 	APPLINFO 
 		*h = applikations, 
@@ -965,7 +965,7 @@ APPLINFO *app_find(const char *file, boolean dial)
  * Find the (short) name of the first application associated with a filename
  */
 
-char *app_find_name(const char *fname, boolean full)
+char *app_find_name(const char *fname, bool full)
 {
 	APPLINFO
 		*theapp;
@@ -1230,7 +1230,7 @@ static char *app_parpath(char *cmline)
 	VLNAME 
 		thepath;		/* extracted path */
 
-	boolean 
+	bool 
 		q = FALSE;		/* quoting in progress */
 
 
@@ -1306,7 +1306,7 @@ static char *app_parpath(char *cmline)
  * Result: TRUE if succesfull, FALSE if not.
  */
 
-boolean app_exec
+bool app_exec
 (
 	const char *program,
 	APPLINFO *app,
@@ -1342,7 +1342,7 @@ boolean app_exec
 	SNAME
 		thiscall;				/* name of this ttp */
 
-	boolean 
+	bool 
 		argv,					/* Use ARGV protocol flag. */
 		single,					/* don't multitask (Magic) */
 		back,					/* run in background when possible */
@@ -1465,7 +1465,7 @@ boolean app_exec
 	}
 
 	/* 
-	 * Set some program-type details as proper boolean values 
+	 * Set some program-type details as proper bool values 
 	 * note: form of the assignment given below appears to give the smallest binary
 	 */
 
@@ -1902,7 +1902,7 @@ int app_specstart(int flags, WINDOW *w, int *list, int nn, int kstate)
 		if(app->flags & AT_RBXT)
 			xd_rbdclick = 0;
 
-		if ( ( app->flags & flags) != NULL ) /* correct type of application ? */
+		if ( ( app->flags & flags) != 0 ) /* correct type of application ? */
 		{
 			/* Delay a little bit before the next application */
 

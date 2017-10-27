@@ -34,10 +34,10 @@ typedef struct fattr
 
 typedef struct
 {
-	boolean selected;
-	boolean newstate;
-	boolean visible;
-	boolean link;
+	bool selected;
+	bool newstate;
+	bool visible;
+	bool link;
 	int index;
 	struct fattr attrib;
 	ITMTYPE item_type;
@@ -90,8 +90,8 @@ typedef struct
 	   But at least this way it works.
 	*/
 
-	boolean refresh;
-	boolean va_refresh;
+	bool refresh;
+	bool va_refresh;
 
 } DIR_WINDOW;
 
@@ -111,9 +111,9 @@ extern RECT dmax;	/* maximum window size */
 
 CfgNest dir_one;
 
-boolean dir_add_window(const char *path, const char *thespec, const char *name);
-boolean dir_add_dwindow(const char *path);
-boolean dir_onalt(int key, WINDOW *w);
+bool dir_add_window(const char *path, const char *thespec, const char *name);
+bool dir_add_dwindow(const char *path);
+bool dir_onalt(int key, WINDOW *w);
 void dir_close(WINDOW *w, int mode);
 const char *dir_path(WINDOW *w);
 void dir_filemask(DIR_WINDOW *w);
@@ -131,15 +131,15 @@ void calc_nlines(DIR_WINDOW *w);
 int linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
 void dir_info(DIR_WINDOW *w);
-boolean dir_isexec(const char *name, XATTR *attr);
+bool dir_isexec(const char *name, XATTR *attr);
 void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
 void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
 void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
 void dir_refresh_all(void);
 void dir_trim_slash ( char *path );
-boolean dir_do_path( char *path, int action );
-OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, boolean smode, RECT *work);
+bool dir_do_path( char *path, int action );
+OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, bool smode, RECT *work);
 void draw_tree(OBJECT *tree, RECT *clip);
 void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type);
 ITMTYPE diritem_type( char *fullname );

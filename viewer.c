@@ -21,14 +21,9 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
-#include <mint.h>
+#include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
-#include <library.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -192,7 +187,7 @@ void disp_hex
 	char *p,  			/* pointer to the beginning of the 16-byte line of text */
 	long a,				/* index of 1st byte of the line from the file beginning */
 	long size,			/* file size */
-	boolean toprint		/* true if file is being printed */ 
+	bool toprint		/* true if file is being printed */ 
 )
 {
 	long 
@@ -781,10 +776,10 @@ static void set_lines
  * In that case check c > 127 instead of c < 0 
  */
 
-static boolean isxprint(char c)
+static bool isxprint(signed char c)
 {
 	if (((c >= ' ') && (c <= '~')) || (c == '\t') || (c == '\r') ||
-		(c == '\n') || (c == 'ÿ') || (c < 0) )
+		(c == '\n') || (c < 0) )
 		return TRUE;
 	else
 		return FALSE;
@@ -835,7 +830,7 @@ int read_txtfile
 
 	if ((error = (int)x_attr(0, FS_INQ, name, &attr)) == 0)
 	{
-		*flength = attr.size;	/* output param. file length */
+		*flength = attr.st_size;	/* output param. file length */
 
 		/* Open the file */
 
@@ -854,7 +849,6 @@ int read_txtfile
 				if (read == *flength)
 				{				
 					/* And this has been read for a display in a window */
-
 					if ( tlines != NULL )
 					{
 						/* 
@@ -926,7 +920,7 @@ int read_txtf
 static int txt_read
 (
 	TXT_WINDOW *w,	/* pointer to window where the file will be displayed */
-	boolean setmode	/* if true, determine whether to use text or hex mode */
+	bool setmode	/* if true, determine whether to use text or hex mode */
 )
 {
 	int 
@@ -990,7 +984,7 @@ static int txt_read
  * If filename is not given (is NULL), keep old name and reread old file.
  */
 
-boolean txt_reread
+bool txt_reread
 (
 	TXT_WINDOW *w, 	/* pointer to window into which the file is reread */
 	char *name, 	/* file name */
@@ -1128,7 +1122,7 @@ void compare_files( WINDOW *w, int n, int *list )
 	XDINFO 
 		info;				/* dialog info structure */
 
-	boolean
+	bool
 		sync = TRUE, 		/* false while attempting to resynchronize */
 		diff = FALSE;		/* true if not equal files */
 
@@ -1357,8 +1351,8 @@ void compare_files( WINDOW *w, int n, int *list )
  */
 
 static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
-						   long py, int tabsize, boolean hexmode,
-						   boolean setmode, int *error) 
+						   long py, int tabsize, bool hexmode,
+						   bool setmode, int *error) 
 {
 	TXT_WINDOW
 		*w;
@@ -1423,7 +1417,7 @@ static WINDOW *txt_do_open(WINFO *info, const char *file, int px,
  * or by a filename (if not NULL, filename has priority)
  */
 
-boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
+bool txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 {
 	int 
 		j = 0,
@@ -1436,6 +1430,7 @@ boolean txt_add_window(WINDOW *w, int item, int kstate, char *thefile)
 		*textwj = textwindows;
 
 
+	(void)kstate;
 	while ((j < MAXWINDOWS - 1) && (textwj->used != FALSE))
 	{
 		j++;
@@ -1603,5 +1598,3 @@ CfgNest view_config
 
 	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL );
 }
-
-

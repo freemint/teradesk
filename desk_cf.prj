@@ -203,7 +203,6 @@ library\utility\lib_cf.prj
 
 ;Standard libraries
 
-ahccstdf.lib
-ahccgemf.lib
-
-
+pcstdlib.lib
+pctoslib.lib
+pcgemlib.lib

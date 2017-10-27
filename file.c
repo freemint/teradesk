@@ -21,17 +21,8 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>			/* for wildcards */
-#include <tos.h>
-#include <mint.h>
-#include <ctype.h>
-#include <vdi.h>
-#include <xdialog.h>
 #include <library.h>
-#include <system.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -319,10 +310,9 @@ char *fn_make_newname(const char *oldn, const char *newn)
  * Acceptable forms: X:<0> or X:\<0>
  */
 
-boolean isdisk(const char *path)
+bool isdisk(const char *path)
 {
-	char
-		*p = (char *)path;
+	const char *p = path;
 
 
 	/*
@@ -345,7 +335,7 @@ boolean isdisk(const char *path)
  * by analyzing the name. No check of the actual directory is made.
  */
 
-boolean isroot(const char *path)
+bool isroot(const char *path)
 {
 	char
 		*d = nonwhite((char *)path);
@@ -381,7 +371,7 @@ char *locate(const char *name, int type)
 	int
 		ex_flags;
 
-	boolean
+	bool
 		result = FALSE;
 
 
@@ -482,7 +472,7 @@ void get_fsel
 	VLNAME			/* actually a LNAME should be enough */
 		name;		/* name obtained */
 
-	boolean
+	bool
 		addname = ((flags & 0x8000) == 0);
 
 
@@ -619,7 +609,7 @@ long drvmap(void)
  * but defined by numbers 0 to 25.
  */
 
-boolean check_drive(int drv)
+bool check_drive(int drv)
 {
 	if ((drv >= 0) && (drv <= ('Z' - 'A')) && (btst(drvmap(), drv)))
 		return TRUE;
@@ -657,7 +647,7 @@ boolean check_drive(int drv)
  * This was changed so that match_pattern() is always used now.
  */
 
-boolean match_pattern(const char *t, const char *pat)
+bool match_pattern(const char *t, const char *pat)
 {
 	char
 		*d, 				/* difference in positions */
@@ -667,7 +657,7 @@ boolean match_pattern(const char *t, const char *pat)
 		u, 					/* uppercased character in pat */
 		tu;					/* uppercased *t */
 
-	boolean
+	bool
 		inv = FALSE,
 		valid = TRUE;
 
@@ -827,12 +817,12 @@ boolean match_pattern(const char *t, const char *pat)
  * Some special considerations of the '.' character in single-TOS
  */
 
-boolean cmp_wildcard(const char *fname, const char *pat)
+bool cmp_wildcard(const char *fname, const char *pat)
 {
 	char
 		*dot = NULL;
 
-	boolean
+	bool
 		matched;
 
 
@@ -877,6 +867,10 @@ static int chdrv;
 static long cdecl (*Oldgetbpb) (int);
 static long cdecl (*Oldmediach) (int);
 static long cdecl (*Oldrwabs) (int, void *, int, int, int, long);
+
+#define hdv_bpb              ( *( long cdecl (**)( int dev ) ) 0x472L )
+#define hdv_rw               ( *( long cdecl (**)( int rwflag,void *buf,int cnt,int recnr,int dev,long lrecno)) 0x476L )
+#define hdv_mediach  ( *( long cdecl (**)( int dev ) ) 0x47EL )
 
 /* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
 /*     04'10 Coldfire */

@@ -21,14 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
-#include <xdialog.h>
-#include <mint.h>
 #include <library.h>
-#include <limits.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -187,7 +181,7 @@ int icnt_geticon
 	ITMTYPE
 		thetype = type;
 
-	boolean
+	bool
 		more = (type != tgt_type && tgt_type != ITM_NOTUSED);
 
 
@@ -248,7 +242,7 @@ int icnt_geticon
  * in resource but a different handling routine.
  */
 
-static boolean icntype_dialog
+static bool icntype_dialog
 (
 	ICONTYPE **list,	/* list into which the item is placed */
 	int pos,			/* position (ordinal) in the list where to place the item */

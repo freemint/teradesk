@@ -21,15 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <vdi.h>
-#include <tos.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <mint.h>
-#include <xdialog.h>
 #include <library.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -81,7 +74,7 @@ extern int
 	ovrstat;	/* state of overscan */
 #endif
 
-extern boolean
+extern bool
 	clearline,
 	onekey_shorts;	/* true if single-key menu shortcuts exist */
 
@@ -116,13 +109,13 @@ static XFILE
 XUSERBLK
 	wxub;
 
-boolean
+bool
 	autoloc_upd = FALSE,	
 	autoloc = FALSE,		/* true if autolocator is in effect */
 	can_iconify,			/* true if current AES supports iconification */ 
 	can_touch;
 
-static boolean 
+static bool 
 	wclose = FALSE;			/* true during windows being temporarily closed */
 
 static char 
@@ -137,8 +130,8 @@ static void itm_selall(WINDOW *w);
 static int *itm_list(WINDOW *w, int *nselected);
 static void wd_type_hndlmenu(WINDOW *w, int title, int item);
 static void icw_draw(WINDOW *w);
-static boolean in_window(WINDOW *w, int x, int y);
-static boolean wd_isiconified(TYP_WINDOW *w);
+static bool in_window(WINDOW *w, int x, int y);
+static bool wd_isiconified(TYP_WINDOW *w);
 int cdecl ub_bckbox(PARMBLK *pb);
 
 
@@ -277,7 +270,7 @@ void w_transptext( int x, int y, char *text)
  * Is a window item some kind of a file (i.e. a file or a program?)
  */
 
-boolean isfileprog(ITMTYPE type)
+bool isfileprog(ITMTYPE type)
 {
 	return (type == ITM_FILE || type == ITM_PROGRAM);
 }
@@ -291,7 +284,7 @@ boolean isfileprog(ITMTYPE type)
  * Note 2: width and height are in character-cell units, x and y in pixels!
  */
 
-static void wrect_in_screen(RECT *info, boolean normalsize)
+static void wrect_in_screen(RECT *info, bool normalsize)
 {
 	/* 
 	 * Window should be at least 32 pixels in the screen 
@@ -342,7 +335,7 @@ void wd_in_screen( WINFO *info )
  * See also wd_sizes().
  */
 
-void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, boolean icons)
+void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons)
 {
 	if (w && xw_type(w) == TEXT_WIND)
 	{
@@ -584,7 +577,7 @@ void wd_top_app(int apid)
 	if(naes || aes_ctrl) 
 		appl_control(apid, 12, NULL);	/* N.AES, XaAES */
 	else 
-		wind_set(-1, WF_TOP, apid);		/* Magic */
+		wind_set(-1, WF_TOP, apid, 0, 0, 0);		/* Magic */
 }
 #endif
 
@@ -655,7 +648,7 @@ void wd_restoretop(int code, int *whandle, int *wap_id)
  * Does a pointer point to a directory or text window?
  */
 
-boolean wd_dirortext(WINDOW *w)
+bool wd_dirortext(WINDOW *w)
 {
 	return (w && (xw_type(w) == DIR_WIND || xw_type(w) == TEXT_WIND));
 }
@@ -704,7 +697,7 @@ void itm_set_menu(WINDOW *w)
 		type,				/* type of an item in the list */
 		type2 = ITM_FILE;	/* same */
 
-	boolean 
+	bool 
 		topicf = FALSE,		/* true if top window is iconified */
 		nonsel,				/* true if nothing selected and dir/text topped */
 		showinfo = FALSE,	/* true if show info is enabled */
@@ -1133,7 +1126,7 @@ void wd_update_drv(int drive)
 			{			
 				const char *path = thefunc->wd_path(w);
 
-				boolean goodpath = (((path[0] & 0x5F - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
+				bool goodpath = (((path[0] & 0x5F - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
 #if _MINT_
 				if (mint)
 				{
@@ -1143,7 +1136,7 @@ void wd_update_drv(int drive)
 					{
 						XATTR attr;
 
-						if ((x_attr(0, FS_LFN, path, &attr) == 0) && (attr.dev == drive)) /* follow the link */
+						if ((x_attr(0, FS_LFN, path, &attr) == 0) && (attr.st_dev == drive)) /* follow the link */
 							thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
 					}
 				}
@@ -1273,7 +1266,7 @@ void wd_del_all(void)
  * Currently, return status is, in fact, irelevant.
  */
 
-boolean wd_checkopen(int *error)
+bool wd_checkopen(int *error)
 {
 	if (*error)
 	{
@@ -1913,7 +1906,7 @@ void wd_init(void)
  * Return TRUE if OK selected.
  */
 
-boolean wd_type_setfont(int button)
+bool wd_type_setfont(int button)
 {
 	int 
 		title,		/* index of dialog title string */
@@ -2054,7 +2047,7 @@ void wd_xyround(RECT *r)
  * exceed the screen, or does not become too small.
  */
 
-void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, boolean iswork)
+void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 {
 #if _MINT_
 
@@ -2178,7 +2171,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 		ch,
 		cw;
 
-	boolean
+	bool
 		iswork = FALSE;
 
 
@@ -2327,7 +2320,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 					((DIR_WINDOW *)w)->px,
 					nc,
 					(int)py, 
-					rows, 
+					(int)rows, 
 					FALSE, 
 					&work
 				)) == NULL) 
@@ -2392,7 +2385,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
  * Either redraw a window or send a message to AES to redraw it 
  */
 
-void wd_type_draw(TYP_WINDOW *w, boolean message) 
+void wd_type_draw(TYP_WINDOW *w, bool message) 
 {
 	RECT area;
 
@@ -2549,7 +2542,7 @@ void wd_type_fulled(WINDOW *w, int mbshift)
 		oy = ((TYP_WINDOW *)w)->py;
 #endif
 
-	boolean
+	bool
 		f = (( mbshift & ( K_RSHIFT | K_LSHIFT ) ) != 0 );
 
 
@@ -2707,7 +2700,7 @@ void wd_set_defsize(WINFO *w)
  * and this would probably be used only rarely.
  */
 
-void wd_forcesize(WINDOW *w, RECT *size, boolean cond)
+void wd_forcesize(WINDOW *w, RECT *size, bool cond)
 {
 	RECT s = *size;
 
@@ -2777,7 +2770,7 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 		dc = 0,			/* number of directory columns */
 		oc = 0;			/* old number of directory columns */
 
-	boolean
+	bool
 		draw = FALSE;	/* true when window has to be redrawn */
 
 
@@ -2947,7 +2940,7 @@ void w_page(TYP_WINDOW *w, int newpx, long newpy)
 		arrow,
 		dpx = newpx - w->px;
 
-	boolean
+	bool
 		doit = FALSE;
 
 	if ( dpx != 0 )
@@ -3056,7 +3049,7 @@ void w_pageright(TYP_WINDOW *w)
  *
  * wx,wy	- x,y coordinaat werkgebied window
  * area		- rechthoek
- * prev		- pointer naar een boolean, die aangeeft of een of twee
+ * prev		- pointer naar een bool, die aangeeft of een of twee
  *			  regels opnieuw getekend moeten worden.
  *
  * ch  		- char height (or char height + DELTA or icon height)
@@ -3070,7 +3063,7 @@ void w_pageright(TYP_WINDOW *w)
  * If last=1 find the last one; if last=0 find the first one.
  */
 
-static long find_firstlast(int wy, int ay, int ah, boolean *prev, int ch, int last)
+static long find_firstlast(int wy, int ay, int ah, bool *prev, int ch, int last)
 {
 	int line;
 
@@ -3124,7 +3117,7 @@ void w_scroll(TYP_WINDOW *w, int type)
 		ch,
 		wtype = xw_type((WINDOW *)w);
 
-	boolean 
+	bool 
 		vert = FALSE,
 		prev; 
 
@@ -3309,7 +3302,7 @@ void w_scroll(TYP_WINDOW *w, int type)
  * if returned TRUE, routine set_sliders() should be called next.
  */
 
-boolean wd_adapt(WINDOW *w)
+bool wd_adapt(WINDOW *w)
 {
 	RECT size;
 
@@ -3457,6 +3450,11 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 			}
 			break;
 		}
+		case BACKSPC:
+			if (wt != DIR_WIND || (autoloc && aml))
+				goto thedefault;
+			wd_type_close(w, 0);
+			break;
 		case UNDO:
 		case INSERT:	/* Toggle autoselector on/off */
 		{
@@ -3787,7 +3785,7 @@ CfgNest open_config
  * this "file".
  */
 
-boolean wd_tmpcls(void)
+bool wd_tmpcls(void)
 {
 	int error;
 
@@ -3871,7 +3869,7 @@ int itm_find(WINDOW *w, int x, int y)
 }
 
 
-boolean itm_state(WINDOW *w, int item)
+bool itm_state(WINDOW *w, int item)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_state) (w, item);
 }
@@ -3970,11 +3968,13 @@ int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib)
  * Is the window object a link? Return TRUE if it is.
  */
 
-boolean itm_islink(WINDOW *w, int item)
+bool itm_islink(WINDOW *w, int item)
 {
 #if _MINT_
 	return (((ITM_WINDOW *) w)->itm_func->itm_islink) (w, item);
 #else
+	(void)w;
+	(void)item;
 	return FALSE;
 #endif
 }
@@ -3986,10 +3986,10 @@ boolean itm_islink(WINDOW *w, int item)
  * Use the opportunity to find target object's fullname.
  */
 
-boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *type)
+bool itm_follow(WINDOW *w, int item, bool *link, char **name, ITMTYPE *type)
 {
 #if _MINT_
-	boolean ll =  itm_islink(w, item);
+	bool ll =  itm_islink(w, item);
 
 	if (ll && ((options.cprefs & CF_FOLL) != 0))
 	{
@@ -4002,7 +4002,7 @@ boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *typ
 	}
 	else
 #else
-	boolean ll = FALSE;
+	bool ll = FALSE;
 #endif
 	{
 		*link = ll;
@@ -4014,7 +4014,7 @@ boolean itm_follow(WINDOW *w, int item, boolean *link, char **name, ITMTYPE *typ
 }
 
 
-boolean itm_open(WINDOW *w, int item, int kstate)
+bool itm_open(WINDOW *w, int item, int kstate)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_open) (w, item, kstate);
 }
@@ -4029,7 +4029,7 @@ boolean itm_open(WINDOW *w, int item, int kstate)
  * mode = 4: select all  
  */
 
-void itm_select(WINDOW *w, int selected, int mode, boolean draw)
+void itm_select(WINDOW *w, int selected, int mode, bool draw)
 {
 	if (xw_exist(w))
 		(((ITM_WINDOW *)w)->itm_func->itm_select) (w, selected, mode, draw);
@@ -4082,7 +4082,7 @@ static int *itm_list(WINDOW *w, int *n)
  *																	*
  ********************************************************************/
 
-static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
+static bool itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 					 int dobject, int kstate, ICND *icnlist, int x, int y)
 {
 	if (dw)
@@ -4123,7 +4123,7 @@ static boolean itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
  * an error. It should be called only if destination window is not TeraDesk's
  */
 
-static boolean itm_drop
+static bool itm_drop
 (
 	WINDOW *w, 			/* source window */
 	int n,				/* number of selected items */ 
@@ -4143,11 +4143,12 @@ static boolean itm_drop
 		i, 			/* item counter */
 		apid = -1,	/* destination app id */ 
 		hdl;		/* destination window handle */
+	int dummy;
 	
 	/* Find the owner of the window at x,y */
 
 	if ( (hdl = wind_find(x,y)) > 0)
-		wind_get(hdl, WF_OWNER, &apid); 
+		wind_get(hdl, WF_OWNER, &apid, &dummy, &dummy, &dummy);
 
 	/* Drag & drop is possible only in Mint or Magic (what about geneva 6?) */
 
@@ -4251,7 +4252,15 @@ static boolean itm_drop
 	}
 	else
 #endif
+	{
+		(void) x;
+		(void) y;
+		(void) kstate;
+		(void)list;
+		(void) n;
+		(void) w;
 		alert_printf(1, AILLDEST); /* Illegal copy destination */
+	}
 
 	return FALSE;
 }
@@ -4416,7 +4425,7 @@ static void select_object(WINDOW *w, int object, int mode)
  * Find the window and the object at position x,y 
  */
 
-static void find_newobj(int x, int y, WINDOW **wd, int *object, boolean *state)
+static void find_newobj(int x, int y, WINDOW **wd, int *object, bool *state)
 {
 	WINDOW *w = xw_find(x, y);
 
@@ -4438,7 +4447,7 @@ static void find_newobj(int x, int y, WINDOW **wd, int *object, boolean *state)
  * Copy objects from an object (window) to another
  */
 
-boolean itm_move
+bool itm_move
 (
 	WINDOW *src_wd,	/* source window */ 
 	int src_object,	/* source object */ 
@@ -4466,7 +4475,7 @@ boolean itm_move
 		*cur_wd = src_wd, 
 		*new_wd;
 
-	boolean 
+	bool 
 		result = FALSE,
 		cur_state = TRUE, 
 		new_state, 
@@ -4639,7 +4648,7 @@ boolean itm_move
  * Check whether position (x,y) is inside the work area of window *w);
  */
 
-static boolean in_window(WINDOW *w, int x, int y)
+static bool in_window(WINDOW *w, int x, int y)
 {
 	RECT work;
 
@@ -4757,7 +4766,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 				/*  This works only if TeraDesk has open windows ! */
 
 				WINDOW *ww = xw_first();
-				boolean nowin = TRUE;
+				bool nowin = TRUE;
 
 				while (ww)
 				{
@@ -4810,7 +4819,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 void wd_set_obj0
 (
 	OBJECT *obj,	/* pointer to object */
-	boolean smode,	/* smode=1: G_IBOX, smode=0: G_BOX */
+	bool smode,	/* smode=1: G_IBOX, smode=0: G_BOX */
 	int row,		
 	int lines,		/* how many icon lines will be drawn */
 	RECT *work		/* window work area dimensions and position*/
@@ -4827,10 +4836,10 @@ void wd_set_obj0
 	wxub.uv.fill.colour = options.win_colour;
 	wxub.uv.fill.pattern = options.win_pattern;
 
-	obj[0].r.x = work->x;
-	obj[0].r.y = row + work->y;
-	obj[0].r.w = work->w;
-	obj[0].r.h = minmax( iconh, lines * iconh, work->h);
+	obj[0].ob_x = work->x;
+	obj[0].ob_y = row + work->y;
+	obj[0].ob_width = work->w;
+	obj[0].ob_height = minmax( iconh, lines * iconh, work->h);
 }
 
 
@@ -4839,7 +4848,7 @@ void wd_set_obj0
  * Note similar object-setting code in add_icon() in icon.c
  */
 
-void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, boolean link, int icon_no, int obj_x, int obj_y, char *name )
+void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool link, int icon_no, int obj_x, int obj_y, char *name )
 {
 	OBJECT
 		*obji = &obj[i + 1];
@@ -4859,8 +4868,8 @@ void set_obji( OBJECT *obj, long i, long n, boolean selected, boolean hidden, bo
 	if (link)
 		obji->ob_state |= CHECKED;
 
-	obji->r.x = obj_x;
-	obji->r.y = obj_y;
+	obji->ob_x = obj_x;
+	obji->ob_y = obj_y;
 	obji->ob_spec.ciconblk = &cicnblk[i];
 
 	cicnblk[i] = *icons[icon_no].ob_spec.ciconblk;
@@ -5012,7 +5021,9 @@ void wd_type_iconify(WINDOW *w, RECT *r)
 			redraw_desk(&oldsize);
 		}
 	}
-
+#else
+	(void) w;
+	(void) r;
 #endif
 
 }
@@ -5054,6 +5065,9 @@ void wd_type_uniconify(WINDOW *w, RECT *r)
 
 	if(r->w == -1)
 		xw_send_redraw(w, WM_REDRAW, &size);
+#else
+	(void) w;
+	(void) r;
 #endif
 }
 
@@ -5064,7 +5078,7 @@ void wd_type_uniconify(WINDOW *w, RECT *r)
  * it does not contain any real rectangle data
  */
 
-static boolean wd_isiconified(TYP_WINDOW *w)
+static bool wd_isiconified(TYP_WINDOW *w)
 {
 #if _MINT_
 
@@ -5080,10 +5094,11 @@ static boolean wd_isiconified(TYP_WINDOW *w)
 			xw_get((WINDOW *)w, WF_ICONIFY, &r);
 	}
 
-	return (boolean)(r.x); 
+	return (bool)(r.x); 
 
 #else
 
+	(void) w;
 	return FALSE;
 
 #endif
@@ -5105,7 +5120,7 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 		size;
 
 #if _MINT_
-	boolean 
+	bool 
 		icf = can_iconify && oldflags->iconified; 
 #endif
 
@@ -5160,8 +5175,11 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 		wd_type_iconify(w, &size);
 	else
 #endif
+	{
+		(void) oldsize;
 		set_sliders((TYP_WINDOW *)w);
-
+	}
+	
 	xw_note_top(w);
 
 	info->used = TRUE;

@@ -21,13 +21,7 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tos.h>
-#include <vdi.h>
 #include <library.h>
-#include <mint.h>
 #include <xdialog.h>
 
 #include "resource.h"
@@ -54,12 +48,12 @@ typedef struct
 	COMMAND cml;
 	const char *envp;
 	int appl_type;
-	boolean new;
+	bool new;
 } PRG_INFO;
 
 int cdecl(*old_critic) (int error);
 PRG_INFO pinfo;
-boolean fargv = FALSE;
+bool fargv = FALSE;
 
 extern int tos_version, aes_version;
 
@@ -79,10 +73,10 @@ static void set_title(char *title)
 	dsktitle.ob_flags = LASTOB;
 
 	dsktitle.ob_spec.tedinfo = &ttd;
-	dsktitle.r.x = 0;
-	dsktitle.r.y = 0;
-	dsktitle.r.w = xd_desk.w;
-	dsktitle.r.h = xd_fnt_h + 2;
+	dsktitle.ob_x = 0;
+	dsktitle.ob_y = 0;
+	dsktitle.ob_width = xd_desk.w;
+	dsktitle.ob_height = xd_fnt_h + 2;
 
 	ttd.te_ptext = title;
 	ttd.te_font = 3;
@@ -91,7 +85,7 @@ static void set_title(char *title)
 	ttd.te_thickness = 0;
 	ttd.te_txtlen = xd_desk.w / xd_fnt_w;
 
-	draw_tree(&dsktitle, &dsktitle.r);
+	draw_tree(&dsktitle, (RECT *)&dsktitle.ob_x);
 }
 
 
@@ -134,19 +128,19 @@ static void remove_critic(void)
 static void close_windows(void)
 {
 	int handle;
-
+	int dummy;
 
 	if ( aes_version >= 0x140 )
 		wind_new();
 	else
 	{
-		wind_get(0, WF_TOP, &handle);
+		wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 
 		while (handle > 0)
 		{
 			wind_close(handle);
 			wind_delete(handle);
-			wind_get(0, WF_TOP, &handle);
+			wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 		}
 	}
 }
@@ -231,7 +225,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 			shel_write(SHW_EXEC, aptype, 0, pinfo.name, (char *)&pinfo.cml);
 
 			hourglass_mouse();
-			wind_set(0, WF_NEWDESK, NULL, 0);
+			wind_set_ptr(0, WF_NEWDESK, NULL, 0);
 
 			/* Show the name of the launched program as title on the screen */
 
@@ -331,8 +325,8 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 				if ((h = x_fullname(pinfo.name, &error)) != NULL)
 				{
-					if (strlen(h) <= PATH_MAX)
-						strcpy((char *) pinfo.name, h);
+					if (strlen(h) < sizeof(pinfo.name))
+						strcpy(pinfo.name, h);
 					else
 					{
 						error = EPTHTL;
@@ -446,9 +440,9 @@ void start_prg
 	const char *cmdl,		/* command line (first byte is length) */
 	const char *path,		/* default directory for this program */
 	ApplType prg,			/* application type */
-	boolean argv,			/* if true, use argv protocol */
-	boolean single, 		/* run in single mode when applicable */
-	boolean back,			/* run in background when applicable */
+	bool argv,			/* if true, use argv protocol */
+	bool single, 		/* run in single mode when applicable */
+	bool back,			/* run in background when applicable */
 	long limmem, 			/* memory limit for program */
 	char *localenv,			/* local environment string for the program */
 	int kstate				/* state of SHIFT, CONTROL and ALTERNATE keys */
@@ -471,13 +465,18 @@ void start_prg
 	VLNAME
 		prgpath;							/* Default directory for this program */
 
-	boolean 
+	bool 
 		stask = TRUE,						/* TRUE if singletasking mode */
 		doenv = FALSE,						/* TRUE to process local environment */
 		doargv = FALSE,						/* TRUE to process ARGV */
 		background = back,					/* run in background */
 		catargv;							/* TRUE to append ARGV to local environmen */
 
+
+#if !_MINT_
+	(void) limmem;
+	(void) single;
+#endif
 
 	/* Determine program type */
 
@@ -589,7 +588,7 @@ void start_prg
 	 */
 
 #if _MINT_
-	stask = ( single && magx ) || ( _GemParBlk.glob.count != -1 && !magx );
+	stask = ( single && magx ) || ( _AESnumapps != -1 && !magx );
 #endif
 
 	/* 

@@ -21,16 +21,6 @@
  */
 
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
-
-#include <stdlib.h>
-#include <string.h>
 #include <library.h>
 
 #include "xdialog.h"
@@ -340,7 +330,7 @@ void clr_object(RECT *r, int colour, int pattern)
  * drawing in 3d but that option being disabled by the user!
  */
 
-static boolean xd_is3dobj(int flags) 
+static bool xd_is3dobj(int flags) 
 {
 	int f3d = flags & (AES3D_1 | AES3D_2);
 
@@ -947,7 +937,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 		smfdb,			/* source memory block definition */
 		dmfdb;			/* destination memory block definition */
 
-	boolean
+	bool
 		do3d;			/* true if 3d effects should be employed */
 
 
@@ -2013,8 +2003,6 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 
 void xd_set_userobjects(OBJECT *tree)
 {
-	extern int aes_flags;
-
 	int 
 		etype, 		/* extended object type */
 		n,			/* object count */ 

@@ -30,7 +30,7 @@ typedef struct sliderinfo
 {
 	LSTYPE **list;				/* pointer to the list scrolled by this slider */
 	OBJECT *tree;				/* root object of the dialog */
-	void (*set_selector) (struct sliderinfo *slider, boolean draw, XDINFO *info);
+	void (*set_selector) (struct sliderinfo *slider, bool draw, XDINFO *info);
 	int (*findsel) (void);		/* funktie voor het vinden van het geselekteerde object */
 	int type;					/* slider type (0 or 1) */
 	int up_arrow;				/* 'up arrow' object index */

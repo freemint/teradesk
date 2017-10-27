@@ -21,13 +21,8 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <tos.h>
-#include <np_aes.h>
-#include <vdi.h> 
-#include <error.h>
 #include <library.h>
+#include "error.h"
 #include <xdialog.h>
 #include <xerror.h>
 
@@ -144,7 +139,7 @@ long onetrack
  * Return TRUE if OK, FALSE if not. 
  */
 
-static boolean checktracks
+static bool checktracks
 (
 	int tsides,		/* Number of sides */
 	int ttracks,	/* Number of tracks */
@@ -191,11 +186,12 @@ int readfp
 	int *dirsize
 )
 {
-	int istat, secs;
+	int istat;
+	int secs;
 
 	/* Read the boot sector */
 
-	istat = onetrack(8, sect0, dev, 0, 0, 8); /* read 8 sectors */
+	istat = (int)onetrack(8, sect0, dev, 0, 0, 8); /* read 8 sectors */
  
 	/* Decode format parameters from boot sector */	
 

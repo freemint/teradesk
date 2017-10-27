@@ -21,13 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
-#include <mint.h>
-#include <xdialog.h>
 #include <library.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -54,7 +49,7 @@ static void va_fulled(WINDOW *w, int dummy);
 static void copy_avstat( AVSTAT *t, AVSTAT *s);
 static void rem_avstat(AVSTAT **list, AVSTAT *t);
 void load_settings(char *newinfname);
-char *app_find_name(char *path, boolean full);
+char *app_find_name(char *path, bool full);
 
 static WD_FUNC aw_functions =
 {
@@ -77,7 +72,7 @@ static WD_FUNC aw_functions =
 	va_uniconify			/* uniconify */
 };
 
-boolean 
+bool 
 	va_reply = FALSE;		/* true if AV-protocol handshake is in progress */
 
 int
@@ -138,6 +133,7 @@ static void va_redraw(WINDOW *w, RECT *r)
 
 static void va_fulled(WINDOW *w, int dummy)
 {
+	(void)dummy;
 	xw_send(w, WM_FULLED);
 }
 
@@ -228,7 +224,7 @@ WINDOW *va_accw(void)
  * the pseudo-windows structures in TeraDesk will be deleted 
  */
 
-void va_delall(int ap_id, boolean force)
+void va_delall(int ap_id, bool force)
 {
 	WINDOW *prev, *w = xw_last();
 
@@ -377,6 +373,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 		dest_ap_id;		/* ap_id of the application parameters are sent to */
 
 
+	(void)type;
 	/* 
 	 * Use this opportunity to check for existing AV-clients.
 	 * As programs are not started very often, probably there will
@@ -510,7 +507,7 @@ static void va_send_all(int cap, int *message)
  * Currently, this always returns TRUE, even if failed
  */
 
-boolean va_fontreply(int messid, int dest_ap_id)
+bool va_fontreply(int messid, int dest_ap_id)
 {
 	int va_answer[8];
 
@@ -546,7 +543,7 @@ boolean va_fontreply(int messid, int dest_ap_id)
  * to an application using the Drag & drop protocol
  */
 
-boolean va_add_name(int type, const char *name)
+bool va_add_name(int type, const char *name)
 {
 	long 
 		g = strlen(global_memory);		/* cumulative string length */
@@ -613,7 +610,7 @@ boolean va_add_name(int type, const char *name)
  * Take care to use this routine only for directory windows.
  */
 
-boolean va_pathupdate( WINDOW *w )
+bool va_pathupdate( WINDOW *w )
 {
 	if ( !va_reply )
 	{
@@ -646,13 +643,14 @@ boolean va_pathupdate( WINDOW *w )
  * Note 2: parameter 'list' is locally modified
  */
 
-boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y)
+bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y)
 {
 	AVTYPE *client;
 	ITMTYPE itype;
 	char *thename;
 	int i;
 
+	(void)kstate;
 	/* 
 	 * Find the data for the client which created this window.
 	 * If the window exists, it is assumed that the client is still alive
@@ -777,7 +775,7 @@ void handle_av_protocol(const int *message)
 		m3 = message[3],	/* save some bytes in program size */
 		stat;
 
-	boolean 
+	bool 
 		reply = TRUE;
 
 	AVTYPE
@@ -1198,12 +1196,13 @@ void handle_av_protocol(const int *message)
 		case AV_WHAT_IZIT:
 		{
 			int item, wind_ap_id;
-	
+			int dummy;
+
 			*global_memory = 0; /* clear any old strings */
 	
 			/* Find the owner of the window (can't be always done in single-tos) */
 	
-			wind_get( wind_find(m3, message[4]), WF_OWNER, &wind_ap_id);
+			wind_get( wind_find(m3, message[4]), WF_OWNER, &wind_ap_id, &dummy, &dummy, &dummy);
 	
 			/* Note: it is not clear what should be returned in answer[3] */
 	
@@ -1306,7 +1305,7 @@ void handle_av_protocol(const int *message)
 					*cs, *cq, 		/* position of the next " " and "'" */
 					*pp = NULL;		/* position of the next name */
 	
-				boolean 
+				bool 
 					q = FALSE;		/* true if name is quoted */
 	
 				ITMTYPE 

@@ -21,15 +21,7 @@
  */
 
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
-
-
+#include <library.h>
 #include "xdialog.h"
 
 extern int xd_oldarrow(XDINFO *info);
@@ -61,6 +53,8 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 		key_handled = TRUE;
 
 
+	(void)kstate;
+	
 	info = ((XD_NMWINDOW *)w)->xd_info;
 	tree = info->tree;
 
@@ -112,6 +106,9 @@ void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 		cont;
 
 
+	(void)kstate;
+	(void)bstate;
+	
 	info = ((XD_NMWINDOW *)w)->xd_info;
 
 	if ((next_obj = objc_find(info->tree, ROOT, MAX_DEPTH, x, y)) != -1)
@@ -159,6 +156,7 @@ void __xd_closed(WINDOW *w, int dummy_mode)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 
+	(void)dummy_mode;
 	info->func->dialclose(info);
 }
 

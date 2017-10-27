@@ -27,13 +27,29 @@
 #define cdecl
 #endif
 
-#include <np_aes.h>
+#include <portaes.h>
 #include <stddef.h>
 
 #ifndef __XWINDOW_H__
  #include "xwindow.h"
 #endif
 
+
+typedef enum
+{
+	GAI_WDLG = 0x0001,		/* wdlg_xx()-Funktionen vorhanden */
+	GAI_LBOX = 0x0002,		/* lbox_xx()-Funktionen vorhanden */
+	GAI_FNTS = 0x0004,		/* fnts_xx()-Funktionen vorhanden */
+	GAI_FSEL = 0x0008,		/* neue Dateiauswahl vorhanden */
+
+	GAI_MAGIC= 0x0100,		/* MagiC-AES vorhanden */
+	GAI_INFO = 0x0200,		/* appl_getinfo() vorhanden */
+	GAI_3D   = 0x0400,		/* 3D-Look vorhanden */
+	GAI_CICN = 0x0800,		/* Color-Icons vorhanden */
+	GAI_APTERM = 0x1000,	/* AP_TERM wird unterstÿtzt */
+	GAI_GSHORTCUT = 0x2000,	/* Objekttyp G_SHORTCUT wird unterstÿtzt */
+	GAI_WHITEBAK = 0x4000	/* WHITEBAK objects */
+} GAI;
 
 /* Errorcodes. Take care to use same values as in XERROR.H */
 
@@ -143,9 +159,9 @@ typedef struct
 	int ev_mflags;
 	int ev_mbclicks, ev_mbmask, ev_mbstate;
 	int ev_mm1flags;
-	RECT ev_mm1;
+	GRECT ev_mm1;
 	int ev_mm2flags;
-	RECT ev_mm2;
+	GRECT ev_mm2;
 	unsigned int ev_mtlocount, ev_mthicount;
 
 	int ev_mwhich;

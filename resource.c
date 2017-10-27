@@ -21,12 +21,7 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
 #include <library.h>
-#include <mint.h>
 #include <xdialog.h>
 
 #include "resource.h"
@@ -127,8 +122,8 @@ static void set_menubox(int box)
 
 	objc_offset(menu, box, &x, &dummy);
 
-	if ((offset = x + menu[box].r.w + 5 * xd_fnt_w - xd_screen.w) > 0)
-		menu[box].r.x -= offset;
+	if ((offset = x + menu[box].ob_width + 5 * xd_fnt_w - xd_screen.w) > 0)
+		menu[box].ob_x -= offset;
 }
 
 
@@ -150,8 +145,8 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
 		h3d2 = 2 * aes_hor3d + 1;
 
 
-	ob->r.x = tree[left ].r.x + tree[left].r.w + h3d2;
-	ob->r.w = tree[right].r.x - ob->r.x - h3d2;
+	ob->ob_x = tree[left ].ob_x + tree[left].ob_width + h3d2;
+	ob->ob_width = tree[right].ob_x - ob->ob_x - h3d2;
 }
 
 
@@ -172,13 +167,13 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
 
 	if(aes_hor3d)
 	{
-		ob->r.x -= aes_hor3d;
-		ob->r.w += 2 * aes_hor3d - 1;
-		tree[ob->ob_head].r.x += aes_hor3d;
+		ob->ob_x -= aes_hor3d;
+		ob->ob_width += 2 * aes_hor3d - 1;
+		tree[ob->ob_head].ob_x += aes_hor3d;
 	}
 
-	ob->r.y = tree[up  ].r.y + tree[up].r.h + v3d1;
-	ob->r.h = tree[down].r.y - ob->r.y - v3d1;
+	ob->ob_y = tree[up  ].ob_y + tree[up].ob_height + v3d1;
+	ob->ob_height = tree[down].ob_y - ob->ob_y - v3d1;
 
 	/* Change fill pattern in sliders to full dark gray when appropriate */
 
@@ -202,7 +197,7 @@ void rsc_yfix
 	int chalfs		/* vertical distance from ref. object - in char half-heights */ 
 )
 {
-	tree[object].r.y = tree[refobject].r.y + xd_fnt_h * chalfs / 2;
+	tree[object].ob_y = tree[refobject].ob_y + xd_fnt_h * chalfs / 2;
 }
 
 
@@ -225,16 +220,16 @@ static void mn_del(int box, int item)
 		ch_h = xd_fnt_h;
 
 
-	tree[box].r.h -= ch_h;
-	y = tree[item].r.y;
+	tree[box].ob_height -= ch_h;
+	y = tree[item].ob_y;
 	i = tree[box].ob_head;
 
 	while (i != box)
 	{
 		treei = &tree[i];
 
-		if (treei->r.y > y)
-			treei->r.y -= ch_h;
+		if (treei->ob_y > y)
+			treei->ob_y -= ch_h;
 
 		i = treei->ob_next;
 	}
@@ -320,8 +315,6 @@ static void rsc_fixmenus(void)
 		MPRGOPT,MWDOPT,MVOPTS,MSAVEAS
 	};
 
-
-
 #if _MINT_
 	if(  (!mint) ||  (aes_version < 0x140) )
 #endif
@@ -334,7 +327,6 @@ static void rsc_fixmenus(void)
 	if(!xd_aes4_0)
 #endif
 		mn_del(MNWINBOX, MICONIF); /* can iconify only in AES 4 */
-
 
 	/* 
 	 * memory needed for the menu is estimated from the
@@ -355,13 +347,11 @@ static void rsc_fixmenus(void)
 	if ( aes_version >= 0x140 )
 	{
 		wind_get(0, WF_SCREEN, &dummy, &dummy, &buffer.words.high, &buffer.words.low);
-
 		n = 13; /* count the items in mnbx[] above to set this */
 	}
 	else /* older TOSes */
 	{
 		buffer.size = 8000L;
-
 		n = 21; /* count the items in mnit[] above to set this */
 	}
 
@@ -370,8 +360,6 @@ static void rsc_fixmenus(void)
 		for ( i = 0; i < n; i++ )
 			mn_del((int)mnbx[i], (int)mnit[i]);
 	}
-
-
 #endif
 
 	/* Move some menu boxes left to fit the screen (if needed) */
@@ -383,7 +371,7 @@ static void rsc_fixmenus(void)
 	/* Adapt menu bar width to have the same width as screen */
 
 	xw_getwork(NULL, &desk);
-	menu[menu->ob_head].r.w = desk.w;
+	menu[menu->ob_head].ob_width = desk.w;
 }
 
 
@@ -459,8 +447,8 @@ static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
 	else
 		dx = just;
 
-	obj->r.x += dx * xd_fnt_w;
-	obj->r.w = 12 * xd_fnt_w;
+	obj->ob_x += dx * xd_fnt_w;
+	obj->ob_width = 12 * xd_fnt_w;
 
 	/* Change object type */
 
@@ -587,16 +575,16 @@ void rsc_init(void)
 	for(i = 0; i < 4; i++)
 	{
 		rsc_xalign(wdoptions, (int)xleft[i], (int)xitem[i], (int)xright[i]);
-		wdoptions[xv[i]].r.y += v3d2;
+		wdoptions[xv[i]].ob_y += v3d2;
 	}
 
-	wdoptions[DSKPAT].r.h += v3d2;
-	wdoptions[WINPAT].r.h += v3d2;
+	wdoptions[DSKPAT].ob_height += v3d2;
+	wdoptions[WINPAT].ob_height += v3d2;
 
-	wdoptions[WDDCOLT].r.y = wdoptions[DSKCUP].r.y;
-	wdoptions[WDWCOLT].r.y = wdoptions[WINCUP].r.y;
+	wdoptions[WDDCOLT].ob_y = wdoptions[DSKCUP].ob_y;
+	wdoptions[WDWCOLT].ob_y = wdoptions[WINCUP].ob_y;
 
-	addicon[ICONBACK].r.w = addicon[ICSELBOX].r.w - addicon[ICNUP].r.w - 2 * aes_hor3d - 1;
+	addicon[ICONBACK].ob_width = addicon[ICSELBOX].ob_width - addicon[ICNUP].ob_width - 2 * aes_hor3d - 1;
 
 	rsc_yalign(addicon, ICNUP, ICNDWN, ICPARENT);
 	rsc_yalign(setmask, FTUP, FTDOWN, FTSPAR);
@@ -692,12 +680,11 @@ void rsc_init(void)
 		obj_hide(addprgtype[ATSINGLE]);
 		obj_hide(addprgtype[MEMLIM]);
 
-		dh = addprgtype[MEMLIM].r.y - addprgtype[ATSINGLE].r.y;
-		addprgtype[APTOK].r.y -= dh;
-		addprgtype[APTCANC].r.y -= dh;
-		addprgtype[0].r.h -= dh;
+		dh = addprgtype[MEMLIM].ob_y - addprgtype[ATSINGLE].ob_y;
+		addprgtype[APTOK].ob_y -= dh;
+		addprgtype[APTCANC].ob_y -= dh;
+		addprgtype[0].ob_height -= dh;
 	}
-
 
 #if _EDITLABELS
 #if _MINT_
@@ -884,4 +871,3 @@ void rsc_ltoftext
 
 	*p = 0;
 }
-

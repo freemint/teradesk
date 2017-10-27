@@ -21,10 +21,7 @@
  */
 
 
-#include <tos.h>
-#include <stddef.h>
 #include <library.h>
-#include <system.h>
 
 #undef p_cookie
 #define p_cookie	( * (COOKIE **) 0x5A0L )

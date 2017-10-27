@@ -26,40 +26,10 @@
 
 /* TOS file attributtes */
 
-#define FA_READONLY     0x01
-#define FA_HIDDEN       0x02
-#define FA_SYSTEM       0x04
-#define FA_VOLUME       0x08
-#define FA_SUBDIR       0x10
-#define FA_ARCHIVE      0x20
-#define FA_PARDIR       0x40 /* pseudo attribute for parent dir */
+#define FA_PARDIR       0x40 /* pseudo attribute for parent dir FIXME: used by MagiC */
 
-#define FA_ANY  (FA_READONLY | FA_HIDDEN | FA_SYSTEM | FA_SUBDIR | FA_ARCHIVE)
+#define FA_ANY  (FA_RDONLY | FA_HIDDEN | FA_SYSTEM | FA_SUBDIR | FA_ARCHIVE)
 
-/* Unix file attributes are defined identically as in tos.h */
-
-#define S_IFMT	0170000		/* mask to select file type */
-#define S_IFREG	0100000		/* Regular file */
-#define S_IFDIR	0040000		/* Directory */
-#define S_IFCHR	0020000		/* BIOS special file */
-#define S_IFIFO 0120000		/* FIFO */
-#define S_IMEM	0140000		/* memory region or process */
-#define S_IFLNK	0160000		/* symbolic link */
-
-/* File access rights are defined identically as in tos.h */
-
-#define S_ISUID 04000
-#define S_ISGID 02000
-#define S_ISVTX 01000
-#define S_IRUSR	 0400
-#define S_IWUSR  0200
-#define S_IXUSR  0100
-#define S_IRGRP  0040
-#define S_IWGRP	 0020
-#define S_IXGRP	 0010
-#define S_IROTH	 0004
-#define S_IWOTH	 0002
-#define S_IXOTH	 0001
 #define DEFAULT_DIRMODE (0777)
 #define DEFAULT_MODE    (0666)
 #define EXEC_MODE		(S_IXUSR | S_IXGRP | S_IXOTH)
@@ -80,68 +50,12 @@
 #define EX_DIR		2
 #define EX_LINK		4	/* don't follow the link */
 
-/* Modes voor x_open en x_fopen */
-
-#define O_RWMODE  	0x03		/* isoleert read write mode */
-#define O_RDONLY	0x00
-#define O_WRONLY	0x01
-#define O_RDWR		0x02
-
-#define O_SHMODE	0x70		/* isoleert file sharing mode */
-#define O_COMPAT	0x00
-#define O_DENYRW	0x10
-#define O_DENYW		0x20
-#define O_DENYR		0x30
-#define O_DENYNONE	0x40
-
-enum
-{
-	DP_NOTRUNC,
-	DP_AUTOTRUNC,
-	DP_DOSTRUNC,
-	DP_SENSITIVE	= 0,
-	DP_NOSENSITIVE,
-	DP_SAVE_ONLY,
-	DP_LINKS		= 1,
-	DP_TRUNC		= 5,
-	DP_CASE,
-	DP_MODE,
-	DP_XATT
-};
-
-#ifndef __TOS
-
-typedef struct
+typedef struct          /* used by Pexec */
 {
 	unsigned char length;
 	char command_tail[128];
 } COMMAND;
 
-typedef struct
-{
-	unsigned long b_free;
-	unsigned long b_total;
-	unsigned long b_secsiz;
-	unsigned long b_clsiz;
-} DISKINFO;
-
-typedef struct
-{
-	unsigned int time;
-	unsigned int date;
-} DOSTIME;
-
-typedef struct
-{
-	char d_reserved[21];
-	unsigned char d_attrib;
-	int d_time;
-	int d_date;
-	unsigned long d_length;
-	char d_fname[14];
-} DTA;
-
-#endif
 
 typedef struct
 {
@@ -152,8 +66,8 @@ typedef struct
 		struct
 		{
 			int first;			/* 1 = eerste file lezen, 0 = huidige lezen. */
-			DTA *old_dta;
-			DTA dta;
+			_DTA *old_dta;
+			_DTA dta;
 		} gdata;
 	} data;
 #if _MINT_
@@ -173,12 +87,19 @@ typedef struct
 	unsigned int memfile : 1;
 } XFILE;
 
+#define dos_mtime(st)   (((DOSTIME *)&(st)->st_mtime)->time)
+#define dos_mdate(st)   (((DOSTIME *)&(st)->st_mtime)->date)
+#define dos_atime(st)   (((DOSTIME *)&(st)->st_atime)->time)
+#define dos_adate(st)   (((DOSTIME *)&(st)->st_atime)->date)
+#define dos_ctime(st)   (((DOSTIME *)&(st)->st_ctime)->time)
+#define dos_cdate(st)   (((DOSTIME *)&(st)->st_ctime)->date)
+
 /* niet GEMDOS en MiNT funkties */
 
 int x_checkname(const char *path, const char *name);
 char *x_makepath(const char *path, const char *name, int *error);
-boolean x_exist(const char *file, int flags);
-boolean x_netob(const char *name);
+bool x_exist(const char *file, int flags);
+bool x_netob(const char *name);
 char *x_fullname(const char *file, int *error);
 
 /* Directory funkties */
@@ -191,7 +112,7 @@ int x_mklink(const char *linkname, const char *refname);
 int x_rdlink(size_t tgtsize, char *tgt, const char *linkname );
 char *x_pathlink( char *tgtname, char *linkname );
 char *x_fllink( char *linkname );
-int x_dfree(DISKINFO *diskinfo, int drive);
+int x_dfree(_DISKINFO *diskinfo, int drive);
 int x_getdrv(void);
 long x_setdrv(int drive);
 int x_getlabel(int drive, char *label);
@@ -202,7 +123,7 @@ int x_putlabel(int drive, char *label);
 int x_rename(const char *oldn, const char *newn);
 int x_unlink(const char *file);
 int x_fattrib(const char *file, XATTR *attr);
-int x_datime(DOSTIME *time, int handle, int wflag);
+int x_datime(_DOSTIME *time, int handle, int wflag);
 int x_open(const char *file, int mode);
 int x_create(const char *file, XATTR *attr);
 int x_close(int handle);
@@ -243,9 +164,8 @@ char *x_freadstr(XFILE *file, char *string, size_t max, int *error);
 int x_fwritestr(XFILE *file, const char *string);
 int x_fgets(XFILE *file, char *string, int n);
 int x_fprintf(XFILE *file, char *format, ...);
-boolean x_feof(XFILE *file);
+bool x_feof(XFILE *file);
 int x_inq_xfs(const char *path);
 long x_pflags(char *filename);
 
 void x_init(void);
-

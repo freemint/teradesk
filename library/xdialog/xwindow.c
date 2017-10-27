@@ -21,13 +21,7 @@
  */
 
 
-#include <np_aes.h>
-#include <vdi.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 #include <library.h>
-#include <multitos.h>
 
 #include "xdialog.h"
 
@@ -192,10 +186,10 @@ WINDOW *xw_top(void)
 		*w;
 
 	int
-		thandle;
+		thandle, dummy;
 
 
-	xw_get(NULL, WF_TOP, &thandle);		/* the real top window */
+	wind_get(0, WF_TOP, &thandle, &dummy, &dummy, &dummy);		/* the real top window */
 
 	/* If any known window is topped, return a pointer to it */
 
@@ -233,10 +227,10 @@ WINDOW *xw_bottom(void)
 		*w;
 
 	int
-		bhandle;
+		bhandle, dummy;
 
 
-	xw_get(NULL, WF_BOTTOM, &bhandle);		/* the real bottom window */
+	wind_get(0, WF_BOTTOM, &bhandle, &dummy, &dummy, &dummy);		/* the real bottom window */
 
 	/* If any known window is the bottom one, return a pointer to it */
 
@@ -399,7 +393,7 @@ static void xw_set_topbot(WINDOW *w, int wf)
 	if(w->xw_type == ACC_WIND)
 		xw_send(w, msg);
 	else 
-		wind_set(w->xw_handle, wf, w->xw_handle);
+		wind_set(w->xw_handle, wf, w->xw_handle, 0, 0, 0);
 
 	notef(w);
 }
@@ -1196,13 +1190,9 @@ void xw_getsize(WINDOW *w, RECT *size)
  * Only WF_* codes up to 32 are supported (see also xw_get_argtab[])
  */
 
-void xw_get(WINDOW *w, int field,...)
+void xw_get(WINDOW *w, int field, RECT *r)
 {
-	RECT *r;
-	int *parm[4], dummy, i, parms, handle = 0;
-	va_list p;
-
-	va_start(p, field);
+	int handle = 0;
 
 	if(w)
 		handle = w->xw_handle;
@@ -1213,7 +1203,6 @@ void xw_get(WINDOW *w, int field,...)
 		{
 			if (handle != 0)
 			{
-				r = va_arg(p, RECT *);
 				*r = w->xw_work;
 	
 				if (w->xw_menu != NULL)
@@ -1230,7 +1219,6 @@ void xw_get(WINDOW *w, int field,...)
 		{
 			if (handle != 0)
 			{
-				r = va_arg(p, RECT *);
 				*r = w->xw_size;
 				break;
 			}
@@ -1241,23 +1229,10 @@ void xw_get(WINDOW *w, int field,...)
 		case WF_PREVXYWH:
 		case WF_ICONIFY:
 		{
-			r = va_arg(p, RECT *);
 			wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 			break;
 		}
-		default:
-		{
-			parms = wind_get_nargs(field);
-	
-			for (i = 0; i < parms; i++)
-				parm[i] = va_arg(p, int *);
-			for (;i < 4;i++)
-				parm[i] = &dummy;
-	
-			wind_get(handle, field, parm[0], parm[1], parm[2], parm[3]);
-		}
 	}
-	va_end(p);
 }
 
 

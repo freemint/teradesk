@@ -21,12 +21,6 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <vdi.h>
-#include <mint.h>
 #include <library.h>
 #include <xdialog.h>
 
@@ -78,9 +72,9 @@ typedef struct
 	ITMTYPE item_type;		/* item type of the object to which this icon applies */
 	ITMTYPE tgt_type;		/* type of the target object if this obect is a link */
 	ICNUPDTYPE update;
-	boolean link;			/* true if the icon represents a symbolic link */
-	boolean selected;		/* true if icon is selected */
-	boolean newstate;		/* new selected/deselected state */
+	bool link;			/* true if the icon represents a symbolic link */
+	bool selected;		/* true if icon is selected */
+	bool newstate;		/* new selected/deselected state */
 } ICON;						/* Data for one desktop icon */
 
 
@@ -120,9 +114,8 @@ int
 INAME
 	iname;
 
-static void
-	**svicntree,
-	*svicnrshdr;
+static OBJECT **svicntree;
+static void *svicnrshdr;
 
 static ICON
 	*desk_icons;	/* An array of desktop ICONs */
@@ -141,10 +134,10 @@ static ITMTYPE
 	icd_itm_type, /* type of an item entered by name in the dialog */
 	icd_tgt_type;
 
-static boolean
+static bool
 	icd_islink;
 
-boolean
+bool
 	noicons = FALSE;
 
 
@@ -188,17 +181,17 @@ static WD_FUNC dsk_functions =
  */
 
 static int icn_find(WINDOW *w, int x, int y);
-static boolean icn_state(WINDOW *w, int icon);
+static bool icn_state(WINDOW *w, int icon);
 static ITMTYPE icn_type(WINDOW *w, int icon);
 static ITMTYPE icn_tgttype(WINDOW *w, int icon);
 static char *icn_name(WINDOW *w, int icon);
 static char *icn_fullname(WINDOW *w, int icon);
 static int icn_attrib(WINDOW *w, int icon, int mode, XATTR *attrib);
-static boolean icn_islink(WINDOW *w, int icon);
-static boolean icn_open(WINDOW *w, int item, int kstate);
-static boolean icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
-static boolean icn_userdef(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
-static void icn_select(WINDOW *w, int selected, int mode, boolean draw);
+static bool icn_islink(WINDOW *w, int icon);
+static bool icn_open(WINDOW *w, int item, int kstate);
+static bool icn_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, ICND *icns, int x, int y, int kstate);
+static bool icn_userdef(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
+static void icn_select(WINDOW *w, int selected, int mode, bool draw);
 static void icn_rselect(WINDOW *w, int x, int y);
 static void icn_nselected(WINDOW *w, int *n, int *sel);
 static ICND *icn_xlist(WINDOW *w, int *nselected, int *nvisible, int **sel_list, int mx, int my);
@@ -317,8 +310,8 @@ void put_newgrid(void)
 			if(icn->y > m_icny)
 				icn->y = m_icny;
 
-			deskto->r.x = icn->x * iconw + icn_xoff;
-			deskto->r.y = icn->y * iconh + icn_yoff;
+			deskto->ob_x = icn->x * iconw + icn_xoff;
+			deskto->ob_y = icn->y * iconh + icn_yoff;
 
 			redraw_icon(i, 2);	/* draw at new position */
 		}
@@ -335,7 +328,7 @@ void put_newgrid(void)
  * actually inquiring the item represented by the icon.
  */
 
-boolean isfile(ITMTYPE type)
+bool isfile(ITMTYPE type)
 {
 	if
 	(
@@ -354,7 +347,7 @@ boolean isfile(ITMTYPE type)
  * Similar to above, but includes network objects
  */
 
-static boolean isfilenet(ITMTYPE type)
+static bool isfilenet(ITMTYPE type)
 {
 	return (isfile(type) || type == ITM_NETOB);
 }
@@ -498,9 +491,9 @@ void draw_icrects( WINDOW *w, OBJECT *tree, RECT *r1)
 void redraw_desk(RECT *r1)
 {
 	int
-		owner;
+		owner = 0, dummy;
 
-	boolean
+	bool
 		redraw = TRUE;
 
 
@@ -512,7 +505,7 @@ void redraw_desk(RECT *r1)
 
 	if ( aes_version >= 0x399 )
 	{
-		xw_get(NULL, WF_OWNER, &owner);
+		wind_get(0, WF_OWNER, &owner, &dummy, &dummy, &dummy);
 
 		if (ap_id != owner)
 			redraw = FALSE;
@@ -655,8 +648,8 @@ static void dsk_drawsel(void)
 					if (c.y < r.y)					/* upper edge minimum */
 						r.y = c.y;
 
-					c.x += deskti->r.w - 1;
-					c.y += deskti->r.h - 1;
+					c.x += deskti->ob_width - 1;
+					c.y += deskti->ob_height - 1;
 
 					if (c.x > r.w)                	/* right edge maximum */
 						r.w = c.x;
@@ -753,7 +746,7 @@ static void rubber_box(int x, int y, RECT *r)
 	int
 		x1, x2, ox, y1, y2, oy, kstate;
 
-	boolean
+	bool
 		released;
 
 
@@ -801,7 +794,7 @@ static void rubber_box(int x, int y, RECT *r)
  * External consideration is needed for mode 4
  */
 
-void changestate(int mode, boolean *newstate, int i, int selected, boolean iselected, boolean iselected4)
+void changestate(int mode, bool *newstate, int i, int selected, bool iselected, bool iselected4)
 {
 	switch(mode)
 	{
@@ -837,12 +830,13 @@ void changestate(int mode, boolean *newstate, int i, int selected, boolean isele
  * Externe funkties voor iconen.
  */
 
-static void icn_select(WINDOW *w, int selected, int mode, boolean draw)
+static void icn_select(WINDOW *w, int selected, int mode, bool draw)
 {
 	int i;
 
 	ICON *icn = desk_icons;
 
+	(void)w;
 	/* Newstates after the switch below is equal to selection state of all icons */
 
 	for (i = 0; i < max_icons; i++)
@@ -884,6 +878,7 @@ static void icn_rselect(WINDOW *w, int x, int y)
 		i;
 
 
+	(void)w;
 	icn = desk_icons;
 
 	rubber_box(x, y, &r1);
@@ -896,10 +891,13 @@ static void icn_rselect(WINDOW *w, int x, int y)
 		{
 			monoblk = &(deskto->ob_spec.ciconblk->monoblk);
 
-			r2 = monoblk->ic;
+			r2.x = monoblk->ib_xicon;
+			r2.y = monoblk->ib_yicon;
+			r2.w = monoblk->ib_wicon;
+			r2.h = monoblk->ib_hicon;
 
-			ox = desktop[0].r.x + deskto->r.x;
-			oy = desktop[0].r.y + deskto->r.y;
+			ox = desktop[0].ob_x + deskto->ob_x;
+			oy = desktop[0].ob_y + deskto->ob_y;
 			r2.x += ox;
 			r2.y += oy;
 
@@ -907,7 +905,10 @@ static void icn_rselect(WINDOW *w, int x, int y)
 				icn->newstate = !(icn->selected);
 			else
 			{
-				r2 = monoblk->tx;
+				r2.x = monoblk->ib_xtext;
+				r2.y = monoblk->ib_ytext;
+				r2.w = monoblk->ib_wtext;
+				r2.h = monoblk->ib_htext;
 				r2.x += ox;
 				r2.y += oy;
 
@@ -930,7 +931,7 @@ static void icn_rselect(WINDOW *w, int x, int y)
  * Check if a desktop icon is used and selected
  */
 
-boolean dsk_isselected(int i)
+bool dsk_isselected(int i)
 {
 	return ((desk_icons[i].item_type != ITM_NOTUSED) && desk_icons[i].selected );
 }
@@ -947,6 +948,7 @@ static void icn_nselected(WINDOW *w, int *n, int *sel)
 		s,
 		c = 0;
 
+	(void)w;
 	for (i = 0; i < max_icons; i++)
 	{
 		if(dsk_isselected(i))
@@ -966,8 +968,9 @@ static void icn_nselected(WINDOW *w, int *n, int *sel)
  * but must exist because these are ITMFUNCs
  */
 
-static boolean icn_state(WINDOW *w, int icon)
+static bool icn_state(WINDOW *w, int icon)
 {
+	(void)w;
 	return desk_icons[icon].selected;
 }
 
@@ -978,6 +981,7 @@ static boolean icn_state(WINDOW *w, int icon)
 
 static ITMTYPE icn_type(WINDOW *w, int icon)
 {
+	(void)w;
 	return desk_icons[icon].item_type;
 }
 
@@ -988,6 +992,7 @@ static ITMTYPE icn_type(WINDOW *w, int icon)
 
 static ITMTYPE icn_tgttype(WINDOW *w, int icon)
 {
+	(void)w;
 	return desk_icons[icon].tgt_type;
 }
 
@@ -1007,6 +1012,7 @@ static char *icn_name(WINDOW *w, int icon)
 
 	static char name[20];
 
+	(void)w;
 	if (isfile(icn->item_type))
 	{
 		/* this is a file, folder, program or link- treat as a file(name) */
@@ -1077,6 +1083,7 @@ static char *icn_fullname(WINDOW *w, int icon)
 		*s = NULL;
 
 
+	(void)w;
 	if (icn->item_type == ITM_DRIVE)
 	{
 		if ((s = strdup(adrive)) != NULL)
@@ -1098,6 +1105,7 @@ static int icn_attrib(WINDOW *w, int icon, int mode, XATTR *attr)
 	ICON *icn = &desk_icons[icon];
 
 
+	(void)w;
 	if (isfile(icn->item_type))
 		return (int)x_attr(mode, FS_INQ, icn->icon_dat.name, attr);
 
@@ -1109,11 +1117,13 @@ static int icn_attrib(WINDOW *w, int icon, int mode, XATTR *attr)
  * Does a desktop icon represent a link?
  */
 
-static boolean icn_islink(WINDOW *w, int icon)
+static bool icn_islink(WINDOW *w, int icon)
 {
+	(void)w;
 #if _MINT_
 	return desk_icons[icon].link;
 #else
+	(void)icon;
 	return FALSE;
 #endif
 }
@@ -1171,20 +1181,21 @@ static void get_icnd(int object, ICND *icnd, int mx, int my)
 
 	h = &(desktopobj->ob_spec.ciconblk->monoblk);
 
-	dx = desktopobj->r.x - mx + xd_desk.x;
-	dy = desktopobj->r.y - my + xd_desk.y;
+	dx = desktopobj->ob_x - mx + xd_desk.x;
+	dy = desktopobj->ob_y - my + xd_desk.y;
 
-	tr.x = dx + h->tx.x;
-	tr.y = dy + h->tx.y;
-	tr.w = h->tx.w - 1;
-	tr.h = h->tx.h - 1;
-	ir.x = dx + h->ic.x;
-	ir.y = dy + h->ic.y;
-	ir.w = h->ic.w - 1;
+	tr.x = dx + h->ib_xtext;
+	tr.y = dy + h->ib_ytext;
+	tr.w = h->ib_wtext - 1;
+	tr.h = h->ib_htext - 1;
+	ir.x = dx + h->ib_xicon;
+	ir.y = dy + h->ib_yicon;
+	ir.w = h->ib_wicon - 1;
+	ir.h = h->ib_hicon - 1;
 
 	icnd->item = object;
-	icnd->m_x = dx + desktopobj->r.w / 2;
-	icnd->m_y = dy + desktopobj->r.h / 2;
+	icnd->m_x = dx + desktopobj->ob_width / 2;
+	icnd->m_y = dy + desktopobj->ob_height / 2;
 
 	icn_coords(icnd, &tr, &ir);
 }
@@ -1207,6 +1218,7 @@ static int *icn_list(WINDOW *w, int *nselected)
 		n = 0;		/* item count */
 
 
+	(void)w;
 	/* First count the selected items */
 
 	for (i = 0; i < max_icons; i++)
@@ -1260,6 +1272,7 @@ static ICND *icn_xlist(WINDOW *w, int *nsel, int *nvis, int **sel_list, int mx, 
 		n;
 
 
+	(void)w;
 	if ((*sel_list = icn_list(desk_window, nsel)) != NULL)
 	{
 		n = *nsel;
@@ -1319,6 +1332,7 @@ static int icn_find(WINDOW *w, int x, int y)
 		object = -1;
 
 
+	(void)w;
 	objc_offset(desktop, 0, &ox, &oy);
 
 	if ((i = desktop[0].ob_head) == -1)
@@ -1334,11 +1348,14 @@ static int icn_find(WINDOW *w, int x, int y)
 
 			/* first look at the icon rectangle */
 
-			ox2 = ox + de->r.x;
-			oy2 = oy + de->r.y;
+			ox2 = ox + de->ob_x;
+			oy2 = oy + de->ob_y;
 			p = &(de->ob_spec.ciconblk->monoblk);
 
-			h = (p->ic);
+			h.x = p->ib_xicon;
+			h.y = p->ib_yicon;
+			h.w = p->ib_wicon;
+			h.h = p->ib_hicon;
 			h.x += ox2;
 			h.y += oy2;
 
@@ -1348,7 +1365,10 @@ static int icn_find(WINDOW *w, int x, int y)
 			{
 				/* then look at icon label rectangle */
 
-				h = (p->tx);
+				h.x = p->ib_xtext;
+				h.y = p->ib_ytext;
+				h.w = p->ib_wtext;
+				h.h = p->ib_htext;
 				h.x += ox2;
 				h.y += oy2;
 
@@ -1374,7 +1394,7 @@ static int icn_find(WINDOW *w, int x, int y)
  * Remove a desktop icon
  */
 
-void remove_icon(int object, boolean draw)
+void remove_icon(int object, bool draw)
 {
 	ITMTYPE type = icn_type(desk_window, object);
 
@@ -1430,6 +1450,7 @@ static void icn_set_update(WINDOW *w, wd_upd_type type, const char *fname1, cons
 		i;
 
 
+	(void)w;
 	for (i = 0; i < max_icons; i++)
 	{
 		if (isfilenet(icn->item_type))
@@ -1494,6 +1515,7 @@ static void dsk_do_update(void)
 
 static void icn_do_update(WINDOW *w)
 {
+	(void)w;
 	dsk_do_update();
 }
 
@@ -1508,7 +1530,7 @@ static void icn_do_update(WINDOW *w)
  * Open an object represented by a desktop icon
  */
 
-static boolean icn_open(WINDOW *w, int item, int kstate)
+static bool icn_open(WINDOW *w, int item, int kstate)
 {
 	ICON
 		*icn = &desk_icons[item];
@@ -1738,8 +1760,8 @@ void init_obj(OBJECT *obj, int otype)
 	obj->ob_flags = NONE;
 	obj->ob_state = NORMAL;
 	obj->ob_type = otype;
-	obj->r.w = iconw; 
-	obj->r.h = iconh; 
+	obj->ob_width = iconw; 
+	obj->ob_height = iconh; 
 }
 
 
@@ -1749,8 +1771,8 @@ void init_obj(OBJECT *obj, int otype)
  * Note2: see similar object-setting code in set_obji() in windows.c
  */
 
-static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const char *text,
-                    int ch, int x, int y, boolean draw, const char *fname)
+static int add_icon(ITMTYPE type, ITMTYPE tgttype, bool link, int icon, const char *text,
+                    int ch, int x, int y, bool draw, const char *fname)
 {
 	ICON
 		*icn;
@@ -1822,12 +1844,12 @@ static int add_icon(ITMTYPE type, ITMTYPE tgttype, boolean link, int icon, const
 				(
 					isfile(type) &&
 					x_attr(1, FS_INQ, fname, &attr) >= 0 &&
-					((attr.attr & FA_HIDDEN) != 0 )
+					((attr.st_attr & FA_HIDDEN) != 0 )
 				)
 					deskto->ob_state |= DISABLED;
 
-				deskto->r.x = ix * iconw + icn_xoff;
-				deskto->r.y = iy * iconh + icn_yoff;
+				deskto->ob_x = ix * iconw + icn_xoff;
+				deskto->ob_y = iy * iconh + icn_yoff;
 				deskto->ob_spec.ciconblk = h;
 				*h = *icons[icon_no].ob_spec.ciconblk;
 
@@ -2028,7 +2050,7 @@ void icn_sl_init(int line, SLIDER *sl)
 }
 
 
-void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
+void set_iselector(SLIDER *slider, bool draw, XDINFO *info)
 {
 	OBJECT
 		*h1,
@@ -2040,11 +2062,11 @@ void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
 
 	/* Center the icon image in the background box */
 
-	h1->r.x = (addicon[ICONBACK].r.w - ic->r.w ) / 2;
-	h1->r.y = (addicon[ICONBACK].r.h - ic->r.h ) / 2;
+	h1->ob_x = (addicon[ICONBACK].ob_width - ic->ob_width ) / 2;
+	h1->ob_y = (addicon[ICONBACK].ob_height - ic->ob_height ) / 2;
 
-	h1->r.w = ic->r.w;
-	h1->r.h = ic->r.h;
+	h1->ob_width = ic->ob_width;
+	h1->ob_height = ic->ob_height;
 
 	/*
 	 * In low resolutions, move the icon object up for a little bit,
@@ -2052,7 +2074,7 @@ void set_iselector(SLIDER *slider, boolean draw, XDINFO *info)
 	 */
 
 	if(xd_desk.h < 300)
-		h1->r.y -= 8;
+		h1->ob_y -= 8;
 
 	if (draw)
 		xd_draw(info, ICONBACK, 1);
@@ -2074,7 +2096,7 @@ int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpatt, int bck
 		rdro = ROOT,
 		button;
 
-	boolean
+	bool
 		again = FALSE;
 
 	static const char
@@ -2251,7 +2273,7 @@ void dsk_insticon(WINDOW *w, int n, int *list)
 		if(n > 0)
 		{
 			ITMTYPE ttype;
-			boolean link;
+			bool link;
 
 			if(*list < 0)
 				break;
@@ -2529,8 +2551,8 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
 
 		desk_icons[obj].x = x;
 		desk_icons[obj].y = y;
-		desktop[obj + 1].r.x = x * iconw + icn_xoff; 
-		desktop[obj + 1].r.y = y * iconh + icn_yoff;
+		desktop[obj + 1].ob_x = x * iconw + icn_xoff; 
+		desktop[obj + 1].ob_y = y * iconh + icn_yoff;
 
 		redraw_icon(obj, 2); /* draw icon */
 
@@ -2544,7 +2566,7 @@ static void mv_icons(ICND *icns, int n, int mx, int my)
  * or manipulate desktop icons in other ways.
  */
 
-static boolean icn_copy
+static bool icn_copy
 (
 	WINDOW *dw,		/* pointer to destination window */
 	int dobject,	/* destination object index */
@@ -2616,7 +2638,7 @@ static boolean icn_copy
 			int item, ix, iy, icon;
 			ITMTYPE type, ttype;
 			INAME tolabel;
-			boolean link;
+			bool link;
 			const char *fname, *nameonly;
 
 			comp_icnxy(x, y, &ix, &iy);
@@ -2756,7 +2778,7 @@ extern void clean_up(void);
 
 void regen_desktop(OBJECT *desk_tree)
 {
-	wind_set(0, WF_NEWDESK, desk_tree, 0);
+	wind_set_ptr(0, WF_NEWDESK, desk_tree, 0);
 	dsk_draw();
 
 	if(desk_tree)
@@ -2934,11 +2956,10 @@ CfgNest dsk_config
  * Use standard functions of the AES
  */
 
-boolean load_icons(void)
+bool load_icons(void)
 {
-	void
-		**svtree = _GemParBlk.glob.ptree,
-		*svrshdr = _GemParBlk.glob.rshdr;
+	OBJECT **svtree = _AESrscfile;
+	void *svrshdr = _AESrscmem;
 
 
 	/*
@@ -2966,8 +2987,8 @@ boolean load_icons(void)
 		int i = 0;
 
 		rsrc_gaddr(R_TREE, 0, &icons);		/* That's all you need. */
-		svicntree = _GemParBlk.glob.ptree;
-		svicnrshdr = _GemParBlk.glob.rshdr;
+		svicntree = _AESrscfile;
+		svicnrshdr = _AESrscmem;
 		n_icons = 0;
 		icons++;
 
@@ -2978,8 +2999,8 @@ boolean load_icons(void)
 		while ( (icons[i++].ob_flags&LASTOB) == 0 );
 	}
 
-	_GemParBlk.glob.ptree = svtree;
-	_GemParBlk.glob.rshdr = svrshdr;
+	_AESrscfile = svtree;
+	_AESrscmem = svrshdr;
 
 	return TRUE;
 }
@@ -2987,17 +3008,16 @@ boolean load_icons(void)
 
 void free_icons(void)
 {
-	void
-		**svtree = _GemParBlk.glob.ptree,
-		*svrshdr = _GemParBlk.glob.rshdr;
+	OBJECT **svtree = _AESrscfile;
+	void *svrshdr = _AESrscmem;
 
-	_GemParBlk.glob.ptree = svicntree;
-	_GemParBlk.glob.rshdr = svicnrshdr;
+	_AESrscfile = svicntree;
+	_AESrscmem = svicnrshdr;
 
 	rsrc_free();
 
-	_GemParBlk.glob.ptree = svtree;
-	_GemParBlk.glob.rshdr = svrshdr;
+	_AESrscfile = svtree;
+	_AESrscmem = svrshdr;
 }
 
 
@@ -3006,7 +3026,7 @@ void free_icons(void)
  * Return FALSE in case of error.
  */
 
-boolean dsk_init(void)
+bool dsk_init(void)
 {
 	int
 		i,
@@ -3045,7 +3065,11 @@ boolean dsk_init(void)
 			obsp0->fillpattern = dsk_defaultpatt();
 			obsp0->interiorcol = GREEN;
 
-			desktop[0].r = xd_desk; /* override size set in init_obj() */
+			/* override size set in init_obj() */
+			desktop[0].ob_x = xd_desk.x;
+			desktop[0].ob_y = xd_desk.y;
+			desktop[0].ob_width = xd_desk.w;
+			desktop[0].ob_height = xd_desk.h;
 
 			/* Mark all icon slots as unused */
 
@@ -3090,7 +3114,7 @@ static void dsk_diskicons(int *x, int *y, int ic, char *iname)
 		i,
 		j;
 
-	boolean
+	bool
 		have;
 
 
@@ -3200,7 +3224,7 @@ void dsk_default(void)
  * without opening the dialog, if dialog == FALSE.
  */
 
-void dsk_chngicon(int n, int *list, boolean dialog)
+void dsk_chngicon(int n, int *list, bool dialog)
 {
 	int
 		*ilist = list,
@@ -3304,7 +3328,7 @@ void dsk_options(void)
 		wpattern,
 		button = 0;
 
-	boolean
+	bool
 		ok = FALSE,
 		icn_rearr = FALSE,
 		stop = FALSE,

@@ -52,7 +52,7 @@ extern int
 	opattr,
 	tos_version;
 
-extern boolean
+extern bool
 	cfdial_open,
 	rename_files;
 /*	06'11 HR: needs tos.h (__syscall__)
@@ -62,15 +62,15 @@ unsigned int Tgetdate(void);	/* from tos.h */
 void add_size(LSUM *nbytes, long fsize);
 void sub_size(LSUM *nbytes, long fsize);
 void size_sum(long *total, LSUM *bytes);
-int cnt_items(const char *path, long *folders, long *files, LSUM *bytes, int attrib, boolean search);
+int cnt_items(const char *path, long *folders, long *files, LSUM *bytes, int attrib, bool search);
 void check_opabort (int *result);
-boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
+bool item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
 int open_cfdialog(long folders, long files, LSUM *bytes, int function);
 void close_cfdialog(int button);
 void upd_copyinfo(long folders, long files, LSUM *bytes);
 void upd_copyname(const char *dest, const char *path, const char *name);
 int copy_error(int error, const char *name, int function);
-boolean itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
-boolean itmlist_wop(WINDOW *w, int n, int *list, int function);
-int touch_file( const char *fullname, DOSTIME *time, XATTR *attr, boolean link);
+bool itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
+bool itmlist_wop(WINDOW *w, int n, int *list, int function);
+int touch_file( const char *fullname, _DOSTIME *time, XATTR *attr, bool link);
 int frename(const char *oldfname, const char *newfname, XATTR *attr);

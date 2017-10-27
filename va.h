@@ -75,21 +75,21 @@ typedef struct
 
 typedef struct
 {
-	boolean flag;
+	bool flag;
 	RECT size;
 } AVSETW;
 
 CfgNest va_config;
 
 extern AVSETW avsetw;
-extern boolean va_reply;
+extern bool va_reply;
 extern AVTYPE *avclients;
 extern int av_current;
 extern const char *thisapp;
 
 void va_init(void);
 WINDOW *va_accw(void);
-void va_delall(int ap_id, boolean force);
+void va_delall(int ap_id, bool force);
 void rem_all_avstat(void);
 
 #if __USE_MACROS
@@ -106,8 +106,8 @@ void va_close(WINDOW *w);
 void handle_av_protocol(const int *message);
 int va_start_prg(const char *program, ApplType type, const char *cmdline);
 AVTYPE *va_findclient(int ap_id);
-boolean va_add_name(int type, const char *name );
-boolean va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
-boolean va_fontreply(int messid, int dest_ap_id);
-boolean va_pathupdate(WINDOW *w);
+bool va_add_name(int type, const char *name );
+bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
+bool va_fontreply(int messid, int dest_ap_id);
+bool va_pathupdate(WINDOW *w);
 void va_checkclient(void);

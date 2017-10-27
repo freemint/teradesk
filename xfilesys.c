@@ -21,14 +21,9 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <tos.h>
 #include <library.h>
-#include <mint.h>
-#include <vdi.h>
 #include <xdialog.h>
+#include <sys/stat.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -47,14 +42,12 @@
 
 #define _CHECK_RWMODE 0
 
-long Dgetcwd(char *path, short drive, short size); /* int changed to short for V4.04 to mach mint.h */
-
-static boolean flock;
+static bool flock;
 extern int tos_version, aes_version;
 extern const char *presets[];
-extern boolean va_reply;
+extern bool va_reply;
 
-extern boolean prg_isprogram(const char *name);
+extern bool prg_isprogram(const char *name);
 
 
 /* 
@@ -142,7 +135,7 @@ char *x_makepath(const char *path, const char *name, int *error)
  * otherwise follow the link and check for target existence. 
  */
 
-boolean x_exist(const char *file, int flags)
+bool x_exist(const char *file, int flags)
 {
 	XATTR
 		attr;
@@ -164,7 +157,7 @@ boolean x_exist(const char *file, int flags)
 	}
 	else
 	{
-		itype = attr.mode & S_IFMT;
+		itype = attr.st_mode & S_IFMT;
 
 		switch(itype)
 		{
@@ -201,7 +194,7 @@ boolean x_exist(const char *file, int flags)
  * take care to change loop exit count below.
  */
 
-boolean x_netob(const char *name)
+bool x_netob(const char *name)
 {
 	int
 		i;
@@ -324,7 +317,7 @@ static int _fullname(char *buffer)
 		error = 0,
 		drive = 0;
 
-	boolean
+	bool
 		d = isdisk(buffer);
 
 
@@ -733,12 +726,12 @@ int x_fattrib
 	hasuid = ((x_inq_xfs(file) & FS_UID) != 0);
 #endif
 
-	mask = (FA_READONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE);
+	mask = (FA_RDONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE);
 
-	if((attr->mode & S_IFMT) == S_IFDIR)
+	if((attr->st_mode & S_IFMT) == S_IFDIR)
 		mask |= FA_SUBDIR;
 
-	error = xerror((int)Fattrib(file, 1, (attr->attr & mask) ));
+	error = xerror((int)Fattrib(file, 1, (attr->st_attr & mask) ));
 
 #if _MINT_
 
@@ -747,11 +740,11 @@ int x_fattrib
 
 	if(mint)
 	{
-		mode = attr->mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
+		mode = attr->st_mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
 
 		/* Quietly fail on folders if necessary in Mint (why?) */
 
-		if(!magx && (attr->mode & S_IFMT) == S_IFDIR && error == EFILNF)
+		if(!magx && (attr->st_mode & S_IFMT) == S_IFDIR && error == EFILNF)
 			error = 0;
 
 		/* Set access rights and owner IDs if possible */
@@ -760,7 +753,7 @@ int x_fattrib
 		{
 			/* Don't use Fchmod() on links; target will be modified! */
 
-			if ( (attr->mode & S_IFLNK) != S_IFLNK ) 
+			if ( (attr->st_mode & S_IFLNK) != S_IFLNK ) 
 				error = xerror( (int)Fchmod((char *)file, mode) );
 
 			/* 
@@ -771,7 +764,7 @@ int x_fattrib
 			 */
 
 			if ( error >= 0 )
-				error = xerror( (int)Fchown((char *)file, attr->uid, attr->gid) );
+				error = xerror( (int)Fchown((char *)file, attr->st_uid, attr->st_gid) );
 				
 			if(error == EACCDN)
 			{
@@ -809,7 +802,7 @@ int x_datime(DOSTIME *time, int handle, int wflag)
 int x_open(const char *file, int mode)
 {
 	if (!flock)
-		mode &= O_RWMODE;
+		mode &= O_ACCMODE;
 
 	return (int)x_retresult(Fopen(file, mode));
 }
@@ -821,7 +814,7 @@ int x_open(const char *file, int mode)
 
 int x_create(const char *file, XATTR *attr)
 {
-	int error = (int)x_retresult(Fcreate(file, (attr) ? attr->attr : 0));
+	int error = (int)x_retresult(Fcreate(file, (attr) ? attr->st_attr : 0));
 
 #if _MINT_
 	if (mint && (error >= 0) && attr)
@@ -894,24 +887,24 @@ long x_seek(long offset, int handle, int seekmode)
 
 static void dta_to_xattr(DTA *dta, XATTR *attrib)
 {
-	attrib->mode = 	(S_IRUSR | S_IRGRP | S_IROTH); 	/* everything is readonly */
+	attrib->st_mode = 	(S_IRUSR | S_IRGRP | S_IROTH); 	/* everything is readonly */
 
-	if ((dta->d_attrib & FA_READONLY) == 0)			/* can write as well */
-		attrib->mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
+	if ((dta->d_attrib & FA_RDONLY) == 0)			/* can write as well */
+		attrib->st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
 
 	if (dta->d_attrib & FA_SUBDIR)
-		attrib->mode |= (S_IFDIR | EXEC_MODE );
+		attrib->st_mode |= (S_IFDIR | EXEC_MODE );
 	else if (!(dta->d_attrib & FA_VOLUME))
-		attrib->mode |= S_IFREG;
+		attrib->st_mode |= S_IFREG;
 
-	attrib->size = dta->d_length;
+	attrib->st_size = dta->d_length;
 #if _MINT_
-	attrib->uid = 0;
-	attrib->gid = 0;
+	attrib->st_uid = 0;
+	attrib->st_gid = 0;
 #endif
-	attrib->mtime = attrib->atime = attrib->ctime = dta->d_time;
-	attrib->mdate = attrib->adate = attrib->cdate = dta->d_date;
-	attrib->attr = (int)dta->d_attrib & 0xFF;
+	dos_mtime(attrib) = dos_atime(attrib) = dos_ctime(attrib) = dta->d_time;
+	dos_mdate(attrib) = dos_adate(attrib) = dos_cdate(attrib) = dta->d_date;
+	attrib->st_attr = (int)dta->d_attrib & 0xFF;
 }
 
 
@@ -946,14 +939,13 @@ int x_inq_xfs(const char *path)
 		n = Dpathconf(path, DP_NAMEMAX);/* 3: maximum name length */
 		t = Dpathconf(path, DP_TRUNC);	/* 5: name truncation */
 		c = Dpathconf(path, DP_CASE); 	/* 6: case-sensitive names? */
-		m = Dpathconf(path, DP_MODE);	/* 7: valid mode bits */
-		x = Dpathconf(path, DP_XATT);	/* 8: valid XATTR fields */
+		m = Dpathconf(path, DP_MODEATTR);	/* 7: valid mode bits */
+		x = Dpathconf(path, DP_XATTRFIELDS);	/* 8: valid XATTR fields */
 
 		/* 
 		 * If information can not be returned, results will be < 0, then
 		 * treat as if there are no fields set.
 		 */
-
 		if ( m < 0 )
 			m = 0;
 
@@ -961,13 +953,13 @@ int x_inq_xfs(const char *path)
 			x = 0;
 
 		if (c < 0 )
-			c = 0;
+			c = DP_CASEINSENS;
 
 		if ( t < 0 )
-			t = 0;
+			t = DP_NOTRUNC;
 
 		if ( n < 0 )
-			n = 255;
+			n = 12;
 
 		/* 
 		 * If (m & 0x1FF00), nine access rights bits are valid mode fields
@@ -982,19 +974,20 @@ int x_inq_xfs(const char *path)
 		 * DP_DOSTRUNC = 2 = file names truncated to 8+3
 		 */
 
-		if(c !=  DP_NOSENSITIVE)
+		if(c != DP_CASEINSENS)
 		{
 			retcode |= FS_CSE;
-
-			if(t != DP_DOSTRUNC && n > 12)
-				retcode |= FS_LFN;
 		}
+		if(t != DP_DOSTRUNC && n > 12)
+			retcode |= FS_LFN;
 
 		/* Are link itemtypes valid ?  */
 
-		if ( (m & 0x01000000L) != 0 )
+		if ( (m & DP_FT_LNK) != 0 )
 			retcode |= FS_LNK;
 	}
+#else
+	(void) path;
 #endif
 
 	return retcode;
@@ -1127,7 +1120,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 		long error, rep;
 		char *n;
 
-		if ((error = Dxreaddir(len, dir->data.handle, fspec, (long)attrib, &rep)) == 0)
+		if ((error = Dxreaddir((int)len, dir->data.handle, fspec, attrib, &rep)) == 0)
 			*buffer = fspec + 4L;
 
 		/* By convention, names beginning with '.' are invisible in mint */
@@ -1135,7 +1128,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 		n = fn_get_name(*buffer);
 
 		if ( n[0] == '.' && n[1] != '.' )
-			attrib->attr |= FA_HIDDEN;
+			attrib->st_attr |= FA_HIDDEN;
 
 		result = x_retresult(error);
 	}
@@ -1149,13 +1142,15 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 	{
 		/* If names are not case-sensitive, use uppercase only */
 
+#if 0 /* FIXME: need to distinguish case-sensitive/case-preserving */
 		if((dir->type & FS_CSE) == 0) /* no need to waste time otherwise */
 			strupr(*buffer);
+#endif
 
 		/* If access rights are not supported, don't set them */
 
 		if((dir->type & FS_UID) == 0)
-			attrib->mode &= ~EXEC_MODE;
+			attrib->st_mode &= ~EXEC_MODE;
 	}
 
 #endif /* _MINT_ */
@@ -1218,7 +1213,7 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 	if ( (fs_type & FS_INQ) != 0 )
 		fs_type |= x_inq_xfs(name); /* this change is local only */
 
-	xattr->mode = 0;	/* clear any existing value, see below about Fxattr() */ 
+	xattr->st_mode = 0;	/* clear any existing value, see below about Fxattr() */ 
 
 #if _MINT_
 	if (mint && ((fs_type & FS_ANY) != 0) )
@@ -1240,17 +1235,17 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		(
 			(result >= 0 ) &&
 			((fs_type & FS_UID) != 0) &&
-			((xattr->mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0)
+			((xattr->st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0)
 		)
 		{
-			if((xattr->mode & S_IFMT)  != S_IFLNK)
-				xattr->attr |= FA_READONLY;
+			if((xattr->st_mode & S_IFMT)  != S_IFLNK)
+				xattr->st_attr |= FA_RDONLY;
 			else
-				xattr->attr &= ~FA_READONLY;
+				xattr->st_attr &= ~FA_RDONLY;
 		}
 
 		if( name[0] == '.' && name[1] != '.' )
-			xattr->attr |= FA_HIDDEN;			
+			xattr->st_attr |= FA_HIDDEN;			
 	}
 	else
 #endif
@@ -1277,12 +1272,12 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		 * therefore, (re)set xattr->mode again below
 		 */
 
-		xattr->mode &= ~DEFAULT_DIRMODE;
+		xattr->st_mode &= ~DEFAULT_DIRMODE;
 
-		xattr->mode |= (S_IRUSR | S_IRGRP | S_IROTH);
+		xattr->st_mode |= (S_IRUSR | S_IRGRP | S_IROTH);
 
-		if ((xattr->attr & FA_READONLY) == 0 )
-			xattr->mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
+		if ((xattr->st_attr & FA_RDONLY) == 0 )
+			xattr->st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
 
 		/* 
 		 * Information about execute rights need not be always
@@ -1294,8 +1289,10 @@ long x_attr(int flag, int fs_type, const char *name, XATTR *xattr)
 		 */
 
 		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(fn_get_name(name)))
-			xattr->mode |= EXEC_MODE; 
+			xattr->st_mode |= EXEC_MODE; 
 	}
+#else
+	(void) flag;
 #endif
 
 	return result;
@@ -1346,10 +1343,12 @@ long x_pathconf(const char *path, int which)
 #if _MINT_
 	if (mint)
 		return x_retresult(Dpathconf(path, which));
+#else
+	(void) path;
 #endif
 
 	if (which == DP_PATHMAX)
-		 return PATH_MAX;			/* = 128 in TOS */
+		 return 128;			/* = 128 in TOS */
 	else if (which == DP_NAMEMAX)
 		return 12;					/* 8 + 3 in TOS */
 
@@ -1537,7 +1536,7 @@ XFILE *x_fopen(const char *file, int mode, int *error)
 		*xfile;
 
 	int 
-		rwmode = mode & O_RWMODE;
+		rwmode = mode & O_ACCMODE;
 
 
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
@@ -1632,7 +1631,7 @@ int x_fclose(XFILE *file)
 {
 	int
 		error,
-		rwmode = file->mode & O_RWMODE;
+		rwmode = file->mode & O_ACCMODE;
 
 
 	if (file->memfile)
@@ -1763,7 +1762,7 @@ long x_fread(XFILE *file, void *ptr, long length)
  * e.g. allocate 256 bytes.
  */
 
-#define MRECL 256L
+#define MRECL 256
 
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
@@ -1822,7 +1821,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 					return ENSMEM;	
 
 				dest = file->buffer = new;
-				file->bufsize += (long)MRECL;
+				file->bufsize += MRECL;
 			}
 
 			/* Now write till the end of input */
@@ -1896,7 +1895,7 @@ int x_fgets(XFILE *file, char *string, int n)
 		write,
 		error;
 
-	boolean
+	bool
 		ready = FALSE;
 
 
@@ -1987,7 +1986,7 @@ int x_fgets(XFILE *file, char *string, int n)
  * Return TRUE if end-of-file has been reached
  */
 
-boolean x_feof(XFILE *file)
+bool x_feof(XFILE *file)
 {
 	return ((file->eof) && (file->read == file->write)) ? TRUE : FALSE;
 }

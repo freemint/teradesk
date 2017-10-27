@@ -199,8 +199,6 @@ btst.s
 
 library\ahcm\ahcm.prj
 library\xdialog\xdialog.prj
-library\multitos\multitos.prj
-library\mint\mintlib.prj
 library\utility\library.prj
 
 

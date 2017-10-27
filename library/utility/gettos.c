@@ -21,11 +21,11 @@
  */
 
 
-#include <tos.h>
-#include <np_aes.h>
-#include <system.h>
-#include <stddef.h>
-#include <boolean.h>
+#include <library.h>
+#include <mint/sysvars.h>
+
+#undef _sysbase
+#define _sysbase     ( * ( (OSHEADER **) 0x4F2L ) )
 
 /*
  * Return TOS version to be read as a hex number,
@@ -51,10 +51,6 @@ int get_tosversion( void )
 
 int get_aesversion(void)
 {
-#ifdef __PUREC__
-	return _GemParBlk.glob.version;
-#else
-	return _global[0];
-#endif
+	return _AESversion;
 }
 

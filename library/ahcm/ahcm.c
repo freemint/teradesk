@@ -46,19 +46,24 @@ typedef struct record
 	char data[0];
 } REC;
 
-XA_memory XA_heap_base = {nil, nil, nil, 8192, 13, 0, 0};		/* mode 3 is pref TT-ram */
+XA_memory XA_heap_base = {NULL, NULL, NULL, 8192, 13, 0, 0};		/* mode 3 is pref TT-ram */
 /*                                       ^^^^
  * If you've made a type error           here,
  *   AHCM will nicely round it up for you :-)
  */
-XA_memory XA_local_base = {nil, nil, nil, 8192, 13, 0, 0};
+XA_memory XA_local_base = {NULL, NULL, NULL, 8192, 13, 0, 0};
 
-XA_memory XA_file_base = {nil, nil, nil, 16384, 13, 0, 0};
+XA_memory XA_file_base = {NULL, NULL, NULL, 16384, 13, 0, 0};
 
 static
 void *new_block(XA_memory *base, long size, bool svcur)
 {
-	XA_block *new, *last, *first;
+	XA_block *new;
+#if IFIRST
+	XA_block *first;
+#else
+	XA_block *last;
+#endif
 
 	if (base->mode)
 		new = Mxalloc(size, base->mode);
@@ -75,7 +80,7 @@ void *new_block(XA_memory *base, long size, bool svcur)
 		{
 			first->prior = new;
 			base->first = new;
-			new->prior = nil;
+			new->prior = NULL;
 			new->next = first;
 #else
 		last = base->last;
@@ -83,17 +88,17 @@ void *new_block(XA_memory *base, long size, bool svcur)
 		{
 			last->next = new;
 			base->last = new;
-			new->next = nil;
+			new->next = NULL;
 			new->prior = last;
 #endif
-		othw
+		} else {
 			base->last = base->first = new;
-			new->next = new->prior = nil;
+			new->next = new->prior = NULL;
 		}
-		new->used.first = new->used.last = new->used.cur = nil;
+		new->used.first = new->used.last = new->used.cur = NULL;
 		fr = new->area;
 		new->free.first = new->free.last = new->free.cur = fr;
-		fr->next = fr->prior = nil;
+		fr->next = fr->prior = NULL;
 		fr->size = size - blockprefix;
 		new->size = size;
 		if (svcur)
@@ -162,7 +167,7 @@ XA_block *find_free(XA_memory *base, long s)
 		}
 		blk = blk->next;
 	}
-	return nil;
+	return NULL;
 }
 
 /* Option LARGE:
@@ -221,11 +226,11 @@ static
 void insfirst(XA_list *list, XA_unit *this)
 {
 	list->cur = this;
-	this->prior = nil;
+	this->prior = NULL;
 	this->next = list->first;
 	if (list->first)
 		list->first->prior = this;
-	else							/* if last is nil, first also nil */
+	else							/* if last is NULL, first also NULL */
 		list->last = this;
 	list->first = this;
 }
@@ -246,11 +251,11 @@ static
 void inslast(XA_list *list, XA_unit *this)
 {
 	list->cur = this;
-	this->next = nil;
+	this->next = NULL;
 	this->prior = list->last;
 	if (list->last)
 		list->last->next = this;
-	else							/* if first is nil, last also nil */
+	else							/* if first is NULL, last also NULL */
 		list->first = this;
 	list->last = this;
 }
@@ -273,7 +278,7 @@ void amalgam(XA_list *list, XA_unit *this)
 	if (this->next)
 	{
 		XA_unit *next = this->next;
-		if ((long) this + this->size eq (long) next)
+		if ((long) this + this->size == (long) next)
 		{
 			this->size += next->size;
 			next = next->next;
@@ -300,14 +305,14 @@ void sortins(XA_list *list, XA_unit *this)
 	else
 	if (have->area < this->area)
 	{
-		while (have and have->area < this->area)
+		while (have && have->area < this->area)
 			have = have->next;
 		if (!have)
 			inslast(list, this);
 		else
 			insbefore(list, this, have);
-	othw
-		while (have and have->area > this->area)
+	} else {
+		while (have && have->area > this->area)
 			have = have->prior;
 		if (!have)
 			insfirst(list, this);
@@ -350,13 +355,13 @@ bool in_list(XA_list *list, void *area)
 	XA_unit *at;
 
 	if (list->cur)
-		if (list->cur->area eq area)
+		if (list->cur->area == area)
 			return true;
 
 	at = list->first;
 	while (at)
 	{
-		if (at->area eq area)
+		if (at->area == area)
 			return true;
 
 		at = at->next;
@@ -372,7 +377,7 @@ XA_block *find_unit(XA_memory *base, void *area)
 
 	if (blk)
 		if (blk->used.cur)
-			if (blk->used.cur->area eq area)
+			if (blk->used.cur->area == area)
 				return blk;
 
 	blk = base->first;
@@ -383,21 +388,21 @@ XA_block *find_unit(XA_memory *base, void *area)
 		     b = (long)blk->area + unitprefix;
 
 		/* Is the area in this block ? */
-		if ( x >= b and x <  b + blk->size - (blockprefix + unitprefix) )
+		if ( x >= b && x <  b + blk->size - (blockprefix + unitprefix) )
 		    if (in_list(&blk->used, area))
 				return blk;
 
 		blk = blk->next;
 	}
 
-	return nil;
+	return NULL;
 }
 
 /* The smaller the requested area, the less likely it is
    allocated & freed only once in a while. */
 void *XA_alloc(XA_memory *base, size_t size, XA_key key, XA_key type)
 {
-	XA_block *blk = nil;
+	XA_block *blk = NULL;
 	bool large = false;
 	long s = ((size+3)&-4) + unitprefix;
 
@@ -409,7 +414,7 @@ void *XA_alloc(XA_memory *base, size_t size, XA_key key, XA_key type)
 		long ns = XA_round(base, s + blockprefix);
 		blk = new_block(base, ns, false);
 		if (!blk)
-			return nil;
+			return NULL;
 		large = true;
 	}
 	else
@@ -450,12 +455,12 @@ void *XA_alloc(XA_memory *base, size_t size, XA_key key, XA_key type)
 #endif
 		return this->area;
 	}
-	return nil;
+	return NULL;
 }
 
 void *XA_calloc(XA_memory *base, size_t items, size_t chunk, XA_key key, XA_key type)
 {
-	void *new = nil;
+	void *new = NULL;
 	long l = items*chunk;
 	if (l)
 	{
@@ -474,7 +479,7 @@ void free_unit(XA_memory *base, XA_block *this, XA_unit *at)
 	sortins(&this->free, at),
 	combine(&this->free, at);
 
-	if (this->used.first eq nil)
+	if (this->used.first == NULL)
 		free_block(base, this);
 #if LARGE
 	else
@@ -486,7 +491,7 @@ void free_unit(XA_memory *base, XA_block *this, XA_unit *at)
 		if (at)
 		{
 			if (    at->size > base->chunk - blockprefix	/* 'large' free unit ? */
-			    and (long)at + at->size eq (long)this + this->size		/* at end of block ? */
+			    && (long)at + at->size == (long)this + this->size		/* at end of block ? */
 			   )
 			{
 				long s = 0, t = blockprefix;
@@ -499,7 +504,7 @@ void free_unit(XA_memory *base, XA_block *this, XA_unit *at)
 					t = this->size - s;
 					this->size -= t;
 					at->size -= t;
-					Mshrink(0, this, this->size);
+					Mshrink(this, this->size);
 				}
 			}
 		}
@@ -511,7 +516,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 {
 	XA_block *blk;
 
-	if (area eq nil)
+	if (area == NULL)
 		return XA_alloc(base, size, key, type);
 
 	if (!base)
@@ -534,7 +539,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 				return area;
 
 			blk->used.cur = this;
-			/* split off excess and integrate in free list */
+			/* split off excess && integrate in free list */
 			split(&blk->used, new_size, false);
 			if (this->next)
 				free_unit(base, blk, this->next);
@@ -545,12 +550,12 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 		   extreme differences between allocation sizes (large blocks involved)
 		*/
 			frf = blk->free.first;
-			if (frf and frf < this)
+			if (frf && frf < this)
 			{
 				if (    blk->size >  base->chunk
-				    and new_size  <  base->chunk - (unitprefix + blockprefix)
-				    and frf->size >= new_size
-				    and frf->size - new_size > 2*unitprefix
+				    && new_size  <  base->chunk - (unitprefix + blockprefix)
+				    && frf->size >= new_size
+				    && frf->size - new_size > 2*unitprefix
 				   )
 				{
 					blk->free.cur = frf;
@@ -570,7 +575,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 		else
 		if (new_size > old_size)
 		{
-			XA_unit *follow = this, *followup;
+			XA_unit *follow = this;
 			long diff = new_size - old_size, fs;
 
 			(long)follow += old_size;
@@ -579,8 +584,8 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 			/* is the following physical unit free and large enough to hold the extension */
 
 			if (    old_size + fs > new_size
-				and fs - diff > 2*unitprefix
-			    and in_list(&blk->free, follow->area)
+				&& fs - diff > 2*unitprefix
+			    && in_list(&blk->free, follow->area)
 			   )
 			{
 				XA_unit *followup = follow;
@@ -623,7 +628,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 			return area;				/* same size, do nothing */
 	}
 
-	return nil;
+	return NULL;
 }
 
 void XA_free(XA_memory *base, void *area)
@@ -645,10 +650,10 @@ void XA_free(XA_memory *base, void *area)
 
 bool XA_match(XA_unit *at, XA_key key, XA_key type)
 {
-	bool m =(   key  eq -1
-	         or key  eq at->key )
-	    and (   type eq -1
-	         or type eq at->type )
+	bool m =(   key  == -1
+	         || key  == at->key )
+	    && (   type == -1
+	         || type == at->type )
 		;
 	return m;
 }
@@ -662,7 +667,7 @@ void XA_free_all(XA_memory *base, XA_key key, XA_key type)
 	blk = base->first;
 
 #if USEM1M1					/* This is only for being able to test XA_match */
-	if (key eq -1 and type eq -1)
+	if (key == -1 && type == -1)
 	{
 		while(blk)
 		{
@@ -670,7 +675,7 @@ void XA_free_all(XA_memory *base, XA_key key, XA_key type)
 			Mfree(blk);
 			blk = next;
 		}
-		base->first = base->last = base->cur = nil;
+		base->first = base->last = base->cur = NULL;
 	}
 	else
 #endif
@@ -761,13 +766,13 @@ bool XA_leaked(XA_memory *base, XA_key key, XA_key type, XA_report *report)
 void XA_follow(XA_memory *base, XA_block *blk, XA_list *list, XA_report *report)
 {
 	/* Go up and down the list, finish at the same address. */
-	XA_unit *un = list->first, *n = un, *p;
+	XA_unit *un = list->first, *n = un;
 	while (un)
 	{
 		n = un;
 		un = un->next;
 	}
-	if (n ne list->last)
+	if (n != list->last)
 	{
 		report(base, blk, n, "last found");
 		report(base, blk, list->last, "list->last");
@@ -779,7 +784,7 @@ void XA_follow(XA_memory *base, XA_block *blk, XA_list *list, XA_report *report)
 		n = un;
 		un = un->prior;
 	}
-	if (n ne list->first)
+	if (n != list->first)
 	{
 		report(base, blk, n, "first found");
 		report(base, blk, list->first, "list->first");
@@ -821,17 +826,17 @@ void XA_set_base(XA_memory *base, size_t chunk, short round, short flags)
 	if (!base)
 		base = &XA_heap_base;
 
-	base->first = base->last = base->cur = nil;
+	base->first = base->last = base->cur = NULL;
 
 /* 0: default, negative: dont change */
 	if (!chunk)
 		base->chunk = XA_heap_base.chunk;
-	elif (chunk > 0)
+	else if (chunk > 0)
 		base->chunk = chunk;
 
 	if (!round)
 		base->round = XA_heap_base.round;
-	elif (round > 0)
+	else if (round > 0)
 		base->round = round;
 
 	if (base->round < 12) base->round = 12;
@@ -865,47 +870,47 @@ void XA_list_free(XA_memory *base, XA_report *report)
 
 void *malloc(size_t size)
 {
-	return XA_alloc(nil, size, 0, 0);
+	return XA_alloc(NULL, size, 0, 0);
 }
 
 void *calloc(size_t items, size_t chunk)
 {
-	return XA_calloc(nil, items, chunk, 0, 0);
+	return XA_calloc(NULL, items, chunk, 0, 0);
 }
 
 void *realloc(void *addr, size_t size)
 {
-	return XA_realloc(nil, addr, size, 0, 0);
+	return XA_realloc(NULL, addr, size, 0, 0);
 }
 
 void free(void *addr)
 {
-	XA_free(nil, addr);
+	XA_free(NULL, addr);
 }
 #endif
 
 void _FreeAll(void)
 {
-	XA_free_all(nil, -1, -1);
+	XA_free_all(NULL, -1, -1);
 }
 
-global
-void *xmalloc(size_t size, XA_key key)
-{	return XA_alloc(nil, size, key, 0);	}
-global
-void *xcalloc(size_t items, size_t chunk, XA_key key)
-{	return XA_calloc(nil, items, chunk, key, 0);}
-global
-void *xrealloc(void *old, size_t size, XA_key key)
-{	return XA_realloc(nil, old, size, key, 0);	}
 
-global
+void *xmalloc(size_t size, XA_key key)
+{	return XA_alloc(NULL, size, key, 0);	}
+
+void *xcalloc(size_t items, size_t chunk, XA_key key)
+{	return XA_calloc(NULL, items, chunk, key, 0);}
+
+void *xrealloc(void *old, size_t size, XA_key key)
+{	return XA_realloc(NULL, old, size, key, 0);	}
+
+
 void *fmalloc(size_t size, XA_key key)
 {	return XA_alloc(&XA_file_base, size, key, 0);	}
-global
+
 void *fcalloc(size_t items, size_t chunk, XA_key key)
 {	return XA_calloc(&XA_file_base, items, chunk, key, 0);	}
-global
+
 void *frealloc(void *old, size_t size, XA_key key)
 {	return XA_realloc(&XA_file_base, old, size, key, 0);	}
 void ffree(void *area)

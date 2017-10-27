@@ -21,12 +21,12 @@
  */
 
 
-#include <np_aes.h>
+#include <portaes.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
-#include <vdi.h>
+#include <portvdi.h>
 #include <library.h>
 #include <xdialog.h>
 

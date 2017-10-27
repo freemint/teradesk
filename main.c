@@ -21,19 +21,7 @@
  */
 
 
-#if _LOGFILE
-#include <stdio.h>
-#endif
-
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <tos.h>
-#include <vdi.h>
 #include <library.h>
-#include <mint.h>
-#include <system.h>
 #include <xdialog.h>
 #include <xscncode.h>
 
@@ -62,6 +50,13 @@
 #include "va.h"
 #include "video.h"
 
+#undef os_start
+#define os_start     ( * (long *) 0x4F2L )
+#define memval               ( * (long *) 0x420L )
+#define memval2              ( * (long *) 0x43AL )
+#define resvector   ( * ( void (**)( void ) ) 0x42AL )
+#define resvalid     ( * (long *) 0x426L )
+
 #define RSRCNAME	"desktop.rsc" /* Name of te program's resource file */
 
 #define EVNT_FLAGS	(MU_MESAG | MU_BUTTON | MU_KEYBD) /* For the main loop */
@@ -70,7 +65,7 @@
 #define MIN_PLINE 32	/* minimum printer line length */
 #define DEF_PLINE 80	/* default printer line length */
 
-extern boolean
+extern bool
 	fargv;				/* flag to force use of ARGV whenever possible */
 
 extern char 
@@ -124,7 +119,7 @@ static const int
 int 
 	have_ssystem = 0;
 
-boolean			/* No need to define values, always set when starting main() */
+bool			/* No need to define values, always set when starting main() */
 	mint, 		/* True if Mint  is present  */
 	magx,		/* True if MagiC is present  */	
 	naes,		/* True if N.AES is present  */
@@ -132,18 +127,18 @@ boolean			/* No need to define values, always set when starting main() */
 
 #endif
 
-boolean
+bool
 	shutdown = FALSE,	/* true if system shutdown is required  */
 	startup = TRUE;		/* true if desktop is starting */
 
-static boolean
+static bool
 	ct60,				/* True if this is a CT60 machine       */
 	chrez = FALSE, 		/* true if resolution should be changed */
 	quit = FALSE,		/* true if teradesk should finish       */ 
     reboot = FALSE,		/* true if a reboot should happen       */
 	shutting = FALSE;	/* true if started shutting down        */
 
-boolean
+bool
 	onekey_shorts;		/* true if any single-key menu shortcuts are defined */
 
 #if _LOGFILE
@@ -169,8 +164,6 @@ static const char
 static XDEVENT 
 	loopevents;		/* events awaited for in the main loop */
 
-
-void Shutdown(long mode);
 
 static CfgNest		/* Elsewhere defined configuration routines */ 
 	opt_config, 	/* Options */
@@ -488,8 +481,8 @@ static void showhelp (unsigned int key)
 
 /* 
  * Generalized set_opt() to change display of any options button from bitflags
- * In fact it can set option buttons from boolean variables as well
- * (then set "opt" to 1, and "button" is a boolean variable)
+ * In fact it can set option buttons from bool variables as well
+ * (then set "opt" to 1, and "button" is a bool variable)
  */
 
 void set_opt
@@ -675,7 +668,7 @@ static void setpreferences(void)
 		*tmpmi,
 		tmp[NITEM + 2];		/* temporary kbd shortcuts (until OK'd) */
 
-	boolean
+	bool
 		shok;				/* TRUE if a shortcut is acceptable */
 
 	char
@@ -1224,7 +1217,7 @@ void load_settings
  * Set complete specification for configuration file(s)
  */
 
-boolean find_cfgfiles(char **cfgname)
+bool find_cfgfiles(char **cfgname)
 {
 	char
 		*fullname;
@@ -1258,7 +1251,7 @@ boolean find_cfgfiles(char **cfgname)
  * This function is called only once during program execution.
  */
 
-static boolean init(void)
+static bool init(void)
 {
 	/* Get screen work area */
 
@@ -1667,7 +1660,7 @@ fprintf(logfile, "\n hndlkey 0x%x 0x%x", key, kstate);
  * Return -1 upon AP_TERM message, return 0 otherwise
  */
 
-static int _hndlmessage(int *message, boolean allow_exit)
+static int _hndlmessage(int *message, bool allow_exit)
 {
 #if _LOGFILE
 fprintf(logfile, "\n _hndlmessage 0x%x %i %i", message[0], message[1], allow_exit);
@@ -1834,7 +1827,7 @@ static void evntloop(void)
  * starts sending messages endlessly
  */
 
-boolean wait_to_quit(void)
+bool wait_to_quit(void)
 {
 	int event = 0;
 
@@ -1978,10 +1971,10 @@ int main(void)
 
 	mint  |= magx;			/* Quick & dirty */
 
+	Pdomain(1);
 	if (mint)
 	{
 		Psigsetmask(0x7FFFE14EL);
-		Pdomain(1);
 		fsdefext = (char *)DEFAULT_EXT;	/* Set "*" as a default filename extension */
 	}
 #endif

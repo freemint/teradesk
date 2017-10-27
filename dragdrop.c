@@ -21,14 +21,15 @@
  */
 
 
-#include <np_aes.h>
-#include <tos.h>
-#include <string.h>
-#include <mint.h>
+#include <library.h>
+#include <errno.h>
+#include <signal.h>
 #include <error.h>
 
+#if _MINT_
 static char pipename[24];
-static void  *oldpipesig;
+#endif
+static __mint_sighandler_t oldpipesig;
 
 
 /*
@@ -61,18 +62,17 @@ static void  *oldpipesig;
 
 int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
 {
+#if _MINT_
+
 	long 
 		fd_mask;
 
 	int 
-		msg[8],		/* message buffer */
-		*mp = msg,	/* pointer to */
+		msg[8];		/* message buffer */
+	int *mp = msg,	/* pointer to */
 		fd;			/* pipe handle */ 
-
 	char
 		c = 0;
-
-#if _MINT_
 
 	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
 
@@ -99,7 +99,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 		fd = (int)Fcreate(pipename, 0x02);
 	} 
-	while (fd == EACCDN);
+	while (fd == -ETOS_ACCES);
 
 	if (fd < 0) /* fcreate error */
 		return fd;
@@ -136,7 +136,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 			if ((int)Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE) /* no error reading extensions */
 			{
-				oldpipesig = Psignal(SIGPIPE, (void *)SIG_IGN);
+				oldpipesig = Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
 				return fd;
 			}
 		}
@@ -144,6 +144,14 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 	Fclose(fd);
 
+#else
+	(void) exts;
+	(void) kstate;
+	(void) msx;
+	(void) msy;
+	(void) winid;
+	(void) spid;
+	(void) dpid;
 #endif
 
 	return -1;
@@ -166,9 +174,9 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 int ddstry(int fd, char *ext, char *name, long size)
 {
-	char c;
-
 #if _MINT_
+
+	char c;
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
@@ -195,6 +203,11 @@ int ddstry(int fd, char *ext, char *name, long size)
 		}
 	}
 
+#else
+	(void) fd;
+	(void) ext;
+	(void) name;
+	(void) size;
 #endif
 
 	return DD_NAK;
@@ -209,7 +222,7 @@ void ddclose(int fd)
 {
 	if ( fd >= 0 )
 	{
-		Psignal(SIGPIPE, oldpipesig);
+		Psignal(__MINT_SIGPIPE, oldpipesig);
 		Fclose(fd);
 	}
 }
@@ -252,7 +265,7 @@ int ddopen(int ddnam, char *preferext)
 		outbuf[0] = DD_OK;
 		strncpy(outbuf+1, preferext, DD_EXTSIZE);
 
-		oldpipesig = Psignal(SIGPIPE, SIG_IGN);
+		oldpipesig = Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
 
 		if (Fwrite(fd, (long)DD_EXTSIZE + 1, outbuf) != DD_EXTSIZE + 1) 
 		{

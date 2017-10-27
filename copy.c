@@ -21,17 +21,10 @@
  */
 
 
-#include <np_aes.h>
-#include <vdi.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include <library.h>
-#include <tos.h>
-#include <mint.h>
 #include <xdialog.h>
 #include <xscncode.h>
-#include <limits.h>
+#include <sys/stat.h>
 
 
 #include "resource.h"
@@ -65,7 +58,7 @@ typedef struct copydata
 	char *sname;
 	char *dname;
 	struct copydata *prev;
-	boolean chk;
+	bool chk;
 } COPYDATA;
 
 #if _SHOWFIND
@@ -74,7 +67,7 @@ extern int search_nsm;
 
 
 
-DOSTIME
+_DOSTIME
 	now,
 	optime;
 
@@ -94,11 +87,11 @@ static int
 static XDINFO
 	cfdial;
 
-boolean
+bool
 	cfdial_open,
 	rename_files = FALSE;
 
-static boolean
+static bool
 	set_oldpos,
 	overwrite,
 	updatemode = FALSE,
@@ -165,8 +158,8 @@ void upd_copyinfo(long folders, long files, LSUM *bytes)
 
 static void ci_resize (int d)
 {
-		copyinfo[COKBOX].r.y += d; 		/* make the dialog as small as practical */
-		copyinfo[COPYBOX].r.h += d;		/* same */
+		copyinfo[COKBOX].ob_y += d; 		/* make the dialog as small as practical */
+		copyinfo[COPYBOX].ob_height += d;		/* same */
 }
 
 
@@ -187,7 +180,7 @@ int open_cfdialog(long folders, long files, LSUM *bytes, int function)
 
 
 	sd = 0;
-	sd1 = copyinfo[COKBOX].r.y - copyinfo[CPT3].r.y - xd_fnt_h;
+	sd1 = copyinfo[COKBOX].ob_y - copyinfo[CPT3].ob_y - xd_fnt_h;
 
 	/* Set default visibility and state of some objects */
 
@@ -229,7 +222,7 @@ int open_cfdialog(long folders, long files, LSUM *bytes, int function)
 
 			obj_unhide(copyinfo[CSETBOX]);
 #if _MINT_
-			copyinfo[CFOLLNK].r.y = copyinfo[CSETBOX].r.y;
+			copyinfo[CFOLLNK].ob_y = copyinfo[CSETBOX].ob_y;
 #endif
 			break;
 		}
@@ -238,7 +231,7 @@ int open_cfdialog(long folders, long files, LSUM *bytes, int function)
 			mask = CF_DEL;
 			title = DTDELETE;
 #if _MINT_
-			copyinfo[CFOLLNK].r.y = copyinfo[CPT3].r.y;
+			copyinfo[CFOLLNK].ob_y = copyinfo[CPT3].ob_y;
 			obj_unhide(copyinfo[CFOLLNK]);
 #endif
 			sd = sd1;
@@ -374,7 +367,7 @@ void upd_copyname( const char *dest, const char *folder, const char *file )
  * Push an item onto the stack
  */
 
-static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean chk)
+static int push(COPYDATA **stack, const char *spath, const char *dpath, bool chk)
 {
 	COPYDATA
 		*new;
@@ -409,7 +402,7 @@ static int push(COPYDATA **stack, const char *spath, const char *dpath, boolean 
  * Pull an item from the stack
  */
 
-static boolean pull(COPYDATA **stack, int *result)
+static bool pull(COPYDATA **stack, int *result)
 {
 	COPYDATA
 		*top = *stack;
@@ -430,7 +423,7 @@ static boolean pull(COPYDATA **stack, int *result)
  * Beware: "*name" buffer should be at least sizeof(VLNAME) characters long
  */
 
-static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, boolean *eod)
+static int stk_readdir(COPYDATA *stack, char *name, XATTR *attr, bool *eod)
 {
 	int
 		error;
@@ -560,7 +553,7 @@ int cnt_items
 	long *files, 		/* files count */
 	LSUM *bytes,		/* bytes count */
 	int attribs, 		/* attributes mask for item selection */
-	boolean search		/* true if this is done while searching */
+	bool search		/* true if this is done while searching */
 )
 {
 	COPYDATA
@@ -586,7 +579,7 @@ int cnt_items
 	char
 		*fpath = NULL;		/* item path */
 
-	boolean
+	bool
 		found = FALSE,		/* match not found yet */
 		gosub = ( !search || ((options.xprefs & S_SKIPSUB) == 0) ),
 		ready = FALSE,
@@ -624,7 +617,7 @@ int cnt_items
 
 			if (!nodir && ((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-				type = attr.mode & S_IFMT;
+				type = attr.st_mode & S_IFMT;
 				nodir = FALSE;
 
 				if ( search )
@@ -657,7 +650,7 @@ int cnt_items
 					/* This item is a file or a link */
 
 					*files += 1;
-					add_size(bytes, attr.size);
+					add_size(bytes, attr.st_size);
 					inftype = ITM_FILE;
 				}
 			} /* error == 0 ? */
@@ -669,7 +662,7 @@ int cnt_items
 
 				if (x_attr(0, FS_INQ, path, &attr) >= 0)
 				{
-					if((attr.mode & S_IFMT) == S_IFREG)
+					if((attr.st_mode & S_IFMT) == S_IFREG)
 					{
 						pathonly = fn_get_path(path);
 						strsncpy(name, fn_get_name(path), sizeof(VLNAME));
@@ -764,7 +757,7 @@ static int dir_error(int error, const char *file)
  * in large directories.
  */
 
-static boolean count_items
+static bool count_items
 (
 	WINDOW *w,
 	int n,			/* number of selected items */
@@ -797,7 +790,7 @@ static boolean count_items
 	ITMTYPE
 		type;
 
-	boolean
+	bool
 		link,
 		ok = TRUE;
 
@@ -846,7 +839,7 @@ static boolean count_items
 			if ((error = itm_attrib(w, item, 1, &attr)) == 0)
 			{
 				*files += 1;
-				add_size(bytes, attr.size);
+				add_size(bytes, attr.st_size);
 			}
 			else
 			{
@@ -861,7 +854,7 @@ static boolean count_items
 			if ((error = itm_attrib(w, item, (link || (type == ITM_NETOB)) ? 1 : 0, &attr)) == 0)
 			{
 				*files += 1;
-				add_size(bytes, attr.size);
+				add_size(bytes, attr.st_size);
 			}
 			else
 				*listi = -1; /* will later become -list[i] */
@@ -1129,7 +1122,7 @@ int copy_error
  * Note: parameter 'list' is locally modified.
  */
 
-static boolean check_copy
+static bool check_copy
 (
 	WINDOW *w,			/* source directory window */
 	int n,				/* number of items selected */
@@ -1149,7 +1142,7 @@ static boolean check_copy
 	ITMTYPE
 		type;
 
-	boolean
+	bool
 		result = TRUE;
 
 
@@ -1301,7 +1294,7 @@ static int exist
 
 	if ((error = (int)x_attr(attmode, FS_INQ, dname, &attr)) == 0)
 	{
-		*dmode = attr.mode & S_IFMT;
+		*dmode = attr.st_mode & S_IFMT;
 
 		*dxattr = attr; /* return existing destination attributes */
 
@@ -1419,9 +1412,9 @@ static int hndl_nameconflict
 	XATTR
 		dxattr;			/* attributes of the item at destination */
 
-	unsigned int
-		sd, st,			/* source date and time */
-		dd, dt;			/* destination date and time */
+	DOSTIME
+		st,				/* source date and time */
+		dt;				/* destination date and time */
 
 	int
 		button, 		/* id of the button clicked in the dialog */
@@ -1432,13 +1425,13 @@ static int hndl_nameconflict
 		smode,			/* source item attributes and access modes */
 		dmode;			/* same for destination */
 
-	boolean
+	bool
 		again,			/* exit the outermost loop if false */
 		stop, 			/* exit the inner loop if true */
 		first = TRUE;	/* first time in the loop */
 
 
-	smode = (attr->mode) & S_IFMT;
+	smode = (attr->st_mode) & S_IFMT;
 	result = 0;
 
 	/* Does destination already exist ? */
@@ -1457,23 +1450,19 @@ static int hndl_nameconflict
 
 	if (updatemode)
 	{
-		sd = attr->mdate;
-		st = attr->mtime;
-		dd = dxattr.mdate;
-		dt = dxattr.mtime;
+		st = *((DOSTIME *)&attr->st_mtime);
+		dt = *((DOSTIME *)&dxattr.st_mtime);
 	}
 
 	if (restoremode)
 	{
-		sd = dxattr.mdate;
-		st = dxattr.mtime;
-		dd = attr->mdate;
-		dt = attr->mtime;
+		st = *((DOSTIME *)&dxattr.st_mtime);
+		dt = *((DOSTIME *)&attr->st_mtime);
 	}
 
 	if ( (smode != S_IFDIR) && (updatemode || restoremode) )
 	{
-		if ( (sd < dd) || (( sd == dd ) && ( st <= dt )) )
+		if ( (st.date < dt.date) || (( st.date == dt.date ) && ( st.time <= dt.time )) )
 			result = XSKIP;
 	}
 
@@ -1740,7 +1729,7 @@ static int hndl_rename(char *name, XATTR *attr)
 
 static int chk_access(XATTR *attr)
 {
-	if((attr->attr & FA_READONLY) != 0)
+	if((attr->st_attr & FA_RDONLY) != 0)
 		return EACCDN;
 
 	return 0;
@@ -1762,7 +1751,7 @@ int touch_file
 	const char *fullname,	/* name of the object (i.e. file) */
 	DOSTIME *time, 			/* time & date to set */
 	XATTR *attr,			/* attributes to set */
-	boolean link			/* true if this is a link */
+	bool link			/* true if this is a link */
 )
 {
 	int
@@ -1774,7 +1763,7 @@ int touch_file
 	 * changing the timestamp
 	 */
 
-	if( attr && ((wp = attr->attr & FA_READONLY) == 0) )
+	if( attr && ((wp = attr->st_attr & FA_RDONLY) == 0) )
 		error = x_fattrib(fullname, attr);
 
 	if( (error >= 0) && (time != NULL) )
@@ -1810,7 +1799,8 @@ int touch_file
 		else
 #endif
 		{
-			if ((attr->mode & S_IFMT) == S_IFREG)
+			(void) link;
+			if ((attr->st_mode & S_IFMT) == S_IFREG)
 			{
 				/*
 				 * Date/time can be set for files only.
@@ -1836,7 +1826,7 @@ int touch_file
 	{
 		error = 0;
 
-		if( attr && ( wp || ((attr->attr & FA_ARCHIVE) == 0) ))
+		if( attr && ( wp || ((attr->st_attr & FA_ARCHIVE) == 0) ))
 			error = x_fattrib(fullname, attr);
 	}
 
@@ -1855,9 +1845,9 @@ static int copy_file
 	XATTR *attr, 		/* source (extended) attributes */
 	int function,		/* function to perform */
 	int prev,
-	boolean chk,		/* check for nameconflict */
+	bool chk,		/* check for nameconflict */
 #if _MINT_
-	boolean link,		/* true if item is a link */
+	bool link,		/* true if item is a link */
 #endif
 	LSUM *rbytes
 )
@@ -1914,23 +1904,23 @@ static int copy_file
 			 * when operation was started, or set in the show-info dialog
 			 */
 
-			oldattr = attr->attr;	/* keep original */
+			oldattr = attr->st_attr;	/* keep original */
 
 			if ( (options.cprefs & CF_CATTR) != 0 ) /* reset atributes ? */
 			{
-				attr->attr = opattr;	/* as set in the fileinfo dialog */
+				attr->st_attr = opattr;	/* as set in the fileinfo dialog */
 				theattr = attr;
 #if _MINT_
-				attr->mode &= ~(DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX); /* remove permissions and sticky bit */
+				attr->st_mode &= ~(DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX); /* remove permissions and sticky bit */
 
 				if(function == CMD_TOUCH)
 				{
-					attr->mode |= (opmode & (DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX));
-					attr->uid = opuid;
-					attr->gid = opgid;
+					attr->st_mode |= (opmode & (DEFAULT_DIRMODE |  S_ISUID | S_ISGID | S_ISVTX));
+					attr->st_uid = opuid;
+					attr->st_gid = opgid;
 				}
 				else
-					attr->mode |= DEFAULT_DIRMODE;
+					attr->st_mode |= DEFAULT_DIRMODE;
 #endif
 			}
 			else
@@ -1945,8 +1935,7 @@ static int copy_file
 			}
 			else	/* do not reset date/time */
 			{
-				time.time = attr->mtime;
-				time.date = attr->mdate;
+				time = *((DOSTIME *)&attr->st_mtime);
 				thetime = NULL;
 			}
 
@@ -1991,10 +1980,10 @@ static int copy_file
 
 						if
 						(
-							((oldattr & FA_READONLY) != 0) && /* this was a readonly file, and... */
+							((oldattr & FA_RDONLY) != 0) && /* this was a readonly file, and... */
 							((options.cprefs & CF_CATTR) == 0) && /* reset of attributes not specified, and */
 							(
-								( ( FA_ANY & (oldattr ^ attr->attr) ) != FA_READONLY) || /* either old and new attributes differ, or */
+								( ( FA_ANY & (oldattr ^ attr->st_attr) ) != FA_RDONLY) || /* either old and new attributes differ, or */
 								((options.cprefs & CF_CTIME) != 0) /* or timestamp is to be changed */
 							 )
 						)
@@ -2008,7 +1997,7 @@ static int copy_file
 
 						XATTR dattr, oattr;
 						error = 0;
-						dattr.mode = 0;
+						dattr.st_mode = 0;
 
 						if (x_attr(1, FS_INQ,  dname, &dattr) >= 0) /* object itself, don't follow links */
 							error = chk_access(&dattr);
@@ -2024,7 +2013,7 @@ static int copy_file
 							 * deleted first
 							 */
 #if _MINT_
-							if(mint && ((dattr.mode & S_IFMT) != 0) && ((dattr.mode & S_IFMT) != (attr->mode & S_IFMT)))
+							if(mint && ((dattr.st_mode & S_IFMT) != 0) && ((dattr.st_mode & S_IFMT) != (attr->st_mode & S_IFMT)))
 								error = x_unlink(dname);
 
 							if(error == 0)
@@ -2034,8 +2023,8 @@ static int copy_file
 #if _MINT_
 								if(function == CMD_COPY)
 								{
-									oattr.gid = currgid;
-									oattr.uid = curruid;
+									oattr.st_gid = currgid;
+									oattr.st_uid = curruid;
 								}
 
 								if ( link )
@@ -2121,7 +2110,7 @@ static int create_folder
 	long *files,		/* (pointer to) files count */
 	LSUM *bytes,		/* (pointer to) bytes count*/
 	int function,		/* operation code (CMD_COPY...etc.) */
-	boolean *chk		/* if true, check for nameconflict */
+	bool *chk		/* if true, check for nameconflict */
 )
 {
 	int
@@ -2200,7 +2189,7 @@ static int copy_path
 	long *files,		/* number of files acted upon */
 	LSUM *bytes,		/* number of bytes acted upon */
 	int function,		/* what to do */
-	boolean chk			/* if true, check for nameconflict */
+	bool chk			/* if true, check for nameconflict */
 )
 {
 	COPYDATA
@@ -2219,7 +2208,7 @@ static int copy_path
 	XATTR
 		attr;
 
-	boolean
+	bool
 #if _MINT_
 		link,
 #endif
@@ -2235,7 +2224,7 @@ static int copy_path
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-				type = attr.mode & S_IFMT;
+				type = attr.st_mode & S_IFMT;
 #if _MINT_
 				link = (type == S_IFLNK );
 #endif
@@ -2244,7 +2233,7 @@ static int copy_path
 					/* This is a directory (or a link to one) */
 
 					int tmpres;
-					boolean tmpchk = stack->chk;
+					bool tmpchk = stack->chk;
 
 					if ((stack->sname = x_makepath(stack->spath, name, &error)) != NULL)
 					{
@@ -2290,7 +2279,7 @@ static int copy_path
 					else
 						stack->result = copy_error(error, name, function);
 					*files -= 1;
-					sub_size(bytes, attr.size);
+					sub_size(bytes, attr.st_size);
 				}
 			}
 			else
@@ -2336,7 +2325,7 @@ static int copy_path
  * Note: parameter 'list' is locally modified
  */
 
-static boolean copy_list
+static bool copy_list
 (
 	WINDOW *w,			/* pointer to source window */
 	int n,				/* number of selected items */
@@ -2368,7 +2357,7 @@ static boolean copy_list
 	ITMTYPE
 		type;
 
-	boolean
+	bool
 		link,
 		chk;
 
@@ -2430,7 +2419,7 @@ static boolean copy_list
 						result = copy_error(error, name, function);
 
 					*files -= 1;
-					sub_size(bytes, attr.size);
+					sub_size(bytes, attr.st_size);
 					break;
 				}
 				case ITM_FOLDER:
@@ -2497,7 +2486,7 @@ static boolean copy_list
  * Copy a list of file/folder/disk items
  */
 
-static boolean itm_copyit
+static bool itm_copyit
 (
 	WINDOW *dw,		/* Destination window */
 	int dobject,	/* Destination object */
@@ -2513,7 +2502,7 @@ static boolean itm_copyit
 	const char
 		*dest;			/* destination path */
 
-	boolean
+	bool
 		result = FALSE;	/* TRUE if an operation is successful */
 
 
@@ -2647,7 +2636,7 @@ static int del_path
 	unsigned int
 		type;
 
-	boolean
+	bool
 		ready = FALSE,
 		eod = FALSE;
 
@@ -2661,7 +2650,7 @@ static int del_path
 		{
 			if (((error = stk_readdir(stack, name, &attr, &eod)) == 0) && (eod == FALSE))
 			{
-				type = attr.mode & S_IFMT;
+				type = attr.st_mode & S_IFMT;
 
 				if (type == S_IFDIR)
 				{
@@ -2695,7 +2684,7 @@ static int del_path
 						stack->result = copy_error(error, name, CMD_DELETE);
 
 					*files -= 1;
-					sub_size(bytes, attr.size);
+					sub_size(bytes, attr.st_size);
 				}
 			}
 			else
@@ -2738,7 +2727,7 @@ static int del_path
  * Note: parameter 'list' is locally modified
  */
 
-static boolean del_list
+static bool del_list
 (
 	WINDOW *w,
 	int n,
@@ -2769,7 +2758,7 @@ static boolean del_list
 	ITMTYPE
 		type;
 
-	boolean
+	bool
 #if _MINT_
 		llink,
 #endif
@@ -2835,7 +2824,7 @@ static boolean del_list
 #endif
 					{
 						*files -= 1;
-						sub_size(bytes, attr.size);
+						sub_size(bytes, attr.st_size);
 					}
 
 					free(cpath);
@@ -2890,7 +2879,7 @@ static boolean del_list
 				if(link)
 				{
 					*files -= 1;
-					sub_size(bytes, attr.size);
+					sub_size(bytes, attr.st_size);
 				}
 
 				free(cpath);
@@ -2918,7 +2907,7 @@ static boolean del_list
  * Returns TRUE if successful.
  */
 
-boolean itmlist_op
+bool itmlist_op
 (
 	WINDOW *w,				/* pointer to source window */
 	int n,					/* number of items to work upon */
@@ -2942,7 +2931,7 @@ boolean itmlist_op
 		*spath,				/* initial source path */
 		anypath[6];			/* Dummy destination path when it does not matter */
 
-	boolean
+	bool
 		cont,				/* true if there is some action to perform */
 		result = FALSE; 	/* returned value */
 
@@ -3195,7 +3184,7 @@ boolean itmlist_op
  * in speed.
  */
 
-boolean itmlist_wop(WINDOW *w, int n, int *list, int function)
+bool itmlist_wop(WINDOW *w, int n, int *list, int function)
 {
 	return itmlist_op(w, n, list, NULL, function);
 }
@@ -3205,7 +3194,7 @@ boolean itmlist_wop(WINDOW *w, int n, int *list, int function)
  * Hoofdprogramma kopieer gedeelte.
  */
 
-boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate)
+bool item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate)
 {
 	const char
 		*program;
@@ -3216,7 +3205,7 @@ boolean item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kst
 	int
 		wtype;
 
-	boolean
+	bool
 		result = FALSE;
 
 

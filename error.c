@@ -21,11 +21,8 @@
  */
 
 
-#include <np_aes.h>			/* modern */
-#include <stdarg.h>
-#include <vdi.h>
-#include <xdialog.h> 
 #include <library.h>
+#include <xdialog.h> 
 
 #include "desktop.h"
 #include "error.h"

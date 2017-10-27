@@ -21,14 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h> 
 #include <library.h>
 #include <xdialog.h>
-#include <mint.h>
-#include <limits.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -86,6 +80,7 @@ void prg_info
 	PRGTYPE *pt				/* output information */ 
 )
 {
+	(void)dummy;
 	if ( (list == NULL) || !find_wild( (LSTYPE **)list, (char *)prgname, (LSTYPE *)pt, copy_prgtype ) )
 	{
 		/* If program type not defined or name not given: default */
@@ -108,7 +103,7 @@ void prg_info
  * size (16 bytes) but would slow the program down.
  */
 
-boolean prg_isprogram(const char *fname)
+bool prg_isprogram(const char *fname)
 {
 	PRGTYPE *p = prgtypes;
 
@@ -172,7 +167,7 @@ static void rem_all_prgtypes(void)
  * if operation is cancelled, entry values in *pt should be unchanged.
  */
 
-boolean prgtype_dialog
+bool prgtype_dialog
 ( 
 	PRGTYPE **list, 	/* list to check duplicate entries in */
 	int pos, 			/* position in the list where to enter data */
@@ -183,7 +178,7 @@ boolean prgtype_dialog
 	XDINFO
 		info;			/* dialog info structure */
 
-	boolean
+	bool
 		stat = FALSE,	/* accept or not */
 		stop = FALSE;	/* loop until true */
 

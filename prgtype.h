@@ -57,11 +57,11 @@ extern PRGTYPE pwork;
 CfgNest prg_config;
 void prg_setprefs(void);
 void prg_info(PRGTYPE **list, const char *prgname, int dummy, PRGTYPE *pt );
-boolean prgtype_dialog( PRGTYPE **list, int pos, PRGTYPE *pt, int use );
+bool prgtype_dialog( PRGTYPE **list, int pos, PRGTYPE *pt, int use );
 void copy_prgtype ( PRGTYPE *t, PRGTYPE *s );
 void prg_init(void);
 void prg_default(void);
-boolean prg_isprogram(const char *name);
+bool prg_isprogram(const char *name);
 void sim_click(void);
 
 

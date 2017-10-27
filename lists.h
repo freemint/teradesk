@@ -45,10 +45,10 @@ typedef struct ls_func
 	void (*lsrem)(LSTYPE **list, LSTYPE *item);
 	void (*lsitem)(LSTYPE **list, char *name, int use, LSTYPE *lwork);
 	LSTYPE *(*lsfinditem)(LSTYPE **list, char *name, int *ord);
-	boolean (*ls_dialog)(LSTYPE **list, int pos, LSTYPE *item, int use);
+	bool (*ls_dialog)(LSTYPE **list, int pos, LSTYPE *item, int use);
 }LS_FUNC;
 
-boolean find_wild ( LSTYPE **list, char *name, LSTYPE *work, void *func );
+bool find_wild ( LSTYPE **list, char *name, LSTYPE *work, void *func );
 int find_selected(void);
 LSTYPE *get_item(LSTYPE **list, int item);
 LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos);
@@ -58,9 +58,9 @@ void lsrem_all_one(LSTYPE **list);
 void lsrem_three(LSTYPE **clist, void *remfunc);
 LSTYPE *lsadd( LSTYPE **list, size_t size, LSTYPE *pt, int pos, void *copy_func );
 LSTYPE *lsadd_end( LSTYPE **list, size_t size, LSTYPE *pt, void *copy_func );
-boolean copy_all(LSTYPE **copy, LSTYPE **list, size_t size, void *copy_func ); 
+bool copy_all(LSTYPE **copy, LSTYPE **list, size_t size, void *copy_func ); 
 int cnt_types(LSTYPE **list );
-boolean check_dup( LSTYPE **list, char *name, int pos );
+bool check_dup( LSTYPE **list, char *name, int pos );
 int list_edit(LS_FUNC *lsfunc,	LSTYPE **lists, int nl, size_t size, LSTYPE *lwork, int use );
 
 #define NLINES 4	/* Number of lines in a filetype-selector dialog */

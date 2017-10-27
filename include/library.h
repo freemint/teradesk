@@ -24,9 +24,24 @@
 
 #define __LIBRARY__
 
-#ifndef _BOOLEAN_
-#include <boolean.h>
-#endif
+#include <stdbool.h>
+#include <portaes.h>
+#include <portvdi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <tos.h>
+
+typedef struct
+{
+        int     x;
+        int     y;
+        int     w;
+        int     h;
+} RECT;
 
 /* Strings of specific lengths for icon labels, file types, etc. */
 

@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-extern boolean onone, onfile;
+extern bool onone, onfile;
 extern char *hyppage;
 
-boolean item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );
+bool item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );
 void opn_hyphelp (void);

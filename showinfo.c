@@ -21,15 +21,9 @@
  */
 
 
-#include <np_aes.h>
-#include <vdi.h>
-#include <stdlib.h>
-#include <string.h>
 #include <library.h>
-#include <tos.h>			/* 06'11 HR: tos.h */
 #include <xdialog.h>
-#include <limits.h>
-#include <ctype.h>
+#include <sys/stat.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -82,13 +76,13 @@ static VLNAME
 static const char
 	ois[] = {ISWP, ISARCHIV, ISHIDDEN, ISSYSTEM};
 
-static boolean
+static bool
 	searchdopen = FALSE,	/* flag that Search... dialog is open */
 	infodopen = FALSE,   	/* flag that Info... dialog is open */
 	nodirs,					/* TRUE if directory names are not to be searched */
 	nofound = TRUE;			/* TRUE if no items founnd */
 
-extern boolean
+extern bool
 	can_touch;
 
 extern const char
@@ -96,7 +90,7 @@ extern const char
 
 
 
-char *app_find_name(const char *fname, boolean full);
+char *app_find_name(const char *fname, bool full);
 
 
 #define BADTIME (unsigned int)0xFFFF /* marks illegal date/time */
@@ -178,7 +172,7 @@ static void cv_dtoform(char *tstr, unsigned int date)
 static unsigned int cv_formtodt
 (
 	char *dtstr,	/* date or time as a string; formats: ddmmyy or hhmmss */
-	boolean ct		/* if TRUE this is time being converted */
+	bool ct		/* if TRUE this is time being converted */
 )
 {
 	int
@@ -424,7 +418,7 @@ char *find_string
  * Search criteria are passed through global variables.
  */
 
-boolean searched_found
+bool searched_found
 (
 	char *path,		/* pointer to file/folder path */
 	char *name, 	/* pointer to file/folder name */
@@ -441,7 +435,7 @@ boolean searched_found
 	int
 		error = 0;		/* error code */
 
-	boolean
+	bool
 		found = FALSE;	/* true if match found */
 
 
@@ -455,7 +449,7 @@ boolean searched_found
 	{
 		/* ...and date range matched... */
 
-		if ( (found = (attr->mdate >= search_lodate && attr->mdate <= search_hidate ) ) == TRUE )
+		if ( (found = (dos_mdate(attr) >= search_lodate && dos_mdate(attr) <= search_hidate ) ) == TRUE )
 		{
 			/* ...and size range matched... */
 
@@ -464,8 +458,8 @@ boolean searched_found
 				(
 					found =
 					(
-						( ((attr->mode & S_IFMT) == S_IFDIR) && !nodirs ) ||
-			    		( ((attr->mode & S_IFMT) == S_IFREG) && (attr->size >= search_losize && attr->size <= search_hisize) )
+						( ((attr->st_mode & S_IFMT) == S_IFDIR) && !nodirs ) ||
+			    		( ((attr->st_mode & S_IFMT) == S_IFREG) && (attr->st_size >= search_losize && attr->st_size <= search_hisize) )
 					)
 				) == TRUE
 			)
@@ -785,7 +779,7 @@ int object_info
 		result = 0,		/* return code of this routine */
 		thetitle;		/* dialog title */
 
-	boolean
+	bool
 		changed = FALSE, /* TRUE if objectinfo changed */
 		qquit = FALSE;	/* TRUE to exit from dialog */
 
@@ -825,15 +819,15 @@ int object_info
 
 	if ( type != ITM_DRIVE )
 	{
-		attrib = attr->attr; /* copy state of attributes to temp. storage */
+		attrib = attr->st_attr; /* copy state of attributes to temp. storage */
 #if _MINT_
-		mode = attr->mode;
+		mode = attr->st_mode;
 		/* If noone has write access, set the file to readonly */
 
 		if ( (mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0 )
-			attrib |= FA_READONLY;
+			attrib |= FA_RDONLY;
 		else
-			attrib &= ~FA_READONLY;
+			attrib &= ~FA_RDONLY;
 #endif
 		tflall = TFIALL;
 	}
@@ -950,7 +944,7 @@ int object_info
 							strcat(pflags, get_freestring(PFFLOAD + jf));
 					}
 
-					strcpy(pprot, get_freestring(PPPRIVAT + ((flg & 0x30) >> 4)));
+					strcpy(pprot, get_freestring(PPPRIVAT + (int)((flg & 0x30) >> 4)));
 
 					if( (flg & 0x1000) != 0 )
 						strcat(pprot, get_freestring(PPSHARE));
@@ -969,7 +963,7 @@ int object_info
 #if _MINT_
 			/* Handle some special 'file' objects from drive U */
 
-			switch ( attr->mode & S_IFMT )
+			switch ( attr->st_mode & S_IFMT )
 			{
 				case S_IFCHR:
 				{
@@ -981,7 +975,7 @@ int object_info
 					thetitle = DTPIPINF;
 					break;
 				}
-				case S_IMEM:
+				case __S_IFMEM:
 				{
 					thetitle = DTMEMINF;
 					break;
@@ -1013,7 +1007,7 @@ int object_info
 #if _MINT_
 			evenmore:;
 #endif
-			fsize = attr->size;
+			fsize = attr->st_size;
 
 			if(fsize > DISP_KBMB)
 				fsize = ((1- KBMB) - fsize) / KBMB;
@@ -1027,13 +1021,13 @@ int object_info
 			path_to_disp ( nfname );
 			cv_fntoform(fileinfo, FLPATH, nfname);
 			cv_fntoform(fileinfo, FLNAME, fname);
-			cv_ttoform(time, attr->mtime);
-			cv_dtoform(date, attr->mdate);
+			cv_ttoform(time, dos_mtime(attr));
+			cv_dtoform(date, dos_mdate(attr));
 			rsc_hidemany(fileinfo, (int *)items3);
 			obj_unhide(fileinfo[FLNAMBOX]);
 #if _MINT_
-			gid = attr->gid;
-			uid = attr->uid;
+			gid = attr->st_gid;
+			uid = attr->st_uid;
 
 			if ( (fs_type & FS_UID) != 0 )
 			{
@@ -1231,7 +1225,7 @@ int object_info
 			(type != ITM_FOLDER) &&
 			(button != FLABORT) &&
 			(button != FLSKIP) &&
-			((attrib & FA_READONLY) == 0 ) &&
+			((attrib & FA_RDONLY) == 0 ) &&
 			(optime.time == BADTIME || optime.date == BADTIME || strlen(nfname) < 1 )
 		)
 		{
@@ -1255,7 +1249,7 @@ int object_info
 					char *newn;
 					int error = 0;
 					XATTR new_attribs = *attr;
-					boolean link = (type == ITM_LINK);
+					bool link = (type == ITM_LINK);
 
 					hourglass_mouse();
 					qquit = TRUE;
@@ -1267,13 +1261,13 @@ int object_info
 
 					/* Set states of attributes from the states of dialog buttons */
 
-					new_attribs.attr = get_file_attribs(attrib);
+					new_attribs.st_attr = get_file_attribs(attrib);
 #if _MINT_
 					if ( (fs_type & FS_UID) != 0 )
 					{
-						new_attribs.mode = get_file_rights(mode);
-						new_attribs.uid = fi_atoi(UID);
-						new_attribs.gid = fi_atoi(GID);
+						new_attribs.st_mode = get_file_rights(mode);
+						new_attribs.st_uid = fi_atoi(UID);
+						new_attribs.st_gid = fi_atoi(GID);
 					}
 #endif
 					if ((newn = fn_make_newname(oldn, nfname)) != NULL)
@@ -1294,7 +1288,7 @@ int object_info
 							icn_fix_ictype(); /* fix desktop icon too */
 						}
 #if _MINT_
-						if ( link && (strcmp(tgname, ltgtname) != NULL) )
+						if ( link && (strcmp(tgname, ltgtname) != 0) )
 						{
 							/* It should be checked here whether the target exists */
 
@@ -1322,14 +1316,14 @@ int object_info
 
 						if
 						(
-							(new_attribs.attr != attrib) ||
+							(new_attribs.st_attr != attrib) ||
 #if _MINT_
-							(new_attribs.mode != mode) ||
-							(new_attribs.uid != uid) ||
-							(new_attribs.gid != gid) ||
+							(new_attribs.st_mode != mode) ||
+							(new_attribs.st_uid != uid) ||
+							(new_attribs.st_gid != gid) ||
 #endif
-							(optime.time != attr->mtime) ||
-							(optime.date != attr->mdate)
+							(optime.time != dos_mtime(attr)) ||
+							(optime.date != dos_mdate(attr))
 						)
 						{
 							/*
@@ -1355,11 +1349,11 @@ int object_info
 
 								if
 								(
-									(attrib & FA_READONLY) &&
+									(attrib & FA_RDONLY) &&
 									(
-										( (attrib ^ new_attribs.attr) != FA_READONLY) ||
-										(optime.date != attr->mdate) ||
-										(optime.time != attr->mtime)
+										( (attrib ^ new_attribs.st_attr) != FA_RDONLY) ||
+										(optime.date != dos_mdate(attr)) ||
+										(optime.time != dos_mtime(attr))
 									)
 								)
 									error = EACCDN;
@@ -1519,7 +1513,7 @@ void item_showinfo
 	WINDOW *w,		/* pointer to the window in which the objects are */
 	int n,			/* number of objects to show */
 	int *list,		/* list of selected object indices */
-	boolean search 	/* true if search results are displayed */
+	bool search 	/* true if search results are displayed */
 )
 {
 	const char

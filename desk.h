@@ -21,9 +21,6 @@
  */
 
 
-#include <boolean.h>
-#include <stddef.h>
-
 #ifdef MEMDEBUG
 /* Note: a specific directory required below: */
 #include <d:\tmp\memdebug\memdebug.h>
@@ -46,10 +43,6 @@
 /* Maximum number of Teradesk's windows of one type */
 
 #define MAXWINDOWS 8 
-
-/* Maximum path length (in single-tos mode?) */
-
-#define PATH_MAX 128 /* from stdio.h */
 
 /* Diverse options which are bitflags */
 
@@ -217,7 +210,7 @@ extern int
 /* Flags to show a specific OS or AES type (detected from cookies) */
 
 #if _MINT_
-extern boolean 
+extern bool 
 	mint,			/* mint or magic present */
 	magx,			/* magic present  */
 	naes,			/* naes present */
@@ -226,7 +219,7 @@ extern boolean
 extern int have_ssystem;
 #endif
 
-extern boolean
+extern bool
 	shutdown,		/* shutdown has been initiated */
 	startup;		/* startup is in progress */
 
@@ -238,7 +231,7 @@ int chk_xd_open(OBJECT *tree, XDINFO *info);
 void set_opt(OBJECT *tree, int flags, int opt, int button ); 
 void get_opt(OBJECT *tree, int *flags, int opt, int button );
 int hndlmessage(int *message);
-boolean wait_to_quit(void);
-boolean find_cfgfiles (char **cfgfile); 
+bool wait_to_quit(void);
+bool find_cfgfiles (char **cfgfile); 
 
 

@@ -21,13 +21,8 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <tos.h>
-#include <np_aes.h>
-#include <vdi.h>
-#include <error.h>
 #include <library.h>
+#include "error.h"
 #include <xdialog.h>
 
 #include "xfilesys.h"
@@ -49,7 +44,7 @@ extern WINDOW *xw_deskwin;
 extern int aes_version;
 
 void clean_up(void);
-void wd_forcesize(WINDOW *w, RECT *size, boolean cond);
+void wd_forcesize(WINDOW *w, RECT *size, bool cond);
 
 
 int 
@@ -70,7 +65,7 @@ long
 #endif
 	vdo;			/* id. of video hardware- shifter type- see below */
 
-static boolean
+static bool
 	st_ste = FALSE,		/* ST or STe */
 	fal_mil = FALSE;	/* Falcon or Milan */
 
@@ -509,7 +504,7 @@ int voptions(void)
 		npp,				/* previous number of colour planes */
 		np = xd_nplanes;	/* number of colour planes: 1 to 16 */
 
-	boolean
+	bool
 		editcol = FALSE,	/* permit editting number of colours */
 		qquit = FALSE;
 

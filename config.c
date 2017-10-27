@@ -21,13 +21,7 @@
  */
 
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <mint.h>
-#include <string.h>
-#include <np_aes.h>
 #include <library.h>
-#include <vdi.h> /* only because of xdialog.h */
 #include <xdialog.h>
 
 #include "desktop.h"
@@ -247,7 +241,7 @@ int CfgSave
 	XFILE *fp,		/* pointer to open file parameters */
 	CfgEntry *tab,	/* pointer to configuration table */
 	int level0,		/* nesting (indent) level */
-	boolean emp		/* if true, write empty or zero-value fields */
+	bool emp		/* if true, write empty or zero-value fields */
 ) 
 {
 	int 
@@ -519,7 +513,7 @@ int CfgLoad
 	CFG_TYPE
 		tabtype;
 
-	boolean
+	bool
 		skip = FALSE;			/* true while recovering from errors */
 
 

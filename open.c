@@ -21,13 +21,9 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h> 
-#include <vdi.h>
-#include <mint.h>
 #include <library.h>
 #include <xdialog.h>
+
 #include "resource.h"
 #include "desk.h"
 #include "error.h"
@@ -47,7 +43,7 @@
 #include "applik.h"
 #include "prgtype.h"
 
-boolean
+bool
 	onone = FALSE,		/* true if only one instance should run */
 	onfile = FALSE; 	/* true if app is started to open a file */
 
@@ -121,7 +117,7 @@ int open_dialog(void)
  * may contain a command line, if not NULL
  */
 
-boolean item_open
+bool item_open
 (
 	WINDOW *inw, 		/* window in which the selection is made */
 	int initem,			/* ordinal of the selected item from the window */ 
@@ -155,7 +151,7 @@ boolean item_open
 		error,
 		button;			/* index of the button pressed */
 
-	boolean 
+	bool 
 		alternate= FALSE, 
 		deselect = FALSE;
 

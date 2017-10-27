@@ -21,11 +21,6 @@
  */
 
 
-#include <np_aes.h>
-#include <vdi.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mint.h>
 #include <library.h>
 #include <xdialog.h>
 
@@ -71,7 +66,7 @@ typedef struct
 static FONTBLOCK 
 	fbl;
 
-static boolean
+static bool
 	wdfopen = FALSE,
 	nonmodal = FALSE;
 
@@ -109,15 +104,19 @@ static int cdecl draw_text(PARMBLK *pb)
 		extent[8];
 
 	RECT
-		*r = &pb->r,
-		tr;
+		r, tr;
 
-	xd_clip_on(r); /* clipping does not seem to work with pb->c ? */
+	r.x = pb->pb_x;
+	r.y = pb->pb_y;
+	r.w = pb->pb_w;
+	r.h = pb->pb_h;
+	
+	xd_clip_on(&r); /* clipping does not seem to work with pb->c ? */
 
 	if (nonmodal)
-		clr_object( r, WHITE, -1); 	/* to make white background */
+		clr_object( &r, WHITE, -1); 	/* to make white background */
 	else
-		pclear(r); /* to show window colour and pattern */
+		pclear(&r); /* to show window colour and pattern */
 
 	/* note: do not create a direct pointer to thefbl->font, it would be longer */
 
@@ -131,8 +130,8 @@ static int cdecl draw_text(PARMBLK *pb)
 	tr.w = extent[2] - extent[0];
 	tr.h = extent[7] - extent[1] + 4;
 
-	tr.x = r->x + (r->w - tr.w) / 2;
-	tr.y = r->y + (r->h - tr.h) / 2;
+	tr.x = r.x + (r.w - tr.w) / 2;
+	tr.y = r.y + (r.h - tr.h) / 2;
 
 	w_transptext(tr.x, tr.y + 2, thetext);
 
@@ -192,7 +191,7 @@ static int fnt_find_selected(void)
 static void set_theselector
 (
 	SLIDER *slider, 
-	boolean draw, 
+	bool draw, 
 	XDINFO *info,
 	int thefont,
 	FONTDATA *fd,
@@ -234,7 +233,7 @@ static void set_theselector
  * Set font selector listbox for TeraDesk
  */
 
-static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
+static void set_fselector(SLIDER *slider, bool draw, XDINFO *info)
 {
 	set_theselector(slider, draw, info, fbl.fdfont, fbl.fd, fbl.nf);
 }
@@ -246,7 +245,7 @@ static void set_fselector(SLIDER *slider, boolean draw, XDINFO *info)
  * Set font selector listbox for the systemwide nonmodal font-selector dialog
  */
 
-static void mset_fselector(SLIDER *slider, boolean draw, XDINFO *info)
+static void mset_fselector(SLIDER *slider, bool draw, XDINFO *info)
 {
 	FNT_DIALOG *fnt_dial = ((FNT_SLIDER *)slider)->fnt_dial;
 
@@ -342,7 +341,7 @@ static int get_size(FONTBLOCK *fbl)
 static void font_count
 (
 	FONTBLOCK *fbl,	/* pointer to structure with fonts data */
-	boolean prop	/* true if proportional fonts are counted */
+	bool prop	/* true if proportional fonts are counted */
 )
 {
 	FNAME
@@ -365,7 +364,7 @@ static void font_count
 	/* Determine available form length only the first time */
 
 	if(flblen == 0)
-		flblen = strlen(wdfont[WDFONT1].ob_spec.tedinfo->te_ptext) + 1;
+		flblen = (int)strlen(wdfont[WDFONT1].ob_spec.tedinfo->te_ptext) + 1;
 
 	for (i = 0; i <= nfonts; i++)
 	{
@@ -450,7 +449,7 @@ static void do_fd_button
 		curobj,				/* index of object in the listbox */ 
 		newfont;			/* aux local font index */ 
 
-	boolean
+	bool
 		drawbutt = TRUE;
 
 
@@ -544,7 +543,7 @@ static void *alloc_fd(void)
  * Dialog for selecting window (directory or text) font
  */
 
-boolean fnt_dialog(int title, XDFONT *wd_font, boolean prop)
+bool fnt_dialog(int title, XDFONT *wd_font, bool prop)
 {
 	int 
 		button;
@@ -555,7 +554,7 @@ boolean fnt_dialog(int title, XDFONT *wd_font, boolean prop)
 	SLIDER 
 		sl_info;
 
-	boolean 
+	bool 
 		stop = FALSE, 
 		ok = FALSE;
 

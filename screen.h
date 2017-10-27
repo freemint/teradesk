@@ -21,11 +21,11 @@
  */
 
 
-boolean clip_desk(RECT *r);
+bool clip_desk(RECT *r);
 void clipdesk_on(void);
 void pclear(RECT *r);
 void invert(RECT *r);
-boolean rc_intersect2(RECT *r1, RECT *r2);
+bool rc_intersect2(RECT *r1, RECT *r2);
 void move_screen(RECT *dest, RECT *src);
 void set_txt_default(XDFONT *f);
 int *get_colours(void);

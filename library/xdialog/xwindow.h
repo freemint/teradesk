@@ -133,7 +133,7 @@ extern void xw_delete(WINDOW *w);
 extern void xw_closedelete(WINDOW *w);
 
 extern void xw_set(WINDOW *w, int field,...);
-extern void xw_get(WINDOW *w, int field,...);
+extern void xw_get(WINDOW *w, int field, RECT *r);
 extern void xw_setsize(WINDOW *w, RECT *size);
 extern void xw_getsize(WINDOW *w, RECT *size);
 extern void xw_getwork(WINDOW *w, RECT *size);

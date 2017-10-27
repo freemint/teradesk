@@ -21,18 +21,6 @@
  */
 
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <tos.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <osbind.h>
- #include <vdibind.h>
-#endif
-
-#include <ctype.h>
-#include <stddef.h>
 #include <library.h>
 #include <vaproto.h>
 
@@ -175,11 +163,6 @@ int xe_xmulti(XDEVENT *events)
 
 	events->xd_keycode = 0; /* why ??? */
 
-#ifdef __PUREC__
-
-	EvntMulti((EVENT *)events);
-
-#else
 	events->ev_mwhich = evnt_multi
 	(
 		events->ev_mflags,
@@ -205,7 +188,6 @@ int xe_xmulti(XDEVENT *events)
 		&events->ev_mkreturn,
 		&events->ev_mbreturn
 	);
-#endif
 	xe_mbshift = events->ev_mmokstate;
 
 	/* AV_SENDKEY message is transformed into a keyboard event */

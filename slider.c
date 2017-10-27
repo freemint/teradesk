@@ -21,12 +21,9 @@
  */
 
 
-#include <np_aes.h>
-#include <vdi.h>
-#include <mint.h>
+#include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
-#include <library.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -47,7 +44,7 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 		s,
 		sn = sl->n,
 		slines = sl->lines,
-		slh = sl->tree[sl->sparent].r.h;
+		slh = sl->tree[sl->sparent].ob_height;
 
 
 	sl->line = ((sn < slines) || (sl->line < 0)) ? 0 : min(sl->line, sn - slines);
@@ -66,12 +63,12 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 	
 	/* Compensation for 3D effects */
 
-	sl->tree[sl->slider].r.h = sh - 2 * aes_ver3d;
+	sl->tree[sl->slider].ob_height = sh - 2 * aes_ver3d;
 
 	/* Determine slider position */
 
 	s = sn - slines;
-	sl->tree[sl->slider].r.y = aes_ver3d + ( (s > 0) ? (int) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
+	sl->tree[sl->slider].ob_y = aes_ver3d + ( (s > 0) ? (int) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
 
 	if (info)
 		xd_drawdeep(info, sl->sparent);
@@ -132,7 +129,7 @@ static void do_slider
 		newpos = 0;
 
 	lines = (long)(sl->n - sl->lines);
-	sl->line = (int)calc_slpos(lines, newpos);
+	sl->line = (int)calc_slpos(newpos, lines);
 	sl_set_slider(sl, info);
 }
 

@@ -21,15 +21,6 @@
  */
 
 
-#ifdef __PUREC__
- #include <np_aes.h>
- #include <vdi.h>
-#else
- #include <aesbind.h>
- #include <vdibind.h>
-#endif
-
-#include <stddef.h>
 #include <library.h>
 #include "xdialog.h"
 

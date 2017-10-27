@@ -284,7 +284,7 @@ screen(capsensitive("xd_change"))
 Name          Change object status and redraw the object.
 
 Definition    void xd_change( XDINFO *dialog,int object,int newstate,
-                              boolean draw );
+                              bool draw );
 
 Prototype in  xdialog.h
 

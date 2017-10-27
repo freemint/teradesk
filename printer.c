@@ -21,16 +21,10 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <tos.h>
-#include <vdi.h>
 #include <library.h>
 #include <xdialog.h>
+#include <time.h>
 #include <xscncode.h>
-#include <mint.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -63,7 +57,7 @@ int trash_or_print(ITMTYPE type);
  * Print a character through GEMDOS.
  */
 
-static boolean prtchar
+static bool prtchar
 (
 	char ch	/* character to be printed */
 )
@@ -75,7 +69,7 @@ static boolean prtchar
 		button,
 		error;
 
-	boolean
+	bool
 		ready = FALSE, 
 		result = FALSE;
 
@@ -128,9 +122,9 @@ static boolean prtchar
  * same as prtchar above, it returns FALSE when OK!
  */
 
-static boolean print_eol(void)
+static bool print_eol(void)
 {
-	boolean status = FALSE;
+	bool status = FALSE;
 
 	if ( ( status = prtchar( (char)13 )	) == FALSE )	/* CR */
 		status = prtchar( (char)10 );					/* LF */
@@ -145,7 +139,7 @@ static boolean print_eol(void)
  * Function returns FALSE if ok, in style with other print functions
  */
 
-static boolean print_line 
+static bool print_line 
 ( 
 	const char *dline 		/* 0-terminated line to print */
 )
@@ -156,7 +150,7 @@ static boolean print_line
 	int 
 		i = 0;				/* position in printer line */
 
-	boolean 
+	bool 
 		status = FALSE;		/* prtchar print status */
 
 
@@ -205,7 +199,7 @@ static int print_file
 		ll = 0,		/* line length counter */
 		result = 0;
 
-	boolean 
+	bool 
 		stop = FALSE;
 
 
@@ -344,7 +338,7 @@ static int print_file
  * Note: parameter 'list' is locally modified
  */
 
-boolean check_print
+bool check_print
 (
 	WINDOW *w,	/* poiner to window in which items have been selected */
 	int n,		/* number of selected items */
@@ -406,7 +400,7 @@ boolean check_print
  * window the directory of which is being printed.
  */
 
-boolean print_list
+bool print_list
 ( 
 	WINDOW *w,		/* pointer to window in which itemsh have been selected */ 
 	int n,			/* number of seleced items */ 
@@ -438,7 +432,7 @@ boolean print_list
 		type,		/* item type (file/folder...) */
 		tgttype;	/* link target type */
 
-	boolean
+	bool
 		perror = FALSE;		/* true if there is an error in printing */
 
 
@@ -510,7 +504,7 @@ boolean print_list
 							}
 
 							*files -= 1;
-							sub_size(bytes, attr.size);
+							sub_size(bytes, attr.st_size);
 
 						upd_copyname(NULL, NULL, empty);
 						}
@@ -529,7 +523,7 @@ boolean print_list
 						else
 						{
 							*files -= 1;
-							sub_size(bytes, attr.size);
+							sub_size(bytes, attr.st_size);
 						}
 
 						perror = print_line(dline);

@@ -21,9 +21,9 @@
  */
 
 
-int key_state(int *key, boolean hndl_msg);
+int key_state(int *key, bool hndl_msg);
 void clr_key_buf(void);
 void wait_button(void);
 void wait(int dt);
 int clr_msg_buf(void);
-boolean escape_abort( boolean hndl_msg );
+bool escape_abort( bool hndl_msg );

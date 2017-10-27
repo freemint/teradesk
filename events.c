@@ -21,8 +21,7 @@
  */
 
 
-#include <np_aes.h>	
-#include <vdi.h>
+#include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
 
@@ -82,7 +81,7 @@ static int event(int evflags, int mstate, int *key)
  *			 -1 if a message is received which terminates the program
  */
 
-int key_state(int *key, boolean hndl_msg)
+int key_state(int *key, bool hndl_msg)
 {
 	int result;
 
@@ -139,7 +138,7 @@ void wait_button(void)
 
 void wait(int dt)
 {
-	evnt_timer(dt, 0);
+	evnt_timer(dt);
 }
 
 
@@ -178,7 +177,7 @@ int clr_msg_buf(void)
  * operations noticeably
  */
 
-boolean escape_abort( boolean hndl_msg )
+bool escape_abort( bool hndl_msg )
 {
 	int
 		key,

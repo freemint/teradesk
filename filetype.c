@@ -21,14 +21,8 @@
  */
 
 
-#include <np_aes.h>	
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
 #include <library.h>
 #include <xdialog.h>
-#include <mint.h>
-#include <limits.h>
 
 #include "resource.h" /* includes desktop.h */
 #include "desk.h"
@@ -64,7 +58,7 @@ const char
 	*presets[12] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG", ".*", "\0" };
 
 const char 
-	fas[] = {FA_READONLY, FA_ARCHIVE, FA_HIDDEN, FA_SYSTEM, FA_SUBDIR, FA_PARDIR};
+	fas[] = {FA_RDONLY, FA_ARCHIVE, FA_HIDDEN, FA_SYSTEM, FA_SUBDIR, FA_PARDIR};
 
 
 /*  
@@ -147,7 +141,7 @@ static void rem_all_filetypes(void)
  * in *ft are unchanged.
  */
 
-static boolean filetype_dialog
+static bool filetype_dialog
 (
 	FTYPE **list, 	/* list in which duplicates are checked for */
 	int pos,		/* positin in the list where to add data */ 
@@ -162,7 +156,7 @@ static boolean filetype_dialog
 		title, 			/* rsc index of dialog title string */
 		button;			/* code of pressed button */
 
-	boolean
+	bool
 		stat = FALSE,	/* changes accepted or not */
 		stop = FALSE;	/* true to exit from dialog */
 

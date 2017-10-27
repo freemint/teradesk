@@ -21,14 +21,8 @@
  */
 
 
-#include <np_aes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vdi.h>
-#include <xdialog.h>
-#include <mint.h>
 #include <library.h>
-#include <limits.h>
+#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -55,7 +49,7 @@ void log_shortname( char *dest, char* appname ); /* from applik.h */
  * in the list-manipulation dialog. See lists.c 
  */
 
-static void set_lselector(SLIDER *slider, boolean draw, XDINFO *info) 
+static void set_lselector(SLIDER *slider, bool draw, XDINFO *info) 
 {
 	int
 		i;
@@ -120,7 +114,7 @@ static void ls_sl_init ( int n, SLIDER *sl, LSTYPE **list )
  * if there is any.
  */
 
-boolean find_wild 
+bool find_wild 
 ( 
 	LSTYPE **list,		/* list to be searched in */ 
 	char *name,			/* name to match */ 
@@ -137,7 +131,7 @@ boolean find_wild
 	void 
 		(*copyf)( LSTYPE *t, LSTYPE *s ) = copy_func;
 
-	boolean
+	bool
 		result = FALSE;
 
 
@@ -420,7 +414,7 @@ LSTYPE *lsadd_end
 
 /* Copy a filetype, programtype, icontype or applications list into another */
 
-boolean copy_all
+bool copy_all
 (
 	LSTYPE **copy, 	/* target list to which data is copied */
 	LSTYPE **list,	/* source list from which data is copied */ 
@@ -483,7 +477,7 @@ int cnt_types
  *  pos  = position of "name" item in the list 
  */
 
-boolean check_dup
+bool check_dup
 ( 
 	LSTYPE **list,	/* list of filetypes */ 
 	char *name,		/* name to check */ 
@@ -553,9 +547,9 @@ static void resize_dialog
 	int dh	/* vertical size change */
 )
 {
-	setmask[0].r.h += dh;
-	setmask[FTOK].r.y += dh;
-	setmask[FTCANCEL].r.y += dh;
+	setmask[0].ob_height += dh;
+	setmask[FTOK].ob_y += dh;
+	setmask[FTCANCEL].ob_y += dh;
 }
 
 
@@ -605,7 +599,7 @@ int list_edit
 		*curitm,			/* pointer to current item in the list */
 		*anitem;			/* temp. pointer storage for swapping places */
 
-	boolean
+	bool
 		keep = FALSE,		/* true if not needed to set buttons to normal */
 		stop = FALSE,		/* true to exit from the main loop */
 		dc = FALSE,			/* true for a double click */
@@ -633,7 +627,7 @@ int list_edit
 
 	if(use & LS_APPL)
 	{
-		dh = setmask[FTCHANGE].r.y - setmask[FTADD].r.y;
+		dh = setmask[FTCHANGE].ob_y - setmask[FTADD].ob_y;
 		resize_dialog(-dh);
 	}
 
