@@ -19,13 +19,13 @@ ahcm.lib
 
 ;.C[ -K -Y -G -I..\..\include]
 ;.S[ -Y -S ]
-;.L[ -J -Y -L -V]
+;.L[ -J -Y -L]
 
 ; Without debug info:
 
 .C[ -C -K -G -I..\..\include]
 .S[ -S ]
-.L[ -J -V]
+.L[ -J]
 
 =
 

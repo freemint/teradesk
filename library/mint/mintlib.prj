@@ -32,13 +32,13 @@ mint.lib
 
 ;.C[-K -Y  -I..\..\include]
 ;.S[-Y -S]
-;.L[-J -G -Y -V]
+;.L[-J -G -Y]
 
 ; No debug info
 
 .C[-C -G -K -I..\..\include]
 .S[-S]
-.L[-J -V]
+.L[-J]
 
 =
 mintbind.s			; HR 130203: same as used by XaAES

@@ -124,20 +124,20 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 ; without debug info
 
 .C [-C -P -G -Ilibrary\xdialog -Iinclude]
-.S [-S -V -Iinclude]
-.L [-S=8192 -H=512 -V]
+.S [-S -Iinclude]
+.L [-S=8192]
 
 ; with debug info
 
 ;.C [-Y -C -P -G -Ilibrary\xdialog -Iinclude]
-;.S [-S -V -Iinclude]
-;.L [-G -L -Y -S=8192 -H=512 -V]
+;.S [-S -Iinclude]
+;.L [-G -L -Y -S=8192 -H=512]
 
 =
 
 ; Standard startup code
 
-pcstart.o
+cstartv.o
 
 ; Note: set autodependencies in Pure-C shell options
 

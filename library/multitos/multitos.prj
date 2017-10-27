@@ -32,13 +32,13 @@ multitos.lib
 
 ;.C[-K -Y -I..\..\include]
 ;.S[-Y -S]
-;.L[-J -G -Y -V]
+;.L[-J -G -Y]
 
 ; No debug info below
 
 .C[-C -G -K -I..\..\include]
 .S[-S]
-.L[-J -V]
+.L[-J]
 
 =
 aes.s
