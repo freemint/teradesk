@@ -24,18 +24,15 @@
 #define ICON_W		80
 #define ICON_H		46
 
-extern OBJECT 
-	*icons,
-	*desktop;
+extern OBJECT *icons;
+extern OBJECT *desktop;
 
-extern WINDOW 
-	*desk_window;
+extern WINDOW *desk_window;
 
-extern _WORD 
-	iconw,	/* icon sell size */
-	iconh,	/* icon cell size */
-	n_icons;
- 
+extern _WORD iconw;	/* icon sell size */
+extern _WORD iconh;	/* icon cell size */
+extern _WORD n_icons;
+
 extern INAME iname;
 
 extern bool noicons;
