@@ -31,7 +31,7 @@
 #include "events.h"
 #include "xfilesys.h"
 #include "file.h"
-#include "lists.h" 
+#include "lists.h"
 #include "slider.h"
 #include "font.h"
 #include "config.h"
@@ -52,11 +52,12 @@ typedef struct
 	bool new;
 } PRG_INFO;
 
-_WORD cdecl(*old_critic) (_WORD error);
-PRG_INFO pinfo;
+static _WORD cdecl (*old_critic) (_WORD error);
+
+static PRG_INFO pinfo;
+
 bool fargv = FALSE;
 
-static void sim_click(void);
 
 /* 
  * Display a title with the program name in the top of the screen. 
@@ -76,14 +77,14 @@ static void set_title(const char *title)
 	dsktitle.ob_width = xd_desk.w;
 	dsktitle.ob_height = xd_fnt_h + 2;
 
-	ttd.te_ptext = (char *)(long)title;
+	ttd.te_ptext = (char *) (long) title;
 	ttd.te_font = 3;
 	ttd.te_just = 2;
 	ttd.te_color = 0x1F0;
 	ttd.te_thickness = 0;
 	ttd.te_txtlen = xd_desk.w / xd_fnt_w;
 
-	draw_tree(&dsktitle, (RECT *)&dsktitle.ob_x);
+	draw_tree(&dsktitle, (RECT *) & dsktitle.ob_x);
 }
 
 
@@ -99,7 +100,7 @@ void clean_up(void)
 }
 
 
-static _WORD cdecl new_critic(_WORD error /*,_WORD drive*/ )
+static _WORD cdecl new_critic(_WORD error /*,_WORD drive */ )
 {
 	return error;
 }
@@ -128,9 +129,10 @@ static void close_windows(void)
 	_WORD handle;
 	_WORD dummy;
 
-	if ( aes_version >= 0x140 )
+	if (aes_version >= 0x140)
+	{
 		wind_new();
-	else
+	} else
 	{
 		wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 
@@ -144,19 +146,55 @@ static void close_windows(void)
 }
 
 
-/* 
+/*
+ * There seems to be a problem with TOS 2.06 swallowing the first mouse click
+ * after a program is executed by clicking on a desktop icon, when there are
+ * no windows open. It is mentioned also in the manual for the Thing desktop
+ * (Thing seems to suffer from the same problem).
+ * Code below seems to cure that: a mouse click is simulated by appl_tplay().
+ * Note1: sim_click() is also used when starting a program, see above.
+ * Note2: code below seems to be a working compromise fit both for
+ * the unpatched and the patched TOS 2.06.
+ * Note 3: TOS 3.06 being essentially the same as 2.06, this should
+ * apply to it, too ???
+ */
+
+static void sim_click(void)
+{
+	if ((tos_version == 0x206 || tos_version == 0x306)
+#if _MINT_
+		&& !(mint || geneva)
+#endif
+		)
+	{
+		XDEVENT events;
+		_WORD p[8] = { 0, 1, 1, 1, 0, 1, 0, 0 };
+
+		if (!wd_dirortext(xw_top()))
+			appl_tplay((void *) (&p), 2, 4);
+
+		xd_clrevents(&events);
+		events.ev_mflags = MU_BUTTON | MU_TIMER;
+		events.ev_mbclicks = 0x102;
+		events.ev_mbmask = 3;
+		events.ev_mtlocount = 100;
+
+		xe_xmulti(&events);
+	}
+}
+
+
+/*
  * Execute a singletask program with a command line. Return error code.
  * Note: appl_type here is 0 or 1 only; 0 for TOS programs, 1 for GEM ones
  */
-
 static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_type)
 {
-	_WORD 
-		dummy,
-		error, 
-		*colours = NULL, 
-		stdout_handle = 0,
-		ostderr_handle = 0;
+	_WORD dummy;
+	_WORD error;
+	_WORD *colours = NULL;
+	_WORD stdout_handle = 0;
+	_WORD ostderr_handle = 0;
 
 	/* If 'save colour' option is set, save the current colours. */
 
@@ -170,27 +208,27 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 
 	if (options.xprefs & TOS_STDERR)
 	{
-		if ((stdout_handle = (_WORD)Fdup(1)) < 0)	/* Get a copy of stdout for Fforce. */
+		if ((stdout_handle = (_WORD) Fdup(1)) < 0)	/* Get a copy of stdout for Fforce. */
 		{
 			free(colours);
 			return stdout_handle;
 		}
 
-		if ((ostderr_handle = (_WORD)Fdup(2)) < 0)	/* Duplicate old stderr. */
+		if ((ostderr_handle = (_WORD) Fdup(2)) < 0)	/* Duplicate old stderr. */
 		{
 			Fclose(stdout_handle);
 			free(colours);
 			return ostderr_handle;
 		}
 
-		Fforce(2,stdout_handle);
+		Fforce(2, stdout_handle);
 	}
 
 	hourglass_mouse();
 
 	/* Save current position of windows into a buffer, then close all windows; */
 
-	if ( wd_tmpcls() )
+	if (wd_tmpcls())
 	{
 		/* If windows were successfully closed, remove menu bar */
 
@@ -213,14 +251,14 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 			 * parameter #2.If it is (0), the application will be launched as
 			 * a TOS application, otherwise if it is (1), the 
 			 * application will be launched as a GEM application. 
-             * The extended bits in mode are only supported by AES 
+			 * The extended bits in mode are only supported by AES 
 			 * versions of at least 4.0. Parent applications which 
 			 * launch children using this mode are supposed to be 
 			 * suspended under MultiTOS.
 			 * Note: errors returned by shel_write() are not handled!
 			 */
 
-			shel_write(SHW_EXEC, aptype, 0, pinfo.name, (char *)&pinfo.cml);
+			shel_write(SHW_EXEC, aptype, 0, pinfo.name, (char *) &pinfo.cml);
 
 			hourglass_mouse();
 			wind_set_ptr_int(0, WF_NEWDESK, NULL, 0);
@@ -231,7 +269,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 
 			/* Why is this ? */
 
-#if 0 /* why was this? */
+#if 0									/* why was this? */
 			appl_exit();
 			appl_init();
 #endif
@@ -251,8 +289,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 				xd_mouse_off();
 				v_enter_cur(vdi_handle);
 				install_critic();
-			}
-			else
+			} else
 			{
 				/* GEM app; redraw desktop space */
 				dsk_draw();
@@ -268,12 +305,12 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 			 * closed, so the criteria in sim_click for simulating a click
 			 * will always be satisfied.
 			 */
-		
-			sim_click(); 
+
+			sim_click();
 
 			/* Start a program using Pexec */
 
-			error = (_WORD)x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
+			error = (_WORD) x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
 
 			if (aptype == 0)
 			{
@@ -283,17 +320,18 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 
 				if ((options.xprefs & TOS_KEY) != 0)
 				{
-					_WORD d, mbs;
+					_WORD d,
+					 mbs;
+
 					v_curtext(vdi_handle, get_freestring(MKEYCONT));
 					while (Bconstat(2))
 						Bconin(2);
-					while (!Bconstat(2) && (vq_mouse(vdi_handle, &mbs, &d, &d), mbs == 0));
+					while (!Bconstat(2) && (vq_mouse(vdi_handle, &mbs, &d, &d), mbs == 0)) ;
 				}
 
 				v_exit_cur(vdi_handle);
 				xd_mouse_on();
-			}
-			else
+			} else
 			{
 				/* This was a GEM program */
 
@@ -301,15 +339,15 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 			}
 
 			{
-				VLNAME cmd; /* maybe LNAME is enough ? */
+				VLNAME cmd;				/* maybe LNAME is enough ? */
 				char tail[128];
 
 				shel_read(cmd, tail);
 
 				if (strcmp(cmd, pinfo.name) && cmd[0])
 				{
-					COMMAND *ptail = (COMMAND *)tail;
-					
+					COMMAND *ptail = (COMMAND *) tail;
+
 					strcpy(pinfo.name, cmd);
 					pinfo.cml = *ptail;
 					pinfo.envp = NULL;
@@ -325,24 +363,26 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 				if ((h = x_fullname(pinfo.name, &error)) != NULL)
 				{
 					if (strlen(h) < sizeof(pinfo.name))
+					{
 						strcpy(pinfo.name, h);
-					else
+					} else
 					{
 						error = EPTHTL;
 						pinfo.new = FALSE;
 					}
 
 					free(h);
-				}
-				else
+				} else
+				{
 					pinfo.new = FALSE;
+				}
 			}
 
 			/* Try to restore a visible mouse if possible */
 
 			clean_up();
 
-		} /* do */
+		}								/* do */
 
 		shel_write(SHW_NOEXEC, 1, 0, "", "\0\0");
 
@@ -356,9 +396,10 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 	 * Clear keyboard buffer just in case there is something left there; 
 	 * then set mouse pointer to arrow shape 
 	 */
-
-	while (key_state(&dummy, FALSE) > 0); /* instead of clr_key_buf() */
-
+	while (key_state(&dummy, FALSE) > 0)	/* instead of clr_key_buf() */
+	{
+	}
+	
 	arrow_mouse();
 
 	/* Restore handle 2 to old handle. */
@@ -372,52 +413,13 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 
 	/* Restore old colours. */
 
-	if(colours)
+	if (colours)
 	{
 		set_colours(colours);
 		free(colours);
 	}
 
 	return error;
-}
-
-
-/* 
- * There seems to be a problem with TOS 2.06 swallowing the first mouse click
- * after a program is executed by clicking on a desktop icon, when there are
- * no windows open. It is mentioned also in the manual for the Thing desktop
- * (Thing seems to suffer from the same problem).
- * Code below seems to cure that: a mouse click is simulated by appl_tplay().
- * Note1: sim_click() is also used when starting a program, see above.
- * Note2: code below seems to be a working compromise fit both for
- * the unpatched and the patched TOS 2.06.
- * Note 3: TOS 3.06 being essentially the same as 2.06, this should
- * apply to it, too ???
- */
-
-static void sim_click(void)
-{
- 
-	if ( (tos_version == 0x206 || tos_version == 0x306 )  
-#if _MINT_
-	             && !(mint || geneva) 
-#endif
-	   ) 
-	{
-		XDEVENT events;
-		_WORD p[8] = {0,1, 1,1, 0,1, 0,0};
-
-		if ( !wd_dirortext(xw_top()) )
-			appl_tplay( (void *)(&p), 2, 4 );
-
-		xd_clrevents(&events);
-		events.ev_mflags = MU_BUTTON | MU_TIMER;
-		events.ev_mbclicks = 0x102;
-		events.ev_mbmask = 3;
-		events.ev_mtlocount = 100;
-
-		xe_xmulti(&events); 
-	}
 }
 
 
@@ -433,44 +435,36 @@ static void sim_click(void)
  * This routine is called only once, in app_exec() 
  */
 
-void start_prg
-(
-	const char *fname,		/* path+filename of program */ 
-	char *cmdl,				/* command line (first byte is length) */
-	const char *path,		/* default directory for this program */
-	ApplType prg,			/* application type */
-	bool argv,			/* if true, use argv protocol */
-	bool single, 		/* run in single mode when applicable */
-	bool back,			/* run in background when applicable */
-	long limmem, 			/* memory limit for program */
-	char *localenv,			/* local environment string for the program */
-	_WORD kstate				/* state of SHIFT, CONTROL and ALTERNATE keys */
-)
+void start_prg(const char *fname,		/* path+filename of program */
+			   char *cmdl,				/* command line (first byte is length) */
+			   const char *path,		/* default directory for this program */
+			   ApplType prg,			/* application type */
+			   bool argv,				/* if true, use argv protocol */
+			   bool single,				/* run in single mode when applicable */
+			   bool back,				/* run in background when applicable */
+			   long limmem,				/* memory limit for program */
+			   char *localenv,			/* local environment string for the program */
+			   _WORD kstate				/* state of SHIFT, CONTROL and ALTERNATE keys */
+	)
 {
-	_WORD 
-		error = 0,
-		appl_type;							/* 0 (TOS) or 1 (GEM) */
+	_WORD error = 0;
+	_WORD appl_type;					/* 0 (TOS) or 1 (GEM) */
 
-	size_t 
-		envl = 0,							/* length of environment string */ 
-		newenvl = 0;						/* length of environment string */
+	size_t envl = 0;					/* length of environment string */
+	size_t newenvl = 0;					/* length of environment string */
 
-	char 
-		*pp,								/* temporary allocation */
-		*olddir = NULL,						/* previous default directory */
-		*buildenv = NULL,					/* this env. will be passed */
-		*tmpenv = NULL;						/* points to temp. env. string */
+	char *pp;							/* temporary allocation */
+	char *olddir = NULL;				/* previous default directory */
+	char *buildenv = NULL;				/* this env. will be passed */
+	char *tmpenv = NULL;				/* points to temp. env. string */
 
-	VLNAME
-		prgpath;							/* Default directory for this program */
+	VLNAME prgpath;						/* Default directory for this program */
 
-	bool 
-		stask = TRUE,						/* TRUE if singletasking mode */
-		doenv = FALSE,						/* TRUE to process local environment */
-		doargv = FALSE,						/* TRUE to process ARGV */
-		background = back,					/* run in background */
-		catargv;							/* TRUE to append ARGV to local environmen */
-
+	bool stask = TRUE;					/* TRUE if singletasking mode */
+	bool doenv = FALSE;					/* TRUE to process local environment */
+	bool doargv = FALSE;					/* TRUE to process ARGV */
+	bool background = back;				/* run in background */
+	bool catargv;						/* TRUE to append ARGV to local environmen */
 
 #if !_MINT_
 	(void) limmem;
@@ -479,11 +473,11 @@ void start_prg
 
 	/* Determine program type */
 
-	appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0; 
+	appl_type = ((prg == PGEM) || (prg == PGTP)) ? 1 : 0;
 
 	/* Background program is activated if [Control] is pressed */
 
-	if (kstate & K_CTRL) 
+	if (kstate & K_CTRL)
 		background = TRUE;
 
 	/* 
@@ -492,7 +486,7 @@ void start_prg
 	 * Note: localenv is never passed if empty, it is NULL then 
 	 */
 
-	if ( localenv )
+	if (localenv)
 	{
 		doenv = TRUE;
 		tmpenv = make_argv_env(NULL, localenv, &envl);
@@ -500,8 +494,8 @@ void start_prg
 	}
 
 	/* Should ARGV string be appended to the local environment? */
-	
-	catargv = argv; /* but it may be modified later */
+
+	catargv = argv;						/* but it may be modified later */
 
 	/* 
 	 * Also, slightly different behaviour is needed in some cases.
@@ -509,10 +503,10 @@ void start_prg
 	 * to local environment
 	 */
 
-#if 0 /* it seems better to always add ARGV to the environment */
+#if 0									/* it seems better to always add ARGV to the environment */
 
 #if _MINT_
-	catargv = catargv && ( fargv || magx || (mint /* && !magx */  && !geneva && doenv) || !(mint || geneva) ); 
+	catargv = catargv && (fargv || magx || (mint /* && !magx */  && !geneva && doenv) || !(mint || geneva));
 #endif
 
 #endif
@@ -527,10 +521,10 @@ void start_prg
 	 * even if it contains only the trailing zeros
 	 */
 
-	if ( doenv || catargv )
+	if (doenv || catargv)
 	{
-		buildenv = new_env( tmpenv, envl, 1, &newenvl );
-		if ( !(buildenv) )
+		buildenv = new_env(tmpenv, envl, 1, &newenvl);
+		if (!(buildenv))
 			goto errexit;
 	}
 
@@ -547,29 +541,29 @@ void start_prg
 	 * appear in Magic or Geneva.
 	 */
 
-	if ( argv ) 
+	if (argv)
 	{
 		doargv = TRUE;
 
 #if _MINT_
-		if ( catargv )
+		if (catargv)
 #endif
 		{
 			/* Append ARGV to the local environment string */
 
-			char *envp = buildenv; 
+			char *envp = buildenv;
 
 			doenv = TRUE;
 			tmpenv = make_argv_env(fname, cmdl + 1, &envl);
-			buildenv = malloc_chk(newenvl + envl + 2L); /* +2L probably not needed here */
+			buildenv = malloc_chk(newenvl + envl + 2L);	/* +2L probably not needed here */
 
-			if ( !(tmpenv && buildenv) )
+			if (!(tmpenv && buildenv))
 				goto errexit;
 
 			/* Concatenate the strings. Append ARGV string at trailing end */
 
-			memcpy( buildenv, envp, newenvl );
-			memcpy(&buildenv[newenvl - 1L], tmpenv, envl );
+			memcpy(buildenv, envp, newenvl);
+			memcpy(&buildenv[newenvl - 1L], tmpenv, envl);
 			free(tmpenv);
 			free(envp);
 			tmpenv = NULL;
@@ -587,7 +581,7 @@ void start_prg
 	 */
 
 #if _MINT_
-	stask = ( single && magx ) || ( _AESnumapps != -1 && !magx );
+	stask = (single && magx) || (_AESnumapps != -1 && !magx);
 #endif
 
 	/* 
@@ -597,7 +591,7 @@ void start_prg
 	 * backslash if it is not there. 
 	 */
 
-	if((pp = fn_get_path((path) ? path : fname)) != NULL)
+	if ((pp = fn_get_path((path) ? path : fname)) != NULL)
 	{
 		/* A backslash may have to be concatenated, so copy the string */
 
@@ -606,29 +600,27 @@ void start_prg
 
 		/* Now concatenate the backslash. Must do so for Geneva at least */
 
-		if(!stask)
+		if (!stask)
 		{
-			pp = strrchr(prgpath,'\\');
+			pp = strrchr(prgpath, '\\');
 
-			if(!pp || (pp && pp[1] != '\0'))
+			if (!pp || (pp && pp[1] != '\0'))
 				strcat(prgpath, bslash);
 		}
 
-		if
-		(
-			stask
+		if (stask
 #if _MINT_
 			|| magx
 #endif
-		)
+			)
 		{
 			hourglass_mouse();
 			olddir = x_getpath(0, &error);
 
-			if(olddir)
+			if (olddir)
 				error = chdir(prgpath);
 
-			if(error < 0)
+			if (error < 0)
 			{
 				arrow_mouse();
 				xform_error(error);
@@ -638,51 +630,48 @@ void start_prg
 
 		/* See note above about singletasking ! */
 
-		if(stask || background)
+		if (stask || background)
 		{
 			/* 
 			 * AES is not multitasking, use Pexec() to start program,
 			 * (or else start a background program in mint)
 			 */
-
 			COMMAND cl;
 
-
 			if ((appl_type == 1) && background)
-				alert_iprint(MGEMBACK); 		/* GEM programs can not be started in background */
+				alert_iprint(MGEMBACK);	/* GEM programs can not be started in background */
 			else
 			{
-				if (prg == PACC)	
-					alert_iprint(MCANTACC); 		/* Don't start acc in single tos */
+				if (prg == PACC)
+					alert_iprint(MCANTACC);	/* Don't start acc in single tos */
 				else
 				{
-					/* Make a copy of cmdl. Never more than 125 characters */	
+					/* Make a copy of cmdl. Never more than 125 characters */
 
 					memclr(cl.command_tail, sizeof(cl.command_tail));
-					strsncpy(cl.command_tail, cmdl + 1, 126); /* "126" includes zero termination byte */
-					cl.length = *cmdl; /* value in the first byte */
+					strsncpy(cl.command_tail, cmdl + 1, 126);	/* "126" includes zero termination byte */
+					cl.length = *cmdl;	/* value in the first byte */
 
-					if ( doargv )
-						cl.length = 127; /* signalizes that ARGV is used */
+					if (doargv)
+						cl.length = 127;	/* signalizes that ARGV is used */
 
-					if ( background )
+					if (background)
 					{
 #if _MINT_
-						error = (_WORD)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
+						error = (_WORD) x_exec((mint) ? 100 : 0, fname, &cl, buildenv);	/* just Pexec */
 #else
-						error = (_WORD)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
+						error = (_WORD) x_exec(0, fname, &cl, buildenv);	/* just Pexec */
 #endif
-					}
-					else
+					} else
 						error = exec_com(fname, &cl, buildenv, appl_type);
-	
+
 					/* Fix a TOS bug */
 
 					sim_click();
 
 					/* Report errors */
 
-					xform_error(error); /* Will ignore error >= 0 */
+					xform_error(error);	/* Will ignore error >= 0 */
 				}
 			}
 		}
@@ -696,27 +685,25 @@ void start_prg
 			if (prg == PACC)
 			{
 				/* Start an accessory. Note: returns 0 if error. */
-				error = shel_write(SHW_EXEC_ACC, 0, wiscr, fname, empty); 
-			}
-			else
+				error = shel_write(SHW_EXEC_ACC, 0, wiscr, fname, empty);
+			} else
 			{
 				/* Start other types of applications */
-
-				_WORD mode;			/* launch mode */
-				void *p[5];			/* parameters for the extended call */
+				_WORD mode;				/* launch mode */
+				void *p[5];				/* parameters for the extended call */
 
 				/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
 
-				mode = SHW_XMDDEFDIR | SHW_EXEC; /* always use SHW_EXEC */
+				mode = SHW_XMDDEFDIR | SHW_EXEC;	/* always use SHW_EXEC */
 
 				/* Notify if memory limit is defined */
 
-				if ( limmem > 0L )	
+				if (limmem > 0L)
 					mode |= SHW_XMDLIMIT;
 
 				/* Notify that an environment is passed */
 
-				if ( doenv ) 
+				if (doenv)
 					mode |= SHW_XMDENV;
 
 				/* 
@@ -724,38 +711,36 @@ void start_prg
 				 * the pointer for the default directory
 				 */
 
-				p[0] = (void *)(long)fname;			/* pointer to name                */
-				p[1] = (void *)limmem;	/* value for Psetlimit()          */
+				p[0] = (void *) (long) fname;	/* pointer to name                */
+				p[1] = (void *) limmem;	/* value for Psetlimit()          */
 				p[2] = NULL;			/* value for Prenice()            */
 				p[3] = prgpath;			/* pointer to default directory   */
 				p[4] = buildenv;		/* pointer to environment string  */
 
 				/* Magic specifies the use of ARGV differenlty than other AESes */
-		
-				if ( magx )
+
+				if (magx)
 				{
-					if(doargv)
+					if (doargv)
 					{
-						if(catargv)
-							cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+						if (catargv)
+							cmdl[0] = 127;	/* Command will be passed through ARGV by TeraDesk */
 						else
-							cmdl[0] = 255; /* Magic will do ARGV only if needeed */
+							cmdl[0] = 255;	/* Magic will do ARGV only if needeed */
 					}
-				}
-				else
+				} else
 				{
-					if ( doargv && !catargv )
+					if (doargv && !catargv)
 					{
-						cmdl[0] = 127; /* this signals the use of ARGV */
-						wiscr = 1;			 /* the same */
-					}
-					else
-						wiscr = 0; /* ARGV is provided in other way, if needed */
+						cmdl[0] = 127;	/* this signals the use of ARGV */
+						wiscr = 1;		/* the same */
+					} else
+						wiscr = 0;		/* ARGV is provided in other way, if needed */
 				}
 
 				/* Start a program using shel_write */
 
-				error = shel_write(mode, appl_type, wiscr, (char *)p, (char *)cmdl);
+				error = shel_write(mode, appl_type, wiscr, (char *) p, (char *) cmdl);
 			}
 
 			/* 
@@ -765,7 +750,7 @@ void start_prg
 			 * some happily return ap_id of a failed startup.
 			 */
 
-			if (error <= 0 )
+			if (error <= 0)
 				alert_iprint(MFAILPRG);
 		}
 #endif
@@ -773,9 +758,9 @@ void start_prg
 
 	/* Program may jump directly here in case of error */
 
-	errexit:;
+  errexit:;
 
-	if(olddir)
+	if (olddir)
 	{
 		hourglass_mouse();
 		chdir(olddir);

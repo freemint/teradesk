@@ -44,7 +44,7 @@ char *strdup(const char *s)
 {
 	char *new = NULL;
 
-	if(s != NULL)
+	if (s != NULL)
 	{
 		size_t ls = strlen(s) + 1;
 
@@ -69,22 +69,17 @@ char *strdup(const char *s)
 
 int vsprintf(char *buffer, const char *format, va_list argpoint)
 {
-	const char *s;	/* pointer to a location in input format */ 
-	char *d;		/* pointer to a location in output buffer */ 
-	char *h;		/* pointer to a location in input string */ 
-	char fill;		/* padding character */
-	char tmp[16];	/* temporary buffer */
-
-	bool 
-		lng, 		/* true if a numeric variable is of a long type */
-		ready;		/* true when conversionn is finished */
-
-	int 
-		radix,		/* decimal or hexadecimal base for numeric output */
-		maxl,		/* maximum output string length */ 
-		ls,			/* string length */
-		i;			/* counter */
-
+	const char *s;						/* pointer to a location in input format */
+	char *d;							/* pointer to a location in output buffer */
+	char *h;							/* pointer to a location in input string */
+	char fill;							/* padding character */
+	char tmp[16];						/* temporary buffer */
+	bool lng;							/* true if a numeric variable is of a long type */
+	bool ready;							/* true when conversionn is finished */
+	int radix;							/* decimal or hexadecimal base for numeric output */
+	int maxl;							/* maximum output string length */
+	int ls;								/* string length */
+	int i;								/* counter */
 
 	s = format;
 	d = buffer;
@@ -107,103 +102,89 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 
 				switch (*s)
 				{
-					case 's':
+				case 's':
+					/* alphanumeric string format */
+					h = va_arg(argpoint, char *);
+					goto copyit;
+				case 'l':
+					/* next numeric output will be of a 'long' variable */
+					lng = TRUE;
+					break;
+				case 'x':
+					/* override radix and fill for hexadecimal output */
+					radix = 16;
+					fill = '0';
+					/* fall through */
+				case 'd':
+					/* decimal or hexadecimal numeric output */
+					if (lng)
+						ltoa(va_arg(argpoint, long), tmp, radix);
+					else
+						itoa(va_arg(argpoint, int), tmp, radix);
+					h = tmp;
+
+				  copyit:;
+					ls = (int) strlen(h);
+					if (maxl == 0)
+						maxl = ls;
+					maxl = min(maxl, 255 - (int) (d - buffer));
+
+					/* pad with zeros or blanks */
+
+					i = maxl - ls;
+					ls = 0;
+
+					if (maxl && i)	/* use maxl for d as well */
 					{
-						/* alphanumeric string format */
-	
-						h = va_arg(argpoint, char *);
-						goto copyit;
-					}
-					case 'l':
-					{
-						/* next numeric output will be of a 'long' variable */
-	
-						lng = TRUE;
-						break;
-					}
-					case 'x':
-					{
-						/* override radix and fill for hexadecimal output */
-						radix = 16;
-						fill = '0';
-					}
-					case 'd':
-					{
-						/* decimal or hexadecimal numeric output */
-	
-						if ( lng )					
-							ltoa(va_arg(argpoint, long), tmp, radix);
-						else
-							itoa(va_arg(argpoint, int), tmp, radix);
-	
-						h = tmp;
-	
-						copyit:;
-	
-						ls = (int)strlen(h);
-	
-						if(maxl == 0)
-							maxl = ls;
-	
-						maxl = min(maxl, 255 - (int)(d - buffer)); 
-	
-						/* pad with zeros or blanks */
-	
-						i = maxl - ls;
-						ls = 0;
-	
-						if (maxl && i) /* use maxl for d as well */
+						while (i--)
 						{
-							while (i--)
-							{
-								*d++ = fill;
-								ls++;
-							}
-						}
-	
-						/* copy data to output */
-	
-						while (*h && (ls < maxl))
-						{
-							*d++ = *h++;
+							*d++ = fill;
 							ls++;
 						}
-	
-						ready = TRUE;
-						break;
 					}
-					default:
+
+					/* copy data to output */
+
+					while (*h && ls < maxl)
 					{
-						/* interpret length specifier if given */
-	
-						if (isdigit(*s))
-							maxl = maxl * 10 + (int)(*s - '0');
-						else
-							ready = TRUE;
+						*d++ = *h++;
+						ls++;
 					}
+
+					ready = TRUE;
+					break;
+					
+				default:
+					/* interpret length specifier if given */
+
+					if (isdigit(*s))
+						maxl = maxl * 10 + (int) (*s - '0');
+					else
+						ready = TRUE;
+					break;
 				}
 				s++;
 			}
-		}
-		else
+		} else
+		{
 			*d++ = *s++;
+		}
 	}
 
-	*d = 0;	
+	*d = 0;
 
-	return (int)(d - buffer);
+	return (int) (d - buffer);
 }
 
 
 /*
  * Write into a string- substitute a standard function
  */
-
-int sprintf(char *buffer, const char *format,...)
+int sprintf(char *buffer, const char *format, ...)
 {
 	int r;
-
 	va_list argpoint;
+
 	va_start(argpoint, format);
 	r = vsprintf(buffer, format, argpoint);
 	va_end(argpoint);
