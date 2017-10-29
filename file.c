@@ -33,8 +33,8 @@
 #include "prgtype.h"
 #include "window.h"
 
-#define CFGEXT		"*.IN?" /* default configuration-file extension */
-#define PRNEXT		"*.PRN" /* default print-file extension */
+#define CFGEXT		"*.IN?"				/* default configuration-file extension */
+#define PRNEXT		"*.PRN"				/* default print-file extension */
 
 
 
@@ -46,14 +46,13 @@
  * A check is made whether total path length is within VLNAME size
  */
 
-int make_path( char *name, const char *path, const char *fname )
+int make_path(char *name, const char *path, const char *fname)
 {
 	size_t l = strlen(path);
 
-
 	/* "-1" below because a backlash may be added to the string */
 
-	if(l + strlen(fname) >= sizeof(VLNAME) - 1)
+	if (l + strlen(fname) >= sizeof(VLNAME) - 1)
 		return EPTHTL;
 
 	strcpy(name, path);
@@ -92,21 +91,18 @@ static const char *fn_last_backsl(const char *fname)
  * that "fname" is at least LNAME.
  */
 
-void split_path( char *path, char *fname, const char *name )
+void split_path(char *path, char *fname, const char *name)
 {
-	long
-		pl;		/* path length */
-
+	long pl;							/* path length */
 	const char *np = fn_get_name(name);
 
-
-	pl = lmin((size_t)(np - name), sizeof(VLNAME));
+	pl = lmin((size_t) (np - name), sizeof(VLNAME));
 	strsncpy(fname, np, sizeof(LNAME));
 	*path = 0;
 
-	if(pl > 0)
+	if (pl > 0)
 	{
-		if(fn_last_backsl(name) == name + 2)
+		if (fn_last_backsl(name) == name + 2)
 			pl++;
 
 		strsncpy(path, name, pl);
@@ -124,33 +120,31 @@ void split_path( char *path, char *fname, const char *name )
  * This routine also handles the cases of '\.\' or '\.' in the path
  */
 
-void path_to_disp ( char *fpath )
+void path_to_disp(char *fpath)
 {
 	/* find the last '\' */
+	char *nend = strrchr(fpath, '\\');
 
-	char *nend = strrchr( fpath, '\\' );
-
-
-	if ( nend > fpath ) /* otherwise nend[-1] below would not be possible */
+	if (nend > fpath)					/* otherwise nend[-1] below would not be possible */
 	{
 		char *p, *q;
 
 		/* If '\' is preceded by a ':' keep it, otherwise truncate */
 
-		if ( nend[-1] == ':' )
+		if (nend[-1] == ':')
 			nend++;
 
 		*nend = 0;
 
 		/* Attempt to find '\.\' or a trailing '\.' */
 
-		while((p = strstr( fpath, "\\.")) != NULL)
+		while ((p = strstr(fpath, "\\.")) != NULL)
 		{
 			q = p + 2L;
 
 			/* If found, remove it */
 
-			if(*q == '\\' || *q == '\0')
+			if (*q == '\\' || *q == '\0')
 			{
 				*p = 0;
 				strcat(fpath, q);
@@ -171,11 +165,11 @@ void path_to_disp ( char *fpath )
 
 const char *fn_get_name(const char *path)
 {
-	if(path)
+	if (path)
 	{
-		const char *h = fn_last_backsl(path); /* h == path if no backslash found */
+		const char *h = fn_last_backsl(path);	/* h == path if no backslash found */
 
-		if ( h != path || *path == '\\' )
+		if (h != path || *path == '\\')
 			h++;
 
 		return h;
@@ -192,10 +186,9 @@ const char *fn_get_name(const char *path)
 
 char *fn_get_path(const char *path)
 {
-	const char
-		*backsl;	/* pointer to the last backslash */
+	const char *backsl;					/* pointer to the last backslash */
 	char *newpath;
-	long l;			/* string length */
+	long l;								/* string length */
 
 
 	/* If there is no backslash in the name, just take the whole path */
@@ -210,7 +203,7 @@ char *fn_get_path(const char *path)
 	if (((l = backsl - path) == 2) && (path[1] == ':'))
 		l++;
 
-	l++; /* for the trailing zero byte */
+	l++;								/* for the trailing zero byte */
 
 	/*
 	 * Allocate memory for the new path, then copy the relevant part of
@@ -234,12 +227,8 @@ char *fn_get_path(const char *path)
 
 char *fn_make_path(const char *path, const char *name)
 {
-	char
-		*result;
-
-	_WORD
-		error;
-
+	char *result;
+	_WORD error;
 
 	if ((result = x_makepath(path, name, &error)) == NULL)
 		xform_error(error);
@@ -256,36 +245,29 @@ char *fn_make_path(const char *path, const char *name)
 
 char *fn_make_newname(const char *oldn, const char *newn)
 {
-	long
-		l,
-		tl;
-
+	long l, tl;
 	const char *backsl;
 	char *path;
-
-	_WORD
-		error = 0;
-
+	_WORD error = 0;
 
 	/* Find position of the last backslash  */
 
 	backsl = fn_last_backsl(oldn);
 
-	l = backsl - oldn;				/* length of the path part */
-	tl = l + strlen(newn) + 3L;				/* total new length */
+	l = backsl - oldn;					/* length of the path part */
+	tl = l + strlen(newn) + 3L;			/* total new length */
 
 	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
 	{
-		strsncpy(path, oldn, l + 1);		/* copy the path */
+		strsncpy(path, oldn, l + 1);	/* copy the path */
 
-		if ( (error = x_checkname( path, newn ) ) == 0 )
+		if ((error = x_checkname(path, newn)) == 0)
 		{
-			if(*(backsl + 1) != '\0')
+			if (*(backsl + 1) != '\0')
 				strcat(path, bslash);
 
 			strcat(path, newn);
-		}
-		else
+		} else
 		{
 			free(path);
 			path = NULL;
@@ -294,7 +276,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 
 	/* Note: failed malloc will be reported in malloc_chk above */
 
-	xform_error(error); /* Will ignore error >= 0 */
+	xform_error(error);					/* Will ignore error >= 0 */
 
 	return path;
 }
@@ -310,7 +292,6 @@ bool isdisk(const char *path)
 {
 	const char *p = path;
 
-
 	/*
 	 * If address exists, index 0 can be examined
 	 * If char at index 0 is not 0, index 1 can be examined
@@ -319,7 +300,7 @@ bool isdisk(const char *path)
 
 	/*                 [0]       [1]             [2]            [2]     */
 
-	if( p && isalpha(*(p++)) && *(p++) == ':' && (*p == '\\' || *p == '\0') )
+	if (p && isalpha(*(p++)) && *(p++) == ':' && (*p == '\\' || *p == '\0'))
 		return TRUE;
 
 	return FALSE;
@@ -335,7 +316,7 @@ bool isroot(const char *path)
 {
 	const char *d = nonwhite(path);
 
-	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
+	if (isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')))
 		return TRUE;
 
 	return FALSE;
@@ -352,29 +333,19 @@ bool isroot(const char *path)
 
 char *locate(const char *name, _WORD type)
 {
-	VLNAME
-		fname; /* can this be a LNAME ? */
-
-	char
-		*newpath,
-		*newn,
-		*fspec,
-		*title,
-		*cfgext;
+	VLNAME fname;						/* can this be a LNAME ? */
+	char *newpath;
+	char *newn;
+	char *fspec;
+	char *title;
+	char *cfgext;
 	const char *defext;
+	_WORD ex_flags;
+	bool result = FALSE;
 
-	_WORD
-		ex_flags;
+	static const _WORD  titles[] = { FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT };
 
-	bool
-		result = FALSE;
-
-
-	static const _WORD /* don't use const char here! indexes are large */
-		titles[] = {FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT};
-
-
-	cfgext = strdup( (type == L_PRINTF) ? PRNEXT : CFGEXT); /* so that strlwr can be done upon it */
+	cfgext = strdup((type == L_PRINTF) ? PRNEXT : CFGEXT);	/* so that strlwr can be done upon it */
 
 #if _MINT_
 	if (mint && cfgext)
@@ -386,7 +357,7 @@ char *locate(const char *name, _WORD type)
 	defext = (type >= L_LOADCFG) ? cfgext : fsdefext;
 
 	if ((fspec = fn_make_newname(name, defext)) == NULL)
-			return NULL;
+		return NULL;
 
 	strcpy(fname, fn_get_name(name));
 	ex_flags = EX_FILE;
@@ -403,11 +374,12 @@ char *locate(const char *name, _WORD type)
 		if (!newpath)
 			return NULL;
 
-		if ((type == L_PROGRAM) && !prg_isprogram(fname))
-			alert_iprint(TPLFMT);
-		else
+		if (type == L_PROGRAM && !prg_isprogram(fname))
 		{
-			if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF) )
+			alert_iprint(TPLFMT);
+		} else
+		{
+			if (((newn = fn_make_newname(newpath, fname)) != NULL) && (type != L_SAVECFG) && (type != L_PRINTF))
 			{
 				result = x_exist(newn, ex_flags);
 
@@ -416,14 +388,14 @@ char *locate(const char *name, _WORD type)
 					alert_iprint(TFILNF);
 					free(newn);
 				}
-			}
-			else
+			} else
+			{
 				result = TRUE;
+			}
 		}
 
 		fspec = newpath;
-	}
-	while (!result);
+	} while (!result);
 
 	free(newpath);
 
@@ -440,61 +412,55 @@ char *locate(const char *name, _WORD type)
  * the scrolled-text FTEXT object.
  */
 
-void get_fsel
-(
-	XDINFO *info,	/* dialog data */
-	char *result,	/* pointer to the string being edited */
-	_WORD flags		/* sets whether pathonly or nameonly */
-)
+void get_fsel(XDINFO *info,				/* dialog data */
+			  char *result,				/* pointer to the string being edited */
+			  _WORD flags				/* sets whether pathonly or nameonly */
+	)
 {
-	char
-		*c,			/* pointer to aft part of the string */
-		*cc,		/* copy of the above */
-		*path,		/* path obtained */
-		*title;		/* Selector title */
+	char *c;							/* pointer to aft part of the string */
+	char *cc;							/* copy of the above */
+	char *path;							/* path obtained */
+	char *title;						/* Selector title */
 
-	long
-		pl = 0,			/* path length   */
-		fl = 0,			/* name length   */
-		tl,				/* total length of inserted string */
-		sl,				/* string length */
-		ml;				/* possible maximum for tl */
+	long pl = 0;						/* path length   */
+	long fl = 0;						/* name length   */
+	long tl;							/* total length of inserted string */
+	long sl;							/* string length */
+	long ml;							/* possible maximum for tl */
 
-	_WORD
-		tid = FSTLANY,
-		err = EPTHTL;
+	_WORD tid = FSTLANY;
+	_WORD err = EPTHTL;
 
-	VLNAME			/* actually a LNAME should be enough */
-		name;		/* name obtained */
+	VLNAME name;							/* name obtained */
 
-	bool
-		addname = ((flags & 0x8000) == 0);
+	bool addname = ((flags & 0x8000) == 0);
 
 
-	if(addname)
+	if (addname)
 	{
-		if((flags & 0x4000) != 0)
+		if ((flags & 0x4000) != 0)
 			tid = FSTLFILE;
-	}
-	else
+	} else
+	{
 		tid = FSTLFLDR;
-
+	}
+	
 	title = get_freestring(tid);
 
 	name[0] = 0;
 
 	/* Call the fileselector */
 
-	path = xfileselector( fsdefext, name, title ); /* path is allocated here */
+	path = xfileselector(fsdefext, name, title);	/* path is allocated here */
 
 	/* Some fileselectors do not redraw what was below them... */
 
 	wd_drawall();
-	xd_drawdeep( info, ROOT );
+	xd_drawdeep(info, ROOT);
 
 	/* If a path is specified, get rid of wildcards in it */
 
-	if ( path )
+	if (path)
 	{
 		/*
 		 * There will always be something after the last "\"
@@ -504,55 +470,56 @@ void get_fsel
 
 		path_to_disp(path);
 
-		if (*name && !isroot(path) && addname )
+		if (*name && !isroot(path) && addname)
 			strcat(path, bslash);
 
 		fl = strlen(name);
 		pl = strlen(path);
 		sl = strlen(result);
-		tl = 0;			/* length of the string to be inserted */
+		tl = 0;							/* length of the string to be inserted */
 		ml = XD_MAX_SCRLED - sl - 1;
 
 		cc = NULL;
-		c = result + (long)(info->cursor_x); /* part after the cursor */
+		c = result + (long) (info->cursor_x);	/* part after the cursor */
 
-		if ( (info->cursor_x < sl) && ( (cc = strdup(c)) == NULL ) )
-			err = 0; /* error already reported in strdup */
-		else
+		if ((info->cursor_x < sl) && ((cc = strdup(c)) == NULL))
+		{
+			err = 0;					/* error already reported in strdup */
+		} else
 		{
 			*c = 0;
 
-			if((flags & 0x4000) == 0)
+			if ((flags & 0x4000) == 0)
 			{
 				tl += pl;
 
-				if(tl > ml)
+				if (tl > ml)
 					goto freepath;
 
-				strsncpy( c, path, pl + 1 ); /* must include null at end here! */
+				strsncpy(c, path, pl + 1);	/* must include null at end here! */
 			}
 
-			if ( fl && addname )
+			if (fl && addname)
 			{
 				tl += fl;
 
-				if(tl > ml)
+				if (tl > ml)
 					goto freepath;
 
-				strcat( result, name );
+				strcat(result, name);
 			}
 
-			if ( cc )
+			if (cc)
 			{
-				strcat( result, cc );
+				strcat(result, cc);
 				free(cc);
 			}
 
-			info->cursor_x += (_WORD)tl;
+			info->cursor_x += (_WORD) tl;
 			err = 0;
 		}
 
-		freepath:;
+	  freepath:;
 		xform_error(err);
 		free(path);
 	}
@@ -566,12 +533,9 @@ void get_fsel
 int chdir(const char *path)
 {
 	const char *h = path;
+	_WORD error;
 
-	_WORD
-		error;
-
-
-	if(isdisk(path))
+	if (isdisk(path))
 	{
 		x_setdrv((path[0] & 0x5F) - 'A');
 
@@ -649,21 +613,18 @@ bool check_drive(_WORD drv)
 
 bool match_pattern(const char *t, const char *pat)
 {
-	const char *d; 				/* difference in positions */
-	const char *pe = NULL;		/* pointer to pattern end */
-	const char *te = NULL; 		/* pointer to name end */
-	const char *pa = NULL;		/* pointer to last astarisk */
-	char u; 					/* uppercased character in pat */
-	char tu;					/* uppercased *t */
-
-	bool
-		inv = FALSE,
-		valid = TRUE;
-
+	const char *d;						/* difference in positions */
+	const char *pe = NULL;				/* pointer to pattern end */
+	const char *te = NULL;				/* pointer to name end */
+	const char *pa = NULL;				/* pointer to last astarisk */
+	char u;								/* uppercased character in pat */
+	char tu;							/* uppercased *t */
+	bool inv = FALSE;
+	bool valid = TRUE;
 
 	/* Is this an exception mask? */
 
-	if(*pat == '~')
+	if (*pat == '~')
 	{
 		pat++;
 		inv = TRUE;
@@ -671,139 +632,130 @@ bool match_pattern(const char *t, const char *pat)
 
 	/* Now match the pattern */
 
-	while(valid && ((*t && *pat) || (!*t && *pat == '*')))	/* HR: catch empty that should be OK */
+	while (valid && ((*t && *pat) || (!*t && *pat == '*')))	/* HR: catch empty that should be OK */
 	{
-		switch(*pat)
+		switch (*pat)
 		{
-			case '?':			/* ? means any single character */
+		case '?':						/* ? means any single character */
+			t++;
+			pat++;
+			break;
+		case '*':						/* * means a string of any character */
+			if (!te)
+				te = t + strlen(t);	/* find the end */
+
+			if (!pe)
+			{
+				pe = pat;
+
+				while (*pe)			/* find the end and the last asterisk */
+				{
+					if (*pe == '*')
+						pa = pe;
+
+					pe++;
+				}
+			}
+
+			pat++;
+
+			if (pat > pa)			/* skip irelevant part */
+			{
+				d = te - (pe - pat);
+
+				if (d > t)
+					t = d;
+			}
+
+			/*
+			 * First character that must be matched after the '*'
+			 * this code could be smaller, but slower
+			 */
+
+			if (*pat == '!')
+			{
+				pat++;
+
+				if (*pat)			/* guard against invalidly specified masks */
+				{
+					u = (char) touppc(pat[1]);	/* the first one after that */
+
+					while (((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+						t++;
+
+					goto exceptch;
+				}
+			} else if (*pat == '[')
+			{
+				d = strchr(pat, ']');
+
+				if (d)				/* guard against invalidly specified masks */
+				{
+					u = (char) touppc(d[1]);
+
+					while (((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
+						t++;
+
+					goto anych;
+				}
+			} else
+			{
+				u = (char) touppc(*pat);
+
+				while (*t && (touppc(*t) != u))
+					t++;
+
+				break;
+			}
+
+			valid = FALSE;
+			break;
+
+		case '!':						/* !X means any character but X */
+			tu = touppc(*t);
+			pat++;
+
+		  exceptch:;
+
+			u = (char) touppc(*pat);
+
+			if (u && tu != u)
 			{
 				t++;
 				pat++;
 				break;
 			}
-			case '*':			/* * means a string of any character */
+
+			valid = FALSE;
+			break;
+
+		case '[':						/* [<chars>] means any one of <chars> */
+			tu = touppc(*t);
+			d = strchr(pat, ']');
+
+			if (d)
 			{
-				if(!te)
-					te = t + strlen(t);	/* find the end */
+			  anych:;
 
-				if(!pe)
+				while (++pat < d && (tu != touppc(*pat))) ;
+
+				if (pat < d)
 				{
-					pe = pat;
-
-					while(*pe)	/* find the end and the last asterisk */
-					{
-						if(*pe == '*')
-							pa = pe;
-
-						pe++;
-					}
-				}
-
-				pat++;
-
-				if(pat > pa)	/* skip irelevant part */
-				{
-					d = te - (pe - pat);
-
-					if(d > t)
-						t = d;
-				}
-
-				/*
-				 * First character that must be matched after the '*'
-				 * this code could be smaller, but slower
-				 */
-
-				if(*pat == '!')
-				{
+					pat = d;
 					pat++;
-
-					if(*pat)	/* guard against invalidly specified masks */
-					{
-						u = (char)touppc(pat[1]);	/* the first one after that */
-
-						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
-							t++;
-
-						goto exceptch;
-					}
-				}
-				else if(*pat == '[')
-				{
-					d = strchr(pat,']');
-
-					if(d)	/* guard against invalidly specified masks */
-					{
-						u = (char)touppc(d[1]);
-
-						while(((tu = touppc(*t)) != 0) && touppc(t[1]) != u)
-							t++;
-
-						goto anych;
-					}
-				}
-				else
-				{
-					u = (char)touppc(*pat);
-
-					while(*t &&(touppc(*t) != u))
-						t++;
-
-					break;
-				}
-
-				valid = FALSE;
-				break;
-			}
-			case '!':			/* !X means any character but X */
-			{
-				tu = touppc(*t);
-				pat++;
-
-				exceptch:;
-
-				u = (char)touppc(*pat);
-
-				if (u && tu != u)
-				{
 					t++;
-					pat++;
 					break;
 				}
+			}
 
-				valid = FALSE;
+			valid = FALSE;
+			break;
+		default:						/* exact match on anything else, case insensitive */
+			if (touppc(*t++) == touppc(*pat++))
 				break;
-			}
-			case '[':			/* [<chars>] means any one of <chars> */
-			{
-				tu = touppc(*t);
-				d = strchr(pat, ']');
 
-				if(d)
-				{
-					anych:;
-
-					while(++pat < d && (tu != touppc(*pat)));
-
-					if(pat < d)
-					{
-						pat = d;
-						pat++;
-						t++;
-						break;
-					}
-				}
-
-				valid = FALSE;
-				break;
-			}
-			default:	/* exact match on anything else, case insensitive */
-			{
-				if (touppc(*t++) == touppc(*pat++))
-					break;
-
-				valid = FALSE;
-			}
+			valid = FALSE;
+			break;
 		}
 	}
 
@@ -818,12 +770,8 @@ bool match_pattern(const char *t, const char *pat)
 
 bool cmp_wildcard(const char *fname, const char *pat)
 {
-	char
-		*dot = NULL;
-
-	bool
-		matched;
-
+	char *dot = NULL;
+	bool matched;
 
 #if _MINT_
 	if (!mint)
@@ -844,9 +792,10 @@ bool cmp_wildcard(const char *fname, const char *pat)
 
 			if (dot[1] == '*' && dot[2] == '\0' && strchr(fname, '.') == NULL)
 				*dot = '\0';
-		}
-		else if (strchr(fname, '.') != NULL)
+		} else if (strchr(fname, '.') != NULL)
+		{
 			return FALSE;
+		}
 	}
 
 	/* Now match the pattern */
@@ -854,16 +803,19 @@ bool cmp_wildcard(const char *fname, const char *pat)
 	matched = match_pattern(fname, pat);
 
 	if (dot)
-		*dot = '.'; /* restore the dot which was removed earlier */
+		*dot = '.';						/* restore the dot which was removed earlier */
 
 	return matched;
 }
 
 
 static _WORD chdrv;
-static long cdecl (*Oldgetbpb) (_WORD);
-static long cdecl (*Oldmediach) (_WORD);
-static long cdecl (*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
+
+static long cdecl(*Oldgetbpb) (_WORD);
+
+static long cdecl(*Oldmediach) (_WORD);
+
+static long cdecl(*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
 
 #define hdv_bpb              ( *( long cdecl (**)( _WORD dev ) ) 0x472L )
 #define hdv_rw               ( *( long cdecl (**)( _WORD rwflag,void *buf,_WORD cnt,_WORD recnr,_WORD dev,long lrecno)) 0x476L )
@@ -900,12 +852,12 @@ static long cdecl Newgetbpb(_WORD d)
 {
 	if (d == chdrv)
 	{
-		hdv_bpb = Oldgetbpb;		/*  *((Func *)0x472L)  */
-		hdv_rw = Oldrwabs;			/*  *((Func *)0x476L)  */
-		hdv_mediach = Oldmediach;	/*  *((Func *)0x47eL)  */
+		hdv_bpb = Oldgetbpb;			/*  *((Func *)0x472L)  */
+		hdv_rw = Oldrwabs;				/*  *((Func *)0x476L)  */
+		hdv_mediach = Oldmediach;		/*  *((Func *)0x47eL)  */
 	}
 
-	return (*Oldgetbpb)(d);
+	return (*Oldgetbpb) (d);
 }
 #endif
 
@@ -916,7 +868,7 @@ static long cdecl Newgetbpb(_WORD d)
  * and then disabled. Rwabs is a very dangerous function :-)
  */
 
-#if 0 /* __AHCC__ */
+#if 0									/* __AHCC__ */
 static long __asm__ cdecl Newmediach(_WORD d)
 {
 	movem.l	d2-d3,-(a7)
@@ -941,12 +893,12 @@ static long cdecl Newmediach(_WORD d)
 	if (d == chdrv)
 		return 2;
 	else
-		return (*Oldmediach)(d);
+		return (*Oldmediach) (d);
 }
 #endif
 
 
-#if 0 /* __AHCC__ */
+#if 0									/* __AHCC__ */
 static long __asm__ cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	move.l	sp,a0			; stackframe pointer --> a0
@@ -977,7 +929,7 @@ static long cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l
 	if (d == chdrv)
 		return MEDIA_CHANGE;
 	else
-		return (*Oldrwabs)(d, buf, a, b, c, l);
+		return (*Oldrwabs) (d, buf, a, b, c, l);
 }
 #endif
 
@@ -990,11 +942,9 @@ static long cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l
 
 void force_mediach(const char *path)
 {
-	_WORD
-		drive,
-		p = *path;
+	_WORD drive, p = *path;
 
-	if(!isdisk(path))
+	if (!isdisk(path))
 		return;
 
 	drive = tolower(p) - 'a';
@@ -1003,33 +953,20 @@ void force_mediach(const char *path)
 	if (mint)
 	{
 		if (Dlock(1, drive) == 0)
-			Dlock(0, drive);
-	}
-	else
+			(void) Dlock(0, drive);
+	} else
 #endif
 	{
 		void *stack;
 		static char fname[] = "X:\\X";
 		long r;
-
-		stack = (void *)Super(0L);
-
+		stack = (void *) Super(0L);
 		chdrv = drive;
 
-#if 0 /* replaced with equivalent code below */
-		Oldrwabs = *((Func *)0x476L);
-		Oldgetbpb = *((Func *)0x472L);
-		Oldmediach = *((Func *)0x47eL);
-#endif
 		Oldrwabs = hdv_rw;
 		Oldgetbpb = hdv_bpb;
 		Oldmediach = hdv_mediach;
 
-#if 0 /* replaced with equivalent code below */
-		*((Func *)0x476L) = Newrwabs;
-		*((Func *)0x472L) = Newgetbpb;
-		*((Func *)0x47eL) = Newmediach;
-#endif
 		hdv_rw = Newrwabs;
 		hdv_bpb = Newgetbpb;
 		hdv_mediach = Newmediach;
@@ -1038,15 +975,10 @@ void force_mediach(const char *path)
 		r = Fopen(fname, 0);
 
 		if (r >= 0)
-			Fclose((_WORD)r);
+			Fclose((_WORD) r);
 
-		if (*((void **)0x476L) == (void *)Newrwabs)
+		if (*((void **) 0x476L) == (void *) Newrwabs)
 		{
-#if 0 /* replaced with equivalent code below */
-			*((Func *)0x472L) = Oldgetbpb;
-			*((Func *)0x476L) = Oldrwabs;
-			*((Func *)0x47eL) = Oldmediach;
-#endif
 			hdv_bpb = Oldgetbpb;
 			hdv_rw = Oldrwabs;
 			hdv_mediach = Oldmediach;
@@ -1066,15 +998,11 @@ void force_mediach(const char *path)
 
 void cv_tos_fn2form(char *dest, const char *source)
 {
-	const char
-		*s = source;			/* a location in the source string */
+	const char *s = source;				/* a location in the source string */
+	char *dl = dest + 12;				/* In case a longer name slips through */
+	char *d = dest;						/* a location in the destination string */
 
-	char
-		*dl = dest + 12,		/* In case a longer name slips through */
-		*d = dest;				/* a location in the destination string */
-
-
-	while (*s && (*s != '.') && d < dl )
+	while (*s && (*s != '.') && d < dl)
 		*d++ = *s++;
 
 	if (*s)
@@ -1084,7 +1012,7 @@ void cv_tos_fn2form(char *dest, const char *source)
 
 		s++;
 
-		while ( *s && d < dl )
+		while (*s && d < dl)
 			*d++ = *s++;
 	}
 
@@ -1099,11 +1027,8 @@ void cv_tos_fn2form(char *dest, const char *source)
 
 static void cv_tos_form2fn(char *dest, const char *source)
 {
-	const char
-		*s = source;
-
-	char
-		*d = dest;
+	const char *s = source;
+	char *d = dest;
 
 	while ((*s != 0) && (s - source < 8))
 	{
@@ -1145,44 +1070,37 @@ void cv_fntoform(OBJECT *tree, _WORD object, const char *src)
 	 * Beware: "l" is the complete allocated length,
 	 * zero termination-byte must fit into it
 	 */
-
-	OBJECT
-		*ob = tree + object;
-
-	TEDINFO
-		*ti = xd_get_obspecp(ob)->tedinfo;
-
-	char
-		*dst = ti->te_ptext;
-
-	long
-		l = (long)ti->te_txtlen;
-
+	OBJECT *ob = tree + object;
+	TEDINFO *ti = xd_get_obspecp(ob)->tedinfo;
+	char *dst = ti->te_ptext;
+	long l = ti->te_txtlen;
 
 	/*
 	 * The only 12-chars long fields in TeraDesk should be
 	 * for 8+3 names, possibly even if Mint/Magic is around
 	 */
 
-	if ( l < 13L)
-		cv_tos_fn2form(dst, src);
-	else
+	if (l < 13)
 	{
-		if (ob->ob_flags & OF_EDITABLE )
+		cv_tos_fn2form(dst, src);
+	} else
+	{
+		if (ob->ob_flags & OF_EDITABLE)
 		{
-			if(xd_xobtype(ob) == XD_SCRLEDIT)
+			if (xd_xobtype(ob) == XD_SCRLEDIT)
 			{
-				l = (long)sizeof(VLNAME);
-				xd_init_shift(ob, src); /* will not work if strlen(dest) > sizeof(VLNAME) */
+				l = sizeof(VLNAME);
+				xd_init_shift(ob, src);	/* will not work if strlen(dest) > sizeof(VLNAME) */
 			}
 
-			strsncpy(dst, src, (size_t)l); 		/* term. byte included in l */
+			strsncpy(dst, src, (size_t) l);	/* term. byte included in l */
 
-			if ( strlen(src) >= l )
+			if ((long)strlen(src) >= l)
 				alert_iprint(TFNTLNG);
+		} else
+		{
+			cramped_name(src, dst, l);	/* term. byte included */
 		}
-		else
-			cramped_name(src, dst, l); 	/* term. byte included */
 	}
 }
 
@@ -1194,19 +1112,15 @@ void cv_fntoform(OBJECT *tree, _WORD object, const char *src)
 
 void cv_formtofn(char *dst, OBJECT *tree, _WORD object)
 {
-	TEDINFO
-		*ti = xd_get_obspecp(tree + object)->tedinfo;
-
-	char
-		*src = ti->te_ptext;
-
+	TEDINFO *ti = xd_get_obspecp(tree + object)->tedinfo;
+	char *src = ti->te_ptext;
 
 	/*
 	 * The only 12-characters-long fields in TeraDesk should be
 	 * for 8+3 names, possibly even if Mint/Magic is around
 	 */
 
-	if(ti->te_txtlen < 13)
+	if (ti->te_txtlen < 13)
 		cv_tos_form2fn(dst, src);
 	else
 		strip_name(dst, src);

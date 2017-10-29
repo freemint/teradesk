@@ -28,17 +28,13 @@
 #include "desktop.h"
 #include "desk.h"
 #include "events.h"
-#include "error.h" 
+#include "error.h"
 
 
 static _WORD event(_WORD evflags, _WORD mstate, _WORD *key)
 {
-	XDEVENT
-		events;
-
-	_WORD
-		result;
-
+	XDEVENT events;
+	_WORD result;
 
 	xd_clrevents(&events);
 
@@ -59,8 +55,7 @@ static _WORD event(_WORD evflags, _WORD mstate, _WORD *key)
 			if (hndlmessage(events.ev_mmgpbuf) != 0)
 				return -1;
 		}
-	} 
-	while (!(result == MU_TIMER) && !(result & ~(MU_MESAG | MU_TIMER)));
+	} while (!(result == MU_TIMER) && !(result & ~(MU_MESAG | MU_TIMER)));
 
 	*key = events.xd_keycode;
 
@@ -85,14 +80,13 @@ _WORD key_state(_WORD *key, bool hndl_msg)
 {
 	_WORD result;
 
-	result = event( (hndl_msg ? (MU_KEYBD | MU_MESAG) : MU_KEYBD), 0, key);
+	result = event((hndl_msg ? (MU_KEYBD | MU_MESAG) : MU_KEYBD), 0, key);
 
 	if (result == -1)
 	{
 		/* only if hndl_msg == TRUE can -1 be returned from event() */
 		return -1;
-	}
-	else if (result & MU_KEYBD)
+	} else if (result & MU_KEYBD)
 		return 1;
 	else
 		return 0;
@@ -121,22 +115,17 @@ void wait(_WORD dt)
  * operations noticeably
  */
 
-bool escape_abort( bool hndl_msg )
+bool escape_abort(bool hndl_msg)
 {
-	_WORD
-		key,
-		r;
-
+	_WORD key, r;
 
 	if ((r = key_state(&key, hndl_msg)) > 0)
 	{
 		if (key == ESCAPE)
-			if ( alert_printf(2, AABOOP) == 1 )
+			if (alert_printf(2, AABOOP) == 1)
 				return TRUE;
-	}
-	else if (r < 0)
+	} else if (r < 0)
 		return TRUE;
-	
-	return FALSE;
-} 
 
+	return FALSE;
+}
