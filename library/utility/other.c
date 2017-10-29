@@ -23,8 +23,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <tos.h>
 #include <library.h>
+#include <tos.h>
 
 /*
  * Convert a number (range 0:99 only!!!) into a string

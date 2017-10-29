@@ -55,6 +55,7 @@
 #define ENSLOCK	-59		/* Lock niet gevonden */
 #define GERANGE -64     /* Filepointer in ongeldig bereik */
 #define EINTRN  -65     /* Internal error */
+#undef EPLFMT
 #define EPLFMT  -66     /* Programma heeft niet het korrekte formaat om geladen te worden */
 #define EGSBF   -67     /* Fout bij Mshrink of Mfree */
 

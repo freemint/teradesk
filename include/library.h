@@ -21,18 +21,29 @@
  */
 
 #ifndef __LIBRARY__
-
-#define __LIBRARY__
+#define __LIBRARY__ 1
 
 #include <stdbool.h>
+#ifdef __PUREC__
 #include <portaes.h>
 #include <portvdi.h>
+#else
+#include <portab.h>
+#include <gem.h>
+typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
+#undef _AESrscfile
+#define	_AESrscfile   ((*((OBJECT ***)&aes_global[5])))
+#undef _AESrscmem
+#define	_AESrscmem    ((*((void **)&aes_global[7])))
+#define bfobspec BFOBSPEC
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include <tos.h>
 
 typedef struct

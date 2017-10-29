@@ -27,9 +27,6 @@
 #define cdecl
 #endif
 
-#include <portaes.h>
-#include <stddef.h>
-
 #ifndef __XWINDOW_H__
  #include "xwindow.h"
 #endif

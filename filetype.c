@@ -58,7 +58,7 @@ const char
 	*presets[12] = {"*", "*.*", "*.PRG", "*.APP", "*.GTP", "*.TOS", "*.TTP", "*.ACC", "*.TXT", "*.IMG", ".*", "\0" };
 
 const char 
-	fas[] = {FA_RDONLY, FA_ARCHIVE, FA_HIDDEN, FA_SYSTEM, FA_SUBDIR, FA_PARDIR};
+	fas[] = {FA_RDONLY, FA_CHANGED, FA_HIDDEN, FA_SYSTEM, FA_DIR, FA_PARDIR};
 
 
 /*  

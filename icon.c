@@ -2753,7 +2753,7 @@ static _WORD dsk_hndlkey(WINDOW *w, _WORD dummy_scancode, _WORD dummy_keystate)
  */
 void regen_desktop(OBJECT *desk_tree)
 {
-	wind_set_ptr(0, WF_NEWDESK, desk_tree, 0);
+	wind_set_ptr_int(0, WF_NEWDESK, desk_tree, 0);
 	dsk_draw();
 
 	if(desk_tree)

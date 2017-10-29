@@ -21,16 +21,9 @@
  */
 
 
-#include <portaes.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <portvdi.h>
-#include <mintbind.h>
 #include <library.h>
 #include <xdialog.h>
-#include <limits.h>
-
+#include <mintbind.h>
 
 #include "resource.h"
 #include "desk.h"

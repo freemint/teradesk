@@ -24,12 +24,19 @@
 #include <library.h>
 #include <errno.h>
 #include <signal.h>
-#include <error.h>
+#include <xerror.h>
 #include "dragdrop.h"
 
 #if _MINT_
 static char pipename[24];
 #endif
+
+#ifndef __MINT_SIGPIPE
+typedef void _CDECL (*__mint_sighandler_t) (long signum);
+#define __MINT_SIGPIPE 13
+#define __MINT_SIG_IGN	((__mint_sighandler_t) 1L)
+#endif
+
 static __mint_sighandler_t oldpipesig;
 
 
@@ -61,13 +68,11 @@ static __mint_sighandler_t oldpipesig;
  * it doesn't correctly search through pipes .AA to .ZZ
  */
 
-_WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD kstate, char *exts )
+_WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD kstate, char *exts)
 {
 #if _MINT_
 
-	long 
-		fd_mask;
-
+	long fds_mask;
 	_WORD 
 		msg[8];		/* message buffer */
 	_WORD *mp = msg,	/* pointer to */
@@ -100,7 +105,7 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 
 		fd = (_WORD)Fcreate(pipename, 0x02);
 	} 
-	while (fd == -ETOS_ACCES);
+	while (fd == EACCDN);
 
 	if (fd < 0) /* fcreate error */
 		return fd;
@@ -125,9 +130,9 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 
 	/* Now wait for a response */
 
-	fd_mask = 1L << fd;
+	fds_mask = 1L << fd;
 
-	if (Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L) && fd_mask) /* no timeout */
+	if (Fselect(DD_TIMEOUT, &fds_mask, 0L, 0L) && fds_mask) /* no timeout */
 	{
 		/* Read the 1 byte response */
 

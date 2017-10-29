@@ -24,7 +24,6 @@
 #include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 
@@ -628,7 +627,7 @@ _WORD cnt_items
 				{
 					/* This item is a directory */
 
-					if ( (attribs & FA_SUBDIR) != 0 )
+					if ( (attribs & FA_DIR) != 0 )
 						*folders += 1;
 
 					if ( gosub && (stack->sname = x_makepath(stack->spath, name, &error)) != NULL)
@@ -636,7 +635,7 @@ _WORD cnt_items
 						if ((error = push(&stack, stack->sname, NULL, FALSE)) != 0)
 							free(stack->sname);
 						else
-							if( (attribs & FA_SUBDIR) != 0 )
+							if( (attribs & FA_DIR) != 0 )
 								inftype = ITM_FOLDER;
 					}
 				}
@@ -1820,7 +1819,7 @@ _WORD touch_file
 	{
 		error = 0;
 
-		if( attr && ( wp || ((attr->st_attr & FA_ARCHIVE) == 0) ))
+		if( attr && ( wp || ((attr->st_attr & FA_CHANGED) == 0) ))
 			error = x_fattrib(fullname, attr);
 	}
 
@@ -3034,7 +3033,7 @@ bool itmlist_op
 				now.time = Tgettime();
 				optime = now;
 
-				opattr = FA_ARCHIVE; /* set all to just the "file changed" bit */
+				opattr = FA_CHANGED; /* set all to just the "file changed" bit */
 			}
 
 			/* Find path of the first source (or its full name if it is a folder) */

@@ -1,0 +1,89 @@
+BUILD := $(shell gcc -dumpmachine)
+
+HCP=hcp
+
+teradesk.hyp: teradesk.stg
+		 $(AM_V_GEN)HCP=""; \
+		 BUILD_HCP=""; \
+		 if test "$(CROSS)" != "no"; then \
+	           BUILD=$(BUILD); \
+		   if test "$$BUILD" != ""; then BUILD_HCP=`which $${BUILD}-hcp 2>/dev/null`; fi; \
+		   HCP="$$BUILD_HCP"; \
+		   if test "$$BUILD_HCP" = ""; then \
+		     echo "cannot create $@ when cross-compiling, output left in $<" >&2; \
+		   fi; \
+		 else \
+		   HCP="$(HCP)"; \
+		 fi; \
+		 if test "$$HCP" != "" && $$HCP --version >/dev/null 2>&1; then \
+		   $$HCP -o$@ $< || exit 1; \
+		 else \
+		   echo "HCP not found, output left in $<" >&2; \
+		 fi
+
+
+teradesk.ref: teradesk.hyp
+	@test -f $@
+
+.bindistdir:
+	$(AM_V_at)echo `mktemp -d`/tera3b > $@
+
+.srcdistdir:
+	$(AM_V_at)echo `mktemp -d`/tera3s > $@
+
+bindist:: teradesk.hyp teradesk.ref .bindistdir
+	$(AM_V_at)set -e; \
+	BINDISTDIR=`cat .bindistdir`; \
+	mkdir -p $${BINDISTDIR}/doc; \
+	cp -a desktop.prg desktop.rsc desktop.rso desktop.rsd desktos.prg desk_cf.prg $${BINDISTDIR}; \
+	cp -a readme.txt $${BINDISTDIR}; \
+	cp -a icons.rsc $${BINDISTDIR}; \
+	cp -a cicons.rsc $${BINDISTDIR}; \
+	cp -a hist_v34.txt $${BINDISTDIR}/doc; \
+	cp -a COPYING $${BINDISTDIR}/doc; \
+	cp -a teradesk.hyp teradesk.ref $${BINDISTDIR}/doc; \
+	echo "Binary distribution in $${BINDISTDIR}"
+
+dist srcdist:: .srcdistdir
+	$(AM_V_at)set -e; \
+	SRCDISTDIR=`cat .srcdistdir`; \
+	mkdir -p $${SRCDISTDIR}/support; \
+	mkdir -p $${SRCDISTDIR}/include; \
+	mkdir -p $${SRCDISTDIR}/library; \
+	mkdir -p $${SRCDISTDIR}/library/ahcm; \
+	mkdir -p $${SRCDISTDIR}/library/utility; \
+	mkdir -p $${SRCDISTDIR}/library/xdialog; \
+	for i in Makefile Makefile.dist COPYING readme.txt resource.txt hist_v34.txt teradesk.stg udo_fo.img *.c *.h *.prj desktop.rs* icons.rs* cicons.rs*; do \
+		cp -a $$i $${SRCDISTDIR}/; \
+	done; \
+	for i in include/*.h; do \
+		cp -a $$i $${SRCDISTDIR}/include; \
+	done; \
+	for i in support/*; do \
+		cp -a $$i $${SRCDISTDIR}/support; \
+	done; \
+	for i in library/ahcm/*.c library/ahcm/*.h library/ahcm/*.prj; do \
+		cp -a $$i $${SRCDISTDIR}/library/ahcm; \
+	done; \
+	for i in library/utility/*.c library/utility/*.prj; do \
+		cp -a $$i $${SRCDISTDIR}/library/utility; \
+	done; \
+	for i in library/xdialog/*.c library/xdialog/*.h library/xdialog/*.prj library/xdialog/*.hlp; do \
+		cp -a $$i $${SRCDISTDIR}/library/xdialog; \
+	done; \
+	echo "Source distribution in $${SRCDISTDIR}"
+
+zips:: srcdist bindist
+	$(AM_V_at)set -e; \
+	SRCDISTDIR=`cat .srcdistdir`; \
+	BINDISTDIR=`cat .bindistdir`; \
+	VERSION=`echo $(VERSION) | tr -d '.'`; \
+	here=`pwd`; \
+	cd $${SRCDISTDIR} || exit 1; \
+	zip -r "$$here/tera$${VERSION}s.zip" .; \
+	cd $${BINDISTDIR} || exit 1; \
+	zip -r "$$here/tera$${VERSION}b.zip" .; \
+	echo "created tera$${VERSION}s.zip and tera$${VERSION}b.zip"
+
+clean::
+	$(RM) .srcdistdir .bindistdir

@@ -223,7 +223,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 			shel_write(SHW_EXEC, aptype, 0, pinfo.name, (char *)&pinfo.cml);
 
 			hourglass_mouse();
-			wind_set_ptr(0, WF_NEWDESK, NULL, 0);
+			wind_set_ptr_int(0, WF_NEWDESK, NULL, 0);
 
 			/* Show the name of the launched program as title on the screen */
 

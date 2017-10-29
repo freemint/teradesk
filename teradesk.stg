@@ -1,6 +1,13 @@
+@if VERSION >= 6
+@os "atari"
+@charset "atari"
+@inputenc "atari"
+@lang "en"
+@endif
+@options +z
 @subject "Documentation/Utilities"
 @database "User Manual for TeraDesk"
-@author "Wout Klaren, Henk Robbers, Djordje Vukovic"  '
+@author "Wout Klaren, Henk Robbers, Djordje Vukovic"
 @$VER: November 2016
 @width 70
 @default Main
@@ -1223,7 +1230,7 @@ Set applications...
    Contents
 @image udo_fo.img 4
       Menus and Dialogs
-@ image udo_fo.img 7
+@image udo_fo.img 7
          Menu title: File
 
 @{U}4.2.3  New...                                                 TeraDesk@{u}
@@ -1975,7 +1982,7 @@ folder.
 
 
 
-@node "Menu title: Window
+@node "Menu title: Window"
 @toc "Menus and Dialogs"
 @image udo_fo.img 1
    Contents

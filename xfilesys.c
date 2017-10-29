@@ -23,7 +23,6 @@
 
 #include <library.h>
 #include <xdialog.h>
-#include <sys/stat.h>
 #include <mint/cookie.h>
 #include <fcntl.h>
 
@@ -624,7 +623,7 @@ _WORD x_getlabel(_WORD drive, char *label)
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 
-		if (((error = Fsfirst(path, FA_VOLUME)) == 0)) 
+		if (((error = Fsfirst(path, FA_LABEL)) == 0)) 
 			strsncpy(lblbuf, dta.d_fname, (size_t)LBLMAX);
 		else
 			error = EFILNF;
@@ -725,10 +724,10 @@ _WORD x_fattrib
 	hasuid = ((x_inq_xfs(file) & FS_UID) != 0);
 #endif
 
-	mask = (FA_RDONLY | FA_SYSTEM | FA_HIDDEN | FA_ARCHIVE);
+	mask = (FA_RDONLY | FA_SYSTEM | FA_HIDDEN | FA_CHANGED);
 
 	if((attr->st_mode & S_IFMT) == S_IFDIR)
-		mask |= FA_SUBDIR;
+		mask |= FA_DIR;
 
 	error = xerror((_WORD)Fattrib(file, 1, (attr->st_attr & mask) ));
 
@@ -891,9 +890,9 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 	if ((dta->d_attrib & FA_RDONLY) == 0)			/* can write as well */
 		attrib->st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
 
-	if (dta->d_attrib & FA_SUBDIR)
+	if (dta->d_attrib & FA_DIR)
 		attrib->st_mode |= (S_IFDIR | EXEC_MODE );
-	else if (!(dta->d_attrib & FA_VOLUME))
+	else if (!(dta->d_attrib & FA_LABEL))
 		attrib->st_mode |= S_IFREG;
 
 	attrib->st_size = dta->d_length;

@@ -60,3 +60,5 @@ m4/mkdirp.m4
 .dirstamp
 ahcc.cfg
 ahcc.buf
+.bindistdir
+.srcdistdir

@@ -180,11 +180,11 @@ static int _s_folder(const void *ee1, const void *ee2)
 	bool e1dir, e2dir;
 
 #if _MINT_
-		e1dir = ((e1->attrib.attrib & FA_SUBDIR) || (e1->tgt_type == ITM_FOLDER));
-		e2dir = ((e2->attrib.attrib & FA_SUBDIR) || (e2->tgt_type == ITM_FOLDER));
+		e1dir = ((e1->attrib.attrib & FA_DIR) || (e1->tgt_type == ITM_FOLDER));
+		e2dir = ((e2->attrib.attrib & FA_DIR) || (e2->tgt_type == ITM_FOLDER));
 #else
-		e1dir = (e1->attrib.attrib & FA_SUBDIR);
-		e2dir = (e2->attrib.attrib & FA_SUBDIR);
+		e1dir = (e1->attrib.attrib & FA_DIR);
+		e2dir = (e2->attrib.attrib & FA_DIR);
 #endif
 
 	if ((h = _s_visible(ee1, ee2)) != 0)
@@ -550,8 +550,8 @@ static void set_visible(DIR_WINDOW *w)
 				(   (oa & FA_SYSTEM) != 0 					/* permit system */
 			        || (b->attrib.attrib & FA_SYSTEM) == 0 	/* or item is not system */
 				) && 
-				(   (oa & FA_SUBDIR) != 0 					/* permit subdirectory */
-			        || (b->attrib.attrib & FA_SUBDIR) == 0 	/* or item is not subdirectory */
+				(   (oa & FA_DIR) != 0 						/* permit subdirectory */
+			        || (b->attrib.attrib & FA_DIR) == 0 	/* or item is not subdirectory */
 					|| strcmp(b->name, prevdir) == 0       	/*** or item is parent dir ***/ 
 				) && 
 				(   (oa & FA_PARDIR) != 0 					/* permit parent dir */  
@@ -1996,7 +1996,7 @@ void dir_line(DIR_WINDOW *dw, char *s, _WORD item)
 				*d++ = (aa & FA_SYSTEM)   ? 's' : '-';
 				*d++ = (aa & FA_HIDDEN)   ? 'h' : '-';
 				*d++ = (aa & FA_RDONLY) ? '-' : 'w';
-				*d++ = (aa & FA_ARCHIVE)  ? 'a' : '-';
+				*d++ = (aa & FA_CHANGED)  ? 'a' : '-';
 			}
 
 			*d++ = ' ';
@@ -4114,9 +4114,9 @@ ITMTYPE diritem_type(char *fullname )
 
 		if (x_attr(  1, fs_type, fullname, &attr )  >= 0 )
 		{
-			if ( attr.st_attr & FA_SUBDIR ) 
+			if ( attr.st_attr & FA_DIR ) 
 				return ITM_FOLDER;
-			else if ( !( attr.st_attr & FA_VOLUME) )
+			else if ( !( attr.st_attr & FA_LABEL) )
 			{
 				if ( dir_isexec(fn_get_name(fullname), &attr) )
 					return ITM_PROGRAM;

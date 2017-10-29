@@ -22,9 +22,9 @@
 
 
 #include <library.h>
+#include "xdialog.h"
 
 #include "xscncode.h"
-#include "xdialog.h"
 
 
 /* 
@@ -32,7 +32,7 @@
  * and so that code is disabled by seting _SMALL_FONT to 0
  */
 
-#define _SMALL_FONT 0 
+#define _SMALL_FONT 0
 
 _WORD 
 	aes_flags    = 0,	/* proper appl_info protocol (works with ALL Tos) */
@@ -2609,19 +2609,19 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 			/* Information on "normal" AES font */
 
-			appl_xgetinfo(APG_FONT, &xd_regular_font.size, &xd_regular_font.id,
+			appl_xgetinfo(AES_LARGEFONT, &xd_regular_font.size, &xd_regular_font.id,
 						 &dummy, &dummy);
 #if _SMALL_FONT
 
 			/* Information on "small" AES font */
 
-			appl_xgetinfo(APG_SMLFONT, &xd_small_font.size, &xd_small_font.id,
+			appl_xgetinfo(AES_SMALLFONT, &xd_small_font.size, &xd_small_font.id,
 						 &dummy, &dummy);
 
 #endif
 			/* Information on colour icons and supported rsc format */
 
-			appl_xgetinfo(APG_REZ, &ag1, &ag2, &colour_icons, &dummy);
+			appl_xgetinfo(AES_SYSTEM, &ag1, &ag2, &colour_icons, &dummy);
 
 			/* 
 			 * Information on supported window handling capabilities;
@@ -2630,11 +2630,11 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 			 * (AES 4.0 ?) recognizes these inquiries anyway
 			 */
 
-			appl_xgetinfo(APG_WINDOWS, &aes_wfunc, &dummy, &dummy, &dummy );
+			appl_xgetinfo(AES_WINDOW, &aes_wfunc, &dummy, &dummy, &dummy );
 
 			/* Information on object handling capabilites */
 
-			if ( appl_xgetinfo(APG_OBJECTS, &xd_has3d, &ag2, &ag3, &ag4 ))
+			if ( appl_xgetinfo(AES_OBJECT, &xd_has3d, &ag2, &ag3, &ag4 ))
 			{
 				if ( ag4 & 0x08 )				/* G_SHORTCUT supported ? */
 					aes_flags |= GAI_GSHORTCUT;
@@ -2645,7 +2645,7 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 				if ( xd_has3d && ag2 )					/* 3D-objects and objc_sysvar() present? */
 				{
-					objc_sysvar( 0, AD3DVALUE, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-enlargements   */
+					objc_sysvar( 0, AD3DVAL, 0, 0, &aes_hor3d, &aes_ver3d );	/* 3D-enlargements   */
 					objc_sysvar( 0, BACKGRCOL, 0, 0, &xd_bg_col, &dummy); 		/* background colour */
 				}
 			}

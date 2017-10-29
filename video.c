@@ -25,7 +25,7 @@
 #include "error.h"
 #include <xdialog.h>
 #include <mint/cookie.h>
-#include <falcon.h>
+#include <mint/falcon.h>
 
 #include "xfilesys.h"
 #include "resource.h"
@@ -42,6 +42,9 @@
 #include "video.h"
 #include "startprg.h"
 
+#ifndef C_Lace
+#define C_Lace 0x4C616365L     /* LaceScan */
+#endif
 
 #if _OVSCAN
 static short oldstat = -1;   /* previous state of OVERscan */

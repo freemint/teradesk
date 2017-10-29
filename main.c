@@ -942,7 +942,7 @@ static void opt_default(void)
 	options.cprefs = CF_COPY | CF_DEL | CF_OVERW | CF_PRINT | CF_TOUCH | CF_SHOWD;
 	options.fields = WD_SHSIZ | WD_SHDAT | WD_SHTIM | WD_SHATT | WD_SHOWN;    
 	options.plinelen = DEF_PLINE; 							
-	options.attribs = FA_SUBDIR | FA_SYSTEM;
+	options.attribs = FA_DIR | FA_SYSTEM;
 #endif
 	options.aarr = 1;	
 
@@ -1370,9 +1370,9 @@ static _WORD alloc_global_memory(void)
 #else
 	if (tos_version >= 0x206)
 #endif
-		global_memory = Mxalloc(global_mem_size, mode);
+		global_memory = (char *)Mxalloc(global_mem_size, mode);
 	else	
-		global_memory = Malloc(global_mem_size);
+		global_memory = (char *)Malloc(global_mem_size);
 
 	return (global_memory) ? 0 : ENSMEM;
 }
