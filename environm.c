@@ -47,14 +47,13 @@ long envlen(void)
 	do
 	{
 		while (*p++)
-			l++;		/* count nonzero bytes */
-		l++;			/* and a following zero byte */
-	}
-	while (*p);			/* while the next byte after a zero is nonzero */
+			l++;						/* count nonzero bytes */
+		l++;							/* and a following zero byte */
+	} while (*p);						/* while the next byte after a zero is nonzero */
 
-	l++;				/* count the last trailing zero */
+	l++;								/* count the last trailing zero */
 
-	return l;			/* return total length */
+	return l;							/* return total length */
 }
 
 
@@ -67,23 +66,17 @@ long envlen(void)
  * be it only "\0\0" if nothing else exists.
  */
 
-char *new_env
-(
-	const char *newvar,	/* form: NEWVAR=VALUE */ 
-	size_t size,	 	/* size of above, INCLUDING the trailing zero byte */
-	int where,			/* 1: add at head; 2: add at tail */
-	size_t *newsize		/* new environment string size including two trailing zeros */
-)
+char *new_env(const char *newvar,		/* form: NEWVAR=VALUE */
+			  size_t size,				/* size of above, INCLUDING the trailing zero byte */
+			  int where,				/* 1: add at head; 2: add at tail */
+			  size_t * newsize			/* new environment string size including two trailing zeros */
+	)
 {
-	long 
-		l = envlen() - 1; 		/* this will include one trailing zero */
-
-	char 
-		*new,					/* allocated  space for the new enviro */
-		*newto,					/* where to put the old string */
-		*oldto;					/* where to put the new string */
-	const char *p = _BasPag->p_env;	/* where is the old environment */
-
+	long l = envlen() - 1;				/* this will include one trailing zero */
+	char *new;							/* allocated  space for the new enviro */
+	char *newto;						/* where to put the old string */
+	char *oldto;						/* where to put the new string */
+	const char *p = _BasPag->p_env;		/* where is the old environment */
 
 	*newsize = 0;
 
@@ -97,21 +90,21 @@ char *new_env
 
 	/* Allocate space for the new environment */
 
-	if ( (new = malloc_chk(l + size + 4L)) != NULL )
+	if ((new = malloc_chk(l + size + 4L)) != NULL)
 	{
 		oldto = newto = new;
 
-		if ( where == 1 )
-			oldto += size; 	/* where to put the old string */
-		else	
-			newto += l;		/* where to put the new string */
+		if (where == 1)
+			oldto += size;				/* where to put the old string */
+		else
+			newto += l;					/* where to put the new string */
 
 		memcpy(oldto, p, l);
-	
-		if ( size )
+
+		if (size)
 			memcpy(newto, newvar, size);
 
-		new[l + size] = '\0';		/* second trailing zero */
+		new[l + size] = '\0';			/* second trailing zero */
 
 		*newsize = l + size + 1;
 	}
@@ -129,20 +122,20 @@ char *new_env
  * But is the program's environment string always allowed to write into ???
  */
 
-void clr_argv(void) 
+void clr_argv(void)
 {
 	char *p;
 
 	/* Find the location for the value of ARGV, then retrace until "ARGV=" found */
 
-	if((p = getenv("ARGV")) != NULL)
+	if ((p = getenv("ARGV")) != NULL)
 	{
-		while(strstr(p, "ARGV=") == NULL)
+		while (strstr(p, "ARGV=") == NULL)
 		{
 			p--;
 		}
-		
-		*p = '\0';	/* Destroy ARGV, this is now the end of environment */
+
+		*p = '\0';						/* Destroy ARGV, this is now the end of environment */
 	}
 }
 
@@ -160,22 +153,15 @@ void clr_argv(void)
  * expected to be doubled.
  */
 
-char *make_argv_env
-(
-	const char *program,	/* program name */ 
-	const char *cmdl,		/* command line or an environment string */ 
-	size_t *size			/* resultant size of the string */
-)
+char *make_argv_env(const char *program,	/* program name */
+					const char *cmdl,	/* command line or an environment string */
+					size_t * size		/* resultant size of the string */
+	)
 {
-	long 
-		argvl = 0;			/* Size of allocated space */
-
-	char 
-		*envp;				/* String being built */
-
-	const char
-		*name = "ARGV=", 	/* name of ARGV variable */
-		*s;					/* current location in input strings */
+	long argvl = 0;						/* Size of allocated space */
+	char *envp;							/* String being built */
+	const char *name = "ARGV=";			/* name of ARGV variable */
+	const char *s;						/* current location in input strings */
 
 	/* 
 	 * Length of command line + two trailing zeros. If the command line
@@ -183,16 +169,16 @@ char *make_argv_env
 	 * because the quotes will in fact be removed from the string
 	 */
 
-	argvl = strlen(cmdl) + 2L; 
+	argvl = strlen(cmdl) + 2L;
 
 	/* 
 	 * Length of "ARGV=" + length of program name + zero byte after "="
 	 * + zero byte after program name 
 	 */
 
-	if ( program )
-		argvl += strlen(program) + 7L; 
-	
+	if (program)
+		argvl += strlen(program) + 7L;
+
 	*size = 0;
 
 	/* 
@@ -203,9 +189,9 @@ char *make_argv_env
 
 	if ((envp = malloc_chk(argvl)) != NULL)
 	{
-		char *d = envp; /* current location in the string */
+		char *d = envp;					/* current location in the string */
 
-		if ( program )
+		if (program)
 		{
 			/* Add ARGV variable. */
 
@@ -216,7 +202,7 @@ char *make_argv_env
 				*d++ = *s++;
 			}
 
-			*d++ = 0;				/* Delimiting zero  after ARGV= */
+			*d++ = 0;					/* Delimiting zero  after ARGV= */
 
 
 			/* Add program name and a zero after it */
@@ -242,7 +228,7 @@ char *make_argv_env
 
 		d = strcpyuq(d, cmdl);
 
-		*d = 0;	  /* second trailing zero */
+		*d = 0;							/* second trailing zero */
 
 		/* This is the actual length of the environment string */
 
