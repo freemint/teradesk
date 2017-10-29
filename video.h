@@ -27,5 +27,4 @@ extern short ovrstat;
 #endif
 
 short voptions(void);
-void get_set_video(bool set);
-
+void get_set_video(_WORD set);

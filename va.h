@@ -85,7 +85,7 @@ extern AVSETW avsetw;
 extern bool va_reply;
 extern AVTYPE *avclients;
 extern _WORD av_current;
-extern const char *thisapp;
+extern char const thisapp[];
 
 void va_init(void);
 WINDOW *va_accw(void);
