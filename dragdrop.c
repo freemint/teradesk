@@ -73,12 +73,10 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 #if _MINT_
 
 	long fds_mask;
-	_WORD 
-		msg[8];		/* message buffer */
-	_WORD *mp = msg,	/* pointer to */
-		fd;			/* pipe handle */ 
-	char
-		c = 0;
+	_WORD msg[8];		/* message buffer */
+	_WORD *mp = msg;	/* pointer to */
+	_WORD fd;			/* pipe handle */
+	char c = 0;
 
 	strcpy(pipename, "U:\\PIPE\\DRAGDROP.A@");
 
@@ -93,21 +91,18 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 
 		if (pipename[18] > 'Z')
 		{
-			pipename[18] = 'A'; 
-
+			pipename[18] = 'A';
 			pipename[17]++;
-
 			if (pipename[17] > 'Z')
 				break;
 		}
 
 		/* Mode 2 means "get EOF if nobody has pipe open for reading" */
 
-		fd = (_WORD)Fcreate(pipename, 0x02);
-	} 
-	while (fd == EACCDN);
+		fd = (_WORD) Fcreate(pipename, 0x02);
+	} while (fd == EACCDN);
 
-	if (fd < 0) /* fcreate error */
+	if (fd < 0)							/* fcreate error */
 		return fd;
 
 	/* Construct and send the AES message to destination app */
@@ -119,9 +114,9 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 	*mp++ = msx;
 	*mp++ = msy;
 	*mp++ = kstate;
-	*mp   = ( ( ((_WORD)pipename[17]) << 8) + pipename[18] );
+	*mp = ((((_WORD) pipename[17]) << 8) + pipename[18]);
 
-	if(appl_write(dpid, 16, msg) == 0)
+	if (appl_write(dpid, 16, msg) == 0)
 	{
 		/* appl_write error */
 		Fclose(fd);
@@ -132,17 +127,17 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 
 	fds_mask = 1L << fd;
 
-	if (Fselect(DD_TIMEOUT, &fds_mask, 0L, 0L) && fds_mask) /* no timeout */
+	if (Fselect(DD_TIMEOUT, &fds_mask, 0L, 0L) && fds_mask)	/* no timeout */
 	{
 		/* Read the 1 byte response */
 
-		if( ((_WORD)Fread(fd, 1L, &c) == 1) && (c == DD_OK) ) /* no read error or DD_NAK */
+		if (((_WORD) Fread(fd, 1L, &c) == 1) && c == DD_OK)	/* no read error or DD_NAK */
 		{
 			/* Now read the "preferred extensions" */
 
-			if ((_WORD)Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE) /* no error reading extensions */
+			if ((_WORD) Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE)	/* no error reading extensions */
 			{
-				oldpipesig = Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
+				oldpipesig = (__mint_sighandler_t)Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
 				return fd;
 			}
 		}
@@ -176,7 +171,8 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
  *
  * Output parameters: none
  *
- * Returns:	 see above DD_...	*/
+ * Returns:	 see above DD_...
+ */
 
 _WORD ddstry(_WORD fd, const char *ext, const char *name, long size)
 {
@@ -186,29 +182,23 @@ _WORD ddstry(_WORD fd, const char *ext, const char *name, long size)
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
-	_WORD hdrlen = 9 + (_WORD)strlen(name); /* in Magic docs it is 8 + ... */
+	_WORD hdrlen = 9 + (_WORD) strlen(name);	/* in Magic docs it is 8 + ... */
 
-	if ((_WORD)Fwrite(fd, 2L, &hdrlen) == 2) 	/* send header length */
+	if ((_WORD) Fwrite(fd, 2L, &hdrlen) == 2)	/* send header length */
 	{
 		/* Now send the header */
 
-		if
-		(
-			(
-				(_WORD)Fwrite(fd, 4L, ext) + 
-				(_WORD)Fwrite(fd, 4L, &size) + 
-				(_WORD)Fwrite(fd, (long)strlen(name) + 1, name) /* in Magic docs there is no + 1 */		
-			)
-			== hdrlen
-		) 
+		if (((_WORD) Fwrite(fd, 4L, ext) +
+		     (_WORD) Fwrite(fd, 4L, &size) +
+		     (_WORD) Fwrite(fd, (long) strlen(name) + 1, name)	/* in Magic docs there is no + 1 */
+			) == hdrlen)
 		{
 			/* Wait for a reply */
 
-			if ((_WORD)Fread(fd, 1L, &c) == 1) 
-				return (_WORD)c;
+			if ((_WORD) Fread(fd, 1L, &c) == 1)
+				return (_WORD) c;
 		}
 	}
-
 #else
 	(void) fd;
 	(void) ext;
@@ -226,7 +216,7 @@ _WORD ddstry(_WORD fd, const char *ext, const char *name, long size)
 
 void ddclose(_WORD fd)
 {
-	if ( fd >= 0 )
+	if (fd >= 0)
 	{
 		(void) Psignal(__MINT_SIGPIPE, oldpipesig);
 		Fclose(fd);
@@ -234,7 +224,7 @@ void ddclose(_WORD fd)
 }
 
 
-#if 0 /* All following code is for TeraDesk as the the receiver; currently NOT USED */
+#if 0									/* All following code is for TeraDesk as the the receiver; currently NOT USED */
 
 /*
  * open a drag & drop pipe
@@ -259,21 +249,22 @@ void ddclose(_WORD fd)
 _WORD ddopen(_WORD ddnam, const char *preferext)
 {
 	_WORD fd;
+
 	char outbuf[DD_EXTSIZE + 1];
 
 	pipename[18] = ddnam & 0x00ff;
 	pipename[17] = (ddnam & 0xff00) >> 8;
 
-	fd = (_WORD)Fopen(pipename, 2);
+	fd = (_WORD) Fopen(pipename, 2);
 
-	if (fd >= 0) 
+	if (fd >= 0)
 	{
 		outbuf[0] = DD_OK;
-		strncpy(outbuf+1, preferext, DD_EXTSIZE);
+		strncpy(outbuf + 1, preferext, DD_EXTSIZE);
 
-		oldpipesig = Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
+		oldpipesig = (__mint_sighandler_t)Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
 
-		if (Fwrite(fd, (long)DD_EXTSIZE + 1, outbuf) != DD_EXTSIZE + 1) 
+		if (Fwrite(fd, (long) DD_EXTSIZE + 1, outbuf) != DD_EXTSIZE + 1)
 		{
 			ddclose(fd);
 			return -1;
@@ -307,35 +298,31 @@ _WORD ddopen(_WORD ddnam, const char *preferext)
 
 _WORD ddrtry(_WORD fd, const char *name, const char *whichext, long *size)
 {
-	_WORD
-		hdrlen,
-		i;
+	_WORD hdrlen, i;
+	char buf[80];
 
-	char
-		buf[80];
-
-	if ((_WORD)Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
+	if ((_WORD) Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
 		return -1;
 
-	if ((_WORD)Fread(fd, 4L, whichext) == 4)
+	if ((_WORD) Fread(fd, 4L, whichext) == 4)
 	{
 		whichext[4] = 0;
 
-		if ((_WORD)Fread(fd, 4L, size) == 4)
+		if ((_WORD) Fread(fd, 4L, size) == 4)
 		{
 			hdrlen -= 8;
 
 			i = min(hdrlen, DD_NAMEMAX);
 
-			if (Fread(fd, (long)i, name) == i) 
+			if (Fread(fd, (long) i, name) == i)
 			{
 				hdrlen -= i;
 
 				/* skip any extra header, no more than 80 bytes at a time */
 
-				while (hdrlen > 0) 
+				while (hdrlen > 0)
 				{
-					Fread(fd, (long)min(80, hdrlen), buf);
+					Fread(fd, (long) min(80, hdrlen), buf);
 					hdrlen -= 80;
 				}
 

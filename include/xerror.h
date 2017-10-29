@@ -51,7 +51,9 @@
 #define EDRIVE  -46		/* Invalid drive specification */
 #define ENSAME  -48     /* Files niet op hetzelfde logische loopwerk */
 #define ENMFIL  -49     /* Er kunnen geen files meer geopend worden */
+#undef ELOCKED
 #define ELOCKED	-58		/* File is locked */
+#undef ENSLOCK
 #define ENSLOCK	-59		/* Lock niet gevonden */
 #define GERANGE -64     /* Filepointer in ongeldig bereik */
 #define EINTRN  -65     /* Internal error */
@@ -63,7 +65,9 @@
 
 /* -2048 t/m -2063 file fouten */
 
+#undef EWRITE
 #define EWRITE		-2048		/* Write error on file */
+#undef EREAD
 #define EREAD		-2049		/* Read error on file */
 #define EDSKFULL	-2050		/* Disk full */
 #define EEOF		-2051		/* End of file */
@@ -71,6 +75,7 @@
 /* Some other more-less file related errors */
 
 #define EFRVAL		-2053		/* Invalid value read from file */
+#undef ENOMSG
 #define ENOMSG		-2054		/* Don't display message */
 
 /* -2064 t/m -2079 lengte fouten */
