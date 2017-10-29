@@ -23,7 +23,6 @@
 
 #include <library.h>
 #include <xdialog.h>
-#include <xdialog.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -36,8 +35,8 @@
 #include "main.h"
 
 
-static _WORD palsize = 0;	/* new (as read from the file) palette size */
-static _WORD *palette = 0; 	/* Pointer to current palette */
+static _WORD palsize = 0;				/* new (as read from the file) palette size */
+static _WORD *palette = 0;				/* Pointer to current palette */
 
 
 /* 
@@ -70,11 +69,10 @@ void pclear(RECT *r)
 {
 	bool doo = options.win_pattern && options.win_colour;
 
-	if(doo)
+	if (doo)
 		clr_object(r, options.win_colour, options.win_pattern);
 	else
 		clr_object(r, 0, -1);
-
 }
 
 
@@ -165,7 +163,7 @@ void set_txt_default(XDFONT *f)
 	vst_rotation(vdi_handle, 0);
 	vst_alignment(vdi_handle, 0, 5, &dummy, &dummy);
 	xd_vst_point(f->size, &dummy);
-	vst_color(vdi_handle, f->colour); 
+	vst_color(vdi_handle, f->colour);
 	vst_effects(vdi_handle, f->effects);
 }
 
@@ -178,11 +176,13 @@ void set_txt_default(XDFONT *f)
 
 _WORD *get_colours(void)
 {
-	_WORD i, *colours, *h;
+	_WORD i;
+	_WORD *colours;
+	_WORD *h;
 
 	palsize = xd_ncolours;
 
-	if ((colours = malloc((long)xd_ncolours * 3L * sizeof(*colours))) != NULL)
+	if ((colours = malloc((long) xd_ncolours * 3L * sizeof(*colours))) != NULL)
 	{
 		h = colours;
 
@@ -203,7 +203,8 @@ _WORD *get_colours(void)
 
 void set_colours(_WORD *colours)
 {
-	_WORD i, *h = colours;
+	_WORD i;
+	_WORD *h = colours;
 
 	for (i = 0; i < palsize; i++)
 	{
@@ -223,39 +224,17 @@ typedef struct rgb
 	_WORD red;
 	_WORD green;
 	_WORD blue;
-}RGB;
+} RGB;
 
-RGB cwork;
-
-static void rgb_config(XFILE *file, int lvl, int io, int *error);
-static void pal_config(XFILE *file, int lvl, int io, int *error);
+static RGB cwork;
 
 
-static CfgEntry palette_root[] =
-{
-	{ CFG_NEST, "palette", { pal_config } },
-	{ CFG_FINAL, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
-};
-
-static CfgEntry palette_table[] =
-{
-	{ CFG_HDR,  "palette", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D,    "size", { &palsize    } },
-	{ CFG_NEST, "col", {  rgb_config	 } },
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
-};
-
-
-static const CfgEntry colour_table[] =
-{
+static const CfgEntry colour_table[] = {
 	{ CFG_HDR, "col", { 0 } },
 	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D | CFG_INHIB, "ind", { &cwork.ind } }, /* index is not essential, but accept it */
+	{ CFG_D | CFG_INHIB, "ind", { &cwork.ind } },	/* index is not essential, but accept it */
 	{ CFG_DDD, "rgb", { &cwork.red } },
-	{ CFG_END, NULL, { 0 } },
+	{ CFG_END,  NULL, { 0 } },
 	{ CFG_LAST, NULL, { 0 } }
 };
 
@@ -266,20 +245,18 @@ static const CfgEntry colour_table[] =
 
 static void rgb_config(XFILE *file, int lvl, int io, int *error)
 {
-	_WORD 
-		i,
-		*p,
-		nc = min(xd_ncolours, palsize),
-		*thecolour = palette;
+	_WORD i;
+	_WORD *p;
+	_WORD nc = min(xd_ncolours, palsize), *thecolour = palette;
 
-	if ( io == CFG_SAVE )
+	if (io == CFG_SAVE)
 	{
-		for ( i = 0; i < xd_ncolours; i++ )
+		for (i = 0; i < xd_ncolours; i++)
 		{
 			cwork.ind = i;
-			cwork.red =  *thecolour++;
+			cwork.red = *thecolour++;
 			cwork.green = *thecolour++;
-			cwork.blue =  *thecolour++; 
+			cwork.blue = *thecolour++;
 
 			*error = CfgSave(file, colour_table, lvl, CFGEMP);
 
@@ -287,8 +264,7 @@ static void rgb_config(XFILE *file, int lvl, int io, int *error)
 				break;
 		}
 
-	}
-	else
+	} else
 	{
 		/* initialize rgb but NOT ind */
 
@@ -298,18 +274,28 @@ static void rgb_config(XFILE *file, int lvl, int io, int *error)
 
 		*error = CfgLoad(file, colour_table, MAX_KEYLEN, lvl);
 
-		if ( (*error == 0) && (cwork.ind < nc) )
+		if ((*error == 0) && (cwork.ind < nc))
 		{
 			p = &cwork.red;
 
-			thecolour += 3 * cwork.ind; /* need not be in sequence */
+			thecolour += 3 * cwork.ind;	/* need not be in sequence */
 			cwork.ind++;
 
-			for ( i = 0; i < 3; i++ )
+			for (i = 0; i < 3; i++)
 				*thecolour++ = min(*p++, 1000);
 		}
 	}
 }
+
+
+static CfgEntry palette_table[] = {
+	{ CFG_HDR,  "palette", { 0 } },
+	{ CFG_BEG,  NULL, { 0 } },
+	{ CFG_D,    "size", { &palsize } },
+	{ CFG_NEST, "col", { rgb_config } },
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
+};
 
 
 /*
@@ -326,25 +312,32 @@ static void pal_config(XFILE *file, int lvl, int io, int *error)
 	 * (or save data from it, depending on io)
 	 */
 
-	if ( palette )
+	if (palette)
 	{
-		*error = handle_cfg(file, palette_table, lvl, CFGEMP, io, NULL, NULL );
+		*error = handle_cfg(file, palette_table, lvl, CFGEMP, io, NULL, NULL);
 
-		if ( io == CFG_LOAD )
+		if (io == CFG_LOAD)
 		{
 			if (palsize != xd_ncolours)
-				alert_iprint(MECOLORS); /* warning */
+				alert_iprint(MECOLORS);	/* warning */
 
 			if (*error == 0)
 				set_colours(palette);
 		}
 
 		free(palette);
-	}
-	else 
+	} else
+	{
 		*error = ENSMEM;
+	}
 }
- 
+
+
+static CfgEntry palette_root[] = {
+	{ CFG_NEST, "palette", { pal_config } },
+	{ CFG_FINAL, NULL, { 0  } },
+	{ CFG_LAST, NULL, { 0 } }
+};
 
 /*
  * Load or save complete colour palette configuration.
@@ -357,10 +350,8 @@ static void pal_config(XFILE *file, int lvl, int io, int *error)
 void handle_colours(_WORD io)
 {
 	if (options.vprefs & SAVE_COLOURS)	/* separate file "teradesk.pal" */
-		handle_cfgfile( palname, palette_root, palide, io );
+		handle_cfgfile(palname, palette_root, palide, io);
 }
 
 
-#endif		/* PALETTES */
-
-
+#endif /* PALETTES */

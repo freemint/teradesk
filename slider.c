@@ -28,7 +28,7 @@
 #include "resource.h"
 #include "desk.h"
 #include "events.h"
-#include "lists.h" 
+#include "lists.h"
 #include "slider.h"
 #include "file.h"
 
@@ -39,13 +39,11 @@
 
 void sl_set_slider(SLIDER *sl, XDINFO *info)
 {
-	_WORD 
-		sh,
-		s,
-		sn = sl->n,
-		slines = sl->lines,
-		slh = sl->tree[sl->sparent].ob_height;
-
+	_WORD sh;
+	_WORD s;
+	_WORD sn = sl->n;
+	_WORD slines = sl->lines;
+	_WORD slh = sl->tree[sl->sparent].ob_height;
 
 	sl->line = ((sn < slines) || (sl->line < 0)) ? 0 : min(sl->line, sn - slines);
 
@@ -53,13 +51,14 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 
 	if (sn > slines)
 	{
-		sh = (_WORD)(((long)slines * (long)slh) / (long)sn);
+		sh = (_WORD) (((long) slines * (long) slh) / (long) sn);
 
 		if (sh < xd_fnt_h)
 			sh = xd_fnt_h;
-	}
-	else
+	} else
+	{
 		sh = slh;
+	}
 	
 	/* Compensation for 3D effects */
 
@@ -68,7 +67,8 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 	/* Determine slider position */
 
 	s = sn - slines;
-	sl->tree[sl->slider].ob_y = aes_ver3d + ( (s > 0) ? (_WORD) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
+	sl->tree[sl->slider].ob_y =
+		aes_ver3d + ((s > 0) ? (_WORD) (((long) (slh - sh) * (long) (sl->line)) / (long) s) : 0);
 
 	if (info)
 		xd_drawdeep(info, sl->sparent);
@@ -79,13 +79,11 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
  * Calculate to which item a slider points.
  */
 
-_WORD calc_slpos
-(
-	_WORD newpos,	/* position (0:1000) */
-	long lines	/* number of items */
-) 
+_WORD calc_slpos(_WORD newpos,			/* position (0:1000) */
+				 long lines				/* number of items */
+	)
 {
-	return (_WORD)(((lines * newpos) / 1000L));
+	return (_WORD) (((lines * newpos) / 1000L));
 }
 
 
@@ -93,28 +91,18 @@ _WORD calc_slpos
  * Calculate slider position (0:1000) for the first visible item
  */
 
-_WORD calc_slmill
-(
-	long pos,	/* index of first item */
-	long lines	/* number of items */
-)
+_WORD calc_slmill(long pos,				/* index of first item */
+				  long lines			/* number of items */
+	)
 {
-	return (lines) ? (_WORD)((1000L * pos) / lines) : 0;
+	return (lines) ? (_WORD) ((1000L * pos) / lines) : 0;
 }
 
 
-static void do_slider
-(
-	SLIDER *sl,
-	XDINFO *info
-)
+static void do_slider(SLIDER *sl, XDINFO *info)
 {
-	long
-		lines;
-
-	_WORD
-		newpos;
-
+	long lines;
+	_WORD newpos;
 
 	xd_begmctrl();
 	newpos = graf_slidebox(sl->tree, sl->sparent, sl->slider, 1);
@@ -125,7 +113,7 @@ static void do_slider
 	 * (wrong setting for small values of slider position)
 	 */
 
-	if ( newpos < 40 )
+	if (newpos < 40)
 		newpos = 0;
 
 	lines = sl->n - sl->lines;
@@ -138,16 +126,11 @@ static void do_slider
  * This routine handles clicking on the slider parent object
  * i.e. paging up or down through a list with a slider
  */
-
 static void do_bar(SLIDER *sl, XDINFO *info)
 {
-	_WORD
-		my,
-		oy,
-		dummy,
-		old,
-		maxi,
-		slines = sl->lines;
+	_WORD my, oy;
+	_WORD dummy, old, maxi;
+	_WORD slines = sl->lines;
 
 	graf_mkstate(&dummy, &my, &dummy, &dummy);
 	objc_offset(sl->tree, sl->slider, &dummy, &oy);
@@ -160,8 +143,7 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 		{
 			maxi = sl->line;
 			sl->line -= slines;
-		}
-		else
+		} else
 		{
 			maxi = sl->n - slines;
 			sl->line += slines;
@@ -174,8 +156,7 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 			sl_set_slider(sl, info);
 			sl->set_selector(sl, TRUE, info);
 		}
-	}
-	while (xe_button_state() & 0x1);
+	} while (xe_button_state() & 0x1);
 }
 
 
@@ -189,35 +170,29 @@ static void do_bar(SLIDER *sl, XDINFO *info)
 
 _WORD keyfunc(XDINFO *info, SLIDER *sl, _WORD scancode)
 {
-	_WORD
-		k = 0,
-		j = 0,
-		selected;
+	_WORD k = 0;
+	_WORD j = 0;
+	_WORD selected;
 
-	switch ((unsigned short)scancode)
+	switch ((unsigned short) scancode)
 	{
-		case CTL_CURUP:
-		{
-			if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
-				k = -1;
-			else if(sl->line > 0)
-				j = -1;
-			break;
-		}
-		case CTL_CURDOWN:
-		{
-			if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)) )
-				k = 1;
-			else if (sl->line < (sl->n - sl->lines))
- 				j = 1;
-		}
-		default:
-		{
-			break;
-		}
+	case CTL_CURUP:
+		if ((sl->type != 0) && ((selected = sl->findsel()) != 0))
+			k = -1;
+		else if (sl->line > 0)
+			j = -1;
+		break;
+	case CTL_CURDOWN:
+		if ((sl->type != 0) && ((selected = sl->findsel()) != (sl->lines - 1)))
+			k = 1;
+		else if (sl->line < (sl->n - sl->lines))
+			j = 1;
+		break;
+	default:
+		break;
 	}
 
-	if(k != 0)
+	if (k != 0)
 	{
 		selected += sl->first;
 		obj_deselect(sl->tree[selected]);
@@ -226,7 +201,7 @@ _WORD keyfunc(XDINFO *info, SLIDER *sl, _WORD scancode)
 		return 1;
 	}
 
-	if(j != 0)
+	if (j != 0)
 	{
 		sl->line += j;
 		sl_set_slider(sl, info);
@@ -244,32 +219,29 @@ _WORD keyfunc(XDINFO *info, SLIDER *sl, _WORD scancode)
 
 _WORD sl_handle_button(_WORD button, SLIDER *sl, XDINFO *info)
 {
-	_WORD 
-		j = 0,
-		button2 = button & 0x7FFF;
-
+	_WORD j = 0, button2 = button & 0x7FFF;
 
 	if (button2 == sl->up_arrow)
 	{
-		if(sl->line > 0)
+		if (sl->line > 0)
 			j = -1;
-	}
-	else if (button2 == sl->down_arrow)
+	} else if (button2 == sl->down_arrow)
 	{
-		if(sl->line < (sl->n - sl->lines))
+		if (sl->line < (sl->n - sl->lines))
 			j = 1;
-	}
-	else if (button2 == sl->slider)
+	} else if (button2 == sl->slider)
 	{
 		do_slider(sl, info);
 		sl->set_selector(sl, TRUE, info);
-	}
-	else if (button2 == sl->sparent)
+	} else if (button2 == sl->sparent)
+	{
 		do_bar(sl, info);
-	else
+	} else
+	{
 		return FALSE;
-
-	if(j != 0)
+	}
+	
+	if (j != 0)
 	{
 		sl->line += j;
 		sl_set_slider(sl, info);
@@ -290,9 +262,8 @@ _WORD sl_form_do(_WORD start, SLIDER *sl, XDINFO *info)
 
 	do
 	{
-		button = xd_kform_do(info, start, (userkeys)keyfunc, sl);
-	}
-	while (sl_handle_button(button, sl, info));
+		button = xd_kform_do(info, start, (userkeys) keyfunc, sl);
+	} while (sl_handle_button(button, sl, info));
 
 	return button;
 }
@@ -309,5 +280,3 @@ void sl_init(SLIDER *slider)
 	slider->set_selector(slider, FALSE, NULL);
 	sl_set_slider(slider, NULL);
 }
-
-
