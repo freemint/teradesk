@@ -32,59 +32,54 @@
 #include "desktop.h"
 
 
-extern	OBJECT 
-	*menu,
-	*setprefs,
-	*addprgtype,
-	*newfolder,
-	*fileinfo,
-	*infobox,
-	*addicon,
-	*getcml,
-	*nameconflict,
-	*copyinfo,
-	*setmask,
-	*applikation,
-	*loadmods,
-	*viewmenu,
-	*stabsize,
-	*wdoptions,
-	*wdfont,
-	*helpno1,
-	*fmtfloppy, 
-	*vidoptions,
-	*copyoptions,
-	*ftydialog,
-	*searching,
-	*specapp,
-	*openw,
-	*compare,
-	*quitopt;
+extern OBJECT *menu;
+extern OBJECT *setprefs;
+extern OBJECT *addprgtype;
+extern OBJECT *newfolder;
+extern OBJECT *fileinfo;
+extern OBJECT *infobox;
+extern OBJECT *addicon;
+extern OBJECT *getcml;
+extern OBJECT *nameconflict;
+extern OBJECT *copyinfo;
+extern OBJECT *setmask;
+extern OBJECT *applikation;
+extern OBJECT *loadmods;
+extern OBJECT *viewmenu;
+extern OBJECT *stabsize;
+extern OBJECT *wdoptions;
+extern OBJECT *wdfont;
+extern OBJECT *helpno1;
+extern OBJECT *fmtfloppy; 
+extern OBJECT *vidoptions;
+extern OBJECT *copyoptions;
+extern OBJECT *ftydialog;
+extern OBJECT *searching;
+extern OBJECT *specapp;
+extern OBJECT *openw;
+extern OBJECT *compare;
+extern OBJECT *quitopt;
 
-extern char 
-	*oldname,
-	*newname,
-	*cfile1,
-	*cfile2,
-	*tgname,
-	*drvid,
-	*iconlabel
+extern char *oldname;
+extern char *newname;
+extern char *cfile1;
+extern char *cfile2;
+extern char *tgname;
+extern char *drvid;
+extern char *iconlabel;
 #if _EDITLABELS
 #if _MINT_
-	,
-	*lblvalid,
-	*lbltmplt
+extern char *lblvalid;
+extern char *lbltmplt;
 #endif
 #endif
-	;
 
-extern VLNAME
-	openline,
-	flname,
-	cmdline,
-	ttpline,
-	dirname,
-	envline;
+extern VLNAME openline;
+extern VLNAME flname;
+extern VLNAME cmdline;
+extern VLNAME ttpline;
+extern VLNAME dirname;
+extern VLNAME envline;
 
 void rsc_init(void);
 void rsc_title(OBJECT *tree, _WORD object, _WORD title);

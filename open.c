@@ -33,7 +33,7 @@
 #include "printer.h"
 #include "font.h"
 #include "config.h"
-#include "window.h" /* before dir.h and viewer.h */
+#include "window.h"						/* before dir.h and viewer.h */
 #include "dir.h"
 #include "file.h"
 #include "viewer.h"
@@ -45,11 +45,10 @@
 #include "icon.h"
 
 
-bool
-	onone = FALSE,		/* true if only one instance should run */
-	onfile = FALSE; 	/* true if app is started to open a file */
+bool onone = FALSE;						/* true if only one instance should run */
+bool onfile = FALSE;					/* true if app is started to open a file */
 
-const char *hyppage = NULL;	/* name of the hypertext page to display */
+const char *hyppage = NULL;				/* name of the hypertext page to display */
 
 
 /*
@@ -60,40 +59,36 @@ const char *hyppage = NULL;	/* name of the hypertext page to display */
 
 static _WORD open_dialog(void)
 {
-	XDINFO
-		owinfo;
+	XDINFO owinfo;
+	_WORD thebutton, button = 0;		/* assuming that no button will ever have index 0 */
 
-	_WORD 
-		thebutton,
-		button = 0; /* assuming that no button will ever have index 0 */
-
-	if(chk_xd_open(openw, &owinfo) >= 0)
+	if (chk_xd_open(openw, &owinfo) >= 0)
 	{
-		button = xd_form_do (&owinfo, ROOT);
+		button = xd_form_do(&owinfo, ROOT);
 		thebutton = button;
 
-		switch(button)
+		switch (button)
 		{
-			case OWRUN:
+		case OWRUN:
 			{
-				prg_info(NULL, empty, 0, (LSTYPE *)&awork);
+				prg_info(NULL, empty, 0, (LSTYPE *) & awork);
 				log_shortname(awork.shname, awork.name);
 
-				if (!prgtype_dialog(NULL, 0, (LSTYPE *)&awork, LS_APPL | LS_EDIT))
+				if (!prgtype_dialog(NULL, 0, (LSTYPE *) & awork, LS_APPL | LS_EDIT))
 					button = 0;
 
 				break;
 			}
-			case OWUSE:
+		case OWUSE:
 			{
 				log_shortname(fwork.filetype, awork.name);
 				selitem = NULL;
-				app_install(LS_SELA, &applikations); /* selitem is nonnull only if successful here */
-			
+				app_install(LS_SELA, &applikations);	/* selitem is nonnull only if successful here */
+
 				if (!selitem)
-					button = 0;			
+					button = 0;
 			}
-			default:
+		default:
 			{
 				break;
 			}
@@ -115,56 +110,39 @@ static _WORD open_dialog(void)
  * may contain a command line, if not NULL
  */
 
-bool item_open
-(
-	WINDOW *inw, 		/* window in which the selection is made */
-	_WORD initem,			/* ordinal of the selected item from the window */ 
-	_WORD kstate,			/* keyboard state while opening the item */ 
-	char *theitem, 		/* explicitely specified full item name */
-	char *thecommand	/* command line if the item is a program */
-)
+bool item_open(WINDOW *inw,				/* window in which the selection is made */
+			   _WORD initem,			/* ordinal of the selected item from the window */
+			   _WORD kstate,			/* keyboard state while opening the item */
+			   char *theitem,			/* explicitely specified full item name */
+			   char *thecommand			/* command line if the item is a program */
+	)
 {
-	WINDOW
-		*w;				/* "inw", locally (i.e. maybe changed) */
+	WINDOW *w;							/* "inw", locally (i.e. maybe changed) */
+	DIR_WINDOW simw;					/* pointer to a simulated dir window */
+	APPLINFO *appl;						/* Pointer to information on the app to run */
 
-	DIR_WINDOW
-		simw;			/* pointer to a simulated dir window */
-
-	APPLINFO 
-		*appl;			/* Pointer to information on the app to run */
-
-	char
-		*qline = NULL,		/* requoted content of openline */
-		*cmline = NULL,		/* Command passed to application from "Open" dialog" */
-		*realname = NULL,	/* link target name */ 
-		*blank,				/* pointer to a ' ' in the name */ 
-		*path;				/* constructed path of the item to open */
-
-	VLNAME 
-		epath,			/* Path of the item specified in "Open" */ 
-		ename;			/* name of the item specified in "Open" */
-
-	_WORD 
-		item,			/* "initem", locally (i.e. maybe changed) */
-		error,
-		button;			/* index of the button pressed */
-
-	bool 
-		alternate= FALSE, 
-		deselect = FALSE;
-
-	ITMTYPE 
-		type;			/* item type (file, folder, program...) */
-
+	char *qline = NULL;					/* requoted content of openline */
+	char *cmline = NULL;					/* Command passed to application from "Open" dialog" */
+	char *realname = NULL;				/* link target name */
+	char *blank;							/* pointer to a ' ' in the name */
+	char *path;							/* constructed path of the item to open */
+	VLNAME epath;						/* Path of the item specified in "Open" */
+	VLNAME ename;							/* name of the item specified in "Open" */
+	_WORD item;							/* "initem", locally (i.e. maybe changed) */
+	_WORD error;
+	_WORD button;						/* index of the button pressed */
+	bool alternate = FALSE;
+	bool deselect = FALSE;
+	ITMTYPE type;						/* item type (file, folder, program...) */
 
 	item = initem;
 
 	autoloc_off();
 
-	if ( (kstate & K_ALT) != 0 )
+	if ((kstate & K_ALT) != 0)
 		alternate = TRUE;
-	
-	if ( inw && !theitem )
+
+	if (inw && !theitem)
 	{
 		/* 
 		 * An item is specified by selection in a window; get its full name
@@ -175,41 +153,40 @@ bool item_open
 
 		/* Try to divine which type of item this is */
 
-		type = itm_tgttype( inw, initem );
+		type = itm_tgttype(inw, initem);
 
 		/* Is this really needed ? */
 
-		if ( realname && type != ITM_NOTUSED && !trash_or_print(type) )
-			type = diritem_type( (char *)realname );
+		if (realname && type != ITM_NOTUSED && !trash_or_print(type))
+			type = diritem_type((char *) realname);
 
-		 /* If "Alternate" is pressed a program is treated like ordinary file */
+		/* If "Alternate" is pressed a program is treated like ordinary file */
 
-		if ( alternate && (type == ITM_PROGRAM ) )
+		if (alternate && (type == ITM_PROGRAM))
 			type = ITM_FILE;
-	}
-	else
+	} else
 	{
 		/* Open a form to explicitely enter item name */
 
-		if ( !theitem )
+		if (!theitem)
 		{
-			rsc_title( newfolder, NDTITLE, DTOPENIT );
+			rsc_title(newfolder, NDTITLE, DTOPENIT);
 			obj_hide(newfolder[DIRNAME]);
 			obj_unhide(newfolder[OPENNAME]);
 			xd_init_shift(&newfolder[OPENNAME], openline);
-			button = chk_xd_dialog( newfolder, ROOT );
+			button = chk_xd_dialog(newfolder, ROOT);
 		}
 
 		/* Note: theitem must come first below */
 
-		if ( theitem || (button == NEWDIROK) )
+		if (theitem || (button == NEWDIROK))
 		{
 			/* 
 			 * For some reason if(!theitem){}else{}  here
 			 * gives shorter code than if(theitem){}else{}
 			 */
 
-			if ( !theitem ) 
+			if (!theitem)
 			{
 				/* 
 				 * Object specified on a command line is opened.
@@ -220,7 +197,7 @@ bool item_open
 
 				/* Continue only if something remains on the line */
 
-				if ( strlen(openline) == 0 )	
+				if (strlen(openline) == 0)
 					return FALSE;
 
 				/* 
@@ -231,53 +208,47 @@ bool item_open
 				 * to an empty string.
 				 */
 
-				cmline = (char *)(long)empty; /* first, cmline points to an empty string */
+				cmline = (char *) (long) empty;	/* first, cmline points to an empty string */
 
 				qline = malloc_chk(strlenq(openline));
-				strcpyrq(qline, openline, '"', &blank); /* 34 = double quote */
+				strcpyrq(qline, openline, '"', &blank);	/* 34 = double quote */
 
-				if(blank)
+				if (blank)
 				{
 					*blank = 0;
-					cmline = blank + 1; /* now cmline points to after the first blank */
+					cmline = blank + 1;	/* now cmline points to after the first blank */
 				}
 
 				/* Unquote item name */
 
 				strcpyuq(qline, qline);
 
-				/* Convert item name to uppercase, keep the command as it is */
-#if _MINT_
-				if (!mint)
-#endif
-					strupr(qline);
-
 				/* Find the real name of the item */
 
-				if ((realname = x_fllink(qline)) == NULL )
+				if ((realname = x_fllink(qline)) == NULL)
 				{
 					free(qline);
 					return FALSE;
 				}
-					
+
 				/* Restore complete line (for the next opening) */
 
-				if ( blank )
+				if (blank)
 					*blank = ' ';
-			}
-			else
+			} else
 			{
 				/* Item name is explicitely specified in "theitem" */
 
-				if ( (realname = x_fllink(theitem)) == NULL )
+				if ((realname = x_fllink(theitem)) == NULL)
 					return FALSE;
 
-				if ( thecommand && *thecommand )
+				if (thecommand && *thecommand)
 					cmline = thecommand;
 			}
-		}
-		else
+		} else
+		{
 			return FALSE;
+		}
 
 		/* 
 		 * Try to divine which type of item this is. This is done
@@ -286,12 +257,12 @@ bool item_open
 		 * be an error warning.
 		 */
 
-		type = diritem_type( (char *)realname );
+		type = diritem_type((char *) realname);
 	}
-	
+
 	/* Is this name (path) too long, or wrong in some other way? */
 
-	if(realname && ((error = x_checkname(realname, NULL)) != 0))
+	if (realname && ((error = x_checkname(realname, NULL)) != 0))
 	{
 		free(realname);
 		free(qline);
@@ -301,38 +272,35 @@ bool item_open
 
 	/* Now that the type of the item is known, do something */
 
-	switch(type)
+	switch (type)
 	{
-		case ITM_TRASH:
-		case ITM_PRINTER:
-		case ITM_NOTUSED:
+	case ITM_TRASH:
+	case ITM_PRINTER:
+	case ITM_NOTUSED:
+		/* Object is a trah can or a printer (or unknown) and can not be opened */
+
+		alert_cantdo(trash_or_print(type), MNOOPEN);
+		break;
+	default:
+		/* Separate "realname" into "ename" and "epath" */
+
+		if (type == ITM_NETOB)
 		{
-			/* Object is a trah can or a printer (or unknown) and can not be opened */
-
-			alert_cantdo(trash_or_print(type), MNOOPEN);
-			break;
+			strcpy(ename, realname);
+			strcpy(epath, empty);
+		} else
+		{
+			split_path(epath, ename, realname);
 		}
-		default:
-		{	
-			/* Separate "realname" into "ename" and "epath" */
+		/* 
+		 * Simulate some structures of a directory window so that existing
+		 * routines expecting an item selected in a window can be used
+		 */
 
-			if(type == ITM_NETOB)
-			{
-				strcpy(ename, realname);
-				strcpy(epath, empty);
-			}
-			else
-				split_path(epath, ename, realname);
-
-			/* 
-			 * Simulate some structures of a directory window so that existing
-			 * routines expecting an item selected in a window can be used
-			 */
-
-			w = (WINDOW *)&simw;
-			dir_simw(&simw, epath, ename, type);
-			item = 0;
-		}
+		w = (WINDOW *) & simw;
+		dir_simw(&simw, epath, ename, type);
+		item = 0;
+		break;
 	}
 
 	free(realname);
@@ -344,132 +312,124 @@ bool item_open
 
 	switch (type)
 	{
-		case ITM_DRIVE:
-		{
-			/* Object is a disk volume (codes 0 to 25 for check_drive() ) */
+	case ITM_DRIVE:
+		/* Object is a disk volume (codes 0 to 25 for check_drive() ) */
 
-			if ( ( path = itm_fullname(w, item) ) != NULL )
+		if ((path = itm_fullname(w, item)) != NULL)
+		{
+			if (check_drive((path[0] & 0xDF) - 'A') == FALSE)
 			{
-				if (check_drive( (path[0] & 0xDF) - 'A') == FALSE)
-				{
-					free(path);
-					free(qline);
-					return FALSE;
-				}
-				else
-					deselect = dir_add_dwindow(path); 
-			}
-			else
-				deselect = FALSE;
-
-			break;
-		}
-		case ITM_FOLDER:
-		{
-			/* Object is a folder */
-
-			if ((path = itm_fullname(w, item)) != NULL)
-				deselect = dir_add_dwindow(path); 
-			else
-				deselect = FALSE;
-
-			break;
-		}
-		case ITM_PREVDIR:
-		{
-			/* Object is a parent folder */
-
-			if ((path = fn_get_path(wd_path(w))) != NULL)
-				deselect = dir_add_dwindow(path); 
-			else
-				deselect = FALSE;
-
-			break;
-		}
-		case ITM_PROGRAM:
-		{
-			/* Object is a program */
-
-			if (( path = itm_fullname(w, item) ) != NULL )
-			{
-				deselect = app_exec(path, NULL, NULL, (_WORD *)cmline, cmline ? -1 : 0, kstate);						
 				free(path);
-			}
-
-			break;
-		}
-		case ITM_NETOB:
-		case ITM_FILE:
-		{
-			/* Object is a file */
-
-			naap = 0; /* see app_find() */
-			onfile = TRUE;
-			deselect = FALSE;
-
-			if (!alternate && (appl = app_find(itm_name(w, item), TRUE)) != NULL)
-				deselect = app_exec(NULL, appl, w, &item, 1, kstate);
-			else if(naap == 0) 
+				free(qline);
+				return FALSE;
+			} else
 			{
-				/* File type assignment has been bypassed: now show/edit/cancel */
-
-				if ( theitem )
-					button = OWSHOW;
-				else
-				{
-					memclr(&awork, sizeof(APPLINFO));
-					awork.name = itm_fullname(w, item);
-					button = open_dialog();
-				}
-
-				switch (button)
-				{
-					case OWSHOW:
-					{
-						/* Call the viewer program or open a text window */
-						if ( (deselect = app_specstart(AT_VIEW, w, &item, 1, kstate)) == 0 )
-							deselect = txt_add_window(w, item, kstate, NULL);
-						break;
-					}
-					case OWEDIT:
-					{
-						/* Call the editor program */
-						if ( (deselect = app_specstart(AT_EDIT, w, &item, 1, kstate)) == 0 )
-							alert_iprint(TNOEDIT);
-						break;
-					}
-					case OWRUN:
-					{
-						/* Run this file as a program/application */
-						onfile = FALSE;
-						deselect = app_exec(NULL, &awork, NULL, NULL, 0, kstate);
-						break;
-					}
-					case OWUSE:
-					{
-						/* Open this file with the selected application */
-						deselect = app_exec(NULL, (APPLINFO *)selitem, w, &item, 1, kstate);
-						break;
-					}
-					default:
-					{
-						/* Do nothing */
-						break;
-					}
-				}
-
-				free(awork.name);
+				deselect = dir_add_dwindow(path);
 			}
-
-			onfile = FALSE;
-			break;
-		}
-		default: 
+		} else
 		{
-			/* Object is a trashcan, printer, or not recognized */
-
 			deselect = FALSE;
 		}
+		break;
+	case ITM_FOLDER:
+		/* Object is a folder */
+
+		if ((path = itm_fullname(w, item)) != NULL)
+			deselect = dir_add_dwindow(path);
+		else
+			deselect = FALSE;
+
+		break;
+	case ITM_PREVDIR:
+		/* Object is a parent folder */
+
+		if ((path = fn_get_path(wd_path(w))) != NULL)
+			deselect = dir_add_dwindow(path);
+		else
+			deselect = FALSE;
+
+		break;
+	case ITM_PROGRAM:
+		/* Object is a program */
+
+		if ((path = itm_fullname(w, item)) != NULL)
+		{
+			deselect = app_exec(path, NULL, NULL, (_WORD *) cmline, cmline ? -1 : 0, kstate);
+			free(path);
+		}
+
+		break;
+	case ITM_NETOB:
+	case ITM_FILE:
+		/* Object is a file */
+
+		naap = 0;					/* see app_find() */
+		onfile = TRUE;
+		deselect = FALSE;
+
+		if (!alternate && (appl = app_find(itm_name(w, item), TRUE)) != NULL)
+		{
+			deselect = app_exec(NULL, appl, w, &item, 1, kstate);
+		} else if (naap == 0)
+		{
+			/* File type assignment has been bypassed: now show/edit/cancel */
+
+			if (theitem)
+			{
+				button = OWSHOW;
+			} else
+			{
+				memclr(&awork, sizeof(awork));
+				awork.name = itm_fullname(w, item);
+				button = open_dialog();
+			}
+
+			switch (button)
+			{
+			case OWSHOW:
+				{
+					/* Call the viewer program or open a text window */
+					if ((deselect = app_specstart(AT_VIEW, w, &item, 1, kstate)) == 0)
+						deselect = txt_add_window(w, item, kstate, NULL);
+					break;
+				}
+			case OWEDIT:
+				{
+					/* Call the editor program */
+					if ((deselect = app_specstart(AT_EDIT, w, &item, 1, kstate)) == 0)
+						alert_iprint(TNOEDIT);
+					break;
+				}
+			case OWRUN:
+				{
+					/* Run this file as a program/application */
+					onfile = FALSE;
+					deselect = app_exec(NULL, &awork, NULL, NULL, 0, kstate);
+					break;
+				}
+			case OWUSE:
+				{
+					/* Open this file with the selected application */
+					deselect = app_exec(NULL, (APPLINFO *) selitem, w, &item, 1, kstate);
+					break;
+				}
+			default:
+				{
+					/* Do nothing */
+					break;
+				}
+			}
+
+			free(awork.name);
+		}
+
+		onfile = FALSE;
+		break;
+	default:
+		/* Object is a trashcan, printer, or not recognized */
+
+		deselect = FALSE;
+		break;
 	}
 
 	free(qline);
@@ -496,7 +456,7 @@ void opn_hyphelp(void)
 {
 	APPLINFO *helpprg = app_find("*.HYP", FALSE);
 
-	if(helpprg && hyppage)
+	if (helpprg && hyppage)
 	{
 		LNAME cmd;
 
@@ -506,13 +466,12 @@ void opn_hyphelp(void)
 
 		strcpy(cmd, "*:\\TERADESK.HYP");
 
-		if(*hyppage)
+		if (*hyppage)
 		{
 			strcat(cmd, &hyppage[1]);
 			cmd[strlen(cmd) - 5] = '\0';
 		}
 
-		app_exec(NULL, helpprg, NULL, (_WORD *)cmd, -1, 0);
+		app_exec(NULL, helpprg, NULL, (_WORD *) cmd, -1, 0);
 	}
 }
-
