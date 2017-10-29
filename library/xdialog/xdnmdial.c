@@ -24,8 +24,6 @@
 #include <library.h>
 #include "xdialog.h"
 
-extern int xd_oldarrow(XDINFO *info);
-
 #define XD_NMWDFLAGS	(NAME | CLOSER | MOVER)
 
 
@@ -34,7 +32,7 @@ extern int xd_oldarrow(XDINFO *info);
  * niet modale dialoogbox.
  */
 
-int __xd_hndlkey(WINDOW *w, int key, int kstate)
+_WORD __xd_hndlkey(WINDOW *w, _WORD key, _WORD kstate)
 {
 	XDINFO
 		*info;
@@ -45,7 +43,7 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
 	OBJECT
 		*tree;
 
-	int
+	_WORD
 		next_obj,
 		nkeys,
 		kr,
@@ -95,12 +93,12 @@ int __xd_hndlkey(WINDOW *w, int key, int kstate)
  * niet modale dialoogbox.
  */
 
-void __xd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
+void __xd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 {
 	XDINFO
 		*info;
 
-	int
+	_WORD
 		next_obj,
 		cmode,
 		cont;
@@ -152,7 +150,7 @@ void __xd_topped(WINDOW *w)
  *('mode' is for compatibility with WD_FUNC)
  */
 
-void __xd_closed(WINDOW *w, int dummy_mode)
+void __xd_closed(WINDOW *w, _WORD dummy_mode)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 
@@ -161,21 +159,20 @@ void __xd_closed(WINDOW *w, int dummy_mode)
 }
 
 
-/* Currently there are no menus in nonmodal dialogs in TeraDesk
+#if 0 /* Currently there are no menus in nonmodal dialogs in TeraDesk */
 
 /*
  * Funktie die wordt aangeroepen als een menu van de niet-modale
  * dialoogbox geselekteerd is.
  */
 
-void __xd_hndlmenu(WINDOW *w, int title, int item)
+void __xd_hndlmenu(WINDOW *w, _WORD title, _WORD item)
 {
 	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
 
 	info->func->dialmenu(info, title, item);
 }
-
-*/
+#endif
 
 
 /*

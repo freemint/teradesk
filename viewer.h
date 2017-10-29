@@ -47,9 +47,9 @@ typedef struct
 	char **lines;				/* lijst met pointers naar het begin van alle tekstregels */
 	long size;					/* aantal bytes in de tekst */
 	long tlines;				/* aantal regels in de tekst */
-	int tabsize;				/* tab size */
-	int twidth;					/* text width incl. tab substitutes */
-	int hexmode;				/* Hexmode flag. */
+	_WORD tabsize;				/* tab size */
+	_WORD twidth;					/* text width incl. tab substitutes */
+	_WORD hexmode;				/* Hexmode flag. */
 
 } TXT_WINDOW;
 
@@ -58,16 +58,15 @@ extern XDFONT txt_font;
 extern WINFO textwindows[MAXWINDOWS];	/* some information about open windows */
 extern RECT tmax;
 
-CfgNest text_one;
-
-bool txt_add_window(WINDOW *sw, int item, int kstate, char *thefile);
+bool txt_add_window(WINDOW *sw, _WORD item, _WORD kstate, char *thefile);
 void txt_closed(WINDOW *w);
-void txt_hndlmenu(WINDOW *w, int title, int item);
+void txt_hndlmenu(WINDOW *w, _WORD title, _WORD item);
 void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
-void txt_prtcolumn(TXT_WINDOW *w, int column, int nc, RECT *area, RECT *work);
-int txt_read(TXT_WINDOW *w, bool setmode);
-bool txt_reread( TXT_WINDOW *w, char *name, int px, long py);
-int read_txtf(const char *name, char **buffer, long *flength); 
-void compare_files( WINDOW *w, int n, int *list );
+void txt_prtcolumn(TXT_WINDOW *w, _WORD column, _WORD nc, RECT *area, RECT *work);
+bool txt_reread( TXT_WINDOW *w, char *name, _WORD px, long py);
+_WORD read_txtf(const char *name, char **buffer, long *flength); 
+void compare_files( WINDOW *w, _WORD n, _WORD *list );
 void disp_hex( char *tmp, char *p, long a, long size, bool toprint );
-void copy_unnull(char *dest, char *source, long length, long pos, int dl);
+void copy_unnull(char *dest, const char *source, long length, long pos, _WORD dl);
+void view_config(XFILE *file, int lvl, int io, int *error);
+void text_one(XFILE *file, int lvl, int io, int *error);

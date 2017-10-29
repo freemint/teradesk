@@ -21,13 +21,11 @@
  */  
 
 
-extern
-	long over;
+#if _OVSCAN
+extern long over;
+extern short ovrstat;
+#endif
 
-extern int
-	ovrstat,
-	currez;
-
-extern int voptions(void);
-void get_set_video(int set);
+short voptions(void);
+void get_set_video(bool set);
 

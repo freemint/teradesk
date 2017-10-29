@@ -98,7 +98,7 @@ const unsigned char xd_emode_specs[XD_EMODECOUNT] =
 	__XD_IS_SPECIALKEY			/* XD_CRIGHT(63) */
 };
 
-const int ckeytab[] =
+const _WORD ckeytab[] =
 {
 	CURUP,						/* XD_UP */
 	CURDOWN,

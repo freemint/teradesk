@@ -28,6 +28,10 @@
 #include "desk.h"
 #include "error.h"
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#endif
+
 
 /*
  * Duplicate 's', returning an identical malloc'd string.
@@ -65,12 +69,11 @@ char *strdup(const char *s)
 
 int vsprintf(char *buffer, const char *format, va_list argpoint)
 {
-	char 
-		*s,			/* pointer to a location in input format */ 
-		*d,			/* pointer to a location in output buffer */ 
-		*h,			/* pointer to a location in input string */ 
-		fill,		/* padding character */
-		tmp[16];	/* temporary buffer */
+	const char *s;	/* pointer to a location in input format */ 
+	char *d;		/* pointer to a location in output buffer */ 
+	char *h;		/* pointer to a location in input string */ 
+	char fill;		/* padding character */
+	char tmp[16];	/* temporary buffer */
 
 	bool 
 		lng, 		/* true if a numeric variable is of a long type */
@@ -83,7 +86,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 		i;			/* counter */
 
 
-	s = (char *)format;
+	s = format;
 	d = buffer;
 
 	while (*s)
@@ -207,4 +210,3 @@ int sprintf(char *buffer, const char *format,...)
 
 	return r;
 }
-

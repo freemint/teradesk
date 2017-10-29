@@ -24,6 +24,8 @@
 #include <library.h>
 #include "error.h"
 #include <xdialog.h>
+#include <mint/cookie.h>
+#include <falcon.h>
 
 #include "xfilesys.h"
 #include "resource.h"
@@ -37,37 +39,26 @@
 #include "icon.h"
 #include "events.h"
 #include "screen.h"
+#include "video.h"
+#include "startprg.h"
 
 
-extern int tos_version;
-extern WINDOW *xw_deskwin; 
-extern int aes_version;
-
-void clean_up(void);
-void wd_forcesize(WINDOW *w, RECT *size, bool cond);
-
-
-int 
 #if _OVSCAN
-	oldstat = -1,   /* previous state of OVERscan */
-	ovrstat = -1,	/* state of overscan          */
+static short oldstat = -1;   /* previous state of OVERscan */
+short ovrstat = -1;	/* state of overscan          */
+long over;			/* identification of overscan type */
 #endif
-	vprefsold,		/* previous state of voptions */
-	vdohi,			/* upper word of vdo cookie value */
-	bltstat = 0,	/* presence of blitter        */
-	falmode = 0,	/* falcon video mode		  */
-	fmtype,			/* falcon monitor type: 0=STmon 1=STcol 2=VGA 3=TV */
-	currez;  		/* current res: 0=ST-low 1=ST-med 2=ST-Hi 4=TT-low 6=TT-hi 7=TT-med */    
+static short vprefsold;		/* previous state of voptions */
+static short vdohi;			/* upper word of vdo cookie value */
+static short bltstat = 0;	/* presence of blitter        */
+static short falmode = 0;	/* falcon video mode		  */
+static short fmtype;		/* falcon monitor type: 0=STmon 1=STcol 2=VGA 3=TV */
+static short currez;  		/* current res: 0=ST-low 1=ST-med 2=ST-Hi 4=TT-low 6=TT-hi 7=TT-med */    
 
-long
-#if _OVSCAN
-	over,			/* identification of overscan type */
-#endif
-	vdo;			/* id. of video hardware- shifter type- see below */
+static long vdo;			/* id. of video hardware- shifter type- see below */
 
-static bool
-	st_ste = FALSE,		/* ST or STe */
-	fal_mil = FALSE;	/* Falcon or Milan */
+static bool st_ste = FALSE;		/* ST or STe */
+static bool fal_mil = FALSE;	/* Falcon or Milan */
 
 /* These are the shifter types returned from the _VDO cookie */
 
@@ -122,24 +113,23 @@ static const char rmap[10] = {VSTLOW, VSTMED, VSTHIGH, 0, VTTMED, 0, VTTHIGH, VT
  *  parameter: 0=get, 1=set, 2=set & change rez
  */
  
-void get_set_video (int set) 
+void get_set_video (bool set) 
 {
 #if _OVSCAN
-	long
-		s,						/* superv.stack pointer */
-		logb,       			/* logical screen base  */
-		phyb;       			/* physical screen base */
+	void *s;					/* superv.stack pointer */
+	void *logb;       			/* logical screen base  */
+	void *phyb;       			/* physical screen base */
 
 	char
 		*acia;
 
-	static int 
+	static _WORD 
 		ov_max_h, 
 		ov_max_w,
 		idi, 
 		menu_h;
 
-	static const int 
+	static const _WORD 
 		std_x[4] = {320, 640, 1280, 0}, 
 		std_y[4] = {200, 400,  800, 0};
 #endif
@@ -151,8 +141,8 @@ void get_set_video (int set)
 	/* Where is the screen ? */
 
 #if _OVSCAN
-	logb = xbios(3); 				/* Logbase();  */
-	phyb = xbios(2);				/* Physbase(); */
+	logb = Logbase();
+	phyb = Physbase();
 #endif
 
 	if ( set == 0 )					 /* get data */
@@ -163,26 +153,26 @@ void get_set_video (int set)
 
    		/* Which is the current standard resolution ? */
 	
-		currez = (int)xbios(4); /* Getrez() */   	
+		currez = Getrez();
 
-/* not used, at least for the time being		
+#if 0 /* not used, at least for the time being */
 		options.vrez = currez;
-*/
+#endif
 
 		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
 		
-		vdo = find_cookie( '_VDO' );
+		vdo = find_cookie(C__VDO);
 
 		if ( vdo == -1 )
 			vdo = 0L; 				/* if no cookie, ST will be assumed */
 
-		vdohi = (int)(vdo >> 16);	/* use only the upper word */
+		vdohi = (_WORD)(vdo >> 16);	/* use only the upper word */
 
 		/* 
 		 * Note: Currently Falcon and Milan hardware are identically 
 		 * treated (should they be?). Same for Aranym.
 		 * If this is a Falcon or Milan, in which mode it is ? 
-		 * currez obtained above will be menaingless, it will have
+		 * currez obtained above will be meaningless, it will have
 		 * to be constructed from the mode setting and monitor type.
 		 * It will be used only to set/read radio buttons but ignored
 		 * in actual resolution change
@@ -191,8 +181,8 @@ void get_set_video (int set)
 		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO || vdohi == ARA_VIDEO)
 		{
 			fal_mil = TRUE;
-			falmode = (int)xbios(88, -1); 		/* Vsetmode() */
-			fmtype = (int)xbios(89); 			/* mon_type() */
+			falmode = VsetMode(-1);
+			fmtype = VgetMonitor();
 			bltstat = 0;						/* No ST blitter */
 
 			if ( (falmode & VM_STMODE) == 0 )
@@ -231,8 +221,8 @@ void get_set_video (int set)
 		
 #if _OVSCAN	
 	
-			if (   ( (over = find_cookie('OVER')) != - 1 )
-			    || ( (over = find_cookie('Lace')) != - 1 ) )
+			if (   ( (over = find_cookie(C_OVER)) != - 1 )
+			    || ( (over = find_cookie(C_Lace)) != - 1 ) )
 			{
 				/* There is ST-overscan/lacescan. Set initial values */
 
@@ -310,8 +300,8 @@ void get_set_video (int set)
 				 * Note: perhaps use Ssystem() here when appropriate? 
 				 */
 
-				s = Super(0L);
-				(long)acia = 0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
+				s = (void *)Super(0L);
+				acia = (char *)0xFFFC00L; /* address of the acia chip reg  HR 240203 (long) */
 
 				if ( options.vprefs & VO_OVSCAN )
 				{
@@ -341,7 +331,7 @@ void get_set_video (int set)
 				/* Note: return from supervisor before Setscreen()... */
 
 				Super ( (void *)s );
-				xbios(5, logb, phyb, currez); 	/* Setscreen (logb,phyb,currez); */ 
+				Setscreen(logb, phyb, currez);
 			}			
 #endif
 		}	/* fal_mil ? */
@@ -381,7 +371,7 @@ void get_set_video (int set)
 		{
 			/* Change resolution */
 
-			int 
+			_WORD 
 #if _MINT_
 				ignor,
 #endif
@@ -432,17 +422,17 @@ void get_set_video (int set)
 			 * return error if shel_write(5,...) above fails...
 			 */
 
-/* this does not work for the time being
+#if 0 /* this does not work for the time being */
 			if ( iret == 0 )
 			{
 				/* Besides, HOW to do this ? */
 	
 			}
-*/
+#endif
 
-		} 	/* set = 1 or 2 */	
+		}
 	
-	}		/* set > 0 */
+	}
 }
 
 
@@ -450,7 +440,7 @@ void get_set_video (int set)
  * Aux. size-optimization routine
  */
 
-static void vd_setstring(int to, int from)
+static void vd_setstring(_WORD to, _WORD from)
 {
 	xd_get_obspecp(&vidoptions[to])->free_string = get_freestring(from);
 }
@@ -462,9 +452,9 @@ static void vd_setstring(int to, int from)
  * Note: buttons must be in sequence: VSTLOW, VSTMED, VSTHIGH, VTTLOW, VTTMED, VTTHIGH
  */
 
-static void vd_enable_rez(int toob)
+static void vd_enable_rez(_WORD toob)
 {
-	int i;
+	_WORD i;
 
 	for (i = VSTLOW; i <= toob; i++ )
 		obj_enable(vidoptions[i]);
@@ -477,28 +467,25 @@ static void vd_enable_rez(int toob)
  * i.e. there are some Falcon-specific options 
  */ 
 
-int voptions(void)
+short voptions(void)
 {
-   	int 
-		rcode = 0,	/* return code of this routine */
-		button,		/* selected button */
-		newrez,		/* desired resolution   */
-		newmode,	/* desired video mode (Falcon) */	
-		rimap[16];	/* inverse to rmap */
+   	short rcode = 0;	/* return code of this routine */
+	_WORD button;		/* selected button */
+	_WORD newrez;		/* desired resolution   */
+	_WORD newmode;		/* desired video mode (Falcon) */	
+	_WORD rimap[16];	/* inverse to rmap */
 	             	/* dimensioning will be problematic if object */
     	           	/* indices are large - check in desktop.rsc   */
 
-	static const char 
-		npc[] = {0, 0, 1, 0,2, 0,0,0,3, 0,0,0,0,0,0,0,4}; /* = f(np) */
+	static const char npc[] = {0, 0, 1, 0,2, 0,0,0,3, 0,0,0,0,0,0,0,4}; /* = f(np) */
 
-	char
-		*ap,		/* to display # of colours */
-		*s = vidoptions[VNCOL].ob_spec.free_string;	/* same */
+	const char *ap;	/* to display # of colours */
+	char *s = vidoptions[VNCOL].ob_spec.free_string;	/* same */
 	
 	long
 		ncc;
 
-	int
+	_WORD
 		npmax,				/* max settable number of colour planes */
 		npmin,				/* min settable number of colour planes */
 		npp,				/* previous number of colour planes */
@@ -530,7 +517,7 @@ int voptions(void)
 	
 	/* Set radiobutton for current resolution selected */
 	
-	xd_set_rbutton(vidoptions, VREZOL, (int)rmap[currez]);
+	xd_set_rbutton(vidoptions, VREZOL, (_WORD)rmap[currez]);
 
 	/* Set some hardware-specific dialog elements */
 
@@ -629,7 +616,7 @@ int voptions(void)
 
 			npmin = 1;
 			npmax = 16;
-			ap = (char *)empty;
+			ap = empty;
 			ncc = 0x00000001L << np;
 			npp = np;
 		
@@ -655,7 +642,7 @@ int voptions(void)
 			if (fal_mil)
 			{
 				newmode &= ~(VM_STMODE | VM_80COL | VM_NPLANES);
-				newmode |= (int)(npc[np]);
+				newmode |= npc[np];
 
 				if ( newrez <= ST_HIGHRES )
 					newmode |= VM_STMODE;
@@ -785,4 +772,3 @@ int voptions(void)
 
  	return rcode;
 }
-

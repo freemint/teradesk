@@ -33,12 +33,12 @@
  * Some convenient macros for manipulating dialog objects
  */
 
-#define obj_hide(x)		x.ob_flags |= HIDETREE
-#define obj_unhide(x)	x.ob_flags &= ~HIDETREE  
-#define obj_select(x)	x.ob_state |= SELECTED
-#define obj_deselect(x)	x.ob_state &= ~SELECTED
-#define obj_enable(x)	x.ob_state &= ~DISABLED
-#define obj_disable(x)	x.ob_state |= DISABLED
+#define obj_hide(x)		x.ob_flags |= OF_HIDETREE
+#define obj_unhide(x)	x.ob_flags &= ~OF_HIDETREE  
+#define obj_select(x)	x.ob_state |= OS_SELECTED
+#define obj_deselect(x)	x.ob_state &= ~OS_SELECTED
+#define obj_enable(x)	x.ob_state &= ~OS_DISABLED
+#define obj_disable(x)	x.ob_state |= OS_DISABLED
 
 /* Maximum number of Teradesk's windows of one type */
 
@@ -143,47 +143,47 @@ typedef struct
 {	
 	/* Desktop */
 
-	int version;				/* cfg. file version */
-	int cprefs;					/* copy prefs: CF_COPY|CF_DEL|CF_OVERW|CF_PRINT|CF_TOUCH|CF_CTIME|CF_CATTR|CF_SHOWD|P_HEADER|CF_FOLL */
-	int xprefs;					/* more preferences: S_IGNCASE | S_SKIPSUB | TOS_KEY | TOS_STDERR  */
-	unsigned int dial_mode;		/* dialog mode (window/flying) */
-	unsigned int sexit;			/* save on exit */
-	int kbshort[NITEM + 2];		/* keyboard shortcuts */
+	_WORD version;				/* cfg. file version */
+	_WORD cprefs;				/* copy prefs: CF_COPY|CF_DEL|CF_OVERW|CF_PRINT|CF_TOUCH|CF_CTIME|CF_CATTR|CF_SHOWD|P_HEADER|CF_FOLL */
+	_WORD xprefs;				/* more preferences: S_IGNCASE | S_SKIPSUB | TOS_KEY | TOS_STDERR  */
+	_WORD dial_mode;			/* dialog mode (window/flying) */
+	_WORD sexit;				/* save on exit */
+	_WORD kbshort[NITEM + 2];	/* keyboard shortcuts */
 
 	/* Sizes */
 
-	int bufsize;				/* copy buffer size  */
+	_WORD bufsize;				/* copy buffer size  */
 	long max_dir;				/* maximum no of entries for 1 hierarchic level */
-	int plinelen;				/* printer line length */
-	int tabsize;				/* global tab size */
-	int cwin;					/* compare match window */
+	_WORD plinelen;				/* printer line length */
+	_WORD tabsize;				/* global tab size */
+	_WORD cwin;					/* compare match window */
 
 	/* View */
 
-	int mode;					/* text or icon mode */
-	int sort;					/* sorting rule */
-	int aarr;					/* auto arrange directory items */
-	int fields;					/* shown file data elements */
-	int attribs;				/* shown attributes of visible directory items */
+	_WORD mode;					/* text or icon mode */
+	_WORD sort;					/* sorting rule */
+	_WORD aarr;					/* auto arrange directory items */
+	_WORD fields;				/* shown file data elements */
+	_WORD attribs;				/* shown attributes of visible directory items */
 
 	/* Video */
 
-	int vprefs;                 /* video preferences  */
-	int vrez;                   /* video resolution */
-	int dsk_colour;				/* desktop colour */
-	int win_colour;				/* window colour */
-	int dsk_pattern;			/* desktop pattern  */
-	int win_pattern;			/* window pattern */
+	_WORD vprefs;           	/* video preferences  */
+	_WORD vrez;             	/* video resolution */
+	_WORD dsk_colour;			/* desktop colour */
+	_WORD win_colour;			/* window colour */
+	_WORD dsk_pattern;			/* desktop pattern  */
+	_WORD win_pattern;			/* window pattern */
 } Options;
 
 
 typedef struct
 {
-	int item;					/* nummer van icoon */
-	int m_x;					/* coordinaten middelpunt t.o.v. muis, alleen bij iconen */
-	int m_y;
-	int np;						/* number of points in object's contour */
-	int coords[18];				/* coordinaten van schaduw */
+	_WORD item;					/* nummer van icoon */
+	_WORD m_x;					/* coordinaten middelpunt t.o.v. muis, alleen bij iconen */
+	_WORD m_y;
+	_WORD np;						/* number of points in object's contour */
+	_WORD coords[18];				/* coordinaten van schaduw */
 } ICND;
 
 extern Options
@@ -202,7 +202,7 @@ extern const char
 extern long 
 	global_mem_size;
 
-extern int 
+extern _WORD 
 	vdi_handle,		/* workstation handle */ 
 	ap_id,			/* application id of TeraDesk itself */ 
 	nfonts;			/* number of available fonts */
@@ -216,7 +216,6 @@ extern bool
 	naes,			/* naes present */
 	geneva;			/* geneva present */
 
-extern int have_ssystem;
 #endif
 
 extern bool
@@ -224,13 +223,12 @@ extern bool
 	startup;		/* startup is in progress */
 
 
-long btst(long x, int bit);
 void *malloc_chk(size_t size);
-int chk_xd_dialog(OBJECT *tree, int start);
-int chk_xd_open(OBJECT *tree, XDINFO *info);
-void set_opt(OBJECT *tree, int flags, int opt, int button ); 
-void get_opt(OBJECT *tree, int *flags, int opt, int button );
-int hndlmessage(int *message);
+_WORD chk_xd_dialog(OBJECT *tree, _WORD start);
+_WORD chk_xd_open(OBJECT *tree, XDINFO *info);
+void set_opt(OBJECT *tree, _WORD flags, _WORD opt, _WORD button ); 
+void get_opt(OBJECT *tree, _WORD *flags, _WORD opt, _WORD button );
+_WORD hndlmessage(_WORD *message);
 bool wait_to_quit(void);
 bool find_cfgfiles (char **cfgfile); 
 

@@ -22,8 +22,13 @@
 
 #define MFINDS 999  /* max. number of found instances of searched-for string */
 
-void item_showinfo(WINDOW *w, int n, int *list, bool search); 
+#if _SHOWFIND
+extern _WORD search_nsm;
+extern long find_offset;
+#endif
+
+void item_showinfo(WINDOW *w, _WORD n, _WORD *list, bool search); 
 void closeinfo (void);
-int si_drive(const char *path);
-int object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *attr);
-bool searched_found( char *path, char *name, XATTR *attr);
+_WORD si_drive(const char *path);
+_WORD object_info(ITMTYPE type, const char *oldname, const char *fname, XATTR *attr);
+bool searched_found( const char *path, const char *name, XATTR *attr);

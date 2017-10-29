@@ -24,8 +24,8 @@
 #define PM_HEX 1	/* print data as hex dump */
 #define PM_RAW 2	/* print data as it is, no intervention */
 
-extern int printmode;		/* see above */
+extern _WORD printmode;		/* see above */
 extern XFILE *printfile;	/* print file; if NULL print to port */
 
-bool check_print( WINDOW *w, int n, int *list); 
-bool print_list(WINDOW *w, int n, int *list, long *folders, long *files, LSUM *bytes, int function);
+bool check_print( WINDOW *w, _WORD n, _WORD *list); 
+bool print_list(WINDOW *w, _WORD n, _WORD *list, long *folders, long *files, LSUM *bytes, _WORD function);

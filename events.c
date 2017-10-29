@@ -31,12 +31,12 @@
 #include "error.h" 
 
 
-static int event(int evflags, int mstate, int *key)
+static _WORD event(_WORD evflags, _WORD mstate, _WORD *key)
 {
 	XDEVENT
 		events;
 
-	int
+	_WORD
 		result;
 
 
@@ -81,9 +81,9 @@ static int event(int evflags, int mstate, int *key)
  *			 -1 if a message is received which terminates the program
  */
 
-int key_state(int *key, bool hndl_msg)
+_WORD key_state(_WORD *key, bool hndl_msg)
 {
-	int result;
+	_WORD result;
 
 	result = event( (hndl_msg ? (MU_KEYBD | MU_MESAG) : MU_KEYBD), 0, key);
 
@@ -103,7 +103,7 @@ int key_state(int *key, bool hndl_msg)
  * Wait dt milliseconds
  */
 
-void wait(int dt)
+void wait(_WORD dt)
 {
 	evnt_timer(dt);
 }
@@ -123,7 +123,7 @@ void wait(int dt)
 
 bool escape_abort( bool hndl_msg )
 {
-	int
+	_WORD
 		key,
 		r;
 

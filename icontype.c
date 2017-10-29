@@ -44,14 +44,14 @@ typedef struct icontype
 {
 	SNAME type;				/* associated filetype */
 	struct icontype *next;	/* pointer to next item in the list */
-	int icon;				/* icon id. */
+	_WORD icon;				/* icon id. */
 	INAME icon_name;		/* icon name */
 } ICONTYPE;
 
 typedef struct
 {
-	int icon;
-	int resvd;
+	_WORD icon;
+	_WORD resvd;
 } ITYPE;
 
 static ICONTYPE 
@@ -62,12 +62,6 @@ static ICONTYPE
 
 static ITMTYPE
 	defictype;
-
-extern XDINFO 
-	icd_info;
-
-extern int 
-	sl_noop;
 
 
 /*
@@ -84,8 +78,10 @@ extern int
  * (note: must not just copy *t = *s because t->next should be preserved)
  */
 
-static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
+static void copy_icntype( LSTYPE *lt, LSTYPE *ls )
 {
+	ICONTYPE *t = (ICONTYPE *)lt;
+	ICONTYPE *s = (ICONTYPE *)ls;
 	ICONTYPE *next = t->next;
 	*t = *s;
 	t->next = next;
@@ -102,7 +98,7 @@ static void copy_icntype( ICONTYPE *t, ICONTYPE *s )
  * but slows things even further.
  */
 
-static int find_icon(const char *name, ICONTYPE *list)
+static _WORD find_icon(const char *name, ICONTYPE *list)
 {
 
 	ICONTYPE *p = list;
@@ -128,12 +124,15 @@ static int find_icon(const char *name, ICONTYPE *list)
 
 static void icnt_info
 ( 
-	ICONTYPE **list, 	/* pointer to list in which the icon is searched for */
-	char *filetype,		/* file(type) for which the associated icon is searched */ 
-	int group,			/* is this files or folders or programs icon group */
-	ICONTYPE *it 		/* output information */
+	LSTYPE **llist, 	/* pointer to list in which the icon is searched for */
+	const char *filetype,		/* file(type) for which the associated icon is searched */ 
+	_WORD group,			/* is this files or folders or programs icon group */
+	LSTYPE *item 		/* output information */
 )
 {
+	ICONTYPE **list = (ICONTYPE **)llist;
+	ICONTYPE *it = (ICONTYPE *)item;
+	
 	if ( !find_wild( (LSTYPE **)list, filetype, (LSTYPE *)it, copy_icntype ) )
 	{
 		/* Attempt to divine the icon from a possibly defined desktop icon */
@@ -144,7 +143,7 @@ static void icnt_info
 		{
 			/* No suitable icon on the desktop, set general icon */
 
-			int 
+			_WORD 
 				iconid = FIINAME, 
 				lg = group & (LS_FIIC | LS_FOIC | LS_PRIC);
 
@@ -166,14 +165,14 @@ static void icnt_info
  * If icontype is not equal to icon target type, link is assumed.
  */
 
-int icnt_geticon
+_WORD icnt_geticon
 (
 	const char *name,
 	ITMTYPE type,		/* type of the item */
 	ITMTYPE tgt_type	/* type of the tartet item of a link */
 )
 {
-	int
+	_WORD
 		icon,
 		deficon,
 		i;
@@ -244,13 +243,15 @@ int icnt_geticon
 
 static bool icntype_dialog
 (
-	ICONTYPE **list,	/* list into which the item is placed */
-	int pos,			/* position (ordinal) in the list where to place the item */
-	ICONTYPE *it,		/* item to be placed in the list */
-	int use				/* purpose of use of dialog (add/edit) */
+	LSTYPE **llist,		/* list into which the item is placed */
+	_WORD pos,			/* position (ordinal) in the list where to place the item */
+	LSTYPE *item,		/* item to be placed in the list */
+	_WORD use			/* purpose of use of dialog (add/edit) */
 )
 {
-	int 
+	ICONTYPE **list = (ICONTYPE **)llist;
+	ICONTYPE *it = (ICONTYPE *)item;
+	_WORD 
 		il,
 		button, 
 		theic = it->icon, 
@@ -262,7 +263,7 @@ static bool icntype_dialog
 	SNAME 
 		thename;
 
-	static const int 
+	static const _WORD 
 		items1[] = {ICSHFIL, ICSHFLD, ICSHPRG, 0},
 		items2[] = {CHNBUTT, ICBTNS, DRIVEID, ICNLABEL, INAMBOX, 0};
 
@@ -342,8 +343,6 @@ static bool icntype_dialog
  * Use these iconlist-specific functions to manipulate icon lists: 
  */
 
-#pragma warn -sus
-
 static LS_FUNC itlist_func =
 {
 	copy_icntype,
@@ -354,15 +353,13 @@ static LS_FUNC itlist_func =
 };
 
 
-#pragma warn .sus
-
 /* 
  * Handle the dialog for maintaining lists of icons assigned to files 
  */
 
 void icnt_settypes(void)
 {
-	int 
+	_WORD 
 		button;
 
 
@@ -415,24 +412,23 @@ void rem_all_icontypes(void)
 }
 
 
-/* This routine is not currently used in TeraDesk
+#if 0 /* This routine is not currently used in TeraDesk */
 
 /*
  * Add an icon assignment into the list, explicitely giving parameters.
  */
 
-static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
+static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, _WORD icon)
 {
 	/* Define filemask */
 
 	strsncpy ( (char *)iwork.type, filetype, sizeof(iwork.type) );
 
-/* Let the user decide 
+/* Let the user decide */
 #if _MINT_
 	if ( mint && !magic )
 		strlwr(iwork.type);
 #endif
-*/
 
 	/* Index of that icon in (c)icons.rsc */
 
@@ -447,7 +443,7 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, int icon)
 	return (ICONTYPE *)lsadd_end( (LSTYPE **)list, sizeof(ICONTYPE), (LSTYPE *)(&iwork), copy_icntype );
 }
 
-*/
+#endif
 
 
 
@@ -470,7 +466,7 @@ void icnt_default(void)
  * If assignment to the new list fails, old assignment is not removed.
  */
 
-static void icnt_move(int to, int from, ICONTYPE *it)
+static void icnt_move(_WORD to, _WORD from, ICONTYPE *it)
 {
 	if
 	(
@@ -534,12 +530,12 @@ void icnt_fix_ictypes(void)
 
 static CfgEntry icnt_table[] =
 {
-	{CFG_HDR, "itype" },
-	{CFG_BEG},
-	{CFG_S,   "mask", iwork.type	  },
-	{CFG_S,   "name", iwork.icon_name },
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, "itype", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_S,   "mask", { iwork.type }},
+	{ CFG_S,   "name", { iwork.icon_name } },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -547,7 +543,7 @@ static CfgEntry icnt_table[] =
  * Save or load definiton of one icontype
  */
 
-static CfgNest one_itype 
+static void one_itype(XFILE *file, int lvl, int io, int *error)
 {
 	*error = 0;
 
@@ -568,7 +564,7 @@ static CfgNest one_itype
 
 		/* Load configuration data for one icontype */
 
-		*error = CfgLoad(file, icnt_table, (int)sizeof(SNAME), lvl); 
+		*error = CfgLoad(file, icnt_table, (_WORD)sizeof(SNAME), lvl); 
 
 		/* Add to the list */
 
@@ -604,11 +600,11 @@ static CfgNest one_itype
 
 static CfgEntry icngrp_table[] =
 {
-	{CFG_HDR,  NULL }, /* keyword will be substituted */
-	{CFG_BEG},
-	{CFG_NEST, "itype", one_itype  },		/* Repeating group */
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, NULL, { 0 } }, /* keyword will be substituted */
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "itype", { one_itype }},		/* Repeating group */
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -616,7 +612,7 @@ static CfgEntry icngrp_table[] =
  * Save or load "files", "folders" or "programs" group of icon definitions 
  */
 
-static CfgNest icngrp_cfg
+static void icngrp_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	if ( io == CFG_LOAD )
 		lsrem_all_one((LSTYPE **)(*ppthis));
@@ -629,7 +625,7 @@ static CfgNest icngrp_cfg
  * Save or load "files" group of window icontypes 
  */
 
-static CfgNest file_cfg
+static void file_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	pthis = iconlists[0];
 	ppthis = &iconlists[0];
@@ -643,7 +639,7 @@ static CfgNest file_cfg
  * Save or load "folders" group of window icontypes 
  */
 
-static CfgNest folder_cfg
+static void folder_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	ppthis = &iconlists[1];
 	pthis = iconlists[1];
@@ -658,7 +654,7 @@ static CfgNest folder_cfg
  * Save or load "programs" group of window icontypes 
  */
 
-static CfgNest program_cfg
+static void program_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	pthis = iconlists[2];
 	ppthis = &iconlists[2];
@@ -674,13 +670,13 @@ static CfgNest program_cfg
 
 static CfgEntry icontypes_table[] =
 {
-	{CFG_HDR,  "icontypes" },
-	{CFG_BEG},
-	{CFG_NEST, "files",     file_cfg    },		/* group */
-	{CFG_NEST, "folders",   folder_cfg  },		/* group */
-	{CFG_NEST, "programs",  program_cfg },		/* group */
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  "icontypes", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "files",     { file_cfg } },		/* group */
+	{ CFG_NEST, "folders",   { folder_cfg } },		/* group */
+	{ CFG_NEST, "programs",  { program_cfg } },		/* group */
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -688,7 +684,7 @@ static CfgEntry icontypes_table[] =
  * Save or load all window icons (icontypes) definitions 
  */
 
-CfgNest icnt_config
+void icnt_config(XFILE *file, int lvl, int io, int *error)
 {
 	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
 }

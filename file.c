@@ -31,11 +31,11 @@
 #include "config.h"
 #include "file.h"
 #include "prgtype.h"
+#include "window.h"
 
 #define CFGEXT		"*.IN?" /* default configuration-file extension */
 #define PRNEXT		"*.PRN" /* default print-file extension */
 
-void wd_drawall(void);
 
 
 /*
@@ -48,12 +48,12 @@ void wd_drawall(void);
 
 int make_path( char *name, const char *path, const char *fname )
 {
-	long l = (long)strlen(path);
+	size_t l = strlen(path);
 
 
 	/* "-1" below because a backlash may be added to the string */
 
-	if(l + (long)strlen(fname) >= (long)sizeof(VLNAME) - 1)
+	if(l + strlen(fname) >= sizeof(VLNAME) - 1)
 		return EPTHTL;
 
 	strcpy(name, path);
@@ -73,13 +73,12 @@ int make_path( char *name, const char *path, const char *fname )
  * beginning of the string
  */
 
-char *fn_last_backsl(const char *fname)
+static const char *fn_last_backsl(const char *fname)
 {
-	char *e;
-
+	const char *e;
 
 	if ((e = strrchr(fname, '\\')) == NULL)
-		e = (char *)fname;
+		e = fname;
 
 	return e;
 }
@@ -98,11 +97,10 @@ void split_path( char *path, char *fname, const char *name )
 	long
 		pl;		/* path length */
 
-	char
-		*np = fn_get_name(name);
+	const char *np = fn_get_name(name);
 
 
-	pl = lmin((size_t)(np - (char *)name), sizeof(VLNAME));
+	pl = lmin((size_t)(np - name), sizeof(VLNAME));
 	strsncpy(fname, np, sizeof(LNAME));
 	*path = 0;
 
@@ -171,11 +169,11 @@ void path_to_disp ( char *fpath )
  * It doesn't allocate any memory for the name.
  */
 
-char *fn_get_name(const char *path)
+const char *fn_get_name(const char *path)
 {
 	if(path)
 	{
-		char *h = fn_last_backsl(path); /* h == path if no backslash found */
+		const char *h = fn_last_backsl(path); /* h == path if no backslash found */
 
 		if ( h != path || *path == '\\' )
 			h++;
@@ -194,11 +192,10 @@ char *fn_get_name(const char *path)
 
 char *fn_get_path(const char *path)
 {
-	char
+	const char
 		*backsl;	/* pointer to the last backslash */
-
-	long
-		l;			/* string length */
+	char *newpath;
+	long l;			/* string length */
 
 
 	/* If there is no backslash in the name, just take the whole path */
@@ -210,7 +207,7 @@ char *fn_get_path(const char *path)
 	 * add one to the length so that "\" is included
 	 */
 
-	if (((l = backsl - (char *)path) == 2) && (path[1] == ':'))
+	if (((l = backsl - path) == 2) && (path[1] == ':'))
 		l++;
 
 	l++; /* for the trailing zero byte */
@@ -220,12 +217,12 @@ char *fn_get_path(const char *path)
 	 * the path to the new location
 	 */
 
-	if ((backsl = malloc_chk(l)) != NULL)
-		strsncpy(backsl, path, l);
+	if ((newpath = malloc_chk(l)) != NULL)
+		strsncpy(newpath, path, l);
 
 	/* Return pointer to the new location, or NULL if failed */
 
-	return backsl;
+	return newpath;
 }
 
 
@@ -240,7 +237,7 @@ char *fn_make_path(const char *path, const char *name)
 	char
 		*result;
 
-	int
+	_WORD
 		error;
 
 
@@ -263,11 +260,10 @@ char *fn_make_newname(const char *oldn, const char *newn)
 		l,
 		tl;
 
-	char
-		*backsl,
-		*path;
+	const char *backsl;
+	char *path;
 
-	int
+	_WORD
 		error = 0;
 
 
@@ -275,7 +271,7 @@ char *fn_make_newname(const char *oldn, const char *newn)
 
 	backsl = fn_last_backsl(oldn);
 
-	l = backsl - (char *)oldn;				/* length of the path part */
+	l = backsl - oldn;				/* length of the path part */
 	tl = l + strlen(newn) + 3L;				/* total new length */
 
 	if ((path = malloc_chk(tl)) != NULL)	/* allocate space for the new */
@@ -337,8 +333,7 @@ bool isdisk(const char *path)
 
 bool isroot(const char *path)
 {
-	char
-		*d = nonwhite((char *)path);
+	const char *d = nonwhite(path);
 
 	if( isdisk(d) && (d[2] == '\0' || (d[2] == '\\' && d[3] == '\0')) )
 		return TRUE;
@@ -355,7 +350,7 @@ bool isroot(const char *path)
  * Note: Types L_FILE and L_FOLDER are currently not used in TeraDesk
  */
 
-char *locate(const char *name, int type)
+char *locate(const char *name, _WORD type)
 {
 	VLNAME
 		fname; /* can this be a LNAME ? */
@@ -365,17 +360,17 @@ char *locate(const char *name, int type)
 		*newn,
 		*fspec,
 		*title,
-		*cfgext,
-		*defext;
+		*cfgext;
+	const char *defext;
 
-	int
+	_WORD
 		ex_flags;
 
 	bool
 		result = FALSE;
 
 
-	static const int /* don't use const char here! indexes are large */
+	static const _WORD /* don't use const char here! indexes are large */
 		titles[] = {FSTLFILE, FSTLPRG, FSTLFLDR, FSTLOADS, FSTSAVES, FSPRINT};
 
 
@@ -449,7 +444,7 @@ void get_fsel
 (
 	XDINFO *info,	/* dialog data */
 	char *result,	/* pointer to the string being edited */
-	int flags		/* sets whether pathonly or nameonly */
+	_WORD flags		/* sets whether pathonly or nameonly */
 )
 {
 	char
@@ -465,7 +460,7 @@ void get_fsel
 		sl,				/* string length */
 		ml;				/* possible maximum for tl */
 
-	int
+	_WORD
 		tid = FSTLANY,
 		err = EPTHTL;
 
@@ -553,7 +548,7 @@ void get_fsel
 				free(cc);
 			}
 
-			info->cursor_x += (int)tl;
+			info->cursor_x += (_WORD)tl;
 			err = 0;
 		}
 
@@ -570,10 +565,9 @@ void get_fsel
 
 int chdir(const char *path)
 {
-	char
-		*h = (char *)path;
+	const char *h = path;
 
-	int
+	_WORD
 		error;
 
 
@@ -581,10 +575,10 @@ int chdir(const char *path)
 	{
 		x_setdrv((path[0] & 0x5F) - 'A');
 
-		h = (char *)path + 2;
+		h = path + 2;
 
 		if (*h == 0)
-			h = (char *)bslash;
+			h = bslash;
 	}
 
 	error = x_setpath(h);
@@ -599,7 +593,13 @@ int chdir(const char *path)
 
 long drvmap(void)
 {
-	return (x_setdrv(x_getdrv()));
+	return x_setdrv(x_getdrv());
+}
+
+
+bool btst(long x, _WORD bit)
+{
+	return (x & (1L << bit)) != 0;
 }
 
 
@@ -609,7 +609,7 @@ long drvmap(void)
  * but defined by numbers 0 to 25.
  */
 
-bool check_drive(int drv)
+bool check_drive(_WORD drv)
 {
 	if ((drv >= 0) && (drv <= ('Z' - 'A')) && (btst(drvmap(), drv)))
 		return TRUE;
@@ -649,13 +649,12 @@ bool check_drive(int drv)
 
 bool match_pattern(const char *t, const char *pat)
 {
-	char
-		*d, 				/* difference in positions */
-		*pe = NULL,		 	/* pointer to pattern end */
-		*te = NULL, 		/* pointer to name end */
-		*pa = NULL,			/* pointer to last astarisk */
-		u, 					/* uppercased character in pat */
-		tu;					/* uppercased *t */
+	const char *d; 				/* difference in positions */
+	const char *pe = NULL;		/* pointer to pattern end */
+	const char *te = NULL; 		/* pointer to name end */
+	const char *pa = NULL;		/* pointer to last astarisk */
+	char u; 					/* uppercased character in pat */
+	char tu;					/* uppercased *t */
 
 	bool
 		inv = FALSE,
@@ -685,11 +684,11 @@ bool match_pattern(const char *t, const char *pat)
 			case '*':			/* * means a string of any character */
 			{
 				if(!te)
-					te = (char *)t + strlen(t);	/* find the end */
+					te = t + strlen(t);	/* find the end */
 
 				if(!pe)
 				{
-					pe = (char *)pat;
+					pe = pat;
 
 					while(*pe)	/* find the end and the last asterisk */
 					{
@@ -704,7 +703,7 @@ bool match_pattern(const char *t, const char *pat)
 
 				if(pat > pa)	/* skip irelevant part */
 				{
-					d = te - (pe - (char *)pat);
+					d = te - (pe - pat);
 
 					if(d > t)
 						t = d;
@@ -861,22 +860,20 @@ bool cmp_wildcard(const char *fname, const char *pat)
 }
 
 
-typedef long cdecl (*Func)();
+static _WORD chdrv;
+static long cdecl (*Oldgetbpb) (_WORD);
+static long cdecl (*Oldmediach) (_WORD);
+static long cdecl (*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
 
-static int chdrv;
-static long cdecl (*Oldgetbpb) (int);
-static long cdecl (*Oldmediach) (int);
-static long cdecl (*Oldrwabs) (int, void *, int, int, int, long);
-
-#define hdv_bpb              ( *( long cdecl (**)( int dev ) ) 0x472L )
-#define hdv_rw               ( *( long cdecl (**)( int rwflag,void *buf,int cnt,int recnr,int dev,long lrecno)) 0x476L )
-#define hdv_mediach  ( *( long cdecl (**)( int dev ) ) 0x47EL )
+#define hdv_bpb              ( *( long cdecl (**)( _WORD dev ) ) 0x472L )
+#define hdv_rw               ( *( long cdecl (**)( _WORD rwflag,void *buf,_WORD cnt,_WORD recnr,_WORD dev,long lrecno)) 0x476L )
+#define hdv_mediach  ( *( long cdecl (**)( _WORD dev ) ) 0x47EL )
 
 /* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
 /*     04'10 Coldfire */
 
-#if __AHCC__
-static long __asm__ cdecl Newgetbpb(int d)
+#ifdef __AHCC__
+static long __asm__ cdecl Newgetbpb(_WORD d)
 {
 	move.l	d2,-(a7)
 	move.l	d3,-(a7)
@@ -899,7 +896,7 @@ L44:
 	rts
 }
 #else
-static long cdecl Newgetbpb(int d)
+static long cdecl Newgetbpb(_WORD d)
 {
 	if (d == chdrv)
 	{
@@ -920,7 +917,7 @@ static long cdecl Newgetbpb(int d)
  */
 
 #if 0 /* __AHCC__ */
-static long __asm__ cdecl Newmediach(int d)
+static long __asm__ cdecl Newmediach(_WORD d)
 {
 	movem.l	d2-d3,-(a7)
 	move	12(sp),d3		; 4(sp) + 8
@@ -939,7 +936,7 @@ L94:
 	bra.s	L86
 }
 #else
-static long cdecl Newmediach(int d)
+static long cdecl Newmediach(_WORD d)
 {
 	if (d == chdrv)
 		return 2;
@@ -950,7 +947,7 @@ static long cdecl Newmediach(int d)
 
 
 #if 0 /* __AHCC__ */
-static long __asm__ cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
+static long __asm__ cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	move.l	sp,a0			; stackframe pointer --> a0
 	movem.l	d2-d3,-(a7)
@@ -975,7 +972,7 @@ L158:
 	bra.s	L150
 }
 #else
-static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
+static long cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	if (d == chdrv)
 		return MEDIA_CHANGE;
@@ -993,7 +990,7 @@ static long cdecl Newrwabs(int d, void *buf, int a, int b, int c, long l)
 
 void force_mediach(const char *path)
 {
-	int
+	_WORD
 		drive,
 		p = *path;
 
@@ -1019,22 +1016,20 @@ void force_mediach(const char *path)
 
 		chdrv = drive;
 
-/*		replaced with equivalent code below
-
+#if 0 /* replaced with equivalent code below */
 		Oldrwabs = *((Func *)0x476L);
 		Oldgetbpb = *((Func *)0x472L);
 		Oldmediach = *((Func *)0x47eL);
-*/
+#endif
 		Oldrwabs = hdv_rw;
 		Oldgetbpb = hdv_bpb;
 		Oldmediach = hdv_mediach;
 
-/*		replaced with equivalent code below
-
+#if 0 /* replaced with equivalent code below */
 		*((Func *)0x476L) = Newrwabs;
 		*((Func *)0x472L) = Newgetbpb;
 		*((Func *)0x47eL) = Newmediach;
-*/
+#endif
 		hdv_rw = Newrwabs;
 		hdv_bpb = Newgetbpb;
 		hdv_mediach = Newmediach;
@@ -1043,16 +1038,15 @@ void force_mediach(const char *path)
 		r = Fopen(fname, 0);
 
 		if (r >= 0)
-			Fclose((int)r);
+			Fclose((_WORD)r);
 
-		if (*((Func *)0x476L) == Newrwabs)
+		if (*((void **)0x476L) == (void *)Newrwabs)
 		{
-/*			replaced with equivalent code below
-
+#if 0 /* replaced with equivalent code below */
 			*((Func *)0x472L) = Oldgetbpb;
 			*((Func *)0x476L) = Oldrwabs;
 			*((Func *)0x47eL) = Oldmediach;
-*/
+#endif
 			hdv_bpb = Oldgetbpb;
 			hdv_rw = Oldrwabs;
 			hdv_mediach = Oldmediach;
@@ -1144,7 +1138,7 @@ static void cv_tos_form2fn(char *dest, const char *source)
  * Note: if the name is too long, it will be trimmed.
  */
 
-void cv_fntoform(OBJECT *tree, int object, const char *src)
+void cv_fntoform(OBJECT *tree, _WORD object, const char *src)
 {
 	/*
 	 * Determine destination and what is the available length
@@ -1174,12 +1168,12 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
 		cv_tos_fn2form(dst, src);
 	else
 	{
-		if (ob->ob_flags & EDITABLE )
+		if (ob->ob_flags & OF_EDITABLE )
 		{
 			if(xd_xobtype(ob) == XD_SCRLEDIT)
 			{
 				l = (long)sizeof(VLNAME);
-				xd_init_shift(ob, (char *)src); /* will not work if strlen(dest) > sizeof(VLNAME) */
+				xd_init_shift(ob, src); /* will not work if strlen(dest) > sizeof(VLNAME) */
 			}
 
 			strsncpy(dst, src, (size_t)l); 		/* term. byte included in l */
@@ -1198,7 +1192,7 @@ void cv_fntoform(OBJECT *tree, int object, const char *src)
  * This routine does not allocate any space for destination.
  */
 
-void cv_formtofn(char *dst, OBJECT *tree, int object)
+void cv_formtofn(char *dst, OBJECT *tree, _WORD object)
 {
 	TEDINFO
 		*ti = xd_get_obspecp(tree + object)->tedinfo;

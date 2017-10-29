@@ -35,13 +35,13 @@
 					OBJECT *xw_menu;/* menu object */		\
 					RECT xw_size;	/* window size */		\
 					RECT xw_work;	/* work area size */	\
-					int xw_handle;	/* window handle */		\
-					int xw_ap_id;	/* app id of owner */	\
-					int xw_bar;		/* menubar object ind */\
-					int xw_mparent;	/* parent window id */	\
-					int xw_type;	/* window type */		\
-					int xw_flags;	/* flags for widgets */	\
-					int xw_xflags	/* other diverse flags */
+					_WORD xw_handle;	/* window handle */		\
+					_WORD xw_ap_id;	/* app id of owner */	\
+					_WORD xw_bar;		/* menubar object ind */\
+					_WORD xw_mparent;	/* parent window id */	\
+					_WORD xw_type;	/* window type */		\
+					_WORD xw_flags;	/* flags for widgets */	\
+					_WORD xw_xflags	/* other diverse flags */
 
 /*
  * Default window structuur, bevat alleen de door de window
@@ -77,20 +77,20 @@ typedef struct window
 
 typedef struct wd_func
 {
-	int (*wd_hndlkey) (WINDOW *w, int scancode, int keystate);
-	void (*wd_hndlbutton) (WINDOW *w, int x, int y, int n, int bstate, int kstate);
+	_WORD (*wd_hndlkey) (WINDOW *w, _WORD scancode, _WORD keystate);
+	void (*wd_hndlbutton) (WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate);
 	void (*wd_redraw) 	(WINDOW *w, RECT *area);
 	void (*wd_topped) 	(WINDOW *w);
 	void (*wd_bottomed)	(WINDOW *w);
 	void (*wd_newtop) 	(WINDOW *w);
-	void (*wd_closed) 	(WINDOW *w, int mode);
-	void (*wd_fulled) 	(WINDOW *w, int mbshift);
-	void (*wd_arrowed) 	(WINDOW *w, int arrows);
-	void (*wd_hslider) 	(WINDOW *w, int newpos);
-	void (*wd_vslider) 	(WINDOW *w, int newpos);
+	void (*wd_closed) 	(WINDOW *w, _WORD mode);
+	void (*wd_fulled) 	(WINDOW *w, _WORD mbshift);
+	void (*wd_arrowed) 	(WINDOW *w, _WORD arrows);
+	void (*wd_hslider) 	(WINDOW *w, _WORD newpos);
+	void (*wd_vslider) 	(WINDOW *w, _WORD newpos);
 	void (*wd_sized) 	(WINDOW *w, RECT *newsize);
 	void (*wd_moved) 	(WINDOW *w, RECT *newpos);
-	void (*wd_hndlmenu) (WINDOW *w, int title, int item);
+	void (*wd_hndlmenu) (WINDOW *w, _WORD title, _WORD item);
 	void (*wd_top)     	(WINDOW *w);
 	void (*wd_iconify)	(WINDOW *w, RECT *r);
 	void (*wd_uniconify)(WINDOW *w, RECT *r);
@@ -124,69 +124,62 @@ typedef struct wd_func
  * Declaratie van de voor de gebruiker beschikbare funkties.
  */
 
-extern WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
+WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
 						 RECT *msize, size_t wd_struct_size,
 						 OBJECT *menu, int *error);
-extern void xw_open(WINDOW *wd, RECT *size);
-extern void xw_close(WINDOW *w);
-extern void xw_delete(WINDOW *w);
-extern void xw_closedelete(WINDOW *w);
+void xw_open(WINDOW *wd, RECT *size);
+void xw_close(WINDOW *w);
+void xw_delete(WINDOW *w);
+void xw_closedelete(WINDOW *w);
 
-extern void xw_set(WINDOW *w, int field,...);
-extern void xw_get(WINDOW *w, int field, RECT *r);
-extern void xw_setsize(WINDOW *w, RECT *size);
-extern void xw_getsize(WINDOW *w, RECT *size);
-extern void xw_getwork(WINDOW *w, RECT *size);
-extern void xw_getfirst(WINDOW *w, RECT *size);
-extern void xw_getnext(WINDOW *w, RECT *size);
-extern void xw_calc(int w_ctype, int w_flags, RECT *input,
+void xw_set(WINDOW *w, _WORD field,...);
+void xw_get(WINDOW *w, _WORD field, RECT *r);
+void xw_setsize(WINDOW *w, RECT *size);
+void xw_getsize(WINDOW *w, RECT *size);
+void xw_getwork(WINDOW *w, RECT *size);
+void xw_getfirst(WINDOW *w, RECT *size);
+void xw_getnext(WINDOW *w, RECT *size);
+void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input,
 					RECT *output, OBJECT *menu);
 
-extern void xw_nop1(WINDOW *w);
-extern void xw_nop2(WINDOW *w, int i);
-extern WINDOW *xw_find(int x, int y);
-extern WINDOW *xw_hfind(int handle);
-extern WINDOW *xw_top(void);
-extern WINDOW *xw_bottom(void);
-extern void xw_note_top(WINDOW *w);
-extern void xw_note_bottom(WINDOW *w);
-extern int xw_exist(WINDOW *w);
-extern WINDOW *xw_first(void);
+void xw_nop1(WINDOW *w);
+void xw_nop2(WINDOW *w, _WORD i);
+WINDOW *xw_find(_WORD x, _WORD y);
+WINDOW *xw_hfind(_WORD handle);
+WINDOW *xw_top(void);
+WINDOW *xw_bottom(void);
+void xw_note_top(WINDOW *w);
+void xw_note_bottom(WINDOW *w);
+_WORD xw_exist(WINDOW *w);
+WINDOW *xw_first(void);
 WINDOW *xw_last(void);
 
-#if __USE_MACROS
 #define xw_type(w)		((w)->xw_type)
 #define xw_handle(w)	((w)->xw_handle)
 #define xw_next(w) 		((w)->xw_next)
 #define xw_prev(w) 		((w)->xw_prev)
-#else
-extern int xw_type(WINDOW *w);
-extern int xw_handle(WINDOW *w);
-extern WINDOW *xw_next(WINDOW *w);
-extern WINDOW *xw_prev(WINDOW *w);
-#endif
 
-extern int xw_dosend;
+extern _WORD xw_dosend;
+extern WINDOW *xw_deskwin; 			/* pointer to desktop window */
 
-extern void xw_cycle(void);
-extern void xw_send(WINDOW *w, int messid);
-extern void xw_send_rect(WINDOW *w, int messid, int pid, RECT *area);
-extern void xw_send_redraw(WINDOW *w, int messid, RECT *area);
-extern void xw_menu_icheck(WINDOW *w, int item, int check);
-extern void xw_menu_ienable(WINDOW *w, int item, int enable);
-extern void xw_menu_text(WINDOW *w, int item, const char *text);
-extern void xw_menu_tnormal(WINDOW *w, int item, int normal);
-extern void xw_redraw_menu(WINDOW *w, int object, RECT *r);
+void xw_cycle(void);
+void xw_send(WINDOW *w, _WORD messid);
+void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area);
+void xw_send_redraw(WINDOW *w, _WORD messid, const RECT *area);
+void xw_menu_icheck(WINDOW *w, _WORD item, _WORD check);
+void xw_menu_ienable(WINDOW *w, _WORD item, _WORD enable);
+void xw_menu_text(WINDOW *w, _WORD item, const char *text);
+void xw_menu_tnormal(WINDOW *w, _WORD item, _WORD normal);
+void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r);
 
-extern int xw_hndlbutton(int x, int y, int n, int bstate, int kstate);
-extern int xw_hndlkey(int scancode, int keystate);
-extern int xw_hndlmessage(int *message);
+_WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate);
+_WORD xw_hndlkey(_WORD scancode, _WORD keystate);
+_WORD xw_hndlmessage(_WORD *message);
 
-extern WINDOW *xw_open_desk(int type, WD_FUNC *functions,
-							size_t wd_struct_size, int *error);
-extern void xw_close_desk(void);
-extern void xw_iconify(WINDOW *w, RECT *r); 
-extern void xw_uniconify(WINDOW *w, RECT *r); 
+WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions, size_t wd_struct_size, _WORD *error);
+void xw_close_desk(void);
+void xw_iconify(WINDOW *w, RECT *r); 
+void xw_uniconify(WINDOW *w, RECT *r); 
 
 
 #endif

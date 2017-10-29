@@ -22,27 +22,10 @@
 
 
 #include <library.h>
+#include <mint/ssystem.h>
 
 #undef p_cookie
 #define p_cookie	( * (COOKIE **) 0x5A0L )
-
-
-#if _MINT_
-extern int have_ssystem;
-#endif
-
-long o_resvalid;
-void (*o_resvector)( void );
-
-#if __AHCC__
-void __asm__ jmpa6(void)
-{
-	addq.l	#4, sp			; adjust stack, jmpa6 is called
-	jmp 	(a6)
-}
-#else
-void jmpa6( void ) 0x4ED6;
-#endif
 
 
 /*
@@ -86,7 +69,21 @@ long find_cookie( long name )
 }
 
 
-/* All following routines are currently not used in Teradesk
+#if 0 /* All following routines are currently not used in Teradesk */
+
+long o_resvalid;
+void (*o_resvector)( void );
+
+#if __AHCC__
+void __asm__ jmpa6(void)
+{
+	addq.l	#4, sp			; adjust stack, jmpa6 is called
+	jmp 	(a6)
+}
+#else
+void jmpa6( void ) 0x4ED6;
+#endif
+
 
 static void cookie_reset( void )
 {
@@ -104,7 +101,7 @@ static void cookie_reset( void )
  * r =  2 : nieuw cookie geinstalleerd, niet reset vast. 
  */
 
-int install_cookie( long name,long value,COOKIE *buffer,long l )
+_WORD install_cookie( long name,long value,COOKIE *buffer,long l )
 {
 	void
 		*stack;
@@ -112,7 +109,7 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 	COOKIE
 		*cookie;
 
-	int
+	_WORD
 		r,
 		i,
 		j;
@@ -141,9 +138,9 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 				r = -1;
 			else
 			{
-				int e;		/* reserve 'end' for language */
+				_WORD e;		/* reserve 'end' for language */
 
-				e = (int)cookie[i].value - 1;
+				e = (_WORD)cookie[i].value - 1;
 
 				for(j = 0; j < e; j++)
 					buffer[j] = cookie[j];
@@ -185,5 +182,4 @@ int install_cookie( long name,long value,COOKIE *buffer,long l )
 
 	return r;
 }
-
-*/
+#endif

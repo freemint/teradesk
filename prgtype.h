@@ -21,6 +21,11 @@
  */
 
 
+#ifndef __PRGTYPE_H__
+#define __PRGTYPE_H__ 1
+
+#include "lists.h"
+
 typedef struct prgtype
 {
  /* ---vvv--- compatible with FTYPE and LSTYPE structures */
@@ -29,7 +34,7 @@ typedef struct prgtype
  /* ---^^^--- compatible with FTYPE and LSTYPE structures */
 	ApplType appl_type;		/* type of program */
 	long limmem;			/* memory limit for this type in multitasking */
-	int flags;				/* argv + path + single */
+	_WORD flags;				/* argv + path + single */
 } PRGTYPE;
 
 /* For consistency with other flags which are saved as bits... */
@@ -53,15 +58,16 @@ typedef struct prgtype
 
 extern CfgEntry prg_table[];
 extern PRGTYPE pwork;
+extern PRGTYPE *prgtypes;   	/* list of executable filetypes */
 
-CfgNest prg_config;
+void prg_config(XFILE *file, int lvl, int io, int *error);
 void prg_setprefs(void);
-void prg_info(PRGTYPE **list, const char *prgname, int dummy, PRGTYPE *pt );
-bool prgtype_dialog( PRGTYPE **list, int pos, PRGTYPE *pt, int use );
-void copy_prgtype ( PRGTYPE *t, PRGTYPE *s );
+void prg_info(LSTYPE **list, const char *prgname, _WORD dummy, LSTYPE *pt );
+bool prgtype_dialog( LSTYPE **list, _WORD pos, LSTYPE *pt, _WORD use );
+void copy_prgtype ( LSTYPE *t, LSTYPE *s );
 void prg_init(void);
 void prg_default(void);
 bool prg_isprogram(const char *name);
-void sim_click(void);
 
 
+#endif

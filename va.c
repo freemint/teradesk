@@ -40,16 +40,17 @@
 #include "slider.h"
 #include "icon.h"
 #include "va.h"
+#include "filetype.h"
+#include "applik.h"
+#include "main.h"
 
 
 static void va_redraw(WINDOW *w, RECT *r);
 static void va_iconify(WINDOW *w, RECT *r);
 static void va_uniconify(WINDOW *w, RECT *r);
-static void va_fulled(WINDOW *w, int dummy);
-static void copy_avstat( AVSTAT *t, AVSTAT *s);
-static void rem_avstat(AVSTAT **list, AVSTAT *t);
-void load_settings(char *newinfname);
-char *app_find_name(char *path, bool full);
+static void va_fulled(WINDOW *w, _WORD dummy);
+static void copy_avstat(LSTYPE *t, LSTYPE *s);
+static void rem_avstat(LSTYPE **list, LSTYPE *t);
 
 static WD_FUNC aw_functions =
 {
@@ -75,11 +76,8 @@ static WD_FUNC aw_functions =
 bool 
 	va_reply = FALSE;		/* true if AV-protocol handshake is in progress */
 
-int
+_WORD
 	av_current;				/* ap_id of the currently messaging AV-client */
-
-extern XDFONT 
-	dir_font;				/* data for the font used in directories */
 
 AVTYPE 
 	avwork,					/* work area for editing AV-clients data */
@@ -99,7 +97,7 @@ const char
 
 #if _MORE_AV
 
-static const int answertypes[]=
+static const _WORD answertypes[]=
 {
 	VA_OB_UNKNOWN,	/* unused-unknown */
 	VA_OB_DRIVE,	/* disk volume */
@@ -131,7 +129,7 @@ static void va_redraw(WINDOW *w, RECT *r)
  * Full the client's window
  */
 
-static void va_fulled(WINDOW *w, int dummy)
+static void va_fulled(WINDOW *w, _WORD dummy)
 {
 	(void)dummy;
 	xw_send(w, WM_FULLED);
@@ -165,9 +163,9 @@ static void va_uniconify(WINDOW *w, RECT *r)
  * Clear the 'answer' buffer and set word [1] to TeraDesk's ap_id
  */
 
-static void va_clranswer(int *va_answer)
+static void va_clranswer(_WORD *va_answer)
 {
-	memclr(va_answer, (size_t)16); 
+	memclr(va_answer, 16); 
 	va_answer[1] = ap_id;
 }
 
@@ -224,7 +222,7 @@ WINDOW *va_accw(void)
  * the pseudo-windows structures in TeraDesk will be deleted 
  */
 
-void va_delall(int ap_id, bool force)
+void va_delall(_WORD id, bool force)
 {
 	WINDOW *prev, *w = xw_last();
 
@@ -232,7 +230,7 @@ void va_delall(int ap_id, bool force)
 	{
 		prev = xw_prev(w);
 
-		if ( w->xw_type == ACC_WIND && (ap_id < 0 || w->xw_ap_id == ap_id) )
+		if ( w->xw_type == ACC_WIND && (id < 0 || w->xw_ap_id == id) )
 		{
 			xw_close(w);
 
@@ -250,8 +248,10 @@ void va_delall(int ap_id, bool force)
  * to preserve target's pointer to next ????
  */
 
-static void copy_avtype (AVTYPE *t, AVTYPE *s)
+static void copy_avtype (LSTYPE *lt, LSTYPE *ls)
 {
+	AVTYPE *t = (AVTYPE *)lt;
+	AVTYPE *s = (AVTYPE *)ls;
 	AVTYPE *next = t->next;
 	*t = *s;
 	t->next = next;
@@ -262,13 +262,13 @@ static void copy_avtype (AVTYPE *t, AVTYPE *s)
  * Find a signed-on AV-client identified by its ap_id
  */
 
-AVTYPE *va_findclient(int ap_id)
+AVTYPE *va_findclient(_WORD id)
 {
 	AVTYPE *f = avclients;
 
 	while(f)
 	{
-		if ( f->ap_id == ap_id )
+		if ( f->ap_id == id )
 			return f;
 
 		f = f->next;
@@ -282,8 +282,10 @@ AVTYPE *va_findclient(int ap_id)
  * Remove an AV-protocol client from the list. Close all its windows
  */
 
-void rem_avtype(AVTYPE **list, AVTYPE *item)
+static void rem_avtype(LSTYPE **llist, LSTYPE *it)
 {
+	AVTYPE **list = (AVTYPE **)llist;
+	AVTYPE *item = (AVTYPE *)it;
 	xw_dosend = 0;
 	va_delall(item->ap_id, TRUE);
 	lsrem((LSTYPE **)list, (LSTYPE *)item);
@@ -295,7 +297,7 @@ void rem_avtype(AVTYPE **list, AVTYPE *item)
  * Use these AV-client-list-specific functions to manipulate lists: 
  */
 
-#pragma warn -sus
+#if 0
 static LS_FUNC avlist_func =	/* for the list of clients */
 {
 	copy_avtype,
@@ -304,7 +306,9 @@ static LS_FUNC avlist_func =	/* for the list of clients */
 	find_lsitem, /* find an item specified by name or position */
 	NULL
 };
+#endif
 
+#if 0
 static LS_FUNC avslist_func =	/* for the list of status strings */
 {
 	copy_avstat,
@@ -313,8 +317,7 @@ static LS_FUNC avslist_func =	/* for the list of status strings */
 	find_lsitem, /* find an item specified by name or position */
 	NULL
 };
-
-#pragma warn .sus
+#endif
 
 
 /*
@@ -335,7 +338,7 @@ void va_checkclient(void)
 		next = f->next; /* f is about to be destroyed, so save f->next */
 
 		if (appl_find(f->name) < 0)
-			rem_avtype(&avclients, f);
+			rem_avtype((LSTYPE **)&avclients, (LSTYPE *)f);
 
 		f = next;
 	}
@@ -362,13 +365,13 @@ void va_checkclient(void)
  * Result: TRUE if command has been passed using VA_START.
  */
 
-int va_start_prg(const char *program, ApplType type, const char *cmdl)
+_WORD va_start_prg(const char *program, ApplType type, const char *cmdl)
 {
 	char 
 		*fb,			/* not used here */
 		prgname[14];	/* 8-chars-long name of the program. Must be 14 bytes long here */
 
-	int 
+	_WORD 
 		va_answer[8],	/* local answer-message buffer */
 		dest_ap_id;		/* ap_id of the application parameters are sent to */
 
@@ -415,13 +418,13 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 		 * had previously signed-on. 
 		 */
 
-/* disabled for the time being
+#if 0 /* disabled for the time being */
 
 		theclient = (AVTYPE *)find_lsitem((LSTYPE **)&avclients, prgname, &i );
  
 		if (type != PACC && (!theclient || (theclient->avcap3 & VV_START) != 0) )
 			return FALSE; /* this is not a VA_START capable client */
-*/
+#endif
 
 		/* Check if the application with this name is still/already running */
 
@@ -464,7 +467,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
 
 				/* Double quotes must be converted to single quotes */
 
-				strcpyrq(global_memory, (char *)cmdl, SINGLE_Q, &fb);
+				strcpyrq(global_memory, cmdl, SINGLE_Q, &fb);
 				va_clranswer(va_answer);
 
 				va_answer[0] = VA_START;
@@ -487,7 +490,7 @@ int va_start_prg(const char *program, ApplType type, const char *cmdl)
  * This routine must not be used if another handshake is in progress.
  */
 
-static void va_send_all(int cap, int *message)
+static void va_send_all(_WORD cap, _WORD *message)
 {
 	AVTYPE *f = avclients;
 
@@ -507,9 +510,9 @@ static void va_send_all(int cap, int *message)
  * Currently, this always returns TRUE, even if failed
  */
 
-bool va_fontreply(int messid, int dest_ap_id)
+bool va_fontreply(_WORD messid, _WORD dest_ap_id)
 {
-	int va_answer[8];
+	_WORD va_answer[8];
 
 	va_clranswer(va_answer);
 
@@ -543,7 +546,7 @@ bool va_fontreply(int messid, int dest_ap_id)
  * to an application using the Drag & drop protocol
  */
 
-bool va_add_name(int type, const char *name)
+bool va_add_name(_WORD type, const char *name)
 {
 	long 
 		g = strlen(global_memory);		/* cumulative string length */
@@ -614,7 +617,7 @@ bool va_pathupdate( WINDOW *w )
 {
 	if ( !va_reply )
 	{
-		int va_answer[8];
+		_WORD va_answer[8];
 
 		va_clranswer(va_answer);
 
@@ -643,12 +646,12 @@ bool va_pathupdate( WINDOW *w )
  * Note 2: parameter 'list' is locally modified
  */
 
-bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y)
+bool va_accdrop(WINDOW *dw, WINDOW *sw, _WORD *list, _WORD n, _WORD kstate, _WORD x, _WORD y)
 {
 	AVTYPE *client;
 	ITMTYPE itype;
 	char *thename;
-	int i;
+	_WORD i;
 
 	(void)kstate;
 	/* 
@@ -661,7 +664,7 @@ bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int
 
 	if ( client )
 	{
-		int va_answer[8];
+		_WORD va_answer[8];
 
 		/* Client found; add each name from the list into the global memory */
 
@@ -757,38 +760,33 @@ bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int
  *
  */
 
-void handle_av_protocol(const int *message)
+void handle_av_protocol(const _WORD *message)
 {
-	char 
-		*path = NULL, 
-		*mask = NULL,
-		*pp3,			/* location in the message as a string pointer */
-		*mp5,			/* same */
-		*pp6;			/* same */
+	char *path = NULL;
+	char *mask = NULL;
+	const char *pp3;			/* location in the message as a string pointer */
+	const char *mp5;			/* same */
+	const char *pp6;			/* same */
 
-	int 
+	_WORD 
 #if _MINT_
 		j,
 #endif
-		error,
 		answer[8],			/* answer message will be composed here */
 		m3 = message[3],	/* save some bytes in program size */
 		stat;
+	int error;
 
 	bool 
 		reply = TRUE;
 
-	AVTYPE
-/* not used for the time being, see below
-		*oldclient,
-*/
-		*theclient;
+#if 0 /* not used for the time being, see below */
+	AVTYPE *oldclient;
+#endif
+	AVTYPE *theclient;
 
 #if _MORE_AV
-
-	AVSTAT
-		*thestatus;
-
+	AVSTAT *thestatus;
 #endif
 
 	WINDOW 
@@ -818,9 +816,9 @@ void handle_av_protocol(const int *message)
 	 * them here for all concerned
 	 */
 
-	pp3 = *(char **)(message + 3);
-	mp5 = *(char **)(message + 5);
-	pp6 = *(char **)(message + 6);
+	pp3 = *(const char *const *)(message + 3);
+	mp5 = *(const char *const *)(message + 5);
+	pp6 = *(const char *const *)(message + 6);
 
 	switch(message[0])
 	{
@@ -897,7 +895,7 @@ void handle_av_protocol(const int *message)
 			 * Therefore xw_dosend = 0 temporarily
 			 */
 	
-			rem_avtype(&avclients, va_findclient(av_current));
+			rem_avtype((LSTYPE **)&avclients, (LSTYPE *)va_findclient(av_current));
 			reply = FALSE;
 			break;
 		}
@@ -1004,7 +1002,7 @@ void handle_av_protocol(const int *message)
 					 */
 	
 					if( mask )
-						stat = (int)dir_add_window(path, mask, NULL);
+						stat = (_WORD)dir_add_window(path, mask, NULL);
 					else
 					{
 						free(path);
@@ -1110,7 +1108,7 @@ void handle_av_protocol(const int *message)
 		case AV_SETWINDPOS:
 		{
 			avsetw.flag = TRUE;
-			avsetw.size = *( (RECT *)(&message[3]) ); /* shorter */
+			avsetw.size = *( (const RECT *)(&message[3]) ); /* shorter */
 			reply = FALSE;
 			break;
 		}
@@ -1195,8 +1193,8 @@ void handle_av_protocol(const int *message)
 		}
 		case AV_WHAT_IZIT:
 		{
-			int item, wind_ap_id;
-			int dummy;
+			_WORD item, wind_ap_id;
+			_WORD dummy;
 
 			*global_memory = 0; /* clear any old strings */
 	
@@ -1314,7 +1312,7 @@ void handle_av_protocol(const int *message)
 				DIR_WINDOW 
 					ww;				/* structure for the simulated window */
 	
-				int 
+				_WORD 
 					list = 0;		/* simulated selected item */
 	
 				*global_memory = 0;	/* clear the string in the buffer */
@@ -1387,7 +1385,7 @@ void handle_av_protocol(const int *message)
 							case AV_DRAG_ON_WINDOW:
 							{
 								stat = 
-								(int)itm_move
+								(_WORD)itm_move
 								( 
 									(WINDOW *)&ww, 
 									0, 
@@ -1403,11 +1401,11 @@ void handle_av_protocol(const int *message)
 								 * Note: this is still not fully compliant to the
 								 * AV-protocol: links can not be created
 								 */
-								int old_prefs = options.cprefs;
+								_WORD old_prefs = options.cprefs;
 								options.cprefs = (message[7] & 0x0004) ? old_prefs : (old_prefs & ~CF_OVERW);
 								rename_files = (message[7] & 0x0002) ? TRUE : FALSE;
 								stat = (mask) ?
-								(int)itmlist_op
+								(_WORD)itmlist_op
 								(
 									(WINDOW *)&ww, 
 									1, 
@@ -1421,7 +1419,7 @@ void handle_av_protocol(const int *message)
 							case AV_DELFILE:
 							{
 								stat = 
-								(int)itmlist_wop
+								(_WORD)itmlist_wop
 								(
 									(WINDOW *)&ww, 
 									1, 
@@ -1547,9 +1545,9 @@ void vastat_default(void)
 
 void va_close(WINDOW *w)
 {
-/*
+#if 0
 	xw_closedelete(w); /* xw_close(w) then xw_delete(w) */
-*/
+#endif
 	xw_close(w);
 }
 
@@ -1572,12 +1570,12 @@ static SINFO this;
 
 CfgEntry stat_table[] =
 {
-	{CFG_HDR, "status" },
-	{CFG_BEG},
-	{CFG_S,   "name",  this.name	},
-	{CFG_S,   "stat",  this.stat	},
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, "status", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_S,   "name", {  this.name	} },
+	{ CFG_S,   "stat", {  this.stat	} },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -1587,8 +1585,10 @@ CfgEntry stat_table[] =
  * the string itself is not duplicated.
  */
 
-static void copy_avstat(AVSTAT *t, AVSTAT *s)
+static void copy_avstat(LSTYPE *lt, LSTYPE *ls)
 {
+	AVSTAT *t = (AVSTAT *)lt;
+	AVSTAT *s = (AVSTAT *)ls;
 	strcpy(t->name, s->name);
 	t->stat = s->stat;
 }
@@ -1598,8 +1598,10 @@ static void copy_avstat(AVSTAT *t, AVSTAT *s)
  * Remove one AV-client's status data from the list
  */
 
-static void rem_avstat(AVSTAT **list, AVSTAT *t)
+static void rem_avstat(LSTYPE **llist, LSTYPE *it)
 {
+	AVSTAT **list = (AVSTAT **)llist;
+	AVSTAT *t = (AVSTAT *)it;
 	free(t->stat);							/* the string itself */
 	lsrem((LSTYPE **)list, (LSTYPE *)t);		/* the list entry */
 }
@@ -1609,7 +1611,7 @@ static void rem_avstat(AVSTAT **list, AVSTAT *t)
  * Handle saving/loading status data for one AV-client
  */
 
-static CfgNest one_avstat
+static void one_avstat(XFILE *file, int lvl, int io, int *error)
 {
 	*error = 0;
 
@@ -1669,11 +1671,11 @@ static CfgNest one_avstat
 
 static CfgEntry va_table[] =
 {
-	{CFG_HDR,  "avstats" },
-	{CFG_BEG},
-	{CFG_NEST, "status", one_avstat  },		/* Repeating group */
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  "avstats", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "status", { one_avstat } },		/* Repeating group */
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -1681,7 +1683,7 @@ static CfgEntry va_table[] =
  * Handle saving/loading of all AV-client status data
  */
 
-CfgNest va_config
+void va_config(XFILE *file, int lvl, int io, int *error)
 { 
 	*error = handle_cfg(file, va_table, lvl, CFGEMP, io, rem_all_avstat, vastat_default);
 }

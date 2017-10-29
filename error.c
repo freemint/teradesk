@@ -34,7 +34,7 @@
  * identified by its index; handy for composing various texts.
  */
 
-char *get_freestring( int stringid )
+char *get_freestring( _WORD stringid )
 {
 	OBSPEC s;
 
@@ -54,12 +54,12 @@ char *get_freestring( int stringid )
  * there is a loss in clarity.
  */
 
-char *get_message(int error)
+char *get_message(_WORD error)
 {
 	static char 
 		buffer[40];
 
-	int
+	_WORD
 		msg;
 
 
@@ -179,7 +179,7 @@ char *get_message(int error)
  * Display an alert box while debugging 
  */
 
-int alert_msg(const char *string, ...)
+_WORD alert_msg(const char *string, ...)
 {
 	char
 		alert[256],
@@ -188,7 +188,7 @@ int alert_msg(const char *string, ...)
 	va_list
 		argpoint;
 
-	int
+	_WORD
 		button;
 
 
@@ -207,17 +207,17 @@ int alert_msg(const char *string, ...)
  * possibly containing some other texts; return button index 
  */
 
-int alert_printf
+_WORD alert_printf
 (
-	int def,		/* default button index */ 
-	int message,	/* message text id. */
+	_WORD def,		/* default button index */ 
+	_WORD message,	/* message text id. */
 	...				/* other text to be printed */
 )
 {
 	va_list
 		argpoint;
 
-	int 
+	_WORD 
 		button;
 
 	char 
@@ -240,7 +240,7 @@ int alert_printf
  * identified only by string-id "message";
  */
 
-void alert_iprint( int message )
+void alert_iprint( _WORD message )
 {
 	alert_printf( 1, AGENALRT, get_freestring(message) );
 }
@@ -251,7 +251,7 @@ void alert_iprint( int message )
  * to perform an operation. Form: <object type> can not be <operation>.
  */
 
-void alert_cantdo(int msg1, int msg2)
+void alert_cantdo(_WORD msg1, _WORD msg2)
 {
 	alert_printf(1, ACANTDO, get_freestring(msg1), get_freestring(msg2));
 }
@@ -263,7 +263,7 @@ void alert_cantdo(int msg1, int msg2)
  * for fatal errors which will stop TeraDesk.
  */
 
-void alert_abort( int message )
+void alert_abort( _WORD message )
 {
 	alert_printf( 1, AFABORT, get_freestring(message) );
 }
@@ -274,7 +274,7 @@ void alert_abort( int message )
  * identified only by string id "message", 
  */
 
-int alert_query( int message )
+_WORD alert_query( _WORD message )
 {
 	return alert_printf( 1, AQUERY, get_freestring(message) );
 }
@@ -288,7 +288,7 @@ int alert_query( int message )
  * This routine ignores error codes >= 0.
  */
 
-void xform_error(int error)
+void xform_error(_WORD error)
 {
 	/* Hopefully this optimization will work OK, hard to test it all now */
 
@@ -305,7 +305,7 @@ void xform_error(int error)
  * and additional error-message text idenified by "error" code 
  */
 
-void hndl_error(int message, int error)
+void hndl_error(_WORD message, _WORD error)
 {
 	if (error > EINVFN)
 		return;
@@ -322,9 +322,9 @@ void hndl_error(int message, int error)
  * the text associated to error code "error".
  */
 
-int xhndl_error(int msg, int error, const char *file)
+_WORD xhndl_error(_WORD msg, _WORD error, const char *file)
 {
-	int 
+	_WORD 
 		button = 0, 
 		txtid = 0;
 

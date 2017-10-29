@@ -22,6 +22,8 @@
 
 extern bool fargv;
 
-void start_prg(const char *fname, const char *cl, const char *path,
+void start_prg(const char *fname, char *cl, const char *path,
 			   ApplType prg, bool argv, bool single, bool back, 
-               long limmem, char *localenv, int kstate);
+               long limmem, char *localenv, _WORD kstate);
+
+void clean_up(void);

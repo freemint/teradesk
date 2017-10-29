@@ -20,9 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <library.h>
 #include <xerror.h>
 
-int xerror( int toserror )
+_WORD xerror( _WORD toserror )
 {
 	if (toserror >= 0)
 		return 0;

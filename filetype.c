@@ -68,8 +68,10 @@ const char
  * (note: must not just copy *t = *s because t->next should be preserved)
  */
 
-void copy_ftype(FTYPE *t, FTYPE *s)
+void copy_ftype(LSTYPE *lt, LSTYPE *ls)
 {
+	FTYPE *t = (FTYPE *)lt;
+	FTYPE *s = (FTYPE *)ls;
 	strsncpy( t->filetype, s->filetype, sizeof(SNAME) );
 }
 
@@ -80,7 +82,7 @@ void copy_ftype(FTYPE *t, FTYPE *s)
  * corresponding routines enter additional data as appropriate
  */
 
-static FTYPE *ftadd_one(char *filetype)
+static FTYPE *ftadd_one(const char *filetype)
 {
 	strsncpy( fwork.filetype, filetype, sizeof(fwork.filetype));
 
@@ -90,13 +92,13 @@ static FTYPE *ftadd_one(char *filetype)
 	 * Currently disabled, i.e. always uppercase
 	 */
 
-/* Better let the user decide
+#if 0 /* Better let the user decide */
 #if _MINT_
 
 	if ( mint && !magic )
 		strlwr(fwork.filetype);
 #endif
-*/
+#endif
 	return (FTYPE *)lsadd_end( (LSTYPE **)(&filetypes), sizeof(LSTYPE), (LSTYPE *)(&fwork), copy_ftype); 
 }
 
@@ -112,12 +114,15 @@ static FTYPE *ftadd_one(char *filetype)
 
 static void ftype_info
 ( 
-	FTYPE **list, 		/* list of defined masks */
-	char *filetype,		/* filetype to search for */ 
-	int use,			/* what is being done */
-	FTYPE *ft 			/* output information */
+	LSTYPE **llist, 		/* list of defined masks */
+	const char *filetype,	/* filetype to search for */ 
+	_WORD use,				/* what is being done */
+	LSTYPE *item 			/* output information */
 )
 {
+	FTYPE **list = (FTYPE **)llist;
+	FTYPE *ft = (FTYPE *)item;
+	
 	if ( !(use & LS_SELA) )
 		find_wild( (LSTYPE **)list, filetype, (LSTYPE *)ft, copy_ftype );
 
@@ -143,16 +148,18 @@ static void rem_all_filetypes(void)
 
 static bool filetype_dialog
 (
-	FTYPE **list, 	/* list in which duplicates are checked for */
-	int pos,		/* positin in the list where to add data */ 
-	FTYPE *ft,		/* data to be edited */ 
-	int use			/* use of this dialog (filetype or doctype, add or edit) */
+	LSTYPE **llist, 	/* list in which duplicates are checked for */
+	_WORD pos,		/* positin in the list where to add data */ 
+	LSTYPE *item,		/* data to be edited */ 
+	_WORD use			/* use of this dialog (filetype or doctype, add or edit) */
 )
 {
+	FTYPE **list = (FTYPE **)llist;
+	FTYPE *ft = (FTYPE *)item;
 	XDINFO
 		info;			/* dialog info structure */
 
-	int 
+	_WORD 
 		title, 			/* rsc index of dialog title string */
 		button;			/* code of pressed button */
 
@@ -234,7 +241,6 @@ char *wd_filemask(const char *mask)
  * Use these filetype-list-specific functions to manipulate filetype lists: 
  */
 
-#pragma warn -sus
 static LS_FUNC ftlist_func =
 {
 	copy_ftype,
@@ -243,7 +249,6 @@ static LS_FUNC ftlist_func =
 	find_lsitem,
 	filetype_dialog
 };
-#pragma warn .sus
 
 
 /* 
@@ -258,13 +263,13 @@ char *ft_dialog
 ( 
 	const char *mask,	/* file mask which will be current from now on */ 
 	FTYPE **flist,		/* list of defined filetypes/masks */ 
-	int use				/* determines if sets filemasks or documenttypes */ 
+	_WORD use				/* determines if sets filemasks or documenttypes */ 
 )
 {
 	OBJECT
 		savedial;		/* to save the dialog before recursive calls */
 
-	int 
+	_WORD 
 		j,				/* loop counter */
 		luse,			/* local value of use */
 		button,			/* code of pressed button */
@@ -279,7 +284,7 @@ char *ft_dialog
 	static const char 
 		ois[] = {0, 0, MSKHID, MSKSYS, MSKDIR, MSKPAR};
 
-	static const int
+	static const _WORD
 		items[] = {MSKATT, FILETYPE, FTTEXT, 0};
 
 
@@ -322,12 +327,12 @@ char *ft_dialog
 			rsc_title(setmask, DTSMASK, DTFTYPES);
  			rsc_title(setmask, FTTEXT, TFTYPE ); 
 			obj_unhide(setmask[MSKATT]); 
-			setmask[FILETYPE].ob_flags |= EDITABLE;
+			setmask[FILETYPE].ob_flags |= OF_EDITABLE;
 
 			/* Enter values of file attributes flags into dialog */
 
 			for(j = 2; j < 6; j++)
-				set_opt( setmask, options.attribs, (int)fas[j], (int)ois[j]);
+				set_opt( setmask, options.attribs, fas[j], ois[j]);
 
 			break;
 		}
@@ -341,7 +346,7 @@ char *ft_dialog
 
 			rsc_title(setmask, DTSMASK, DTDTYPES);
 			rsc_title(setmask, FTTEXT, TAPP ); 
-			setmask[FILETYPE].ob_flags &= ~EDITABLE;
+			setmask[FILETYPE].ob_flags &= ~OF_EDITABLE;
 			obj_deselect(setmask[FTADD]); 
 			obj_deselect(setmask[FTDELETE]);
 			obj_deselect(setmask[FTCHANGE]);
@@ -366,7 +371,7 @@ char *ft_dialog
 		if ( luse & LS_FMSK )
 		{
 			for(j = 2; j < 6; j++)
-				get_opt( setmask, &options.attribs, (int)fas[j], (int)ois[j]);
+				get_opt( setmask, &options.attribs, fas[j], ois[j]);
 
 			if ( mask != NULL )
 			{
@@ -416,7 +421,7 @@ void ft_init(void)
 
 void ft_default(void)
 {
-	int i;
+	_WORD i;
 
 	rem_all_filetypes();
 
@@ -432,11 +437,11 @@ void ft_default(void)
 	/* Note: for upper/lowercase match see routine ftadd_one */
 
 	for ( i = 0; i < 10; i++ )
-		ftadd_one((char *)presets[i]);
+		ftadd_one(presets[i]);
 #else
 
-	ftadd_one((char *)presets[0]);	/* 		* 		*/			
-	ftadd_one((char *)presets[1]);	/* 		*.*		*/
+	ftadd_one(presets[0]);	/* 		* 		*/			
+	ftadd_one(presets[1]);	/* 		*.*		*/
 
 #endif
 }
@@ -448,11 +453,11 @@ void ft_default(void)
 
 CfgEntry ft_table[] =
 {
-	{CFG_HDR, NULL }, /* keyword will be substituted */
-	{CFG_BEG},
-	{CFG_S,   "mask", fwork.filetype },
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, NULL, { 0 } }, /* keyword will be substituted */
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_S,   "mask", {  fwork.filetype } },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -461,7 +466,7 @@ CfgEntry ft_table[] =
  * loading of -only one- 
  */
  
-CfgNest one_ftype
+static void one_ftype(XFILE *file, int lvl, int io, int *error)
 {
 	*error = 0;
 
@@ -512,11 +517,11 @@ CfgNest one_ftype
 
 CfgEntry filetypes_table[] =
 {
-	{CFG_HDR,  NULL }, /* keyword will be substituted */
-	{CFG_BEG},
-	{CFG_NEST, NULL, one_ftype },		/* Repeating group */
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  NULL, { 0 } }, /* keyword will be substituted */
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, NULL, { one_ftype } },		/* Repeating group */
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -524,9 +529,9 @@ CfgEntry filetypes_table[] =
  * Load or save all filetypes
  */
 
-CfgNest ft_config
+void ft_config(XFILE *file, int lvl, int io, int *error)
 {
-	char *fff = "ftype";
+	const char *fff = "ftype";
 
 	fthis = filetypes;
 	ffthis = &filetypes;
@@ -537,6 +542,3 @@ CfgNest ft_config
 
 	*error = handle_cfg(file, filetypes_table, lvl, CFGEMP, io, rem_all_filetypes, ft_default);
 }
-
-
-

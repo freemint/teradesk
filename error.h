@@ -37,15 +37,15 @@
 #define XALL 		-1031		/* mark all */
 
 
-int alert_msg(const char *string, ...);	
-int alert_printf(int def, int message,...);
-void alert_iprint( int message );
-void alert_cantdo(int msg1, int msg2);
-void alert_abort( int message );
-int alert_query( int message );
+_WORD alert_msg(const char *string, ...);	
+_WORD alert_printf(_WORD def, _WORD message,...);
+void alert_iprint( _WORD message );
+void alert_cantdo(_WORD msg1, _WORD msg2);
+void alert_abort( _WORD message );
+_WORD alert_query( _WORD message );
 
-void xform_error(int error);
-void hndl_error(int msg, int error);
-int xhndl_error(int msg, int error, const char *file);
-char *get_freestring( int stringid );
-char *get_message(int error);
+void xform_error(_WORD error);
+void hndl_error(_WORD msg, _WORD error);
+_WORD xhndl_error(_WORD msg, _WORD error, const char *file);
+char *get_freestring( _WORD stringid );
+char *get_message(_WORD error);

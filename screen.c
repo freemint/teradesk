@@ -33,10 +33,11 @@
 #include "font.h"
 #include "screen.h"
 #include "window.h"
+#include "main.h"
 
 
-int palsize = 0;	/* new (as read from the file) palette size */
-int *palette = 0; 	/* Pointer to current palette */
+static _WORD palsize = 0;	/* new (as read from the file) palette size */
+static _WORD *palette = 0; 	/* Pointer to current palette */
 
 
 /* 
@@ -53,7 +54,7 @@ bool clip_desk(RECT *r)
 
 void clipdesk_on(void)
 {
-	int clip_rect[4];
+	_WORD clip_rect[4];
 
 	xd_rect2pxy(&xd_desk, clip_rect);
 	vs_clip(vdi_handle, 1, clip_rect);
@@ -108,7 +109,7 @@ void set_rect_default(void)
  * Draw a simple rectangle, defined by its diagonal points
  */
 
-void draw_rect(int x1, int y1, int x2, int y2)
+void draw_rect(_WORD x1, _WORD y1, _WORD x2, _WORD y2)
 {
 	xd_mouse_off();
 	xd_clip_on(&xd_desk);
@@ -125,7 +126,7 @@ void draw_rect(int x1, int y1, int x2, int y2)
 void invert(RECT *r)
 {
 	MFDB mfdb;
-	int pxy[8];
+	_WORD pxy[8];
 
 	xd_rect2pxy(r, pxy);
 	xd_rect2pxy(r, &pxy[4]);
@@ -141,7 +142,7 @@ void invert(RECT *r)
 void move_screen(RECT *dest, RECT *src)
 {
 	MFDB mfdb;
-	int pxy[8];
+	_WORD pxy[8];
 
 	mfdb.fd_addr = NULL;
 	xd_rect2pxy(src, pxy);
@@ -157,7 +158,7 @@ void move_screen(RECT *dest, RECT *src)
 
 void set_txt_default(XDFONT *f)
 {
-	int dummy;
+	_WORD dummy;
 
 	xd_vswr_repl_mode();
 	vst_font(vdi_handle, f->id);
@@ -175,13 +176,13 @@ void set_txt_default(XDFONT *f)
  * Return NULL if allocation is not successful.
  */
 
-int *get_colours(void)
+_WORD *get_colours(void)
 {
-	int i, *colours, *h;
+	_WORD i, *colours, *h;
 
 	palsize = xd_ncolours;
 
-	if ((colours = malloc((long)xd_ncolours * 3L * sizeof(int))) != NULL)
+	if ((colours = malloc((long)xd_ncolours * 3L * sizeof(*colours))) != NULL)
 	{
 		h = colours;
 
@@ -200,9 +201,9 @@ int *get_colours(void)
  * Set colour palette from a palette table
  */
 
-void set_colours(int *colours)
+void set_colours(_WORD *colours)
 {
-	int i, *h = colours;
+	_WORD i, *h = colours;
 
 	for (i = 0; i < palsize; i++)
 	{
@@ -215,47 +216,47 @@ void set_colours(int *colours)
 #if PALETTES
 
 static const char *palide = "TeraDesk-pal";
-extern char *palname;
 
 typedef struct rgb
 {
-	int ind;
-	int red;
-	int green;
-	int blue;
+	_WORD ind;
+	_WORD red;
+	_WORD green;
+	_WORD blue;
 }RGB;
 
 RGB cwork;
 
-CfgNest rgb_config, pal_config;
+static void rgb_config(XFILE *file, int lvl, int io, int *error);
+static void pal_config(XFILE *file, int lvl, int io, int *error);
 
 
 static CfgEntry palette_root[] =
 {
-	{CFG_NEST, "palette", pal_config },
-	{CFG_FINAL},
-	{CFG_LAST}
+	{ CFG_NEST, "palette", { pal_config } },
+	{ CFG_FINAL, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 static CfgEntry palette_table[] =
 {
-	{CFG_HDR,  "palette" },
-	{CFG_BEG},
-	{CFG_D,    "size", &palsize    },
-	{CFG_NEST, "col",  rgb_config	 },
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  "palette", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_D,    "size", { &palsize    } },
+	{ CFG_NEST, "col", {  rgb_config	 } },
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
 static const CfgEntry colour_table[] =
 {
-	{CFG_HDR, "col"  },
-	{CFG_BEG},
-	{CFG_D | CFG_INHIB, "ind", &cwork.ind }, /* index is not essential, but accept it */
-	{CFG_DDD, "rgb", &cwork.red },
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, "col", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_D | CFG_INHIB, "ind", { &cwork.ind } }, /* index is not essential, but accept it */
+	{ CFG_DDD, "rgb", { &cwork.red } },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -263,9 +264,9 @@ static const CfgEntry colour_table[] =
  * Load or save configuration for one colour
  */
 
-static CfgNest rgb_config
+static void rgb_config(XFILE *file, int lvl, int io, int *error)
 {
-	int 
+	_WORD 
 		i,
 		*p,
 		nc = min(xd_ncolours, palsize),
@@ -315,7 +316,7 @@ static CfgNest rgb_config
  * Load or save palette configuration data
  */
 
-static CfgNest pal_config
+static void pal_config(XFILE *file, int lvl, int io, int *error)
 {
 	palette = get_colours();
 	cwork.ind = 0;
@@ -353,7 +354,7 @@ static CfgNest pal_config
  * Errors from handle_cfgfile() are ignored.
  */
 
-void handle_colours(int io)
+void handle_colours(_WORD io)
 {
 	if (options.vprefs & SAVE_COLOURS)	/* separate file "teradesk.pal" */
 		handle_cfgfile( palname, palette_root, palide, io );

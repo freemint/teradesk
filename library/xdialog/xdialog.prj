@@ -30,16 +30,20 @@ xdialog.lib
 
 .C [-D__USE_MACROS=1];
 
+.C[-C-]
+.C[-K]
+.C[-G]
+.C[-I..\..\include]
+.S[ -S ]
+
 ; With debug info:
 
-;.C[ -C -K -Y -G -I..\..\include]
-;.S[ -Y -S ]
+;.C[ -Y]
+;.S[ -Y]
 ;.L[ -J -Y -L -G]
 
 ; Without debug info:
 
-.C[ -C -K -G -I..\..\include]
-.S[ -S ]
 .L[ -J]
 
 

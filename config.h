@@ -21,6 +21,12 @@
  */
 
 
+/*
+ * Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
+ */
+#define _MINT_ 1			/* 0 for single-TOS-only desktop */
+
+
 /* Note: at most 31 entry type can be defined here */
 
 typedef enum
@@ -34,7 +40,7 @@ typedef enum
 	CFG_B,				/* %c on int8   */
 	CFG_H,				/* %d on int8, nonnegative only       */
 	CFG_C,				/* %c on int16  */
-	CFG_BD,				/* %d on int16, 0 & 1 only      */
+	CFG_BD,				/* %d on bool, 0 & 1 only      */
 	CFG_D,				/* %d on int16, nonnegative only      */
 	CFG_DDD,			/* 3 x %d on int 16, nonnegative only */
 	CFG_X,				/* %x on int16  */
@@ -50,12 +56,20 @@ typedef enum
 typedef struct
 {
 	char type;			/* CFG_TYPE */
-	char *s;			/* format   */
-	void *a;			/* data     */
+	const char *s;		/* format   */
+	union {
+		void *p;		/* data     */
+		char *s;
+		_UWORD *u;
+		unsigned char *c;
+		_WORD *i;
+		long *l;
+		void (*f)(XFILE *file, int lvl, int io, int *error);
+	} a;
 } CfgEntry;
 
 
-/* Mnemonic for easier reading of code: value for parameter "io" of CfgNest */
+/* Mnemonic for easier reading of code: value for parameter "io" of CFG_NEST */
 
 #define CFG_LOAD 0
 #define CFG_SAVE 1
@@ -79,9 +93,7 @@ typedef struct
 extern int chklevel;
 
 
-typedef void CfgNest(XFILE *file, int lvl, int io, int *error);
-
-int	CfgLoad(XFILE *f, CfgEntry *tab, int maxs, int lvl);
-int CfgSave(XFILE *f, CfgEntry *tab, int lvl, bool emp);
+int	CfgLoad(XFILE *f, const CfgEntry *tab, int maxs, int lvl);
+int CfgSave(XFILE *f, const CfgEntry *tab, int lvl, bool emp);
 int handle_cfg(XFILE *f, CfgEntry *tab, int lvl0, int emp, int io, void *ini, void *def);
-int handle_cfgfile( char *name,	CfgEntry *tab, const char *ident,	int io);
+int handle_cfgfile( const char *name, const CfgEntry *tab, const char *ident, int io);

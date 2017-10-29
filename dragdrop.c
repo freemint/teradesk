@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <error.h>
+#include "dragdrop.h"
 
 #if _MINT_
 static char pipename[24];
@@ -60,16 +61,16 @@ static __mint_sighandler_t oldpipesig;
  * it doesn't correctly search through pipes .AA to .ZZ
  */
 
-int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *exts )
+_WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD kstate, char *exts )
 {
 #if _MINT_
 
 	long 
 		fd_mask;
 
-	int 
+	_WORD 
 		msg[8];		/* message buffer */
-	int *mp = msg,	/* pointer to */
+	_WORD *mp = msg,	/* pointer to */
 		fd;			/* pipe handle */ 
 	char
 		c = 0;
@@ -97,7 +98,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 
 		/* Mode 2 means "get EOF if nobody has pipe open for reading" */
 
-		fd = (int)Fcreate(pipename, 0x02);
+		fd = (_WORD)Fcreate(pipename, 0x02);
 	} 
 	while (fd == -ETOS_ACCES);
 
@@ -113,7 +114,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	*mp++ = msx;
 	*mp++ = msy;
 	*mp++ = kstate;
-	*mp   = ( ( ((int)pipename[17]) << 8) + pipename[18] );
+	*mp   = ( ( ((_WORD)pipename[17]) << 8) + pipename[18] );
 
 	if(appl_write(dpid, 16, msg) == 0)
 	{
@@ -130,11 +131,11 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
 	{
 		/* Read the 1 byte response */
 
-		if( ((int)Fread(fd, 1L, &c) == 1) && (c == DD_OK) ) /* no read error or DD_NAK */
+		if( ((_WORD)Fread(fd, 1L, &c) == 1) && (c == DD_OK) ) /* no read error or DD_NAK */
 		{
 			/* Now read the "preferred extensions" */
 
-			if ((int)Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE) /* no error reading extensions */
+			if ((_WORD)Fread(fd, DD_EXTSIZE, exts) == DD_EXTSIZE) /* no error reading extensions */
 			{
 				oldpipesig = Psignal(__MINT_SIGPIPE, __MINT_SIG_IGN);
 				return fd;
@@ -172,7 +173,7 @@ int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char *
  *
  * Returns:	 see above DD_...	*/
 
-int ddstry(int fd, char *ext, char *name, long size)
+_WORD ddstry(_WORD fd, const char *ext, const char *name, long size)
 {
 #if _MINT_
 
@@ -180,26 +181,26 @@ int ddstry(int fd, char *ext, char *name, long size)
 
 	/* 4 bytes for extension, 4 bytes for size, 1 byte for trailing 0 */
 
-	int hdrlen = 9 + (int)strlen(name); /* in Magic docs it is 8 + ... */
+	_WORD hdrlen = 9 + (_WORD)strlen(name); /* in Magic docs it is 8 + ... */
 
-	if ((int)Fwrite(fd, 2L, &hdrlen) == 2) 	/* send header length */
+	if ((_WORD)Fwrite(fd, 2L, &hdrlen) == 2) 	/* send header length */
 	{
 		/* Now send the header */
 
 		if
 		(
 			(
-				(int)Fwrite(fd, 4L, ext) + 
-				(int)Fwrite(fd, 4L, &size) + 
-				(int)Fwrite(fd, (long)strlen(name) + 1, name) /* in Magic docs there is no + 1 */		
+				(_WORD)Fwrite(fd, 4L, ext) + 
+				(_WORD)Fwrite(fd, 4L, &size) + 
+				(_WORD)Fwrite(fd, (long)strlen(name) + 1, name) /* in Magic docs there is no + 1 */		
 			)
 			== hdrlen
 		) 
 		{
 			/* Wait for a reply */
 
-			if ((int)Fread(fd, 1L, &c) == 1) 
-				return (int)c;
+			if ((_WORD)Fread(fd, 1L, &c) == 1) 
+				return (_WORD)c;
 		}
 	}
 
@@ -218,17 +219,17 @@ int ddstry(int fd, char *ext, char *name, long size)
  * Close a drag & drop operation. If handle is -1, don't do anything.
  */
 
-void ddclose(int fd)
+void ddclose(_WORD fd)
 {
 	if ( fd >= 0 )
 	{
-		Psignal(__MINT_SIGPIPE, oldpipesig);
+		(void) Psignal(__MINT_SIGPIPE, oldpipesig);
 		Fclose(fd);
 	}
 }
 
 
-/* All following code is for TeraDesk as the the receiver; currently NOT USED
+#if 0 /* All following code is for TeraDesk as the the receiver; currently NOT USED */
 
 /*
  * open a drag & drop pipe
@@ -250,15 +251,15 @@ void ddclose(int fd)
  * pipe.
  */
 
-int ddopen(int ddnam, char *preferext)
+_WORD ddopen(_WORD ddnam, const char *preferext)
 {
-	int fd;
+	_WORD fd;
 	char outbuf[DD_EXTSIZE + 1];
 
 	pipename[18] = ddnam & 0x00ff;
 	pipename[17] = (ddnam & 0xff00) >> 8;
 
-	fd = Fopen(pipename, 2);
+	fd = (_WORD)Fopen(pipename, 2);
 
 	if (fd >= 0) 
 	{
@@ -299,23 +300,23 @@ int ddopen(int ddnam, char *preferext)
  * send a DD_NAK, DD_EXT, or DD_LEN reply with ddreply().
  */
 
-int ddrtry(int fd, char *name, char *whichext, long *size)
+_WORD ddrtry(_WORD fd, const char *name, const char *whichext, long *size)
 {
-	int
+	_WORD
 		hdrlen,
 		i;
 
 	char
 		buf[80];
 
-	if ((int)Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
+	if ((_WORD)Fread(fd, 2L, &hdrlen) != 2 || hdrlen < 9)
 		return -1;
 
-	if ((int)Fread(fd, 4L, whichext) == 4)
+	if ((_WORD)Fread(fd, 4L, whichext) == 4)
 	{
 		whichext[4] = 0;
 
-		if ((int)Fread(fd, 4L, size) == 4)
+		if ((_WORD)Fread(fd, 4L, size) == 4)
 		{
 			hdrlen -= 8;
 
@@ -356,7 +357,7 @@ int ddrtry(int fd, char *name, char *whichext, long *size)
  * in the latter case the file descriptor is closed
  */
 
-int ddreply(int fd, int ack)
+_WORD ddreply(_WORD fd, _WORD ack)
 {
 	char c = ack;
 
@@ -367,4 +368,4 @@ int ddreply(int fd, int ack)
 }
 
 
-end of currently unused receiver code */
+#endif /* end of currently unused receiver code */

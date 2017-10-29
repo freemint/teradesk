@@ -21,7 +21,8 @@
  */
 
 
-
+#ifndef __COPY_H__
+#define __COPY_H__ 1
 
 #define CMD_COPY	 0
 #define CMD_MOVE	 1
@@ -43,34 +44,30 @@ extern DOSTIME
 		now,
 		optime;
 
-extern int
 #if _MINT_
-	opmode,
-	opuid,
-	opgid,
+extern _WORD opmode;
+extern _WORD opuid;
+extern _WORD opgid;
 #endif
-	opattr,
-	tos_version;
+extern _WORD opattr;
 
-extern bool
-	cfdial_open,
-	rename_files;
-/*	06'11 HR: needs tos.h (__syscall__)
-unsigned int Tgettime(void);	/* from tos.h */
-unsigned int Tgetdate(void);	/* from tos.h */
-*/
+extern bool cfdial_open;
+extern bool rename_files;
+
 void add_size(LSUM *nbytes, long fsize);
 void sub_size(LSUM *nbytes, long fsize);
 void size_sum(long *total, LSUM *bytes);
-int cnt_items(const char *path, long *folders, long *files, LSUM *bytes, int attrib, bool search);
-void check_opabort (int *result);
-bool item_copy(WINDOW *dw, int dobject, WINDOW *sw, int n, int *list, int kstate);
-int open_cfdialog(long folders, long files, LSUM *bytes, int function);
-void close_cfdialog(int button);
+_WORD cnt_items(const char *path, long *folders, long *files, LSUM *bytes, _WORD attrib, bool search);
+void check_opabort (_WORD *result);
+bool item_copy(WINDOW *dw, _WORD dobject, WINDOW *sw, _WORD n, _WORD *list, _WORD kstate);
+_WORD open_cfdialog(long folders, long files, LSUM *bytes, _WORD function);
+void close_cfdialog(_WORD button);
 void upd_copyinfo(long folders, long files, LSUM *bytes);
 void upd_copyname(const char *dest, const char *path, const char *name);
-int copy_error(int error, const char *name, int function);
-bool itmlist_op(WINDOW *w, int n, int *list, const char *dest, int function);
-bool itmlist_wop(WINDOW *w, int n, int *list, int function);
-int touch_file( const char *fullname, _DOSTIME *time, XATTR *attr, bool link);
-int frename(const char *oldfname, const char *newfname, XATTR *attr);
+_WORD copy_error(_WORD error, const char *name, _WORD function);
+bool itmlist_op(WINDOW *w, _WORD n, _WORD *list, const char *dest, _WORD function);
+bool itmlist_wop(WINDOW *w, _WORD n, _WORD *list, _WORD function);
+_WORD touch_file( const char *fullname, _DOSTIME *time, XATTR *attr, bool link);
+_WORD frename(const char *oldfname, const char *newfname, XATTR *attr);
+
+#endif /* __COPY_H__ */

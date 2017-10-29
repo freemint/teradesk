@@ -31,54 +31,50 @@ extern OBJECT
 extern WINDOW 
 	*desk_window;
 
-extern int 
+extern _WORD 
 	iconw,	/* icon sell size */
 	iconh,	/* icon cell size */
 	n_icons;
  
-extern INAME
-	iname;
+extern INAME iname;
 
-extern bool 
-	noicons;
+extern bool noicons;
 
-extern XDINFO
-	icd_info;
+extern XDINFO icd_info;
+extern _WORD sl_noop;
 
-
-void init_obj(OBJECT *obj, int otype);
+void init_obj(OBJECT *obj, _WORD otype);
 bool dsk_init(void);
-int dsk_load(XFILE *file);
+_WORD dsk_load(XFILE *file);
 void dsk_default(void);
 void dsk_close(void);
-void dsk_insticon(WINDOW *w, int n, int *list);
-void dsk_chngicon(int n, int *list, bool dialog);
+void dsk_insticon(WINDOW *w, _WORD n, _WORD *list);
+void dsk_chngicon(_WORD n, _WORD *list, bool dialog);
 void dsk_draw(void);
 void redraw_desk(RECT *r);
 void regen_desktop(OBJECT *desk_tree);
 void dsk_options(void);
-void set_dsk_background(int pattern, int colour);
+void set_dsk_background(_WORD pattern, _WORD colour);
 bool load_icons(void);
 void free_icons(void);
-void remove_icon(int object, bool draw);
-int limcolour(int col);
-int limpattern(int pat);
-int dsk_defaultpatt(void);
-void set_selcolpat(XDINFO *info, int obj, int col, int pat);
-int rsrc_icon(const char *name);
+void remove_icon(_WORD object, bool draw);
+_WORD limcolour(_WORD col);
+_WORD limpattern(_WORD pat);
+void set_selcolpat(XDINFO *info, _WORD obj, _WORD col, _WORD pat);
+_WORD rsrc_icon(const char *name);
 bool isfile(ITMTYPE type);
-void hideskip(int n, OBJECT *obj);
-int trash_or_print(ITMTYPE type);
-int icn_iconid(const char *name);
-int rsrc_icon_rscid(int id, char *name );
-int default_icon(ITMTYPE type);
+void hideskip(_WORD n, OBJECT *obj);
+_WORD trash_or_print(ITMTYPE type);
+_WORD icn_iconid(const char *name);
+_WORD rsrc_icon_rscid(_WORD id, char *name );
+_WORD default_icon(ITMTYPE type);
 void set_iselector(SLIDER *slider, bool draw, XDINFO *info);
-void icn_sl_init(int line, SLIDER *sl);
-int icn_dialog(SLIDER *sl_info, int *icon_no, int startobj, int bckpat, int bckcol);
+void icn_sl_init(_WORD line, SLIDER *sl);
+_WORD icn_dialog(SLIDER *sl_info, _WORD *icon_no, _WORD startobj, _WORD bckpat, _WORD bckcol);
 void draw_icrects( WINDOW *w, OBJECT *tree, RECT *r1);
 void start_rubberbox(void);
-void rubber_rect(int x1, int x2, int y1, int y2, RECT *r);
+void rubber_rect(_WORD x1, _WORD x2, _WORD y1, _WORD y2, RECT *r);
 void icn_coords(ICND *icnd, RECT *tr, RECT *ir);
 void icn_fix_ictype(void);
-void changestate(int mode, bool *newstate, int i, int selected, bool iselected, bool iselected4);
-
+void changestate(_WORD mode, bool *newstate, _WORD i, _WORD selected, bool iselected, bool iselected4);
+void dsk_config(XFILE *file, int lvl, int io, int *error);

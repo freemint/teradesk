@@ -39,6 +39,7 @@
 #define USEM1M1 1			/* If 0, XA_match can be tested */
 #define LARGE 1
 #define IFIRST 0
+#define TESTSHRINK 0
 
 typedef struct record
 {
@@ -190,7 +191,7 @@ XA_unit *split(XA_list *list, long s, bool large)
 #if LARGE
 		if (large)
 		{
-			(long)cur += l;
+			cur = (XA_unit *)((char *)cur + l);
 			cur->next = next;
 			cur->prior = new;
 			if (next)
@@ -202,7 +203,7 @@ XA_unit *split(XA_list *list, long s, bool large)
 		else
 #endif
 		{
-			(long)new += s;
+			new = (XA_unit *)((char *)new + s);
 			new->next = next;
 			new->prior = cur;
 			if (next)
@@ -527,7 +528,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 	{
 		XA_unit *this = area;
 		long old_size, new_size;
-		(long)this -= unitprefix;
+		this = (XA_unit *)((char *)this - unitprefix);
 		new_size = ((size+3)&-4) + unitprefix;
 		old_size = this->size;
 
@@ -578,7 +579,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 			XA_unit *follow = this;
 			long diff = new_size - old_size, fs;
 
-			(long)follow += old_size;
+			follow = (XA_unit *)((char *)follow + old_size);
 			fs = follow->size;
 
 			/* is the following physical unit free and large enough to hold the extension */
@@ -592,7 +593,7 @@ void *XA_realloc(XA_memory *base, void *area, size_t size, XA_key key, XA_key ty
 
 				/* just move up the boundery between this and the following free area */
 
-				(long)followup += diff;
+				followup = (XA_unit *)((char *)followup + diff);
 				memmove(followup, follow, unitprefix);
 				followup->size -= diff;
 				this->size += diff;
@@ -642,13 +643,13 @@ void XA_free(XA_memory *base, void *area)
 	blk = find_unit(base, area);
 	if (blk)
 	{
-		XA_unit *this = area;
-		(long)this -= unitprefix;
-		free_unit(base, blk, this);
+		XA_unit *_this = area;
+		_this = (XA_unit *)((char *)_this - unitprefix);
+		free_unit(base, blk, _this);
 	}
 }
 
-bool XA_match(XA_unit *at, XA_key key, XA_key type)
+static bool XA_match(XA_unit *at, XA_key key, XA_key type)
 {
 	bool m =(   key  == -1
 	         || key  == at->key )
@@ -763,7 +764,7 @@ bool XA_leaked(XA_memory *base, XA_key key, XA_key type, XA_report *report)
 	return reported;
 }
 
-void XA_follow(XA_memory *base, XA_block *blk, XA_list *list, XA_report *report)
+static void XA_follow(XA_memory *base, XA_block *blk, XA_list *list, XA_report *report)
 {
 	/* Go up and down the list, finish at the same address. */
 	XA_unit *un = list->first, *n = un;
@@ -803,14 +804,14 @@ void XA_sanity(XA_memory *base, XA_report *report)
 	{
 		REC *at = (REC *)blk,
 		    *to = at,
-		    *pr;
-		(long)at += blockprefix;
-		(long)to += blk->size;
+		    *pr = NULL;
+		at = (REC *)((char *)at + blockprefix);
+		to = (REC *)((char *)to + blk->size);
 
 		while (at < to)
 		{
 			pr = at;
-			(long)at += at->size;
+			at = (REC *)((char *)at + at->size);
 		}
 
 		if (at != to)

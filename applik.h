@@ -23,40 +23,40 @@
 
 typedef struct appl
 {
-/* ---vvv--- compatible with PRGTYPE structure */
- /* ---vvv--- compatible with FTYPE and LSTYPE structures */
+	/* ---vvv--- compatible with PRGTYPE structure */
+	/* ---vvv--- compatible with FTYPE and LSTYPE structures */
 	SNAME shname;
 	struct appl *next;
- /* ---^^^--- compatible with FTYPE and LSTYPE structures */
+	/* ---^^^--- compatible with FTYPE and LSTYPE structures */
 	ApplType appltype;
 	long limmem;
-	int flags;				/* argv + path + single */
-/* ---^^^--- compatible with PRGTYPE structure */
+	_WORD flags;				/* argv + path + single */
+	/* ---^^^--- compatible with PRGTYPE structure */
 	char *cmdline;
 	char *localenv;
 	char *name;
 	FTYPE *filetypes;
-	int fkey;
+	_WORD fkey;
 } APPLINFO;
 
 extern APPLINFO 
 	awork,
 	*applikations;
 
-extern int
-	naap;
+extern _WORD naap;
 
 
-CfgNest app_config;
+
+void app_config(XFILE *file, int lvl, int io, int *error);
 
 void app_init(void);
 void app_default(void);
-void app_install(int use, APPLINFO **applist);
+void app_install(_WORD use, APPLINFO **applist);
 APPLINFO *app_find(const char *file, bool dial);
-APPLINFO *find_appl(APPLINFO **list, const char *program, int *pos);
-APPLINFO *find_fkey(int fkey);
-bool app_exec(const char *program, APPLINFO *appl, WINDOW *w, int *sellist, int n, int kstate);
+APPLINFO *find_fkey(_WORD fkey);
+bool app_exec(const char *program, APPLINFO *appl, WINDOW *w, _WORD *sellist, _WORD n, _WORD kstate);
 void app_update(wd_upd_type type, const char *fname1, const char *fname2);
-int app_specstart(int flags, WINDOW *w, int *list, int n, int kstate);
-bool app_checkspec(int flag, int pos);
-void log_shortname( char *dest, char* appname ); 
+_WORD app_specstart(_WORD flags, WINDOW *w, _WORD *list, _WORD n, _WORD kstate);
+bool app_checkspec(_WORD flag, _WORD pos);
+void log_shortname( char *dest, const char* appname ); 
+char *app_find_name(const char *path, bool full);

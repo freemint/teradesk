@@ -39,7 +39,7 @@
 
 void sl_set_slider(SLIDER *sl, XDINFO *info)
 {
-	int 
+	_WORD 
 		sh,
 		s,
 		sn = sl->n,
@@ -53,7 +53,7 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 
 	if (sn > slines)
 	{
-		sh = (int)(((long)slines * (long)slh) / (long)sn);
+		sh = (_WORD)(((long)slines * (long)slh) / (long)sn);
 
 		if (sh < xd_fnt_h)
 			sh = xd_fnt_h;
@@ -68,7 +68,7 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
 	/* Determine slider position */
 
 	s = sn - slines;
-	sl->tree[sl->slider].ob_y = aes_ver3d + ( (s > 0) ? (int) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
+	sl->tree[sl->slider].ob_y = aes_ver3d + ( (s > 0) ? (_WORD) (((long)(slh - sh) * (long)(sl->line)) / (long)s) : 0);
 
 	if (info)
 		xd_drawdeep(info, sl->sparent);
@@ -79,13 +79,13 @@ void sl_set_slider(SLIDER *sl, XDINFO *info)
  * Calculate to which item a slider points.
  */
 
-long calc_slpos
+_WORD calc_slpos
 (
-	int newpos,	/* position (0:1000) */
+	_WORD newpos,	/* position (0:1000) */
 	long lines	/* number of items */
 ) 
 {
-	return ((lines * newpos) / 1000L);
+	return (_WORD)(((lines * newpos) / 1000L));
 }
 
 
@@ -93,13 +93,13 @@ long calc_slpos
  * Calculate slider position (0:1000) for the first visible item
  */
 
-int calc_slmill
+_WORD calc_slmill
 (
 	long pos,	/* index of first item */
 	long lines	/* number of items */
 )
 {
-	return (lines) ? (int)((1000L * pos) / lines) : 0;
+	return (lines) ? (_WORD)((1000L * pos) / lines) : 0;
 }
 
 
@@ -112,7 +112,7 @@ static void do_slider
 	long
 		lines;
 
-	int
+	_WORD
 		newpos;
 
 
@@ -128,8 +128,8 @@ static void do_slider
 	if ( newpos < 40 )
 		newpos = 0;
 
-	lines = (long)(sl->n - sl->lines);
-	sl->line = (int)calc_slpos(newpos, lines);
+	lines = sl->n - sl->lines;
+	sl->line = calc_slpos(newpos, lines);
 	sl_set_slider(sl, info);
 }
 
@@ -141,7 +141,7 @@ static void do_slider
 
 static void do_bar(SLIDER *sl, XDINFO *info)
 {
-	int
+	_WORD
 		my,
 		oy,
 		dummy,
@@ -187,14 +187,14 @@ static void do_bar(SLIDER *sl, XDINFO *info)
  * in list_edit(); otherwise it is completely redundant
  */
 
-int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
+_WORD keyfunc(XDINFO *info, SLIDER *sl, _WORD scancode)
 {
-	int
+	_WORD
 		k = 0,
 		j = 0,
 		selected;
 
-	switch (scancode)
+	switch ((unsigned short)scancode)
 	{
 		case CTL_CURUP:
 		{
@@ -242,9 +242,9 @@ int keyfunc(XDINFO *info, SLIDER *sl, int scancode)
  * This routine handles the pressed arrow buttons in a slider
  */
 
-int sl_handle_button(int button, SLIDER *sl, XDINFO *info)
+_WORD sl_handle_button(_WORD button, SLIDER *sl, XDINFO *info)
 {
-	int 
+	_WORD 
 		j = 0,
 		button2 = button & 0x7FFF;
 
@@ -284,9 +284,9 @@ int sl_handle_button(int button, SLIDER *sl, XDINFO *info)
  * Note: in case of a double click, bit 0x8000 is set in returned value
  */
 
-int sl_form_do(int start, SLIDER *sl, XDINFO *info)
+_WORD sl_form_do(_WORD start, SLIDER *sl, XDINFO *info)
 {
-	int button;
+	_WORD button;
 
 	do
 	{

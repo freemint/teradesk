@@ -40,37 +40,35 @@
 #include "screen.h"
 #include "startprg.h"
 #include "va.h"
+#include "dir.h"
 
 
 typedef struct
 {
 	LNAME name;
 	COMMAND cml;
-	const char *envp;
-	int appl_type;
+	char *envp;
+	_WORD appl_type;
 	bool new;
 } PRG_INFO;
 
-int cdecl(*old_critic) (int error);
+_WORD cdecl(*old_critic) (_WORD error);
 PRG_INFO pinfo;
 bool fargv = FALSE;
 
-extern int tos_version, aes_version;
-
-void sim_click(void);
-void draw_tree(OBJECT *tree, RECT *clip);
+static void sim_click(void);
 
 /* 
  * Display a title with the program name in the top of the screen. 
  */
 
-static void set_title(char *title)
+static void set_title(const char *title)
 {
 	OBJECT dsktitle;
 	TEDINFO ttd;
 
 	init_obj(&dsktitle, G_BOXTEXT);
-	dsktitle.ob_flags = LASTOB;
+	dsktitle.ob_flags = OF_LASTOB;
 
 	dsktitle.ob_spec.tedinfo = &ttd;
 	dsktitle.ob_x = 0;
@@ -78,7 +76,7 @@ static void set_title(char *title)
 	dsktitle.ob_width = xd_desk.w;
 	dsktitle.ob_height = xd_fnt_h + 2;
 
-	ttd.te_ptext = title;
+	ttd.te_ptext = (char *)(long)title;
 	ttd.te_font = 3;
 	ttd.te_just = 2;
 	ttd.te_color = 0x1F0;
@@ -101,7 +99,7 @@ void clean_up(void)
 }
 
 
-static int cdecl new_critic(int error /*,int drive*/ )
+static _WORD cdecl new_critic(_WORD error /*,_WORD drive*/ )
 {
 	return error;
 }
@@ -109,13 +107,13 @@ static int cdecl new_critic(int error /*,int drive*/ )
 
 static void install_critic(void)
 {
-	old_critic = (int cdecl(*)(int error)) Setexc(0x101, (void (*)()) new_critic);
+	old_critic = (_WORD cdecl(*)(_WORD error)) Setexc(0x101, (void (*)()) new_critic);
 }
 
 
 static void remove_critic(void)
 {
-	Setexc(0x101, (void (*)()) old_critic);
+	(void) Setexc(0x101, (void (*)()) old_critic);
 }
 
 
@@ -127,8 +125,8 @@ static void remove_critic(void)
 
 static void close_windows(void)
 {
-	int handle;
-	int dummy;
+	_WORD handle;
+	_WORD dummy;
 
 	if ( aes_version >= 0x140 )
 		wind_new();
@@ -151,14 +149,14 @@ static void close_windows(void)
  * Note: appl_type here is 0 or 1 only; 0 for TOS programs, 1 for GEM ones
  */
 
-static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_type)
+static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_type)
 {
-	int 
+	_WORD 
 		dummy,
 		error, 
 		*colours = NULL, 
-		stdout_handle, 
-		ostderr_handle;
+		stdout_handle = 0,
+		ostderr_handle = 0;
 
 	/* If 'save colour' option is set, save the current colours. */
 
@@ -172,13 +170,13 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 	if (options.xprefs & TOS_STDERR)
 	{
-		if ((stdout_handle = (int)Fdup(1)) < 0)	/* Get a copy of stdout for Fforce. */
+		if ((stdout_handle = (_WORD)Fdup(1)) < 0)	/* Get a copy of stdout for Fforce. */
 		{
 			free(colours);
 			return stdout_handle;
 		}
 
-		if ((ostderr_handle = (int)Fdup(2)) < 0)	/* Duplicate old stderr. */
+		if ((ostderr_handle = (_WORD)Fdup(2)) < 0)	/* Duplicate old stderr. */
 		{
 			Fclose(stdout_handle);
 			free(colours);
@@ -205,7 +203,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 		while (pinfo.new)
 		{
-			int aptype;
+			_WORD aptype;
 
 			aptype = pinfo.appl_type;
 			pinfo.new = FALSE;
@@ -233,12 +231,11 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 			/* Why is this ? */
 
-/* why was this?  
-{
+#if 0 /* why was this? */
 			appl_exit();
 			appl_init();
-}
-*/
+#endif
+
 			/* Close and delete any remaining windows */
 
 			close_windows();
@@ -276,7 +273,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 			/* Start a program using Pexec */
 
-			error = (int)x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
+			error = (_WORD)x_exec(0, pinfo.name, &pinfo.cml, pinfo.envp);
 
 			if (aptype == 0)
 			{
@@ -286,7 +283,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 				if ((options.xprefs & TOS_KEY) != 0)
 				{
-					int d, mbs;
+					_WORD d, mbs;
 					v_curtext(vdi_handle, get_freestring(MKEYCONT));
 					while (Bconstat(2))
 						Bconin(2);
@@ -311,8 +308,10 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
 
 				if (strcmp(cmd, pinfo.name) && cmd[0])
 				{
+					COMMAND *ptail = (COMMAND *)tail;
+					
 					strcpy(pinfo.name, cmd);
-					pinfo.cml = *(COMMAND *)tail;
+					pinfo.cml = *ptail;
 					pinfo.envp = NULL;
 					pinfo.appl_type = 1;	/* Moet verbeterd worden. */
 					pinfo.new = TRUE;
@@ -396,7 +395,7 @@ static int exec_com(const char *name, COMMAND *cml, const char *envp, int appl_t
  * apply to it, too ???
  */
 
-void sim_click(void)
+static void sim_click(void)
 {
  
 	if ( (tos_version == 0x206 || tos_version == 0x306 )  
@@ -406,7 +405,7 @@ void sim_click(void)
 	   ) 
 	{
 		XDEVENT events;
-		int p[8] = {0,1, 1,1, 0,1, 0,0};
+		_WORD p[8] = {0,1, 1,1, 0,1, 0,0};
 
 		if ( !wd_dirortext(xw_top()) )
 			appl_tplay( (void *)(&p), 2, 4 );
@@ -437,7 +436,7 @@ void sim_click(void)
 void start_prg
 (
 	const char *fname,		/* path+filename of program */ 
-	const char *cmdl,		/* command line (first byte is length) */
+	char *cmdl,				/* command line (first byte is length) */
 	const char *path,		/* default directory for this program */
 	ApplType prg,			/* application type */
 	bool argv,			/* if true, use argv protocol */
@@ -445,10 +444,10 @@ void start_prg
 	bool back,			/* run in background when applicable */
 	long limmem, 			/* memory limit for program */
 	char *localenv,			/* local environment string for the program */
-	int kstate				/* state of SHIFT, CONTROL and ALTERNATE keys */
+	_WORD kstate				/* state of SHIFT, CONTROL and ALTERNATE keys */
 )
 {
-	int 
+	_WORD 
 		error = 0,
 		appl_type;							/* 0 (TOS) or 1 (GEM) */
 
@@ -510,13 +509,13 @@ void start_prg
 	 * to local environment
 	 */
 
-/* it seems better to always add ARGV to the environment
+#if 0 /* it seems better to always add ARGV to the environment */
 
 #if _MINT_
 	catargv = catargv && ( fargv || magx || (mint /* && !magx */  && !geneva && doenv) || !(mint || geneva) ); 
 #endif
 
-*/
+#endif
 
 	/* 
 	 * Create a new environment string, by concatenating the
@@ -558,7 +557,7 @@ void start_prg
 		{
 			/* Append ARGV to the local environment string */
 
-			const char *envp = buildenv; 
+			char *envp = buildenv; 
 
 			doenv = TRUE;
 			tmpenv = make_argv_env(fname, cmdl + 1, &envl);
@@ -669,9 +668,9 @@ void start_prg
 					if ( background )
 					{
 #if _MINT_
-						error = (int)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
+						error = (_WORD)x_exec( (mint) ? 100 : 0, fname, &cl, buildenv); /* just Pexec */
 #else
-						error = (int)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
+						error = (_WORD)x_exec( 0, fname, &cl, buildenv); /* just Pexec */
 #endif
 					}
 					else
@@ -690,20 +689,20 @@ void start_prg
 #if _MINT_
 		else
 		{
-			int wiscr = SHW_PARALLEL;
+			_WORD wiscr = SHW_PARALLEL;
 
 			/* AES is multitasking, use shel_write() to start program. */
 
 			if (prg == PACC)
 			{
 				/* Start an accessory. Note: returns 0 if error. */
-				error = shel_write(SHW_EXEC_ACC, 0, wiscr, (char *)fname, (char *)empty); 
+				error = shel_write(SHW_EXEC_ACC, 0, wiscr, fname, empty); 
 			}
 			else
 			{
 				/* Start other types of applications */
 
-				int mode;			/* launch mode */
+				_WORD mode;			/* launch mode */
 				void *p[5];			/* parameters for the extended call */
 
 				/* Start gem/tos program (0x1), but in extended mode ( | 0x400 ) */
@@ -725,8 +724,8 @@ void start_prg
 				 * the pointer for the default directory
 				 */
 
-				p[0] = fname;			/* pointer to name                */
-				(long)p[1] = limmem;	/* value for Psetlimit()          */
+				p[0] = (void *)(long)fname;			/* pointer to name                */
+				p[1] = (void *)limmem;	/* value for Psetlimit()          */
 				p[2] = NULL;			/* value for Prenice()            */
 				p[3] = prgpath;			/* pointer to default directory   */
 				p[4] = buildenv;		/* pointer to environment string  */
@@ -738,16 +737,16 @@ void start_prg
 					if(doargv)
 					{
 						if(catargv)
-							(char)cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
+							cmdl[0] = 127; /* Command will be passed through ARGV by TeraDesk */
 						else
-							(char)cmdl[0] = 255; /* Magic will do ARGV only if needeed */
+							cmdl[0] = 255; /* Magic will do ARGV only if needeed */
 					}
 				}
 				else
 				{
 					if ( doargv && !catargv )
 					{
-						(char)cmdl[0] = 127; /* this signals the use of ARGV */
+						cmdl[0] = 127; /* this signals the use of ARGV */
 						wiscr = 1;			 /* the same */
 					}
 					else

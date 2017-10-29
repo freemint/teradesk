@@ -20,15 +20,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef __DIR_H__
+#define __DIR_H__ 1
+
+#include <sys/types.h>
+
+#include "copy.h"
 
 typedef struct fattr
 {
 	long size;
-	unsigned int mode;
-	unsigned int mtime, mdate;
-	unsigned int attrib;
+	mode_t mode;
+	unsigned short mtime, mdate;
+	unsigned short attrib;
 #if _MINT_
-	unsigned int gid, uid;
+	gid_t gid;
+	uid_t uid;
 #endif
 } FATTR;
 
@@ -38,11 +45,11 @@ typedef struct
 	bool newstate;
 	bool visible;
 	bool link;
-	int index;
+	_WORD index;
 	struct fattr attrib;
 	ITMTYPE item_type;
 	ITMTYPE tgt_type;	/* target object type */
-	int icon;			/* id. of an icon assignded to this object */
+	_WORD icon;			/* id. of an icon assignded to this object */
 	const char *name;	/* pointer to a name string of this object */
 	char alname[];		/* to be allocated together with NDTA */
 } NDTA;
@@ -64,18 +71,18 @@ typedef struct
 #else
 	char info[80];			/* info line of window */
 #endif
-	const char *fspec;		/* filename mask for the window */
+	char *fspec;			/* filename mask for the window (allocated) */
 	LSUM usedbytes;			/* total size of files in the dir. */
 	LSUM visbytes;			/* total size of visible files */
 	LSUM selbytes;			/* total size of selected items */
-	int fs_type;			/* We need to know the filesystem type for formatting purposes. */
-	int nfiles;				/* number of files in directory */
-	int nvisible;			/* number of visible files in directory */
-	int nselected;			/* number of selected items in directory */
-	int namelength;			/* length of longest name in the directory */
-	int llength;			/* length of a directory line in text mode */
-	int reserved;			/* currently unused */
-	int par_px;				/* Position of the slider in the parent window */
+	_WORD fs_type;			/* We need to know the filesystem type for formatting purposes. */
+	_WORD nfiles;			/* number of files in directory */
+	_WORD nvisible;			/* number of visible files in directory */
+	_WORD nselected;		/* number of selected items in directory */
+	_WORD namelength;		/* length of longest name in the directory */
+	_WORD llength;			/* length of a directory line in text mode */
+	_WORD reserved;			/* currently unused */
+	_WORD par_px;			/* Position of the slider in the parent window */
 	long par_py;			/* Position of the slider in the parent window */
 	long par_itm;			/* index of this dir in the parent dir */
 	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
@@ -108,13 +115,14 @@ typedef struct
 extern XDFONT dir_font;
 extern WINFO dirwindows[MAXWINDOWS];		/* some information about open windows */
 extern RECT dmax;	/* maximum window size */
+extern ITMFUNC 	*dir_func;	/* pointer to directory window functions */
 
-CfgNest dir_one;
+void dir_one(XFILE *file, int lvl, int io, int *error);
 
-bool dir_add_window(const char *path, const char *thespec, const char *name);
-bool dir_add_dwindow(const char *path);
-bool dir_onalt(int key, WINDOW *w);
-void dir_close(WINDOW *w, int mode);
+bool dir_add_window(char *path, char *thespec, const char *name);
+bool dir_add_dwindow(char *path);
+bool dir_onalt(_WORD key, WINDOW *w);
+void dir_close(WINDOW *w, _WORD mode);
 const char *dir_path(WINDOW *w);
 void dir_filemask(DIR_WINDOW *w);
 void dir_newfolder(WINDOW *w);
@@ -122,25 +130,29 @@ void dir_sort(WINDOW *w);
 void dir_seticons(WINDOW *w);
 void dir_autoselect(DIR_WINDOW *w);
 void dir_briefline(char *tstr, XATTR *att);
-void dir_line(DIR_WINDOW *dw, char *s, int item);
+void dir_line(DIR_WINDOW *dw, char *s, _WORD item);
 void dir_disp_mode(WINDOW *w);
 void dir_mode(WINDOW *w);
 void dir_newdir( WINDOW *w );
 void dir_reread( DIR_WINDOW *w );
 void calc_nlines(DIR_WINDOW *w);		
-int linelength(DIR_WINDOW *w);
+_WORD linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
 void dir_info(DIR_WINDOW *w);
 bool dir_isexec(const char *name, XATTR *attr);
-void dir_prtline(DIR_WINDOW *dw, int line, RECT *area, RECT *work);
-void dir_prtcolumn(DIR_WINDOW *dw, int column, int nc, RECT *area, RECT *work);
+void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work);
+void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, RECT *area, RECT *work);
 void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
 void dir_refresh_all(void);
 void dir_trim_slash ( char *path );
-bool dir_do_path( char *path, int action );
-OBJECT *make_tree(DIR_WINDOW *dw, int sc, int ncolumns, int sl, int lines, bool smode, RECT *work);
+bool dir_do_path( char *path, _WORD action );
+OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc, _WORD ncolumns, _WORD sl, _WORD lines, bool smode, RECT *work);
 void draw_tree(OBJECT *tree, RECT *clip);
-void dir_simw(DIR_WINDOW *dw, char *path, char *name, ITMTYPE type);
+void dir_simw(DIR_WINDOW *dw, char *path, const char *name, ITMTYPE type);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);
+void dir_config(XFILE *file, int lvl, int io, int *error);
+void dir_one(XFILE *file, int lvl, int io, int *error);
+
+#endif /* __DIR_H__ */

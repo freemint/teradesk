@@ -87,8 +87,9 @@ extern VLNAME
 	envline;
 
 void rsc_init(void);
-void rsc_title(OBJECT *tree, int object, int title);
-void rsc_ltoftext(OBJECT *tree, int object, long value);
+void rsc_title(OBJECT *tree, _WORD object, _WORD title);
+void rsc_ltoftext(OBJECT *tree, _WORD object, long value);
 void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt);
 void rsc_tostmplt(TEDINFO *ted);
-void rsc_hidemany(OBJECT *tree, int *items);
+void rsc_hidemany(OBJECT *tree, const _WORD *items);
+char *fmt_size(long value, _WORD *l);

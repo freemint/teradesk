@@ -32,10 +32,10 @@
  * e.g. 0x104, 0x206, etc.
  */
 
-int get_tosversion( void )
+_WORD get_tosversion( void )
 {
 	void *stack;
-	int version;
+	_WORD version;
 
 	stack = (void *)Super(NULL);
 	version = _sysbase->os_version;
@@ -49,7 +49,7 @@ int get_tosversion( void )
  * e.g. 0x340, 0x399, etc.
  */
 
-int get_aesversion(void)
+_WORD get_aesversion(void)
 {
 	return _AESversion;
 }

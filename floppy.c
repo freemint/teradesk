@@ -35,6 +35,7 @@
 #include "window.h"	  /* because of showinfo.h */
 #include "showinfo.h"
 #include "events.h"
+#include "floppy.h"
 
 static XDINFO fdinfo;
 
@@ -47,10 +48,10 @@ static XDINFO fdinfo;
  
 static void fpartoftext 
 ( 
-	int tsides,  /* number of sides */
-	int tspt,    /* sectors per track */
-	int ttracks, /* number of tracks */ 
-	int dirsize  /* number of directory entries in root */
+	_WORD tsides,  /* number of sides */
+	_WORD tspt,    /* sectors per track */
+	_WORD ttracks, /* number of tracks */ 
+	_WORD dirsize  /* number of directory entries in root */
 )
 {
 	/* rsc_ltoftext instead of itoa for nicer (right-justified) looks */
@@ -69,10 +70,10 @@ static void fpartoftext
  * Display formatting/copying progress percentage 
  */
 
-void prdisp 
+static void prdisp 
 ( 
-	int current,  /* current track, =-1 for 0% */
-	int total     /* total number of tracks */
+	_WORD current,  /* current track, =-1 for 0% */
+	_WORD total     /* total number of tracks */
 )
 {
 	long perc;			/* percentage of progress */
@@ -89,7 +90,7 @@ void prdisp
  * (but the bytes are in the wrong order: low byte on lower address)
  */
 
-void cctoi(unsigned char *out, unsigned char *in)
+static void cctoi(unsigned char *out, const unsigned char *in)
 {
 	out[1] = in[0];
 	out[0] = in[1];
@@ -103,14 +104,14 @@ void cctoi(unsigned char *out, unsigned char *in)
  * Also, filler is somewhere int, elsewhere long, elsewhere *long!
  */
 
-long onetrack
+static long onetrack
 (
-	int what, 	/* 8 = read, 9= write */
+	_WORD what, 	/* 8 = read, 9= write */
 	void *buf,	/* Pointer to the buffer used */
-	int devno,	/* device id */
-	int itrack,	/* current track number */
-	int iside,	/* floppy side */
-	int spt		/* number of sectors to read/write */
+	_WORD devno,	/* device id */
+	_WORD itrack,	/* current track number */
+	_WORD iside,	/* floppy side */
+	_WORD spt		/* number of sectors to read/write */
 )
 {
 	long 
@@ -122,7 +123,10 @@ long onetrack
 
 	/* These xbios calls are Flopwr() / Floprd() and Flopver() */
 
-	istat = xbios( what, buf, filler, devno, 1, itrack, iside, spt );
+	if (what == 9)
+		istat = Flopwr( buf, (void *)filler, devno, 1, itrack, iside, spt );
+	else
+		istat = Floprd( buf, (void *)filler, devno, 1, itrack, iside, spt );
 	
 	if(!istat && what != 19)
 	{
@@ -141,11 +145,11 @@ long onetrack
 
 static bool checktracks
 (
-	int tsides,		/* Number of sides */
-	int ttracks,	/* Number of tracks */
-	int tspt,		/* Number of sectors per track */
-	int mspt,		/* max. number of sectors per track */
-	int tbps		/* Number of bytes per sector */
+	_WORD tsides,		/* Number of sides */
+	_WORD ttracks,	/* Number of tracks */
+	_WORD tspt,		/* Number of sectors per track */
+	_WORD mspt,		/* max. number of sectors per track */
+	_WORD tbps		/* Number of bytes per sector */
 )
 {
 	if 
@@ -165,7 +169,7 @@ static bool checktracks
  * Aux. size-optimization routine
  */
 
-static int fl_atoi(int obj)
+static _WORD fl_atoi(_WORD obj)
 {
 	return atoi(fmtfloppy[obj].ob_spec.tedinfo->te_ptext);
 }
@@ -175,29 +179,29 @@ static int fl_atoi(int obj)
  * Read format parameters from the floppy
  */
 
-int readfp
+static _WORD readfp
 (
-	int dev,
+	_WORD dev,
 	unsigned char *sect0,
-	int *bps,
-	int *spt,
-	int *sides,
-	int *tracks,
-	int *dirsize
+	_WORD *bps,
+	_WORD *spt,
+	_WORD *sides,
+	_WORD *tracks,
+	_WORD *dirsize
 )
 {
-	int istat;
-	int secs;
+	_WORD istat;
+	_WORD secs;
 
 	/* Read the boot sector */
 
-	istat = (int)onetrack(8, sect0, dev, 0, 0, 8); /* read 8 sectors */
+	istat = (_WORD)onetrack(8, sect0, dev, 0, 0, 8); /* read 8 sectors */
  
 	/* Decode format parameters from boot sector */	
 
 	if(istat == 0)
 	{
-		*bps = ((int)sect0[0x0c]) << 8;
+		*bps = ((_WORD)sect0[0x0c]) << 8;
 		cctoi((unsigned char *)dirsize, &sect0[0x11]);
 		cctoi((unsigned char *)(&secs), &sect0[0x13]);
 		*spt = sect0[0x18];
@@ -220,7 +224,7 @@ int readfp
 void formatfloppy
 (
 	char fdrive,  		/* drive id letter ( 'A'or 'B' ) */
-	int format    		/* true for format, false for copy */
+	_WORD format    		/* true for format, false for copy */
 )
 {
 	unsigned char 
@@ -233,20 +237,20 @@ void formatfloppy
 		serial,			/* 24-bit disk serial number  */
 		istat,			/* function execution status  */
 #if _MINT_
-		lstats,			/* same, for locking source device */
-		lstatt,			/* same, for locking target device */
+		lstats = 0,		/* same, for locking source device */
+		lstatt = 0,		/* same, for locking target device */
 #endif
 		mbsize = 0;     /* allocated memory block size (bytes) */
 
-	int 
+	_WORD 
 		button,			/* index of activeded button */
-		sectors,		/* total number of disk sectors */
+		sectors = 0,	/* total number of disk sectors */
 		itrack,			/* current track (counter) */
 		ftracks,		/* how many tracks to format */
 		iside,			/* current side (counter) */
 		sbps,			/* source disk bytes per sector */
 		tbps,			/* target disk bytes per sector */
-		sdevno,			/* source drive id */
+		sdevno = 0,		/* source drive id */
 		tdevno,			/* target disk drive id */
 		ssides,			/* source disk number of sides */
 		stracks,		/* source disk number of tracks */
@@ -259,7 +263,7 @@ void formatfloppy
 		retrycnt,		/* limit for retry counter */
 		rc;				/* retry counter */
 	
-	static int     		/* keep these from previous call */
+	static _WORD     		/* keep these from previous call */
 		mspt=11,		/* maximum permitted sectors per track */
 		tsides,			/* target disk number of sides */
 		ttracks,		/* target disk number of tracks */
@@ -347,7 +351,7 @@ void formatfloppy
 		obj_unhide(fmtfloppy[FLABEL]); 				/* show label field */
 		obj_enable(fmtfloppy[FLABEL]); 				/* it is editable */
 		obj_unhide(fmtfloppy[FQWIK]);				/* quick format */
-		tdevno = (int)fdrive - 'A';					/* target drive */
+		tdevno = fdrive - 'A';						/* target drive */
 	}
 	else 			/* copy disk */
 	{
@@ -357,7 +361,7 @@ void formatfloppy
 		xd_set_child(fmtfloppy, FFTYPE, 0);
 		obj_hide(fmtfloppy[FLABEL]);			/* hide label field */
 		obj_hide(fmtfloppy[FQWIK]);				/* quick format */
-		sdevno = (int)fdrive - 'A';				/* source drive */
+		sdevno = fdrive - 'A';					/* source drive */
 		tdevno = 1 & (1 ^ sdevno);  			/* target is the other one */
 		drive[0] = tdevno + 'A';    			/* target drive letter */
 		strcpy(fmtfloppy[FTGTDRV].ob_spec.tedinfo->te_ptext, drive); /* put into dialog */ 
@@ -585,7 +589,7 @@ void formatfloppy
 				
 					prdisp ( -1, 100 );
 
-					if ( fmtfloppy[FQWIK].ob_state & SELECTED )
+					if ( fmtfloppy[FQWIK].ob_state & OS_SELECTED )
 						ftracks = 2;
 					else
 						ftracks = ttracks;
@@ -605,7 +609,7 @@ void formatfloppy
 							 * Now, xbios(10...) = Flopfmt(...)
 							 */
 						 						
-							istat = xbios(10, sect0, filler, tdevno, tspt, itrack, iside, intleave, 0x87654321L, 0xE5E5 ); 
+							istat = Flopfmt(sect0, (void *)filler, tdevno, tspt, itrack, iside, intleave, 0x87654321L, 0xE5E5 ); 
 
 							/* In case of error inquire what to do */
 						
@@ -620,7 +624,7 @@ void formatfloppy
 
 								/* Even after a retry, there is an arror */	
 
-								button = alert_printf( 3, AFMTERR, itrack, get_message((int)istat) );
+								button = alert_printf( 3, AFMTERR, itrack, get_message((_WORD)istat) );
 
 								switch ( button )
 								{
@@ -665,12 +669,12 @@ void formatfloppy
 
 					memcpy(sect0, hdr, 17);
 
-					serial = xbios(17);	 				/* random serial number */					  										/* produce random number */
+					serial = Random();	 				/* random serial number */					  										/* produce random number */
 					memcpy(&sect0[0x08], &serial, 3);	/* turned around, but doesn't matter */
 					sect0[0x0c] = (char)(tbps >> 8);	/* bytes/128 per sector */
 
-					cctoi(&sect0[0x11], (unsigned char *)(&dirsize));
-					cctoi(&sect0[0x13], (unsigned char *)(&sectors) );
+					cctoi(&sect0[0x11], (const unsigned char *)(&dirsize));
+					cctoi(&sect0[0x13], (const unsigned char *)(&sectors) );
 		        
 					sect0[0x15] = fat0;            			/* media id. */
 					sect0[0x16] = (char)fatsize;   			/* sectors per fat: 3 ... 9 */
@@ -732,7 +736,7 @@ void formatfloppy
 				}
 				else /* disk copy */
 				{
-					int tbpt; /* bytes per track */
+					_WORD tbpt; /* bytes per track */
 
 					/* Insert target disk, read boot sector */
         
@@ -800,7 +804,7 @@ void formatfloppy
 					/* How many tracks to copy in each pass ? how many passes ? */
 				
 					tbpt = tbps * tspt;
-					tpp = (int)(mbsize / (tbpt * tsides));     
+					tpp = (_WORD)(mbsize / (tbpt * tsides));     
 					npass = ttracks / tpp;
 
 					if ( ttracks % tpp ) 
@@ -902,7 +906,7 @@ void formatfloppy
 			abortfmt:	
 
 			if ( (button == 1 ) && !finished && istat ) /* if started but not finished */
-				alert_printf( 1, AERRACC, get_message((int)istat) ); 
+				alert_printf( 1, AERRACC, get_message((_WORD)istat) ); 
 		}
 
 		/* Final activities... */

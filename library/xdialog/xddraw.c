@@ -26,18 +26,7 @@
 #include "xdialog.h"
 
 
-extern int 
-	xd_has3d,
-	xd_bg_col,
-	xd_ind_col,
-	xd_act_col,
-	xd_sel_col;
-
-extern int
-	brd_l, brd_r, brd_u, brd_d; /* object border sizes */
-
-static MFDB
-	cursor_mfdb = {	NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
+static MFDB cursor_mfdb = {	NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
 
 
 /********************************************************************
@@ -59,9 +48,9 @@ static MFDB
  * Get appropriate colour for activator/indicator/background object
  */
 
-int xd_get_3d_colour(int flags)
+static _WORD xd_get_3d_colour(_WORD flags)
 {
-	int colour;
+	_WORD colour;
 
 	if (IS_ACT(flags))
 		colour = xd_act_col;
@@ -70,9 +59,9 @@ int xd_get_3d_colour(int flags)
 	else if (IS_BG(flags))
 		colour = xd_bg_col;
 	else
-		colour = WHITE;
+		colour = G_WHITE;
 
-	return (colour >= xd_ncolours) ? WHITE : colour;
+	return (colour >= xd_ncolours) ? G_WHITE : colour;
 }
 
 
@@ -87,11 +76,11 @@ static long xd_strlen(char *s)
 
 	l = strlen(s);
 
-/* This capability is currently not used anywhere in Teradesk resource
+#if 0 /* This capability is currently not used anywhere in Teradesk resource */
 
 	if (strchr(s, '#') != NULL)
 		l--;
-*/
+#endif
 
 	return l;
 }
@@ -102,9 +91,9 @@ static long xd_strlen(char *s)
  * argument: attrib; but it was allways called with attrib = 0
  */
 
-static void prt_text(char *s, int x, int y, int state)
+static void prt_text(char *s, _WORD x, _WORD y, _WORD state)
 {
-	int
+	_WORD
 		attrib = 0;
 
 	char 
@@ -112,7 +101,7 @@ static void prt_text(char *s, int x, int y, int state)
 		/* *h, currently unused */ 
 		*p = NULL;
 
-	if (state & DISABLED)
+	if (state & OS_DISABLED)
 		attrib ^= 2;
 
 	vst_effects(xd_vhandle, attrib);
@@ -121,9 +110,9 @@ static void prt_text(char *s, int x, int y, int state)
 
 	/* uses AES 4 WHITEBAK */
 
-	if (state & WHITEBAK)
+	if (state & OS_WHITEBAK)
 	{
-		int und = (state << 1) >> 9;
+		_WORD und = (state << 1) >> 9;
 
 		if (und >= 0)
 		{
@@ -133,11 +122,11 @@ static void prt_text(char *s, int x, int y, int state)
 		}
 	}
 
-/* This capability is currently not used anywhere in Teradesk
+#if 0 /* This capability is currently not used anywhere in Teradesk */
 
 	else
 
-	/* I_A enhanced: now you can place '#' in text itself! */
+		/* I_A enhanced: now you can place '#' in text itself! */
 
 		while ((h = strchr(h, '#')) != NULL)
 		{
@@ -150,7 +139,7 @@ static void prt_text(char *s, int x, int y, int state)
 			/* else: double '#': make it one! */
 			h++;
 		}
-*/
+#endif
 
 	v_gtext(xd_vhandle, x, y, tmp);
 
@@ -158,14 +147,14 @@ static void prt_text(char *s, int x, int y, int state)
 	{
 		/* Do underline some character! Use red colour */
 
-		int xtnd[8];
+		_WORD xtnd[8];
 
 		*p = 0;
 		vqt_extent(xd_vhandle, tmp, xtnd);
 		vst_effects(xd_vhandle, attrib ^ 8);	/* XOR due to text-style extensions! */
-		vst_color(xd_vhandle, RED);
+		vst_color(xd_vhandle, G_RED);
 		v_gtext(xd_vhandle, x + (xtnd[2] - xtnd[0]), y, " ");
-		vst_color(xd_vhandle, BLACK);
+		vst_color(xd_vhandle, G_BLACK);
 	}
 }
 
@@ -175,9 +164,9 @@ static void prt_text(char *s, int x, int y, int state)
  * Note: smaller code is generated when pointers to pxy are used
  */
 
-void draw_xdrect(int x, int y, int w, int h)
+void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
 {
-	int 
+	_WORD 
 		p,
 		pxy[10],
 		*pxyp = pxy;
@@ -204,9 +193,9 @@ void draw_xdrect(int x, int y, int w, int h)
  * desired thickness of border
  */
 
-static void draw_frame(RECT *frame, int start, int eind)	
+static void draw_frame(RECT *frame, _WORD start, _WORD eind)	
 {
-	int i, s, e;
+	_WORD i, s, e;
 
 	/* Note: this is slightly shorter than using min() and max() */
 
@@ -238,7 +227,7 @@ static void draw_frame(RECT *frame, int start, int eind)
  * Set suitable (default) line attributes. Full line, width 1 pixel.
  */
 
-void set_linedef(int colour)
+void set_linedef(_WORD colour)
 {
 	vsl_color(xd_vhandle, colour);
 	vsl_ends(xd_vhandle, 0, 0);
@@ -255,13 +244,13 @@ void set_linedef(int colour)
 
 static void set_textdef(void)
 {
-	int dummy;
+	_WORD dummy;
 
 	vst_font(xd_vhandle, xd_regular_font.id);
 	vst_rotation(xd_vhandle, 0);
 	vst_alignment(xd_vhandle, 0, 5, &dummy, &dummy);
 	xd_vst_point(xd_regular_font.size, &dummy);
-	vst_color(xd_vhandle, BLACK);
+	vst_color(xd_vhandle, G_BLACK);
 	xd_vswr_trans_mode(); 
 }
 
@@ -288,9 +277,9 @@ void xd_vswr_repl_mode(void)
  * Rectangle is always drawn in replace mode.
  */
 
-void clr_object(RECT *r, int colour, int pattern)
+void clr_object(RECT *r, _WORD colour, _WORD pattern)
 {
-	int 
+	_WORD 
 		pxy[4],
 		pn,
 		fillmode = FIS_SOLID;
@@ -330,9 +319,9 @@ void clr_object(RECT *r, int colour, int pattern)
  * drawing in 3d but that option being disabled by the user!
  */
 
-static bool xd_is3dobj(int flags) 
+static bool xd_is3dobj(_WORD flags) 
 {
-	int f3d = flags & (AES3D_1 | AES3D_2);
+	_WORD f3d = flags & (AES3D_1 | AES3D_2);
 
 	if 
 	( 
@@ -350,14 +339,14 @@ static bool xd_is3dobj(int flags)
  * Calculate size of an object enlargement, including 3D effects
  */
 
-static void xd_3dbrd( int ob_state, int *xl, int *xr, int *yu, int *yd)
+static void xd_3dbrd( _WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd)
 {
 	*xl = aes_hor3d;
 	*xr = aes_hor3d;
 	*yu = aes_ver3d;
 	*yd = aes_ver3d;
 
-	if (ob_state & OUTLINED)
+	if (ob_state & OS_OUTLINED)
 	{
 		/* don't use max() here, this is shorter */
 
@@ -397,15 +386,15 @@ static void xd_3dbrd( int ob_state, int *xl, int *xr, int *yu, int *yd)
 static void xd_drawbox
 (
 	RECT *r,		/* size of the box      */
-	int flags,		/* object flags relevant to drawing this box */
-	int state,		/* object state         */
-	int xtype		/* extended object type */
+	_WORD flags,	/* object flags relevant to drawing this box */
+	_WORD state,	/* object state         */
+	_WORD xtype		/* extended object type */
 )
 {
 	RECT
 		outsize;	/* external object dimensions (final) */
 
-	int 
+	_WORD 
 		hxl,		/* horizontal enlargement  */
 		vxu,		/* vertical enlargement    */
 		hxr,		/* horizontal enlargement  */
@@ -445,7 +434,7 @@ static void xd_drawbox
 			colour = xd_get_3d_colour(flags);
 		else
 		{
-			if ( (state & SELECTED) && (xtype == XD_BUTTON) )
+			if ( (state & OS_SELECTED) && (xtype == XD_BUTTON) )
 				colour = xd_sel_col;
 			else
  				colour = xd_bg_col; 
@@ -472,9 +461,9 @@ static void xd_drawbox
 		|| IS_ACT(flags)
 	)
 	{
-		if (flags & DEFAULT)
+		if (flags & OF_DEFAULT)
 			border = 2; /* actual border thickness will be 3 pixels */
-		else if (flags & EXIT)
+		else if (flags & OF_EXIT)
 			border = 1; /* actual border thickness will be 2 pixels */
 		else
 			border = 0; /* actual border thickness will be 1 pixel  */
@@ -482,7 +471,7 @@ static void xd_drawbox
 		if ( xtype == XD_DRAGBOX )
 			colour = xd_sel_col;
 		else
-			colour = BLACK;
+			colour = G_BLACK;
 
 		set_linedef(colour);
 		draw_frame( &outsize, 0, -border );
@@ -502,7 +491,7 @@ static void xd_drawbox
 
 	if ( xd_is3dobj(flags) )
 	{
-		int *pxyp = pxy;
+		_WORD *pxyp = pxy;
 
 		p = outsize.x + outsize.w - 2;
 		*pxyp++ = p;							/* [0] upper right corner */
@@ -523,15 +512,15 @@ static void xd_drawbox
 
 		/* Alternate shadowing for selected and deselected object */
 
-		if ( state & SELECTED )
+		if ( state & OS_SELECTED )
 		{
-			colour = WHITE;
+			colour = G_WHITE;
 			colour2 = xd_sel_col;
 		}
 		else
 		{
 			colour = xd_sel_col;
-			colour2 = WHITE;
+			colour2 = G_WHITE;
 		}
 
 		set_linedef(colour);
@@ -546,9 +535,9 @@ static void xd_drawbox
  * Code for drawing progdefined "dragbox" ear on dialogs
  */
 
-static int cdecl ub_drag(PARMBLK *pb)
+static _WORD cdecl ub_drag(PARMBLK *pb)
 {
-	int 
+	_WORD 
 		dhl,
 		dhr,
 		dvu,
@@ -612,13 +601,13 @@ static int cdecl ub_drag(PARMBLK *pb)
 
 	/* Draw something looking like a part of the border visible behind the "ear" */
 
-	b = abs((int)obspec->obspec.framesize);	/* border thickness */
+	b = abs((_WORD)obspec->obspec.framesize);	/* border thickness */
 
 	if ( b != 0 )
 	{
-		int i;
+		_WORD i;
 
-		vsl_color(xd_vhandle, (int)(obspec->obspec.framecol));
+		vsl_color(xd_vhandle, (_WORD)(obspec->obspec.framecol));
 
 		pxy[0] = size.x + 1;
 		pxy[1] = size.y;
@@ -650,9 +639,9 @@ static int cdecl ub_drag(PARMBLK *pb)
  * Code for drawing progdefined "background box"
  */
 
-int cdecl ub_bckbox(PARMBLK *pb)
+_WORD cdecl ub_bckbox(PARMBLK *pb)
 {
-	int 
+	_WORD 
 		flags;
 
 	RECT 
@@ -707,7 +696,7 @@ int cdecl ub_bckbox(PARMBLK *pb)
  * Code for drawing progdefined circular radiobutton
  */
 
-static int cdecl ub_roundrb(PARMBLK *pb)
+static _WORD cdecl ub_roundrb(PARMBLK *pb)
 {
 	/*
 	 * Bitmasks for round radio buttons.
@@ -915,21 +904,20 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 	char
 		*string;		/* text beside the button */
 
-	static const int
+	static const _WORD
 		dmode[3] = {MD_REPLACE,	MD_TRANS, MD_TRANS}; /* drawing mode: */
 
-	int
+	_WORD
 		i, 
 		flags,										 /* object flags */
 		x = pb->pb_x, 
 		y = pb->pb_y, 
 		pxy[8] = {0, 0, 15},
-		ci[6] = {WHITE, WHITE,   BLACK, WHITE,   BLACK, WHITE};	/* colour indices for three steps */
+		ci[6] = {G_WHITE, G_WHITE,   G_BLACK, G_WHITE,   G_BLACK, G_WHITE};	/* colour indices for three steps */
 
-	void 
-		*t,						/* aux, for swapping pointers to bitmaps   */
-		*rb[3], 				/* pointers to selected bitmaps            */
-		*bmu,*bml,*bmc,*bmf;	/* pointers to resolution-dependent bitmaps */
+	const short *t;						/* aux, for swapping pointers to bitmaps   */
+	const short *rb[3]; 				/* pointers to selected bitmaps            */
+	const short *bmu, *bml, *bmc, *bmf;	/* pointers to resolution-dependent bitmaps */
 
 	MFDB
 		smfdb,			/* source memory block definition */
@@ -1028,7 +1016,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 
 	ci[4] = 1; 
 
-	if( pb->pb_currstate & SELECTED )
+	if( pb->pb_currstate & OS_SELECTED )
 	{
 		t = rb[0];
 		rb[0] = rb[1];
@@ -1047,7 +1035,7 @@ static int cdecl ub_roundrb(PARMBLK *pb)
 
 	for ( i = 0; i < 3; i++ )
 	{
-		smfdb.fd_addr = rb[i];
+		smfdb.fd_addr = (void *)(long)rb[i];
 		vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i] );
 	}
 
@@ -1068,9 +1056,9 @@ static int cdecl ub_roundrb(PARMBLK *pb)
  * Code for drawing progdefined rectangular "checkbox" button 
  */
 
-static int cdecl ub_rectbut(PARMBLK *pb)
+static _WORD cdecl ub_rectbut(PARMBLK *pb)
 {
-	int
+	_WORD
 		x = pb->pb_x, 
 		y = pb->pb_y,
 		flags;
@@ -1111,9 +1099,9 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 
 	/* Draw additional graphic elements - "X" diagonal lines if selected */
 
-	if ( pb->pb_currstate & SELECTED )
+	if ( pb->pb_currstate & OS_SELECTED )
 	{
-		int
+		_WORD
 			pxy[8], 
 			*pxyp = pxy,
 			b = 0;
@@ -1130,7 +1118,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
 		*pxyp++ = pxy[0];
 		*pxyp   = pxy[3];
 
-		set_linedef(BLACK);			
+		set_linedef(G_BLACK);			
 		v_pline(xd_vhandle, 2, pxy);
 		v_pline(xd_vhandle, 2, &pxy[4]);
 	}
@@ -1152,7 +1140,7 @@ static int cdecl ub_rectbut(PARMBLK *pb)
  * Code which handles scrolled editable text fields 
  */
 
-static int cdecl ub_scrledit(PARMBLK *pb)
+static _WORD cdecl ub_scrledit(PARMBLK *pb)
 {
 	XUSERBLK *blk = (XUSERBLK *)pb->pb_parm;
 	TEDINFO *ted = blk->ob_spec.tedinfo;
@@ -1162,7 +1150,7 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 		*text = s,
 	    *save = ted->te_ptext;			/* pointer to editable text field */
 
-	int 
+	_WORD 
 		i,								/* counter for padding with "_"s */
 		tmode,							/* transparent or replace */
 		b,								/* border thickness */
@@ -1171,8 +1159,8 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 	    w = pb->pb_w,
 	    h = pb->pb_h,
 		xl, xr,								/* positions of < > markers */
-	    tw = (int)strlen(save),				/* length of text in the field */
-	    ow = (int)strlen(ted->te_pvalid);	/* length of validation field */
+	    tw = (_WORD)strlen(save),				/* length of text in the field */
+	    ow = (_WORD)strlen(ted->te_pvalid);	/* length of validation field */
 
 	RECT 
 		size,							/* size of the text box */
@@ -1209,9 +1197,9 @@ static int cdecl ub_scrledit(PARMBLK *pb)
 
 	if ( xd_colaes ) 
 	{
-		if ( aes_hor3d == 0 && ted->te_thickness != 0 && get_aesversion() == 0x399)
+		if ( aes_hor3d == 0 && ted->te_thickness != 0 && aes_version == 0x399)
 			/* hopefully this branch is valid for Magic only */
-			xd_drawbox(&size, AES3D_1, SELECTED, XD_SCRLEDIT );
+			xd_drawbox(&size, AES3D_1, OS_SELECTED, XD_SCRLEDIT );
 		else
 		{
 			/* other "gray background" AESes V4 */
@@ -1292,12 +1280,12 @@ static int cdecl ub_scrledit(PARMBLK *pb)
  * Code for drawing a progdefined rectangular button with an underlined text
  */
 
-static int cdecl ub_button(PARMBLK *pb)
+static _WORD cdecl ub_button(PARMBLK *pb)
 {
 	char 
 		*string;
 
-	int 
+	_WORD 
 		x, 
 		y,
 		flags, 
@@ -1321,7 +1309,7 @@ static int cdecl ub_button(PARMBLK *pb)
 
 	set_textdef();
 
-	if ( pb->pb_currstate & SELECTED )
+	if ( pb->pb_currstate & OS_SELECTED )
 	{
 		if ( xd_is3dobj(flags) )
 			offset = 1;
@@ -1329,7 +1317,7 @@ static int cdecl ub_button(PARMBLK *pb)
 			vswr_mode(xd_vhandle, MD_XOR);
 	}
 	
-	x = pb->pb_x + (pb->pb_w - (int) xd_strlen(string) * xd_regular_font.cw) / 2 + offset;
+	x = pb->pb_x + (pb->pb_w - (_WORD) xd_strlen(string) * xd_regular_font.cw) / 2 + offset;
 	y = pb->pb_y + (pb->pb_h - xd_regular_font.ch) / 2 + offset;
 
 	/* Write button text */
@@ -1350,14 +1338,14 @@ static int cdecl ub_button(PARMBLK *pb)
  * background colour, and then the text is placed there.
  */
 
-static int cdecl ub_rbutpar(PARMBLK *pb)
+static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 {
-	int 
+	_WORD 
 		x, y,		/* text position */
 		dh,			/* height change */
 		flags;		/* state flags */
 
-	const int
+	const _WORD
 		gap = 2; 	/* distance between the frame and the text (pixels) */
 
 	char 
@@ -1399,7 +1387,7 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
 
 	size.x = x - gap;
 	size.y = y - 1;
-	size.w = (int)xd_strlen(string) * xd_regular_font.cw + 2 * gap;
+	size.w = (_WORD)xd_strlen(string) * xd_regular_font.cw + 2 * gap;
 	size.h = xd_regular_font.ch + 2; 
 
 	clr_object(&size, xd_bg_col, -1);	
@@ -1427,9 +1415,9 @@ static int cdecl ub_rbutpar(PARMBLK *pb)
  * (but only if a box is drawn), and not increase object width.
  */
 
-static int cdecl ub_title(PARMBLK *pb)
+static _WORD cdecl ub_title(PARMBLK *pb)
 {
-	int 
+	_WORD 
 		dx,
 		pxy[4],
 		flags;
@@ -1469,16 +1457,16 @@ static int cdecl ub_title(PARMBLK *pb)
 		pxy[2] = pxy[0] + pb->pb_w - 1;
 
 		xd_vswr_repl_mode();
-		set_linedef(BLACK);
+		set_linedef(G_BLACK);
 		v_pline(xd_vhandle, 2, pxy);
 	}
 
 	/* Draw title text in blue, then turn back to black */
 
 	set_textdef();
-	vst_color(xd_vhandle, LBLUE);
+	vst_color(xd_vhandle, G_LBLUE);
 	prt_text(string, pb->pb_x + dx, pb->pb_y + (pb->pb_h - xd_regular_font.ch - 1) / 2, pb->pb_currstate);
-	vst_color(xd_vhandle, BLACK);
+	vst_color(xd_vhandle, G_BLACK);
 
 	/* Turn clipping off */
 
@@ -1491,11 +1479,10 @@ static int cdecl ub_title(PARMBLK *pb)
 /*
  * Code for (not) drawing a rectangle for an unknown object type
  */
-
-/*
-static int cdecl ub_unknown(PARMBLK *pb)
+#if 0
+static _WORD cdecl ub_unknown(PARMBLK *pb)
 {
-/* this would be a mistake anyway, so why draw anything at all ?
+	/* this would be a mistake anyway, so why draw anything at all ? */
 
 	RECT 
 		*clip = (RECT *)&pb->pb_xc,
@@ -1503,16 +1490,15 @@ static int cdecl ub_unknown(PARMBLK *pb)
 
 	xd_clip_on(clip);
 
-	set_linedef(BLACK);
+	set_linedef(G_BLACK);
 	xd_vswr_repl_mode();
 	clr_object(frame, 0, -1);
 	draw_frame(frame, 0, 0);
 
 	xd_clip_off();
-*/
 	return 0;
 }
-*/
+#endif
 
 
 /********************************************************************
@@ -1531,11 +1517,11 @@ static void xd_calc_cursor(XDINFO *info, RECT *cursor)
 
 	cursor->x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.cw;
 
-/* A slightly smaller cursor looks better in Magic
+#if 0 /* A slightly smaller cursor looks better in Magic */
 	cursor->y -= 1;
 	cursor->w = 1;
 	cursor->h = xd_regular_font.ch + 2;
-*/
+#endif
 	cursor->w = 1;
 	cursor->h = xd_regular_font.ch;
 }
@@ -1560,7 +1546,7 @@ static void xd_credraw(XDINFO *info, RECT *area)
 	{
 		RECT cursor, r;
 		MFDB smfdb;
-		int pxy[8], *pxyp = pxy;
+		_WORD pxy[8], *pxyp = pxy;
 
 		xd_calc_cursor(info, &cursor);
 		smfdb.fd_addr = NULL;
@@ -1584,7 +1570,7 @@ static void xd_credraw(XDINFO *info, RECT *area)
 			
 			xd_clip_on(&r);
 			xd_vswr_repl_mode();
-			set_linedef(BLACK);
+			set_linedef(G_BLACK);
 
 			pxy[0] = pxy[2] = cursor.x;
 			pxy[1] = cursor.y;
@@ -1613,7 +1599,7 @@ static void xd_cur_remove(XDINFO *info)
 		MFDB
 			dmfdb;
 
-		int
+		_WORD
 			pxy[8],
 			*pxyp = pxy;
 
@@ -1676,14 +1662,14 @@ static void xd_cur_remove(XDINFO *info)
  * Funktie voor het tekenen van een dialoogbox in een window 
  */
 
-void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags)
+void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 {
 	RECT
 		r1,
 		r2,
 		cursor;
 
-	int
+	_WORD
 		draw_cur;
 
 	OBJECT
@@ -1754,7 +1740,7 @@ void xd_cursor_off(XDINFO *info)
  * Funktie voor het tekenen van een dialoogbox of een deel daarvan 
  */
 
-void xd_draw(XDINFO *info, int start, int depth)
+void xd_draw(XDINFO *info, _WORD start, _WORD depth)
 {
 	xd_begupdate();
 	xd_cursor_off(info);
@@ -1768,7 +1754,7 @@ void xd_draw(XDINFO *info, int start, int depth)
  * A shorter form of the above, draw with all children.
  */
 
-void xd_drawdeep(XDINFO *info, int start)
+void xd_drawdeep(XDINFO *info, _WORD start)
 {
 	xd_draw(info, start, MAX_DEPTH);
 }
@@ -1778,7 +1764,7 @@ void xd_drawdeep(XDINFO *info, int start)
  * Similar, but draw this level only
  */
 
-void xd_drawthis(XDINFO *info, int start)
+void xd_drawthis(XDINFO *info, _WORD start)
 {
 	xd_draw(info, start, 0);
 }
@@ -1795,18 +1781,18 @@ void xd_drawthis(XDINFO *info, int start)
  * Do what is necessary to change state of an object on the screen
  */
 
-void xd_change(XDINFO *info, int object, int newstate, int draw)
+void xd_change(XDINFO *info, _WORD object, _WORD newstate, _WORD draw)
 {
 	OBJECT
 		*tree = info->tree;
 
-	int
+	_WORD
 		twostates;
 
 	if ( object < 0 ) 
 		return;
 
-	twostates = (newstate & 0xff) | (tree[object].ob_state & (0xff00 | WHITEBAK));	/* preserve extended states */
+	twostates = (newstate & 0xff) | (tree[object].ob_state & (0xff00 | OS_WHITEBAK));	/* preserve extended states */
 
 	if (info->dialmode != XD_WINDOW)
 		objc_change
@@ -1819,7 +1805,7 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 			info->drect.w,
 			info->drect.h,
 			twostates, 
-			(int)draw
+			draw
 		);
 	else
 	{
@@ -1832,22 +1818,22 @@ void xd_change(XDINFO *info, int object, int newstate, int draw)
 
 
 /*
- * Set a button to NORMAL without drawing it
+ * Set a button to OS_NORMAL without drawing it
  */
 
-void xd_buttnorm(XDINFO *info, int button)
+void xd_buttnorm(XDINFO *info, _WORD button)
 {
-	xd_change(info, button, NORMAL, 0);
+	xd_change(info, button, OS_NORMAL, 0);
 }
 
 
 /*
- * Set a button to NORMAL and draw it
+ * Set a button to OS_NORMAL and draw it
  */
 
-void xd_drawbuttnorm(XDINFO *info, int button)
+void xd_drawbuttnorm(XDINFO *info, _WORD button)
 {
-	xd_change(info, button, NORMAL, 1);
+	xd_change(info, button, OS_NORMAL, 1);
 }
 
 
@@ -1863,9 +1849,9 @@ void xd_drawbuttnorm(XDINFO *info, int button)
  * Offset is positive downwards.
  */
 
-static void xd_translate(OBJECT *tree, int parent, int offset)
+static void xd_translate(OBJECT *tree, _WORD parent, _WORD offset)
 {
-	int i = tree[parent].ob_head;
+	_WORD i = tree[parent].ob_head;
 
 	while ((i >= 0) && (i != parent))
 	{
@@ -1882,20 +1868,20 @@ static void xd_translate(OBJECT *tree, int parent, int offset)
  * Note: this detects only Magic-style capabilities, but -not- those
  * of e.g. Geneva.
  * If own_userdef = 1, all objects will be drawn by TeraDesk.
- * Unfortunately, there is currenlty no easy way to put it somewhere in the
+ * Unfortunately, there is currently no easy way to put it somewhere in the
  * configuration file, because this data is needed before the file is read.
  */
 
-int own_userdef = 0; /* =1 if Teradesk will always draw all userdef objects */
+static bool own_userdef = 0; /* =1 if Teradesk will always draw all userdef objects */
 
-static int must_userdef(OBJECT *ob)
+static bool must_userdef(OBJECT *ob)
 {
 	if ( !own_userdef )
 	{
 		if (!(aes_flags & GAI_WHITEBAK))
 			return TRUE;
 
-		if (ob->ob_state & WHITEBAK)
+		if (ob->ob_state & OS_WHITEBAK)
 			return FALSE;
 	}
 
@@ -1912,7 +1898,7 @@ static int must_userdef(OBJECT *ob)
  * the resource is initialized before the configuration file is read.
  */
  
-void xd_own_xobjects( int setit )
+void xd_own_xobjects( bool setit )
 {
 	own_userdef = setit;
 }
@@ -1933,12 +1919,12 @@ void xd_own_xobjects( int setit )
  * Result	: Total number of user-defined objects (*n + *nx).
  */
 
-static int cnt_user(OBJECT *tree, int *n, int *nx)
+static _WORD cnt_user(OBJECT *tree, _WORD *n, _WORD *nx)
 {
 	OBJECT
 		*object = tree;
 
-	int 
+	_WORD 
 		etype;
 
 
@@ -1949,11 +1935,10 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 	{
 		etype = xd_xobtype(object);
 
-/* with a good resource file there is no need for this test
-
+#if 0 /* with a good resource file there is no need for this test */
 		if (xd_is_xtndelement(etype) && ((object->ob_type & 0xFF) != G_USERDEF))
+#endif
 
-*/
 		if( xd_is_xtndelement(etype) )		
 		{
 			switch(etype)
@@ -1984,7 +1969,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 			}
 		}
 
-		if (object->ob_flags & LASTOB)
+		if (object->ob_flags & OF_LASTOB)
 			return (*n + *nx);
 
 		object++;
@@ -2001,7 +1986,7 @@ static int cnt_user(OBJECT *tree, int *n, int *nx)
 
 void xd_set_userobjects(OBJECT *tree)
 {
-	int 
+	_WORD 
 		etype, 		/* extended object type */
 		n,			/* object count */ 
 		nx, 
@@ -2020,7 +2005,7 @@ void xd_set_userobjects(OBJECT *tree)
 	XDOBJDATA 
 		*data;
 
-	int 
+	_WORD 
 		cdecl(*c_code) (PARMBLK *parmblock);
 
 
@@ -2054,10 +2039,9 @@ void xd_set_userobjects(OBJECT *tree)
 		xuserblk = FALSE;				/* no extended block */
 		etype = xd_xobtype(c_obj);		/* extended type */
 
-/* with a correct resource file there is no need for this test
-
+#if 0 /* with a correct resource file there is no need for this test */
 		if (xd_is_xtndelement(etype) && ((c_obj->ob_type & 0xFF) != G_USERDEF))
-*/
+#endif
 		if(  xd_is_xtndelement(etype) )
 		{
 			/*
@@ -2203,7 +2187,7 @@ void xd_set_userobjects(OBJECT *tree)
 					c_code = ub_bckbox;	
 					break;
 				}
-	/* this should never happen
+#if 0 /* this should never happen */
 				default:
 				{
 					/* Yet unknown userdef; this should never happen! */
@@ -2211,7 +2195,7 @@ void xd_set_userobjects(OBJECT *tree)
 					xuserblk = FALSE;
 					break;
 				}
-	*/
+#endif
 			}
 
 			if (c_code)	
@@ -2233,7 +2217,7 @@ void xd_set_userobjects(OBJECT *tree)
 
 		}
 
-		if (c_obj->ob_flags & LASTOB)
+		if (c_obj->ob_flags & OF_LASTOB)
 			return;
 
 		object++;
@@ -2246,11 +2230,11 @@ void xd_set_userobjects(OBJECT *tree)
  * Call this routine only once for each object 
  */
 
-int xd_gaddr(int index, void *addr)
+_WORD xd_gaddr(_WORD iindex, void *addr)
 {
-	int result;
+	_WORD result;
 
-	if ((result = rsrc_gaddr(R_TREE, index, addr)) != 0) 
+	if ((result = rsrc_gaddr(R_TREE, iindex, addr)) != 0) 
 		xd_set_userobjects(*(OBJECT **)addr);
 
 	return result;
@@ -2262,7 +2246,7 @@ int xd_gaddr(int index, void *addr)
  * Clear the text in the buffer (zero first character only)
  */
 
-char *xd_set_srcl_text(OBJECT *tree, int item, char *txt)
+char *xd_set_srcl_text(OBJECT *tree, _WORD item, char *txt)
 {
 	TEDINFO *ted = xd_get_obspecp(tree + item)->tedinfo;
 	ted->te_ptext = txt;
@@ -2273,16 +2257,15 @@ char *xd_set_srcl_text(OBJECT *tree, int item, char *txt)
 
 void xd_fixtree(OBJECT *tree)
 {
-	int i = 0;
+	_WORD i = 0;
 
 	for (;;)
 	{
 		rsrc_obfix(tree, i);
 
-		if (tree[i].ob_flags & LASTOB)
+		if (tree[i].ob_flags & OF_LASTOB)
 			break;
 
 		i++;
 	}
 }
-

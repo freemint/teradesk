@@ -27,7 +27,7 @@
 #include "xdialog.h"
 
 
-int 
+_WORD 
 	xe_mbshift,
 	xd_kstate; 	/* kbd state while clicking a button; */
 
@@ -36,17 +36,17 @@ int
  * eigen scancode. 
  */
 
-int xe_keycode(int scancode, int kstate)
+_WORD xe_keycode(_WORD scancode, _WORD kstate)
 {
 	static const char 
 		num[] = {0,27,49,50,51,52,53,54,55,56,57,48,45,61,8},
 		numk[] = {55,56,57,52,53,54,49,50,51,48};
 
-	int 
+	_WORD 
 		keycode, 
 		nkstate, 
-		scan,
 		ctrl;
+	unsigned short scan;
 
 	/* Zet key state om in eigen formaat */
 
@@ -56,7 +56,7 @@ int xe_keycode(int scancode, int kstate)
 
 	/* Bepaal scancode */
 
-	scan = ((unsigned int)scancode & 0xFF00) >> 8;
+	scan = ((unsigned short)scancode & 0xFF00) >> 8;
 
 	/* Controleer of de scancode hoort bij een ASCII teken */
 
@@ -79,7 +79,7 @@ int xe_keycode(int scancode, int kstate)
 #ifdef __PUREC__
 			keycode = touppc(((unsigned char)(Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
 #else
-			keycode = touppc((int)((unsigned char)(((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
+			keycode = touppc((_WORD)((unsigned char)(((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
 #endif
 		}
 
@@ -101,7 +101,7 @@ int xe_keycode(int scancode, int kstate)
  * This is better than just checking whether a dialog is opened.
  */
  
-int xd_isdopen(void)
+static _WORD xd_isdopen(void)
 {
 	if
 	(
@@ -122,12 +122,12 @@ int xd_isdopen(void)
  * Vervanging van evnt_multi, die eigen keycode terug levert. 
  */
 
-int xe_xmulti(XDEVENT *events)
+_WORD xe_xmulti(XDEVENT *events)
 {
-	static int
+	static _WORD
 		level = 0;
 
-	int
+	_WORD
 		r,
 		old_mtlocount,
 		old_mflags;
@@ -222,9 +222,9 @@ int xe_xmulti(XDEVENT *events)
 	{
 		if ((events->ev_mmgpbuf[0] == MN_SELECTED) && xd_dialogs)
 		{ 
-/* no need
+#if 0 /* no need */
 			if (xd_menu)
-*/
+#endif
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
 			r &= ~MU_MESAG;
 		}
@@ -239,7 +239,7 @@ int xe_xmulti(XDEVENT *events)
 
 	if ((r & MU_BUTTON) && !xd_isdopen() && (level == 1))
 	{
-		int mmobutton = events->ev_mmobutton;
+		_WORD mmobutton = events->ev_mmobutton;
 
 		if (xd_rbdclick && mmobutton == 2)
 			events->ev_mbreturn = 2;	/* right button is double click */
@@ -277,9 +277,9 @@ int xe_xmulti(XDEVENT *events)
  * Bepaal de huidige toestand van de muis buttons.
  */
 
-int xe_button_state(void)
+_WORD xe_button_state(void)
 {
-	int
+	_WORD
 		dummy,
 		mstate;
 
@@ -304,12 +304,12 @@ int xe_button_state(void)
  *			   event niet is opgetreden.
  */
 
-int xe_mouse_event(int mstate, int *x, int *y, int *kstate)
+_WORD xe_mouse_event(_WORD mstate, _WORD *x, _WORD *y, _WORD *kstate)
 {
 	XDEVENT
 		events;
 
-	int
+	_WORD
 		flags;
 
 

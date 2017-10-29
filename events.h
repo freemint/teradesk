@@ -21,6 +21,6 @@
  */
 
 
-int key_state(int *key, bool hndl_msg);
-void wait(int dt);
+_WORD key_state(_WORD *key, bool hndl_msg);
+void wait(_WORD dt);
 bool escape_abort( bool hndl_msg );

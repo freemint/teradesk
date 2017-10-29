@@ -19,8 +19,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-extern bool onone, onfile;
-extern char *hyppage;
+#include "xfilesys.h"
 
-bool item_open(WINDOW *w, int item, int kstate, char *theitem, char *thecommand );
-void opn_hyphelp (void);
+extern bool onone, onfile;
+extern const char *hyppage;
+
+bool item_open(WINDOW *w, _WORD item, _WORD kstate, char *theitem, char *thecommand );
+void open_config(XFILE *file, int lvl, int io, int *error);

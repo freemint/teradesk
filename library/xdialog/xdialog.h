@@ -34,6 +34,7 @@
  #include "xwindow.h"
 #endif
 
+#define _DOZOOM 0
 
 typedef enum
 {
@@ -81,7 +82,7 @@ typedef enum
 #define XD_TITLE		10		/* IA: Underlined title */
 #define XD_RECTBUTTRI	11		/* IA: rectangle button: tri-state!
 								   this means cycle between:
-								   NORMAL / SELECTED / CHECKED */
+								   OS_NORMAL / OS_SELECTED / OS_CHECKED */
 #define XD_CYCLBUT		12		/* IA: cycling button. used with pop-ups mostly. */
 #define XD_SCRLEDIT		13		/* HR 021202: scrolling editable text fields. */
 #define XD_FONTTEXT		14		/* font sample text */
@@ -113,12 +114,13 @@ typedef enum
 
 /* I_A: constants for ob_state when using 'tri-state' buttons */
 
-#define TRISTATE_MASK	(CROSSED | CHECKED)
-#define TRISTATE_0		CROSSED
-#define TRISTATE_1		CHECKED
-#define TRISTATE_2		(CROSSED | CHECKED)
+#define TRISTATE_MASK	(OS_CROSSED | OS_CHECKED)
+#define TRISTATE_0		OS_CROSSED
+#define TRISTATE_1		OS_CHECKED
+#define TRISTATE_2		(OS_CROSSED | OS_CHECKED)
 
 extern const unsigned char xd_emode_specs[XD_EMODECOUNT];
+extern char *xd_cancelstring;	/* from xdialog; possible 'Cancel' texts */
 
 #define __XD_IS_ELEMENT		0x01
 #define __XD_IS_SPECIALKEY	0x02
@@ -135,12 +137,12 @@ extern const unsigned char xd_emode_specs[XD_EMODECOUNT];
 typedef struct xdinfo
 {
 	OBJECT *tree;			/* pointer naar object boom. */
-	int dialmode;			/* dialoog mode. */
+	_WORD dialmode;			/* dialoog mode. */
 	RECT drect;				/* Maten van de dialoogbox. */
 	WINDOW *window;			/* Indien in window mode pointer naar window structuur. */
-	int edit_object;		/* Object waarop de cursor staat. */
-	int cursor_x;			/* x positie in edit_object. */
-	int curs_cnt;			/* cursor counter. */
+	_WORD edit_object;		/* Object waarop de cursor staat. */
+	_WORD cursor_x;			/* x positie in edit_object. */
+	_WORD curs_cnt;			/* cursor counter. */
 	MFDB mfdb;				/* Indien in buffered mode structuur met data buffer. */
 	struct xd_func *func;	/* Pointer naar de structuur met funkties van een niet modale dialoogbox. */
 	struct xdinfo *prev;
@@ -148,107 +150,107 @@ typedef struct xdinfo
 
 typedef struct xd_func
 {
-	void (*dialbutton) (XDINFO *info, int object);
+	void (*dialbutton) (XDINFO *info, _WORD object);
 	void (*dialclose) (XDINFO *info);
-	void (*dialmenu) (XDINFO *info, int title, int item);
+	void (*dialmenu) (XDINFO *info, _WORD title, _WORD item);
 	void (*dialtop) (XDINFO *info);
 } XD_NMFUNC;
 
 typedef struct
 {
-	int ev_mflags;
-	int ev_mbclicks, ev_mbmask, ev_mbstate;
-	int ev_mm1flags;
+	_WORD ev_mflags;
+	_WORD ev_mbclicks, ev_mbmask, ev_mbstate;
+	_WORD ev_mm1flags;
 	GRECT ev_mm1;
-	int ev_mm2flags;
+	_WORD ev_mm2flags;
 	GRECT ev_mm2;
-	unsigned int ev_mtlocount, ev_mthicount;
+	unsigned short ev_mtlocount, ev_mthicount;
 
-	int ev_mwhich;
-	int ev_mmox, ev_mmoy;
-	int ev_mmobutton;
-	int ev_mmokstate;
-	int ev_mkreturn;
-	int ev_mbreturn;
+	_WORD ev_mwhich;
+	_WORD ev_mmox, ev_mmoy;
+	_WORD ev_mmobutton;
+	_WORD ev_mmokstate;
+	_WORD ev_mkreturn;
+	_WORD ev_mbreturn;
 
-	int ev_mmgpbuf[8];
+	_WORD ev_mmgpbuf[8];
 
-	int xd_keycode;
+	_WORD xd_keycode;
 } XDEVENT;
 
-typedef int (*userkeys) (XDINFO *info, void *userdata, int scancode);
+typedef _WORD (*userkeys) (XDINFO *info, void *userdata, _WORD scancode);
 
-extern int
-	xd_colaes,
-	aes_hor3d,
-	aes_ver3d,
-	xd_rbdclick,
-	colour_icons;
+extern _WORD xd_aes4_0;
+extern _WORD xd_colaes;
+extern _WORD aes_hor3d;
+extern _WORD aes_ver3d;
+extern _WORD xd_rbdclick;
+extern _WORD colour_icons;
 
+extern _WORD aes_wfunc;	/* result of appl_getinfo(11, ...) */
+extern _WORD aes_ctrl;
 
 
 /* Funkties voor het openen en sluiten van een dialoog */
 
-int xd_open(OBJECT *tree, XDINFO *info);
+_WORD xd_open(OBJECT *tree, XDINFO *info);
 void xd_close(XDINFO *info);
-void xd_enable_menu(int state);
+void xd_enable_menu(_WORD state);
 
 /* Funkties voor het tekenen van objecten in een dialoogbox. */
 
-void xd_draw(XDINFO *info, int start, int depth);
-void xd_drawdeep(XDINFO *info, int start);
-void xd_drawthis(XDINFO *info, int start);
-void xd_change(XDINFO *info, int object, int newstate, int draw);
-void xd_buttnorm(XDINFO *info, int button);
-void xd_drawbuttnorm(XDINFO *info, int button);
-void xd_own_xobjects( int setit );
-void clr_object(RECT *r, int colour, int pattern);
-void draw_xdrect(int x, int y, int w, int h);
+void xd_draw(XDINFO *info, _WORD start, _WORD depth);
+void xd_drawdeep(XDINFO *info, _WORD start);
+void xd_drawthis(XDINFO *info, _WORD start);
+void xd_change(XDINFO *info, _WORD object, _WORD newstate, _WORD draw);
+void xd_buttnorm(XDINFO *info, _WORD button);
+void xd_drawbuttnorm(XDINFO *info, _WORD button);
+void xd_own_xobjects( bool setit );
+void clr_object(RECT *r, _WORD colour, _WORD pattern);
+void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h);
 void xd_vswr_trans_mode(void);
 void xd_vswr_repl_mode(void);
 
 /* Funkties voor het uitvoeren van een dialoog. */
 
-int xd_kform_do(XDINFO *info, int start, userkeys userfunc, void *userdata);
-int xd_form_do(XDINFO *info, int start);
-int xd_form_do_draw(XDINFO *info);
-int xd_kdialog(OBJECT *tree, int start, userkeys userfunc, void *userdata);
-int xd_dialog(OBJECT *tree, int start);
+_WORD xd_kform_do(XDINFO *info, _WORD start, userkeys userfunc, void *userdata);
+_WORD xd_form_do(XDINFO *info, _WORD start);
+_WORD xd_form_do_draw(XDINFO *info);
+_WORD xd_kdialog(OBJECT *tree, _WORD start, userkeys userfunc, void *userdata);
+_WORD xd_dialog(OBJECT *tree, _WORD start);
 
 /* Funkties voor initialisatie van een resource. */
 
-int xd_gaddr(int index, void *addr);
+_WORD xd_gaddr(_WORD index, void *addr);
 void xd_fixtree(OBJECT *tree);
 void xd_set_userobjects(OBJECT *tree);
-char *xd_set_srcl_text(OBJECT *tree, int item, char *txt);
+char *xd_set_srcl_text(OBJECT *tree, _WORD item, char *txt);
 
 /* Funkties voor het zetten van de verschillende modes */
 
-int xd_setdialmode(int new, int (*hndl_message) (int *message),
-						  OBJECT *menu, int nmnitems, int *mnitems);
-int xd_setposmode(int new);
+_WORD xd_setdialmode(_WORD new, _WORD (*hndl_message) (_WORD *message), OBJECT *menu, _WORD nmnitems, const _WORD *mnitems);
+_WORD xd_setposmode(_WORD new);
 
 /* Funkties voor initialisatie bibliotheek */
 
-int init_xdialog(int *vdi_handle, void *(*malloc) (unsigned long size),
+_WORD init_xdialog(_WORD *vdi_handle, void *(*malloc) (unsigned long size),
 						void (*free) (void *block), const char *prgname,
-						int load_fonts, int *nfonts);
+						_WORD load_fonts, _WORD *nfonts);
 void exit_xdialog(void);
 
 
 /* Hulpfunkties */
 
-int xd_isrect(RECT *r);
-int xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
-int xd_inrect(int x, int y, RECT *r);
+_WORD xd_isrect(RECT *r);
+_WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
+_WORD xd_inrect(_WORD x, _WORD y, RECT *r);
 long xd_initmfdb(RECT *r, MFDB *mfdb);
-void xd_objrect(OBJECT *tree, int object, RECT *r);
-void xd_userdef(OBJECT *object, USERBLK *userblk,
-					   int cdecl(*code) (PARMBLK *parmblock));
-void xd_rect2pxy(RECT *r, int *pxy);
-int xd_obj_parent(OBJECT *tree, int object);
-int xd_xobtype(OBJECT *tree);
-int xd_wdupdate(int mode);
+void xd_objrect(OBJECT *tree, _WORD object, RECT *r);
+void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock));
+void xd_rect2pxy(RECT *r, _WORD *pxy);
+_WORD xd_obj_parent(OBJECT *tree, _WORD object);
+_WORD xd_xobtype(OBJECT *tree);
+_WORD xd_wdupdate(_WORD mode);
 void xd_begupdate(void);
 void xd_endupdate(void);
 void xd_begmctrl(void);
@@ -257,55 +259,60 @@ void xd_mouse_off(void);
 void xd_mouse_on(void);
 void xd_screensize(void);
 
-int xd_get_rbutton(OBJECT *tree, int rb_parent);
-int xd_set_rbutton(OBJECT *tree, int rb_parent, int object);
-void xd_set_child(OBJECT *tree, int rb_parent, int enab);
+_WORD xd_get_rbutton(OBJECT *tree, _WORD rb_parent);
+_WORD xd_set_rbutton(OBJECT *tree, _WORD rb_parent, _WORD object);
+void xd_set_child(OBJECT *tree, _WORD rb_parent, _WORD enab);
 
 OBSPEC *xd_get_obspecp(OBJECT *object);
 char *xd_pvalid(OBJECT *object);
 char *xd_ptext(OBJECT *object);
 void xd_zerotext(OBJECT *object);
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec);
-void *xd_get_scrled(OBJECT *tree, int edit_obj);
-void xd_init_shift(OBJECT *obj, char *text);
+void *xd_get_scrled(OBJECT *tree, _WORD edit_obj);
+void xd_init_shift(OBJECT *obj, const char *text);
 
 /* Currently not used anywhere in Teradesk
-int xd_set_tristate(int ob_state, int state);
-int xd_get_tristate(int ob_state);
-int xd_is_tristate(OBJECT *tree);
+_WORD xd_set_tristate(_WORD ob_state, _WORD state);
+_WORD xd_get_tristate(_WORD ob_state);
+_WORD xd_is_tristate(OBJECT *tree);
 */
 
 void xd_clip_on(RECT *r);
 void xd_clip_off(void);
 
-int xd_vst_point(int height, int *ch);
-int xd_fnt_point(int height, int *cw, int *ch);
+_WORD xd_vst_point(_WORD height, _WORD *ch);
+_WORD xd_fnt_point(_WORD height, _WORD *cw, _WORD *ch);
 
 /* Event funkties */
 
 void xd_clrevents(XDEVENT *ev);
-int xe_keycode(int scancode, int kstate);
-int xe_xmulti(XDEVENT *events);
-int xe_button_state(void);
-int xe_mouse_event(int mstate, int *x, int *y, int *kstate);
+_WORD xe_keycode(_WORD scancode, _WORD kstate);
+_WORD xe_xmulti(XDEVENT *events);
+_WORD xe_button_state(void);
+_WORD xe_mouse_event(_WORD mstate, _WORD *x, _WORD *y, _WORD *kstate);
 
 /* Funkties voor niet modale dialoogboxen. */
 
-int xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, int start, 
-/* int x, int y, not used */ 
+_WORD xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start, 
+/* _WORD x, _WORD y, not used */ 
 OBJECT *menu, 
 #if _DOZOOM
-RECT *xywh, int zoom, 
+RECT *xywh, _WORD zoom, 
 #endif
 const char *title);
 
 
 void xd_nmclose(XDINFO *info
 #if _DOZOOM
-,RECT *xywh, int zoom
+,RECT *xywh, _WORD zoom
 #endif
 );
 
-#endif
+void get_fsel(XDINFO *info, char *result, _WORD flags);
+void opn_hyphelp (void);
+
+_WORD cdecl ub_bckbox(PARMBLK *pb);
 
 #include "internal.h"
+
+#endif

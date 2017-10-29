@@ -90,11 +90,7 @@ VLNAME				/* scrolled text fields for file/folder/path names */
 	envline;
 
 
-extern int 
-	tos_version,	/* tos version, hex encoded */ 
-	aes_version;	/* aes version, hex encoded */
-
-extern int
+extern _WORD
 	aes_wfunc;	/* result of appl_getinfo(11, ...) */
 
 
@@ -103,7 +99,7 @@ extern int
  * List of items must terminate with a 0
  */
 
-void rsc_hidemany(OBJECT *tree, int *items)
+void rsc_hidemany(OBJECT *tree, const _WORD *items)
 {
 	while(*items)
 	{
@@ -116,12 +112,9 @@ void rsc_hidemany(OBJECT *tree, int *items)
  * Move a menu box left until it fits the screen, and a litle more.
  */
 
-static void set_menubox(int box)
+static void set_menubox(_WORD box)
 {
-	int
-		x,
-		dummy,
-		offset;
+	_WORD x, dummy,	offset;
 
 	objc_offset(menu, box, &x, &dummy);
 
@@ -139,12 +132,12 @@ static void set_menubox(int box)
  */
 
 
-static void rsc_xalign(OBJECT *tree, int left, int right, int object)
+static void rsc_xalign(OBJECT *tree, _WORD left, _WORD right, _WORD object)
 {
 	OBJECT
 		*ob = &tree[object];
 
-	int
+	_WORD
 		h3d2 = 2 * aes_hor3d + 1;
 
 
@@ -160,12 +153,12 @@ static void rsc_xalign(OBJECT *tree, int left, int right, int object)
  * Note2: this routine also changes the size of the slider itself.
  */
 
-static void rsc_yalign(OBJECT *tree, int up, int down, int object)
+static void rsc_yalign(OBJECT *tree, _WORD up, _WORD down, _WORD object)
 {
 	OBJECT
 		*ob = &tree[object];
 
-	int
+	_WORD
 		v3d1 = aes_ver3d + 1;
 
 	if(aes_hor3d)
@@ -192,12 +185,12 @@ static void rsc_yalign(OBJECT *tree, int up, int down, int object)
  * is an attempt to fix the flaw. Seems to work ok. 
  */
 
-void rsc_yfix 
+static void rsc_yfix 
 ( 
 	OBJECT *tree,	/* object tree which is fixed */ 
-	int refobject,	/* index of object which is a reference for moved object */ 
-	int object,		/* index of repositioned- moved object */ 
-	int chalfs		/* vertical distance from ref. object - in char half-heights */ 
+	_WORD refobject,	/* index of object which is a reference for moved object */ 
+	_WORD object,		/* index of repositioned- moved object */ 
+	_WORD chalfs		/* vertical distance from ref. object - in char half-heights */ 
 )
 {
 	tree[object].ob_y = tree[refobject].ob_y + xd_fnt_h * chalfs / 2;
@@ -211,13 +204,13 @@ void rsc_yfix
 
 #if _MENUDEL
 
-static void mn_del(int box, int item)
+static void mn_del(_WORD box, _WORD item)
 {
 	OBJECT
 		*treei,
 		*tree = menu;
 
-	int 
+	_WORD 
 		i,
 	 	y,
 		ch_h = xd_fnt_h;
@@ -257,34 +250,25 @@ static void rsc_fixmenus(void)
 	 * about buffer size
 	 */
 
-	RECT
-		desk;
+	RECT desk;
 
 #if _MENUDEL
 
-	RECT
-		boxrect;
-
-	MFDB
-		mfdb;
+	RECT boxrect;
+	MFDB mfdb;
 
 	union
 	{
 		long size;
 		struct
 		{
-			int high;
-			int low;
+			_WORD high;
+			_WORD low;
 		} words;
 	} buffer;
 
-	long
-		mnsize = 0;
-
-	int
-		i,
-		n,
-		dummy;
+	long mnsize = 0;
+	_WORD i, n,	dummy;
 
 
 	static const char maxbox[] = {MNVIEWBX, MNOPTBOX};
@@ -338,7 +322,7 @@ static void rsc_fixmenus(void)
 
 	for( i = 0; i < 2; i++ )
 	{
-		xd_objrect(menu, (int)maxbox[i], &boxrect);
+		xd_objrect(menu, (_WORD)maxbox[i], &boxrect);
 		mnsize = lmax(mnsize, xd_initmfdb(&boxrect, &mfdb));
 	}
 
@@ -355,13 +339,13 @@ static void rsc_fixmenus(void)
 	else /* older TOSes */
 	{
 		buffer.size = 8000L;
-		n = 21; /* count the items in mnit[] above to set this */
+		n = (_WORD)(sizeof(mnit) / sizeof(mnit[0]));
 	}
 
 	if (mnsize >= buffer.size)
 	{
 		for ( i = 0; i < n; i++ )
-			mn_del((int)mnbx[i], (int)mnit[i]);
+			mn_del(mnbx[i], mnit[i]);
 	}
 #endif
 
@@ -389,8 +373,8 @@ void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
 {
 	strcpy(ted->te_pvalid, valid);
 	strcpy(ted->te_ptmplt, tmplt);
-	ted->te_tmplen = (int)strlen(tmplt) + 1;
-	ted->te_txtlen = (int)strlen(valid) + 1;
+	ted->te_tmplen = (_WORD)strlen(tmplt) + 1;
+	ted->te_txtlen = (_WORD)strlen(valid) + 1;
 	ted->te_ptext[ted->te_txtlen] = 0;
 }
 
@@ -431,7 +415,7 @@ void rsc_tostmplt(TEDINFO *ted)
  * See also routines cv_fntoform() and cv_formtofn() 
  */
  
-static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
+static void tos_fnform( OBJECT *tree, _WORD object, _WORD just, bool extra )
 {
 	OBJECT
 		*obj = tree + object;
@@ -439,7 +423,7 @@ static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
 	TEDINFO 
 		*ted = xd_get_obspecp(obj)->tedinfo; 
 
-	int
+	_WORD
 		dx = 0;
 
 
@@ -470,7 +454,7 @@ static void tos_fnform( OBJECT *tree, int object, int just, bool extra )
  * Wildcards are not permitted here.
  */
 
-static void tos_bform(OBJECT *tree, int object)
+static void tos_bform(OBJECT *tree, _WORD object)
 {
 	tos_fnform(tree, object, -1, FALSE);
 }
@@ -481,7 +465,7 @@ static void tos_bform(OBJECT *tree, int object)
  * This will work correctly only on a three-digit hexadecimal number.
  */
 
-static void show_os( OBJECT *obj, int v )
+static void show_os( OBJECT *obj, _WORD v )
 {
 	sprintf(obj->ob_spec.tedinfo->te_ptext, " %3x", v);
 }
@@ -495,15 +479,14 @@ static void show_os( OBJECT *obj, int v )
 
 void rsc_init(void)
 {
-	int 
+	_WORD 
 		i, 
 		v3d2 = 2 * aes_ver3d + 1;
 
-	static const char /* Beware: all these indices must be below 127 */ 
-		xleft[] = {DSKPDOWN, DSKCDOWN, WINPDOWN, WINCDOWN},
-		xitem[] = {DSKPUP, DSKCUP, WINPUP, WINCUP},
-		xright[] = {DSKPAT, DSKPAT, WINPAT, WINPAT},
-		xv[] = {DSKCDOWN, DSKCUP, WINCDOWN, WINCUP};
+	static const unsigned char xleft[] = { DSKPDOWN, DSKCDOWN, WINPDOWN, WINCDOWN };
+	static const unsigned char xitem[] = { DSKPUP, DSKCUP, WINPUP, WINCUP };
+	static const unsigned char xright[] = { DSKPAT, DSKPAT, WINPAT, WINPAT };
+	static const unsigned char xv[] = { DSKCDOWN, DSKCUP, WINCDOWN, WINCUP };
 
 	/* Get pointers to dialog trees in the resource */
 
@@ -553,7 +536,7 @@ void rsc_init(void)
 	          xd_set_srcl_text(searching,    SMASK,    dirname  ); 	/* may be converted to 8+3 */
 	          xd_set_srcl_text(addicon,      IFNAME,   dirname  );
 	cfile1 =  xd_set_srcl_text(compare,      CFILE1,   dirname  );	/* always complete path, i.e. long */
-	cfile2 =  xd_set_srcl_text(compare,      CFILE2,   flname   );	/* always cmplete path, i.e. long */	
+	cfile2 =  xd_set_srcl_text(compare,      CFILE2,   flname   );	/* always complete path, i.e. long */	
 
 	/* Pointers to some other often-used texts */
 
@@ -577,7 +560,7 @@ void rsc_init(void)
 
 	for(i = 0; i < 4; i++)
 	{
-		rsc_xalign(wdoptions, (int)xleft[i], (int)xitem[i], (int)xright[i]);
+		rsc_xalign(wdoptions, (_WORD)xleft[i], (_WORD)xitem[i], (_WORD)xright[i]);
 		wdoptions[xv[i]].ob_y += v3d2;
 	}
 
@@ -613,7 +596,7 @@ void rsc_init(void)
 
 	for ( i = 0; i < NLINES; i++)				/* setmask & font dialogs */
 	{
-		int i2 = i * 2 + 1;
+		_WORD i2 = i * 2 + 1;
 		rsc_yfix( setmask, FTPARENT, FTYPE1 + i, i2 );
 		rsc_yfix( wdfont, WDPARENT, WDFONT1 + i, i2 ); 
 	}		
@@ -631,7 +614,7 @@ void rsc_init(void)
 #endif
 	{
 		char *s;
-		int dh;
+		_WORD dh;
 
 		/* These are SNAMEs */
 
@@ -712,7 +695,7 @@ void rsc_init(void)
 	/* Fill-in the constant part of the info-box dialog */
 
 #if _MINT_
-#if __COLDFIRE__
+#if defined(__COLDFIRE__) || defined(__mcoldfire__)
 	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TCFIRE);
 #else
 	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TMULTI);
@@ -735,7 +718,7 @@ void rsc_init(void)
  * Note: see also routine get_freestring() in error.c
  */
 
-void rsc_title(OBJECT *tree, int object, int title)
+void rsc_title(OBJECT *tree, _WORD object, _WORD title)
 {
 	OBSPEC s;
 
@@ -763,9 +746,9 @@ void rsc_title(OBJECT *tree, int object, int title)
  * internal buffer for the formatted sting.
  */
 
-char *fmt_size(long value, int *l)
+char *fmt_size(long value, _WORD *l)
 {
-	int
+	_WORD
 		i,
 		j;
 
@@ -808,7 +791,7 @@ char *fmt_size(long value, int *l)
 	}
 
 	ltoa(value, buf, 10);
-	j = (int)strlen(buf);
+	j = (_WORD)strlen(buf);
 
 	buf[j] = suf;
 	j += i;
@@ -837,7 +820,7 @@ char *fmt_size(long value, int *l)
 void rsc_ltoftext
 (
 	OBJECT *tree,	/* object tree */
-	int object,		/* index of formatted text fild */
+	_WORD object,		/* index of formatted text fild */
 	long value		/* value to be written */
 )
 {
@@ -847,7 +830,7 @@ void rsc_ltoftext
 	TEDINFO 
 		*ti = xd_get_obspecp(ob)->tedinfo;
 
-	int
+	_WORD
 		s2;					/* length of the string s */
 
 	char 
@@ -859,8 +842,8 @@ void rsc_ltoftext
 
    if((ob->ob_type & 0xFF) == G_FTEXT)
 	{
-		int 
-			s1 = (int)(strlen(ti->te_pvalid) - s2);
+		_WORD 
+			s1 = (_WORD)(strlen(ti->te_pvalid) - s2);
 
 		while(s1)
 		{

@@ -31,7 +31,7 @@
  * (set diagonal points of a rectangle, not the whole perimeter)
  */
 
-void xd_rect2pxy(RECT *r, int *pxy)
+void xd_rect2pxy(RECT *r, _WORD *pxy)
 {
 	pxy[0] = r->x;
 	pxy[1] = r->y;
@@ -44,9 +44,9 @@ void xd_rect2pxy(RECT *r, int *pxy)
  * Funktie voor het berekenen van de doorsnede van twee rechthoeken. 
  */
 
-int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
+_WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 {
-	int xmin, xmax, ymin, ymax;
+	_WORD xmin, xmax, ymin, ymax;
 
 
 	xmin = max(r1->x, r2->x);
@@ -79,7 +79,7 @@ int xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
  *			   als dit niet het geval is.
  */
 
-int xd_inrect(int x, int y, RECT *r)
+_WORD xd_inrect(_WORD x, _WORD y, RECT *r)
 {
 	if
 	(
@@ -120,7 +120,7 @@ long xd_initmfdb(RECT *r, MFDB *mfdb)
  * Funktie voor het installeren van user-defined objects. 
  */
 
-void xd_userdef(OBJECT *object, USERBLK *userblk, int cdecl(*code) (PARMBLK *parmblock))
+void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock))
 {
 	object->ob_type = (object->ob_type & 0xFF00) | G_USERDEF;
 	userblk->ub_code = code;
@@ -136,7 +136,7 @@ void xd_userdef(OBJECT *object, USERBLK *userblk, int cdecl(*code) (PARMBLK *par
  * object type into userblk fields.
  */
 
-void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *parmblock))
+void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock))
 {
 	userblk->ub_code = code;
 	userblk->ub_parm = userblk;
@@ -150,9 +150,9 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *p
 	object->ob_type &= 0xFF00;
 	object->ob_type |= G_USERDEF;
 
-/* no need here
+#if 0 /* no need here */
 	object->ob_flags &= ~(AES3D_1 | AES3D_2); /* see XDDRAW.C - xd_set_userobjects */
-*/
+#endif
 	object->ob_spec.userblk = (USERBLK *)userblk;
 }
 
@@ -161,7 +161,7 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code) (PARMBLK *p
  * Funktie die rechthoek om object bepaalt 
  */
 
-void xd_objrect(OBJECT *tree, int object, RECT *r)
+void xd_objrect(OBJECT *tree, _WORD object, RECT *r)
 {
 	OBJECT *obj = &tree[object];
 
@@ -175,7 +175,7 @@ void xd_objrect(OBJECT *tree, int object, RECT *r)
  * Get extended object type
  */
 
-int xd_xobtype(OBJECT *tree)
+_WORD xd_xobtype(OBJECT *tree)
 {
 	return ((tree->ob_type >> 8) & 0xFF);
 }
@@ -185,9 +185,9 @@ int xd_xobtype(OBJECT *tree)
  * find parent of object "object"
  */
 
-int xd_obj_parent(OBJECT *tree, int object)
+_WORD xd_obj_parent(OBJECT *tree, _WORD object)
 {
-	int i = tree[object].ob_next, j;
+	_WORD i = tree[object].ob_next, j;
 
 	while (i >= 0)
 	{
@@ -217,12 +217,12 @@ int xd_obj_parent(OBJECT *tree, int object)
  * If object == parent, then GET the index of the selected button.
  */
 
-int xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
+_WORD xd_set_rbutton(OBJECT *tree, _WORD rb_parent, _WORD object)
 {
 	OBJECT
 		*obj;
 
-	int
+	_WORD
 		i = tree[rb_parent].ob_head;	/* first child of parent */
 
 
@@ -230,19 +230,19 @@ int xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
 	{
 		obj = &tree[i];
 
-		if (obj->ob_flags & RBUTTON)	/* watch radiobuttons only */
+		if (obj->ob_flags & OF_RBUTTON)	/* watch radiobuttons only */
 		{
 			if(object == rb_parent)
 			{
-				if ((obj->ob_state & SELECTED) && (obj->ob_flags & RBUTTON))
+				if ((obj->ob_state & OS_SELECTED) && (obj->ob_flags & OF_RBUTTON))
 					return i;
 			}
 			else
 			{
 				if (i == object)
-					obj->ob_state |= SELECTED;	/* select this one */
+					obj->ob_state |= OS_SELECTED;	/* select this one */
 				else
-					obj->ob_state &= ~SELECTED;	/* deselect others */
+					obj->ob_state &= ~OS_SELECTED;	/* deselect others */
 			}
 		}
 
@@ -258,7 +258,7 @@ int xd_set_rbutton(OBJECT *tree, int rb_parent, int object)
  * This function returns the index of the selected button object
  */
 
-int xd_get_rbutton(OBJECT *tree, int rb_parent)
+_WORD xd_get_rbutton(OBJECT *tree, _WORD rb_parent)
 {
 	return xd_set_rbutton(tree, rb_parent, rb_parent);
 }
@@ -268,12 +268,12 @@ int xd_get_rbutton(OBJECT *tree, int rb_parent)
  * Enable or disable all children of the parent
  */
 
-void xd_set_child(OBJECT *tree, int rb_parent, int enab)
+void xd_set_child(OBJECT *tree, _WORD rb_parent, _WORD enab)
 {
 	OBJECT
 		*obj;
 
-	int
+	_WORD
 		i = tree[rb_parent].ob_head;	/* first child of parent */
 
 
@@ -282,9 +282,9 @@ void xd_set_child(OBJECT *tree, int rb_parent, int enab)
 		obj = &tree[i];
 
 		if (enab)
-			obj->ob_state &= ~DISABLED;	/* enable it */
+			obj->ob_state &= ~OS_DISABLED;	/* enable it */
 		else
-			obj->ob_state |= DISABLED;	/* disable it */
+			obj->ob_state |= OS_DISABLED;	/* disable it */
 
 		i = obj->ob_next;
 	}
@@ -328,8 +328,6 @@ char *xd_pvalid(OBJECT *object)
  * als USERDEF als XUSERDEF objecten!
  */
 
-/* Use correct types ! */
-
 void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 {
 	if ((object->ob_type & 0xFF) == G_USERDEF)
@@ -346,28 +344,28 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 }
 
 
-/* There are cutrrently no tristate objects in TeraDesk
+#if 0 /* There are currently no tristate objects in TeraDesk */
 
 /* 
  * Tristate-button functions...
  */
 
-int xd_get_tristate(int ob_state)
+_WORD xd_get_tristate(_WORD ob_state)
 {
 	return ob_state & TRISTATE_MASK;
 }
 
-int xd_set_tristate(int ob_state, int state)
+_WORD xd_set_tristate(_WORD ob_state, _WORD state)
 {
 	return (ob_state & ~TRISTATE_MASK) | (state&0xff);
 }
 
-int xd_is_tristate(OBJECT *object)
+_WORD xd_is_tristate(OBJECT *object)
 {
 	return(xd_xobtype(object) == XD_RECBUTTRI);
 }
 
-*/
+#endif
 
 
 /*
@@ -380,7 +378,7 @@ int xd_is_tristate(OBJECT *object)
 
 void xd_clip_on(RECT *r)
 {
-	int
+	_WORD
 		pxy[4];
 
 	xd_rect2pxy(r, pxy);
@@ -394,7 +392,7 @@ void xd_clip_on(RECT *r)
 
 void xd_clip_off(void)
 {
-	int
+	_WORD
 		pxy[4];
 
 	vs_clip(xd_vhandle, 0, pxy);
@@ -405,18 +403,18 @@ void xd_clip_off(void)
  * Obtain font size with fewer arguments
  */
 
-int xd_vst_point(int height, int *ch)
+_WORD xd_vst_point(_WORD height, _WORD *ch)
 {
-	int
+	_WORD
 		dummy;
 
 	return vst_point(xd_vhandle, height, &dummy, &dummy, &dummy, ch);
 }
 
 
-int xd_fnt_point(int height, int *cw, int *ch)
+_WORD xd_fnt_point(_WORD height, _WORD *cw, _WORD *ch)
 {
-	int
+	_WORD
 		dummy,
 		r;
 

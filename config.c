@@ -23,6 +23,7 @@
 
 #include <library.h>
 #include <xdialog.h>
+#include <fcntl.h>
 
 #include "desktop.h"
 #include "desk.h"
@@ -47,14 +48,11 @@
  * should return to 0 at the end of configuration file.
  */
 
-static char
-	*cname = "?";		/* name of curently open file */
+static const char *cname;		/* name of curently open file */
 
-char
-	*lastnest = "?";	/* last remembered nesting keyword */
+static const char *lastnest = "?";	/* last remembered nesting keyword */
 
-int 
-	chklevel = 0;		/* summary nest level */
+int chklevel = 0;		/* summary nest level */
 
 
 /* 
@@ -65,11 +63,10 @@ int
  * when read with some programs -including the Pure-C editor!!!
  */
 
-static const char 
-/* 
-	eol[3] = {'\r','\n', 0}; 	/* <CR><LF> */
-*/
-	eol[2] = {'\n', 0};   		/* <LF>     */
+#if 0
+static const char eol[3] = {'\r','\n', 0}; 	/* <CR><LF> */
+#endif
+static const char eol[2] = {'\n', 0};   		/* <LF>     */
 
 
 /* 
@@ -100,7 +97,7 @@ static void append_fmt
 (
 	CFG_TYPE cfgtype,	/* entry type         */
 	char *dest,			/* destination string */
-	char *src			/* input string       */
+	const char *src			/* input string       */
 )
 {
 	CFG_TYPE 
@@ -141,16 +138,18 @@ static void append_fmt
 			strcat(dest, eol);
 			break;
 		}
-/* currently not used in TeraDesk- but may be used some day
+#if 0 /* currently not used in TeraDesk- but may be used some day */
 		case CFG_B:
 		case CFG_C:
-		{
 			strcat(dest, "=%c");
 			break;
-		}
 		case CFG_BD:
+			strcat(dest, "=%d");
+			break;
 		case CFG_H:
-*/
+			strcat(dest, "=%u");
+			break;
+#endif
 		case CFG_D:
 		{
 			strcat(dest, "=%d");
@@ -191,15 +190,14 @@ static void append_fmt
  * if everything is OK, return number of bytes written.
  */
 
-static int fprintf_wtab
+static _WORD fprintf_wtab
 (
 	XFILE *fp,			/* pointer to open file parameters */ 
 	int lvl, 			/* number of tabs, equal to current nesting level */
 	char *string, ...	/* string(s) to print */ 
 )
 {
-	int 
-		error = 0;
+	_WORD error = 0;
 
 	char 
 		s[MAX_CFGLINE];
@@ -211,7 +209,7 @@ static int fprintf_wtab
 	/* Print a number of tab characters */
 
 	while ( (lvl-- > 0) && (error >= 0) )
-		error = (int)x_fwrite( fp, "\t", sizeof(char) );
+		error = (_WORD)x_fwrite( fp, "\t", sizeof(char) );
 
 	/* Print whatever else is specified */
 
@@ -224,7 +222,7 @@ static int fprintf_wtab
 		va_end(argpoint);
 
 		if ( error > 0 )
-			error = (int)x_fwrite(fp, s, (long)error );
+			error = (_WORD)x_fwrite(fp, s, (long)error );
 	}
 
 	return error;
@@ -239,7 +237,7 @@ static int fprintf_wtab
 int CfgSave
 (
 	XFILE *fp,		/* pointer to open file parameters */
-	CfgEntry *tab,	/* pointer to configuration table */
+	const CfgEntry *tab,	/* pointer to configuration table */
 	int level0,		/* nesting (indent) level */
 	bool emp		/* if true, write empty or zero-value fields */
 ) 
@@ -273,10 +271,10 @@ int CfgSave
 			case CFG_NEST:
 			{
 				/* Go deeper, it is a nest, and all is specified */
-				if ( (tab->a != NULL) && (tab->s != NULL) )
+				if ( (tab->a.p != NULL) && (tab->s != NULL) )
 				{
 					error = 0;
-					(*(CfgNest *)tab->a)(fp, level, 1, &error); 
+					(*tab->a.f)(fp, level, 1, &error); 
 				}
 
 				break;
@@ -315,7 +313,7 @@ int CfgSave
 							/* Write string value */
 							char
 								*tp = ts, 
-								*ss = (char *)tab->a;
+								*ss = tab->a.s;
 
 							if (*ss || emp)
 							{
@@ -337,38 +335,56 @@ int CfgSave
 
 							break;
 						}
-/* currently not used
+#if 0 /* currently not used */
 						case CFG_C:
+							{
+								/* Write integer value (diverse formats) */
+	
+								unsigned char *v = tab->a.c;
+								if (*v || emp)
+									error = fprintf_wtab(fp, lvl, fmt, *v);
+								
+							}
+							break;
 						case CFG_BD:
-*/
+							{
+								/* Write integer value (diverse formats) */
+	
+								bool *v = tab->a.b;
+								if (*v || emp)
+									error = fprintf_wtab(fp, lvl, fmt, *v);
+								
+							}
+							break;
+#endif
 						case CFG_D:
 						case CFG_X:
-						{
-							/* Write integer value (diverse formats) */
-
-							unsigned int *v = (unsigned int *)tab->a;
-							if (*v || emp)
-								error = fprintf_wtab(fp, lvl, fmt, *v);
-							
+							{
+								/* Write integer value (diverse formats) */
+	
+								_UWORD *v = tab->a.u;
+								if (*v || emp)
+									error = fprintf_wtab(fp, lvl, fmt, *v);
+								
+							}
 							break;
-						}
-/* Currently not used
+#if 0 /* Currently not used */
 						case CFG_H:
 						case CFG_B:
 						{
 							/* Write byte or unsigned char value */
-							unsigned int v = *(unsigned char *)tab->a;
+							unsigned int v = *tab->a.c;
 
 							if (v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, v);
 							
 							break;
 						}
-*/
+#endif
 						case CFG_DDD: 
 						{
 							/* Write a triplet of integers */
-							int *v = (int *)tab->a;
+							_WORD *v = tab->a.i;
 
 							if (v)
 								error = fprintf_wtab(fp, lvl, fmt, v[0], v[1], v[2]); 
@@ -378,7 +394,7 @@ int CfgSave
 						case CFG_L:
 						{
 							/* Write a long value */
-							long *v = (long *)tab->a;
+							long *v = tab->a.l;
 
 							if (*v || emp)
 								error = fprintf_wtab(fp, lvl, fmt, *v);
@@ -452,12 +468,7 @@ static char *nocomment
  * substituting all "@" with " " 
  */
 
-static void cfgcpy
-(
-	char *d,	/* pointer to destination string */
-	char *s,	/* pointer to source string */
-	int x		/* max. number of characters to be copied */
-)
+static void cfgcpy(char *d, const char *s, int x)
 {
 	while 
 	( 					/* loop until: */     
@@ -468,15 +479,17 @@ static void cfgcpy
 		&& *s != 0		/* end of string */
 	)
 	{
-		if (*s == '@') 
+		char c = *s;
+		if (c == '@') 
 		{
-			if(s[1] == *s)
+			if(s[1] == c)
 				s++;
 			else
-				*s = ' ';
+				c = ' ';
 		}
 
-		*d++ = *s++; 
+		*d++ = c;
+		s++;
 		x--;
 	}
 
@@ -495,7 +508,7 @@ static void cfgcpy
 int CfgLoad
 (
 	XFILE *fp,			/* pointer to file definition structure */ 
-	CfgEntry *cfgtab, 	/* pointer to configuration table */
+	const CfgEntry *cfgtab, 	/* pointer to configuration table */
 	int maxs,			/* maximum length of value string (after "="), incl. termination */ 
 	int level0			/* nesting (indent) level */
 ) 
@@ -507,11 +520,10 @@ int CfgLoad
 		tel = 0;				/* error counter */
 
 	char 
-		r[MAX_CFGLINE], 		/* string read from the file */
-		*s;						/* pointer to a positon in the above */
+		r[MAX_CFGLINE]; 		/* string read from the file */
+	const char *s;					/* pointer to a positon in the above */
 
-	CFG_TYPE
-		tabtype;
+	CFG_TYPE tabtype = 0;
 
 	bool
 		skip = FALSE;			/* true while recovering from errors */
@@ -519,14 +531,15 @@ int CfgLoad
 
 	/* Loop while needed. Get next record from the file */
 
-	while ( (error = x_fgets(fp, s = r, (int)sizeof(r))) == 0 )
+	while ( (error = x_fgets(fp, r, (int)sizeof(r))) == 0 )
 	{
-		CfgEntry *tab = cfgtab;
+		const CfgEntry *tab = cfgtab;
 
 		/* Strip line end and comment, then move to first nonblank */
 
-		crlf(s);
-		nocomment(s);
+		crlf(r);
+		nocomment(r);
+		s = r;
 		s = nonwhite(s);
 
 		/* Skip empty lines */
@@ -612,7 +625,7 @@ int CfgLoad
 						/* It is a nest, go one level deeper */
 						/* also remember this keyword for possible error output */
 						lastnest = tab->s;
-						(*(CfgNest *)tab->a)(fp, level, 0, &error);
+						(*tab->a.f)(fp, level, 0, &error);
 
 						if ( error == EFRVAL )
 						{
@@ -626,45 +639,46 @@ int CfgLoad
 					case CFG_S:
 					{
 						/* Decode a string */
-						cfgcpy(tab->a, s, maxs - 1);
+						cfgcpy(tab->a.s, s, maxs - 1);
 						break;
 					}
-/* currently not used in Teradesk but may be used some day
+#if 0 /* currently not used in Teradesk but may be used some day */
 					case CFG_C:
 					{
-						/* Interprete string as uint */
-						*(uint *)tab->a = *s++;
+						/* Interpret string as unsigned char */
+						*tab->a.c = *s++;
 						break;
 					}
 					case CFG_B:
 					{
 						/* Decode a character value */
-						*(char *)tab->a = *s++;
+						*tab->a.c = *s++;
 						break;
 					}
 					case CFG_H:
 					{
 						/* Decode a positive decimal byte value */
-						*(char *)tab->a = (char)max(atoi(s), 0);
+						*tab->a.c = (char)max(atoi(s), 0);
 						break;
 					}
 					case CFG_BD:
-*/
-					case CFG_D:
-					{
-						/* Decode a positive decimal integer value */
-						*(int *)tab->a = max(atoi(s), 0);
-/* Currently not used
-						if ( (tabtype == CFG_BD) && (*(int *)tab->a > 0) )
-							*(int *)tab->a = 1;
-*/
+						{
+							/* Decode a positive decimal integer value */
+							*tab->a.b = max(atoi(s), 0) > 0;
+						}
 						break;
-					}
+#endif
+					case CFG_D:
+						{
+							/* Decode a positive decimal integer value */
+							*tab->a.i = max(atoi(s), 0);
+						}
+						break;
 					case CFG_DDD:
 					{
 						/* Decode a triplet of positive decimal integer values */
-						int *vv = (int *)tab->a;
-						char *s2;
+						_WORD *vv = tab->a.i;
+						const char *s2;
 						s2 = --s;
 						v = 0;
 
@@ -679,13 +693,13 @@ int CfgLoad
 					case CFG_X:
 					{
 						/* Decode a hex integer value */
-						*(int *)tab->a = (int)strtol(s, NULL, 16); 
+						*tab->a.u = (_UWORD)strtol(s, NULL, 16); 
 						break;
 					}
 					case CFG_L:
 					{
 						/* Decode a positive decimal long int value */
-						*(long *)tab->a = lmax(atol(s), 0L);
+						*tab->a.l = lmax(atol(s), 0L);
 						break;
 					}
 					default:
@@ -818,8 +832,8 @@ int handle_cfg
 
 int handle_cfgfile
 (
-	char *name,			/* name of configuration file to read/write */
-	CfgEntry *tab,		/* table which has to be handled */
+	const char *name,			/* name of configuration file to read/write */
+	const CfgEntry *tab,		/* table which has to be handled */
 	const char *ident,	/* Identification header for this file */
 	int io				/* 1=save, 0=read */
 )
@@ -827,14 +841,13 @@ int handle_cfgfile
 	XFILE 
 		*file;
 
-	char 
-		*savecname,
-		*savelastnest;
+	const char *savecname;
+	const char *savelastnest;
 
 	static char
 		*fmt1 = "%s%s%s";
 
-	int
+	_WORD
 		n, 
 		error,
 		savechklevel;
@@ -849,11 +862,6 @@ int handle_cfgfile
 
 	savecname = cname;
 	cname = fn_get_name(name);
-
-#if _MINT_
-	if ( magx || !mint )
-#endif
-		strupr(cname);
 
 	/* Proceed to load or save */
 
@@ -890,7 +898,7 @@ int handle_cfgfile
 
 			if ((n = x_fgets(file, identbuf, MAX_CFGLINE - 1) ) == 0)
 			{
-				lastnest = (char *)ident;
+				lastnest = ident;
 				chklevel = 0;
 
 				/* 

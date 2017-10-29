@@ -28,24 +28,22 @@ typedef struct ftype
 } FTYPE;
 
 
-extern CfgEntry 
-	ft_table[],
-	filetypes_table[];
+extern CfgEntry ft_table[];
+extern CfgEntry filetypes_table[];
 
-extern FTYPE 
-	fwork,
-	*fthis, 
-	**ffthis;
+extern FTYPE fwork;
+extern FTYPE *fthis;
+extern FTYPE **ffthis;
 
-extern const char
-	*presets[];
+extern const char *presets[];
+
+extern const char fas[];			/* file attributes flags */
 
 
-CfgNest ft_config;
+void ft_config(XFILE *file, int lvl, int io, int *error);
 
 char *wd_filemask(const char *mask);
 void ft_init(void);
 void ft_default(void);
-void copy_ftype(FTYPE *target, FTYPE *source);
-char *ft_dialog( const char *mask, FTYPE **list, int what );
-
+void copy_ftype(LSTYPE *target, LSTYPE *source);
+char *ft_dialog( const char *mask, FTYPE **list, _WORD what );

@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+#include <stddef.h>
+#include <library.h>
 
 /*
  * Note: to save space, do not use these functions to substitute 
@@ -32,7 +35,7 @@
  * Return the smaller of two integers
  */
 
-int min(int x, int y)
+_WORD min(_WORD x, _WORD y)
 {
 	return (x < y) ? x : y;
 }
@@ -42,7 +45,7 @@ int min(int x, int y)
  * Return the larger of two integers
  */
 
-int max(int x, int y)
+_WORD max(_WORD x, _WORD y)
 {
 	return (x > y) ? x : y;
 }
@@ -54,23 +57,14 @@ int max(int x, int y)
  * high limit is lower than low limit
  */
 
-int minmax(int lo, int i, int hi)
+_WORD minmax(_WORD lo, _WORD i, _WORD hi)
 {
-/*
-	if ( i < lo )
-		return lo;
-	else
-		return(i < hi) ? i : hi;
-*/
 	if( i < lo )
 		return lo;
-	else
-	{
-		if(hi < lo)
-			hi = lo;
+	if(hi < lo)
+		hi = lo;
 
-		return(i < hi) ? i : hi;
-	}
+	return i < hi ? i : hi;
 }
 
 
@@ -80,7 +74,7 @@ int minmax(int lo, int i, int hi)
 
 long lmin(long x, long y)
 {
-	return (x < y) ? x : y;
+	return x < y ? x : y;
 }
 
 
@@ -90,7 +84,7 @@ long lmin(long x, long y)
 
 long lmax(long x, long y)
 {
-	return (x > y) ? x : y;
+	return x > y ? x : y;
 }
 
 
@@ -102,19 +96,9 @@ long lmax(long x, long y)
 
 long lminmax(long lo, long i, long hi)
 {
-/*
-	if ( i < lo )
+	if (i < lo)
 		return lo;
-	else
-		return (i < hi) ? i : hi;
-*/
-	if( i < lo )
-		return lo;
-	else
-	{
-		if(hi < lo)
-			hi = lo;
-
-		return(i < hi) ? i : hi;
-	}
+	if (hi < lo)
+		hi = lo;
+	return(i < hi) ? i : hi;
 }

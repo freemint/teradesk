@@ -21,6 +21,10 @@
  */
 
 
+#ifndef __LISTS_H__
+#define __LISTS_H__ 1
+
+
 /* 
  * Common part of FTYPE, PRGTYPE, ICONTYPE and APPLINFO structures 
  * is defined here, so that same routines can operate on all
@@ -43,25 +47,25 @@ typedef struct ls_func
 {
 	void (*lscopy)(LSTYPE *t, LSTYPE *s);
 	void (*lsrem)(LSTYPE **list, LSTYPE *item);
-	void (*lsitem)(LSTYPE **list, char *name, int use, LSTYPE *lwork);
-	LSTYPE *(*lsfinditem)(LSTYPE **list, char *name, int *ord);
-	bool (*ls_dialog)(LSTYPE **list, int pos, LSTYPE *item, int use);
+	void (*lsitem)(LSTYPE **list, const char *name, _WORD use, LSTYPE *lwork);
+	LSTYPE *(*lsfinditem)(LSTYPE **list, const char *name, _WORD *ord);
+	bool (*ls_dialog)(LSTYPE **list, _WORD pos, LSTYPE *item, _WORD use);
 }LS_FUNC;
 
-bool find_wild ( LSTYPE **list, char *name, LSTYPE *work, void *func );
-int find_selected(void);
-LSTYPE *get_item(LSTYPE **list, int item);
-LSTYPE *find_lsitem(LSTYPE **list, char *name, int *pos);
+bool find_wild ( LSTYPE **list, const char *name, LSTYPE *work, void *func );
+_WORD find_selected(void);
+LSTYPE *get_item(LSTYPE **list, _WORD item);
+LSTYPE *find_lsitem(LSTYPE **list, const char *name, _WORD *pos);
 void lsrem(LSTYPE **list, LSTYPE *item);
 void lsrem_all(LSTYPE **list, void *rem_func);
 void lsrem_all_one(LSTYPE **list);
 void lsrem_three(LSTYPE **clist, void *remfunc);
-LSTYPE *lsadd( LSTYPE **list, size_t size, LSTYPE *pt, int pos, void *copy_func );
+LSTYPE *lsadd( LSTYPE **list, size_t size, LSTYPE *pt, _WORD pos, void *copy_func );
 LSTYPE *lsadd_end( LSTYPE **list, size_t size, LSTYPE *pt, void *copy_func );
 bool copy_all(LSTYPE **copy, LSTYPE **list, size_t size, void *copy_func ); 
-int cnt_types(LSTYPE **list );
-bool check_dup( LSTYPE **list, char *name, int pos );
-int list_edit(LS_FUNC *lsfunc,	LSTYPE **lists, int nl, size_t size, LSTYPE *lwork, int use );
+_WORD cnt_types(LSTYPE **list );
+bool check_dup( LSTYPE **list, char *name, _WORD pos );
+_WORD list_edit(LS_FUNC *lsfunc,	LSTYPE **lists, _WORD nl, size_t size, LSTYPE *lwork, _WORD use );
 
 #define NLINES 4	/* Number of lines in a filetype-selector dialog */
 
@@ -80,3 +84,4 @@ int list_edit(LS_FUNC *lsfunc,	LSTYPE **lists, int nl, size_t size, LSTYPE *lwor
 
 #define LS_SELA 8192	/* Select a one-time-use application */
 
+#endif /* __LISTS_H__ */

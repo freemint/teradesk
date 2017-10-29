@@ -24,7 +24,7 @@
 #include <string.h>
 #include <library.h>
 
-#define SINGLE_Q 39
+#define SINGLE_Q '\''
 #define DOUBLE_Q '"'
 
 
@@ -42,7 +42,7 @@ char *strsncpy(char *dst, const char *src, size_t len)
 }
 
 
-/* this is never used in TeraDesk
+#if 0 /* this is never used in TeraDesk */
 
 /*
  * Copy a string 's' and right-justify in a field 'd' with length 'len'. 
@@ -60,7 +60,7 @@ char *strcpyj(char *d, const char *s, size_t len)
 		l,
 		b;
 
-	int
+	_WORD
 		i = 0;
 
 
@@ -74,7 +74,7 @@ char *strcpyj(char *d, const char *s, size_t len)
 	d[len] = 0;
 	return d;
 }
-*/
+#endif
 
 
 /*
@@ -87,13 +87,9 @@ char *strcpyj(char *d, const char *s, size_t len)
 
 size_t strlenq(const char *name)
 {
-	size_t
-		l = 3;
-
-	char
-		*p = (char *)name;
-
-	int
+	size_t l = 3;
+	const char *p = name;
+	_WORD
 		q = 0;
 
 
@@ -173,7 +169,7 @@ char *strcpyq(char *d, const char *s, char qc)
  * copying starts from the beginning of the string.
  */
 
-char *strcpyuq(char *d, char *s)
+char *strcpyuq(char *d, const char *s)
 {
 	char
 		h,
@@ -231,13 +227,12 @@ char *strcpyuq(char *d, char *s)
 
 char *strcpyrq(char *d, const char *s, char qc, char **fb)
 {
-	char
-		q = 0,				/* nonzero if quoting in effect */
-		fqc = 0,			/* first encountered quote character */
- 		*p = (char *)s,		/* a location in source string */
-		*t = d;				/* a location in destination string */
-		*fb = 0L;			/* no blanks found yet */
+	char q = 0;				/* nonzero if quoting in effect */
+	char fqc = 0;			/* first encountered quote character */
+ 	const char *p = s;		/* a location in source string */
+	char *t = d;			/* a location in destination string */
 
+	*fb = NULL;		/* no blanks found yet */
 
 	while(*p)
 	{

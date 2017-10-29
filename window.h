@@ -65,21 +65,21 @@ typedef enum
 
 typedef struct
 {
-	int (*itm_find) (WINDOW *w, int x, int y);
-	bool (*itm_state) (WINDOW *w, int item);
-	ITMTYPE (*itm_type) (WINDOW *w, int item);
-	ITMTYPE (*itm_tgttype) (WINDOW *w, int item);
-	const char *(*itm_name) (WINDOW *w, int item);
-	char *(*itm_fullname) (WINDOW *w, int item);
-	int (*itm_attrib) (WINDOW *w, int item, int mode, XATTR *attr);
-	bool (*itm_islink) (WINDOW *w, int item);
-	bool (*itm_open) (WINDOW *w, int item, int kstate);
-	bool (*itm_copy) (WINDOW *dw, int dobject, WINDOW *sw,
-	        int n, int *list, ICND *icns, int x, int y, int kstate);
-	void (*itm_select) (WINDOW *w, int selected, int mode, bool draw);
-	void (*itm_rselect) (WINDOW *w, int x, int y);
-	ICND *(*itm_xlist) (WINDOW *w, int *ns, int *nv, int **list, int mx, int my);
-	int *(*itm_list) (WINDOW *w, int *n);
+	_WORD (*itm_find) (WINDOW *w, _WORD x, _WORD y);
+	bool (*itm_state) (WINDOW *w, _WORD item);
+	ITMTYPE (*itm_type) (WINDOW *w, _WORD item);
+	ITMTYPE (*itm_tgttype) (WINDOW *w, _WORD item);
+	const char *(*itm_name) (WINDOW *w, _WORD item);
+	char *(*itm_fullname) (WINDOW *w, _WORD item);
+	_WORD (*itm_attrib) (WINDOW *w, _WORD item, _WORD mode, XATTR *attr);
+	bool (*itm_islink) (WINDOW *w, _WORD item);
+	bool (*itm_open) (WINDOW *w, _WORD item, _WORD kstate);
+	bool (*itm_copy) (WINDOW *dw, _WORD dobject, WINDOW *sw,
+	        _WORD n, _WORD *list, ICND *icns, _WORD x, _WORD y, _WORD kstate);
+	void (*itm_select) (WINDOW *w, _WORD selected, _WORD mode, bool draw);
+	void (*itm_rselect) (WINDOW *w, _WORD x, _WORD y);
+	ICND *(*itm_xlist) (WINDOW *w, _WORD *ns, _WORD *nv, _WORD **list, _WORD mx, _WORD my);
+	_WORD *(*itm_list) (WINDOW *w, _WORD *n);
 
 	const char *(*wd_path) (WINDOW *w);
 
@@ -100,8 +100,8 @@ typedef struct
 typedef struct
 {
 	WINDOW *w;
-	int selected;
-	int n;
+	_WORD selected;
+	_WORD n;
 } SEL_INFO;
 
 /*
@@ -125,12 +125,12 @@ typedef struct
  * Some fields in the common part of DIR_WINDOW and TXT_WINDOW structures
  */
 
-#define WD_VARS 	int scolumns;  \
-					int rows;	   \
-					int columns;   		/* number of columns in window content (chars or icons) */ \
-					int ncolumns;  		/* visible width (chars) */   \
-					int dcolumns;		/* number of dir. columns, otherwise 0 */ \
-					int px;        		/* h.slider position  */ \
+#define WD_VARS 	_WORD scolumns;  \
+					_WORD rows;	   \
+					_WORD columns;   		/* number of columns in window content (chars or icons) */ \
+					_WORD ncolumns;  		/* visible width (chars) */   \
+					_WORD dcolumns;		/* number of dir. columns, otherwise 0 */ \
+					_WORD px;        		/* h.slider position  */ \
 					long py;       		/* v.slider position  */ \
 					long nrows;	   		/* visible height (lines) */  \
 					long nlines;   		/* total number of lines in window content (lines or icons) */ \
@@ -151,25 +151,25 @@ typedef struct
 
 typedef struct winfo
 {
-	int x;						/* positie van het window */
-	int y;
-	int w;						/* afmetingen van het werkgebied */
-	int h;
-	int ix; /* position and size at iconify time */
-	int iy; 
-	int iw;
-	int ih;
+	_WORD x;						/* positie van het window */
+	_WORD y;
+	_WORD w;						/* afmetingen van het werkgebied */
+	_WORD h;
+	_WORD ix; /* position and size at iconify time */
+	_WORD iy; 
+	_WORD iw;
+	_WORD ih;
 	TYP_WINDOW *typ_window;
 	WDFLAGS flags;
 	bool used;
-}WINFO;
+} WINFO;
 
 
-/* Note: see window.c; CfgNest positions */
+/* Note: see window.c; CFG_NEST positions */
 
 typedef struct
 {
-	int i, x, y, ww, wh, ix, iy, iw, ih;
+	_WORD i, x, y, ww, wh, ix, iy, iw, ih;
 	WDFLAGS flags;
 	XDFONT font;
 	WINFO *windows;
@@ -178,7 +178,7 @@ typedef struct
 
 typedef struct
 {
-	int 
+	_WORD 
 		index,
 		px, 
 		hexmode, 
@@ -192,11 +192,17 @@ typedef struct
 		*w;
 } SINFO2;
 
+extern bool	clearline;
+extern bool onekey_shorts;	/* true if single-key menu shortcuts exist */
+
 extern NEWSINFO1 thisw;
 extern SINFO2 that;
 extern SEL_INFO selection;
 
 extern bool autoloc;
+extern XUSERBLK wxub;
+extern bool autoloc_upd;
+extern bool can_touch;
 
 #if _MINT_
 extern LNAME automask; /* to compose the autolocator mask */
@@ -214,41 +220,41 @@ extern XDFONT *cfg_font;
 
 extern WD_FUNC wd_type_functions;
 
-CfgNest positions;
-CfgNest cfg_wdfont;
-CfgNest wd_config;
+void positions(XFILE *file, int lvl, int io, int *error);
+void cfg_wdfont(XFILE *file, int lvl, int io, int *error);
+void wd_config(XFILE *file, int lvl, int io, int *error);
 
 void autoloc_off(void);
-int itm_find(WINDOW *w, int x, int y);
-bool itm_state(WINDOW *w, int item);
-ITMTYPE itm_type(WINDOW *w, int item);
-ITMTYPE itm_tgttype(WINDOW *w, int item);
-int itm_icon(WINDOW *w, int item);
-const char *itm_name(WINDOW *w, int item);
-char *itm_fullname(WINDOW *w, int item);
-char *itm_tgtname(WINDOW *w, int item);
-int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib);
-bool itm_islink(WINDOW *w, int item);
-bool itm_follow(WINDOW *w, int item, bool *link, char **name, ITMTYPE *type);
-bool itm_open(WINDOW *w, int item, int kstate);
-void itm_select(WINDOW *w, int selected, int mode, bool draw);
+_WORD itm_find(WINDOW *w, _WORD x, _WORD y);
+bool itm_state(WINDOW *w, _WORD item);
+ITMTYPE itm_type(WINDOW *w, _WORD item);
+ITMTYPE itm_tgttype(WINDOW *w, _WORD item);
+_WORD itm_icon(WINDOW *w, _WORD item);
+const char *itm_name(WINDOW *w, _WORD item);
+char *itm_fullname(WINDOW *w, _WORD item);
+char *itm_tgtname(WINDOW *w, _WORD item);
+_WORD itm_attrib(WINDOW *w, _WORD item, _WORD mode, XATTR *attrib);
+bool itm_islink(WINDOW *w, _WORD item);
+bool itm_follow(WINDOW *w, _WORD item, bool *link, char **name, ITMTYPE *type);
+bool itm_open(WINDOW *w, _WORD item, _WORD kstate);
+void itm_select(WINDOW *w, _WORD selected, _WORD mode, bool draw);
 void itm_set_menu ( WINDOW *w );
 void wd_setselection(WINDOW *w);
 void wd_do_dirs(void *func);
 void wd_set_update(wd_upd_type type, const char *name1, const char *name2);
 void wd_do_update(void);
-void wd_update_drv(int drive);
-void wd_restoretop(int code, int *whandle, int *wap_id);
+void wd_update_drv(_WORD drive);
+void wd_restoretop(_WORD code, _WORD *whandle, _WORD *wap_id);
 bool wd_dirortext(WINDOW *w);
-void wd_hndlbutton(WINDOW *w, int x, int y, int n, int button_state, int keystate);
+void wd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD button_state, _WORD keystate);
 const char *wd_path(WINDOW *w);
 const char *wd_toppath(void);
 void wd_seticons(void);
 void wd_reset(WINDOW *w);
 void wd_deselect_all(void);
 void wd_del_all(void);
-void wd_hndlmenu(int item, int keystate);
-void wd_menu_ienable(int item, int enable);
+void wd_hndlmenu(_WORD item, _WORD keystate);
+void wd_menu_ienable(_WORD item, _WORD enable);
 void wd_sizes(void);
 
 #if __USE_MACROS
@@ -258,25 +264,24 @@ void wd_init(void);
 #endif
 
 void wd_default(void);
-int wd_load(XFILE *file);
 bool wd_tmpcls(void);
 void wd_reopen(void);
 void wd_type_draw(TYP_WINDOW *w, bool message); 
 void wd_type_sldraw(WINDOW *w);
-bool wd_type_setfont(int button); 
+bool wd_type_setfont(_WORD button); 
 void calc_rc(TYP_WINDOW *w, RECT *work); 
 void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork); 
 void wd_calcsize(WINFO *w, RECT *size); 
-int wd_type_hndlkey(WINDOW *w, int scancode, int keystate);
+_WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate);
 void wd_set_defsize(WINFO *w); 
-void wd_type_close( WINDOW *w, int mode);
+void wd_type_close( WINDOW *w, _WORD mode);
 void wd_type_topped (WINDOW *w);		
 void wd_type_bottomed (WINDOW *w);		
-void wd_type_arrowed(WINDOW *w, int arrows);
-void wd_type_fulled(WINDOW *w, int mbshift);
+void wd_type_arrowed(WINDOW *w, _WORD arrows);
+void wd_type_fulled(WINDOW *w, _WORD mbshift);
 void wd_type_nofull(WINDOW *w);
-void wd_type_hslider(WINDOW *w, int newpos);
-void wd_type_vslider(WINDOW *w, int newpos);
+void wd_type_hslider(WINDOW *w, _WORD newpos);
+void wd_type_vslider(WINDOW *w, _WORD newpos);
 void wd_type_moved(WINDOW *w, RECT *newpos);
 void wd_type_sized(WINDOW *w, RECT *newsize);
 void wd_type_redraw(WINDOW *w, RECT *area);
@@ -284,17 +289,17 @@ void wd_type_title(TYP_WINDOW *w);
 void set_hslsize_pos(TYP_WINDOW *w);
 void set_vslsize_pos(TYP_WINDOW *w);
 void set_sliders(TYP_WINDOW *w);
-void w_page(TYP_WINDOW *w, int newpx, long newpy);
+void w_page(TYP_WINDOW *w, _WORD newpx, long newpy);
 void w_pageup(TYP_WINDOW *w);
 void w_pagedown(TYP_WINDOW *w);
 void w_pageleft(TYP_WINDOW *w);
 void w_pageright(TYP_WINDOW *w);
-void w_scroll(TYP_WINDOW *w, int type); 
+void w_scroll(TYP_WINDOW *w, _WORD type); 
 bool wd_adapt(WINDOW *w);	
-void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons);
-void wd_set_obj0( OBJECT *obj, bool smode, int row, int lines, RECT *work );
-void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool link, int icon_no, 
-int obj_x, int obj_y, char *name );
+void wd_cellsize(TYP_WINDOW *w, _WORD *cw, _WORD *ch, bool icons);
+void wd_set_obj0( OBJECT *obj, bool smode, _WORD row, _WORD lines, RECT *work );
+void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool link, _WORD icon_no, 
+_WORD obj_x, _WORD obj_y, char *name );
 void wd_type_iconify(WINDOW *w, RECT *r);
 void wd_type_uniconify(WINDOW *w, RECT *r);
 void wd_restoresize(WINFO *info);
@@ -305,9 +310,10 @@ void wd_noselection(void);
 void wd_in_screen ( WINFO *info );
 long wd_type_slines(TYP_WINDOW *w);
 void wd_drawall(void);
-int wd_wcount(void);
-bool itm_move(WINDOW *src_wd, int src_object, int old_x, int old_y, int avkstate);
+_WORD wd_wcount(void);
+bool itm_move(WINDOW *src_wd, _WORD src_object, _WORD old_x, _WORD old_y, _WORD avkstate);
 void arrow_mouse(void);
 void hourglass_mouse(void);
-void w_transptext( int x, int y, char *text);
+void w_transptext( _WORD x, _WORD y, char *text);
 bool isfileprog(ITMTYPE type);
+void wd_forcesize(WINDOW *w, RECT *size, bool cond);

@@ -75,19 +75,19 @@
 
 typedef struct xuserblk
 {
-	int cdecl (*ub_code)(PARMBLK *parmblock);
+	_WORD cdecl (*ub_code)(PARMBLK *parmblock);
 	struct xuserblk *ub_parm;		/* Pointer to itself */
-	int ob_type;					/* Original object type */
-	int ob_flags;					/* Original object flags */
+	_WORD ob_type;					/* Original object type */
+	_WORD ob_flags;					/* Original object flags */
 	OBSPEC ob_spec;					/* Original object specifier */
 	union
 	{ 
-		long ptr;					/* a handy pointer to anything */
-		int ob_shift;				/* For scrledit: position of letterbox. */
+		void *ptr;					/* a handy pointer to anything */
+		_WORD ob_shift;				/* For scrledit: position of letterbox. */
 		struct
 		{
-			int pattern;			/* background fill pattern */
-			int colour;				/* background fill colour */
+			_WORD pattern;			/* background fill pattern */
+			_WORD colour;				/* background fill colour */
 		} fill;
 	}uv;
 } XUSERBLK;
@@ -99,33 +99,33 @@ typedef struct xdobjdata
 
 typedef struct
 {
-	int key;
-	int object;
+	_WORD key;
+	_WORD object;
 } KINFO;
 
 typedef struct
 {
 	XW_INTVARS;
 	XDINFO *xd_info;
-	int nkeys;
+	_WORD nkeys;
 	KINFO kinfo[MAXKEYS];
 } XD_NMWINDOW;
 
 typedef struct
 {
-	int id;
+	_WORD id;
 
 /* currently unused
-	int type;
+	_WORD type;
 */
-	int size;
-	int colour;
-	int effects;
-	int cw;
-	int ch;
+	_WORD size;
+	_WORD colour;
+	_WORD effects;
+	_WORD cw;
+	_WORD ch;
 } XDFONT;
 
-extern int
+extern _WORD
 	xd_vhandle,
 	xd_nplanes,
 	xd_ncolours,
@@ -139,10 +139,21 @@ extern int
 	aes_flags,
 	xd_fdo_flag;
 
-extern const int
-	ckeytab[];
+extern const _WORD ckeytab[];
+
+extern _WORD xd_has3d;
+extern _WORD xd_bg_col;
+extern _WORD xd_ind_col;
+extern _WORD xd_act_col;
+extern _WORD xd_sel_col;
+
+extern _WORD brd_l;
+extern _WORD brd_r;
+extern _WORD brd_u;
+extern _WORD brd_d; /* object border sizes */
 
 extern const char *xd_prgname;
+
 extern void *(*xd_malloc) (size_t size);
 extern void (*xd_free) (void *block);
 extern XDOBJDATA *xd_objdata;
@@ -151,26 +162,37 @@ extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
 extern RECT xd_screen, xd_desk;
 extern XDFONT xd_regular_font, xd_small_font;
+extern _WORD xe_mbshift;
+extern _WORD xd_vhandle;
 
-extern void set_linedef(int colour);
-extern int xd_movebutton(OBJECT *tree);
-extern int xd_abs_curx(OBJECT *tree, int object, int curx);
-extern void xd_cursor_on(XDINFO *info);
-extern void xd_cursor_off(XDINFO *info);
-extern int xd_hndlmessage(int *message, int flag);
-extern int xd_scan_messages(int flag, int *mes);
-extern void xd_redraw(XDINFO *info, int start, int depth, RECT *area, int flags);
-extern XDINFO *xd_find_dialog(WINDOW *w);
-extern int xd_form_button(XDINFO *info, int object, int clicks, int *result);
-extern int xd_find_obj(OBJECT *tree, int start, int which);
-extern void xd_edit_init(XDINFO *info, int object, int curx);
-extern void xd_edit_end(XDINFO *info);
-extern void xd_calcpos(XDINFO *info, XDINFO *prev, int pmode);
-extern int xd_edit_char(XDINFO *info, int key);
-extern int xd_form_keybd(XDINFO *info, int kobnext, int kchar, int *knxtobject, int *knxtchar);
-extern int xd_find_key(OBJECT *tree, KINFO *kinfo, int nk, int key);
-extern int xd_set_keys(OBJECT *tree, KINFO *kinfo);
-extern void xw_closeall(void);
-extern void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, int cdecl(*code)(PARMBLK *parmblock));
+_WORD __xd_hndlkey(WINDOW *w, _WORD key, _WORD kstate);
+void __xd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate);
+void __xd_hndlmenu(WINDOW *w, _WORD title, _WORD item);
+
+void __xd_topped(WINDOW *w);
+void __xd_closed(WINDOW *w, _WORD mode);
+void __xd_top(WINDOW *w);
+
+void set_linedef(_WORD colour);
+_WORD xd_movebutton(OBJECT *tree);
+_WORD xd_abs_curx(OBJECT *tree, _WORD object, _WORD curx);
+void xd_cursor_on(XDINFO *info);
+void xd_cursor_off(XDINFO *info);
+_WORD xd_hndlmessage(_WORD *message, _WORD flag);
+_WORD xd_scan_messages(_WORD flag, _WORD *mes);
+void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags);
+XDINFO *xd_find_dialog(WINDOW *w);
+_WORD xd_form_button(XDINFO *info, _WORD object, _WORD clicks, _WORD *result);
+_WORD xd_find_obj(OBJECT *tree, _WORD start, _WORD which);
+void xd_edit_init(XDINFO *info, _WORD object, _WORD curx);
+void xd_edit_end(XDINFO *info);
+void xd_calcpos(XDINFO *info, XDINFO *prev, _WORD pmode);
+_WORD xd_edit_char(XDINFO *info, _WORD key);
+_WORD xd_form_keybd(XDINFO *info, _WORD kobnext, _WORD kchar, _WORD *knxtobject, _WORD *knxtchar);
+_WORD xd_find_key(OBJECT *tree, KINFO *kinfo, _WORD nk, _WORD key);
+_WORD xd_set_keys(OBJECT *tree, KINFO *kinfo);
+void xw_closeall(void);
+void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl(*code)(PARMBLK *parmblock));
+_WORD xd_oldarrow(XDINFO *info);
 
 #endif

@@ -37,10 +37,10 @@
 
 typedef struct
 {
-        int     x;
-        int     y;
-        int     w;
-        int     h;
+        _WORD x;
+        _WORD y;
+        _WORD w;
+        _WORD h;
 } RECT;
 
 /* Strings of specific lengths for icon labels, file types, etc. */
@@ -62,41 +62,49 @@ typedef struct
 char *strsncpy(char *dst, const char *src, size_t len);	
 char *strcpyj(char *dst, const char *src, size_t len);
 char *strcpyq(char *d, const char *s, char qc);
-char *strcpyuq(char *d, char *s);
+char *strcpyuq(char *d, const char *s);
 char *strcpyrq(char *d, const char *s, char qc, char **fb);
 size_t strlenq(const char *name);
 
-int min(int x, int y);
-int max(int x, int y);
-int minmax(int lo, int i, int hi);
+_WORD min(_WORD x, _WORD y);
+_WORD max(_WORD x, _WORD y);
+_WORD minmax(_WORD lo, _WORD i, _WORD hi);
 long lmin(long x, long y);
 long lmax(long x, long y);
 long lminmax(long lo, long i, long hi);
 void bell(void);
-int touppc(int c);
-char *digit(char *s, int x);
+_WORD touppc(_WORD c);
+char *digit(char *s, _WORD x);
 void *memclr(void *s, size_t len); 
 
 
 /* Funkties voor filenamen */
 
-char *nonwhite ( char *s);
+const char *nonwhite (const char *s);
 void strip_name (char *dst, const char *src);
 void cramped_name(const char *s, char *t, size_t w);
 
 /* Funkties voor cookie-jar */
 
 long find_cookie( long name );
-int install_cookie( long name,long value,COOKIE *buffer,long l );
+_WORD install_cookie( long name,long value,COOKIE *buffer,long l );
 
 /* GEM uitbreidingen */
 
-int aprintf( int def,const char *string, ... );
+_WORD aprintf( _WORD def,const char *string, ... );
 
 /* Funkties voor het bepalen van de TOS-versie */
 
-int get_tosversion( void );
-int get_aesversion( void );
+extern bool have_ssystem;
+extern _WORD tos_version;	/* tos version, hex encoded */ 
+extern _WORD aes_version;	/* aes version, hex encoded */
 
+_WORD get_tosversion( void );
+_WORD get_aesversion( void );
+
+
+char *ultoa(unsigned long n, char *buffer, int radix);
+char *ltoa(long n, char *buffer, int radix);
+char *itoa(int n, char *buffer, int radix);
 
 #endif

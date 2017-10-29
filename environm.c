@@ -34,6 +34,10 @@
 #include "environm.h"
 #include "desk.h"
 
+#ifdef __GNUC__
+# define _BasPag _base
+#endif
+
 
 /*
  * Determine the length of the environment, including
@@ -43,12 +47,8 @@
 
 long envlen(void)
 {
-	char
-		*p = _BasPag->p_env;
-	
-	long
-		l = 0;
-
+	const char *p = _BasPag->p_env;
+	long l = 0;
 
 	do
 	{
@@ -87,8 +87,8 @@ char *new_env
 	char 
 		*new,					/* allocated  space for the new enviro */
 		*newto,					/* where to put the old string */
-		*oldto,					/* where to put the new string */
-		*p = _BasPag->p_env;	/* where is the old environment */
+		*oldto;					/* where to put the new string */
+	const char *p = _BasPag->p_env;	/* where is the old environment */
 
 
 	*newsize = 0;
@@ -97,7 +97,7 @@ char *new_env
 
 	if (!(p && l))
 	{
-		p = (char *)empty;
+		p = empty;
 		l = 2;
 	}
 
@@ -246,7 +246,7 @@ char *make_argv_env
 		 * or double quotes
 		 */
 
-		d = strcpyuq(d, (char *)cmdl);
+		d = strcpyuq(d, cmdl);
 
 		*d = 0;	  /* second trailing zero */
 

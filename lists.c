@@ -36,11 +36,10 @@
 #include "font.h"
 #include "window.h"
 #include "xscncode.h"
+#include "applik.h"
 
 
 LSTYPE *selitem;
-
-void log_shortname( char *dest, char* appname ); /* from applik.h */
 
 
 
@@ -51,7 +50,7 @@ void log_shortname( char *dest, char* appname ); /* from applik.h */
 
 static void set_lselector(SLIDER *slider, bool draw, XDINFO *info) 
 {
-	int
+	_WORD
 		i;
 
 	LSTYPE
@@ -86,7 +85,7 @@ static void set_lselector(SLIDER *slider, bool draw, XDINFO *info)
  * Initiate a (FTYPE, PRGTYPE, ICONTYPE...) list-scroller slider
  */
 
-static void ls_sl_init ( int n, SLIDER *sl, LSTYPE **list )
+static void ls_sl_init ( _WORD n, SLIDER *sl, LSTYPE **list )
 {
 	sl->type = 1;
 	sl->tree = setmask;			/* root object */
@@ -117,13 +116,12 @@ static void ls_sl_init ( int n, SLIDER *sl, LSTYPE **list )
 bool find_wild 
 ( 
 	LSTYPE **list,		/* list to be searched in */ 
-	char *name,			/* name to match */ 
+	const char *name,	/* name to match */ 
 	LSTYPE *work,		/* work area where data is copied */ 
 	void *copy_func 	/* pointer to a functon to copy data */
 )
 {
-	char 
-		*filename;		/* local: pointer to name without path */
+	const char *filename;	/* local: pointer to name without path */
 
 	LSTYPE 
 		*p = *list;	/* start from the beginning of the list */
@@ -139,7 +137,7 @@ bool find_wild
 	{					
 		/* Find the last occurence of "\" and the name after it */
 
-		filename = fn_get_name((const char *)name);
+		filename = fn_get_name(name);
 
 		/* Search in the list */
 
@@ -175,9 +173,9 @@ bool find_wild
  * ( i.e. 0 for FTYPE1, 1 for FTYPE2, etc.)
  */
 
-int find_selected(void)
+_WORD find_selected(void)
 {
-	int object;		/* object index of filetype field */
+	_WORD object;		/* object index of filetype field */
 
 	return ((object = xd_get_rbutton(setmask, FTPARENT)) < 0) ? 0 : object - FTYPE1;
 }
@@ -190,10 +188,10 @@ int find_selected(void)
 LSTYPE *get_item
 ( 
 	LSTYPE **list,		/* pointer to the pointer to list to be searched */ 
-	int item			/* item # */
+	_WORD item			/* item # */
 )
 {
-	int 
+	_WORD 
 		i = 0;			/* item counter */
 
 	LSTYPE 
@@ -226,15 +224,12 @@ LSTYPE *get_item
 LSTYPE *find_lsitem
 (
 	LSTYPE **list,	/* pointer to the pointer to list to be searched */
-	char *name,		/* item name to be found */
-	int *pos		/* position where item was found, or -1 */
+	const char *name,		/* item name to be found */
+	_WORD *pos		/* position where item was found, or -1 */
 )
 {
-	LSTYPE 
-		*f = *list;		/* pointer to current list item */   
-
-	char
-		*n;
+	LSTYPE *f = *list;		/* pointer to current list item */   
+	const char *n;
 
 	*pos = -1;
 
@@ -346,7 +341,7 @@ LSTYPE *lsadd
 	LSTYPE **list,	/* pointer to the list into which the item is added */ 
 	size_t size,	/* size of item */ 
 	LSTYPE *pt, 	/* pointer to work (edit) area of item data to be added */
-	int pos,		/* position (ordinal) in the list: where to add */ 
+	_WORD pos,		/* position (ordinal) in the list: where to add */ 
 	void *copy_func	/* pointer to a function which copies the data of specific kind */ 
 )
 {
@@ -357,7 +352,7 @@ LSTYPE *lsadd
 		*prev,			/* pointer to previous item  */ 
 		*n;				/* pointer to new-added item */
 
-	int 
+	_WORD 
 		i = 0;			/* position counter          */
 
 
@@ -408,7 +403,7 @@ LSTYPE *lsadd_end
 	void *copy_func	/* pointer to a function which copies the data of specific kind */ 
 )
 {
-	return lsadd(list, size, pt, INT_MAX, copy_func);
+	return lsadd(list, size, pt, SHRT_MAX, copy_func);
 }
 
 
@@ -445,16 +440,16 @@ bool copy_all
 
 /*  
  * Count items in a list; return number of items;
- * hopefully there will never be more than 32767 (INT_MAX) items :)
+ * hopefully there will never be more than 32767 (SHRT_MAX) items :)
  * (there is no check for overflow anywhere)
  */
 
-int cnt_types
+_WORD cnt_types
 (
 	LSTYPE **list	/* list to be counted */
 )
 {
-	int n = 0;
+	_WORD n = 0;
 	LSTYPE *f = *list;  
 
 	while (f)
@@ -481,10 +476,10 @@ bool check_dup
 ( 
 	LSTYPE **list,	/* list of filetypes */ 
 	char *name,		/* name to check */ 
-	int pos 		/* position of "name" in the list (i.e. skip that one) */
+	_WORD pos 		/* position of "name" in the list (i.e. skip that one) */
 )
 {
-	int 
+	_WORD 
 		i = 0;			/* item counter */
 
 	LSTYPE 
@@ -544,7 +539,7 @@ void lsrem_three
 
 static void resize_dialog
 (
-	int dh	/* vertical size change */
+	_WORD dh	/* vertical size change */
 )
 {
 	setmask[0].ob_height += dh;
@@ -573,14 +568,14 @@ static void resize_dialog
  * needed after this call. 
  */
 
-int list_edit
+_WORD list_edit
 (
 	LS_FUNC *lsfunc,	/* pointers to item-type-specific functions used */
 	LSTYPE **lists,		/* addresses of pointers to lists of items */
-	int nl,				/* number of lists */
+	_WORD nl,			/* number of lists */
 	size_t size,		/* item size */
 	LSTYPE *lwork,		/* work area for editing */
-	int use				/* use identifier */
+	_WORD use			/* use identifier */
 )
 {
 	WINDOW 
@@ -606,7 +601,7 @@ int list_edit
 		copyok = FALSE,		/* true if copies of lists made ok */
 		redraw;				/* true if need to redraw dialog */
 
-	int 
+	_WORD 
 		i,					/* counter */
 		dh = 0,				/* amount of dialog resizing */
 		pos = -1,			/* index of item in the list */
@@ -814,14 +809,14 @@ int list_edit
 
 				/* Open the appropriate dialog */
 
-				if (lsfunc->ls_dialog(list, INT_MAX, lwork, luse | LS_ADD ) == TRUE)
+				if (lsfunc->ls_dialog(list, SHRT_MAX, lwork, luse | LS_ADD ) == TRUE)
 				{
 					/* Addition accepted */
 
 					if ( wsel )
 					{
 						/* if from a window, exit after finished */
-						pos = INT_MAX;
+						pos = SHRT_MAX;
 						button = FTOK;
 					}
 					else

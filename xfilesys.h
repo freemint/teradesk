@@ -20,9 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef __XFILESYS_H__
+#define __XFILESYS_H__ 1
 
 #define DP_PATHMAX	2
 #define DP_NAMEMAX	3
+
+extern const char *presets[];
 
 /* TOS file attributtes */
 
@@ -59,7 +63,7 @@ typedef struct          /* used by Pexec */
 
 typedef struct
 {
-	char *path;
+	const char *path;
 	union
 	{
 		long handle;
@@ -77,95 +81,96 @@ typedef struct
 
 typedef struct
 {
-	int handle;
-	int mode;
-	int bufsize;
-	int read;
-	int write;
+	_WORD handle;
+	_WORD mode;
+	_WORD bufsize;
+	_WORD read;
+	_WORD write;
 	char *buffer;
 	unsigned int eof : 1;
 	unsigned int memfile : 1;
 } XFILE;
 
-#define dos_mtime(st)   (((DOSTIME *)&(st)->st_mtime)->time)
-#define dos_mdate(st)   (((DOSTIME *)&(st)->st_mtime)->date)
-#define dos_atime(st)   (((DOSTIME *)&(st)->st_atime)->time)
-#define dos_adate(st)   (((DOSTIME *)&(st)->st_atime)->date)
-#define dos_ctime(st)   (((DOSTIME *)&(st)->st_ctime)->time)
-#define dos_cdate(st)   (((DOSTIME *)&(st)->st_ctime)->date)
+#define dos_mtime(st)   ((st)->st_mtim.u.d.time)
+#define dos_mdate(st)   ((st)->st_mtim.u.d.date)
+#define dos_atime(st)   ((st)->st_atim.u.d.time)
+#define dos_adate(st)   ((st)->st_atim.u.d.date)
+#define dos_ctime(st)   ((st)->st_ctim.u.d.time)
+#define dos_cdate(st)   ((st)->st_ctim.u.d.date)
 
 /* niet GEMDOS en MiNT funkties */
 
-int x_checkname(const char *path, const char *name);
-char *x_makepath(const char *path, const char *name, int *error);
-bool x_exist(const char *file, int flags);
+_WORD x_checkname(const char *path, const char *name);
+char *x_makepath(const char *path, const char *name, _WORD *error);
+bool x_exist(const char *file, _WORD flags);
 bool x_netob(const char *name);
-char *x_fullname(const char *file, int *error);
+char *x_fullname(const char *file, _WORD *error);
 
 /* Directory funkties */
 
-int x_setpath(const char *path);
-char *x_getpath(int drive, int *error);
-int x_mkdir(const char *path);
-int x_rmdir(const char *path);
-int x_mklink(const char *linkname, const char *refname);
-int x_rdlink(size_t tgtsize, char *tgt, const char *linkname );
-char *x_pathlink( char *tgtname, char *linkname );
-char *x_fllink( char *linkname );
-int x_dfree(_DISKINFO *diskinfo, int drive);
-int x_getdrv(void);
-long x_setdrv(int drive);
-int x_getlabel(int drive, char *label);
-int x_putlabel(int drive, char *label);
+_WORD x_setpath(const char *path);
+char *x_getpath(_WORD drive, _WORD *error);
+_WORD x_mkdir(const char *path);
+_WORD x_rmdir(const char *path);
+_WORD x_mklink(const char *linkname, const char *refname);
+_WORD x_rdlink(size_t tgtsize, char *tgt, const char *linkname );
+char *x_pathlink( char *tgtname, const char *linkname );
+char *x_fllink( const char *linkname );
+_WORD x_dfree(_DISKINFO *diskinfo, _WORD drive);
+_WORD x_getdrv(void);
+long x_setdrv(_WORD drive);
+_WORD x_getlabel(_WORD drive, char *label);
+_WORD x_putlabel(_WORD drive, char *label);
 
 /* File funkties */
 
-int x_rename(const char *oldn, const char *newn);
-int x_unlink(const char *file);
-int x_fattrib(const char *file, XATTR *attr);
-int x_datime(_DOSTIME *time, int handle, int wflag);
-int x_open(const char *file, int mode);
-int x_create(const char *file, XATTR *attr);
-int x_close(int handle);
-long x_read(int handle, long count, char *buf);
-long x_write(int handle, long count, char *buf);
-long x_seek(long offset, int handle, int seekmode);
+_WORD x_rename(const char *oldn, const char *newn);
+_WORD x_unlink(const char *file);
+_WORD x_fattrib(const char *file, XATTR *attr);
+_WORD x_datime(_DOSTIME *time, _WORD handle, _WORD wflag);
+_WORD x_open(const char *file, _WORD mode);
+_WORD x_create(const char *file, XATTR *attr);
+_WORD x_close(_WORD handle);
+long x_read(_WORD handle, long count, char *buf);
+long x_write(_WORD handle, long count, char *buf);
+long x_seek(long offset, _WORD handle, _WORD seekmode);
 
 /* Funkties voor het lezen van een directory */
 
-XDIR *x_opendir(const char *path, int *error);
+XDIR *x_opendir(const char *path, _WORD *error);
 long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib); 
 long x_rewinddir(XDIR *dir);
 long x_closedir(XDIR *dir);
-long x_attr(int flag, int fs_type, const char *name, XATTR *attrib);
+long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *attrib);
 
 /* Configuratie funkties */
 
-long x_pathconf(const char *path, int which);
+long x_pathconf(const char *path, _WORD which);
 
 /* Funkties voor het uitvoeren van programma's */
 
-long x_exec(int mode, void *ptr1, void *ptr2, void *ptr3);
+long x_exec(_WORD mode, const char *fname, void *ptr2, void *ptr3);
 
 /* GEM funkties */
 
-char *xshel_find(const char *file, int *error);
+char *xshel_find(const char *file, _WORD *error);
 char *xfileselector(const char *path, char *name, const char *label);
 
 /* Vervangers voor de standaard bibliotheek. */
 
-XFILE *x_fopen(const char *file, int mode, int *error);
-XFILE *x_fmemopen(int mode, int *error);
-int x_fclose(XFILE *file);
+XFILE *x_fopen(const char *file, _WORD mode, _WORD *error);
+XFILE *x_fmemopen(_WORD mode, _WORD *error);
+_WORD x_fclose(XFILE *file);
 long x_fread(XFILE *file, void *ptr, long length);
 long x_fwrite(XFILE *file, void *ptr, long length);
-long x_fseek(XFILE *file, long offset, int mode);
-char *x_freadstr(XFILE *file, char *string, size_t max, int *error);
-int x_fwritestr(XFILE *file, const char *string);
-int x_fgets(XFILE *file, char *string, int n);
-int x_fprintf(XFILE *file, char *format, ...);
+long x_fseek(XFILE *file, long offset, _WORD mode);
+char *x_freadstr(XFILE *file, char *string, size_t max, _WORD *error);
+_WORD x_fwritestr(XFILE *file, const char *string);
+_WORD x_fgets(XFILE *file, char *string, _WORD n);
 bool x_feof(XFILE *file);
-int x_inq_xfs(const char *path);
-long x_pflags(char *filename);
+_WORD x_inq_xfs(const char *path);
+long x_pflags(const char *filename);
 
 void x_init(void);
+
+#endif

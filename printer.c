@@ -25,6 +25,7 @@
 #include <xdialog.h>
 #include <time.h>
 #include <xscncode.h>
+#include <fcntl.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -39,6 +40,9 @@
 #include "events.h"
 #include "printer.h"
 #include "viewer.h"
+#include "lists.h"
+#include "slider.h"
+#include "icon.h"
 
 #define PBUFSIZ	1024L /* Should be divisible by 16 !!! */
 
@@ -47,10 +51,7 @@
 
 XATTR pattr;				/* item attributes */
 XFILE *printfile = NULL;	/* print file; if NULL print to port */
-int printmode;				/* text, hex, raw */
-
-
-int trash_or_print(ITMTYPE type);
+_WORD printmode;				/* text, hex, raw */
 
 
 /*
@@ -62,10 +63,9 @@ static bool prtchar
 	char ch	/* character to be printed */
 )
 {
-	long 
-		time;
+	long prttime;
 
-	int 
+	_WORD 
 		button,
 		error;
 
@@ -80,7 +80,7 @@ static bool prtchar
 	if ( printfile )
 	{
 		s = ch;
-		error = (int)x_fwrite(printfile, &s, 1L);
+		error = (_WORD)x_fwrite(printfile, &s, 1L);
 
 		if ( error < 1 )
 		{
@@ -92,13 +92,13 @@ static bool prtchar
 	{
 		do
 		{
-			time = clock() + PTIMEOUT;
+			prttime = clock() + PTIMEOUT;
 
-			while ((clock() < time) && (Cprnos() == 0));
+			while ((clock() < prttime) && (Cprnos() == 0));
 
 			if (Cprnos() != 0)
 			{
-				Cprnout(ch);
+				(void) Cprnout(ch);
 				result = FALSE;
 				ready = TRUE;
 			}
@@ -147,7 +147,7 @@ static bool print_line
 	const char 
 		*p = dline;			/* address of position in dline string */
 
-	int 
+	_WORD 
 		i = 0;				/* position in printer line */
 
 	bool 
@@ -177,10 +177,10 @@ static bool print_line
  * Return 0 if successfull, error code otherwise.
  */
 
-static int print_file
+static _WORD print_file
 (
 	WINDOW *w,	/* ponter to window in which the item has been selected */ 
-	int item	/* item index in the window */
+	_WORD item	/* item index in the window */
 )
 {
 	long 
@@ -189,10 +189,9 @@ static int print_file
 	char 
 		*buffer;	/* file is read into this */
 
-	const 
-		char *name;
+	char *name;
 
-	int 
+	_WORD 
 		handle,
 		i, 
 		error = 0,  
@@ -248,7 +247,7 @@ static int print_file
 		
 						size = size + l;
 
-						for ( i = 0; i < ( ((int)l - 1) / 16 + 1); i++ )
+						for ( i = 0; i < ( ((_WORD)l - 1) / 16 + 1); i++ )
 						{
 							disp_hex(tmp, &buffer[ll], a, size, TRUE);
 
@@ -263,7 +262,7 @@ static int print_file
 					{
 						char *buffi = buffer;
 
-						for (i = 0; i < (int)l; i++)
+						for (i = 0; i < (_WORD)l; i++)
 						{
 							/* line wrap & new line handling */
 
@@ -295,7 +294,7 @@ static int print_file
 						stop = TRUE;
 				}
 				else
-					error = (int)l;
+					error = (_WORD)l;
 			}
 			while ((l == PBUFSIZ) && (stop == FALSE));
 
@@ -341,11 +340,11 @@ static int print_file
 bool check_print
 (
 	WINDOW *w,	/* poiner to window in which items have been selected */
-	int n,		/* number of selected items */
-	int *list	/* list of item indices */
+	_WORD n,		/* number of selected items */
+	_WORD *list	/* list of item indices */
 )
 {
-	int
+	_WORD
 		mes,
 		i;
 
@@ -403,12 +402,12 @@ bool check_print
 bool print_list
 ( 
 	WINDOW *w,		/* pointer to window in which itemsh have been selected */ 
-	int n,			/* number of seleced items */ 
-	int *list, 		/* list of item indices */
+	_WORD n,			/* number of seleced items */ 
+	_WORD *list, 		/* list of item indices */
 	long *folders,	/* count of selected files */ 
 	long *files,	/* count of selected files */
 	LSUM *bytes,	/* total size of selected items */
-	int function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
+	_WORD function	/* operation code: CMD_PRINT / CMD_PRINTDIR */
 )
 {
 	XATTR
@@ -417,11 +416,10 @@ bool print_list
 	XLNAME
 		dline;		/* sufficiently long string for a complete directory line */
 
-	const char 
-		*path,		/* Item's path */ 
-		*name;		/* Item's name */
+	char *path;			/* Item's path */ 
+	const char *name;	/* Item's name */
 
-	int 
+	_WORD 
 		*item,		/* (pointer to) item index */ 
 		i,			/* counter */ 
 		amode,		/* attribute finding mode; 0= follow links */
@@ -433,7 +431,7 @@ bool print_list
 		tgttype;	/* link target type */
 
 	bool
-		perror = FALSE;		/* true if there is an error in printing */
+		printerror = FALSE;		/* true if there is an error in printing */
 
 
 	/* If this is a directory printout, then maybe print direcory title */
@@ -443,11 +441,11 @@ bool print_list
 		strcpy ( dline, get_freestring(TDIROF) ); 	/* Get "Directory of " string */
 		strcat(dline, ((DIR_WINDOW *)w)->title);	/* Append window title */
 
-		if ( (perror = print_line(dline) ) == FALSE )
-			perror = print_eol();
+		if ( (printerror = print_line(dline) ) == FALSE )
+			printerror = print_eol();
 	}
 
-	if ( perror )
+	if (printerror)
 		return FALSE;
 
 	/* Repeat print or dir-line print operation for each item in the list */
@@ -489,7 +487,7 @@ bool print_list
 
 						if ( isfileprog(type) )
 						{
-							int oldmode = printmode;
+							_WORD oldmode = printmode;
 							result = 0;
 
 							if(tgttype != ITM_NETOB)
@@ -526,10 +524,10 @@ bool print_list
 							sub_size(bytes, attr.st_size);
 						}
 
-						perror = print_line(dline);
+						printerror = print_line(dline);
 
 						if ( escape_abort( cfdial_open ) )
-							perror = TRUE;
+							printerror = TRUE;
 
 					} /*  function */
 
@@ -541,7 +539,7 @@ bool print_list
 
 				/* If something is wrong, get out of the loop */
 
-				if ( perror )
+				if ( printerror )
 					result = XFATAL;
 
 				/* Update information on the number of folders/files/bytes remaining */
@@ -566,11 +564,11 @@ bool print_list
 	{
 		strcpy(dline, ((DIR_WINDOW *)w)->info);
 
-		if ( (perror = print_eol()) == FALSE )				/* print blank line */
-			if ( ( perror = print_line(dline) ) == FALSE )	/* print directory total */
-				if ( (perror = print_eol()) == FALSE )		/* print blank line */
-					perror = prtchar( (char)12 );			/* print formfeed */		
+		if ( (printerror = print_eol()) == FALSE )				/* print blank line */
+			if ( ( printerror = print_line(dline) ) == FALSE )	/* print directory total */
+				if ( (printerror = print_eol()) == FALSE )		/* print blank line */
+					printerror = prtchar( (char)12 );			/* print formfeed */		
 	}
 
-	return ((result == XFATAL || perror) ? FALSE : TRUE);
+	return ((result == XFATAL || printerror) ? FALSE : TRUE);
 }

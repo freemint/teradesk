@@ -38,14 +38,13 @@
 #include "window.h"
 #include "icon.h"
 #include "icontype.h"
+#include "dir.h"
 
 
 
-PRGTYPE
-	pwork,				/* work area for editing prgtypes */ 
-	*prgtypes; 			/* List of executable file types */
+PRGTYPE pwork;				/* work area for editing prgtypes */ 
+PRGTYPE *prgtypes; 			/* List of executable file types */
 
-void dir_refresh_all(void);
 
 
 /*
@@ -53,8 +52,10 @@ void dir_refresh_all(void);
  * (note: must not just copy *t = *s because t->next should be preserved)
  */
 
-void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
+void copy_prgtype( LSTYPE *lt, LSTYPE *ls )
 {
+	PRGTYPE *t = (PRGTYPE *)lt;
+	PRGTYPE *s = (PRGTYPE *)ls;
 	PRGTYPE *next = t->next; 
 	*t = *s;
 	t->next = next;	
@@ -74,14 +75,17 @@ void copy_prgtype( PRGTYPE *t, PRGTYPE *s )
 
 void prg_info
 ( 
-	PRGTYPE **list, 		/* list of defined program types */
-	const char *prgname,	/* name or filetype to search for */ 
-	int dummy,				/* not used, for compatibility */
-	PRGTYPE *pt				/* output information */ 
+	LSTYPE **llist, 			/* list of defined program types */
+	const char *prgname,		/* name or filetype to search for */ 
+	_WORD dummy,				/* not used, for compatibility */
+	LSTYPE *item				/* output information */ 
 )
 {
+	PRGTYPE **list = (PRGTYPE **)llist;
+	PRGTYPE *pt = (PRGTYPE *)item;
+	
 	(void)dummy;
-	if ( (list == NULL) || !find_wild( (LSTYPE **)list, (char *)prgname, (LSTYPE *)pt, copy_prgtype ) )
+	if ( (list == NULL) || !find_wild( (LSTYPE **)list, prgname, (LSTYPE *)pt, copy_prgtype ) )
 	{
 		/* If program type not defined or name not given: default */
 
@@ -126,22 +130,20 @@ bool prg_isprogram(const char *fname)
 
 static PRGTYPE *ptadd_one
 (
-	char *filetype,		/* pointer to filetype mask */
-	int type, 			/* program type */
-	int flags,			/* program usage flags */
+	const char *filetype,	/* pointer to filetype mask */
+	_WORD type, 			/* program type */
+	_WORD flags,			/* program usage flags */
 	long limmem			/* memory limit for this program type */
 )
 {
-	strsncpy ( (char *)pwork.name, filetype, sizeof(SNAME) );
+	strsncpy (pwork.name, filetype, sizeof(SNAME) );
 
-/* Better let the user decide whether to do this
-
+#if 0 /* Better let the user decide whether to do this */
 #if _MINT_
 	if ( mint && !magx )
 		strlwr(pwork.name);
 #endif
-
-*/
+#endif
 
 	pwork.appl_type = type;
 	pwork.flags = flags;
@@ -169,12 +171,15 @@ static void rem_all_prgtypes(void)
 
 bool prgtype_dialog
 ( 
-	PRGTYPE **list, 	/* list to check duplicate entries in */
-	int pos, 			/* position in the list where to enter data */
-	PRGTYPE *pt,		/* data to be edited */ 
-	int use				/* use of dialog (add or edit program type or app type) */
+	LSTYPE **llist, 	/* list to check duplicate entries in */
+	_WORD pos, 			/* position in the list where to enter data */
+	LSTYPE *item,		/* data to be edited */ 
+	_WORD use			/* use of dialog (add or edit program type or app type) */
 )
 {
+	PRGTYPE **list = (PRGTYPE **)llist;
+	PRGTYPE *pt = (PRGTYPE *)item;
+	
 	XDINFO
 		info;			/* dialog info structure */
 
@@ -182,7 +187,7 @@ bool prgtype_dialog
 		stat = FALSE,	/* accept or not */
 		stop = FALSE;	/* loop until true */
 
-	int 
+	_WORD 
 		*ptflags = &(pt->flags),/* save a few bytes in program size */
 		lbl,					/* text "filetype" of "application" */
 		title = DTADDPRG,		/* resource index of title to be used for dialog */
@@ -197,7 +202,7 @@ bool prgtype_dialog
 	{
 		if ( use & LS_APPL )
 		{
-			addprgtype[PRGNAME].ob_flags &= ~EDITABLE;
+			addprgtype[PRGNAME].ob_flags &= ~OF_EDITABLE;
 			title = DTSETAPT;
 			lbl = TAPP;
 		}
@@ -211,7 +216,7 @@ bool prgtype_dialog
 	/* Copy all data to dialog */
 
 	cv_fntoform(addprgtype, PRGNAME, pt->name);
-	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (int)(pt->appl_type) );
+	xd_set_rbutton(addprgtype, APTPAR2, APGEM + (_WORD)(pt->appl_type) );
 	xd_set_rbutton
 	(
 		addprgtype,
@@ -284,7 +289,7 @@ bool prgtype_dialog
 		xd_close(&info);
 	}
 
-	addprgtype[PRGNAME].ob_flags |= EDITABLE;
+	addprgtype[PRGNAME].ob_flags |= OF_EDITABLE;
 	return stat;
 }
 
@@ -293,7 +298,6 @@ bool prgtype_dialog
  * Use these listtype-specific functions to manipulate program types list:
  */
 
-#pragma warn -sus
 static LS_FUNC ptlist_func =
 {
 	copy_prgtype,
@@ -302,7 +306,6 @@ static LS_FUNC ptlist_func =
 	find_lsitem,
 	prgtype_dialog
 };
-#pragma warn .sys
 
 
 /*
@@ -311,7 +314,7 @@ static LS_FUNC ptlist_func =
 
 void prg_setprefs(void)
 {
-	int 
+	_WORD 
 		button;			/* code of pressed button */
 
 
@@ -358,8 +361,8 @@ void prg_init(void)
 void prg_default(void)
 {
 	static const ApplType pt[] = {PGEM, PGEM, PGTP, PTOS, PTTP, PACC};
-	static const int dd[] = {PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
-	int i;
+	static const _WORD dd[] = {PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR|PT_ARGV,PD_PDIR,PD_PDIR,PD_PDIR};
+	_WORD i;
 
 	rem_all_prgtypes();
 
@@ -368,7 +371,7 @@ void prg_default(void)
 #else
 	for(i = 0; i < 5; i++)
 #endif
-		ptadd_one((char *)presets[i + 2], pt[i], dd[i], 0L);
+		ptadd_one(presets[i + 2], pt[i], dd[i], 0L);
 }
 
 
@@ -378,14 +381,14 @@ void prg_default(void)
 
 CfgEntry prg_table[] =
 {
-	{CFG_HDR, NULL }, /* keyword will be substituted */
-	{CFG_BEG},
-	{CFG_S,   "name",  pwork.name	},
-	{CFG_L,   "limm",  &pwork.limmem	},
-	{CFG_D,   "appt",  &pwork.appl_type	},
-	{CFG_X,   "flag",  &pwork.flags },
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, NULL, { 0 } }, /* keyword will be substituted */
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_S,   "name", {  pwork.name	} },
+	{ CFG_L,   "limm",  { &pwork.limmem	} },
+	{ CFG_D,   "appt",  { &pwork.appl_type	} },
+	{ CFG_X,   "flag",  { &pwork.flags } },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -393,7 +396,7 @@ CfgEntry prg_table[] =
  * Save or load configuration for program type(s)
  */
 
-static CfgNest one_ptype
+static void one_ptype(XFILE *file, int lvl, int io, int *error)
 {
 	*error = 0;
 
@@ -404,7 +407,7 @@ static CfgNest one_ptype
 		while ( (*error == 0) && p)
 		{
 			strcpy(pwork.name, p->name);
-			pwork.appl_type = (int)p->appl_type;
+			pwork.appl_type = p->appl_type;
 			pwork.limmem = p->limmem;
 			pwork.flags = p->flags;
 
@@ -450,11 +453,11 @@ static CfgNest one_ptype
  
 static CfgEntry prgty_table[] =
 {
-	{CFG_HDR,  "apptypes" },
-	{CFG_BEG},
-	{CFG_NEST, "ptype", one_ptype  },		/* Repeating group */
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  "apptypes", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "ptype", { one_ptype } },		/* Repeating group */
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -462,7 +465,7 @@ static CfgEntry prgty_table[] =
  * Configure all program types 
  */
 
-CfgNest prg_config
+void prg_config(XFILE *file, int lvl, int io, int *error)
 {
 	prg_table[0].s = "ptype";
 	prg_table[2].type &= CFG_MASK;

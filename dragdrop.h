@@ -22,12 +22,13 @@
 
 
 #ifndef DRAGDROP_H
+#define DRAGDROP_H 1
 
-int ddcreate(int dpid, int spid, int winid, int msx, int msy, int kstate, char exts[] );
-int ddstry(int fd, char *ext, char *name, long size);
-void ddclose(int fd);
-int ddopen(int ddnam, char *preferext);
-int ddrtry(int fd, char *name, char *whichext, long *size);
-int ddreply(int fd, int ack);
+_WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD kstate, char exts[] );
+_WORD ddstry(_WORD fd, const char *ext, const char *name, long size);
+void ddclose(_WORD fd);
+_WORD ddopen(_WORD ddnam, const char *preferext);
+_WORD ddrtry(_WORD fd, const char *name, const char *whichext, long *size);
+_WORD ddreply(_WORD fd, _WORD ack);
 
 #endif

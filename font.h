@@ -35,6 +35,6 @@
 
 extern XDFONT def_font;
 
-extern void fnt_setfont(int font, int height, XDFONT *data);
-extern bool fnt_dialog(int title, XDFONT *font, bool prop);
-extern void fnt_mdialog(int ap_id, int win, int id, int size, int colour, int effect, int prop);
+void fnt_setfont(_WORD font, _WORD height, XDFONT *data);
+bool fnt_dialog(_WORD title, XDFONT *font, bool prop);
+void fnt_mdialog(_WORD ap_id, _WORD win, _WORD id, _WORD size, _WORD colour, _WORD effect, _WORD prop);

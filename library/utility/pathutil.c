@@ -30,7 +30,7 @@
  * return pointer to it 
  */
 
-char *nonwhite(char *s)
+const char *nonwhite(const char *s)
 {
 	while( ( (*s == '\t') || (*s == ' ') ) && (*s != 0) ) 
 		s++;
@@ -58,7 +58,7 @@ void strip_name(char *to, const char *from)
 {
 	const char *last = from + strlen(from) - 1;	/* last nonzero */
 
-	from = nonwhite((char *)from);
+	from = nonwhite(from);
 
 	if (*from)									/* if not empty string... */
 	{

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tos.h>
+#include <library.h>
 
 /*
  * Convert a number (range 0:99 only!!!) into a string
@@ -32,11 +33,13 @@
  * Attention: no termination 0 byte.
  */
 
-char *digit(char *s, int x)
+char *digit(char *s, _WORD x)
 {
+	char c;
+	
 	x = x % 100;
-	*s++ = x / 10;
-	*s++ = x - 10 * s[-1] + '0'; /* is this faster than % ? */
+	c = *s++ = x / 10;
+	*s++ = x - 10 * c + '0'; /* is this faster than % ? */
 	s[-2] += '0';
 	return s;
 }
@@ -59,7 +62,7 @@ void bell(void)
  * with ASCII codes shifted down (or left) by 32.
  */
 
-int touppc(int c)
+_WORD touppc(_WORD c)
 {
 	if ( (c & 0x7F) > '?' && c != 0x7F)
 		return c & 0xDF;

@@ -42,16 +42,14 @@
 #include "filetype.h"
 #include "applik.h"
 #include "prgtype.h"
+#include "icon.h"
+
 
 bool
 	onone = FALSE,		/* true if only one instance should run */
 	onfile = FALSE; 	/* true if app is started to open a file */
 
-char
-	*hyppage = NULL;	/* name of the hypertext page to display */
-
-
-int trash_or_print(ITMTYPE type);
+const char *hyppage = NULL;	/* name of the hypertext page to display */
 
 
 /*
@@ -60,12 +58,12 @@ int trash_or_print(ITMTYPE type);
  * Otherwise open additional dialog(s).
  */
 
-int open_dialog(void)
+static _WORD open_dialog(void)
 {
 	XDINFO
 		owinfo;
 
-	int 
+	_WORD 
 		thebutton,
 		button = 0; /* assuming that no button will ever have index 0 */
 
@@ -78,10 +76,10 @@ int open_dialog(void)
 		{
 			case OWRUN:
 			{
-				prg_info(NULL, empty, 0, (PRGTYPE *)&awork);
+				prg_info(NULL, empty, 0, (LSTYPE *)&awork);
 				log_shortname(awork.shname, awork.name);
 
-				if (!prgtype_dialog(NULL, 0, (PRGTYPE *)&awork, LS_APPL | LS_EDIT))
+				if (!prgtype_dialog(NULL, 0, (LSTYPE *)&awork, LS_APPL | LS_EDIT))
 					button = 0;
 
 				break;
@@ -120,8 +118,8 @@ int open_dialog(void)
 bool item_open
 (
 	WINDOW *inw, 		/* window in which the selection is made */
-	int initem,			/* ordinal of the selected item from the window */ 
-	int kstate,			/* keyboard state while opening the item */ 
+	_WORD initem,			/* ordinal of the selected item from the window */ 
+	_WORD kstate,			/* keyboard state while opening the item */ 
 	char *theitem, 		/* explicitely specified full item name */
 	char *thecommand	/* command line if the item is a program */
 )
@@ -146,7 +144,7 @@ bool item_open
 		epath,			/* Path of the item specified in "Open" */ 
 		ename;			/* name of the item specified in "Open" */
 
-	int 
+	_WORD 
 		item,			/* "initem", locally (i.e. maybe changed) */
 		error,
 		button;			/* index of the button pressed */
@@ -233,7 +231,7 @@ bool item_open
 				 * to an empty string.
 				 */
 
-				cmline = (char *)empty; /* first, cmline points to an empty string */
+				cmline = (char *)(long)empty; /* first, cmline points to an empty string */
 
 				qline = malloc_chk(strlenq(openline));
 				strcpyrq(qline, openline, '"', &blank); /* 34 = double quote */
@@ -394,7 +392,7 @@ bool item_open
 
 			if (( path = itm_fullname(w, item) ) != NULL )
 			{
-				deselect = app_exec(path, NULL, NULL, (int *)cmline, cmline ? -1 : 0, kstate);						
+				deselect = app_exec(path, NULL, NULL, (_WORD *)cmline, cmline ? -1 : 0, kstate);						
 				free(path);
 			}
 
@@ -514,7 +512,7 @@ void opn_hyphelp(void)
 			cmd[strlen(cmd) - 5] = '\0';
 		}
 
-		app_exec(NULL, helpprg, NULL, (int *)cmd, -1, 0);
+		app_exec(NULL, helpprg, NULL, (_WORD *)cmd, -1, 0);
 	}
 }
 

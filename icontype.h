@@ -21,9 +21,9 @@
  */
 
 
-CfgNest icnt_config;
+void icnt_config(XFILE *file, int lvl, int io, int *error);
 
-int icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type);
+_WORD icnt_geticon(const char *name, ITMTYPE type, ITMTYPE tgt_type);
 void icnt_settypes(void);
 void icnt_init(void);
 void rem_all_icontypes(void);

@@ -29,7 +29,6 @@ desktop.prg				; with _MINT_=1  for all systems
 
 .C [-D_MINT_=1]			; 0 for single-TOS-only desktop
 
-
 ; Define _MORE_AV as 1 for fuller support of AV-protocol features
 ; at the expense of larger memory needs.
 ; (sensible mostly for the multitasking version)
@@ -97,11 +96,6 @@ desktop.prg				; with _MINT_=1  for all systems
 .C [-D_FONT_SEL=1]
 
 
-; Define AES_RECT as 1 if you use GRECT(x,y,w,h} instead of GRECT{g_x,g_y,g_w,g_h}
-
-.C [-DAES_RECT=1]
-
-
 ; This is for debugging during development. TERADESK.LOG will be created.
 ; Note that the content of the log file is not defined; the developer may
 ; add specific code as needed.
@@ -121,7 +115,7 @@ desktop.prg				; with _MINT_=1  for all systems
 
 ; without debug info
 
-.C [-C -P -G -Ilibrary\xdialog -Iinclude]
+.C [-C- -P -G -Ilibrary\xdialog -Iinclude]
 .S [-S -Iinclude]
 .L [-S=32000]
 
@@ -185,8 +179,6 @@ slider.c
 stringf.c
 xfilesys.c
 error.c
-
-btst.s
 
 
 ;Specific libraries:

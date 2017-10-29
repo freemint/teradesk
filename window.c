@@ -23,6 +23,7 @@
 
 #include <library.h>
 #include <xdialog.h>
+#include <fcntl.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -51,32 +52,15 @@
 #include "screen.h"
 #include "xscncode.h"
 #include "va.h"
+#include "main.h"
+#include "video.h"
 
 
 #define WMINW 14 /* minimum window width (in character cell units) */
 #define WMINH 4	 /* minimum window height (in character cell units) */
 
-extern ITMFUNC 
-	*dir_func;	/* pointer to directory window functions */
 
-extern int
-	aes_wfunc,	/* result of appl_getinfo(11, ...) */
-	aes_ctrl;	/* this should probably be in xdialog.h */
 
-extern char
-	*infname;	/* name of the current configuration file */
-
-#if _OVSCAN	
-extern long
-	over;		/* identification of overscan type */
-
-extern int
-	ovrstat;	/* state of overscan */
-#endif
-
-extern bool
-	clearline,
-	onekey_shorts;	/* true if single-key menu shortcuts exist */
 
 SEL_INFO
 	selection;
@@ -123,16 +107,13 @@ static char
 
 
 
-int appl_control(int ap_id, int what, void *out);
-void load_settings(char *newinfname);
 static void desel_old(void);
 static void itm_selall(WINDOW *w);
-static int *itm_list(WINDOW *w, int *nselected);
-static void wd_type_hndlmenu(WINDOW *w, int title, int item);
+static _WORD *itm_list(WINDOW *w, _WORD *nselected);
+static void wd_type_hndlmenu(WINDOW *w, _WORD title, _WORD item);
 static void icw_draw(WINDOW *w);
-static bool in_window(WINDOW *w, int x, int y);
+static bool in_window(WINDOW *w, _WORD x, _WORD y);
 static bool wd_isiconified(TYP_WINDOW *w);
-int cdecl ub_bckbox(PARMBLK *pb);
 
 
 
@@ -164,14 +145,14 @@ WD_FUNC wd_type_functions =
 
 CfgEntry fnt_table[] =
 {
-	{CFG_HDR, "font" },
-	{CFG_BEG},
-	{CFG_D,   "iden", &thisw.font.id		},
-	{CFG_D,   "size", &thisw.font.size	},
-	{CFG_D,   "fcol", &thisw.font.colour	},
-	{CFG_X,   "feff", &thisw.font.effects},
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, "font", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_D,   "iden", { &thisw.font.id		} },
+	{ CFG_D,   "size", { &thisw.font.size	} },
+	{ CFG_D,   "fcol", { &thisw.font.colour	} },
+	{ CFG_X,   "feff", { &thisw.font.effects} },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -181,19 +162,19 @@ CfgEntry fnt_table[] =
 
 CfgEntry positions_table[] =
 {
-	{CFG_HDR, "pos"	},
-	{CFG_BEG},
-	{CFG_X,   "flag", &thisw.flags	},
-	{CFG_D,   "xpos", &thisw.x	}, /* note: can't go off the left edge */
-	{CFG_D,   "ypos", &thisw.y	},
-	{CFG_D,   "winw", &thisw.ww	},
-	{CFG_D,   "winh", &thisw.wh	},
-	{CFG_D,   "xicw", &thisw.ix	},
-	{CFG_D,   "yicw", &thisw.iy	},
-	{CFG_D,   "wicw", &thisw.iw	},
-	{CFG_D,   "hicw", &thisw.ih	},
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR, "pos", { 0 }	},
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_X,   "flag", { &thisw.flags	} },
+	{ CFG_D,   "xpos", { &thisw.x } }, /* note: can't go off the left edge */
+	{ CFG_D,   "ypos", { &thisw.y	} },
+	{ CFG_D,   "winw", { &thisw.ww	} },
+	{ CFG_D,   "winh", { &thisw.wh	} },
+	{ CFG_D,   "xicw", { &thisw.ix	} },
+	{ CFG_D,   "yicw", { &thisw.iy	} },
+	{ CFG_D,   "wicw", { &thisw.iw	} },
+	{ CFG_D,   "hicw", { &thisw.ih	} },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -203,7 +184,7 @@ CfgEntry positions_table[] =
  * There are no initialization or default routines for this
  */
 
-CfgNest cfg_wdfont
+void cfg_wdfont(XFILE *file, int lvl, int io, int *error)
 {
 	if ( io == CFG_SAVE )
 		thisw.font = *cfg_font;
@@ -259,7 +240,7 @@ void hourglass_mouse(void)
  * Write window text in transparent mode at location (x,y)
  */
 
-void w_transptext( int x, int y, char *text)
+void w_transptext( _WORD x, _WORD y, char *text)
 {
 	xd_vswr_trans_mode(); 
 	v_gtext(vdi_handle, x, y, text);
@@ -335,7 +316,7 @@ void wd_in_screen( WINFO *info )
  * See also wd_sizes().
  */
 
-void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons)
+void wd_cellsize(TYP_WINDOW *w, _WORD *cw, _WORD *ch, bool withicons)
 {
 	if (w && xw_type(w) == TEXT_WIND)
 	{
@@ -349,7 +330,7 @@ void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons)
 			*cw = dir_font.cw;
 			*ch = dir_font.ch + DELTA;
 		}
-		else if(icons)
+		else if(withicons)
 		{
 			*cw = iconw; 
 			*ch = iconh;
@@ -371,12 +352,12 @@ void wd_cellsize(TYP_WINDOW *w, int *cw, int *ch, bool icons)
  * will fail!
  */
 
-CfgNest positions
+void positions(XFILE *file, int lvl, int io, int *error)
 {
 	WINFO 
 		*w = thisw.windows;
 
-	int
+	_WORD
 		i;
 
 	size_t
@@ -439,12 +420,12 @@ CfgNest positions
 
 CfgEntry wtype_table[] =
 {
-	{CFG_HDR,  NULL }, /* keyword will be substituted */
-	{CFG_BEG},
-	{CFG_NEST, "font", cfg_wdfont },
-	{CFG_NEST, "pos", positions	},		/* Repeating group */
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR,  NULL, { 0 } }, /* keyword will be substituted */
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "font",{  cfg_wdfont } },
+	{ CFG_NEST, "pos",{  positions } },		/* Repeating group */
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -461,9 +442,9 @@ CfgEntry wtype_table[] =
  * n=number of items, obj = first item, i= item which is to be checked
  */
 
-static void menu_checkone(int n, int obj, int i)
+static void menu_checkone(_WORD n, _WORD obj, _WORD i)
 {
-	int j;
+	_WORD j;
 	
 	for ( j = 0; j < n; j++ )
 		menu_icheck(menu, j + obj, (i == j) ? 1 : 0);
@@ -478,7 +459,7 @@ static void menu_checkone(int n, int obj, int i)
  * Reverse order and case insensitive sort are treated separately.
  */
 
-static void wd_set_sort(int type)
+static void wd_set_sort(_WORD type)
 {
  	menu_checkone( 5, MSNAME, (type & ~(WD_REVSORT | WD_NOCASE) ) );
 	menu_checkone(1, MREVS,   (type & WD_REVSORT) ? 0 : 1);
@@ -495,9 +476,9 @@ static void wd_set_sort(int type)
  * check it with order of WD_SHSIZ, WD_SHDAT, WD_SHTIM, WD_SHATT, WD_SHOWN
  */
 
-static void wd_set_fields( int fields )
+static void wd_set_fields( _WORD fields )
 {
-	int i;
+	_WORD i;
 
 	for ( i = 0; i < 5; i++ )
 		menu_icheck(menu, MSHSIZ + i, ((fields & (WD_SHSIZ << i) ) ? 1 : 0));
@@ -510,12 +491,12 @@ static void wd_set_fields( int fields )
  * ACC_WIND being in a sequence.
  */
 
-int wd_wcount(void)
+_WORD wd_wcount(void)
 {
 	WINDOW 
 		*h = xw_first();
 
-	int 
+	_WORD 
 		n = 0;
 
 
@@ -548,7 +529,7 @@ void wd_noselection(void)
  * Attention: the item list is deallocated here!
  */
 
-static void wd_iselection(WINDOW *w, int n, int *list)
+static void wd_iselection(WINDOW *w, _WORD n, _WORD *list)
 {
 	wd_noselection();
 
@@ -572,9 +553,9 @@ static void wd_iselection(WINDOW *w, int n, int *list)
  * not in all AESses. Will be ok in N.AES, XaAES and Magic 
  */
 
-void wd_top_app(int apid)
+static void wd_top_app(_WORD apid)
 {
-	if(naes || aes_ctrl) 
+	if (naes || aes_ctrl) 
 		appl_control(apid, 12, NULL);	/* N.AES, XaAES */
 	else 
 		wind_set(-1, WF_TOP, apid, 0, 0, 0);		/* Magic */
@@ -594,9 +575,9 @@ void wd_top_app(int apid)
  */
 
 #if _MINT_
-void wd_restoretop(int code, int *whandle, int *wap_id)
+void wd_restoretop(_WORD code, _WORD *whandle, _WORD *wap_id)
 {
-	int p2, p3, p4;
+	_WORD p2, p3, p4;
 
 	if(mint || geneva)
 	{
@@ -612,9 +593,9 @@ void wd_restoretop(int code, int *whandle, int *wap_id)
 			 */
 
 			*wap_id = -1;
-/* maybe there is no need ???
+#if 0 /* maybe there is no need ??? */
 			if((aes_wfunc & 17) == 17) /* WF_TOP and WF_OWNER supported ? */ 
-*/
+#endif
 				if(wind_get(0, WF_TOP, whandle, &p2, &p3, &p4))
 					if(!wind_get( *whandle, WF_OWNER, wap_id, &p2, &p3, &p4))
 						*wap_id = -1;
@@ -665,7 +646,7 @@ bool wd_dirortext(WINDOW *w)
  * Make it shorter and a little bit slower...
  */
 
-void wd_menu_ienable(int item, int enable)
+void wd_menu_ienable(_WORD item, _WORD enable)
 {
 	menu_ienable(menu, item, enable);
 }
@@ -683,7 +664,7 @@ void itm_set_menu(WINDOW *w)
 	WINDOW
 		*wtop;				/* pointer to top window */
 
-	int 
+	_WORD 
 		n = 0,				/* number of selected items */
 	    *list = NULL,		/* pointer to a list of selected items */
 		wtoptype = 0,		/* type of the topped window */
@@ -694,7 +675,7 @@ void itm_set_menu(WINDOW *w)
 		drive[8];			/* disk drive name string */
 
 	ITMTYPE 
-		type,				/* type of an item in the list */
+		type = 0,			/* type of an item in the list */
 		type2 = ITM_FILE;	/* same */
 
 	bool 
@@ -852,16 +833,16 @@ void itm_set_menu(WINDOW *w)
 	(
 		menu, 
 		MSELALL, 
-		(int)((wtoptype == DIR_WIND && !topicf) || wtoptype == DESK_WIND)
+		(wtoptype == DIR_WIND && !topicf) || wtoptype == DESK_WIND
 	);
 
 	/* Enable duplication of dir and text windows */
 
-	wd_menu_ienable(MDUPLIC, (int)wd_dirortext(wtop));
+	wd_menu_ienable(MDUPLIC, wd_dirortext(wtop));
 
 	/* Enable window cycling if there is more than one window open */
 
-	wd_menu_ienable(MCYCLE, (nwin > 1) ? 1 : 0 );
+	wd_menu_ienable(MCYCLE, nwin > 1);
 
 	/* 
 	 * Enable setting of applications and program types only for
@@ -945,7 +926,7 @@ void itm_set_menu(WINDOW *w)
 
 void wd_setselection(WINDOW *w)
 {
-	int n, *list;
+	_WORD n, *list;
 
 	list = itm_list(w, &n);		/* note: allocate list, or set to null */
 	wd_iselection(w, n, list);	/* note: also deallocates list */
@@ -1104,7 +1085,7 @@ void wd_do_update(void)
 }
 
 
-void wd_update_drv(int drive)
+void wd_update_drv(_WORD drive)
 {
 	WINDOW
 		*w = xw_first();
@@ -1126,7 +1107,7 @@ void wd_update_drv(int drive)
 			{			
 				const char *path = thefunc->wd_path(w);
 
-				bool goodpath = (((path[0] & 0x5F - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
+				bool goodpath = ((((path[0] & 0x5F) - 'A') == drive) && (path[1] == ':')) ? TRUE : FALSE;
 #if _MINT_
 				if (mint)
 				{
@@ -1166,7 +1147,10 @@ void wd_restoresize(WINFO *winfo)
 {
 	if(winfo->flags.iconified)
 	{
-		*(RECT *)(&(winfo->x)) = *(RECT *)(&(winfo->ix));
+		winfo->x = winfo->ix;
+		winfo->y = winfo->iy;
+		winfo->w = winfo->iw;
+		winfo->h = winfo->ih;
 
 		if(!can_iconify)
 			winfo->flags.iconified = 0;
@@ -1191,9 +1175,9 @@ void wd_setnormal(WINFO *info)
  * Note: take care not to attempt to use it on desk window
  */
 
-void wd_type_close( WINDOW *w, int mode)
+void wd_type_close( WINDOW *w, _WORD mode)
 {
-	int wt = xw_type(w);
+	_WORD wt = xw_type(w);
 
 	/* Act according to window type */
 
@@ -1229,7 +1213,7 @@ void wd_type_close( WINDOW *w, int mode)
  * Handle menus in windows (currently in text window only)
  */
 
-static void wd_type_hndlmenu(WINDOW *w, int title, int item)
+static void wd_type_hndlmenu(WINDOW *w, _WORD title, _WORD item)
 {
 	if (xw_type(w) == TEXT_WIND)
 		txt_hndlmenu(w, title, item);
@@ -1291,7 +1275,7 @@ bool wd_checkopen(int *error)
  * (name, size, date...) 
  */
 
-static void wd_sort(int sort) 
+static void wd_sort(_WORD sort) 
 {
 	options.sort = sort;	/* save this in options */
 
@@ -1314,10 +1298,8 @@ void wd_seticons(void)
 
 static void wd_ontext(WINDOW *ww, char **thepath)
 {
-	char
-		*thisname = ((TXT_WINDOW *)xw_top())->path,
-		*thename;
-
+	char *thisname = ((TXT_WINDOW *)xw_top())->path;
+	const char *thename;
 
 	*thepath = fn_get_path( thisname );
 
@@ -1339,7 +1321,7 @@ static void wd_ontext(WINDOW *ww, char **thepath)
  * See itm_set_menu()
  */
 
-void wd_hndlmenu(int item, int keystate)
+void wd_hndlmenu(_WORD item, _WORD keystate)
 {
 	DIR_WINDOW
 		simw;			/* space for a simulated dir window */
@@ -1350,14 +1332,14 @@ void wd_hndlmenu(int item, int keystate)
 		*wfirst,		/* pointer to the topmost TeraDesk's window */
 		*wtop;			/* pointer to the top window */
 
-	int 
+	_WORD 
 		i,				/* aux. counter */
 		n = 0,			/* number of items selected */ 
 		*list = NULL,	/* pointer to a list of selected items indices */
 		*listi,			/* pointer to an item in this list */
 		wtoptype = 0; 	/* type of the top window */
 
-	static int 
+	static _WORD 
 		fmsg[] = {0, 0, 0, 0, -1, -1, -1, -1};	/* a message to itself */
 
 	char			
@@ -1391,7 +1373,7 @@ void wd_hndlmenu(int item, int keystate)
 		{
 			if(n)
 			{
-				int
+				_WORD
 					k,
 					delayt;
 	
@@ -1552,7 +1534,7 @@ void wd_hndlmenu(int item, int keystate)
 		}
 		case MPRINT:
 		{
-			int cmd = CMD_PRINT;
+			_WORD cmd = CMD_PRINT;
 	
 			printmode = PM_TXT;
 	
@@ -1605,7 +1587,7 @@ void wd_hndlmenu(int item, int keystate)
 	#endif
 		case MSETMASK:
 		{
-			int oa = options.attribs;
+			_WORD oa = options.attribs;
 	
 			if ( wtoptype == DIR_WIND )
 				dir_filemask((DIR_WINDOW *)wtop);
@@ -1782,12 +1764,12 @@ void wd_hndlmenu(int item, int keystate)
  * different positions on the screen.
  */
 
-static void wd_defsize(int type)
+static void wd_defsize(_WORD type)
 {
 	WINFO
 		*wi;
 
-	int 
+	_WORD 
 		i,
 		x0, x1,
 		y0, y1,
@@ -1840,7 +1822,7 @@ static void wd_defsize(int type)
  * Window size is rounded to multiples of cell size (font or icon size).
  */
 
-static void wd_type_sizes(RECT *dest, int w_flags, OBJECT * themenu, int fw, int fh)
+static void wd_type_sizes(RECT *dest, _WORD w_flags, OBJECT * themenu, _WORD fw, _WORD fh)
 {
 	RECT work;
 
@@ -1861,7 +1843,7 @@ static void wd_type_sizes(RECT *dest, int w_flags, OBJECT * themenu, int fw, int
 
 void wd_sizes(void)
 {
-	int dcw, dch;
+	_WORD dcw, dch;
 
 
 	wd_cellsize(NULL, &dcw, &dch, FALSE);
@@ -1906,9 +1888,9 @@ void wd_init(void)
  * Return TRUE if OK selected.
  */
 
-bool wd_type_setfont(int button)
+bool wd_type_setfont(_WORD button)
 {
-	int 
+	_WORD 
 		title,		/* index of dialog title string */
 		i;			/* counter */
 
@@ -1984,7 +1966,7 @@ bool wd_type_setfont(int button)
 
 void calc_rc(TYP_WINDOW *w, RECT *work)
 {
-	int cw, ch;
+	_WORD cw, ch;
 
 
 	wd_cellsize(w, &cw, &ch, TRUE);
@@ -2010,7 +1992,7 @@ void calc_rc(TYP_WINDOW *w, RECT *work)
  * parameter m is the modulus for rounding
  */
 
-int wd_round(int x, int m)
+static _WORD wd_round(_WORD x, _WORD m)
 {
 	x += m / 2;
 	x -= (x % m);
@@ -2028,7 +2010,7 @@ int wd_round(int x, int m)
  * real-time movement of windows in Magic and XaAES.
  */
 
-void wd_xyround(RECT *r)
+static void wd_xyround(RECT *r)
 {
 	r->x = wd_round(r->x, 8); 
 	r->y = wd_round(r->y, (r->y > 4 * xd_fnt_h) ? 8 : 2);
@@ -2076,7 +2058,7 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 			work, 
 			*dtmax = &dmax;		/* maximum window work area size */
 
-		int 
+		_WORD 
 			fw,					/* window unit cell width */ 
 			fh,					/* window unit cell height */ 
 			mw,					/* minimum window size */
@@ -2085,11 +2067,11 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 			wflags = DFLAGS;
 
 		OBJECT 
-			*menu = NULL;
+			*wdmenu = NULL;
 
 		if ( xw_type((WINDOW *)w) == TEXT_WIND )
 		{
-			menu = viewmenu;
+			wdmenu = viewmenu;
 			d = 0;
 			wflags = TFLAGS;
 			dtmax = &tmax;
@@ -2097,7 +2079,7 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 
 		/* Calculate work area from overall size */
 
-		xw_calc(WC_WORK, wflags, input, &work, menu);
+		xw_calc(WC_WORK, wflags, input, &work, wdmenu);
 
 		/* Note: this is relevant only if the window is fulled */
 
@@ -2137,7 +2119,7 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 
 		/* Recalculate overall size from modified work size */
 
-		xw_calc(WC_BORDER, wflags, &work, output, menu);
+		xw_calc(WC_BORDER, wflags, &work, output, wdmenu);
 		calc_rc((TYP_WINDOW *)w, &work); /* number of lines and columns */
 	}
 }
@@ -2153,21 +2135,16 @@ void wd_calcsize(WINFO *w, RECT *size)
 	TYP_WINDOW
 		*tw = (TYP_WINDOW *)(w->typ_window);
 
-/* it seems that this is not needed
-	OBJECT 
-		*menu = NULL;
-*/
-
 	RECT 
 		*dtmax = &dmax,
 		def = xd_desk, 
 		border;
 
-	int 
+	_WORD 
 		wflags = DFLAGS,
 		wtype= xw_type((WINDOW *)(tw));
 
-	int 
+	_WORD 
 		ch,
 		cw;
 
@@ -2178,9 +2155,6 @@ void wd_calcsize(WINFO *w, RECT *size)
 	if ( wtype == TEXT_WIND )
 	{
 		dtmax = &tmax;
-/* not needed ?
-		menu = tw->xw_menu;
-*/
 		wflags = TFLAGS;
 	}
 
@@ -2236,7 +2210,7 @@ void wd_calcsize(WINFO *w, RECT *size)
 
 			/* Window overall size must not exceed max integer or so */
 
-			def.h = (int)lmin(32700, ll * ch);
+			def.h = (_WORD)lmin(32700, ll * ch);
 		}
 
 		wd_wsize(tw, &def, size, iswork);
@@ -2309,7 +2283,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 		{
 			if (options.mode != TEXTMODE)
 			{
-				int nc = ((DIR_WINDOW *)w)->ncolumns;
+				_WORD nc = ((DIR_WINDOW *)w)->ncolumns;
 
 				if ( work.w % iconw != XOFFSET)
 					nc++;
@@ -2319,8 +2293,8 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 					(DIR_WINDOW *)w,
 					((DIR_WINDOW *)w)->px,
 					nc,
-					(int)py, 
-					(int)rows, 
+					(_WORD)py, 
+					(_WORD)rows, 
 					FALSE, 
 					&work
 				)) == NULL) 
@@ -2469,7 +2443,7 @@ void wd_type_bottomed(WINDOW *w)
 
 void wd_type_title(TYP_WINDOW *w)
 {
-	int 
+	_WORD 
 		d = 3,		/* Required width increment, single-TOS value */ 
 		columns;
 
@@ -2495,7 +2469,7 @@ void wd_type_title(TYP_WINDOW *w)
 
 	/* Calculate available title width (in characters) */
 
-	columns = min( w->scolumns - d, (int)sizeof(w->title) );
+	columns = min( w->scolumns - d, (_WORD)sizeof(w->title) );
 
 	if(columns > 0)
 	{
@@ -2527,14 +2501,14 @@ void wd_type_title(TYP_WINDOW *w)
  * between the fulled and the normal state.
  */
 
-void wd_type_fulled(WINDOW *w, int mbshift)
+void wd_type_fulled(WINDOW *w, _WORD mbshift)
 {
 	WINFO 
 		*winfo = ((TYP_WINDOW *)w)->winfo; 
 
 #if _MINT_
 
-	int
+	_WORD
 		ox = ((TYP_WINDOW *)w)->px,
 		oc = ((TYP_WINDOW *)w)->dcolumns;
 
@@ -2607,7 +2581,7 @@ void wd_type_nofull(WINDOW *w)
  * Handle scrolling window gadgets 
  */
 
-void wd_type_arrowed(WINDOW *w, int arrows)
+void wd_type_arrowed(WINDOW *w, _WORD arrows)
 {
 	switch (arrows)
 	{
@@ -2643,14 +2617,14 @@ void wd_type_arrowed(WINDOW *w, int arrows)
 }
 
 
-void wd_type_hslider(WINDOW *w, int newpos)
+void wd_type_hslider(WINDOW *w, _WORD newpos)
 {
 	long h = (long)( ((TYP_WINDOW *)w)->columns - ((TYP_WINDOW *)w)->ncolumns);
-	w_page((TYP_WINDOW *)w, (int)calc_slpos(newpos, h), ((TYP_WINDOW *)w)->py);
+	w_page((TYP_WINDOW *)w, calc_slpos(newpos, h), ((TYP_WINDOW *)w)->py);
 }
 
 
-void wd_type_vslider(WINDOW *w, int newpos)
+void wd_type_vslider(WINDOW *w, _WORD newpos)
 {
 	long h = (long) (((TYP_WINDOW *)w)->nlines - ((TYP_WINDOW *)w)->nrows);
 	w_page((TYP_WINDOW *)w, ((TYP_WINDOW *)w)->px, calc_slpos(newpos, h));
@@ -2763,7 +2737,7 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 	RECT 
 		oldsize;		/* old window size */
 
-	int 
+	_WORD 
 #if _MINT_
 		ox,				/* old horizontal slider position */
 #endif
@@ -2843,13 +2817,13 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
  * (later beware of int/long difference in hor/vert applicaton)
  */
 
-void calc_wslider
+static void calc_wslider
 (
 	long wlines, 	/* in-     w->ncolumns or w->nrows; visible width */
 	long nlines,	/* in-     w->columns or w->nlines; total width */
 	long *wpxy,		/* in/out- w->px or w->py; current position */
-	int *p,			/* out-    calculated slider size */
-	int *pos		/* out-    calculated slider position */
+	_WORD *p,			/* out-    calculated slider size */
+	_WORD *pos		/* out-    calculated slider position */
 )
 {
 	long h = nlines - wlines;
@@ -2877,7 +2851,7 @@ void calc_wslider
 
 void set_hslsize_pos(TYP_WINDOW *w)
 {
-	int 
+	_WORD 
 		p,		/* calculated slider size     */ 
 		pos;	/* calculated slider position */
 
@@ -2887,7 +2861,7 @@ void set_hslsize_pos(TYP_WINDOW *w)
 
 	calc_wslider( (long)w->ncolumns, ww, &wpx, &p, &pos );
 
-	w->px = (int)wpx;
+	w->px = (_WORD)wpx;
 
 	/* both size and position of the slider are always set; */
 
@@ -2904,7 +2878,7 @@ void set_hslsize_pos(TYP_WINDOW *w)
 
 void set_vslsize_pos(TYP_WINDOW *w)
 {
-	int
+	_WORD
 		p,		/* slider size     */ 
 		pos;	/* slider position */
 
@@ -2931,12 +2905,12 @@ void set_sliders(TYP_WINDOW *w)
  * enable action even if positions have not changed.
  */
 
-void w_page(TYP_WINDOW *w, int newpx, long newpy)
+void w_page(TYP_WINDOW *w, _WORD newpx, long newpy)
 {
 	long
 		dpy = newpy - w->py;
 
-	int
+	_WORD
 		arrow,
 		dpx = newpx - w->px;
 
@@ -3010,7 +2984,7 @@ void w_pagedown(TYP_WINDOW *w)
 
 void w_pageleft(TYP_WINDOW *w)
 {
-	int newx = w->px - w->ncolumns;
+	_WORD newx = w->px - w->ncolumns;
 
 	if (newx < 0)
 		newx = 0;
@@ -3021,7 +2995,7 @@ void w_pageleft(TYP_WINDOW *w)
 
 void w_pageright(TYP_WINDOW *w)
 {
-	int 
+	_WORD 
 		nc = w->ncolumns,
 		lwidth = w->columns,
 		newx;
@@ -3063,9 +3037,9 @@ void w_pageright(TYP_WINDOW *w)
  * If last=1 find the last one; if last=0 find the first one.
  */
 
-static long find_firstlast(int wy, int ay, int ah, bool *prev, int ch, int last)
+static long find_firstlast(_WORD wy, _WORD ay, _WORD ah, bool *prev, _WORD ch, _WORD last)
 {
-	int line;
+	_WORD line;
 
 	line = ay - wy;
 
@@ -3094,7 +3068,7 @@ static long find_firstlast(int wy, int ay, int ah, bool *prev, int ch, int last)
  * type		- geeft richting van scrollen aan
  */
 
-void w_scroll(TYP_WINDOW *w, int type) 
+void w_scroll(TYP_WINDOW *w, _WORD type) 
 {
 	RECT 
 		work, 
@@ -3103,14 +3077,13 @@ void w_scroll(TYP_WINDOW *w, int type)
 		src, 	/* screen area bein copied from */
 		dest;	/* screen area being copied to */
 
-	long 
-		line;
+	long line = 0;
 
-	int 
+	_WORD 
 		last,
 		dl = -1,
-		column,
-		nc,
+		column = 0,
+		nc = 0,
 		wx, 
 		wy, 
 		cw,
@@ -3240,7 +3213,7 @@ void w_scroll(TYP_WINDOW *w, int type)
 					last = 1;
 				}
 
-				column = (int)find_firstlast(wx, in.x, in.w, &prev, cw, last);
+				column = (_WORD)find_firstlast(wx, in.x, in.w, &prev, cw, last);
 
 				column += w->px;
 				dest.w -=cw;
@@ -3331,9 +3304,9 @@ bool wd_adapt(WINDOW *w)
  *			  1 - toets kon verwerkt worden
  */
 
-int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
+_WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 {
-	int 
+	_WORD 
 		act,				/* action code */
 		key,				/* code of pressed key */
 		wt = xw_type(w),	/* window type */
@@ -3345,13 +3318,13 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 	if(!onekey_shorts)
 		autoloc = TRUE; /* autolocator is always ON if there are no single-key kbd shortcuts */
 
-	switch (scancode)
+	switch ((unsigned short)scancode)
 	{
 		case RETURN:		/* if autoselector is on, open the selected item(s) */
 		{
 			if ( wt != TEXT_WIND )
 			{	
-				int n, *list;
+				_WORD n, *list;
 	
 				if(autoloc && (list = itm_list(w, &n)) != NULL /* no need ? && n */ )
 				{
@@ -3460,7 +3433,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 		{
 			if( wt != DIR_WIND )
 				break;
-			if(autoloc || (unsigned int)scancode == UNDO)
+			if(autoloc || (unsigned short)scancode == UNDO)
 				autoloc_off();
 			else
 			{
@@ -3508,7 +3481,7 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 							if 
 							(
 								key == BACKSPC || 					/* backspace ?     */
-								(unsigned int)key == INSERT || 		/* insert ?        */
+								(unsigned short)key == INSERT || 		/* insert ?        */
 								(key >= ' ' && key <= '~') ||		/* ASCII printable */
 								((key & 0xFF) > 127)				/* codes above 127 */
 							) 
@@ -3516,11 +3489,11 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 								/* key is [Backspace] or [Insert] or a printable character */
 	
 								char *ast, *dot;  	/* pointer to "." in the name */
-								int ei = 0; 		/*  index of "*"  */
+								_WORD ei = 0; 		/*  index of "*"  */
 	
 								/* [Insert] and wildcard should have no effect */
 	
-								if((unsigned int)key == INSERT || (unsigned int)key == UNDO)
+								if((unsigned short)key == INSERT || (unsigned short)key == UNDO)
 									key = 0;
 	
 								/* If [Backspace], delete last character */
@@ -3630,27 +3603,19 @@ int wd_type_hndlkey(WINDOW *w, int scancode, int keystate)
 }
 
 
-CfgNest 
-	dir_config, 	/* configuration table for directory windows */
-	view_config,	/* Configuration table for text windows */ 
-	open_config,	/* configuration table for open windows */
-	dir_one,		/* configuration table for one dir window */
-	text_one;		/* configuration table for one text window */
-
-
 /*
  * Configuration table for all windows
  */
 
 CfgEntry window_table[]= 
 {
-	{CFG_HDR,  "windows" },
-	{CFG_BEG},
-	{CFG_NEST, "directories",	dir_config	},		/* directory windows */
-	{CFG_NEST, "views",			view_config	},		/* text windows */
-	{CFG_NEST, "open",			open_config	},		/* open windows (any type */
-	{CFG_ENDG},
-	{CFG_LAST}
+	{ CFG_HDR,  "windows", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "directories",	{ dir_config	} },		/* directory windows */
+	{ CFG_NEST, "views",			{ view_config	} },		/* text windows */
+	{ CFG_NEST, "open",			{ open_config	} },		/* open windows (any type */
+	{ CFG_ENDG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -3658,7 +3623,7 @@ CfgEntry window_table[]=
  * Load or save all windows information
  */
 
-CfgNest wd_config
+void wd_config(XFILE *file, int lvl, int io, int *error)
 {
 	*error = handle_cfg(file, window_table, lvl, CFGEMP, io, wd_init, wd_default);
 }
@@ -3670,15 +3635,15 @@ CfgNest wd_config
 
 static const CfgEntry open_start_table[] =
 {
-	{CFG_HDR, "open" },
-	{CFG_BEG},
-	{CFG_LAST}
+	{ CFG_HDR, "open", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 static const CfgEntry open_end_table[] =
 {
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -3688,12 +3653,12 @@ static const CfgEntry open_end_table[] =
 
 static CfgEntry open_table[] =
 {
-	{CFG_HDR,  "open" },
-	{CFG_BEG},
-	{CFG_NEST, "dir",	dir_one  },
-	{CFG_NEST, "text",	text_one },
-	{CFG_END},
-	{CFG_LAST}
+	{ CFG_HDR,  "open", { 0 } },
+	{ CFG_BEG, NULL, { 0 } },
+	{ CFG_NEST, "dir", { dir_one } },
+	{ CFG_NEST, "text", { text_one } },
+	{ CFG_END, NULL, { 0 } },
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -3703,9 +3668,9 @@ static CfgEntry open_table[] =
 
 CfgEntry reopen_table[]=
 {
-	{CFG_NEST, "open", open_config},	/* open windows (any type) */
-	{CFG_FINAL}, 				       	/* file completness check  */
-	{CFG_LAST}
+	{ CFG_NEST, "open", { open_config } },	/* open windows (any type) */
+	{ CFG_FINAL, NULL, { 0 } }, 				       		/* file completness check  */
+	{ CFG_LAST, NULL, { 0 } }
 };
 
 
@@ -3718,7 +3683,7 @@ CfgEntry reopen_table[]=
  * Loading is straightforward on keyword occurrence.
  */
 
-CfgNest open_config
+void open_config(XFILE *file, int lvl, int io, int *error)
 {
 	WINDOW *w;
 
@@ -3787,7 +3752,7 @@ CfgNest open_config
 
 bool wd_tmpcls(void)
 {
-	int error;
+	_WORD error;
 
 	/* 
 	 * Deselect anything that was selected in windows. 
@@ -3860,7 +3825,7 @@ void wd_reopen(void)
  * Attention: Must be used only on directory and desktop windows
  */
 
-int itm_find(WINDOW *w, int x, int y)
+_WORD itm_find(WINDOW *w, _WORD x, _WORD y)
 {
 	if (in_window(w, x, y))
 		return (((ITM_WINDOW *)w)->itm_func->itm_find) (w, x, y);
@@ -3869,7 +3834,7 @@ int itm_find(WINDOW *w, int x, int y)
 }
 
 
-bool itm_state(WINDOW *w, int item)
+bool itm_state(WINDOW *w, _WORD item)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_state) (w, item);
 }
@@ -3881,7 +3846,7 @@ bool itm_state(WINDOW *w, int item)
  */
 
 
-ITMTYPE itm_type(WINDOW *w, int item)
+ITMTYPE itm_type(WINDOW *w, _WORD item)
 {
 	if ( xw_type(w) == TEXT_WIND )
 		return ITM_NOTUSED;
@@ -3895,7 +3860,7 @@ ITMTYPE itm_type(WINDOW *w, int item)
  * the item is a link, follow it to the target
  */
 
-ITMTYPE itm_tgttype(WINDOW *w, int item)
+ITMTYPE itm_tgttype(WINDOW *w, _WORD item)
 {
 	if ( xw_type(w) == TEXT_WIND )
 		return ITM_NOTUSED;
@@ -3908,7 +3873,7 @@ ITMTYPE itm_tgttype(WINDOW *w, int item)
  * Get the name of an item in a directory window
  */
 
-const char *itm_name(WINDOW *w, int item)
+const char *itm_name(WINDOW *w, _WORD item)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_name)(w, item);
 }
@@ -3919,7 +3884,7 @@ const char *itm_name(WINDOW *w, int item)
  * item identified by its ordinal in the list.
  */
 
-char *itm_fullname(WINDOW *w, int item)
+char *itm_fullname(WINDOW *w, _WORD item)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_fullname) (w, item);
 }
@@ -3931,7 +3896,7 @@ char *itm_fullname(WINDOW *w, int item)
  * This routine allocates space for the name obtained.
  */
 
-char *itm_tgtname(WINDOW *w, int item)
+char *itm_tgtname(WINDOW *w, _WORD item)
 {
 	char 
 		*thename,
@@ -3955,9 +3920,9 @@ char *itm_tgtname(WINDOW *w, int item)
  * Get iem attributes; on mode=0 follow link, on mode=1 don't
  */
 
-int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib)
+_WORD itm_attrib(WINDOW *w, _WORD item, _WORD mode, XATTR *attrib)
 {
-	int result = (((ITM_WINDOW *) w)->itm_func->itm_attrib) (w, item, mode, attrib);
+	_WORD result = (((ITM_WINDOW *) w)->itm_func->itm_attrib) (w, item, mode, attrib);
 
 	wd_setselection(w);
 	return result;
@@ -3968,7 +3933,7 @@ int itm_attrib(WINDOW *w, int item, int mode, XATTR *attrib)
  * Is the window object a link? Return TRUE if it is.
  */
 
-bool itm_islink(WINDOW *w, int item)
+bool itm_islink(WINDOW *w, _WORD item)
 {
 #if _MINT_
 	return (((ITM_WINDOW *) w)->itm_func->itm_islink) (w, item);
@@ -3986,7 +3951,7 @@ bool itm_islink(WINDOW *w, int item)
  * Use the opportunity to find target object's fullname.
  */
 
-bool itm_follow(WINDOW *w, int item, bool *link, char **name, ITMTYPE *type)
+bool itm_follow(WINDOW *w, _WORD item, bool *link, char **name, ITMTYPE *type)
 {
 #if _MINT_
 	bool ll =  itm_islink(w, item);
@@ -4014,7 +3979,7 @@ bool itm_follow(WINDOW *w, int item, bool *link, char **name, ITMTYPE *type)
 }
 
 
-bool itm_open(WINDOW *w, int item, int kstate)
+bool itm_open(WINDOW *w, _WORD item, _WORD kstate)
 {
 	return (((ITM_WINDOW *)w)->itm_func->itm_open) (w, item, kstate);
 }
@@ -4029,7 +3994,7 @@ bool itm_open(WINDOW *w, int item, int kstate)
  * mode = 4: select all  
  */
 
-void itm_select(WINDOW *w, int selected, int mode, bool draw)
+void itm_select(WINDOW *w, _WORD selected, _WORD mode, bool draw)
 {
 	if (xw_exist(w))
 		(((ITM_WINDOW *)w)->itm_func->itm_select) (w, selected, mode, draw);
@@ -4057,7 +4022,7 @@ static void itm_selall(WINDOW *w)
  * it is checked here because xw_exist does not recognize simulated windows
  */
 
-static int *itm_list(WINDOW *w, int *n)
+static _WORD *itm_list(WINDOW *w, _WORD *n)
 {
 	if
 	(
@@ -4082,8 +4047,8 @@ static int *itm_list(WINDOW *w, int *n)
  *																	*
  ********************************************************************/
 
-static bool itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
-					 int dobject, int kstate, ICND *icnlist, int x, int y)
+static bool itm_copy(WINDOW *sw, _WORD n, _WORD *list, WINDOW *dw,
+					 _WORD dobject, _WORD kstate, ICND *icnlist, _WORD x, _WORD y)
 {
 	if (dw)
 	{
@@ -4126,24 +4091,23 @@ static bool itm_copy(WINDOW *sw, int n, int *list, WINDOW *dw,
 static bool itm_drop
 (
 	WINDOW *w, 			/* source window */
-	int n,				/* number of selected items */ 
-	int *list, 			/* list of selected items' indices */
-	int kstate, 		/* keyboard state */
-	int x, 				/* position of destination window */
-	int y				/* positon of destination window  */
+	_WORD n,				/* number of selected items */ 
+	_WORD  *list, 			/* list of selected items' indices */
+	_WORD  kstate, 		/* keyboard state */
+	_WORD  x, 				/* position of destination window */
+	_WORD  y				/* positon of destination window  */
 )
 {
 #if _MINT_
-	const char 
-		*path;		/* full name of the dragged item */
+	char *path;		/* full name of the dragged item */
 
-	int 
+	_WORD 
 		*item, 		/* (pointer to) index of a selected item */
 		fd,			/* pipe handle */ 
 		i, 			/* item counter */
 		apid = -1,	/* destination app id */ 
 		hdl;		/* destination window handle */
-	int dummy;
+	_WORD dummy;
 	
 	/* Find the owner of the window at x,y */
 
@@ -4191,11 +4155,11 @@ static bool itm_drop
 
 		if (fd > 0)
 		{
-			int reply;
+			_WORD reply;
 
 			/* Will the recepient accept data ? */
 
-			reply = ddstry(fd, "ARGS", (char *)empty, nsize);
+			reply = ddstry(fd, "ARGS", empty, nsize);
 
 			/* 
 			 * Do whatever is needed, depending on what is on destination.
@@ -4270,9 +4234,9 @@ static bool itm_drop
  * Routines voor het tekenen van de omhullende van een icoon. 
  */
 
-static void get_minmax(ICND *icns, int n, int *clip)
+static void get_minmax(ICND *icns, _WORD n, _WORD *clip)
 {
-	int
+	_WORD
 		*cp,
 		i,
 		j,
@@ -4334,9 +4298,9 @@ static void get_minmax(ICND *icns, int n, int *clip)
  * but there would be a loss in speed
  */
 
-static void clip_coords(int *clip, int *nx, int *ny)
+static void clip_coords(_WORD *clip, _WORD *nx, _WORD *ny)
 {
-	int
+	_WORD
 		h,
 		*cp = clip;
 
@@ -4359,12 +4323,12 @@ static void clip_coords(int *clip, int *nx, int *ny)
 }
 
 
-static void draw_icns(ICND *icns, int n, int mx, int my, int *clip)
+static void draw_icns(ICND *icns, _WORD n, _WORD mx, _WORD my, _WORD *clip)
 {
 	ICND
 		*icnd;
 
-	int
+	_WORD
 		*cp,
 		*icp,
 		i,
@@ -4411,7 +4375,7 @@ static void desel_old(void)
  * mode = 2 - deselecteren, mode = 3 - selecteren 
  */
 
-static void select_object(WINDOW *w, int object, int mode)
+static void select_object(WINDOW *w, _WORD object, _WORD mode)
 {
 	if (object < 0)
 		return;
@@ -4425,13 +4389,14 @@ static void select_object(WINDOW *w, int object, int mode)
  * Find the window and the object at position x,y 
  */
 
-static void find_newobj(int x, int y, WINDOW **wd, int *object, bool *state)
+static void find_newobj(_WORD x, _WORD y, WINDOW **wd, _WORD *object, bool *state)
 {
 	WINDOW *w = xw_find(x, y);
 
 	*wd = w;
 	*object = -1;
-
+	*state = FALSE;
+	
 	if (w != NULL)
 	{
 		if ((xw_type(w) == DIR_WIND) || (xw_type(w) == DESK_WIND))
@@ -4450,17 +4415,17 @@ static void find_newobj(int x, int y, WINDOW **wd, int *object, bool *state)
 bool itm_move
 (
 	WINDOW *src_wd,	/* source window */ 
-	int src_object,	/* source object */ 
-	int old_x,		/* initial position */ 
-	int old_y,		/* initial position */ 
-	int avkstate 	/* key state only in av protocol */
+	_WORD src_object,	/* source object */ 
+	_WORD old_x,		/* initial position */ 
+	_WORD old_y,		/* initial position */ 
+	_WORD avkstate 	/* key state only in av protocol */
 )
 {
-	int 
+	_WORD
 		x = old_x, 
 		y = old_y,
-		ox, 
-		oy, 
+		ox = 0,
+		oy = 0,
 		kstate, 
 		*list,
 		*listi, 
@@ -4596,7 +4561,7 @@ bool itm_move
 	{
 		if (cur_wd != NULL)
 		{
-			int cur_type = xw_type(cur_wd);
+			_WORD cur_type = xw_type(cur_wd);
 
 			switch(cur_type)
 			{
@@ -4648,7 +4613,7 @@ bool itm_move
  * Check whether position (x,y) is inside the work area of window *w);
  */
 
-static bool in_window(WINDOW *w, int x, int y)
+static bool in_window(WINDOW *w, _WORD x, _WORD y)
 {
 	RECT work;
 
@@ -4678,9 +4643,9 @@ static bool in_window(WINDOW *w, int x, int y)
  * kstate		- Toestand van de SHIFT, CONTROL en ALTERNATE toets
  */
 
-void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
+void wd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 {
-	int 
+	_WORD 
 		wt = xw_type(w),
 		item, 
 		m_state;
@@ -4692,7 +4657,7 @@ void wd_hndlbutton(WINDOW *w, int x, int y, int n, int bstate, int kstate)
 
 		if(xd_rbdclick == 0 && bstate == 2)
 		{
-			int *list, ni;
+			_WORD *list, ni;
 
 			onfile = TRUE;
 
@@ -4820,8 +4785,8 @@ void wd_set_obj0
 (
 	OBJECT *obj,	/* pointer to object */
 	bool smode,	/* smode=1: G_IBOX, smode=0: G_BOX */
-	int row,		
-	int lines,		/* how many icon lines will be drawn */
+	_WORD row,		
+	_WORD lines,		/* how many icon lines will be drawn */
 	RECT *work		/* window work area dimensions and position*/
 )
 {
@@ -4848,7 +4813,7 @@ void wd_set_obj0
  * Note similar object-setting code in add_icon() in icon.c
  */
 
-void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool link, int icon_no, int obj_x, int obj_y, char *name )
+void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool link, _WORD icon_no, _WORD obj_x, _WORD obj_y, char *name )
 {
 	OBJECT
 		*obji = &obj[i + 1];
@@ -4860,13 +4825,13 @@ void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool lin
 	init_obj(obji, icons[icon_no].ob_type);
 
 	if(selected)
-		obji->ob_state = SELECTED;
+		obji->ob_state = OS_SELECTED;
 
 	if (hidden && (obj[0].ob_spec.obspec.interiorcol == 0) )
-		obji->ob_state |= DISABLED;	/* will this work in all AESes ? */
+		obji->ob_state |= OS_DISABLED;	/* will this work in all AESes ? */
 
 	if (link)
-		obji->ob_state |= CHECKED;
+		obji->ob_state |= OS_CHECKED;
 
 	obji->ob_x = obj_x;
 	obji->ob_y = obj_y;
@@ -4878,7 +4843,7 @@ void set_obji( OBJECT *obj, long i, long n, bool selected, bool hidden, bool lin
 	cicnblk[i].monoblk.ib_char &= 0xFF00;
 	cicnblk[i].monoblk.ib_char |= 0x20;
 
-	objc_add(obj, 0, (int)i + 1);
+	objc_add(obj, 0, (_WORD)i + 1);
 }
 
 
@@ -4895,7 +4860,7 @@ static void icw_draw(WINDOW *w)
 	const char 
 		*wpath = wd_path(w);
 
-	int 
+	_WORD 
 		dx, dy,			/* icon offsets in the root object */
 		icon_no, 		/* icon identifier in resource files */
 		icon_ind;		/* icon identifier in resource files */
@@ -4973,8 +4938,13 @@ void wd_type_iconify(WINDOW *w, RECT *r)
 		/* Remember size of noniconified window */
 
 		if(!(wi->flags.iconified))
-			*(RECT *)(&(wi->ix)) = *(RECT *)(&(wi->x));
-
+		{
+			wi->ix = wi->x;
+			wi->iy = wi->y;
+			wi->iw = wi->w;
+			wi->ih = wi->h;
+		}
+		
 		oldsize = w->xw_size;
 
 		/* Call the function to iconify this window. remember iconified size */
@@ -5140,7 +5110,10 @@ void wd_iopen ( WINDOW *w, RECT *oldsize, WDFLAGS *oldflags )
 #if _MINT_
 		if(icf)
 		{
-			*(RECT *)(&info->x) = *oldsize;
+			info->x = oldsize->x;
+			info->y = oldsize->y;
+			info->w = oldsize->w;
+			info->h = oldsize->h;
 
 			/* note: icwsize must be set before wd_calcsize() or wd_wsize() */
 

@@ -38,10 +38,10 @@
 typedef struct avtype
 {
 	char name[10];				/* AV-client name */
-	int ap_id;					/* AV-client AP-id */
-	int avcap3;					/* AV-client capabilities (word3) */
-	int flags;					/* diverse flags */
-	int resvd;					/* placeholder for compatibility */
+	_WORD ap_id;				/* AV-client AP-id */
+	_WORD avcap3;				/* AV-client capabilities (word3) */
+	_WORD flags;				/* diverse flags */
+	_WORD resvd;				/* placeholder for compatibility */
 	struct avtype *next;		/* Pointer to the next item */
 } AVTYPE;
 
@@ -67,7 +67,7 @@ typedef struct avstat
 typedef struct
 {
 	ITM_INTVARS;
-}ACC_WINDOW;
+} ACC_WINDOW;
 
 /*
  * Structore for data to set size of the next open window
@@ -79,17 +79,17 @@ typedef struct
 	RECT size;
 } AVSETW;
 
-CfgNest va_config;
+void va_config(XFILE *file, int lvl, int io, int *error);
 
 extern AVSETW avsetw;
 extern bool va_reply;
 extern AVTYPE *avclients;
-extern int av_current;
+extern _WORD av_current;
 extern const char *thisapp;
 
 void va_init(void);
 WINDOW *va_accw(void);
-void va_delall(int ap_id, bool force);
+void va_delall(_WORD ap_id, bool force);
 void rem_all_avstat(void);
 
 #if __USE_MACROS
@@ -103,11 +103,11 @@ void vastat_default(void);
 void va_close(WINDOW *w);
 #endif
 
-void handle_av_protocol(const int *message);
-int va_start_prg(const char *program, ApplType type, const char *cmdline);
-AVTYPE *va_findclient(int ap_id);
-bool va_add_name(int type, const char *name );
-bool va_accdrop(WINDOW *dw, WINDOW *sw, int *list, int n, int kstate, int x, int y);
-bool va_fontreply(int messid, int dest_ap_id);
+void handle_av_protocol(const _WORD *message);
+_WORD va_start_prg(const char *program, ApplType type, const char *cmdline);
+AVTYPE *va_findclient(_WORD ap_id);
+bool va_add_name(_WORD type, const char *name );
+bool va_accdrop(WINDOW *dw, WINDOW *sw, _WORD  *list, _WORD  n, _WORD  kstate, _WORD x, _WORD y);
+bool va_fontreply(_WORD messid, _WORD dest_ap_id);
 bool va_pathupdate(WINDOW *w);
 void va_checkclient(void);

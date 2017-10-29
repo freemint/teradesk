@@ -88,4 +88,4 @@
 #define XDNMWINDOWS -4097		/* no more windows available */
 
 
-int xerror( int toserror );
+_WORD xerror( _WORD toserror );

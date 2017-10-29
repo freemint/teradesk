@@ -25,27 +25,16 @@
 
 #include "xdialog.h"
 
-extern int xd_vhandle;
-extern int xe_mbshift;
-
 #define ACC_WIND	19 /* from window.h !!! */
 
 
 static WINDOW 
 	*windows = NULL;		/* lijst met windows. */
 
-WINDOW 
-	*xw_deskwin = NULL; 			/* pointer to desktop window */
+WINDOW *xw_deskwin; 			/* pointer to desktop window */
 
-int
+_WORD
 	xw_dosend = 1;					/* if 0, xw_send is disabled */
-
-#ifdef __PUREC__
-	extern int ap_id;		/* Defined in application. */
-	#define aes_pid ap_id
-#else
-	#define aes_pid gl_apid
-#endif
 
 
 /*
@@ -53,19 +42,16 @@ int
  * in order to avoid some if-thens
  */
 
-#pragma warn -par
-
 void xw_nop1(WINDOW *w)
 {
-
+	(void) w;
 }
 
-void xw_nop2(WINDOW *w, int i)
+void xw_nop2(WINDOW *w, _WORD i)
 {
-
+	(void) w;
+	(void) i;
 }
-
-#pragma warn +par
 
 /*
  * Send a message that passes rectangle size
@@ -74,14 +60,14 @@ void xw_nop2(WINDOW *w, int i)
  */
 
 
-void xw_send_rect(WINDOW *w, int messid, int pid, RECT *area)
+void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area)
 {
 	if(xw_dosend)
 	{
-		int message[8], *messagep = message;
+		_WORD message[8], *messagep = message;
 
 		*messagep++ = messid;
-		*messagep++ = aes_pid;
+		*messagep++ = gl_apid;
 		*messagep++ = 0;
 		*messagep++ = w->xw_handle;
 		*(RECT *)(messagep) = *area;
@@ -104,9 +90,9 @@ void xw_send_rect(WINDOW *w, int messid, int pid, RECT *area)
  *			   applikatie id van het programma staat.
  */
 
-void xw_send_redraw(WINDOW *w, int messid, RECT *area)
+void xw_send_redraw(WINDOW *w, _WORD messid, const RECT *area)
 {
-	xw_send_rect(w, messid, aes_pid, area);
+	xw_send_rect(w, messid, gl_apid, area);
 }
 
 
@@ -116,12 +102,11 @@ void xw_send_redraw(WINDOW *w, int messid, RECT *area)
  * Sending is disabled if xw_dosend is set to 0.
  */
 
-void xw_send(WINDOW *w, int messid)
+void xw_send(WINDOW *w, _WORD messid)
 {
-	static const int dummy[] = {0, 0, 0, 0};
+	static const RECT dummy = { 0, 0, 0, 0 };
 
-
-	xw_send_rect(w, messid, w->xw_ap_id, (RECT *)&dummy[0]);
+	xw_send_rect(w, messid, w->xw_ap_id, &dummy);
 }
 
 
@@ -131,7 +116,7 @@ void xw_send(WINDOW *w, int messid)
  * Find a window by its handle
  */
 
-WINDOW *xw_hfind(int handle)
+WINDOW *xw_hfind(_WORD handle)
 {
 	WINDOW *w = windows;
 
@@ -162,7 +147,7 @@ WINDOW *xw_hfind(int handle)
  *			   op de opgegeven positie.
  */
 
-WINDOW *xw_find(int x, int y)
+WINDOW *xw_find(_WORD x, _WORD y)
 {
 	return xw_hfind(wind_find(x, y));
 }
@@ -185,7 +170,7 @@ WINDOW *xw_top(void)
 	WINDOW
 		*w;
 
-	int
+	_WORD
 		thandle, dummy;
 
 
@@ -226,7 +211,7 @@ WINDOW *xw_bottom(void)
 	WINDOW
 		*w;
 
-	int
+	_WORD
 		bhandle, dummy;
 
 
@@ -262,7 +247,7 @@ WINDOW *xw_bottom(void)
  *			   0 in alle andere gevallen
  */
 
-int xw_exist( WINDOW *w )
+_WORD xw_exist( WINDOW *w )
 {
 	WINDOW *h = windows;
 
@@ -369,12 +354,12 @@ void xw_note_bottom(WINDOW *w)
  * Set a window to top or bottom
  */
 
-static void xw_set_topbot(WINDOW *w, int wf)
+static void xw_set_topbot(WINDOW *w, _WORD wf)
 {
 	void
 		(*notef)(WINDOW *w);
 
-	int
+	_WORD
 		msg;
 
 
@@ -450,7 +435,7 @@ static void xw_set_barpos(WINDOW *w)
  * bijvoorbeeld na een redraw event.
  */
 
-void xw_redraw_menu(WINDOW *w, int object, RECT *r)
+void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r)
 {
 	OBJECT
 		*menu;
@@ -458,7 +443,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
 	RECT
 		r1, r2, in;
 
-	int
+	_WORD
 		pxy[4];
 
 
@@ -511,7 +496,7 @@ void xw_redraw_menu(WINDOW *w, int object, RECT *r)
  * pulldown menu's bepaalt.
  */
 
-static void xw_find_objects(OBJECT *menu, int *bar, int *boxes)
+static void xw_find_objects(OBJECT *menu, _WORD *bar, _WORD *boxes)
 {
 	*bar = menu->ob_head;
 	*boxes = menu->ob_tail;
@@ -522,7 +507,7 @@ static void xw_find_objects(OBJECT *menu, int *bar, int *boxes)
  * Funktie voor het tekenen van een pulldown menu.
  */
 
-static void xw_menu_draw(OBJECT *menu, int item, RECT *box)
+static void xw_menu_draw(OBJECT *menu, _WORD item, RECT *box)
 {
 	objc_draw(menu, item, MAX_DEPTH, box->x, box->y, box->w, box->h);
 }
@@ -533,11 +518,11 @@ static void xw_menu_draw(OBJECT *menu, int item, RECT *box)
  * in een pulldown menu.
  */
 
-static void xw_menu_change(OBJECT *menu, int item, int select, RECT *box)
+static void xw_menu_change(OBJECT *menu, _WORD item, _WORD select, RECT *box)
 {
-	int newstate = menu[item].ob_state;
+	_WORD newstate = menu[item].ob_state;
 
-	newstate = (select) ? newstate | SELECTED : newstate & ~SELECTED;
+	newstate = (select) ? newstate | OS_SELECTED : newstate & ~OS_SELECTED;
 	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
 }
 
@@ -548,7 +533,7 @@ static void xw_menu_change(OBJECT *menu, int item, int select, RECT *box)
  * pulldown menu.
  */
 
-static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
+static void xw_copy_screen(MFDB *dest, MFDB *src, _WORD *pxy)
 {
 	xd_mouse_off();
 	vro_cpyfm(xd_vhandle, S_ONLY, pxy, src, dest);
@@ -561,7 +546,7 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, int *pxy)
  * van een window.
  */
 
-static int xw_do_menu(WINDOW *w, int x, int y)
+static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 {
 	OBJECT
 		*menu;
@@ -577,7 +562,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 	long
 		mem;
 
-	int
+	_WORD
 		pxy[8],
 		title,
 		otitle,
@@ -616,7 +601,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 		do
 		{
-			menu[title].ob_state |= SELECTED;
+			menu[title].ob_state |= OS_SELECTED;
 			xw_redraw_menu(w, title, &r);
 
 			i = menu[p].ob_head;
@@ -670,7 +655,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 				do
 				{
-					int mx, my, oitem, dummy;
+					_WORD mx, my, oitem, dummy;
 
 					oitem = item;
 
@@ -680,7 +665,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 					{
 						title = otitle;
 
-						if (((item = objc_find(menu, i, MAX_DEPTH, mx, my)) >= 0) && (menu[item].ob_state & DISABLED))
+						if (((item = objc_find(menu, i, MAX_DEPTH, mx, my)) >= 0) && (menu[item].ob_state & OS_DISABLED))
 							item = -1;
 					}
 					else
@@ -701,7 +686,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 				while ((title == otitle) && (stop == FALSE));
 
 				if (item >= 0)
-					menu[item].ob_state &= ~SELECTED;
+					menu[item].ob_state &= ~OS_SELECTED;
 
 				if (draw)
 				{
@@ -720,7 +705,7 @@ static int xw_do_menu(WINDOW *w, int x, int y)
 
 			if (item < 0)
 			{
-				menu[otitle].ob_state &= ~SELECTED;
+				menu[otitle].ob_state &= ~OS_SELECTED;
 				xw_redraw_menu(w, otitle, &r);
 			}
 		}
@@ -752,19 +737,19 @@ static int xw_do_menu(WINDOW *w, int x, int y)
  * check	- 0 = verwijder marker, 1 = plaats marker.
  */
 
-void xw_menu_icheck(WINDOW *w, int item, int check)
+void xw_menu_icheck(WINDOW *w, _WORD item, _WORD check)
 {
-	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+	_UWORD *s = &w->xw_menu[item].ob_state;
 
 	if (check == 0)
-		*s &= ~CHECKED;
+		*s &= ~OS_CHECKED;
 	else
-		*s |= CHECKED;
+		*s |= OS_CHECKED;
 }
 
 
 
-/* These functions are curently unused in TeraDesk
+#if 0 /* These functions are curently unused in TeraDesk */
 
 /*
  * Funktie voor het enablen of disablen van een menupunt.
@@ -776,14 +761,14 @@ void xw_menu_icheck(WINDOW *w, int item, int check)
  * enable	- 0 = disable, 1 = enable.
  */
 
-void xw_menu_ienable(WINDOW *w, int item, int enable)
+void xw_menu_ienable(WINDOW *w, _WORD item, _WORD enable)
 {
-	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+	_UWORD *s = &w->xw_menu[item].ob_state;
 
 	if (enable == 0)
-		*s |= DISABLED;
+		*s |= OS_DISABLED;
 	else
-		*s &= ~DISABLED;
+		*s &= ~OS_DISABLED;
 }
 
 
@@ -797,12 +782,12 @@ void xw_menu_ienable(WINDOW *w, int item, int enable)
  * text		- nieuwe tekst.
  */
 
-void xw_menu_text(WINDOW *w, int item, const char *text)
+void xw_menu_text(WINDOW *w, _WORD item, const char *text)
 {
 	w->xw_menu[item].ob_spec.free_string = (char *)text;
 }
+#endif
 
-*/
 
 
 /*
@@ -815,62 +800,20 @@ void xw_menu_text(WINDOW *w, int item, const char *text)
  * normal	- 0 = selecteer, 1 = deselecteer.
  */
 
-void xw_menu_tnormal(WINDOW *w, int item, int normal)
+void xw_menu_tnormal(WINDOW *w, _WORD item, _WORD normal)
 {
 	RECT r;
-	unsigned int *s = (unsigned int *)&(w->xw_menu[item].ob_state);
+	_UWORD *s = &w->xw_menu[item].ob_state;
 
 
 	if (normal == 0)
-		*s |= SELECTED;
+		*s |= OS_SELECTED;
 	else
-		*s &= ~SELECTED;
+		*s &= ~OS_SELECTED;
 
 	xw_bar_rect(w, &r);
 	xw_redraw_menu(w, item, &r);
 }
-
-#if !__USE_MACROS
-/*
- * Bepaal het type van een window.
- */
-
-int xw_type(WINDOW *w)
-{
-	return w->xw_type;
-}
-
-
-/*
- * Bepaal de window handle van een window.
- */
-
-int xw_handle(WINDOW *w)
-{
-	return w->xw_handle;
-}
-
-
-/*
- * Return a  pointer to the next window 
- */
-
-WINDOW *xw_next(WINDOW *w)
-{
-	return w->xw_next;
-}
-
-
-/*
- * Return a pointer to the previous window
- */
-
-WINDOW *xw_prev(WINDOW *w)
-{
-	return w->xw_prev;
-}
-
-#endif
 
 
 /*
@@ -887,7 +830,7 @@ WINDOW *xw_prev(WINDOW *w)
  * keystate		- toestand SHIFT, CONTROL en ALTERNATE toetsen.
  */
 
-int xw_hndlbutton(int x, int y, int n, int bstate, int kstate)
+_WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 {
 	WINDOW *w;
 
@@ -921,7 +864,7 @@ int xw_hndlbutton(int x, int y, int n, int bstate, int kstate)
  * keystate	- toestand SHIFT, CONTROL en ALTERNATE toetsen.
  */
 
-int xw_hndlkey(int scancode, int keystate)
+_WORD xw_hndlkey(_WORD scancode, _WORD keystate)
 {
 	WINDOW *w = xw_top();
 
@@ -977,11 +920,11 @@ void xw_uniconify(WINDOW *w, RECT *r)
  * message	- ontvangen message
  */
 
-int xw_hndlmessage(int *message)
+_WORD xw_hndlmessage(_WORD *message)
 {
 	WD_FUNC *func, *wwfunc;
 	WINDOW *w, *ww;
-	int *m4 = &message[4];
+	_WORD *m4 = &message[4];
 
 	/* Process only messages for an existing window */
 
@@ -1109,9 +1052,9 @@ int xw_hndlmessage(int *message)
  * worden opgegeven, in plaats van vier integers.
  */
 
-void xw_set(WINDOW *w, int field,...)
+void xw_set(WINDOW *w, _WORD field,...)
 {
-	int p1, p2, p3, p4;
+	_WORD p1, p2, p3, p4;
 	RECT *r;
 	va_list p;
 
@@ -1190,9 +1133,9 @@ void xw_getsize(WINDOW *w, RECT *size)
  * Only WF_* codes up to 32 are supported (see also xw_get_argtab[])
  */
 
-void xw_get(WINDOW *w, int field, RECT *r)
+void xw_get(WINDOW *w, _WORD field, RECT *r)
 {
-	int handle = 0;
+	_WORD handle = 0;
 
 	if(w)
 		handle = w->xw_handle;
@@ -1207,7 +1150,7 @@ void xw_get(WINDOW *w, int field, RECT *r)
 	
 				if (w->xw_menu != NULL)
 				{
-					int height = w->xw_menu[w->xw_bar].ob_height + 1;
+					_WORD height = w->xw_menu[w->xw_bar].ob_height + 1;
 	
 					r->y += height;
 					r->h -= height;
@@ -1282,9 +1225,9 @@ void xw_getnext(WINDOW *w, RECT *size)
  * it is the opposite.
  */
  
-void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output, OBJECT *menu)
+void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input, RECT *output, OBJECT *menu)
 {
-	int height;
+	_WORD height;
 
 	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h,
 			  &output->x, &output->y, &output->w, &output->h);
@@ -1307,13 +1250,13 @@ void xw_calc(int w_ctype, int w_flags, RECT *input, RECT *output, OBJECT *menu)
  * object boom.
  */
 
-static int xw_tree_size(OBJECT *menu)
+static _WORD xw_tree_size(OBJECT *menu)
 {
-	int i = 0;
+	_WORD i = 0;
 
 	if (menu)
 	{
-		while ((menu[i].ob_flags & LASTOB) == 0)
+		while ((menu[i].ob_flags & OF_LASTOB) == 0)
 			i++;
 
 		i++;
@@ -1370,7 +1313,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  *					  van het window of NULL.
  */
 
-WINDOW *xw_create(int type, WD_FUNC *functions, int flags,
+WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
 				  RECT *msize, size_t wd_struct_size, OBJECT *menu, int *error)
 {
 	WINDOW *w;
@@ -1520,7 +1463,7 @@ void xw_delete(WINDOW *w)
 }
 
 
-/* currently not used in TeraDesk
+#if 0 /* currently not used in TeraDesk */
 
 /*
  * Close and delete a window
@@ -1532,7 +1475,7 @@ void xw_closedelete(WINDOW *w)
 	xw_delete(w);
 }
 
-*/
+#endif
 
 
 /*
@@ -1544,8 +1487,8 @@ void xw_closedelete(WINDOW *w)
  * wd_struct_size	- grootte van de window structuur,
  */
 
-WINDOW *xw_open_desk(int type, WD_FUNC *functions,
-					 size_t wd_struct_size, int *error)
+WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions,
+					 size_t wd_struct_size, _WORD *error)
 {
 	WINDOW *w;
 
