@@ -48,24 +48,18 @@ LSTYPE *selitem;
  * in the list-manipulation dialog. See lists.c 
  */
 
-static void set_lselector(SLIDER *slider, bool draw, XDINFO *info) 
+static void set_lselector(SLIDER *slider, bool draw, XDINFO *info)
 {
-	_WORD
-		i;
-
-	LSTYPE
-		*f;
-
-	OBJECT
-		*ob = &setmask[FTYPE1];
-
+	_WORD i;
+	LSTYPE *f;
+	OBJECT *ob = &setmask[FTYPE1];
 
 	for (i = 0; i < NLINES; i++)
 	{
-		if ((f = get_item( slider->list, i + slider->line)) == NULL)
+		if ((f = get_item(slider->list, i + slider->line)) == NULL)
 			*ob->ob_spec.tedinfo->te_ptext = 0;
 		else
-			cv_fntoform(ob, 0, f->filetype );
+			cv_fntoform(ob, 0, f->filetype);
 
 		ob++;
 	}
@@ -85,24 +79,24 @@ static void set_lselector(SLIDER *slider, bool draw, XDINFO *info)
  * Initiate a (FTYPE, PRGTYPE, ICONTYPE...) list-scroller slider
  */
 
-static void ls_sl_init ( _WORD n, SLIDER *sl, LSTYPE **list )
+static void ls_sl_init(_WORD n, SLIDER *sl, LSTYPE **list)
 {
 	sl->type = 1;
-	sl->tree = setmask;			/* root object */
-	sl->up_arrow = FTUP;		/* up-arrow object   */
-	sl->down_arrow = FTDOWN;	/* down-arrow object */
-	sl->slider = FTSLIDER;		/* slider object     */
-	sl->sparent = FTSPAR;		/* slider parent (background) object    */
-	sl->lines = NLINES;			/* number of visible lines in the box   */
-	sl->n = n;					/* number of items in the list          */
-	sl->line = 0;				/* index of first item shown in the box */
-	sl->list = list;			/* pointer to list of items to be shown */
+	sl->tree = setmask;					/* root object */
+	sl->up_arrow = FTUP;				/* up-arrow object   */
+	sl->down_arrow = FTDOWN;			/* down-arrow object */
+	sl->slider = FTSLIDER;				/* slider object     */
+	sl->sparent = FTSPAR;				/* slider parent (background) object    */
+	sl->lines = NLINES;					/* number of visible lines in the box   */
+	sl->n = n;							/* number of items in the list          */
+	sl->line = 0;						/* index of first item shown in the box */
+	sl->list = list;					/* pointer to list of items to be shown */
 	sl->set_selector = set_lselector;	/* selector routine */
-	sl->first = FTYPE1;			/* first object in the scrolled box     */
+	sl->first = FTYPE1;					/* first object in the scrolled box     */
 	sl->findsel = find_selected;
 
-	xd_set_rbutton(setmask, FTPARENT, FTYPE1 );
-	sl_init ( sl );
+	xd_set_rbutton(setmask, FTPARENT, FTYPE1);
+	sl_init(sl);
 }
 
 
@@ -113,28 +107,19 @@ static void ls_sl_init ( _WORD n, SLIDER *sl, LSTYPE **list )
  * if there is any.
  */
 
-bool find_wild 
-( 
-	LSTYPE **list,		/* list to be searched in */ 
-	const char *name,	/* name to match */ 
-	LSTYPE *work,		/* work area where data is copied */ 
-	void *copy_func 	/* pointer to a functon to copy data */
-)
+bool find_wild(LSTYPE **list,			/* list to be searched in */
+			   const char *name,		/* name to match */
+			   LSTYPE *work,			/* work area where data is copied */
+			   void *copy_func			/* pointer to a functon to copy data */
+	)
 {
-	const char *filename;	/* local: pointer to name without path */
+	const char *filename;				/* local: pointer to name without path */
+	LSTYPE *p = *list;					/* start from the beginning of the list */
+	void (*copyf) (LSTYPE *t, LSTYPE *s) = copy_func;
+	bool result = FALSE;
 
-	LSTYPE 
-		*p = *list;	/* start from the beginning of the list */
-
-	void 
-		(*copyf)( LSTYPE *t, LSTYPE *s ) = copy_func;
-
-	bool
-		result = FALSE;
-
-
-	if ( name )
-	{					
+	if (name)
+	{
 		/* Find the last occurence of "\" and the name after it */
 
 		filename = fn_get_name(name);
@@ -149,8 +134,8 @@ bool find_wild
 			{
 				/* Copy all data, using appropriate routine */
 
-				copyf( work, p );
-				result = TRUE; /* Found in the list! */
+				copyf(work, p);
+				result = TRUE;			/* Found in the list! */
 				break;
 			}
 			p = p->next;
@@ -159,9 +144,8 @@ bool find_wild
 		/* Copy the name in any case, but beware of the length */
 
 		log_shortname(work->filetype, filename);
-	}
-	else
-		work->filetype[0] = 0;	/* if nonexistent, clear the name */
+	} else
+		work->filetype[0] = 0;			/* if nonexistent, clear the name */
 
 	return result;
 }
@@ -175,7 +159,7 @@ bool find_wild
 
 _WORD find_selected(void)
 {
-	_WORD object;		/* object index of filetype field */
+	_WORD object;						/* object index of filetype field */
 
 	return ((object = xd_get_rbutton(setmask, FTPARENT)) < 0) ? 0 : object - FTYPE1;
 }
@@ -185,20 +169,14 @@ _WORD find_selected(void)
  * Get from a list the pointer to an item specified by its ordinal number 
  */
 
-LSTYPE *get_item
-( 
-	LSTYPE **list,		/* pointer to the pointer to list to be searched */ 
-	_WORD item			/* item # */
-)
+LSTYPE *get_item(LSTYPE **list,		/* pointer to the pointer to list to be searched */
+				 _WORD item				/* item # */
+	)
 {
-	_WORD 
-		i = 0;			/* item counter */
+	_WORD i = 0;						/* item counter */
+	LSTYPE *f = *list;					/* pointer to current list item */
 
-	LSTYPE 
-		*f = *list;		/* pointer to current list item */   
-
-
-	if (item < 0 )
+	if (item < 0)
 		return NULL;
 
 	while ((f != NULL) && (i != item))
@@ -221,18 +199,15 @@ LSTYPE *get_item
  * or -1 if not found
  */
 
-LSTYPE *find_lsitem
-(
-	LSTYPE **list,	/* pointer to the pointer to list to be searched */
-	const char *name,		/* item name to be found */
-	_WORD *pos		/* position where item was found, or -1 */
-)
+LSTYPE *find_lsitem(LSTYPE **list,		/* pointer to the pointer to list to be searched */
+					const char *name,	/* item name to be found */
+					_WORD *pos			/* position where item was found, or -1 */
+	)
 {
-	LSTYPE *f = *list;		/* pointer to current list item */   
+	LSTYPE *f = *list;					/* pointer to current list item */
 	const char *n;
 
 	*pos = -1;
-
 
 	if (name)
 	{
@@ -242,7 +217,7 @@ LSTYPE *find_lsitem
 		{
 			*pos = *pos + 1;
 
-			if(strcmp(n, f->filetype) == 0)
+			if (strcmp(n, f->filetype) == 0)
 				return f;
 
 			f = f->next;
@@ -260,17 +235,13 @@ LSTYPE *find_lsitem
  * this routine is for filetypes, programtypes and icontypes
  */
 
-void lsrem
-( 
-	LSTYPE **list, 		/* pointer to pointer to list of filetype items */
-	LSTYPE *item		/* item to be removed */
-)
+void lsrem(LSTYPE **list,				/* pointer to pointer to list of filetype items */
+		   LSTYPE *item				/* item to be removed */
+	)
 {
 
-	LSTYPE 
-		*f = *list,		/* pointer to current item in the list */ 
-		*prev = NULL;	/* pointer to previous item in the list */
-
+	LSTYPE *f = *list;					/* pointer to current item in the list */
+	LSTYPE *prev = NULL;				/* pointer to previous item in the list */
 
 	while (f && (f != item))
 	{
@@ -278,7 +249,7 @@ void lsrem
 		f = f->next;
 	}
 
-	if ( f )
+	if (f)
 	{
 		if (prev == NULL)
 			*list = f->next;
@@ -299,21 +270,18 @@ void lsrem
  * If the list is empty, nothing is done.
  */
 
-void lsrem_all
-(
-	LSTYPE **list,	/* pointer to pointer to list to work on */ 
-	void *rem_func	/* pointer to function to remove specific item kind */
-)
+void lsrem_all(LSTYPE **list,			/* pointer to pointer to list to work on */
+			   void *rem_func			/* pointer to function to remove specific item kind */
+	)
 {
 	LSTYPE *p;
+	void (*remf) (LSTYPE **list, LSTYPE *item) = rem_func;
 
-	void (*remf)(LSTYPE **list, LSTYPE *item) = rem_func;
-
-	if ( list != NULL )
+	if (list != NULL)
 	{
-		while ( (p = *list) != NULL )
+		while ((p = *list) != NULL)
 		{
-	 		remf(list, p);	
+			remf(list, p);
 		}
 	}
 }
@@ -323,10 +291,8 @@ void lsrem_all
  * A shorter form of the above, uses lsrem() only
  */
 
-void lsrem_all_one
-(
-	LSTYPE **list	/* pointer to list to work on */ 
-)
+void lsrem_all_one(LSTYPE **list		/* pointer to list to work on */
+	)
 {
 	lsrem_all(list, lsrem);
 }
@@ -336,25 +302,18 @@ void lsrem_all_one
  * Add an item into a list; return pointer to this item 
  */
 
-LSTYPE *lsadd 
-( 
-	LSTYPE **list,	/* pointer to the list into which the item is added */ 
-	size_t size,	/* size of item */ 
-	LSTYPE *pt, 	/* pointer to work (edit) area of item data to be added */
-	_WORD pos,		/* position (ordinal) in the list: where to add */ 
-	void *copy_func	/* pointer to a function which copies the data of specific kind */ 
-)
+LSTYPE *lsadd(LSTYPE **list,			/* pointer to the list into which the item is added */
+			  size_t size,				/* size of item */
+			  LSTYPE *pt,				/* pointer to work (edit) area of item data to be added */
+			  _WORD pos,				/* position (ordinal) in the list: where to add */
+			  void *copy_func			/* pointer to a function which copies the data of specific kind */
+	)
 {
-	void (*copyf)( LSTYPE *t, LSTYPE *s) = copy_func;
-
-	LSTYPE 
-		*p = *list, 	/* pointer to current item   */
-		*prev,			/* pointer to previous item  */ 
-		*n;				/* pointer to new-added item */
-
-	_WORD 
-		i = 0;			/* position counter          */
-
+	void (*copyf) (LSTYPE *t, LSTYPE *s) = copy_func;
+	LSTYPE *p = *list;					/* pointer to current item   */
+	LSTYPE *prev;						/* pointer to previous item  */
+	LSTYPE *n;							/* pointer to new-added item */
+	_WORD i = 0;						/* position counter          */
 
 	prev = NULL;
 
@@ -362,9 +321,9 @@ LSTYPE *lsadd
 
 	while ((p != NULL) && (i != pos))
 	{
-		prev = p;		/* remember this as previous */
-		p = p->next;	/* take the next one         */
-		i++;			/* count position as well    */
+		prev = p;						/* remember this as previous */
+		p = p->next;					/* take the next one         */
+		i++;							/* count position as well    */
 	}
 
 	/* 
@@ -373,16 +332,16 @@ LSTYPE *lsadd
 	 * set n->next always after copyf
 	 */
 
-	if ((n = malloc_chk(size)) != NULL) 
+	if ((n = malloc_chk(size)) != NULL)
 	{
-		copyf( n, pt );			/* copy data from pt to n */
+		copyf(n, pt);					/* copy data from pt to n */
 
-		if (prev == NULL)		/* if there is no previous item */
-			*list = n;			/* this is the first item in the list */
+		if (prev == NULL)				/* if there is no previous item */
+			*list = n;					/* this is the first item in the list */
 		else
-			prev->next = n;		/* not first, previous item points to new as next */
+			prev->next = n;				/* not first, previous item points to new as next */
 
-		n->next = p; 			/* will be NULL if there is no next entry */
+		n->next = p;					/* will be NULL if there is no next entry */
 	}
 
 	/* Return pointer to added entry */
@@ -395,13 +354,11 @@ LSTYPE *lsadd
  * A shorter form of the above; add at end of the list only
  */
 
-LSTYPE *lsadd_end 
-( 
-	LSTYPE **list,	/* pointer to the list into which the item is added */ 
-	size_t size,	/* size of item */ 
-	LSTYPE *pt, 	/* pointer to work (edit) area of item data to be added */
-	void *copy_func	/* pointer to a function which copies the data of specific kind */ 
-)
+LSTYPE *lsadd_end(LSTYPE **list,		/* pointer to the list into which the item is added */
+				  size_t size,			/* size of item */
+				  LSTYPE *pt,			/* pointer to work (edit) area of item data to be added */
+				  void *copy_func		/* pointer to a function which copies the data of specific kind */
+	)
 {
 	return lsadd(list, size, pt, SHRT_MAX, copy_func);
 }
@@ -409,32 +366,27 @@ LSTYPE *lsadd_end
 
 /* Copy a filetype, programtype, icontype or applications list into another */
 
-bool copy_all
-(
-	LSTYPE **copy, 	/* target list to which data is copied */
-	LSTYPE **list,	/* source list from which data is copied */ 
-	size_t size, 	/* size of data item */
-	void *copy_func	/* pointer to function to copy data of specific kind */ 
-) 
+bool copy_all(LSTYPE **copy,			/* target list to which data is copied */
+			  LSTYPE **list,			/* source list from which data is copied */
+			  size_t size,				/* size of data item */
+			  void *copy_func			/* pointer to function to copy data of specific kind */
+	)
 {
-	LSTYPE 
-		*p = *list;	/* start from the beginning of the list */
+	LSTYPE *p = *list;					/* start from the beginning of the list */
+	void (*copyf) (LSTYPE *target, LSTYPE *source) = copy_func;
 
-	void (*copyf)(LSTYPE *target, LSTYPE *source) = copy_func;
-
-
-	*copy = NULL;	/* new list isn't anywhere yet */
+	*copy = NULL;						/* new list isn't anywhere yet */
 
 	/* Add to new list while there is something in the original list... */
 
-	while (p)  
+	while (p)
 	{
-		if ( lsadd_end( copy, size, p, copyf ) == NULL )
-			return FALSE; 
+		if (lsadd_end(copy, size, p, copyf) == NULL)
+			return FALSE;
 		p = p->next;
 	}
 
-	return TRUE; 
+	return TRUE;
 }
 
 
@@ -444,13 +396,11 @@ bool copy_all
  * (there is no check for overflow anywhere)
  */
 
-_WORD cnt_types
-(
-	LSTYPE **list	/* list to be counted */
-)
+_WORD cnt_types(LSTYPE **list			/* list to be counted */
+	)
 {
 	_WORD n = 0;
-	LSTYPE *f = *list;  
+	LSTYPE *f = *list;
 
 	while (f)
 	{
@@ -472,22 +422,17 @@ _WORD cnt_types
  *  pos  = position of "name" item in the list 
  */
 
-bool check_dup
-( 
-	LSTYPE **list,	/* list of filetypes */ 
-	char *name,		/* name to check */ 
-	_WORD pos 		/* position of "name" in the list (i.e. skip that one) */
-)
+bool check_dup(LSTYPE **list,			/* list of filetypes */
+			   char *name,				/* name to check */
+			   _WORD pos				/* position of "name" in the list (i.e. skip that one) */
+	)
 {
-	_WORD 
-		i = 0;			/* item counter */
-
-	LSTYPE 
-		*f;				/* pointer to current item in the list */
+	_WORD i = 0;						/* item counter */
+	LSTYPE *f;							/* pointer to current item in the list */
 
 	/* If there is no list to check, result is always TRUE */
 
-	if ( list )
+	if (list)
 	{
 		f = *list;
 
@@ -495,13 +440,13 @@ bool check_dup
 
 		while (f)
 		{
-			if ( i != pos )
+			if (i != pos)
 			{
 				/* compare names... */
-	
-				if ( strcmp( f->filetype, name ) == 0 )
+
+				if (strcmp(f->filetype, name) == 0)
 				{
-					alert_printf( 1, AFILEDEF, f->filetype );
+					alert_printf(1, AFILEDEF, f->filetype);
 					return FALSE;
 				}
 			}
@@ -519,11 +464,9 @@ bool check_dup
  * A size-saving aux. function; remove three lists
  */
 
-void lsrem_three
-(
-	LSTYPE **clist,	/* pointer to array of pointers to lists */ 
-	void *remfunc	/* pointer to function that removes list member */
-)
+void lsrem_three(LSTYPE **clist,		/* pointer to array of pointers to lists */
+				 void *remfunc			/* pointer to function that removes list member */
+	)
 {
 	/* Note: this is shorter than a loop */
 
@@ -537,10 +480,7 @@ void lsrem_three
  * Aux. routine for resizing the setmask dialog when convenient
  */
 
-static void resize_dialog
-(
-	_WORD dh	/* vertical size change */
-)
+static void resize_dialog(_WORD dh)
 {
 	setmask[0].ob_height += dh;
 	setmask[FTOK].ob_y += dh;
@@ -568,59 +508,44 @@ static void resize_dialog
  * needed after this call. 
  */
 
-_WORD list_edit
-(
-	LS_FUNC *lsfunc,	/* pointers to item-type-specific functions used */
-	LSTYPE **lists,		/* addresses of pointers to lists of items */
-	_WORD nl,			/* number of lists */
-	size_t size,		/* item size */
-	LSTYPE *lwork,		/* work area for editing */
-	_WORD use			/* use identifier */
-)
+_WORD list_edit(LS_FUNC *lsfunc,		/* pointers to item-type-specific functions used */
+				LSTYPE **lists,			/* addresses of pointers to lists of items */
+				_WORD nl,				/* number of lists */
+				size_t size,			/* item size */
+				LSTYPE *lwork,			/* work area for editing */
+				_WORD use				/* use identifier */
+	)
 {
-	WINDOW 
-		*w;					/* Pointer to window where item is selected */
+	WINDOW *w;							/* Pointer to window where item is selected */
+	XDINFO info;						/* dialog info structure */
+	SLIDER sl_info;						/* sliderinfo structure */
 
-	XDINFO 
-		info;				/* dialog info structure */
+	LSTYPE *clist[3] = { NULL, NULL, NULL };					/* pointer to copies of list1 */
+	LSTYPE **list = NULL;				/* pointer to currently active list of items */
+	LSTYPE **newlist;					/* pointer to a new list (icons only) */
+	LSTYPE *curitm;						/* pointer to current item in the list */
+	LSTYPE *anitem;						/* temp. pointer storage for swapping places */
 
-	SLIDER 
-		sl_info;			/* sliderinfo structure */
+	bool keep = FALSE;					/* true if not needed to set buttons to normal */
+	bool stop = FALSE;					/* true to exit from the main loop */
+	bool dc = FALSE;					/* true for a double click */
+	bool copyok = FALSE;				/* true if copies of lists made ok */
+	bool redraw;						/* true if need to redraw dialog */
 
-	LSTYPE
-		*clist[3] = {NULL, NULL, NULL},	 /* pointer to copies of list1 */
-		**list = NULL,		/* pointer to currently active list of items */
-		**newlist,			/* pointer to a new list (icons only) */
-		*curitm,			/* pointer to current item in the list */
-		*anitem;			/* temp. pointer storage for swapping places */
-
-	bool
-		keep = FALSE,		/* true if not needed to set buttons to normal */
-		stop = FALSE,		/* true to exit from the main loop */
-		dc = FALSE,			/* true for a double click */
-		copyok = FALSE,		/* true if copies of lists made ok */
-		redraw;				/* true if need to redraw dialog */
-
-	_WORD 
-		i,					/* counter */
-		dh = 0,				/* amount of dialog resizing */
-		pos = -1,			/* index of item in the list */
-		pos0,				/* similar to that */
-		luse,				/* local copy of use parameter */
-		button = FTCANCEL,	/* index of pressed button */
-		wsel,				/* true if item selected in a dir window */
-		item;				/* index of item selected in a dir window */
-
-	char
-		*pname;				/* pointer to path+name of item in a dir window */
-
-	ITMTYPE
-		itype;				/* item type */
-
+	_WORD i;							/* counter */
+	_WORD dh = 0;						/* amount of dialog resizing */
+	_WORD pos = -1;						/* index of item in the list */
+	_WORD pos0;							/* similar to that */
+	_WORD luse;							/* local copy of use parameter */
+	_WORD button = FTCANCEL;				/* index of pressed button */
+	_WORD wsel;							/* true if item selected in a dir window */
+	_WORD item;							/* index of item selected in a dir window */
+	char *pname;						/* pointer to path+name of item in a dir window */
+	ITMTYPE itype;						/* item type */
 
 	/* In some cases make the dialog a bit smaller */
 
-	if(use & LS_APPL)
+	if (use & LS_APPL)
 	{
 		dh = setmask[FTCHANGE].ob_y - setmask[FTADD].ob_y;
 		resize_dialog(-dh);
@@ -631,13 +556,9 @@ _WORD list_edit
 	 * in a window (or desktop), or just called from the menu?
 	 */
 
-	if
-	( 
-		( (w = selection.w) != NULL ) 			&& 
-		( (item = selection.selected) >= 0 )    &&
-		( ( use & (LS_DOCT | LS_SELA) ) == 0 ) 	&&
-		( ( itype = itm_tgttype(w, item) ) != ITM_DRIVE )
-	)
+	if (((w = selection.w) != NULL) &&
+		((item = selection.selected) >= 0) &&
+		((use & (LS_DOCT | LS_SELA)) == 0) && ((itype = itm_tgttype(w, item)) != ITM_DRIVE))
 	{
 		/* 
 		 * Yes, item(s?) selected from a directory window. Then,
@@ -647,36 +568,27 @@ _WORD list_edit
 
 		wsel = TRUE;
 
-		if ( use & LS_ICNT )
+		if (use & LS_ICNT)
 		{
-			switch( itype )
+			switch (itype)
 			{
-				case ITM_FILE:
-				{
-					luse = use | LS_FIIC;
-					list = &lists[0];
-					break;
-				}
-				case ITM_PREVDIR:
-				case ITM_FOLDER:
-				{
-					luse = use | LS_FOIC;
-					list = &lists[1];
-					break;
-				}
-				case ITM_PROGRAM:
-				{
-					luse = use | LS_PRIC;
-					list = &lists[2];
-					break;
-				}
-				default:
-				{
-					goto exitnow;
-				}
+			case ITM_FILE:
+				luse = use | LS_FIIC;
+				list = &lists[0];
+				break;
+			case ITM_PREVDIR:
+			case ITM_FOLDER:
+				luse = use | LS_FOIC;
+				list = &lists[1];
+				break;
+			case ITM_PROGRAM:
+				luse = use | LS_PRIC;
+				list = &lists[2];
+				break;
+			default:
+				goto exitnow;
 			}
-		}
-		else
+		} else
 		{
 			list = &lists[0];
 			luse = use;
@@ -689,19 +601,18 @@ _WORD list_edit
 		 * Some special considerations so that icons can be assigned to ".."
 		 */
 
-		if( ( (luse & LS_ICNT) != 0) && (itype == ITM_PREVDIR) )
+		if (((luse & LS_ICNT) != 0) && (itype == ITM_PREVDIR))
 			pname = strdup(prevdir);
 		else
-			pname = itm_fullname(w,item);
+			pname = itm_fullname(w, item);
 
-		if(pname == NULL)
+		if (pname == NULL)
 			goto exitnow;
 
 		/* Is this item already in the list? */
 
 		curitm = lsfunc->lsfinditem(list, pname, &pos);
-	}
-	else
+	} else
 	{
 		/* 
 		 * No, just activated from the menu; 
@@ -720,24 +631,24 @@ _WORD list_edit
 
 		copyok = TRUE;
 
-		for ( i = 0; i < nl; i++)
+		for (i = 0; i < nl; i++)
 		{
-			if(copyok)
-				copyok = copy_all( &clist[i], &lists[i], size, lsfunc->lscopy );
+			if (copyok)
+				copyok = copy_all(&clist[i], &lists[i], size, lsfunc->lscopy);
 		}
 
-		if ( !copyok )
+		if (!copyok)
 		{
 			lsrem_three(clist, lsfunc->lsrem);
 			goto exitnow;
 		}
 
-		list = &clist[0]; /* always start from the first list */
+		list = &clist[0];				/* always start from the first list */
 		luse = use | LS_FIIC;
 
-		ls_sl_init( cnt_types(list), &sl_info, list); 
+		ls_sl_init(cnt_types(list), &sl_info, list);
 
-		if(chk_xd_open( setmask, &info ) < 0)
+		if (chk_xd_open(setmask, &info) < 0)
 		{
 			lsrem_three(clist, lsfunc->lsrem);
 			return FTCANCEL;
@@ -746,7 +657,7 @@ _WORD list_edit
 
 	/* Loop until told otherwise */
 
-	while ( !stop )
+	while (!stop)
 	{
 		redraw = FALSE;
 		keep = FALSE;
@@ -758,21 +669,20 @@ _WORD list_edit
 		 * get real button pressed
 		 */
 
-		if ( wsel )
+		if (wsel)
 		{
-			if ( curitm == NULL )
-				button = FTADD;		/* list item not found, install new */
+			if (curitm == NULL)
+				button = FTADD;			/* list item not found, install new */
 			else
-				button = FTCHANGE;	/* list item found, edit existing */
-		}
-		else
+				button = FTCHANGE;		/* list item found, edit existing */
+		} else
 		{
 			/* 
 			 * dc marks a double click; relevant for filemasks and
 			 * selected applications only
 			 */
 			button = sl_form_do(ROOT, &sl_info, &info);
- 			dc = (button & 0x8000) ? TRUE : FALSE; 
+			dc = (button & 0x8000) ? TRUE : FALSE;
 			button &= 0x7FFF;
 		}
 
@@ -787,230 +697,214 @@ _WORD list_edit
 
 		switch (button)
 		{
-			case FTOK:
-			case FTCANCEL:
+		case FTOK:
+		case FTCANCEL:
+			stop = TRUE;
+			break;
+
+		case FTADD:
+			/*
+			 * Add (install) a new item in the list;
+			 * First, set appropriate default values, if needed
+			 * i.e. set information existing for the list entry
+			 * matching the name, possibly using wildcards
+			 * (note: pname=NULL if not selected from a window) 
+			 */
+
+			lsfunc->lsitem(list, pname, luse, lwork);	/* default */
+
+			/* If a window selection, always exit after editing */
+
+			/* Open the appropriate dialog */
+
+			if (lsfunc->ls_dialog(list, SHRT_MAX, lwork, luse | LS_ADD) == TRUE)
 			{
-				stop = TRUE;
-				break;
-			}
-			case FTADD:
-			{
-				/*
-			 	 * Add (install) a new item in the list;
-			 	 * First, set appropriate default values, if needed
-				 * i.e. set information existing for the list entry
-				 * matching the name, possibly using wildcards
-			 	 * (note: pname=NULL if not selected from a window) 
-			 	 */
+				/* Addition accepted */
 
-				lsfunc->lsitem(list, pname, luse, lwork);  /* default */
-
-				/* If a window selection, always exit after editing */
-
-				/* Open the appropriate dialog */
-
-				if (lsfunc->ls_dialog(list, SHRT_MAX, lwork, luse | LS_ADD ) == TRUE)
+				if (wsel)
 				{
-					/* Addition accepted */
-
-					if ( wsel )
-					{
-						/* if from a window, exit after finished */
-						pos = SHRT_MAX;
-						button = FTOK;
-					}
-					else
-					{
-						/* 
-						 * if from the menu, show list, slider, etc.
-						 * note: new item is not yet added, and
-						 * it can't be counted, but need to set slider
-						 * properly, therefore cnt_types()+1 below
-						 */
-
-						pos = pos0;
-						sl_info.n = cnt_types(list) + 1;
-						redraw = TRUE;
-						sl_set_slider(&sl_info, &info); 
-					}
-
-					/* Add an item to the temporary list here */
-
-					curitm = lsadd( list, size, lwork, pos, lsfunc->lscopy );
-
-					/* Maybe it didn't succeed ? */
-
-					if(curitm == NULL)
-						button = FTCANCEL;
-
-				} /* ls_dialog ? */
-				break;
-			}
-			case FTDELETE: 
-			{
-				/* 
-		 	 	 * Delete an item from the list
-		 	 	 * Note: currently this operation can't be accessed 
-		 	 	 * if item is selected in a window 
-		 		 */
-
-				pos = pos0;
-				if ((curitm = get_item(list, pos)) != NULL)
+					/* if from a window, exit after finished */
+					pos = SHRT_MAX;
+					button = FTOK;
+				} else
 				{
-					lsfunc->lsrem(list, curitm);
-					sl_info.n = cnt_types(list);
-					redraw = TRUE;
-					sl_set_slider(&sl_info, &info); 
-				}
-				break;
-			}
-			case FTCHANGE:
-			{	
-				/* Edit an existing item in the list */
+					/* 
+					 * if from the menu, show list, slider, etc.
+					 * note: new item is not yet added, and
+					 * it can't be counted, but need to set slider
+					 * properly, therefore cnt_types()+1 below
+					 */
 
-				if (!wsel)
-				{
-					/* if from the menu */
 					pos = pos0;
-					curitm = get_item(list, pos);
+					sl_info.n = cnt_types(list) + 1;
+					redraw = TRUE;
+					sl_set_slider(&sl_info, &info);
 				}
 
-				/* 
-				 * curitm is either found above or else selected from
-				 * a window, copy this data to work area and edit:
-				 */
+				/* Add an item to the temporary list here */
 
-				if ( curitm )
-				{
-					lsfunc->lscopy( lwork, curitm );
+				curitm = lsadd(list, size, lwork, pos, lsfunc->lscopy);
 
-					if ( lsfunc->ls_dialog(list, pos, lwork, luse | LS_EDIT) )
-					{
-						lsfunc->lscopy( curitm, lwork );
-						redraw = TRUE;
+				/* Maybe it didn't succeed ? */
 
-						if(wsel)
-							button = FTOK;
-					}
-				}
-				break;
-			}
-			case FTMOVEUP:
+				if (curitm == NULL)
+					button = FTCANCEL;
+
+			}						/* ls_dialog ? */
+			break;
+
+		case FTDELETE:
+			/* 
+			 * Delete an item from the list
+			 * Note: currently this operation can't be accessed 
+			 * if item is selected in a window 
+			 */
+
+			pos = pos0;
+			if ((curitm = get_item(list, pos)) != NULL)
 			{
-				/* Move an item up in the list, unless it is the first one */
-
-				pos = pos0;
-
-				if (pos > 0 && (curitm = get_item(list, pos)) != NULL)
-				{
-					anitem = get_item(list, pos - 1);
-					anitem->next = curitm->next;
-					curitm->next = anitem;
-
-					if ( pos > 1 )
-					{
-						anitem = get_item(list, pos - 2);
-						anitem->next = curitm;
-					}
-					else
-						*list = curitm;
-
-					keyfunc( &info, &sl_info, CTL_CURUP );
-				}
-
-				break;
-			}
-			case FTMOVEDN:
-			{
-				/* Move an item down in the list, unless it is the last one */
-
-				pos = pos0;
-
-				if ( (pos < (sl_info.n - 1)) && (curitm = get_item(list, pos)) != NULL)
-				{
-					anitem = get_item(list, pos + 1);
-
-					curitm->next = anitem->next;
-					anitem->next = curitm;
-
-					if ( pos > 0 )
-					{
-						curitm = get_item(list, pos - 1);
-						curitm->next = anitem;
-					}
-					else
-						*list = anitem;
-
-					keyfunc( &info, &sl_info, CTL_CURDOWN );
-				}
-
-				break;
-			}
-			case FTYPE1:
-			case FTYPE2:
-			case FTYPE3:
-			case FTYPE4:
-			{
-				/* Select one of the items in the listbox */
-							
-				keep = TRUE;
+				lsfunc->lsrem(list, curitm);
+				sl_info.n = cnt_types(list);
 				redraw = TRUE;
-
-				if ( (use & LS_FMSK) || (use & LS_SELA) )
-				{
-					strcpy(setmask[FILETYPE].ob_spec.tedinfo->te_ptext, 
-					       setmask[button].ob_spec.tedinfo->te_ptext);
-					xd_drawthis(&info, FILETYPE);
-
-					if (dc)
-					{
-						stop = TRUE;
-						button = FTOK;
-					}
-
-					pos = pos0;
-				}
-
-				break;
+				sl_set_slider(&sl_info, &info);
 			}
-			case ITFILES:
-			case ITFOLDER:
-			case ITPROGRA:
+			break;
+		case FTCHANGE:
+			/* Edit an existing item in the list */
+
+			if (!wsel)
 			{
-				/*
-				 * The following two linew will work only if object indices
-				 * for ITFILES to ITPROGRA are in sequence.
-				 */
+				/* if from the menu */
+				pos = pos0;
+				curitm = get_item(list, pos);
+			}
 
-				luse &= ~(LS_FIIC | LS_FOIC | LS_PRIC);
-				luse |= (LS_FIIC << (button - ITFILES)); /* assuming buttons in a sequence */
-				newlist = &clist[button - ITFILES];
+			/* 
+			 * curitm is either found above or else selected from
+			 * a window, copy this data to work area and edit:
+			 */
 
-				keep = TRUE;
+			if (curitm)
+			{
+				lsfunc->lscopy(lwork, curitm);
 
-				if ( newlist != list )
+				if (lsfunc->ls_dialog(list, pos, lwork, luse | LS_EDIT))
 				{
+					lsfunc->lscopy(curitm, lwork);
 					redraw = TRUE;
-					list = newlist;
-					ls_sl_init( cnt_types(list), &sl_info, list); 
+
+					if (wsel)
+						button = FTOK;
 				}
-				break;
 			}
-			default:
+			break;
+
+		case FTMOVEUP:
+			/* Move an item up in the list, unless it is the first one */
+
+			pos = pos0;
+
+			if (pos > 0 && (curitm = get_item(list, pos)) != NULL)
 			{
-				break;
+				anitem = get_item(list, pos - 1);
+				anitem->next = curitm->next;
+				curitm->next = anitem;
 
+				if (pos > 1)
+				{
+					anitem = get_item(list, pos - 2);
+					anitem->next = curitm;
+				} else
+					*list = curitm;
+
+				keyfunc(&info, &sl_info, CTL_CURUP);
 			}
-		}		/* add/delete/change or else */
 
-		if ( !wsel )
+			break;
+
+		case FTMOVEDN:
+			/* Move an item down in the list, unless it is the last one */
+
+			pos = pos0;
+
+			if ((pos < (sl_info.n - 1)) && (curitm = get_item(list, pos)) != NULL)
+			{
+				anitem = get_item(list, pos + 1);
+
+				curitm->next = anitem->next;
+				anitem->next = curitm;
+
+				if (pos > 0)
+				{
+					curitm = get_item(list, pos - 1);
+					curitm->next = anitem;
+				} else
+					*list = anitem;
+
+				keyfunc(&info, &sl_info, CTL_CURDOWN);
+			}
+
+			break;
+
+		case FTYPE1:
+		case FTYPE2:
+		case FTYPE3:
+		case FTYPE4:
+			/* Select one of the items in the listbox */
+
+			keep = TRUE;
+			redraw = TRUE;
+
+			if ((use & LS_FMSK) || (use & LS_SELA))
+			{
+				strcpy(setmask[FILETYPE].ob_spec.tedinfo->te_ptext, setmask[button].ob_spec.tedinfo->te_ptext);
+				xd_drawthis(&info, FILETYPE);
+
+				if (dc)
+				{
+					stop = TRUE;
+					button = FTOK;
+				}
+
+				pos = pos0;
+			}
+
+			break;
+
+		case ITFILES:
+		case ITFOLDER:
+		case ITPROGRA:
+			/*
+			 * The following two linew will work only if object indices
+			 * for ITFILES to ITPROGRA are in sequence.
+			 */
+
+			luse &= ~(LS_FIIC | LS_FOIC | LS_PRIC);
+			luse |= (LS_FIIC << (button - ITFILES));	/* assuming buttons in a sequence */
+			newlist = &clist[button - ITFILES];
+
+			keep = TRUE;
+
+			if (newlist != list)
+			{
+				redraw = TRUE;
+				list = newlist;
+				ls_sl_init(cnt_types(list), &sl_info, list);
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		if (!wsel)
 		{
 			/* Redraw fields FTYPE1... FTYPEn */
 
-			if ( redraw || (use & LS_APPL) )
+			if (redraw || (use & LS_APPL))
 			{
 				set_lselector(&sl_info, TRUE, &info);
-				sl_set_slider(&sl_info, &info); 
+				sl_set_slider(&sl_info, &info);
 			}
 
 			/* Reset buttons in some cases */
@@ -1020,17 +914,17 @@ _WORD list_edit
 
 			/* Sometimes must redraw add/delete/change buttons */
 
-			if ( (use & LS_APPL) && (button >= FTADD) && (button <= FTCHANGE) )
-				xd_draw( &info, TSBUTT, 1);
-		}
-		else			/* if selected from a window, stop immediately */
+			if ((use & LS_APPL) && (button >= FTADD) && (button <= FTCHANGE))
+				xd_draw(&info, TSBUTT, 1);
+		} else							/* if selected from a window, stop immediately */
+		{
 			stop = TRUE;
-
-	}		/* loop while stop != TRUE */
+		}
+	}
 
 	/* Final activities before exit... */
 
-	if ( wsel )
+	if (wsel)
 	{
 		/* 
 		 * List item was selected from the window, so no lists have been 
@@ -1040,8 +934,7 @@ _WORD list_edit
 
 		free(pname);
 		pname = NULL;
-	}
-	else
+	} else
 	{
 		/* 
 		 * Dialog has just been activated from the menu, so:
@@ -1050,9 +943,9 @@ _WORD list_edit
 		 * copies of lists will be cleared and forgotten
 		 */
 
-		if ( button == FTOK )
+		if (button == FTOK)
 		{
-			for(i = 0; i < nl; i++)
+			for (i = 0; i < nl; i++)
 			{
 				lsrem_all(&lists[i], lsfunc->lsrem);
 				lists[i] = clist[i];
@@ -1060,10 +953,9 @@ _WORD list_edit
 
 			/* This is specifically for selecting an app to open a file */
 
-			if ( (use & LS_SELA) && (pos >= 0) )
+			if ((use & LS_SELA) && (pos >= 0))
 				selitem = get_item(&lists[0], pos);
-		}
-		else
+		} else
 		{
 			selitem = NULL;
 			lsrem_three(clist, lsfunc->lsrem);
@@ -1074,7 +966,7 @@ _WORD list_edit
 		xd_close(&info);
 	}
 
-	exitnow:;
+  exitnow:;
 	resize_dialog(dh);
 
 	/* Return last (exit) button code */
