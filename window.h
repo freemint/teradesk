@@ -211,10 +211,9 @@ extern SNAME automask; /* to compose the autolocator mask */
 #endif
 
 
-extern CfgEntry 
-	fnt_table[],
-	positions_table[],
-	wtype_table[];
+extern CfgEntry fnt_table[];
+extern CfgEntry positions_table[];
+extern CfgEntry wtype_table[];
 
 extern XDFONT *cfg_font;
 

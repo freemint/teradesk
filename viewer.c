@@ -39,13 +39,15 @@
 #include "stringf.h"
 
 
-#define FWIDTH			256 /* max.possible width of text window in text mode */
+#define FWIDTH			256				/* max.possible width of text window in text mode */
 
-#define ASCII_PERC		80	/* if so many % of printable chars, it is a text file */
+#define ASCII_PERC		80				/* if so many % of printable chars, it is a text file */
 
 
-WINFO textwindows[MAXWINDOWS]; 
+WINFO textwindows[MAXWINDOWS];
+
 RECT tmax;
+
 XDFONT txt_font;
 
 static _WORD displen = -1;
@@ -72,6 +74,13 @@ static long txt_nlines(TXT_WINDOW *w)
 
 static _WORD txt_width(TXT_WINDOW *w, _WORD hexmode)
 {
+	long i;							/* line counter */
+	long ll;						/* current line width */
+	long mw;						/* maximum line width */
+	char **wl;
+	char *p;						/* pointer to the beginning of the current line */
+	char *p1;						/* same, but for the next line */
+
 	/* 
 	 * If display is in hex mode, return a fixed width (HEXLEN); otherwise
 	 * scan pointers to all lines and find greatest difference between
@@ -80,90 +89,75 @@ static _WORD txt_width(TXT_WINDOW *w, _WORD hexmode)
 	 */
 
 	if (hexmode == 1)
-		return HEXLEN + 1;	/* fixed window width in hex mode */
-	else
+		return HEXLEN + 1;				/* fixed window width in hex mode */
+	/* text is scanned only if width had been reset to 0 */
+
+	if (w->twidth == 0)
 	{
-		long 
-			i,	/* line counter */
-			ll,	/* current line width */
-			mw;	/* maximum line width */
+		_WORD ts = w->tabsize;
 
-		/* text is scanned only if width had been reset to 0 */
+		if (w->tlines > 100)
+			hourglass_mouse();
 
-		if(w->twidth == 0)
+		wl = w->lines;
+		mw = 0;
+
+		for (i = 0; i < w->tlines; i++)
 		{
+			p = *wl++;
+			p1 = *wl;
+			ll = 0;
 
-			char
-				**wl,
-				*p,		/* pointer to the beginning of the current line */
-				*p1;	/* same, but for the next line */
-	
-			_WORD
-				ts = w->tabsize;
-	
-			if(w->tlines > 100)
-				hourglass_mouse();
-
-			wl = w->lines;
-			mw = 0;
-
-			for(i = 0; i < w->tlines; i++)
+			do
 			{
-				p = *wl++;
-				p1 = *wl;
-				ll = 0;
+				ll++;
 
-				do
+				if (*p++ == '\t')
 				{
-					ll++;
-
-					if (*p++ == '\t') 
-					{
-						ll += (ts - (ll % ts));
-					}
+					ll += (ts - (ll % ts));
 				}
-				while (p < p1);
+			} while (p < p1);
 
-				if(ll > mw)
-					mw = ll;
-			}
-
-			/* Add the right margin */
-
-			mw += MARGIN;
-
-			arrow_mouse();
+			if (ll > mw)
+				mw = ll;
 		}
-		else
-			mw = w->twidth;
 
-		/* 
-		 * Window width should be at least (arbitrary) 16 characters 
-		 * but not more than FWIDTH characters 
-		 */
+		/* Add the right margin */
 
-		mw = lminmax(16L, mw, FWIDTH);
+		mw += MARGIN;
 
-		return (_WORD)mw;
+		arrow_mouse();
+	} else
+	{
+		mw = w->twidth;
 	}
+	
+	/* 
+	 * Window width should be at least (arbitrary) 16 characters 
+	 * but not more than FWIDTH characters 
+	 */
+
+	mw = lminmax(16L, mw, FWIDTH);
+
+	return (_WORD) mw;
 }
 
 
 /********************************************************************
- *																	*
- * Functies voor het tekenen van de inhoud van een tekstwindow.		*
- *																	*
+ *                                                                  *
+ * Functions for drawing a textwindow content.                      *
+ *                                                                  *
  ********************************************************************/
 
 /*
- * Functie voor het converteren van een hexadecimale digit in
- * een ASCII karakter.
+ * Function for converting a hexadecimal digit
+ * to an ASCII character
  *
  * Parameters:
  *
- * x		- hexadecimaal getal
+ * x		- hexadecimal number
  *
- * Resultaat: ASCII karakter
+ * Resultt: ASCII character
  */
 
 static char hexdigit(_WORD x)
@@ -182,26 +176,18 @@ static char hexdigit(_WORD x)
  * for files larger than 256MB.
  */
 
-void disp_hex
-(
-	char *tmp,  		/* output buffer tmp[HEXLEN + 2] with data in hex mode  */
-	char *p,  			/* pointer to the beginning of the 16-byte line of text */
-	long a,				/* index of 1st byte of the line from the file beginning */
-	long size,			/* file size */
-	bool toprint		/* true if file is being printed */ 
-)
+void disp_hex(char *tmp,				/* output buffer tmp[HEXLEN + 2] with data in hex mode  */
+			  char *p,					/* pointer to the beginning of the 16-byte line of text */
+			  long a,					/* index of 1st byte of the line from the file beginning */
+			  long size,				/* file size */
+			  bool toprint				/* true if file is being printed */
+	)
 {
-	long 
-		h = a;
+	long h = a;
+	_WORD i;
+	char *tmpj, pi;
 
-	_WORD 
-		i;
-
-	char
-		*tmpj,
-		pi;
-
-	if (a >= size )
+	if (a >= size)
 	{
 		*tmp = 0;
 		return;
@@ -211,7 +197,7 @@ void disp_hex
 
 	for (i = 6; i >= 0; i--)
 	{
-		tmp[i] = hexdigit((_WORD)h);
+		tmp[i] = hexdigit((_WORD) h);
 		h >>= 4;
 	}
 
@@ -225,19 +211,18 @@ void disp_hex
 	{
 		*tmpj++ = ' ';
 
-		if ((a + (long)i) < size)
+		if ((a + (long) i) < size)
 		{
 			pi = p[i];
-			*tmpj++ = hexdigit((_WORD)(pi >> 4));
-			*tmpj++ = hexdigit((_WORD)pi);
+			*tmpj++ = hexdigit((_WORD) (pi >> 4));
+			*tmpj++ = hexdigit((_WORD) pi);
 
-			if ( (pi == 0) || ((toprint == TRUE) && (pi < ' ')) )
+			if ((pi == 0) || ((toprint == TRUE) && (pi < ' ')))
 				pi = '.';
-		}
-		else
+		} else
 		{
-			*tmpj++  = ' ';
-			*tmpj++  = ' ';
+			*tmpj++ = ' ';
+			*tmpj++ = ' ';
 			pi = ' ';
 		}
 
@@ -251,37 +236,31 @@ void disp_hex
 
 
 /*
- * Functie voor het uitlezen van een regel uit de buffer van een
- * window. Afhankelijk van de mode is de presentatie in ASCII of
- * hexadecimaal.
+ * Function for reading a line from the buffer of a
+ * window. Depending on the mode, the presentation is in ASCII or
+ * hexadecimal.
  *
  * Parameters:
  *
- * w		- Pointer naar WINFO structuur 
- * dest		- Buffer waarin de regel geplaatst moet worden
- * line		- Nummer van de regel
+ * w		- Pointer to WINFO structur 
+ * dest		- Buffer in which the line should be placed
+ * line		- Number of the line
  *
- * Resultaat: Lengte van de regel
+ * Result:   Length of the line
  */
 
-static _WORD txt_line
-(
-	TXT_WINDOW *w,	/* pointer to window being processed */ 
-	char *dest,		/* pointer to destination (output) string */ 
-	long line		/* line index */
-)
+static _WORD txt_line(TXT_WINDOW *w,	/* pointer to window being processed */
+					  char *dest,		/* pointer to destination (output) string */
+					  long line			/* line index */
+	)
 {
-	char 
-		*s,			/* pointer to the source string- the real line */ 
-		*d = dest;	/* pointer to a location in destination string */
+	char *s;							/* pointer to the source string- the real line */
+	char *d = dest;						/* pointer to a location in destination string */
 
-	_WORD 
-		i,						/* counter */ 
-		wpxm = w->px - MARGIN,
-		m = w->columns,			/* rightmost column in the text */
-		cnt = 0,				/* input character count */
-		cntm = 0;				/* left margin visible character count */ 
-
+	_WORD i;							/* counter */
+	_WORD wpxm = w->px - MARGIN, m = w->columns;	/* rightmost column in the text */
+	_WORD cnt = 0;						/* input character count */
+	_WORD cntm = 0;						/* left margin visible character count */
 
 	/* Don't process invisible or nonexistent lines */
 
@@ -293,9 +272,9 @@ static _WORD txt_line
 
 	/* Left margin in text window, if visible */
 
-	for ( i = w->px; i < MARGIN; i++ )
+	for (i = w->px; i < MARGIN; i++)
 	{
-		*d++ = ' ';	
+		*d++ = ' ';
 		cntm++;
 	}
 
@@ -304,11 +283,10 @@ static _WORD txt_line
 	if (w->hexmode == 0)
 	{
 		/* Create a line in text mode */
-
 		char ch;
 		_WORD tabsize = w->tabsize;
 
-		m += w->px; /* rightmost column in text */ 
+		m += w->px;						/* rightmost column in text */
 
 		/* If this line does not exist at all, return NULL */
 
@@ -322,45 +300,40 @@ static _WORD txt_line
 
 		while (cnt < m)
 		{
-			if ((ch = *s++) == 0)	/* null: ignore */
+			if ((ch = *s++) == 0)		/* null: ignore */
 				continue;
 
-			if (ch == '\n')			/* linefeed: end of line */
+			if (ch == '\n')				/* linefeed: end of line */
 				break;
 
-			if (ch == '\r')			/* carriage return: ignore */
+			if (ch == '\r')				/* carriage return: ignore */
 				continue;
 
-			if (ch == '\t')			/* tab: substitute */
+			if (ch == '\t')				/* tab: substitute */
 			{
 				do
 				{
-					if (cnt >= wpxm )
+					if (cnt >= wpxm)
 						*d++ = ' ';
 
 					cnt++;
-				}
-				while (((cnt % tabsize) != 0) && (cnt < m));
+				} while (((cnt % tabsize) != 0) && (cnt < m));
 
 				continue;
 			}
 
-			if ( cnt  >= wpxm ) /* if righter than left edge... */
-				*d++ = ch;		/* set that character */
+			if (cnt >= wpxm)			/* if righter than left edge... */
+				*d++ = ch;				/* set that character */
 
 			cnt++;
 		}
-	}
-	else
+	} else
 	{
 		/* Create a line in hex mode */
+		long a = 16L * line;
 
-		long 
-			a = 16L * line;
-
-		char 
-			tmp[HEXLEN + 2], 
-			*p = &w->buffer[a];
+		char tmp[HEXLEN + 2],
+		*p = &w->buffer[a];
 
 		if (w->px >= HEXLEN)
 		{
@@ -370,7 +343,7 @@ static _WORD txt_line
 
 		disp_hex(tmp, p, a, w->size, FALSE);
 
-		s = &tmp[wpxm + cntm]; /* same as &tmp[w->px - (MARGIN - cntm)] */
+		s = &tmp[wpxm + cntm];			/* same as &tmp[w->px - (MARGIN - cntm)] */
 
 		while (cnt < m)
 		{
@@ -386,57 +359,44 @@ static _WORD txt_line
 	/* Finish the line with a null */
 
 	*d = 0;
-	return (_WORD)(d - dest);
+	return (_WORD) (d - dest);
 }
 
 
 /*
- * Bereken de rechthoek die de te tekenen tekst omsluit.
+ * Calculate the rectangle that encloses the text to be drawn.
  */
 
-static void txt_comparea
-(
-	TXT_WINDOW *w,	/* pointer naar window */
-	long line, 		/* regelnummer */
-	_WORD str_len, 	/* lengte van de string */
-	RECT *r,
-	RECT *work		/* RECT structuur met de grootte van het werkgebied van het window */
-)
+static void txt_comparea(TXT_WINDOW *w,	/* pointer to window */
+						 long line,		/* line number */
+						 _WORD str_len,	/* length of the string */
+						 RECT *r, RECT *work	/* RECT structure with the size of the window's work area */
+	)
 {
 	r->x = work->x;
-	r->y = work->y + (_WORD)(line - w->py) * txt_font.ch;
+	r->y = work->y + (_WORD) (line - w->py) * txt_font.ch;
 	r->w = str_len * txt_font.cw;
 	r->h = txt_font.ch;
 }
 
 
 /*
- * Functie voor het afdrukken van 1 karakter van een regel. Deze
- * functie wordt bij het naar links en rechts scrollen van een
- * window gebruikt.
+ * Function for printing 1 character of a line. This one
+ * function is scrolled to the left and right of one
+ * window used.
  */
 
-static void txt_prtchar
-(
-	TXT_WINDOW *w,	/* pointer naar window */
-	_WORD column,		/* kolom waarin het karakter wordt afgedrukt */
-	_WORD nc,			/* number of columns */
-	long line,		/* regel waarin het karakter wordt afgedrukt */
-	RECT *area,		/* clipping rechthoek */
-	RECT *work		/* Werkgebied van het window */
-)
+static void txt_prtchar(TXT_WINDOW *w,	/* pointer to window */
+						_WORD column,	/* column in which the character is printed */
+						_WORD nc,		/* number of columns */
+						long line,		/* line in which the character is printed */
+						RECT *area,		/* clipping rectangle */
+						RECT *work		/* Workspace of the window */
+	)
 {
-	RECT 
-		r,
-		in;
-
-	_WORD
-		len, 
-		c;
-
-	char
-		s[FWIDTH];
-
+	RECT r, in;
+	_WORD len, c;
+	char s[FWIDTH];
 
 	c = column - w->px;
 
@@ -460,36 +420,27 @@ static void txt_prtchar
 
 
 /*
- * Functie voor het afdrukken van een regel.
+ * Function for printing a line.
  */
 
-void txt_prtline
-(
-	TXT_WINDOW *w,	/* Pointer naar window */
-	long line,		/* Regel die wordt afgedrukt */
-	RECT *area,		/* Clipping rechthoek */
-	RECT *work		/* Werkgebied van het window */
-)
+void txt_prtline(TXT_WINDOW *w,		/* Pointer to window */
+				 long line,			/* Line that will be printed */
+				 RECT *area,		/* Clipping rectangle */
+				 RECT *work			/* Workspace of the window */
+	)
 {
-	RECT 
-		r,
-		r2;
-
-	_WORD 
-		len;
-
-	char 
-		s[FWIDTH];
-
+	RECT r, r2;
+	_WORD len;
+	char s[FWIDTH];
 
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
 
-	r2 = r; 
+	r2 = r;
 	r2.w = work->w;
 
 	if (rc_intersect2(area, &r2))
-		pclear(&r2); 
+		pclear(&r2);
 
 	if (rc_intersect2(area, &r))
 		w_transptext(r.x, r.y, s);
@@ -498,22 +449,20 @@ void txt_prtline
 
 /********************************************************************
  *																	*
- * Funkties voor scrollen van tekstwindows.							*
+ * Functions for scrolling text windows.							*
  *																	*
  ********************************************************************/
 
 /*
- * Teken een kolom van een window opnieuw.
+ * Retype a column of a window.
  */
 
-void txt_prtcolumn
-(
-	TXT_WINDOW *w,	/* pointer naar window */
-	_WORD column,		/* first column */
-	_WORD nc,			/* number of columns */
-	RECT *area,		/* clipping rechthoek */
-	RECT *work		/* werkgebied window */
-)
+void txt_prtcolumn(TXT_WINDOW *w,		/* pointer naar window */
+				   _WORD column,		/* first column */
+				   _WORD nc,			/* number of columns */
+				   RECT *area,			/* clipping rechthoek */
+				   RECT *work			/* werkgebied window */
+	)
 {
 	_WORD i;
 
@@ -524,34 +473,34 @@ void txt_prtcolumn
 
 /********************************************************************
  *																	*
- * Functies voor het afhandelen van selecties van een menupunt in	*
- * een window menu.													*
+ * Functions for handling selections of a menu item                 *
+ * a window menu.                                                   *
  *																	*
  ********************************************************************/
 
 /*
- * Functie voor het updaten van het window menu van een tekstwindow.
+ * Function for updating the window menu of a text window.
  * If a macro is used instead of a function, a couple of bytes
  * are saved
  */
 
 #if __USE_MACROS
 
-#define set_menu(x) xw_menu_icheck((WINDOW *)x, VMHEX, x->hexmode)
+#define set_menu(x) xw_menu_icheck((WINDOW *)(x), VMHEX, x->hexmode)
 
 #else
 
 static void set_menu(TXT_WINDOW *w)
 {
-	xw_menu_icheck((WINDOW *)w, VMHEX, w->hexmode);
+	xw_menu_icheck((WINDOW *) w, VMHEX, w->hexmode);
 }
 
 #endif
 
 
 /*
- * Functie voor het instellen van de ASCII of de HEXMODE
- * van een window. This routine toggles hexmode on/off
+ * Function for setting the ASCII or HEXMODE
+ * of a window. This routine toggles hexmode on/off
  * upon each call.
  */
 
@@ -561,25 +510,19 @@ static void txt_mode(TXT_WINDOW *w)
 	w->nlines = txt_nlines(w);
 	w->columns = txt_width(w, w->hexmode);
 
-	wd_type_sldraw ((WINDOW *)w);
-	set_menu(w); /* check the hexmode menu item */
+	wd_type_sldraw((WINDOW *) w);
+	set_menu(w);						/* check the hexmode menu item */
 }
 
 
 /*
- * Functie voor het instellen van de tabultorgrootte van een
- * tekstwindow. 
+ * Function for setting tabulator size of one
+ * textwindow
  */
-
 static void txt_tabsize(TXT_WINDOW *w)
 {
-	_WORD 
-		oldtab,
-		newtab;
-
-	char 
-		*vtabsize = stabsize[VTABSIZE].ob_spec.tedinfo->te_ptext;
-
+	_WORD oldtab, newtab;
+	char *vtabsize = stabsize[VTABSIZE].ob_spec.tedinfo->te_ptext;
 
 	oldtab = w->tabsize;
 
@@ -598,11 +541,11 @@ static void txt_tabsize(TXT_WINDOW *w)
 		{
 			w->tabsize = newtab;
 
-			w->twidth = 0;	/* force txt_width */
+			w->twidth = 0;				/* force txt_width */
 
-			w->twidth = txt_width(w, 0); /* in text mode, slower */
+			w->twidth = txt_width(w, 0);	/* in text mode, slower */
 			w->columns = txt_width(w, w->hexmode);
-			wd_type_sldraw((WINDOW *)w); 
+			wd_type_sldraw((WINDOW *) w);
 		}
 	}
 }
@@ -614,8 +557,8 @@ static void txt_tabsize(TXT_WINDOW *w)
 
 static void txt_free(TXT_WINDOW *w)
 {
-		free(w->lines);
-		free(w->buffer);
+	free(w->lines);
+	free(w->buffer);
 }
 
 
@@ -628,18 +571,18 @@ static void txt_rem(TXT_WINDOW *w)
 	txt_free(w);
 	free(w->path);
 	w->winfo->used = FALSE;
-	w->winfo->typ_window = NULL; 
+	w->winfo->typ_window = NULL;
 
-	xw_delete((WINDOW *)w);
+	xw_delete((WINDOW *) w);
 }
 
 
 /*
- * Window closed handler voor tekstwindows.
+ * Window close handler for text windows.
  *
  * Parameters:
  *
- * w			- Pointer naar window
+ * w			- Pointer to window
  */
 
 void txt_closed(WINDOW *w)
@@ -650,47 +593,38 @@ void txt_closed(WINDOW *w)
 
 
 /*
- * Window menu handler voor tekstwindows.
+ * Window menu handler for text windows.
  *
  * Parameters:
  *
  * w			- Pointer to window
- * title		- Menutitel die geselekteerd is
- * item			- Menupunt dat geselekteerd is
+ * title		- Selected menu title
+ * item			- Selected menu item
  */
 
-void txt_hndlmenu
-(
-	WINDOW *w,	/* pointer to (text) window */
-	_WORD title,	/* menu title id. */
-	_WORD item	/* menu item id. */
-)
+void txt_hndlmenu(WINDOW *w, _WORD title, _WORD item)
 {
 	/* A switch structue is used in case new menu items are introduced */
 
 	switch (item)
 	{
-		case VMTAB:
-		{
-			txt_tabsize((TXT_WINDOW *)w);
-			break;
-		}
-		case VMHEX:
-		{
-			txt_mode((TXT_WINDOW *)w);
-			break;
-		}
+	case VMTAB:
+		txt_tabsize((TXT_WINDOW *) w);
+		break;
+	case VMHEX:
+		txt_mode((TXT_WINDOW *) w);
+		break;
 	}
 
 	wd_type_nofull(w);
 	xw_menu_tnormal(w, title, 1);
 }
 
- 
+
 /********************************************************************
- *																	*
- * Funkties voor het laden van files in een window.					*
- *																	*
+ *                                                                  *
+ * Functions for loading files in a window.                         *
+ *                                                                  *
  ********************************************************************/
 
 /* 
@@ -698,27 +632,19 @@ void txt_hndlmenu
  * Return number of lines counted. 
  */
 
-static long count_lines
-(
-	char *buffer,	/* pointer to buffer contaning file */ 
-	long length		/* buffer (file) length */
-)
+static long count_lines(char *buffer,	/* pointer to buffer contaning file */
+						long length		/* buffer (file) length */
+	)
 {
-	long 
-		cnt = length, 
-		n = 1;
-
-	char 
-		*s = buffer,
-		cr = '\n';
-
+	long cnt = length;
+	long n = 1;
+	char *s = buffer;
 
 	do
 	{
-		if (*s++ == cr)
+		if (*s++ == '\n')
 			n++;
-	}
-	while (--cnt > 0);
+	} while (--cnt > 0);
 
 	return n;
 }
@@ -733,33 +659,26 @@ static long count_lines
  * (there, lineend is carriage-return only).
  */
 
-static void set_lines
-(
-	char *buffer,	/* pointer to buffer containing file */
-	char **lines,	/* pointer to array of pointers to line beginnings */
-	long length		/* file buffer length */
-)
+static void set_lines(char *buffer,		/* pointer to buffer containing file */
+					  char **lines,		/* pointer to array of pointers to line beginnings */
+					  long length		/* file buffer length */
+	)
 {
-	char 
-		*s = buffer, 
-		**p = lines;
-
-	long 
-		cnt = length;
-
+	char *s = buffer;
+	char **p = lines;
+	long cnt = length;
 
 	*p++ = s;
 
 	do
 	{
-		if (*s++ == '\n')	/* find lineends */
+		if (*s++ == '\n')				/* find lineends */
 		{
 			*p++ = s;
 		}
-	}
-	while (--cnt > 0);
+	} while (--cnt > 0);
 
-	*p = buffer + length; 
+	*p = buffer + length;
 }
 
 
@@ -769,21 +688,16 @@ static void set_lines
  * BEWARE that this function accepts an extended range of characters
  * compared to isprint(); 
  * 
- * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf> and 'ÿ'
+ * Acceptable range: ' ' to '~' (32 to 126), <tab>, <cr>, <lf>
  * Also, characters higher than 127 (c < 0) are assumed to be printable
  * for the sake of codepages of other languages.
- * 
- * Note: this will not work well if default character is unsigned!
- * In that case check c > 127 instead of c < 0 
  */
 
 static bool isxprint(signed char c)
 {
-	if (((c >= ' ') && (c <= '~')) || (c == '\t') || (c == '\r') ||
-		(c == '\n') || (c < 0) )
+	if ((c >= ' ' && c <= '~') || c == '\t' || c == '\r' || c == '\n' || c < 0)
 		return TRUE;
-	else
-		return FALSE;
+	return FALSE;
 }
 
 
@@ -798,52 +712,45 @@ static bool isxprint(signed char c)
  * more than needed.
  */
 
-static _WORD read_txtfile
-(
-	const char *name,	/* name of file to read */
-	char **buffer,		/* location of the buffer to receive text */
-	long *flength,		/* size of the file being read */
-	long *tlines,		/* number of text lines in the file */
-	char ***lines		/* pointer to array of pointers to beginnings of text lines */
-)
+static _WORD read_txtfile(const char *name,	/* name of file to read */
+						  char **buffer,	/* location of the buffer to receive text */
+						  long *flength,	/* size of the file being read */
+						  long *tlines,	/* number of text lines in the file */
+						  char ***lines	/* pointer to array of pointers to beginnings of text lines */
+	)
 {
-	_WORD 
-		handle,		/* file handle */ 
-		error;		/* error code  */
-
-	long 
-		read;		/* number of bytes read from the file */ 
-
-	XATTR 
-		attr;		/* file attributes */
-
+	_WORD handle;						/* file handle */
+	_WORD error;						/* error code  */
+	long read;							/* number of bytes read from the file */
+	XATTR attr;							/* file attributes */
 
 	*flength = 0L;
 
 	/* Get file attributes (follow the link in x_attr)  */
 
-	if ((error = (_WORD)x_attr(0, FS_INQ, name, &attr)) == 0)
+	if ((error = (_WORD) x_attr(0, FS_INQ, name, &attr)) == 0)
 	{
-		*flength = attr.st_size;	/* output param. file length */
+		*flength = attr.st_size;		/* output param. file length */
 
 		/* Open the file */
 
 		if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
 		{
 			/* Allocate buffer for complete file; read file into it  */
-		
+
 			if ((*buffer = malloc(*flength + 4L)) == NULL)
+			{
 				error = ENSMEM;
-			else
+			} else
 			{
 				read = x_read(handle, *flength, *buffer);
 
 				/* If completely read with success... */
 
 				if (read == *flength)
-				{				
+				{
 					/* And this has been read for a display in a window */
-					if ( tlines != NULL )
+					if (tlines != NULL)
 					{
 						/* 
 						 * There must be a linefeed -after- the end of file
@@ -861,7 +768,7 @@ static _WORD read_txtfile
 						 * then find those beginnings. 
 						 */
 
-						if(((*lines = malloc((*tlines + 1) * sizeof(char *))) != NULL))
+						if (((*lines = malloc((*tlines + 1) * sizeof(char *))) != NULL))
 							set_lines(*buffer, *lines, *flength);
 						else
 						{
@@ -870,17 +777,17 @@ static _WORD read_txtfile
 							free(*buffer);
 						}
 					}
-				}
-				else
+				} else
 				{
-					error = (read < 0) ? (_WORD)read : EREAD;
+					error = (read < 0) ? (_WORD) read : EREAD;
 					free(*buffer);
 				}
 			}
 			x_close(handle);
-		}
-		else
+		} else
+		{
 			error = handle;
+		}
 	}
 	return error;
 }
@@ -890,14 +797,12 @@ static _WORD read_txtfile
  * A shorter form of the above, with smaller number of arguments.
  */
 
-_WORD read_txtf
-(
-	const char *name,	/* name of file to read */
-	char **buffer,		/* location of the buffer to receive text */
-	long *flength		/* size of the file being read */
-)
+_WORD read_txtf(const char *name,		/* name of file to read */
+				char **buffer,			/* location of the buffer to receive text */
+				long *flength			/* size of the file being read */
+	)
 {
-	return read_txtfile( name, buffer, flength, NULL, NULL);
+	return read_txtfile(name, buffer, flength, NULL, NULL);
 }
 
 
@@ -911,14 +816,11 @@ _WORD read_txtf
  * it is assumed that text mode should be applied.
  */
 
-static _WORD txt_read
-(
-	TXT_WINDOW *w,	/* pointer to window where the file will be displayed */
-	bool setmode	/* if true, determine whether to use text or hex mode */
-)
+static _WORD txt_read(TXT_WINDOW *w,	/* pointer to window where the file will be displayed */
+					  bool setmode		/* if true, determine whether to use text or hex mode */
+	)
 {
-	_WORD 
-		error;
+	_WORD error;
 
 	hourglass_mouse();
 
@@ -932,28 +834,29 @@ static _WORD txt_read
 	{
 		w->lines = NULL;
 		w->buffer = NULL;
-	}
-	else
+	} else
 	{
-		w->twidth = 0; 	/* force txt_width to do something */
+		w->twidth = 0;					/* force txt_width to do something */
 
 		w->twidth = txt_width(w, 0);	/* width in text mode (slower) */
 
 		if (setmode)
 		{
 			char *b;
-			_WORD i, e, n = 0;
+			_WORD i;
+			_WORD e;
+			_WORD n = 0;
 
 			b = w->buffer;
-			e = (_WORD)lmin(w->size, 256L); /* longest possible line */
+			e = (_WORD) lmin(w->size, 256L);	/* longest possible line */
 
 			for (i = 0; i < e; i++)
 			{
-				if(isxprint(*b++))
+				if (isxprint(*b++))
 					n++;
 			}
 
-			n = (n * 100) / (e + 1); /* e can be 0 */
+			n = (n * 100) / (e + 1);	/* e can be 0 */
 
 			if (n > ASCII_PERC)
 				w->hexmode = 0;
@@ -978,19 +881,17 @@ static _WORD txt_read
  * If filename is not given (is NULL), keep old name and reread old file.
  */
 
-bool txt_reread
-(
-	TXT_WINDOW *w, 	/* pointer to window into which the file is reread */
-	char *name, 	/* file name */
-	_WORD px,			/* position of horizontal slider (column index) */ 
-	long py			/* position of vertical slider (line index) */
-)
+bool txt_reread(TXT_WINDOW *w,			/* pointer to window into which the file is reread */
+				char *name,				/* file name */
+				_WORD px,				/* position of horizontal slider (column index) */
+				long py					/* position of vertical slider (line index) */
+	)
 {
 	txt_free(w);
 
 	if (name)
 	{
-		free( w->path );
+		free(w->path);
 		w->path = name;
 	}
 
@@ -998,8 +899,8 @@ bool txt_reread
 	{
 		w->px = px;
 		w->py = py;
-		wd_type_title((TYP_WINDOW *)w); /* set title AND sliders */
-		wd_type_draw((TYP_WINDOW *)w, FALSE);
+		wd_type_title((TYP_WINDOW *) w);	/* set title AND sliders */
+		wd_type_draw((TYP_WINDOW *) w, FALSE);
 		return TRUE;
 	}
 
@@ -1012,20 +913,18 @@ bool txt_reread
  * If buffers are identical, return buffer length
  */
 
-static long compare_buf
-(
-	char *buf1,	/* pointer to buffer #1 */
-	char*buf2,	/* pointer to buffer #2 */
-	long len	/* how many bytes to compare */
-)
+static long compare_buf(char *buf1,		/* pointer to buffer #1 */
+						char *buf2,		/* pointer to buffer #2 */
+						long len		/* how many bytes to compare */
+	)
 {
 	long i;
 
-	for ( i = 0; i < len; i++ )
+	for (i = 0; i < len; i++)
 	{
-		if(*buf1++ != *buf2++)
+		if (*buf1++ != *buf2++)
 			break;
-	} 
+	}
 
 	return i;
 }
@@ -1042,34 +941,29 @@ static long compare_buf
  * ("length" is length from the beginning of source, not counted from "pos").
  */
 
-void copy_unnull
-( 
-	char *dest,		/* pointer to destination */
-	const char *source,	/* pointer to source */
-	long length,	/* length of source */
-	long pos,		/* starting position in the soruce */
-	_WORD dl			/* length of the display field */
-)
+void copy_unnull(char *dest,			/* pointer to destination */
+				 const char *source,	/* pointer to source */
+				 long length,			/* length of source */
+				 long pos,				/* starting position in the soruce */
+				 _WORD dl				/* length of the display field */
+	)
 {
-	_WORD 
-		i,
-		n;
-
+	_WORD i, n;
 	const char *s = source + pos;
 	char *d = dest;
 
-	n = (_WORD)lmin( length - pos, (long)dl );
+	n = (_WORD) lmin(length - pos, (long) dl);
 
-	for ( i = 0; i < n; i++ )
+	for (i = 0; i < n; i++)
 	{
 		*d = *s++;
 
 		/* Some characters can't be printed; substitute them */
 
 		if (*d == 0)
-			*d = SUBST_DISP; 
+			*d = SUBST_DISP;
 
-		d++;		
+		d++;
 	}
 
 	*d = 0;
@@ -1086,38 +980,33 @@ void copy_unnull
  * contents of the files after a difference. 
  */
 
-void compare_files( WINDOW *w, _WORD n, _WORD *list )
+void compare_files(WINDOW *w, _WORD n, _WORD *list)
 {
-	char 
-		*name,				/* name(s) of the file(s) */
-		*buf1 = NULL,		/* buffer for file #1   */
-		*buf2 = NULL;		/* buffer for file #2   */
+	char *name;							/* name(s) of the file(s) */
+	char *buf1 = NULL;					/* buffer for file #1   */
+	char *buf2 = NULL;					/* buffer for file #2   */
 
-	_WORD
-		i,					/* a counter */
-		sw,					/* size of compare window */
-		swx2,				/* almost twice of above */
-		button,				/* response in the alert box     */
-		error = 0;			/* error code from reading files */
+	_WORD i;							/* a counter */
+	_WORD sw;							/* size of compare window */
+	_WORD swx2;							/* almost twice of above */
+	_WORD button;							/* response in the alert box     */
+	_WORD error = 0;						/* error code from reading files */
 
-	long
-		size1,				/* size of file #1 */
-		size2,				/* size of file #2 */
-		i1, 				/* index in the first buffer  */
-		i2, 				/* index in the second buffer */
-		in, 				/* next start index for comparison */
-		i1n,				/* new i1 */
-		i2n,				/* new i2 */
-		i2o,				/* previous i2 */
-		nc, 				/* number of bytes to compare */
-		ii;					/* counter of synchronization attempts */
+	long size1;							/* size of file #1 */
+	long size2;							/* size of file #2 */
+	long i1;							/* index in the first buffer  */
+	long i2;							/* index in the second buffer */
+	long in;							/* next start index for comparison */
+	long i1n;							/* new i1 */
+	long i2n;							/* new i2 */
+	long i2o;							/* previous i2 */
+	long nc;							/* number of bytes to compare */
+	long ii;							/* counter of synchronization attempts */
 
-	XDINFO 
-		info;				/* dialog info structure */
+	XDINFO info;						/* dialog info structure */
 
-	bool
-		sync = TRUE, 		/* false while attempting to resynchronize */
-		diff = FALSE;		/* true if not equal files */
+	bool sync = TRUE;					/* false while attempting to resynchronize */
+	bool diff = FALSE;					/* true if not equal files */
 
 
 	/* 
@@ -1126,8 +1015,8 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 	 * model from the resource file.
 	 */
 
-	if(displen < 0)
-		displen = (_WORD)strlen(compare[DTEXT1].ob_spec.tedinfo->te_ptext);
+	if (displen < 0)
+		displen = (_WORD) strlen(compare[DTEXT1].ob_spec.tedinfo->te_ptext);
 
 	compare[CFILE1].ob_flags |= OF_EDITABLE;
 	compare[CFILE2].ob_flags |= OF_EDITABLE;
@@ -1135,7 +1024,7 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 	obj_hide(compare[CMPIBOX]);
 
 	if (options.cwin == 0)
-		options.cwin = 15;	/* default value */
+		options.cwin = 15;				/* default value */
 
 	itoa(options.cwin, compare[COMPWIN].ob_spec.tedinfo->te_ptext, 10);
 
@@ -1143,18 +1032,18 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 
 	for (i = 0; i < 2; i++)
 	{
-		if (i < n) /* i.e. if it is in the list */
-			name = itm_fullname( w, list[i] );
+		if (i < n)						/* i.e. if it is in the list */
+			name = itm_fullname(w, list[i]);
 		else
 			name = strdup(empty);
 
-		cv_fntoform(compare, CFILE1 + i, name); 
+		cv_fntoform(compare, CFILE1 + i, name);
 		free(name);
 	}
 
 	/* Open the dialog, then loop while needed */
 
-	if(chk_xd_open(compare, &info) >= 0)
+	if (chk_xd_open(compare, &info) >= 0)
 	{
 		do
 		{
@@ -1172,7 +1061,7 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 				strip_name(cfile1, cfile1);
 				strip_name(cfile2, cfile2);
 
-				if ( *cfile1 <= ' ' || *cfile2 <= ' ' || sw <= 0 )
+				if (*cfile1 <= ' ' || *cfile2 <= ' ' || sw <= 0)
 				{
 					alert_iprint(MINVSRCH);
 					continue;
@@ -1188,34 +1077,34 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 
 				/* A file need not be compared to itself */
 
-				if ( strcmp(cfile1, cfile2) == 0 )
+				if (strcmp(cfile1, cfile2) == 0)
 					break;
 
 				/* Start real work */
 
-				hourglass_mouse(); /* this will take some time... */
+				hourglass_mouse();		/* this will take some time... */
 
 				/* Read the files into respective buffers */
 
-				if ( (error = read_txtf( cfile1, &buf1, &size1 ) ) == 0 )
-					error = read_txtf( cfile2, &buf2, &size2 );
+				if ((error = read_txtf(cfile1, &buf1, &size1)) == 0)
+					error = read_txtf(cfile2, &buf2, &size2);
 
 				/* All ok, now start comparing */
 
-				if ( error == 0 )
+				if (error == 0)
 				{
 					/* Current indices: at the beginning(s) */
 
-					i1 = 0; 
+					i1 = 0;
 					i2 = 0;
 
 					/* Scan until the end of the shorter file */
 
-					while ( (i1 < size1) && (i2 < size2) )
+					while ((i1 < size1) && (i2 < size2))
 					{
 						/* How many bytes to compare and not exceed the ends */
 
-						nc = lmin( (size1 - i1), (size2 - i2) );
+						nc = lmin((size1 - i1), (size2 - i2));
 
 						/* How many bytes are equal ? Move to end of that */
 
@@ -1226,7 +1115,7 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 
 						/* If a difference is found before file ends, report */
 
-						if ( (in < nc) || ((in >= nc) && ( (i1n < size1) || (i2n < size2) ))  )
+						if ((in < nc) || ((in >= nc) && ((i1n < size1) || (i2n < size2))))
 						{
 							/* 
 							 * If there is a difference, display strings;
@@ -1234,11 +1123,11 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 							 * and the end of one is reached
 							 */
 
-							if ( sync || (in > swx2) )
+							if (sync || (in > swx2))
 							{
 								arrow_mouse();
 
-								sync = FALSE;	
+								sync = FALSE;
 								diff = TRUE;
 
 								i1 = i1n;
@@ -1247,17 +1136,17 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 
 								/* Prepare something to display */
 
-								copy_unnull( compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1, displen );
-								copy_unnull( compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2, displen );
-								rsc_ltoftext(compare, COFFSET, i1 );
+								copy_unnull(compare[DTEXT1].ob_spec.tedinfo->te_ptext, buf1, size1, i1, displen);
+								copy_unnull(compare[DTEXT2].ob_spec.tedinfo->te_ptext, buf2, size2, i2, displen);
+								rsc_ltoftext(compare, COFFSET, i1);
 
 								obj_unhide(compare[CMPIBOX]);
 								xd_drawdeep(&info, CMPIBOX);
 								button = xd_form_do_draw(&info);
 
-								/* Stop further comparison ? */ 
+								/* Stop further comparison ? */
 
-								if ( button == COMPCANC ) 
+								if (button == COMPCANC)
 									break;
 
 								hourglass_mouse();
@@ -1270,31 +1159,29 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 								 * display length)
 								 */
 
-								i1 += sw; 
+								i1 += sw;
 								ii = 0;
-							}
-							else
+							} else
 							{
 								ii++;
-								if ( ii == swx2 )
+								if (ii == swx2)
 								{
 									sync = TRUE;
 									i2 = i2o;
 								}
 							}
-						}
-						else
+						} else
 						{
 							i1 = i1n;
 							i2 = i2n;
 							sync = TRUE;
 						}
 
-						if ( sync )
+						if (sync)
 							i1++;
 						i2++;
 
-					} /* while */
+					}					/* while */
 
 					arrow_mouse();
 					break;
@@ -1309,11 +1196,9 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 					xform_error(error);
 					button = COMPCANC;
 				}
-			} 
-			else
-				error = 1; /* in order not to show alert below */
-		} 
-		while(button != COMPCANC);
+			} else
+				error = 1;				/* in order not to show alert below */
+		} while (button != COMPCANC);
 
 		/* Close the dialog */
 
@@ -1324,7 +1209,7 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
 
 		/* Display info if files are identical */
 
-		if ( !diff && (error == 0) ) 
+		if (!diff && (error == 0))
 			alert_iprint(MCOMPOK);
 	}
 }
@@ -1344,23 +1229,16 @@ void compare_files( WINDOW *w, _WORD n, _WORD *list )
  */
 
 static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
-						   long py, _WORD tabsize, bool hexmode,
-						   bool setmode, int *error) 
+						   long py, _WORD tabsize, bool hexmode, bool setmode, int *error)
 {
-	TXT_WINDOW
-		*w;
+	TXT_WINDOW *w;
+	RECT oldsize;
+	WDFLAGS oldflags;
 
-	RECT
-		oldsize;
+	wd_in_screen(info);
 
-	WDFLAGS
-		oldflags;
-
-
-	wd_in_screen( info );
-
-	if ((w = (TXT_WINDOW *)xw_create(TEXT_WIND, &wd_type_functions, TFLAGS, &tmax,
-									 sizeof(TXT_WINDOW), viewmenu, error)) == NULL)
+	if ((w = (TXT_WINDOW *) xw_create(TEXT_WIND, &wd_type_functions, TFLAGS, &tmax,
+									  sizeof(TXT_WINDOW), viewmenu, error)) == NULL)
 	{
 		free(file);
 		return NULL;
@@ -1370,19 +1248,19 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 
 	hourglass_mouse();
 
-	info->typ_window = (TYP_WINDOW *)w; 
+	info->typ_window = (TYP_WINDOW *) w;
 	w->px = px;
 	w->py = py;
-	w->path = (char *)file;
+	w->path = (char *) file;
 	w->tabsize = tabsize;
 	w->hexmode = hexmode;
 	w->winfo = info;
 
-	oldsize.x = info->x; /* remember old size */
+	oldsize.x = info->x;				/* remember old size */
 	oldsize.y = info->y;
 	oldsize.w = info->w;
 	oldsize.h = info->h;
-	
+
 	wd_restoresize(info);
 
 	oldflags = info->flags;
@@ -1399,11 +1277,10 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 	{
 		txt_rem(w);
 		return NULL;
-	}
-	else
+	} else
 	{
-		wd_iopen((WINDOW *)w, &oldsize, &oldflags); 
-		return (WINDOW *)w;
+		wd_iopen((WINDOW *) w, &oldsize, &oldflags);
+		return (WINDOW *) w;
 	}
 }
 
@@ -1415,17 +1292,12 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 
 bool txt_add_window(WINDOW *w, _WORD item, _WORD kstate, char *thefile)
 {
-	_WORD 
-		j = 0;
+	_WORD j = 0;
 	int error;
-
 	char *file;
+	WINFO *textwj = textwindows;
 
-	WINFO
-		*textwj = textwindows;
-
-
-	(void)kstate;
+	(void) kstate;
 	while ((j < MAXWINDOWS - 1) && (textwj->used != FALSE))
 	{
 		j++;
@@ -1435,7 +1307,7 @@ bool txt_add_window(WINDOW *w, _WORD item, _WORD kstate, char *thefile)
 	if (textwj->used)
 		return alert_iprint(MTMWIND), FALSE;
 
-	if ( thefile )
+	if (thefile)
 		file = thefile;
 	else if ((file = itm_fullname(w, item)) == NULL)
 		return FALSE;
@@ -1445,32 +1317,27 @@ bool txt_add_window(WINDOW *w, _WORD item, _WORD kstate, char *thefile)
 		xform_error(error);
 		return FALSE;
 	}
-
-#if _SHOWFIND	
+#if _SHOWFIND
 	/* If there was a search for a string, position sliders to show string */
 
-	if ( search_nsm > 0 )
+	if (search_nsm > 0)
 	{
-		long
-			ppy = 0;	/* line in which the string is   */
+		long ppy = 0;					/* line in which the string is */
+		TXT_WINDOW *tw = (TXT_WINDOW *) (textwj->typ_window);
 
-		TXT_WINDOW
-			*tw = (TXT_WINDOW *)(textwj->typ_window);
-
-		search_nsm = 0; /* this search is finished; cancel the finds */
+		search_nsm = 0;					/* this search is finished; cancel the finds */
 
 		/* Find in which line and column the found string is */
 
-		for ( ppy = 0; ppy < tw->tlines; ppy++ )
+		for (ppy = 0; ppy < tw->tlines; ppy++)
 		{
-			if ( tw->lines[ppy] - tw->lines[0] > find_offset )
+			if (tw->lines[ppy] - tw->lines[0] > find_offset)
 				break;
 		}
 
 		/* Note: "ppy" is now equal to line number + 1 */
 
-		w_page( ((TYP_WINDOW *)tw, (_WORD)(find_offset - tw->lines[tw->py]), ppy - 1L);
-
+		w_page((TYP_WINDOW *) tw, (_WORD) (find_offset - tw->lines[tw->py]), ppy - 1L);
 	}
 #endif
 
@@ -1488,88 +1355,66 @@ bool txt_add_window(WINDOW *w, _WORD item, _WORD kstate, char *thefile)
  * Configuration table for one open text window 
  */
 
-static CfgEntry txtw_table[] =
-{
-	{ CFG_HDR,	"text", { 0 } },
+static CfgEntry txtw_table[] = {
+	{ CFG_HDR, "text", { 0 } },
 	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D,		"indx", { &that.index	} },
-	{ CFG_S,		"name", { that.path	    } },
-	{ CFG_D,		"xrel", { &that.px		} },
-	{ CFG_L,		"yrel", { &that.py		} },
-	{ CFG_D,		"hexm", { &that.hexmode	} },
-	{ CFG_D,		"tabs", { &that.tabsize	} },
-	{ CFG_END,  NULL, { 0 } },
+	{ CFG_D, "indx", { &that.index } },
+	{ CFG_S, "name", { that.path } },
+	{ CFG_D, "xrel", { &that.px } },
+	{ CFG_L, "yrel", { &that.py } },
+	{ CFG_D, "hexm", { &that.hexmode } },
+	{ CFG_D, "tabs", { &that.tabsize } },
+	{ CFG_END, NULL, { 0 } },
 	{ CFG_LAST, NULL, { 0 } }
 };
-
 
 /* 
  * Save or load configuration for one open text window 
  */
-
 void text_one(XFILE *file, int lvl, int io, int *error)
 {
 	if (io == CFG_SAVE)
 	{
-		_WORD
-			i = 0;
-
-		TXT_WINDOW
-			*tw;
-	
+		_WORD i = 0;
+		TXT_WINDOW *tw;
+		
 		/* Identify window's index in WINFO by the pointer to that window */
-
-		while ((tw = (TXT_WINDOW *)textwindows[i].typ_window) != (TXT_WINDOW *)that.w)
+		while ((tw = (TXT_WINDOW *) textwindows[i].typ_window) != (TXT_WINDOW *) that.w)
 			i++;
-
 		that.index = i;
 		that.px = tw->px;
 		that.py = tw->py;
 		that.hexmode = tw->hexmode;
-		that.tabsize = tw->tabsize; 
+		that.tabsize = tw->tabsize;
 		strsncpy(that.path, tw->path, sizeof(that.path));
-			
 		*error = CfgSave(file, txtw_table, lvl, CFGEMP);
-	}
-	else
+	} else
 	{
 		memclr(&that, sizeof(that));
-		*error = CfgLoad(file, txtw_table, (_WORD)sizeof(VLNAME), lvl);
-
-		if ( (*error == 0 ) && (that.path[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40 ))
+		*error = CfgLoad(file, txtw_table, (_WORD) sizeof(VLNAME), lvl);
+		if ((*error == 0) && (that.path[0] == 0 || that.index >= MAXWINDOWS || that.tabsize > 40))
+		{
 			*error = EFRVAL;
-
+		}
 		if (*error == 0)
 		{
 			char *name = malloc(strlen(that.path) + 1);
+
 			if (name)
 			{
 				strcpy(name, that.path);
-
 				/* 
 				 * Window's index in WINFO is always taken from the file;
 				 * Otherwise, positions and size would not be preserved
 				 * Note: in case of error, name is deallocated in txt_do_open 
 				 */
-
-				txt_do_open
-				(
-					&textwindows[that.index],
-					name,
-					that.px,
-					that.py,
-					that.tabsize,
-					that.hexmode,
-					FALSE, /* setmode */
-					error
-				);
-
+				txt_do_open(&textwindows[that.index], name, that.px, that.py, that.tabsize, that.hexmode, FALSE, error);
 				/* If there is an error, display an alert */
-
 				wd_checkopen(error);
-			}
-			else
+			} else
+			{
 				*error = ENSMEM;
+			}
 		}
 	}
 }
@@ -1581,15 +1426,14 @@ void text_one(XFILE *file, int lvl, int io, int *error)
 
 void view_config(XFILE *file, int lvl, int io, int *error)
 {
-	if ( io == CFG_LOAD )
+	if (io == CFG_LOAD)
 	{
 		memclr(&thisw, sizeof(thisw));
 		memclr(&that, sizeof(that));
 	}
-
+	
 	cfg_font = &txt_font;
 	wtype_table[0].s = "views";
 	thisw.windows = &textwindows[0];
-
-	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL );
+	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL);
 }

@@ -34,7 +34,7 @@
 #include "config.h"
 #include "prgtype.h"
 
-#define XBUFSIZE	2048L /* size of a buffer used in file reading/writing */
+#define XBUFSIZE	2048L				/* size of a buffer used in file reading/writing */
 
 
 /* 
@@ -56,7 +56,7 @@ static bool flock;
 
 static long x_retresult(long result)
 {
-	return (result < 0) ? (long)xerror((_WORD)result) : result;
+	return (result < 0) ? (long) xerror((_WORD) result) : result;
 }
 
 
@@ -69,33 +69,31 @@ static long x_retresult(long result)
 
 _WORD x_checkname(const char *path, const char *name)
 {
-	long
-		nl = 0,
-		mp = sizeof(VLNAME);
+	long nl = 0;
+	long mp = sizeof(VLNAME);
 
-
-	if(!x_netob(path))	/* only if this is not a network object... */
+	if (!x_netob(path))					/* only if this is not a network object... */
 	{
-		if(*path)		/* and a path is given */
+		if (*path)						/* and a path is given */
 		{
-			if(!isdisk(path))	/* if it is not on a disk, return error */
+			if (!isdisk(path))			/* if it is not on a disk, return error */
 				return EPTHNF;
 
 			mp = x_pathconf(path, DP_PATHMAX);	/* maximum possible length */
 
-			if(mp < 0) 
-				return xerror((_WORD)mp);
+			if (mp < 0)
+				return xerror((_WORD) mp);
 		}
 
-		nl = (long)strlen((name) ? name : fn_get_name(path)); /* name length */
+		nl = (long) strlen((name) ? name : fn_get_name(path));	/* name length */
 
 		/* Avoid needless interrogation of drive if no name given */
 
-		if ( (*path && nl && nl > x_pathconf(path, DP_NAMEMAX)) || nl >= (long)sizeof(LNAME))
+		if ((*path && nl && nl > x_pathconf(path, DP_NAMEMAX)) || nl >= (long) sizeof(LNAME))
 			return EFNTL;
 	}
 
-	if ((long)(strlen(path) + nl + 2L) > lmin(mp, (long)sizeof(VLNAME)))
+	if ((long) (strlen(path) + nl + 2L) > lmin(mp, (long) sizeof(VLNAME)))
 		return EPTHTL;
 
 	return 0;
@@ -111,19 +109,20 @@ char *x_makepath(const char *path, const char *name, _WORD *error)
 {
 	char *p;
 
-	if ((p = malloc(strlen(path) + strlen(name) + 2L)) != NULL)
+	if ((p = malloc(strlen(path) + strlen(name) + 2)) != NULL)
 	{
 		*error = make_path(p, path, name);
 
-		if(*error != 0)
+		if (*error != 0)
 		{
 			free(p);
 			p = NULL;
 		}
-	}
-	else
+	} else
+	{
 		*error = ENSMEM;
-
+	}
+	
 	return p;
 }
 
@@ -136,48 +135,37 @@ char *x_makepath(const char *path, const char *name, _WORD *error)
 
 bool x_exist(const char *file, _WORD flags)
 {
-	XATTR
-		attr;
-
+	XATTR attr;
 	unsigned short itype;
-
-	_WORD
-		theflag;
-
+	_WORD theflag;
 
 #if _MINT_
-	if ( x_attr( (flags & EX_LINK) ? 1 : 0, FS_INQ, file,  &attr) < 0 )
+	if (x_attr((flags & EX_LINK) ? 1 : 0, FS_INQ, file, &attr) < 0)
 #else
-	if (x_attr(1, FS_INQ, file, &attr) < 0) 
+	if (x_attr(1, FS_INQ, file, &attr) < 0)
 #endif
 	{
-		return FALSE; /* x_attr can't find target */
-	}
-	else
+		return FALSE;					/* x_attr can't find target */
+	} else
 	{
 		itype = attr.st_mode & S_IFMT;
 
-		switch(itype)
+		switch (itype)
 		{
-			case S_IFDIR:
-			{
-				theflag = EX_DIR;
-				break;
-			}
+		case S_IFDIR:
+			theflag = EX_DIR;
+			break;
 #if _MINT_
-			case S_IFLNK:
-			{
-				theflag = EX_LINK;
-				break;
-			}
+		case S_IFLNK:
+			theflag = EX_LINK;
+			break;
 #endif
-			default:
-			{
-				theflag = EX_FILE;
-			}
+		default:
+			theflag = EX_FILE;
+			break;
 		}
 
-		if ( (flags & theflag) == 0 )
+		if ((flags & theflag) == 0)
 			return FALSE;
 
 		return TRUE;
@@ -194,18 +182,14 @@ bool x_exist(const char *file, _WORD flags)
 
 bool x_netob(const char *name)
 {
-	_WORD
-		i;
+	_WORD i;
+	static const char *pfx[] = { "http:", "https:", "ftp:", "mailto:", "telnet:" };
 
-	static const char 
-		*pfx[] = {"http:", "https:", "ftp:", "mailto:", "telnet:"};
-
-
-	if(*name && name[1] != ':') /* don't check further if not necessary */
+	if (*name && name[1] != ':')		/* don't check further if not necessary */
 	{
-		for(i = 0; i < 5; i++)
+		for (i = 0; i < 5; i++)
 		{
-			if( strnicmp(name, pfx[i], strlen(pfx[i])) == 0 )
+			if (strnicmp(name, pfx[i], strlen(pfx[i])) == 0)
 			{
 				return TRUE;
 			}
@@ -236,34 +220,27 @@ _WORD x_setpath(const char *path)
 
 char *x_getpath(_WORD drive, _WORD *error)
 {
-	VLNAME
-		tmp;
-
-	char
-		*buffer = NULL,
-		*t = tmp;
-
-	long
-		e;
-
+	VLNAME tmp;
+	char *buffer = NULL;
+	char *t = tmp;
+	long e;
 
 	/* Put drive id at the beginning of the temporary buffer */
 
-	*t++ = (char)(((drive == 0) ? x_getdrv(): (drive - 1)) + 'A');
+	*t++ = (char) (((drive == 0) ? x_getdrv() : (drive - 1)) + 'A');
 	*t++ = ':';
-	*t = 0; /* t is now tmp + 2 */
+	*t = 0;								/* t is now tmp + 2 */
 
 #if _MINT_
-	if(mint)
+	if (mint)
 	{
 		/* Use Dgetcwd so that length can be limited */
 
-		e = Dgetcwd(t, drive, (_WORD)sizeof(VLNAME) - 2 );
+		e = Dgetcwd(t, drive, (_WORD) sizeof(VLNAME) - 2);
 
-		if(e == GERANGE)
+		if (e == GERANGE)
 			e = EPTHTL;
-	}
-	else
+	} else
 #endif
 	{
 		/* In single-TOS this should be safe */
@@ -271,13 +248,13 @@ char *x_getpath(_WORD drive, _WORD *error)
 		e = Dgetpath(t, drive);
 	}
 
-	*error = xerror((_WORD)e);
+	*error = xerror((_WORD) e);
 
 	/* Create output buffer only if there are no errors */
 
-	if(*error == 0)
+	if (*error == 0)
 		buffer = strdup(tmp);
-	
+
 	return buffer;
 }
 
@@ -311,37 +288,30 @@ _WORD x_rmdir(const char *path)
 
 static _WORD _fullname(char *buffer)
 {
-	_WORD
-		error = 0,
-		drive = 0;
+	_WORD error = 0, drive = 0;
+	bool d = isdisk(buffer);
 
-	bool
-		d = isdisk(buffer);
-
-
-	if(!d || strlen(buffer) < 3)
+	if (!d || strlen(buffer) < 3)
 	{
 		/* No drive name contained in the name, or no complete path */
-
-		char
-			*def,
-			*save,
-			*n = buffer;
+		char *def;
+		char *save;
+		char *n = buffer;
 
 		/* Save the name so that it can be copied back */
 
-		if(d)
+		if (d)
 		{
 			drive = *buffer - 'A' + 1;
-			n += 2;		/* here begins the name (after the ':') */
+			n += 2;						/* here begins the name (after the ':') */
 		}
 
-		save = strdup(n);					/* save name only */
-		def = x_getpath(drive, &error); 	/* get default path incl. drive name */
+		save = strdup(n);				/* save name only */
+		def = x_getpath(drive, &error);	/* get default path incl. drive name */
 
 		/* Compose fullname */
 
-		if(def && save && !error)
+		if (def && save && !error)
 			make_path(buffer, def, save);
 
 		free(save);
@@ -362,8 +332,9 @@ char *x_fullname(const char *file, _WORD *error)
 	char *buffer;
 
 	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
+	{
 		*error = ENSMEM;
-	else
+	} else
 	{
 		strsncpy(buffer, file, sizeof(VLNAME));
 
@@ -386,10 +357,10 @@ char *x_fullname(const char *file, _WORD *error)
 
 _WORD x_mklink(const char *linkname, const char *refname)
 {
-	if(x_exist(linkname, EX_LINK))
+	if (x_exist(linkname, EX_LINK))
 		return EACCDN;
 
-	return xerror( (_WORD)Fsymlink( refname, linkname ) );
+	return xerror((_WORD) Fsymlink(refname, linkname));
 }
 
 
@@ -400,21 +371,17 @@ _WORD x_mklink(const char *linkname, const char *refname)
  * Do not make this conversion for network objects.
  */
 
-_WORD x_rdlink( size_t tgtsize, char *tgt, const char *linkname )
+_WORD x_rdlink(size_t tgtsize, char *tgt, const char *linkname)
 {
-	char
-		*slash;
+	char *slash;
+	_WORD err = EACCDN;
 
-	_WORD
-		err = EACCDN;
-
-
-	if(!x_netob(linkname))
-		err =  xerror( (_WORD)Freadlink( (_WORD)tgtsize, tgt, linkname ) );
+	if (!x_netob(linkname))
+		err = xerror((_WORD) Freadlink((_WORD) tgtsize, tgt, linkname));
 
 	if (err == 0 && !x_netob(tgt))
 	{
-		while( ( slash = strchr(tgt, '/') ) != NULL )
+		while ((slash = strchr(tgt, '/')) != NULL)
 			*slash = '\\';
 	}
 
@@ -430,46 +397,34 @@ _WORD x_rdlink( size_t tgtsize, char *tgt, const char *linkname )
  * given.
  */
 
-char *x_pathlink( char *tgtname, const char *linkname )
+char *x_pathlink(char *tgtname, const char *linkname)
 {
-	char
-		*target = NULL,
-		*lpath,				/* path of the link */
-		*lppath,			/* parent path of the link */
-		*b,					/* position of the first backslash, or after it */
-		*p = tgtname;		/* pointer to the backslash */
-
-	_WORD
-		error;
-
+	char *target = NULL;
+	char *lpath;							/* path of the link */
+	char *lppath;						/* parent path of the link */
+	char *b;								/* position of the first backslash, or after it */
+	char *p = tgtname;					/* pointer to the backslash */
+	_WORD error;
 
 	/* beware: comparison below depends on the order of execution */
 
-	if
-	(
-		!x_netob(tgtname) &&
-		(
-			( (b = strchr(tgtname, '\\')) == NULL) || 	/* no '\' in the path */
-			(
-				( *p++ == '.') &&					/* first is '.' */
-				(
-					(*p == '\\') ||					/* second is '\' or... */
-					(*p++ == '.' && *p == '\\')		/* second is '.' and third is '\\' */ 
-				)
-			)
-		)
-	) 
+	if (!x_netob(tgtname) && (((b = strchr(tgtname, '\\')) == NULL) ||	/* no '\' in the path */
+							  ((*p++ == '.') &&	/* first is '.' */
+							   ((*p == '\\') ||	/* second is '\' or... */
+								(*p++ == '.' && *p == '\\')	/* second is '.' and third is '\\' */
+							   ))))
 	{
-		if ( (lpath = fn_get_path(linkname)) != NULL )
+		if ((lpath = fn_get_path(linkname)) != NULL)
 		{
-			if(b == NULL)		/* object path does not contain '\' */
+			if (b == NULL)				/* object path does not contain '\' */
+			{
 				b = tgtname;
-			else				/* first character after the '\' */
+			} else						/* first character after the '\' */
 			{
 				b = p + 1;
 			}
 
-			if(p == tgtname + 2)   /*  it is a "..\"  */
+			if (p == tgtname + 2)		/*  it is a "..\"  */
 			{
 				lppath = fn_get_path(lpath);
 				free(lpath);
@@ -484,9 +439,10 @@ char *x_pathlink( char *tgtname, const char *linkname )
 			target = x_makepath(lpath, b, &error);
 			free(lpath);
 		}
-	}
-	else
+	} else
+	{
 		target = strdup(tgtname);
+	}
 
 	return target;
 }
@@ -502,34 +458,32 @@ char *x_pathlink( char *tgtname, const char *linkname )
  * the path of the link.
  */
 
-char *x_fllink( const char *linkname )
-{	
-	char 
-		*tmp = NULL,
-		*target = NULL;
+char *x_fllink(const char *linkname)
+{
+	char *tmp = NULL;
+	char *target = NULL;
 
-	if ( linkname )
+	if (linkname)
 	{
 #if _MINT_
-		_WORD 
-			error = EACCDN;
+		_WORD error = EACCDN;
 
 		if (mint)
 		{
-			if ( (tmp = malloc_chk( sizeof(VLNAME) )) != NULL )
+			if ((tmp = malloc_chk(sizeof(VLNAME))) != NULL)
 			{
-				error = x_rdlink( sizeof(VLNAME), tmp, linkname ); 
-	
+				error = x_rdlink(sizeof(VLNAME), tmp, linkname);
+
 				/* If the name of the referenced item has been obtained... */
 
-				if ( error )
+				if (error)
+				{
 					/* this is not a link, just copy the name */
 					target = strdup(linkname);
-				else
+				} else
 				{
 					/* this is a link */
 					target = x_pathlink(tmp, linkname);
-
 				}
 			}
 		}
@@ -554,7 +508,7 @@ char *x_fllink( const char *linkname )
  * number of sectors in a cluster 
  */
 
-_WORD x_dfree(DISKINFO *diskinfo, _WORD drive)
+_WORD x_dfree(_DISKINFO *diskinfo, _WORD drive)
 {
 	return xerror(Dfree(diskinfo, drive));
 }
@@ -590,58 +544,49 @@ long x_setdrv(_WORD drive)
  * 39 characters, but output label name always cramped to 12 characters.
  */
 
-#define LBLMAX 40 /* maximum permitted intermediate label length + 1 */
+#define LBLMAX 40						/* maximum permitted intermediate label length + 1 */
 
 _WORD x_getlabel(_WORD drive, char *label)
 {
-	DTA
-		*olddta,
-		dta;
-
-	_WORD
-		error;
-
-	char
-		path[8],
-		lblbuf[LBLMAX];
-
+	_DTA *olddta, dta;
+	_WORD error;
+	char path[8];
+	char lblbuf[LBLMAX];
 
 	strcpy(path, adrive);
 	strcat(path, "*.*");
 
-	*path += (char)drive;
+	*path += (char) drive;
 
 #if _MINT_
-	if(mint)
+	if (mint)
 	{
 		path[3] = 0;
-		error = (_WORD)x_retresult(Dreadlabel(path, lblbuf, LBLMAX));
-	}
-	else
+		error = (_WORD) x_retresult(Dreadlabel(path, lblbuf, LBLMAX));
+	} else
 #endif
 	{
 		olddta = Fgetdta();
 		Fsetdta(&dta);
 
-		if (((error = Fsfirst(path, FA_LABEL)) == 0)) 
-			strsncpy(lblbuf, dta.d_fname, (size_t)LBLMAX);
+		if ((error = Fsfirst(path, FA_LABEL)) == 0)
+			strsncpy(lblbuf, dta.dta_name, (size_t) LBLMAX);
 		else
 			error = EFILNF;
 
 		Fsetdta(olddta);
 	}
 
-	if(error == 0)
+	if (error == 0)
 		cramped_name(lblbuf, label, sizeof(INAME));
 	else
 		*label = 0;
 
-	return ((error == ENMFIL) || (error == EFILNF)) ? 0 : error;
+	return error == ENMFIL || error == EFILNF ? 0 : error;
 }
 
 
 #if _EDITLABELS
-
 /*
  * Create a volume label (for the time being, mint or magic only).
  * In single TOS, does not do anything, but does not return error.
@@ -653,10 +598,10 @@ _WORD x_putlabel(_WORD drive, char *label)
 	char path[4];
 
 	strcpy(path, adrive);
-	*path += (char)drive;
+	*path += (char) drive;
 
 #if _MINT_
-	if(mint)
+	if (mint)
 		return x_retresult(Dwritelabel(path, label));
 	else
 #endif
@@ -696,20 +641,16 @@ _WORD x_unlink(const char *file)
  * on -some- FAT partitions (why?).
  */
 
-_WORD x_fattrib
-(
-	const char *file,	/* file name */
-	XATTR *attr			/* extended attributes */
-)
+_WORD x_fattrib(const char *file,		/* file name */
+				XATTR * attr			/* extended attributes */
+	)
 {
-	_WORD
 #if _MINT_
-		mode,
-		hasuid,	/* true if access rights  are settable */
+	_WORD mode;
+	bool hasuid;						/* true if access rights  are settable */
 #endif
-		mask,	/* mask for changeable ms-dos attributes */
-		error;	/* error code */
-
+	_WORD mask;							/* mask for changeable ms-dos attributes */
+	_WORD error;						/* error code */
 
 	/* 
 	 * The following change is of V4.01. If file access rights
@@ -721,38 +662,38 @@ _WORD x_fattrib
 	 */
 
 #if _MINT_
-	hasuid = ((x_inq_xfs(file) & FS_UID) != 0);
+	hasuid = (x_inq_xfs(file) & FS_UID) != 0;
 #endif
 
-	mask = (FA_RDONLY | FA_SYSTEM | FA_HIDDEN | FA_CHANGED);
+	mask = FA_RDONLY | FA_SYSTEM | FA_HIDDEN | FA_CHANGED;
 
-	if((attr->st_mode & S_IFMT) == S_IFDIR)
+	if ((attr->st_mode & S_IFMT) == S_IFDIR)
 		mask |= FA_DIR;
 
-	error = xerror((_WORD)Fattrib(file, 1, (attr->st_attr & mask) ));
+	error = xerror((_WORD) Fattrib(file, 1, (attr->st_attr & mask)));
 
 #if _MINT_
 
-	if(hasuid)
+	if (hasuid)
 		error = 0;
 
-	if(mint)
+	if (mint)
 	{
 		mode = attr->st_mode & (DEFAULT_DIRMODE | S_ISUID | S_ISGID | S_ISVTX);
 
 		/* Quietly fail on folders if necessary in Mint (why?) */
 
-		if(!magx && (attr->st_mode & S_IFMT) == S_IFDIR && error == EFILNF)
+		if (!magx && (attr->st_mode & S_IFMT) == S_IFDIR && error == EFILNF)
 			error = 0;
 
 		/* Set access rights and owner IDs if possible */
 
-		if ( error >= 0 && hasuid != 0 )
+		if (error >= 0 && hasuid)
 		{
 			/* Don't use Fchmod() on links; target will be modified! */
 
-			if ( (attr->st_mode & S_IFLNK) != S_IFLNK ) 
-				error = xerror( (_WORD)Fchmod(file, mode) );
+			if ((attr->st_mode & S_IFLNK) != S_IFLNK)
+				error = xerror((_WORD) Fchmod(file, mode));
 
 			/* 
 			 * This (and above) may cause a problem with network file systems.
@@ -761,18 +702,18 @@ _WORD x_fattrib
 			 * Therefore, such errors are quietly ignored.
 			 */
 
-			if ( error >= 0 )
-				error = xerror( (_WORD)Fchown(file, attr->st_uid, attr->st_gid) );
-				
-			if(error == EACCDN)
+			if (error >= 0)
+				error = xerror((_WORD) Fchown(file, attr->st_uid, attr->st_gid));
+
+			if (error == EACCDN)
 			{
 				char b[8];
-				const char *c= "U:\\NFS\\";
+				const char *c = "U:\\NFS\\";
 
 				strsncpy(b, file, 8);
 				strupr(b);
 
-				if(strcmp(b, c) == 0)
+				if (strcmp(b, c) == 0)
 					error = 0;
 			}
 		}
@@ -787,7 +728,7 @@ _WORD x_fattrib
  * Get or set file date & time. A handle to the file must exist first 
  */
 
-_WORD x_datime(DOSTIME *time, _WORD handle, _WORD wflag)
+_WORD x_datime(_DOSTIME *time, _WORD handle, _WORD wflag)
 {
 	return xerror(Fdatime(time, handle, wflag));
 }
@@ -802,7 +743,7 @@ _WORD x_open(const char *file, _WORD mode)
 	if (!flock)
 		mode &= O_ACCMODE;
 
-	return (_WORD)x_retresult(Fopen(file, mode));
+	return (_WORD) x_retresult(Fopen(file, mode));
 }
 
 
@@ -812,7 +753,7 @@ _WORD x_open(const char *file, _WORD mode)
 
 _WORD x_create(const char *file, XATTR *attr)
 {
-	_WORD error = (_WORD)x_retresult(Fcreate(file, (attr) ? attr->st_attr : 0));
+	_WORD error = (_WORD) x_retresult(Fcreate(file, (attr) ? attr->st_attr : 0));
 
 #if _MINT_
 	if (mint && (error >= 0) && attr)
@@ -883,26 +824,26 @@ long x_seek(long offset, _WORD handle, _WORD seekmode)
  * Note: perhaps the default rights should not be rwxrwxrwx but rwxr-x--- ?
  */
 
-static void dta_to_xattr(DTA *dta, XATTR *attrib)
+static void dta_to_xattr(_DTA *dta, XATTR *attrib)
 {
-	attrib->st_mode = 	(S_IRUSR | S_IRGRP | S_IROTH); 	/* everything is readonly */
+	attrib->st_mode = S_IRUSR | S_IRGRP | S_IROTH; 	/* everything is readonly */
 
-	if ((dta->d_attrib & FA_RDONLY) == 0)			/* can write as well */
-		attrib->st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
+	if ((dta->dta_attribute & FA_RDONLY) == 0)	/* can write as well */
+		attrib->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
 
-	if (dta->d_attrib & FA_DIR)
-		attrib->st_mode |= (S_IFDIR | EXEC_MODE );
-	else if (!(dta->d_attrib & FA_LABEL))
+	if (dta->dta_attribute & FA_DIR)
+		attrib->st_mode |= S_IFDIR | EXEC_MODE;
+	else if (!(dta->dta_attribute & FA_LABEL))
 		attrib->st_mode |= S_IFREG;
 
-	attrib->st_size = dta->d_length;
+	attrib->st_size = dta->dta_size;
 #if _MINT_
 	attrib->st_uid = 0;
 	attrib->st_gid = 0;
 #endif
-	dos_mtime(attrib) = dos_atime(attrib) = dos_ctime(attrib) = dta->d_time;
-	dos_mdate(attrib) = dos_adate(attrib) = dos_cdate(attrib) = dta->d_date;
-	attrib->st_attr = dta->d_attrib & 0xFF;
+	dos_mtime(attrib) = dos_atime(attrib) = dos_ctime(attrib) = dta->dta_time;
+	dos_mdate(attrib) = dos_adate(attrib) = dos_cdate(attrib) = dta->dta_date;
+	attrib->st_attr = dta->dta_attribute & 0xFF;
 }
 
 
@@ -923,20 +864,23 @@ static void dta_to_xattr(DTA *dta, XATTR *attrib)
 
 _WORD x_inq_xfs(const char *path)
 {
-	_WORD
-		retcode = 0;
+	_WORD retcode = 0;
 
 #if _MINT_
 
 	if (mint)
 	{
-		long n, t, c, m, x;
+		long n;
+		long t;
+		long c;
+		long m;
+		long x;
 
 		/* Inquire about filesystem details */
 
-		n = Dpathconf(path, DP_NAMEMAX);/* 3: maximum name length */
+		n = Dpathconf(path, DP_NAMEMAX);	/* 3: maximum name length */
 		t = Dpathconf(path, DP_TRUNC);	/* 5: name truncation */
-		c = Dpathconf(path, DP_CASE); 	/* 6: case-sensitive names? */
+		c = Dpathconf(path, DP_CASE);	/* 6: case-sensitive names? */
 		m = Dpathconf(path, DP_MODEATTR);	/* 7: valid mode bits */
 		x = Dpathconf(path, DP_XATTRFIELDS);	/* 8: valid XATTR fields */
 
@@ -944,19 +888,19 @@ _WORD x_inq_xfs(const char *path)
 		 * If information can not be returned, results will be < 0, then
 		 * treat as if there are no fields set.
 		 */
-		if ( m < 0 )
+		if (m < 0)
 			m = 0;
 
-		if ( x < 0 )
+		if (x < 0)
 			x = 0;
 
-		if (c < 0 )
+		if (c < 0)
 			c = DP_CASEINSENS;
 
-		if ( t < 0 )
+		if (t < 0)
 			t = DP_NOTRUNC;
 
-		if ( n < 0 )
+		if (n < 0)
 			n = 12;
 
 		/* 
@@ -964,7 +908,7 @@ _WORD x_inq_xfs(const char *path)
 		 * If (x & 0x0030), user and group ids are valid XATTR fields
 		 */
 
-		if ((m & 0x0001FF00L) != 0 && (x & 0x00000030L) != 0 )
+		if ((m & 0x0001FF00L) != 0 && (x & 0x00000030L) != 0)
 			retcode |= FS_UID;
 
 		/*  
@@ -972,16 +916,16 @@ _WORD x_inq_xfs(const char *path)
 		 * DP_DOSTRUNC = 2 = file names truncated to 8+3
 		 */
 
-		if(c != DP_CASEINSENS)
+		if (c != DP_CASEINSENS)
 		{
 			retcode |= FS_CSE;
 		}
-		if(t != DP_DOSTRUNC && n > 12)
+		if (t != DP_DOSTRUNC && n > 12)
 			retcode |= FS_LFN;
 
 		/* Are link itemtypes valid ?  */
 
-		if ( (m & DP_FT_LNK) != 0 )
+		if ((m & DP_FT_LNK) != 0)
 			retcode |= FS_LNK;
 	}
 #else
@@ -998,16 +942,13 @@ _WORD x_inq_xfs(const char *path)
 
 XDIR *x_opendir(const char *path, _WORD *error)
 {
-	XDIR
-		*dir;
-
-	VLNAME
-		p;
-
+	XDIR *dir;
+	VLNAME p;
 
 	if ((dir = malloc(sizeof(XDIR))) == NULL)
+	{
 		*error = ENSMEM;
-	else
+	} else
 	{
 		dir->path = path;
 
@@ -1016,36 +957,31 @@ XDIR *x_opendir(const char *path, _WORD *error)
 			strcat(p, bslash);
 
 #if _MINT_
-
 		dir->type = x_inq_xfs(p);
 
-		if (dir->type == 0)
-		{
-#endif
-			/* FAT file system */
-
-			dir->data.gdata.first = 1;
-			dir->data.gdata.old_dta = Fgetdta();
-			Fsetdta(&dir->data.gdata.dta);
-			*error = 0;
-
-#if _MINT_
-		}
-		else
+		if (dir->type != 0)
 		{
 			/* File system with long filenames or other extensions */
-	
+
 			if (((dir->data.handle = Dopendir(path, 0)) & 0xFF000000L) == 0xFF000000L)
 			{
 				*error = xerror((_WORD) dir->data.handle);
 				free(dir);
 				dir = NULL;
 			}
-		}
+		} else
 #endif
+		{
+			/* FAT file system */
+
+			dir->data.gdata.first = 1;
+			dir->data.gdata.old_dta = Fgetdta();
+			Fsetdta(&dir->data.gdata.dta);
+			*error = 0;
+		}
 	}
 
-	return dir;	
+	return dir;
 }
 
 
@@ -1058,54 +994,49 @@ XDIR *x_opendir(const char *path, _WORD *error)
  * not to be written to or used for permanent storage
  */
 
-long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib) 
+long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 {
-	long
-		result;
+	long result;
 
-	static char
-		fspec[sizeof(VLNAME) + 4];
-
+	static char fspec[sizeof(VLNAME) + 4];
 
 	/* Prepare some pointer to return in case any error occurs later */
 
 	*fspec = 0;
 	*buffer = fspec;
 
-
 #if _MINT_
-	if (dir->type == 0)
+	if (dir->type != 0)
 #endif
 	{
-		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */	
+		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */
 
 		_WORD error;
 
 		if (dir->data.gdata.first != 0)
 		{
-			error = make_path(fspec, dir->path, TOSDEFAULT_EXT); /* presets[1] = "*.*"  */	
+			error = make_path(fspec, dir->path, TOSDEFAULT_EXT);	/* presets[1] = "*.*"  */
 
-			if(error == 0)
+			if (error == 0)
 				error = xerror(Fsfirst(fspec, FA_ANY));
 
 			dir->data.gdata.first = 0;
-		}
-		else
+		} else
 			error = xerror(Fsnext());
 
 		if (error == 0)
 		{
-			if ((_WORD)strlen(dir->data.gdata.dta.d_fname) >= len)
+			if ((_WORD) strlen(dir->data.gdata.dta.d_fname) >= len)
 				error = EFNTL;
 			else
 			{
-				*buffer = dir->data.gdata.dta.d_fname; 
+				*buffer = dir->data.gdata.dta.d_fname;
 
 				dta_to_xattr(&dir->data.gdata.dta, attrib);
 			}
 		}
 
-		result = (long)error;
+		result = (long) error;
 	}
 #if _MINT_
 	else
@@ -1114,18 +1045,17 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 		 * File system with long filenames. Mint (or Magic) is surely present.
 		 * Use Dxreaddir, not Dreaddir, in order to handle links correctly.
 		 */
-
 		long error, rep;
 		const char *n;
 
-		if ((error = Dxreaddir((_WORD)len, dir->data.handle, fspec, attrib, &rep)) == 0)
+		if ((error = Dxreaddir((_WORD) len, dir->data.handle, fspec, attrib, &rep)) == 0)
 			*buffer = fspec + 4L;
 
 		/* By convention, names beginning with '.' are invisible in mint */
 
 		n = fn_get_name(*buffer);
 
-		if ( n[0] == '.' && n[1] != '.' )
+		if (n[0] == '.' && n[1] != '.')
 			attrib->st_attr |= FA_HIDDEN;
 
 		result = x_retresult(error);
@@ -1136,21 +1066,20 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 	 * Also correct stupid assignment of execute rights in Magic.
 	 */
 
-	if ( mint )
+	if (mint)
 	{
 		/* If names are not case-sensitive, use uppercase only */
 
-#if 0 /* FIXME: need to distinguish case-sensitive/case-preserving */
-		if((dir->type & FS_CSE) == 0) /* no need to waste time otherwise */
+#if 0									/* FIXME: need to distinguish case-sensitive/case-preserving */
+		if ((dir->type & FS_CSE) == 0)	/* no need to waste time otherwise */
 			strupr(*buffer);
 #endif
 
 		/* If access rights are not supported, don't set them */
 
-		if((dir->type & FS_UID) == 0)
+		if ((dir->type & FS_UID) == 0)
 			attrib->st_mode &= ~EXEC_MODE;
 	}
-
 #endif /* _MINT_ */
 
 	return result;
@@ -1166,26 +1095,23 @@ long x_closedir(XDIR *dir)
 	long error;
 
 #if _MINT_
-	if (dir->type == 0)
-	{
-#endif
-		/* DOS file system */
-	
-		Fsetdta(dir->data.gdata.old_dta);
-
-		error = 0L;
-#if _MINT_
-	}
-	else
+	if (dir->type != 0)
 	{
 		/* File system with long filenames */
 
 		error = x_retresult(Dclosedir(dir->data.handle));
-	}
-#endif /* _MINT_ */
+	} else
+#endif
+	{
+		/* DOS file system */
 
-	free(dir); 
-	return error; 
+		Fsetdta(dir->data.gdata.old_dta);
+
+		error = 0L;
+	}
+
+	free(dir);
+	return error;
 }
 
 
@@ -1208,13 +1134,13 @@ long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *xattr)
 {
 	long result;
 
-	if ( (fs_type & FS_INQ) != 0 )
-		fs_type |= x_inq_xfs(name); /* this change is local only */
+	if ((fs_type & FS_INQ) != 0)
+		fs_type |= x_inq_xfs(name);		/* this change is local only */
 
-	xattr->st_mode = 0;	/* clear any existing value, see below about Fxattr() */ 
+	xattr->st_mode = 0;					/* clear any existing value, see below about Fxattr() */
 
 #if _MINT_
-	if (mint && ((fs_type & FS_ANY) != 0) )
+	if (mint && ((fs_type & FS_ANY) != 0))
 	{
 		/* 
 		 * This is not a FAT filesystem.
@@ -1229,40 +1155,35 @@ long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *xattr)
 
 		result = x_retresult(Fxattr(flag, name, xattr));
 
-		if
-		(
-			(result >= 0 ) &&
-			((fs_type & FS_UID) != 0) &&
-			((xattr->st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0)
-		)
+		if ((result >= 0) && ((fs_type & FS_UID) != 0) && ((xattr->st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0))
 		{
-			if((xattr->st_mode & S_IFMT)  != S_IFLNK)
+			if ((xattr->st_mode & S_IFMT) != S_IFLNK)
 				xattr->st_attr |= FA_RDONLY;
 			else
 				xattr->st_attr &= ~FA_RDONLY;
 		}
 
-		if( name[0] == '.' && name[1] != '.' )
-			xattr->st_attr |= FA_HIDDEN;			
-	}
-	else
+		if (name[0] == '.' && name[1] != '.')
+			xattr->st_attr |= FA_HIDDEN;
+	} else
 #endif
 	{
 		/* FAT filesystem */
 
-		DTA *olddta, dta;
-	
+		_DTA *olddta;
+		_DTA dta;
+
 		olddta = Fgetdta();
 		Fsetdta(&dta);
-	
-		if ((result = (long)xerror(Fsfirst(name, FA_ANY))) == 0) 
+
+		if ((result = (long) xerror(Fsfirst(name, FA_ANY))) == 0)
 			dta_to_xattr(&dta, xattr);
 
 		Fsetdta(olddta);
 	}
 
 #if _MINT_
-	if ((fs_type & FS_UID) == 0 )
+	if ((fs_type & FS_UID) == 0)
 	{
 		/* 
 		 * This is a filesystem without user rights; imagine some.
@@ -1274,7 +1195,7 @@ long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *xattr)
 
 		xattr->st_mode |= (S_IRUSR | S_IRGRP | S_IROTH);
 
-		if ((xattr->st_attr & FA_RDONLY) == 0 )
+		if ((xattr->st_attr & FA_RDONLY) == 0)
 			xattr->st_mode |= (S_IWUSR | S_IWGRP | S_IWOTH);
 
 		/* 
@@ -1286,8 +1207,8 @@ long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *xattr)
 		 * always examined.
 		 */
 
-		if ( ((fs_type & FS_INQ) != 0) && prg_isprogram(fn_get_name(name)))
-			xattr->st_mode |= EXEC_MODE; 
+		if (((fs_type & FS_INQ) != 0) && prg_isprogram(fn_get_name(name)))
+			xattr->st_mode |= EXEC_MODE;
 	}
 #else
 	(void) flag;
@@ -1303,28 +1224,21 @@ long x_attr(_WORD flag, _WORD fs_type, const char *name, XATTR *xattr)
 
 long x_pflags(const char *filename)
 {
-	long
-		result;
-
-	char
-		buf[26];
-
-	_WORD
-		fh = x_open(filename, O_RDONLY);
-
+	long result;
+	char buf[26];
+	_WORD fh = x_open(filename, O_RDONLY);
 
 	if (fh >= 0)
 	{
-		if ((result = x_read(fh, 26L, buf)) == 26 )
-			result =  (*((long *)(&buf[22]))) & 0x00001037L; 
+		if ((result = x_read(fh, 26L, buf)) == 26)
+			result = (*((long *) (&buf[22]))) & 0x00001037L;
 		else
 			result = EREAD;
-	
+
 		x_close(fh);
 		return result;
 	}
-	else
-		return fh;
+	return fh;
 }
 
 
@@ -1346,9 +1260,9 @@ long x_pathconf(const char *path, _WORD which)
 #endif
 
 	if (which == DP_PATHMAX)
-		 return 128;			/* = 128 in TOS */
+		return 128;						/* = 128 in TOS */
 	else if (which == DP_NAMEMAX)
-		return 12;					/* 8 + 3 in TOS */
+		return 12;						/* 8 + 3 in TOS */
 
 	return 0;
 }
@@ -1362,7 +1276,7 @@ long x_exec(_WORD mode, const char *fname, void *ptr2, void *ptr3)
 {
 	_WORD result = xerror((_WORD) Pexec(mode, fname, ptr2, ptr3));
 
-	if ((result != EFILNF) && (result != EPTHNF) && (result != ENSMEM) && (result != EPLFMT))
+	if (result != EFILNF && result != EPTHNF && result != ENSMEM && result != EPLFMT)
 		result = 0;
 
 	return result;
@@ -1378,16 +1292,18 @@ char *xshel_find(const char *file, _WORD *error)
 	char *buffer;
 
 	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
+	{
 		*error = ENSMEM;
-	else
+	} else
 	{
 		strcpy(buffer, file);
 
 		/* note: shel_find() modifies the content of 'buffer' */
 
 		if (shel_find(buffer) == 0)
+		{
 			*error = EFILNF;
-		else
+		} else
 		{
 			if ((*error = _fullname(buffer)) == 0)
 				return buffer;
@@ -1408,13 +1324,8 @@ char *xshel_find(const char *file, _WORD *error)
 
 char *xfileselector(const char *path, char *name, const char *label)
 {
-	char
-		*buffer;
-
-	_WORD
-		error,
-		button;
-
+	char *buffer;
+	_WORD error, button;
 
 	if ((buffer = malloc_chk(sizeof(VLNAME))) != NULL)
 	{
@@ -1422,9 +1333,10 @@ char *xfileselector(const char *path, char *name, const char *label)
 
 		/* Correct file specification for the more primitive selectors */
 
-		if((error = _fullname(buffer)) != 0)
+		if ((error = _fullname(buffer)) != 0)
+		{
 			xform_error(error);
-		else
+		} else
 		{
 			/* A call to a file selector MUST be bracketed by wind_update() */
 
@@ -1434,21 +1346,20 @@ char *xfileselector(const char *path, char *name, const char *label)
 			 * In fact there should be a check here if an alternative file selector
 			 * is installed, in such case the extended file-selector call can be used
 			 * although TOS is older than 1.04
-			 */	
+			 */
 
-			if ( tos_version >= 0x104 )
+			if (tos_version >= 0x104)
 				error = fsel_exinput(buffer, name, &button, label);
 			else
 				error = fsel_input(buffer, name, &button);
-			
+
 			xd_endupdate();
 
 			if ((error == 0) || (button == 0))
 			{
 				if (error == 0)
 					alert_printf(1, MFSELERR);
-			}
-			else
+			} else
 			{
 				if ((error = _fullname(buffer)) == 0)
 					return buffer;
@@ -1478,15 +1389,12 @@ static _WORD read_buffer(XFILE *file)
 	long n;
 
 	if ((n = x_read(file->handle, XBUFSIZE, file->buffer)) < 0)
-		return (_WORD)n;
-	else
-	{
-		file->write = (_WORD)n;
-		file->read = 0;
-		file->eof = (n != XBUFSIZE) ? TRUE : FALSE;
+		return (_WORD) n;
+	file->write = (_WORD) n;
+	file->read = 0;
+	file->eof = (n != XBUFSIZE) ? TRUE : FALSE;
 
-		return 0;
-	}
+	return 0;
 }
 
 
@@ -1501,23 +1409,17 @@ static _WORD write_buffer(XFILE *file)
 	if (file->write != 0)
 	{
 		if ((n = x_write(file->handle, file->write, file->buffer)) < 0)
-			return (_WORD)n;
-
-		else
+			return (_WORD) n;
+		if (n == (long) file->write)
 		{
-			if (n == (long) file->write)
-			{
-				file->write = 0;
-				file->eof = TRUE;
+			file->write = 0;
+			file->eof = TRUE;
 
-				return 0;
-			}
-			else
-				return EDSKFULL;
+			return 0;
 		}
+		return EDSKFULL;
 	}
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -1529,30 +1431,28 @@ static _WORD write_buffer(XFILE *file)
 
 XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 {
-	XFILE 
-		*xfile;
-
-	_WORD 
-		rwmode = mode & O_ACCMODE;
-
+	XFILE *xfile;
+	_WORD rwmode = mode & O_ACCMODE;
 
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
-		*error = ENSMEM;
-	else
 	{
-		memclr(xfile, sizeof(XFILE));
+		*error = ENSMEM;
+	} else
+	{
+		memclr(xfile, sizeof(*xfile));
 		*error = 0;
 
 		xfile->mode = mode;
-		xfile->buffer = (char *)(xfile + 1);
+		xfile->buffer = (char *) (xfile + 1);
 		xfile->bufsize = (_WORD) XBUFSIZE;
 
 		if (rwmode == O_WRONLY)
-			xfile->handle = x_create(file, NULL);
-		else
 		{
-#if _CHECK_RWMODE 
-			if(rwmode == O_RDONLY)
+			xfile->handle = x_create(file, NULL);
+		} else
+		{
+#if _CHECK_RWMODE
+			if (rwmode == O_RDONLY)
 #endif
 				xfile->handle = x_open(file, mode);
 #if _CHECK_RWMODE
@@ -1561,7 +1461,7 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 #endif
 		}
 
-		if(xfile->handle < 0)
+		if (xfile->handle < 0)
 			*error = xfile->handle;
 
 		if (*error != 0)
@@ -1586,30 +1486,28 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 XFILE *x_fmemopen(_WORD mode, _WORD *error)
 {
 #if _CHECK_RWMODE
-	_WORD
-		rwmode = mode & O_RWMODE; /* mode & 0x03 */
+	_WORD rwmode = mode & O_RWMODE;		/* mode & 0x03 */
 #endif
-
-	XFILE 
-		*xfile;
+	XFILE *xfile;
 
 	*error = 0;
 
 	/* A memory block is allocated and some structures set */
 
-	if ((xfile = malloc(sizeof(XFILE))) == NULL)
-		*error = ENSMEM;
-	else
+	if ((xfile = malloc(sizeof(*xfile))) == NULL)
 	{
-		memclr(xfile, sizeof(XFILE));
+		*error = ENSMEM;
+	} else
+	{
+		memclr(xfile, sizeof(*xfile));
 
 		xfile->mode = mode;
 		xfile->memfile = TRUE;
 
 #if _CHECK_RWMODE
-		if (rwmode != O_RDWR) /* 0x02 */
+		if (rwmode != O_RDWR)			/* 0x02 */
 		{
-			result = EINVFN; /* unknown function ? */
+			result = EINVFN;			/* unknown function ? */
 			free(xfile);
 			xfile = NULL;
 		}
@@ -1626,17 +1524,14 @@ XFILE *x_fmemopen(_WORD mode, _WORD *error)
 
 _WORD x_fclose(XFILE *file)
 {
-	_WORD
-		error,
-		rwmode = file->mode & O_ACCMODE;
-
+	_WORD error;
+	_WORD rwmode = file->mode & O_ACCMODE;
 
 	if (file->memfile)
 	{
 		error = 0;
 		free(file->buffer);
-	}
-	else
+	} else
 	{
 		_WORD h;
 
@@ -1662,20 +1557,12 @@ _WORD x_fclose(XFILE *file)
 
 long x_fread(XFILE *file, void *ptr, long length)
 {
-	long
-		remd = length,
-		n,
-		size;
-
-	char
-		*dest = (char *)ptr,
-		*src;
-
-	_WORD
-		read,
-		write,
-		error;
-
+	long remd = length;
+	long n;
+	long size;
+	char *dest = (char *) ptr;
+	char *src;
+	_WORD read, write, error;
 
 	if (file->memfile)
 	{
@@ -1688,8 +1575,9 @@ long x_fread(XFILE *file, void *ptr, long length)
 		while ((remd > 0) && (file->eof == FALSE))
 		{
 			if (read == write)
+			{
 				file->eof = TRUE;
-			else
+			} else
 			{
 				*dest++ = src[read++];
 				remd--;
@@ -1699,8 +1587,7 @@ long x_fread(XFILE *file, void *ptr, long length)
 		file->read = read;
 
 		return (length - remd);
-	}
-	else
+	} else
 	{
 		/* This is a real file */
 #if _CHECK_RWMODE
@@ -1740,8 +1627,7 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 				remd -= n;
 			}
-		}
-		while ((remd > 0) && (file->eof == FALSE));
+		} while ((remd > 0) && (file->eof == FALSE));
 
 		return (length - remd);
 	}
@@ -1764,19 +1650,13 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 long x_fwrite(XFILE *file, void *ptr, long length)
 {
-	long 
-		remd = length, /* number of bytes remaining to be transferred */ 
-		n, 
-		size;
-
-	char 
-		*dest, 					/* location of the output buffer */
-		*src = (char *)ptr; 	/* position being read from */
-
-	_WORD 
-		write,			 		/* position currently written to */
-		error;					/* error code */
-
+	long remd = length;					/* number of bytes remaining to be transferred */
+	long n;
+	long size;
+	char *dest;							/* location of the output buffer */
+	char *src = (char *) ptr;				/* position being read from */
+	_WORD write;						/* position currently written to */
+	_WORD error;						/* error code */
 
 	/* Don't write into a file opened for reading */
 
@@ -1806,17 +1686,18 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 				 * otherwise, try to increase the allocated amount;
 				 */
 
-				new  = malloc(file->bufsize + MRECL);
-				if ( new )
+				new = malloc(file->bufsize + MRECL);
+				if (new)
 				{
-					if ( file->buffer )
+					if (file->buffer)
 					{
 						memcpy(new, file->buffer, file->bufsize);
 						free(file->buffer);
 					}
+				} else
+				{
+					return ENSMEM;
 				}
-				else
-					return ENSMEM;	
 
 				dest = file->buffer = new;
 				file->bufsize += MRECL;
@@ -1831,8 +1712,7 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 		file->write = write;
 
 		return length;
-	}
-	else
+	} else
 	{
 		/* This is a "real" file */
 
@@ -1881,21 +1761,13 @@ long x_fwrite(XFILE *file, void *ptr, long length)
 
 _WORD x_fgets(XFILE *file, char *string, _WORD n)
 {
-	char
-		*dest,
-		*src,
-		ch,
-		nl = 0;
-
-	_WORD
-		i = 1,
-		read,
-		write,
-		error;
-
-	bool
-		ready = FALSE;
-
+	char *dest;
+	char *src;
+	char ch;
+	char nl = 0;
+	_WORD i = 1;
+	_WORD read, write, error;
+	bool ready = FALSE;
 
 	/* Why ? Just a safety precaution against careless use maybe? */
 
@@ -1929,16 +1801,16 @@ _WORD x_fgets(XFILE *file, char *string, _WORD n)
 			 */
 
 			if (file->eof)
+			{
 				ready = TRUE;
-			else
+			} else
 			{
 				if ((error = read_buffer(file)) < 0)
 					return error;
 				read = file->read;
 				write = file->write;
 			}
-		}
-		else
+		} else
 		{
 			/* Note: this branch also handles the memory file */
 
@@ -1953,8 +1825,7 @@ _WORD x_fgets(XFILE *file, char *string, _WORD n)
 				ch = src[read];
 				if (((ch == '\n') || (ch == '\r')) && (nl != ch))
 					read++;
-			}
-			else
+			} else
 			{
 				/* 
 				 * Handle characters including the first character
@@ -1962,9 +1833,10 @@ _WORD x_fgets(XFILE *file, char *string, _WORD n)
 				 */
 
 				ch = src[read++];
-				if ((ch == '\n') || (ch == '\r'))
+				if (ch == '\n' || ch == '\r')
+				{
 					nl = ch;
-				else if (i < n)
+				} else if (i < n)
 				{
 					*dest++ = ch;
 					i++;
@@ -1973,7 +1845,7 @@ _WORD x_fgets(XFILE *file, char *string, _WORD n)
 		}
 	}
 
-	file->read = read; 
+	file->read = read;
 
 	*dest = 0;
 	return 0;
@@ -2001,4 +1873,3 @@ void x_init(void)
 	else
 		flock = FALSE;
 }
-
