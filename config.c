@@ -162,7 +162,7 @@ static void append_fmt(CFG_TYPE cfgtype,	/* entry type         */
 
 static _WORD fprintf_wtab(XFILE *fp,	/* pointer to open file parameters */
 						  int lvl,		/* number of tabs, equal to current nesting level */
-						  char *string, ...	/* string(s) to print */
+						  const char *string, ...	/* string(s) to print */
 	)
 {
 	_WORD error = 0;
@@ -171,7 +171,7 @@ static _WORD fprintf_wtab(XFILE *fp,	/* pointer to open file parameters */
 
 	/* Print a number of tab characters */
 
-	while ((lvl-- > 0) && (error >= 0))
+	while (lvl-- > 0 && error >= 0)
 		error = (_WORD) x_fwrite(fp, "\t", sizeof(char));
 
 	/* Print whatever else is specified */
@@ -185,7 +185,7 @@ static _WORD fprintf_wtab(XFILE *fp,	/* pointer to open file parameters */
 		va_end(argpoint);
 
 		if (error > 0)
-			error = (_WORD) x_fwrite(fp, s, (long) error);
+			error = (_WORD) x_fwrite(fp, s, error);
 	}
 
 	return error;
@@ -743,7 +743,7 @@ int handle_cfgfile(const char *name,	/* name of configuration file to read/write
 	XFILE *file;
 	const char *savecname;
 	const char *savelastnest;
-	static char *fmt1 = "%s%s%s";
+	static char const fmt1[] = "%s%s%s";
 	_WORD n, error, savechklevel;
 
 	/* Remember last nest name for error tracing */

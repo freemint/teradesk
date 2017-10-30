@@ -674,9 +674,9 @@ void rsc_init(void)
 	infobox[INFOSYS].ob_spec.tedinfo->te_ptext = get_freestring(TMULTI);
 #endif
 #endif
-	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = INFO_VERSION;
-	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = INFO_COPYRIGHT;
-	infobox[OTHRINFO].ob_spec.tedinfo->te_ptext = INFO_OTHER;
+	infobox[INFOVERS].ob_spec.tedinfo->te_ptext = (char *)(long)INFO_VERSION;
+	infobox[COPYRGHT].ob_spec.tedinfo->te_ptext = (char *)(long)INFO_COPYRIGHT;
+	infobox[OTHRINFO].ob_spec.tedinfo->te_ptext = (char *)(long)INFO_OTHER;
 
 	show_os(&infobox[INFOTV], tos_version);
 	show_os(&infobox[INFOAV], aes_version);

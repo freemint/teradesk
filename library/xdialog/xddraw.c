@@ -89,7 +89,7 @@ static long xd_strlen(char *s)
  * argument: attrib; but it was allways called with attrib = 0
  */
 
-static void prt_text(char *s, _WORD x, _WORD y, _WORD state)
+static void prt_text(const char *s, _WORD x, _WORD y, _WORD state)
 {
 	_WORD attrib = 0;
 	char tmp[42];

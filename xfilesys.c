@@ -1648,13 +1648,13 @@ long x_fread(XFILE *file, void *ptr, long length)
 
 #define MRECL 256
 
-long x_fwrite(XFILE *file, void *ptr, long length)
+long x_fwrite(XFILE *file, const void *ptr, long length)
 {
 	long remd = length;					/* number of bytes remaining to be transferred */
 	long n;
 	long size;
 	char *dest;							/* location of the output buffer */
-	char *src = (char *) ptr;				/* position being read from */
+	const char *src = ptr;				/* position being read from */
 	_WORD write;						/* position currently written to */
 	_WORD error;						/* error code */
 

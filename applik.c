@@ -50,7 +50,7 @@
 APPLINFO awork;							/* work area for editing */
 APPLINFO *applikations;					/* list of installed apps data */
 _WORD naap;								/* number of apps assigned to a filetype */
-static char *defcml = "%f";				/* default command line for programs */
+static char const defcml[] = "%f";				/* default command line for programs */
 static SNAME prevcall;					/* name of the last started ttp */
 
 static bool nodocs = FALSE;				/* to copy documenttypes when copying apps */

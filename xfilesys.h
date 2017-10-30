@@ -204,7 +204,7 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error);
 XFILE *x_fmemopen(_WORD mode, _WORD *error);
 _WORD x_fclose(XFILE *file);
 long x_fread(XFILE *file, void *ptr, long length);
-long x_fwrite(XFILE *file, void *ptr, long length);
+long x_fwrite(XFILE *file, const void *ptr, long length);
 long x_fseek(XFILE *file, long offset, _WORD mode);
 char *x_freadstr(XFILE *file, char *string, size_t max, _WORD *error);
 _WORD x_fwritestr(XFILE *file, const char *string);
