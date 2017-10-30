@@ -21,7 +21,6 @@
  */
 
 
-#include <string.h>
 #include <library.h>
 
 #define SINGLE_Q '\''
@@ -33,16 +32,16 @@
  * always terminated with a nul char. Nul char is included in length "len"
  */
 
-char *strsncpy(char *dst, const char *src, size_t len)	
+char *strsncpy(char *dst, const char *src, size_t len)
 {
-	*dst = 0; 					/* just in case strncpy doesn't copy empty string */
-	strncpy(dst, src, len - 1);	/* len is typical: sizeof(achararray) */
+	*dst = 0;							/* just in case strncpy doesn't copy empty string */
+	strncpy(dst, src, len - 1);			/* len is typical: sizeof(achararray) */
 	*(dst + len - 1) = 0;
 	return dst;
 }
 
 
-#if 0 /* this is never used in TeraDesk */
+#if 0									/* this is never used in TeraDesk */
 
 /*
  * Copy a string 's' and right-justify in a field 'd' with length 'len'. 
@@ -56,13 +55,8 @@ char *strsncpy(char *dst, const char *src, size_t len)
 
 char *strcpyj(char *d, const char *s, size_t len)
 {
-	size_t
-		l,
-		b;
-
-	_WORD
-		i = 0;
-
+	size_t l, b;
+	_WORD i = 0;
 
 	l = strlen(s);
 	if (l > len)
@@ -89,30 +83,28 @@ size_t strlenq(const char *name)
 {
 	size_t l = 3;
 	const char *p = name;
-	_WORD
-		q = 0;
+	_WORD q = 0;
 
-
-	while(*p)
+	while (*p)
 	{
 		l++;
 
-		if(*p == ' ')
-			q = 1;					/* quote if space found */
+		if (*p == ' ')
+			q = 1;						/* quote if space found */
 
-		if(*p == SINGLE_Q || *p == DOUBLE_Q)
+		if (*p == SINGLE_Q || *p == DOUBLE_Q)
 		{
-			q = 1;					/* quote if embedded quote found */
-			l++;					/* and it has to be doubled */
+			q = 1;						/* quote if embedded quote found */
+			l++;						/* and it has to be doubled */
 		}
 
-		p++; /* don't put this in the 'if' above ! */
+		p++;							/* don't put this in the 'if' above ! */
 	}
 
-	if(q)
-		l += 2;						/* add two for enclosing quotes */
+	if (q)
+		l += 2;							/* add two for enclosing quotes */
 
-	return l;						/* return string length */
+	return l;							/* return string length */
 }
 
 
@@ -129,25 +121,25 @@ char *strcpyq(char *d, const char *s, char qc)
 
 	/* If there are embedded blanks or quotes, start quoting */
 
-	if(strchr(s, ' ') || strchr(s, DOUBLE_Q) || strchr(s, SINGLE_Q) )
+	if (strchr(s, ' ') || strchr(s, DOUBLE_Q) || strchr(s, SINGLE_Q))
 	{
 		*d++ = qc;
-		q = 1; 
+		q = 1;
 	}
 
 	/* Transfer all characters; double any embedded quote */
 
-	while(*s)
+	while (*s)
 	{
 		*d++ = *s;
-		if(*s == qc)
+		if (*s == qc)
 			*d++ = qc;
 		s++;
 	}
 
 	/* If quoting has been started, finish it (unquote) */
 
-	if(q)
+	if (q)
 		*d++ = qc;
 
 	/* Add a zero termination byte */
@@ -171,15 +163,13 @@ char *strcpyq(char *d, const char *s, char qc)
 
 char *strcpyuq(char *d, const char *s)
 {
-	char
-		h,
-		fqc = 0,
-		q = 0;
-
+	char h;
+	char fqc = 0;
+	char q = 0;
 
 	while ((h = *s++) != 0)
 	{
-		if ((h == ' ') && !q )
+		if (h == ' ' && !q)
 		{
 			/* If not between quotes, substitute blanks with a single 0 */
 
@@ -189,27 +179,29 @@ char *strcpyuq(char *d, const char *s)
 
 		/* Is this a quote character (see also va_start_prg() in va.c) */
 
-		else if ((h == fqc) || (!fqc && (h == SINGLE_Q || h == DOUBLE_Q))) /* 34= double quote, 39=single quote */
+		else if (h == fqc || (!fqc && (h == SINGLE_Q || h == DOUBLE_Q)))
 		{
 			/* two consequtive quotes mean that one is part of the string */
 
 			if (*s == h)
-				*d++ = *s++;	/* transfer quote as part of the string */
-			else
 			{
-				fqc = 0;		/* reset quote character, just in case */
+				*d++ = *s++;			/* transfer quote as part of the string */
+			} else
+			{
+				fqc = 0;				/* reset quote character, just in case */
 
-				if(!q)
-					fqc = h;	/* First encountered quote character */
+				if (!q)
+					fqc = h;			/* First encountered quote character */
 
-				q = !q;			/* start or end the quote */
+				q = !q;					/* start or end the quote */
 			}
-		}
-		else
+		} else
+		{
 			*d++ = h;
+		}
 	}
 
-	*d++ = 0; /* a trailing zero (termination) byte */
+	*d++ = 0;							/* a trailing zero (termination) byte */
 
 	return d;
 }
@@ -227,28 +219,27 @@ char *strcpyuq(char *d, const char *s)
 
 char *strcpyrq(char *d, const char *s, char qc, char **fb)
 {
-	char q = 0;				/* nonzero if quoting in effect */
-	char fqc = 0;			/* first encountered quote character */
- 	const char *p = s;		/* a location in source string */
-	char *t = d;			/* a location in destination string */
+	char q = 0;							/* nonzero if quoting in effect */
+	char fqc = 0;						/* first encountered quote character */
+	const char *p = s;					/* a location in source string */
+	char *t = d;						/* a location in destination string */
 
-	*fb = NULL;		/* no blanks found yet */
+	*fb = NULL;							/* no blanks found yet */
 
-	while(*p)
+	while (*p)
 	{
-		if( ((*p == fqc) || (!fqc && (*p == SINGLE_Q || *p == DOUBLE_Q))) && p[1] != *p)
+		if (((*p == fqc) || (!fqc && (*p == SINGLE_Q || *p == DOUBLE_Q))) && p[1] != *p)
 		{
 			/* This is one quote character; start or end quoting */
 
 			fqc = 0;
 
-			if(!q)
+			if (!q)
 				fqc = *p;
 
 			q = !q;
 			*t = qc;
-		}
-		else
+		} else
 		{
 			/* 
 			 * this may be one single/double quote enclosed in 
@@ -256,31 +247,30 @@ char *strcpyrq(char *d, const char *s, char qc, char **fb)
 			 * or a duplicated current quote character
 			 */
 
-			if(q)
+			if (q)
 			{
-				if(*p == qc && p[1] != qc)
+				if (*p == qc && p[1] != qc)
 					*t++ = qc;
 
 				/* or a doubled quote */
 
-				if(*p == fqc && p[1] == fqc)
+				if (*p == fqc && p[1] == fqc)
 				{
-					if(fqc == qc)
+					if (fqc == qc)
 						*t++ = qc;
 
-					p++;			
+					p++;
 				}
-			}
-			else
+			} else
 			{
-				if(*p == ' ' && *fb == 0L) /* first unquoted blank */
+				if (*p == ' ' && *fb == 0L)	/* first unquoted blank */
 					*fb = t;
-			}		
+			}
 
 			/* or any other character... */
 
 			*t = *p;
-		} 
+		}
 
 		p++;
 		t++;

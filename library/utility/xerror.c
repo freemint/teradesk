@@ -27,11 +27,7 @@ _WORD xerror( _WORD toserror )
 {
 	if (toserror >= 0)
 		return 0;
-	else
-	{
-		if (toserror > -1024)
-			return toserror;
-		else
-			return XUNKNOWN;
-	}
+	if (toserror > -1024)
+		return toserror;
+	return XUNKNOWN;
 }

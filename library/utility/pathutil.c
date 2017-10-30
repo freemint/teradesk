@@ -21,8 +21,6 @@
  */
 
 
-#include <string.h>
-#include <stddef.h>
 #include <library.h>
 
 /* 
@@ -32,7 +30,7 @@
 
 const char *nonwhite(const char *s)
 {
-	while( ( (*s == '\t') || (*s == ' ') ) && (*s != 0) ) 
+	while (*s == '\t' || *s == ' ')
 		s++;
 
 	return s;
@@ -60,11 +58,11 @@ void strip_name(char *to, const char *from)
 
 	from = nonwhite(from);
 
-	if (*from)									/* if not empty string... */
+	if (*from)							/* if not empty string... */
 	{
 		size_t nc = 1;
 
-		while (*last == ' ')					/* last nonblank */
+		while (*last == ' ')			/* last nonblank */
 			last--;
 
 		while (from <= last && nc < sizeof(XLNAME))	/* now copy */
@@ -74,7 +72,7 @@ void strip_name(char *to, const char *from)
 		}
 	}
 
-	*to = 0;									/* terminate with a null */
+	*to = 0;							/* terminate with a null */
 }
 
 
@@ -90,38 +88,32 @@ void strip_name(char *to, const char *from)
 
 void cramped_name(const char *s, char *t, size_t ww)
 {
-	char 
-		*p = t; 	/* pointer to a location in target string  */
+	char *p = t;						/* pointer to a location in target string  */
+	XLNAME ts;							/* temporary storage for the stripped name */
+	long l;								/* input string length */
+	long d;									/* difference between input and output lengths */
+	long h;									/* length of the first part of the name (before "...") */
 
-	XLNAME
-		ts;			/* temporary storage for the stripped name */
+	strip_name(ts, s);					/* remove leading and trailing blanks; insert term. byte */
+	l = strlen(ts);						/* new (trimmed) string length */
+	d = l - ww + 1;						/* new length difference */
 
-	long
-		l,			/* input string length */ 
-		d,			/* difference between input and output lengths */ 
-		h;			/* length of the first part of the name (before "...") */
-
-
-	strip_name(ts, s);		/* remove leading and trailing blanks; insert term. byte */
-	l = strlen(ts);			/* new (trimmed) string length */
-	d = l - ww + 1;			/* new length difference */
-
-	if (d <= 0L)	/* (new) source is shorter than target (or same), so just copy */
-		strcpy(t, ts);
-	else			/* (new) source is longer than the target, must cramp */
+	if (d <= 0L)						/* (new) source is shorter than target (or same), so just copy */
 	{
-		if (ww < 13L)			/* 8.3: destination is very short  */
+		strcpy(t, ts);
+	} else								/* (new) source is longer than the target, must cramp */
+	{
+		if (ww < 13L)					/* 8.3: destination is very short  */
 		{
-			strcpy(t, ts + d);	/* so copy only the last ch's */
-			t[0] = '<';			/* cosmetic, to show it is a truncated name */
-		}
-		else					/* else replace middle of the string with "..." */
+			strcpy(t, ts + d);			/* so copy only the last ch's */
+			t[0] = '<';					/* cosmetic, to show it is a truncated name */
+		} else							/* else replace middle of the string with "..." */
 		{
-			h = (ww - 4) / 2;	/* half of dest. length minus "..." */ 
+			h = (ww - 4) / 2;			/* half of dest. length minus "..." */
 
-			strncpy(t, ts, h);	/* copy first half to  destination */
+			strncpy(t, ts, h);			/* copy first half to  destination */
 
-			p += h;				/* add "..." */
+			p += h;						/* add "..." */
 			*p++ = '.';
 			*p++ = '.';
 			*p++ = '.';
@@ -130,4 +122,3 @@ void cramped_name(const char *s, char *t, size_t ww)
 		}
 	}
 }
-

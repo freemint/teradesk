@@ -21,10 +21,7 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
 #include <library.h>
-#include <tos.h>
 
 /*
  * Convert a number (range 0:99 only!!!) into a string
@@ -36,10 +33,10 @@
 char *digit(char *s, _WORD x)
 {
 	char c;
-	
+
 	x = x % 100;
 	c = *s++ = x / 10;
-	*s++ = x - 10 * c + '0'; /* is this faster than % ? */
+	*s++ = x - 10 * c + '0';			/* is this faster than % ? */
 	s[-2] += '0';
 	return s;
 }
@@ -64,10 +61,9 @@ void bell(void)
 
 _WORD touppc(_WORD c)
 {
-	if ( (c & 0x7F) > '?' && c != 0x7F)
+	if ((c & 0x7F) > '?' && c != 0x7F)
 		return c & 0xDF;
-	else
-		return c;
+	return c;
 }
 
 
@@ -76,7 +72,7 @@ _WORD touppc(_WORD c)
  * Save some bytes in size when speed is not critical
  */
 
-void *memclr(void *s, size_t len) 
+void *memclr(void *s, size_t len)
 {
 	return memset(s, 0, len);
 }

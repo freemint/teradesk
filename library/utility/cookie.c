@@ -36,23 +36,19 @@
  * input value of "name" instead of -1 if there was no cookie jar
  */
 
-long find_cookie( long name )		
+long find_cookie(long name)
 {
-	COOKIE
-		*cookie;
-
-	long
-		cvalue = -1L;
-
+	COOKIE *cookie;
+	long cvalue = -1L;
 
 #if _MINT_
 	if (have_ssystem)
-		Ssystem(S_GETCOOKIE, name, (long)&cvalue );
+		Ssystem(S_GETCOOKIE, name, (long) &cvalue);
 	else
 #endif
 	{
-		void *old_stack = (void *)Super(NULL);
-	
+		void *old_stack = (void *) Super(NULL);
+
 		if ((cookie = p_cookie) != NULL)
 		{
 			while ((cookie->name != 0) && (cookie->name != name))
@@ -61,7 +57,7 @@ long find_cookie( long name )
 			if (cookie->name != 0L)
 				cvalue = cookie->value;
 		}
-	
+
 		Super(old_stack);
 	}
 
@@ -69,10 +65,11 @@ long find_cookie( long name )
 }
 
 
-#if 0 /* All following routines are currently not used in Teradesk */
+#if 0									/* All following routines are currently not used in Teradesk */
 
 long o_resvalid;
-void (*o_resvector)( void );
+
+void (*o_resvector) (void);
 
 #if __AHCC__
 void __asm__ jmpa6(void)
@@ -81,11 +78,11 @@ void __asm__ jmpa6(void)
 	jmp 	(a6)
 }
 #else
-void jmpa6( void ) 0x4ED6;
+void jmpa6(void) 0x4ED6;
 #endif
 
 
-static void cookie_reset( void )
+static void cookie_reset(void)
 {
 	p_cookie = NULL;
 	resvector = o_resvector;
@@ -101,21 +98,13 @@ static void cookie_reset( void )
  * r =  2 : nieuw cookie geinstalleerd, niet reset vast. 
  */
 
-_WORD install_cookie( long name,long value,COOKIE *buffer,long l )
+_WORD install_cookie(long name, long value, COOKIE *buffer, long l)
 {
-	void
-		*stack;
+	void *stack;
+	COOKIE *cookie;
+	_WORD r, i, j;
 
-	COOKIE
-		*cookie;
-
-	_WORD
-		r,
-		i,
-		j;
-
-
-	stack = (void *)Super(NULL);
+	stack = (void *) Super(NULL);
 
 	if ((cookie = p_cookie) != NULL)
 	{
@@ -125,42 +114,42 @@ _WORD install_cookie( long name,long value,COOKIE *buffer,long l )
 			i++;
 
 		if (cookie[i].value > (i + 1))
-			{
-			cookie[i+1] = cookie[i];
+		{
+			cookie[i + 1] = cookie[i];
 			cookie[i].name = name;
 			cookie[i].value = value;
 
 			r = 0;
-		}
-		else
+		} else
 		{
-			if ((l <= cookie[i].value) || (buffer == NULL))
-				r = -1;
-			else
+			if (l <= cookie[i].value || buffer == NULL)
 			{
-				_WORD e;		/* reserve 'end' for language */
+				r = -1;
+			} else
+			{
+				_WORD e;				/* reserve 'end' for language */
 
-				e = (_WORD)cookie[i].value - 1;
+				e = (_WORD) cookie[i].value - 1;
 
-				for(j = 0; j < e; j++)
+				for (j = 0; j < e; j++)
 					buffer[j] = cookie[j];
 
 				p_cookie = buffer;
 
 				cookie[i].name = name;
 				cookie[i].value = value;
-				cookie[i+1].name = 0L;
-				cookie[i+1].value = l;
+				cookie[i + 1].name = 0L;
+				cookie[i + 1].value = l;
 
 				r = 1;
 			}
 		}
-	}
-	else
+	} else
 	{
 		if ((l < 2) || (buffer == NULL))	/* cookie te klein */
+		{
 			r = -1;
-		else
+		} else
 		{
 			o_resvalid = resvalid;
 			o_resvector = resvector;

@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string.h>
-#include <stddef.h>
 #include <library.h>
 
 /*
@@ -59,9 +57,9 @@ _WORD max(_WORD x, _WORD y)
 
 _WORD minmax(_WORD lo, _WORD i, _WORD hi)
 {
-	if( i < lo )
+	if (i < lo)
 		return lo;
-	if(hi < lo)
+	if (hi < lo)
 		hi = lo;
 
 	return i < hi ? i : hi;
@@ -100,5 +98,5 @@ long lminmax(long lo, long i, long hi)
 		return lo;
 	if (hi < lo)
 		hi = lo;
-	return(i < hi) ? i : hi;
+	return (i < hi) ? i : hi;
 }
