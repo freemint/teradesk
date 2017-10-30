@@ -31,18 +31,12 @@ xdialog.lib
 .C[-C-]
 .C[-K]
 .C[-G]
+.C[-P]
 .C[-I..\..\include]
-.S[ -S ]
+.S[-S]
+.S[-Y]
 
-; With debug info:
-
-;.C[ -Y]
-;.S[ -Y]
-;.L[ -J -Y -L -G]
-
-; Without debug info:
-
-.L[ -J]
+.L[-J -Y -L -G]
 
 
 =

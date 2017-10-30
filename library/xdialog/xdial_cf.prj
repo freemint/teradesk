@@ -29,18 +29,15 @@ xdialog.lib
 ; -P: absolute calls; 
 ; -G: size optimization;
 
-; With debug info:
+.C[-C-]
+.C[-K]
+.C[-G]
+.C[-P]
+.C[-I..\..\include]
+.S[-S]
+.S[-Y]
 
-;.C[ -C -K -Y -G -I..\..\include]
-;.S[ -Y -S ]
-;.L[ -J -Y -L -G]
-
-; Without debug info:
-
-.C[ -C -K -G -I..\..\include]
-.S[ -S ]
-.L[ -J]
-
+.L[-J -Y -L -G]
 
 =
 xdialog.c

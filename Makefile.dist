@@ -48,7 +48,7 @@ dist srcdist:: .srcdistdir
 	$(AM_V_at)set -e; \
 	SRCDISTDIR=`cat .srcdistdir`; \
 	mkdir -p $${SRCDISTDIR}/support; \
-	mkdir -p $${SRCDISTDIR}/include; \
+	mkdir -p $${SRCDISTDIR}/include/mint/arch; \
 	mkdir -p $${SRCDISTDIR}/library; \
 	mkdir -p $${SRCDISTDIR}/library/utility; \
 	mkdir -p $${SRCDISTDIR}/library/xdialog; \
@@ -57,6 +57,9 @@ dist srcdist:: .srcdistdir
 	done; \
 	for i in include/*.h; do \
 		cp -a $$i $${SRCDISTDIR}/include; \
+	done; \
+	for i in include/mint/arch/*.h; do \
+		cp -a $$i $${SRCDISTDIR}/include/mint/arch; \
 	done; \
 	for i in support/*; do \
 		cp -a $$i $${SRCDISTDIR}/support; \

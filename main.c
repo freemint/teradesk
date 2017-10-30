@@ -24,6 +24,7 @@
 #include <xdialog.h>
 #include <xscncode.h>
 #include <mint/cookie.h>
+#include <mint/arch/nf_ops.h>
 
 #include "resource.h"
 #include "desk.h"
@@ -117,7 +118,6 @@ bool startup = TRUE;					/* true if desktop is starting */
 static bool ct60;						/* True if this is a CT60 machine       */
 static bool chrez = FALSE;				/* true if resolution should be changed */
 static bool quit = FALSE;				/* true if teradesk should finish       */
-static bool reboot = FALSE;				/* true if a reboot should happen       */
 static bool shutting = FALSE;			/* true if started shutting down        */
 bool onekey_shorts;						/* true if any single-key menu shortcuts are defined */
 
@@ -1322,28 +1322,22 @@ static void hndlmenu(_WORD title,		/* index of menu title */
 				switch (qbutton)
 				{
 				case QUITBOOT:			/* reboot */
-					{
-						reboot = TRUE;
-						shutopt = 2;
-						shutdown = TRUE;
-						goto toshut;
-					}
+					shutopt = 2;
+					shutdown = TRUE;
+					quit = TRUE;
+					break;
 				case QUITSHUT:			/* shutdown */
 					shutdown = TRUE;
 					if (app_specstart(AT_SHUT, NULL, NULL, 0, 0))
-					{
 						shutdown = FALSE;
-						break;
-					}
-				  toshut:;
-				case QUITQUIT:			/* quit */
-					{
+					else
 						quit = TRUE;
-					}
+					break;
+				case QUITQUIT:			/* quit */
+					quit = TRUE;
+					break;
 				case QUITCANC:			/* cancel */
-					{
-						break;
-					}
+					break;
 				}
 			}
 			break;
@@ -1972,7 +1966,9 @@ int main(void)
 
 					Mfree(global_memory);
 				} else
+				{
 					xform_error(error);
+				}
 			}
 
 			/* Unload loaded fonts */
@@ -2063,12 +2059,17 @@ int main(void)
 
 #if _MINT_
 			Syield();
-			wait(2000);
+			wait(100);
 			appl_exit();
 
 			/* shutopt: 0 = halt/poweroff,  1 = reset,  2 = coldreset */
 
 			Shutdown((long) shutopt);
+			/*
+			 * If we get here, Shutdown did not happen. Try NatFeats instead
+			 */
+			if (shutopt == 0)
+				nf_shutdown(0);
 #endif
 			/* 
 			 * If execution of the program comes to this point, it means
@@ -2082,7 +2083,7 @@ int main(void)
 
 			Super(0L);
 
-			if (reboot)
+			if (shutopt != 0)
 			{
 				/* This is supposed to be a cold reset */
 
