@@ -94,12 +94,12 @@ static _WORD cdecl draw_text(PARMBLK *pb)
 	FONTBLOCK *thefbl = (FONTBLOCK *) (((XUSERBLK *) (pb->pb_parm))->uv.ptr);
 	char *thetext = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
 	_WORD extent[8];
-	RECT r, tr;
+	GRECT r, tr;
 
-	r.x = pb->pb_x;
-	r.y = pb->pb_y;
-	r.w = pb->pb_w;
-	r.h = pb->pb_h;
+	r.g_x = pb->pb_x;
+	r.g_y = pb->pb_y;
+	r.g_w = pb->pb_w;
+	r.g_h = pb->pb_h;
 
 	xd_clip_on(&r);						/* clipping does not seem to work with pb->c ? */
 
@@ -117,13 +117,13 @@ static _WORD cdecl draw_text(PARMBLK *pb)
 
 	vqt_extent(vdi_handle, thetext, extent);
 
-	tr.w = extent[2] - extent[0];
-	tr.h = extent[7] - extent[1] + 4;
+	tr.g_w = extent[2] - extent[0];
+	tr.g_h = extent[7] - extent[1] + 4;
 
-	tr.x = r.x + (r.w - tr.w) / 2;
-	tr.y = r.y + (r.h - tr.h) / 2;
+	tr.g_x = r.g_x + (r.g_w - tr.g_w) / 2;
+	tr.g_y = r.g_y + (r.g_h - tr.g_h) / 2;
 
-	w_transptext(tr.x, tr.y + 2, thetext);
+	w_transptext(tr.g_x, tr.g_y + 2, thetext);
 
 	if (pb->pb_currstate & OS_SELECTED)
 		invert(&tr);

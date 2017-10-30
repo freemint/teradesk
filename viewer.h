@@ -56,13 +56,13 @@ typedef struct
 
 extern XDFONT txt_font;
 extern WINFO textwindows[MAXWINDOWS];	/* some information about open windows */
-extern RECT tmax;
+extern GRECT tmax;
 
 bool txt_add_window(WINDOW *sw, _WORD item, _WORD kstate, char *thefile);
 void txt_closed(WINDOW *w);
 void txt_hndlmenu(WINDOW *w, _WORD title, _WORD item);
-void txt_prtline(TXT_WINDOW *w, long line, RECT *area, RECT *work);
-void txt_prtcolumn(TXT_WINDOW *w, _WORD column, _WORD nc, RECT *area, RECT *work);
+void txt_prtline(TXT_WINDOW *w, long line, GRECT *area, GRECT *work);
+void txt_prtcolumn(TXT_WINDOW *w, _WORD column, _WORD nc, GRECT *area, GRECT *work);
 bool txt_reread( TXT_WINDOW *w, char *name, _WORD px, long py);
 _WORD read_txtf(const char *name, char **buffer, long *flength); 
 void compare_files( WINDOW *w, _WORD n, _WORD *list );

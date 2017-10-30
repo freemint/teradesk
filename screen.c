@@ -45,7 +45,7 @@ static _WORD *palette = 0;				/* Pointer to current palette */
  * als resultaat FALSE teruggegeven. 
  */
 
-bool clip_desk(RECT *r)
+bool clip_desk(GRECT *r)
 {
 	return xd_rcintersect(r, &xd_desk, r);
 }
@@ -65,7 +65,7 @@ void clipdesk_on(void)
  * (pattern and colour are those defined for window background)
  */
 
-void pclear(RECT *r)
+void pclear(GRECT *r)
 {
 	bool doo = options.win_pattern && options.win_colour;
 
@@ -80,9 +80,9 @@ void pclear(RECT *r)
  * Find if two rectangles intersect. Return TRUE if they do.
  */
 
-bool rc_intersect2(RECT *r1, RECT *r2)
+bool rc_intersect2(GRECT *r1, GRECT *r2)
 {
-	RECT r;
+	GRECT r;
 
 	return xd_rcintersect(r1, r2, &r);
 }
@@ -121,7 +121,7 @@ void draw_rect(_WORD x1, _WORD y1, _WORD x2, _WORD y2)
  * Invert colours in a rectangle on the screen 
  */
 
-void invert(RECT *r)
+void invert(GRECT *r)
 {
 	MFDB mfdb;
 	_WORD pxy[8];
@@ -137,7 +137,7 @@ void invert(RECT *r)
  * Move a part of the screen to a new location.
  */
 
-void move_screen(RECT *dest, RECT *src)
+void move_screen(GRECT *dest, GRECT *src)
 {
 	MFDB mfdb;
 	_WORD pxy[8];

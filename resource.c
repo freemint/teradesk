@@ -118,7 +118,7 @@ static void set_menubox(_WORD box)
 
 	objc_offset(menu, box, &x, &dummy);
 
-	if ((offset = x + menu[box].ob_width + 5 * xd_fnt_w - xd_screen.w) > 0)
+	if ((offset = x + menu[box].ob_width + 5 * xd_fnt_w - xd_screen.g_w) > 0)
 		menu[box].ob_x -= offset;
 }
 
@@ -234,10 +234,10 @@ static void rsc_fixmenus(void)
 	 * about buffer size
 	 */
 
-	RECT desk;
+	GRECT desk;
 
 #if _MENUDEL
-	RECT boxrect;
+	GRECT boxrect;
 	MFDB mfdb;
 
 	union
@@ -338,7 +338,7 @@ static void rsc_fixmenus(void)
 	/* Adapt menu bar width to have the same width as screen */
 
 	xw_getwork(NULL, &desk);
-	menu[menu->ob_head].ob_width = desk.w;
+	menu[menu->ob_head].ob_width = desk.g_w;
 }
 
 

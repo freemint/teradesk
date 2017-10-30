@@ -27,16 +27,16 @@
 
 
 /* 
- * Funktie voor het omzetten van een RECT structuur naar een pxy array. 
+ * Funktie voor het omzetten van een GRECT structuur naar een pxy array. 
  * (set diagonal points of a rectangle, not the whole perimeter)
  */
 
-void xd_rect2pxy(RECT *r, _WORD *pxy)
+void xd_rect2pxy(GRECT *r, _WORD *pxy)
 {
-	pxy[0] = r->x;
-	pxy[1] = r->y;
-	pxy[2] = pxy[0] + r->w - 1;
-	pxy[3] = pxy[1] + r->h - 1;
+	pxy[0] = r->g_x;
+	pxy[1] = r->g_y;
+	pxy[2] = pxy[0] + r->g_w - 1;
+	pxy[3] = pxy[1] + r->g_h - 1;
 }
 
 
@@ -44,20 +44,20 @@ void xd_rect2pxy(RECT *r, _WORD *pxy)
  * Funktie voor het berekenen van de doorsnede van twee rechthoeken. 
  */
 
-_WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
+_WORD xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *dest)
 {
 	_WORD xmin, xmax, ymin, ymax;
 
-	xmin = max(r1->x, r2->x);
-	ymin = max(r1->y, r2->y);
-	xmax = min(r1->x + r1->w, r2->x + r2->w);
-	ymax = min(r1->y + r1->h, r2->y + r2->h);
-	dest->x = xmin;
-	dest->y = ymin;
-	dest->w = xmax - xmin;
-	dest->h = ymax - ymin;
+	xmin = max(r1->g_x, r2->g_x);
+	ymin = max(r1->g_y, r2->g_y);
+	xmax = min(r1->g_x + r1->g_w, r2->g_x + r2->g_w);
+	ymax = min(r1->g_y + r1->g_h, r2->g_y + r2->g_h);
+	dest->g_x = xmin;
+	dest->g_y = ymin;
+	dest->g_w = xmax - xmin;
+	dest->g_h = ymax - ymin;
 
-	if ((dest->w <= 0) || (dest->h <= 0))
+	if ((dest->g_w <= 0) || (dest->g_h <= 0))
 		return FALSE;
 
 	return TRUE;
@@ -78,9 +78,9 @@ _WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
  *			   als dit niet het geval is.
  */
 
-_WORD xd_inrect(_WORD x, _WORD y, RECT *r)
+_WORD xd_inrect(_WORD x, _WORD y, GRECT *r)
 {
-	if ((x >= r->x) && (x < (r->x + r->w)) && (y >= r->y) && (y < (r->y + r->h)))
+	if ((x >= r->g_x) && (x < (r->g_x + r->g_w)) && (y >= r->g_y) && (y < (r->g_y + r->g_h)))
 		return TRUE;
 	return FALSE;
 }
@@ -92,17 +92,17 @@ _WORD xd_inrect(_WORD x, _WORD y, RECT *r)
  * and number of colours planes
  */
 
-long xd_initmfdb(RECT *r, MFDB *mfdb)
+long xd_initmfdb(GRECT *r, MFDB *mfdb)
 {
 	long size;
 
-	mfdb->fd_w = (r->w + 16) & 0xFFF0;
-	mfdb->fd_h = r->h;
+	mfdb->fd_w = (r->g_w + 16) & 0xFFF0;
+	mfdb->fd_h = r->g_h;
 	mfdb->fd_wdwidth = mfdb->fd_w / 16;
 	mfdb->fd_stand = 0;
 	mfdb->fd_nplanes = xd_nplanes;
 
-	size = ((long) (mfdb->fd_w) * r->h * xd_nplanes) / 8;
+	size = ((long) (mfdb->fd_w) * r->g_h * xd_nplanes) / 8;
 
 	return size;
 }
@@ -153,13 +153,13 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl (*code) (PARMBLK
  * Funktie die rechthoek om object bepaalt 
  */
 
-void xd_objrect(OBJECT *tree, _WORD object, RECT *r)
+void xd_objrect(OBJECT *tree, _WORD object, GRECT *r)
 {
 	OBJECT *obj = &tree[object];
 
-	objc_offset(tree, object, &r->x, &r->y);
-	r->w = obj->ob_width;
-	r->h = obj->ob_height;
+	objc_offset(tree, object, &r->g_x, &r->g_y);
+	r->g_w = obj->ob_width;
+	r->g_h = obj->ob_height;
 }
 
 
@@ -356,7 +356,7 @@ _WORD xd_is_tristate(OBJECT *object)
  * r	- clipping rechthoek.
  */
 
-void xd_clip_on(RECT *r)
+void xd_clip_on(GRECT *r)
 {
 	_WORD pxy[4];
 

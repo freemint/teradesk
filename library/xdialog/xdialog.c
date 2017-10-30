@@ -100,8 +100,8 @@ XDOBJDATA *xd_objdata = NULL;			/* Arrays with USERBLKs */
 XDINFO *xd_dialogs = NULL;				/* Chained list of modal dialog boxes. */
 XDINFO *xd_nmdialogs = NULL;			/* List with non modal dialog boxes. */
 
-RECT xd_screen;							/* screen dimensions */ 
-RECT xd_desk;							/* Dimensions of desktop background. */
+GRECT xd_screen;						/* screen dimensions */
+GRECT xd_desk;							/* Dimensions of desktop background. */
 
 #if _SMALL_FONT
 XDFONT xd_small_font;					/* small font definition */
@@ -109,8 +109,8 @@ XDFONT xd_small_font;					/* small font definition */
 XDFONT xd_regular_font;					/* system font definition */
 
 
-static void __xd_redraw(WINDOW *w, RECT *area);
-static void __xd_moved(WINDOW *w, RECT *newpos);
+static void __xd_redraw(WINDOW *w, GRECT *area);
+static void __xd_moved(WINDOW *w, GRECT *newpos);
 
 
 
@@ -187,8 +187,8 @@ static void xd_save(XDINFO *info)
 
 	pxy[4] = 0;
 	pxy[5] = 0;
-	pxy[6] = info->drect.w - 1;
-	pxy[7] = info->drect.h - 1;
+	pxy[6] = info->drect.g_w - 1;
+	pxy[7] = info->drect.g_h - 1;
 
 	xd_mouse_off();
 	vro_cpyfm(xd_vhandle, S_ONLY, pxy, &source, &info->mfdb);
@@ -210,8 +210,8 @@ static void xd_restore(XDINFO *info)
 
 	pxy[0] = 0;
 	pxy[1] = 0;
-	pxy[2] = info->drect.w - 1;
-	pxy[3] = info->drect.h - 1;
+	pxy[2] = info->drect.g_w - 1;
+	pxy[3] = info->drect.g_h - 1;
 
 	xd_rect2pxy(&info->drect, &pxy[4]);
 	xd_mouse_off();
@@ -245,19 +245,19 @@ void xd_enable_menu(_WORD state)
  * Find the intersection of two areas for clipping ? 
  */
 
-static void xd_clip(XDINFO *info, RECT *clip)
+static void xd_clip(XDINFO *info, GRECT *clip)
 {
-	if (info->drect.x < clip->x)
-		info->drect.x = clip->x;
+	if (info->drect.g_x < clip->g_x)
+		info->drect.g_x = clip->g_x;
 
-	if (info->drect.y < clip->y)
-		info->drect.y = clip->y;
+	if (info->drect.g_y < clip->g_y)
+		info->drect.g_y = clip->g_y;
 
-	if ((info->drect.x + info->drect.w) > (clip->x + clip->w))
-		info->drect.x = clip->x + clip->w - info->drect.w;
+	if ((info->drect.g_x + info->drect.g_w) > (clip->g_x + clip->g_w))
+		info->drect.g_x = clip->g_x + clip->g_w - info->drect.g_w;
 
-	if ((info->drect.y + info->drect.h) > (clip->y + clip->h))
-		info->drect.y = clip->y + clip->h - info->drect.h;
+	if ((info->drect.g_y + info->drect.g_h) > (clip->g_y + clip->g_h))
+		info->drect.g_y = clip->g_y + clip->g_h - info->drect.g_h;
 }
 
 
@@ -270,12 +270,12 @@ static void xd_set_position(XDINFO *info, _WORD x, _WORD y)
 	_WORD dx, dy;
 	OBJECT *tree = info->tree;
 
-	dx = x - info->drect.x;
-	dy = y - info->drect.y;
+	dx = x - info->drect.g_x;
+	dy = y - info->drect.g_y;
 	tree->ob_x += dx;
 	tree->ob_y += dy;
-	info->drect.x = x;
-	info->drect.y = y;
+	info->drect.g_x = x;
+	info->drect.g_y = y;
 }
 
 
@@ -333,42 +333,42 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, _WORD pmode)
 
 	if (pmode == XD_CENTERED && prev == NULL)
 	{
-		form_center(tree, &info->drect.x, &info->drect.y, &info->drect.w, &info->drect.h);
+		form_center(tree, &info->drect.g_x, &info->drect.g_y, &info->drect.g_w, &info->drect.g_h);
 	} else
 	{
-		info->drect.w = tree->ob_width + brd_l + brd_r;
-		info->drect.h = tree->ob_height + brd_u + brd_d;
+		info->drect.g_w = tree->ob_width + brd_l + brd_r;
+		info->drect.g_h = tree->ob_height + brd_u + brd_d;
 
 		switch (pmode)
 		{
 		case XD_CENTERED:
-			info->drect.x = prev->drect.x + (prev->drect.w - info->drect.w) / 2;
-			info->drect.y = prev->drect.y + (prev->drect.h - info->drect.h) / 2;
-			if (xd_desk.w > 400 && xd_desk.h > 300)
+			info->drect.g_x = prev->drect.g_x + (prev->drect.g_w - info->drect.g_w) / 2;
+			info->drect.g_y = prev->drect.g_y + (prev->drect.g_h - info->drect.g_h) / 2;
+			if (xd_desk.g_w > 400 && xd_desk.g_h > 300)
 			{
 				/* 
 				 * If there is room on the screen,
 				 * stack dialogs a little to the right & down, for nicer looks 
 				 */
-				info->drect.x += 16;
-				info->drect.y += 16;
+				info->drect.g_x += 16;
+				info->drect.g_y += 16;
 			}
 			break;
 		case XD_MOUSE:
-			graf_mkstate(&info->drect.x, &info->drect.y, &dummy, &dummy);
-			info->drect.x -= info->drect.w / 2;
-			info->drect.y -= info->drect.h / 2;
+			graf_mkstate(&info->drect.g_x, &info->drect.g_y, &dummy, &dummy);
+			info->drect.g_x -= info->drect.g_w / 2;
+			info->drect.g_y -= info->drect.g_h / 2;
 			break;
 		case XD_CURRPOS:
-			info->drect.x = tree->ob_x - brd_l;
-			info->drect.y = tree->ob_y - brd_u;
+			info->drect.g_x = tree->ob_x - brd_l;
+			info->drect.g_y = tree->ob_y - brd_u;
 			break;
 		}
 
 		xd_clip(info, &xd_desk);
 
-		tree->ob_x = info->drect.x + brd_l;
-		tree->ob_y = info->drect.y + brd_u;
+		tree->ob_x = info->drect.g_x + brd_l;
+		tree->ob_y = info->drect.g_y + brd_u;
 	}
 }
 
@@ -383,10 +383,10 @@ void xd_screensize(void)
 
 	vq_extnd(xd_vhandle, 0, work_out);
 
-	xd_screen.x = 0;
-	xd_screen.y = 0;
-	xd_screen.w = work_out[0] + 1;		/* Screen width (pixels)  */
-	xd_screen.h = work_out[1] + 1;		/* Screen height (pixels) */
+	xd_screen.g_x = 0;
+	xd_screen.g_y = 0;
+	xd_screen.g_w = work_out[0] + 1;		/* Screen width (pixels)  */
+	xd_screen.g_h = work_out[1] + 1;		/* Screen height (pixels) */
 }
 
 
@@ -701,7 +701,7 @@ XDINFO *xd_find_dialog(WINDOW *w)
  * Funktie voor het afhandelen van een redraw event. 
  */
 
-static void __xd_redraw(WINDOW *w, RECT *area)
+static void __xd_redraw(WINDOW *w, GRECT *area)
 {
 	XDINFO *info = xd_find_dialog(w);
 
@@ -715,19 +715,19 @@ static void __xd_redraw(WINDOW *w, RECT *area)
  * Funktie voor het afhandelen van een window moved event. 
  */
 
-static void __xd_moved(WINDOW *w, RECT *newpos)
+static void __xd_moved(WINDOW *w, GRECT *newpos)
 {
 	XDINFO *info = xd_find_dialog(w);
 
 #if 0									/* no need if there are no menus in dialog windows */
-	RECT work;
+	GRECT work;
 
 	xw_setsize(w, newpos);
 	xw_getwork(w, &work);				/* work area may be modified by menu height */
-	xd_set_position(info, work.x, work.y);
+	xd_set_position(info, work.g_x, work.g_y);
 #endif
 	xw_setsize(w, newpos);
-	xd_set_position(info, w->xw_work.x, w->xw_work.y);
+	xd_set_position(info, w->xw_work.g_x, w->xw_work.g_y);
 }
 
 
@@ -1015,7 +1015,7 @@ static bool xd_shift(XUSERBLK *blk, _WORD pos, _WORD flen, _WORD clen)
 _WORD xd_edit_char(XDINFO *info, _WORD key)
 {
 	TEDINFO *tedinfo;
-	RECT clip;
+	GRECT clip;
 	XUSERBLK *blk;
 	char *val;
 	char *str;
@@ -1044,17 +1044,17 @@ _WORD xd_edit_char(XDINFO *info, _WORD key)
 	curlen = (_WORD) strlen(str);
 	flen = (_WORD) strlen(val);
 
-	objc_offset(tree, edit_obj, &clip.x, &clip.y);
-	clip.h = xd_regular_font.ch;
-	clip.w = xd_regular_font.cw * tedinfo->te_tmplen;
+	objc_offset(tree, edit_obj, &clip.g_x, &clip.g_y);
+	clip.g_h = xd_regular_font.ch;
+	clip.g_w = xd_regular_font.cw * tedinfo->te_tmplen;
 
 	if (blk)
 	{
 		/* only scrolled-text fields are handled here */
 
-		clip.x -= xd_regular_font.cw + 2;	/* HR: This temporary until ub_scrledit() handles templates properly. */
-		clip.w += 2 * xd_regular_font.cw + 4;
-		clip.h += 4;
+		clip.g_x -= xd_regular_font.cw + 2;	/* HR: This temporary until ub_scrledit() handles templates properly. */
+		clip.g_w += 2 * xd_regular_font.cw + 4;
+		clip.g_h += 4;
 		maxlen = (_WORD) XD_MAX_SCRLED;
 	} else
 	{
@@ -1500,7 +1500,7 @@ _WORD xd_form_button(XDINFO *info, _WORD object, _WORD clicks, _WORD *result)
 			events.ev_mbmask = 1;
 			events.ev_mm1flags = 1;
 
-			xd_objrect(tree, object, (RECT *) & events.ev_mm1);
+			xd_objrect(tree, object, (GRECT *) & events.ev_mm1);
 			xd_change(info, object, newstate, TRUE);
 
 			do
@@ -1714,8 +1714,8 @@ _WORD xd_kform_do(XDINFO *info, _WORD start, userkeys userfunc, void *userdata)
 				{
 					_WORD nx, ny;
 
-					graf_dragbox(info->drect.w, info->drect.h, info->drect.x, info->drect.y,
-								 xd_desk.x, xd_desk.y, xd_desk.w, xd_desk.h, &nx, &ny);
+					graf_dragbox(info->drect.g_w, info->drect.g_h, info->drect.g_x, info->drect.g_y,
+								 xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h, &nx, &ny);
 
 					xd_restore(info);
 					xd_set_position(info, nx, ny);
@@ -1794,7 +1794,7 @@ _WORD xd_form_do_draw(XDINFO *info)
  * menu		- Optional pointer to a object tree, which should be used
  *			  as menu bar in the window. If NULL no menu bar will
  *			  appear in top of the window. (nonmodal only)
- * xywh		- Optional pointer to a RECT structure. If this pointer
+ * xywh		- Optional pointer to a GRECT structure. If this pointer
  *			  is not NULL and zoom is not 0, the library will draw
  *			  a zoombox from the rectangle in xywh to the window.
  * zoom		- see xywh
@@ -1805,7 +1805,7 @@ _WORD xd_form_do_draw(XDINFO *info)
 static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
    OBJECT *menu,
 #if _DOZOOM
-   RECT *xywh, _WORD zoom
+   GRECT *xywh, _WORD zoom
 #endif
     const char *title)
 {
@@ -1849,7 +1849,7 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 		if ((prev == NULL) || (prev->dialmode == XD_WINDOW))
 		{
 			WINDOW *w;
-			RECT wsize;
+			GRECT wsize;
 			_WORD d;
 			_WORD thetype;
 			WD_FUNC *thefuncs;
@@ -1885,8 +1885,8 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 			/* Nicer looking window border */
 
 			tree->ob_x -= 1;
-			wsize.w -= 2;
-			wsize.h -= 1;
+			wsize.g_w -= 2;
+			wsize.g_h -= 1;
 
 #if 0									/* Currently this is not used anywhere in TeraDesk (See font.c only) */
 
@@ -1894,35 +1894,35 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 			{
 				_WORD dx, dy;
 
-				dx = x - wsize.x;
+				dx = x - wsize.g_x;
 
-				info->drect.x += dx;
+				info->drect.g_x += dx;
 				tree->ob_x += dx;
-				wsize.x = x;
+				wsize.g_x = x;
 
-				dy = y - wsize.y;
+				dy = y - wsize.g_y;
 
-				info->drect.y += dy;
+				info->drect.g_y += dy;
 				tree->ob_y += dy;
-				wsize.y = y;
+				wsize.g_y = y;
 			}
 #endif
 			/* Fit to screen */
 
-			if (wsize.x < xd_desk.x)
+			if (wsize.g_x < xd_desk.g_x)
 			{
-				d = xd_desk.x - wsize.x;
-				info->drect.x += d;
+				d = xd_desk.g_x - wsize.g_x;
+				info->drect.g_x += d;
 				tree->ob_x += d;
-				wsize.x = xd_desk.x;
+				wsize.g_x = xd_desk.g_x;
 			}
 
-			if (wsize.y < xd_desk.y)
+			if (wsize.g_y < xd_desk.g_y)
 			{
-				d = xd_desk.y - wsize.y;
-				info->drect.y += d;
+				d = xd_desk.g_y - wsize.g_y;
+				info->drect.g_y += d;
 				tree->ob_y += d;
-				wsize.y = xd_desk.y;
+				wsize.g_y = xd_desk.g_y;
 			}
 #if _DOZOOM
 			if (zoom && xywh)
@@ -2031,7 +2031,7 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 _WORD xd_open(OBJECT *tree, XDINFO *info)
 {
 #if _DOZOOM
-	RECT xywh;
+	GRECT xywh;
 
 	return xd_open_wzoom(tree, info, NULL, 0, /* 0, 0, */ NULL, &xywh, TRUE, NULL);
 #else
@@ -2043,7 +2043,7 @@ _WORD xd_open(OBJECT *tree, XDINFO *info)
 _WORD xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
 	OBJECT *menu,
 #if _DOZOOM
-	RECT *xywh, _WORD zoom,
+	GRECT *xywh, _WORD zoom,
 #endif
 	const char *title)
 {
@@ -2059,7 +2059,7 @@ _WORD xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
 
 static void xd_close_wzoom(XDINFO *info,
 #if _DOZOOM
-   RECT *xywh, _WORD zoom,
+   GRECT *xywh, _WORD zoom,
 #endif
    _WORD nmd)
 {
@@ -2149,7 +2149,7 @@ static void xd_close_wzoom(XDINFO *info,
 void xd_close(XDINFO *info)
 {
 #if _DOZOOM
-	RECT xywh;
+	GRECT xywh;
 
 	xd_close_wzoom(info, &xywh, TRUE, FALSE);
 #else
@@ -2165,7 +2165,7 @@ void xd_close(XDINFO *info)
 void xd_nmclose(XDINFO *info)
 {
 #if _DOZOOM
-	RECT xywh;
+	GRECT xywh;
 
 	xd_close_wzoom(info, &xywh, TRUE, TRUE);
 #else
@@ -2284,7 +2284,7 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 	/* Don't use xw_get() here... */
 
-	wind_get(0, WF_WORKXYWH, &xd_desk.x, &xd_desk.y, &xd_desk.w, &xd_desk.h);
+	wind_get(0, WF_WORKXYWH, &xd_desk.g_x, &xd_desk.g_y, &xd_desk.g_w, &xd_desk.g_h);
 	xd_vhandle = graf_handle(&xd_fnt_w, &xd_fnt_h, &dummy, &dummy);
 
 	/* Open virtual workstation on screen */

@@ -45,11 +45,11 @@
 #include "main.h"
 
 
-static void va_redraw(WINDOW *w, RECT *r);
+static void va_redraw(WINDOW *w, GRECT *r);
 
-static void va_iconify(WINDOW *w, RECT *r);
+static void va_iconify(WINDOW *w, GRECT *r);
 
-static void va_uniconify(WINDOW *w, RECT *r);
+static void va_uniconify(WINDOW *w, GRECT *r);
 
 static void va_fulled(WINDOW *w, _WORD dummy);
 
@@ -116,7 +116,7 @@ static const _WORD answertypes[] = {
  * Redraw AV-client's wndow
  */
 
-static void va_redraw(WINDOW *w, RECT *r)
+static void va_redraw(WINDOW *w, GRECT *r)
 {
 	xw_send_redraw(w, WM_REDRAW, r);
 }
@@ -137,7 +137,7 @@ static void va_fulled(WINDOW *w, _WORD dummy)
  * Iconify the client's window
  */
 
-static void va_iconify(WINDOW *w, RECT *r)
+static void va_iconify(WINDOW *w, GRECT *r)
 {
 	xw_send_rect(w, WM_ICONIFY, w->xw_ap_id, r);
 	w->xw_xflags |= XWF_ICN;
@@ -148,7 +148,7 @@ static void va_iconify(WINDOW *w, RECT *r)
  * Uniconify the client's window
  */
 
-static void va_uniconify(WINDOW *w, RECT *r)
+static void va_uniconify(WINDOW *w, GRECT *r)
 {
 	wd_type_topped(w);
 	xw_send_rect(w, WM_UNICONIFY, w->xw_ap_id, r);
@@ -1068,7 +1068,7 @@ void handle_av_protocol(const _WORD *message)
 #if _MORE_AV
 	case AV_SETWINDPOS:
 		avsetw.flag = TRUE;
-		avsetw.size = *((const RECT *) (&message[3]));	/* shorter */
+		avsetw.size = *((const GRECT *) (&message[3]));	/* shorter */
 		reply = FALSE;
 		break;
 

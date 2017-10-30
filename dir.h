@@ -114,7 +114,7 @@ typedef struct
 
 extern XDFONT dir_font;
 extern WINFO dirwindows[MAXWINDOWS];		/* some information about open windows */
-extern RECT dmax;	/* maximum window size */
+extern GRECT dmax;	/* maximum window size */
 extern ITMFUNC 	*dir_func;	/* pointer to directory window functions */
 
 void dir_one(XFILE *file, int lvl, int io, int *error);
@@ -140,15 +140,15 @@ _WORD linelength(DIR_WINDOW *w);
 void dir_columns(DIR_WINDOW *dw);
 void dir_info(DIR_WINDOW *w);
 bool dir_isexec(const char *name, XATTR *attr);
-void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work);
-void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, RECT *area, RECT *work);
-void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work);
+void dir_prtline(DIR_WINDOW *dw, _WORD line, GRECT *area, GRECT *work);
+void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, GRECT *area, GRECT *work);
+void dir_prtcolumns(DIR_WINDOW *w, long line, GRECT *in, GRECT *work);
 void dir_refresh_wd(DIR_WINDOW *w);
 void dir_refresh_all(void);
 void dir_trim_slash ( char *path );
 bool dir_do_path( char *path, _WORD action );
-OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc, _WORD ncolumns, _WORD sl, _WORD lines, bool smode, RECT *work);
-void draw_tree(OBJECT *tree, RECT *clip);
+OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc, _WORD ncolumns, _WORD sl, _WORD lines, bool smode, GRECT *work);
+void draw_tree(OBJECT *tree, GRECT *clip);
 void dir_simw(DIR_WINDOW *dw, char *path, const char *name, ITMTYPE type);
 ITMTYPE diritem_type( char *fullname );
 void dir_newlink(WINDOW *w, char *target);

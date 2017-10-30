@@ -74,7 +74,7 @@ static void set_title(const char *title)
 	dsktitle.ob_spec.tedinfo = &ttd;
 	dsktitle.ob_x = 0;
 	dsktitle.ob_y = 0;
-	dsktitle.ob_width = xd_desk.w;
+	dsktitle.ob_width = xd_desk.g_w;
 	dsktitle.ob_height = xd_fnt_h + 2;
 
 	ttd.te_ptext = (char *) (long) title;
@@ -82,9 +82,9 @@ static void set_title(const char *title)
 	ttd.te_just = 2;
 	ttd.te_color = 0x1F0;
 	ttd.te_thickness = 0;
-	ttd.te_txtlen = xd_desk.w / xd_fnt_w;
+	ttd.te_txtlen = xd_desk.g_w / xd_fnt_w;
 
-	draw_tree(&dsktitle, (RECT *) & dsktitle.ob_x);
+	draw_tree(&dsktitle, (GRECT *) & dsktitle.ob_x);
 }
 
 

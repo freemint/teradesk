@@ -182,7 +182,7 @@ void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
  * desired thickness of border
  */
 
-static void draw_frame(RECT *frame, _WORD start, _WORD eind)
+static void draw_frame(GRECT *frame, _WORD start, _WORD eind)
 {
 	_WORD i, s, e;
 
@@ -200,7 +200,7 @@ static void draw_frame(RECT *frame, _WORD start, _WORD eind)
 
 	for (i = s; i <= e; i++)
 	{
-		draw_xdrect(frame->x + i, frame->y + i, frame->w - 2 * i, frame->h - 2 * i);
+		draw_xdrect(frame->g_x + i, frame->g_y + i, frame->g_w - 2 * i, frame->g_h - 2 * i);
 	}
 }
 
@@ -258,7 +258,7 @@ void xd_vswr_repl_mode(void)
  * Rectangle is always drawn in replace mode.
  */
 
-void clr_object(RECT *r, _WORD colour, _WORD pattern)
+void clr_object(GRECT *r, _WORD colour, _WORD pattern)
 {
 	_WORD pxy[4], pn, fillmode = FIS_SOLID;
 
@@ -355,13 +355,13 @@ static void xd_3dbrd(_WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd)
  */
 
 
-static void xd_drawbox(RECT *r,		/* size of the box      */
+static void xd_drawbox(GRECT *r,		/* size of the box      */
 					   _WORD flags,		/* object flags relevant to drawing this box */
 					   _WORD state,		/* object state         */
 					   _WORD xtype		/* extended object type */
 	)
 {
-	RECT outsize;						/* external object dimensions (final) */
+	GRECT outsize;						/* external object dimensions (final) */
 	_WORD hxl;							/* horizontal enlargement  */
 	_WORD vxu;							/* vertical enlargement    */
 	_WORD hxr;							/* horizontal enlargement  */
@@ -380,10 +380,10 @@ static void xd_drawbox(RECT *r,		/* size of the box      */
 
 	xd_3dbrd(state, &hxl, &hxr, &vxu, &vxd);
 
-	outsize.x = r->x - hxl;
-	outsize.y = r->y - vxu;
-	outsize.w = r->w + hxl + hxr;
-	outsize.h = r->h + vxu + vxd;
+	outsize.g_x = r->g_x - hxl;
+	outsize.g_y = r->g_y - vxu;
+	outsize.g_w = r->g_w + hxl + hxr;
+	outsize.g_h = r->g_h + vxu + vxd;
 
 	/* Writing mode is generally "replace" */
 
@@ -453,15 +453,15 @@ static void xd_drawbox(RECT *r,		/* size of the box      */
 	{
 		_WORD *pxyp = pxy;
 
-		p = outsize.x + outsize.w - 2;
+		p = outsize.g_x + outsize.g_w - 2;
 		*pxyp++ = p;					/* [0] upper right corner */
-		*pxyp++ = outsize.y + 1;		/* [1] */
+		*pxyp++ = outsize.g_y + 1;		/* [1] */
 
 		*pxyp++ = p;					/* [2] */
-		p = outsize.y + outsize.h - 2;
+		p = outsize.g_y + outsize.g_h - 2;
 		*pxyp++ = p;					/* [3] lower right corner */
 
-		*pxyp++ = outsize.x + 1;		/* [4] lower left corner  */
+		*pxyp++ = outsize.g_x + 1;		/* [4] lower left corner  */
 		*pxyp++ = p;					/* [5] */
 
 		*pxyp++ = pxy[4];				/* [6] upper left corner  */
@@ -497,12 +497,12 @@ static void xd_drawbox(RECT *r,		/* size of the box      */
 static _WORD cdecl ub_drag(PARMBLK *pb)
 {
 	_WORD dhl, dhr, dvu, dvd, pxy[6], b;
-	RECT size;
+	GRECT size;
 	OBSPEC *obspec = xd_get_obspecp(&pb->pb_tree[pb->pb_obj]);
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) & pb->pb_xc);
 
 	/* 
 	 * Define object size and position (up-  and right-justify with dialog edge)
@@ -511,18 +511,18 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 	xd_3dbrd(pb->pb_tree[pb->pb_obj].ob_state, &dhl, &dhr, &dvu, &dvd);
 
-	if (xd_regular_font.ch > 9 || xd_desk.w > 2 * xd_desk.h)
+	if (xd_regular_font.ch > 9 || xd_desk.g_w > 2 * xd_desk.g_h)
 	{
-		size.w = pb->pb_w;
-		size.x = pb->pb_x;
+		size.g_w = pb->pb_w;
+		size.g_x = pb->pb_x;
 	} else								/* ST-low res; must change aspect ratio */
 	{
-		size.w = pb->pb_w / 2;
-		size.x = pb->pb_x + size.w;
+		size.g_w = pb->pb_w / 2;
+		size.g_x = pb->pb_x + size.g_w;
 	}
 
-	size.y = pb->pb_y;
-	size.h = pb->pb_h;
+	size.g_y = pb->pb_y;
+	size.g_h = pb->pb_h;
 
 	xd_vswr_repl_mode();
 
@@ -532,10 +532,10 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 	/* Draw "\" diagonal in the box */
 
-	pxy[0] = size.x - dhl;
-	pxy[1] = size.y - dvu;
-	pxy[2] = size.x + size.w + dhr - 1;
-	pxy[3] = size.y + size.h + dvd - 1;
+	pxy[0] = size.g_x - dhl;
+	pxy[1] = size.g_y - dvu;
+	pxy[2] = size.g_x + size.g_w + dhr - 1;
+	pxy[3] = size.g_y + size.g_h + dvd - 1;
 
 	set_linedef(xd_sel_col);
 	v_pline(xd_vhandle, 2, pxy);
@@ -550,10 +550,10 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 		vsl_color(xd_vhandle, (_WORD) (obspec->obspec.framecol));
 
-		pxy[0] = size.x + 1;
-		pxy[1] = size.y;
-		pxy[2] = size.x + size.w - 1;
-		pxy[5] = size.y + size.h - 2;
+		pxy[0] = size.g_x + 1;
+		pxy[1] = size.g_y;
+		pxy[2] = size.g_x + size.g_w - 1;
+		pxy[5] = size.g_y + size.g_h - 2;
 
 		/* Draw the border */
 
@@ -583,7 +583,7 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 _WORD cdecl ub_bckbox(PARMBLK *pb)
 {
 	_WORD flags;
-	RECT size;
+	GRECT size;
 	XUSERBLK *blk = (XUSERBLK *) (pb->pb_parm);
 
 	if (((blk->ob_type) & 0x00FF) == G_BOX)	/* Don't draw an IBOX */
@@ -592,16 +592,16 @@ _WORD cdecl ub_bckbox(PARMBLK *pb)
 
 		flags = blk->ob_flags & AES3D_1;
 
-		xd_clip_on((RECT *) & pb->pb_xc);	/* define clipping area */
+		xd_clip_on((GRECT *) & pb->pb_xc);	/* define clipping area */
 
-		size = *(RECT *) (&(pb->pb_x));	/* object size */
+		size = *(GRECT *) (&(pb->pb_x));	/* object size */
 
 		xd_vswr_repl_mode();			/* 'replace' drawing mode */
 
 		/* Draw object rectangle */
 
 		if (flags)
-			size.h -= 1;
+			size.g_h -= 1;
 
 		clr_object(&size, blk->uv.fill.colour, blk->uv.fill.pattern);	/* coloured rectangle */
 
@@ -609,12 +609,12 @@ _WORD cdecl ub_bckbox(PARMBLK *pb)
 
 		if (flags)
 		{
-			size.h += 1;
+			size.g_h += 1;
 
 			if (!(xd_has3d && aes_hor3d == 0))	/* all but Magic (and MyAES) */
 			{
-				size.x -= 1;
-				size.w += 2;
+				size.g_x -= 1;
+				size.g_w += 2;
 			}
 
 			xd_drawbox(&size, flags, pb->pb_tree[pb->pb_obj].ob_state, XD_BCKBOX);
@@ -723,7 +723,7 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) & pb->pb_xc);
 
 	/* Define text to display and object flags */
 
@@ -744,7 +744,7 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 		smfdb.fd_h = 8;
 		pxy[3] = 7;
 
-		if (xd_desk.w < 2 * xd_desk.h)	/* low res */
+		if (xd_desk.g_w < 2 * xd_desk.g_h)	/* low res */
 		{
 			bmu = rbu_8x8;
 			bml = rbl_8x8;
@@ -849,11 +849,11 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
 {
 	_WORD x = pb->pb_x, y = pb->pb_y, flags;
 	char *string;
-	RECT size;
+	GRECT size;
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) & pb->pb_xc);
 
 	/* Define text to display and object flags */
 
@@ -865,14 +865,14 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
 	 * 3/4 of character height + 2 pixels + 3D enlargements
 	 */
 
-	size.x = x;							/* intentionally without "+ aes_hor3d" here */
-	size.y = y + xd_regular_font.ch / 8 + aes_ver3d - 1;
-	size.h = pb->pb_h - xd_regular_font.ch / 4 - 2 * aes_ver3d + 2;
+	size.g_x = x;							/* intentionally without "+ aes_hor3d" here */
+	size.g_y = y + xd_regular_font.ch / 8 + aes_ver3d - 1;
+	size.g_h = pb->pb_h - xd_regular_font.ch / 4 - 2 * aes_ver3d + 2;
 
-	if (xd_desk.w > 2 * xd_desk.h)
-		size.w = 2 * size.h;			/* better looking in ST-medium */
+	if (xd_desk.g_w > 2 * xd_desk.g_h)
+		size.g_w = 2 * size.g_h;			/* better looking in ST-medium */
 	else
-		size.w = size.h;
+		size.g_w = size.g_h;
 
 	/* Draw object box. Specified size will be enlarged as appropriate */
 
@@ -890,9 +890,9 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
 			b = 1;
 
 		*pxyp++ = x + b;				/* x = size.x */
-		*pxyp++ = size.y + b;
-		*pxyp++ = size.x + size.w - 1 - b;
-		*pxyp++ = size.y + size.h - 1 - b;
+		*pxyp++ = size.g_y + b;
+		*pxyp++ = size.g_x + size.g_w - 1 - b;
+		*pxyp++ = size.g_y + size.g_h - 1 - b;
 		*pxyp++ = pxy[2];
 		*pxyp++ = pxy[1];
 		*pxyp++ = pxy[0];
@@ -939,15 +939,15 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 	_WORD tw = (_WORD) strlen(save);		/* length of text in the field */
 	_WORD ow = (_WORD) strlen(ted->te_pvalid);	/* length of validation field */
 
-	RECT size;							/* size of the text box */
-	RECT cb;							/* character-sized blanking rectange */
+	GRECT size;							/* size of the text box */
+	GRECT cb;							/* character-sized blanking rectange */
 
 	ted->te_ptext = s;
 	b = -ted->te_thickness;				/* border to be positive to outside */
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) & pb->pb_xc);
 
 	/* Calculate some positions... */
 
@@ -961,10 +961,10 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 	 * and set transparent mode
 	 */
 
-	size.x = x - 1 - b;
-	size.y = y - 1 - b;
-	size.w = w + 2 + 2 * b;
-	size.h = h + 1 + 2 * b;
+	size.g_x = x - 1 - b;
+	size.g_y = y - 1 - b;
+	size.g_w = w + 2 + 2 * b;
+	size.g_h = h + 1 + 2 * b;
 
 	/* This is an attempt to get rid of the white text background */
 
@@ -986,9 +986,9 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 
 	/* Define a character-sized blanking rectangle in background colour */
 
-	cb.y = y;
-	cb.w = xd_regular_font.cw;
-	cb.h = xd_regular_font.ch;
+	cb.g_y = y;
+	cb.g_w = xd_regular_font.cw;
+	cb.g_h = xd_regular_font.ch;
 
 	/* Set default text parameters and transparent writing mode */
 
@@ -1005,7 +1005,7 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 	} else
 	{
 		xd_vswr_repl_mode();
-		cb.x = xl;
+		cb.g_x = xl;
 		clr_object(&cb, xd_bg_col, -1);
 	}
 
@@ -1016,7 +1016,7 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 	} else
 	{
 		xd_vswr_repl_mode();
-		cb.x = xr;
+		cb.g_x = xr;
 		clr_object(&cb, xd_bg_col, -1);
 	}
 
@@ -1061,7 +1061,7 @@ static _WORD cdecl ub_button(PARMBLK *pb)
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) &pb->pb_xc);
 
 	/* Define text to display and object flags */
 
@@ -1070,7 +1070,7 @@ static _WORD cdecl ub_button(PARMBLK *pb)
 
 	/* Draw object box. No change in object size or position */
 
-	xd_drawbox((RECT *) & pb->pb_x, flags, pb->pb_currstate, XD_BUTTON);
+	xd_drawbox((GRECT *) & pb->pb_x, flags, pb->pb_currstate, XD_BUTTON);
 
 	/* Define text position and writing mode */
 
@@ -1112,11 +1112,11 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 	_WORD flags;						/* state flags */
 	const _WORD gap = 2;				/* distance between the frame and the text (pixels) */
 	char *string;						/* text to be written */
-	RECT size;							/* object frame to be drawn */
+	GRECT size;							/* object frame to be drawn */
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) & pb->pb_xc);
 
 	/* Get object flags and title text */
 
@@ -1126,10 +1126,10 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 	/* Define object area */
 
 	dh = xd_regular_font.ch / 2;
-	size.x = pb->pb_x;
-	size.y = pb->pb_y + dh;
-	size.w = pb->pb_w;
-	size.h = pb->pb_h - dh;
+	size.g_x = pb->pb_x;
+	size.g_y = pb->pb_y + dh;
+	size.g_w = pb->pb_w;
+	size.g_h = pb->pb_h - dh;
 
 	/* Draw object box */
 
@@ -1144,10 +1144,10 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 
 	xd_vswr_repl_mode();
 
-	size.x = x - gap;
-	size.y = y - 1;
-	size.w = (_WORD) xd_strlen(string) * xd_regular_font.cw + 2 * gap;
-	size.h = xd_regular_font.ch + 2;
+	size.g_x = x - gap;
+	size.g_y = y - 1;
+	size.g_w = (_WORD) xd_strlen(string) * xd_regular_font.cw + 2 * gap;
+	size.g_h = xd_regular_font.ch + 2;
 
 	clr_object(&size, xd_bg_col, -1);
 
@@ -1178,11 +1178,11 @@ static _WORD cdecl ub_title(PARMBLK *pb)
 {
 	_WORD dx, pxy[4], flags;
 	char *string;
-	RECT size;
+	GRECT size;
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *) & pb->pb_xc);
+	xd_clip_on((GRECT *) &pb->pb_xc);
 
 	/* Get object flags and text to write */
 
@@ -1194,10 +1194,10 @@ static _WORD cdecl ub_title(PARMBLK *pb)
 	if (xd_colaes && xd_is3dobj(flags))
 	{
 		dx = 2;
-		size.x = pb->pb_x;
-		size.y = pb->pb_y - 1;
-		size.w = pb->pb_w;
-		size.h = pb->pb_h;
+		size.g_x = pb->pb_x;
+		size.g_y = pb->pb_y - 1;
+		size.g_w = pb->pb_w;
+		size.g_h = pb->pb_h;
 		xd_drawbox(&size, flags, pb->pb_currstate, XD_TITLE);
 	} else
 	{
@@ -1234,7 +1234,8 @@ static _WORD cdecl ub_unknown(PARMBLK *pb)
 {
 	/* this would be a mistake anyway, so why draw anything at all ? */
 
-	RECT *clip = (RECT *) & pb->pb_xc, *frame = (RECT *) & pb->pb_x;
+	GRECT *clip = (GRECT *) &pb->pb_xc;
+	GRECT *frame = (GRECT *) & pb->pb_x;
 
 	xd_clip_on(clip);
 
@@ -1259,19 +1260,19 @@ static _WORD cdecl ub_unknown(PARMBLK *pb)
  * Funktie voor het berekenen van de positie en grootte van de cursor.
  */
 
-static void xd_calc_cursor(XDINFO *info, RECT *cursor)
+static void xd_calc_cursor(XDINFO *info, GRECT *cursor)
 {
-	objc_offset(info->tree, info->edit_object, &cursor->x, &cursor->y);
+	objc_offset(info->tree, info->edit_object, &cursor->g_x, &cursor->g_y);
 
-	cursor->x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.cw;
+	cursor->g_x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.cw;
 
 #if 0									/* A slightly smaller cursor looks better in Magic */
-	cursor->y -= 1;
-	cursor->w = 1;
-	cursor->h = xd_regular_font.ch + 2;
+	cursor->g_y -= 1;
+	cursor->g_w = 1;
+	cursor->g_h = xd_regular_font.ch + 2;
 #endif
-	cursor->w = 1;
-	cursor->h = xd_regular_font.ch;
+	cursor->g_w = 1;
+	cursor->g_h = xd_regular_font.ch;
 }
 
 
@@ -1279,7 +1280,7 @@ static void xd_calc_cursor(XDINFO *info, RECT *cursor)
  * Funktie voor het tekenen van de tekst cursor
  */
 
-static void xd_credraw(XDINFO *info, RECT *area)
+static void xd_credraw(XDINFO *info, GRECT *area)
 {
 	if (cursor_mfdb.fd_addr == NULL)
 	{
@@ -1291,7 +1292,7 @@ static void xd_credraw(XDINFO *info, RECT *area)
 
 	if (cursor_mfdb.fd_addr != NULL)
 	{
-		RECT cursor, r;
+		GRECT cursor, r;
 		MFDB smfdb;
 		_WORD pxy[8];
 		_WORD *pxyp = pxy;
@@ -1303,14 +1304,14 @@ static void xd_credraw(XDINFO *info, RECT *area)
 		{
 			/* Save area below cursor. */
 
-			*pxyp++ = r.x;
-			*pxyp++ = r.y;
-			*pxyp++ = r.x + r.w - 1;
-			*pxyp++ = r.y + r.h - 1;
-			*pxyp++ = r.x - cursor.x;
-			*pxyp++ = r.y - cursor.y;
-			*pxyp++ = pxy[4] + r.w - 1;
-			*pxyp = pxy[5] + r.h - 1;
+			*pxyp++ = r.g_x;
+			*pxyp++ = r.g_y;
+			*pxyp++ = r.g_x + r.g_w - 1;
+			*pxyp++ = r.g_y + r.g_h - 1;
+			*pxyp++ = r.g_x - cursor.g_x;
+			*pxyp++ = r.g_y - cursor.g_y;
+			*pxyp++ = pxy[4] + r.g_w - 1;
+			*pxyp = pxy[5] + r.g_h - 1;
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb, &cursor_mfdb);
 
@@ -1320,9 +1321,9 @@ static void xd_credraw(XDINFO *info, RECT *area)
 			xd_vswr_repl_mode();
 			set_linedef(G_BLACK);
 
-			pxy[0] = pxy[2] = cursor.x;
-			pxy[1] = cursor.y;
-			pxy[3] = cursor.y + cursor.h - 1;
+			pxy[0] = pxy[2] = cursor.g_x;
+			pxy[1] = cursor.g_y;
+			pxy[3] = cursor.g_y + cursor.g_h - 1;
 
 			v_pline(xd_vhandle, 2, pxy);
 			xd_clip_off();
@@ -1339,7 +1340,7 @@ static void xd_cur_remove(XDINFO *info)
 {
 	if (cursor_mfdb.fd_addr != NULL)
 	{
-		RECT cursor, r1, r2;
+		GRECT cursor, r1, r2;
 		MFDB dmfdb;
 		_WORD pxy[8];
 		_WORD *pxyp = pxy;
@@ -1354,12 +1355,12 @@ static void xd_cur_remove(XDINFO *info)
 
 			*pxyp++ = 0;
 			*pxyp++ = 0;
-			*pxyp++ = cursor.w - 1;
-			*pxyp++ = cursor.h - 1;
-			*pxyp++ = cursor.x;
-			*pxyp++ = cursor.y;
-			*pxyp++ = cursor.x + pxy[2];
-			*pxyp = cursor.y + pxy[3];
+			*pxyp++ = cursor.g_w - 1;
+			*pxyp++ = cursor.g_h - 1;
+			*pxyp++ = cursor.g_x;
+			*pxyp++ = cursor.g_y;
+			*pxyp++ = cursor.g_x + pxy[2];
+			*pxyp = cursor.g_y + pxy[3];
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 			xd_clip_off();
@@ -1367,7 +1368,7 @@ static void xd_cur_remove(XDINFO *info)
 		{
 			xw_getfirst(info->window, &r1);
 
-			while (r1.w != 0 && r1.h != 0)
+			while (r1.g_w != 0 && r1.g_h != 0)
 			{
 				if (xd_rcintersect(&r1, &cursor, &r2))
 				{
@@ -1375,14 +1376,14 @@ static void xd_cur_remove(XDINFO *info)
 
 					pxyp = pxy;
 
-					*pxyp++ = r2.x - cursor.x;
-					*pxyp++ = r2.y - cursor.y;
-					*pxyp++ = pxy[0] + r2.w - 1;
-					*pxyp++ = pxy[1] + r2.h - 1;
-					*pxyp++ = r2.x;
-					*pxyp++ = r2.y;
-					*pxyp++ = r2.x + r2.w - 1;
-					*pxyp = r2.y + r2.h - 1;
+					*pxyp++ = r2.g_x - cursor.g_x;
+					*pxyp++ = r2.g_y - cursor.g_y;
+					*pxyp++ = pxy[0] + r2.g_w - 1;
+					*pxyp++ = pxy[1] + r2.g_h - 1;
+					*pxyp++ = r2.g_x;
+					*pxyp++ = r2.g_y;
+					*pxyp++ = r2.g_x + r2.g_w - 1;
+					*pxyp = r2.g_y + r2.g_h - 1;
 
 					vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 
@@ -1402,9 +1403,9 @@ static void xd_cur_remove(XDINFO *info)
  * Funktie voor het tekenen van een dialoogbox in een window 
  */
 
-void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
+void xd_redraw(XDINFO *info, _WORD start, _WORD depth, GRECT *area, _WORD flags)
 {
-	RECT r1, r2, cursor;
+	GRECT r1, r2, cursor;
 	_WORD draw_cur;
 	OBJECT *tree = info->tree;
 
@@ -1422,7 +1423,7 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 	if (info->dialmode != XD_WINDOW)
 	{
 		if (flags & XD_RDIALOG)
-			objc_draw(tree, start, depth, area->x, area->y, area->w, area->h);
+			objc_draw(tree, start, depth, area->g_x, area->g_y, area->g_w, area->g_h);
 
 		if (draw_cur)
 			xd_credraw(info, &cursor);
@@ -1430,10 +1431,10 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 	{
 		xw_getfirst(info->window, &r1);
 
-		while (r1.w != 0 && r1.h != 0)
+		while (r1.g_w != 0 && r1.g_h != 0)
 		{
 			if ((flags & XD_RDIALOG) && xd_rcintersect(&r1, area, &r2))
-				objc_draw(tree, start, depth, r2.x, r2.y, r2.w, r2.h);
+				objc_draw(tree, start, depth, r2.g_x, r2.g_y, r2.g_w, r2.g_h);
 
 			if (draw_cur && xd_rcintersect(&r1, &cursor, &r2))
 				xd_credraw(info, &r2);
@@ -1525,7 +1526,7 @@ void xd_change(XDINFO *info, _WORD object, _WORD newstate, _WORD draw)
 
 	if (info->dialmode != XD_WINDOW)
 	{
-		objc_change(tree, object, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h, twostates, draw);
+		objc_change(tree, object, 0, info->drect.g_x, info->drect.g_y, info->drect.g_w, info->drect.g_h, twostates, draw);
 	} else
 	{
 		tree[object].ob_state = twostates;

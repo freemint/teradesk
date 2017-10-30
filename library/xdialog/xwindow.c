@@ -57,7 +57,7 @@ void xw_nop2(WINDOW *w, _WORD i)
  * Sending is disabled if xw_dosend is set to 0.
  */
 
-void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area)
+void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const GRECT *area)
 {
 	if (xw_dosend)
 	{
@@ -68,7 +68,7 @@ void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area)
 		*messagep++ = gl_apid;
 		*messagep++ = 0;
 		*messagep++ = w->xw_handle;
-		*(RECT *) (messagep) = *area;
+		*(GRECT *) (messagep) = *area;
 
 		appl_write(pid, 16, message);
 	}
@@ -88,7 +88,7 @@ void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area)
  *			   applikatie id van het programma staat.
  */
 
-void xw_send_redraw(WINDOW *w, _WORD messid, const RECT *area)
+void xw_send_redraw(WINDOW *w, _WORD messid, const GRECT *area)
 {
 	xw_send_rect(w, messid, gl_apid, area);
 }
@@ -102,7 +102,7 @@ void xw_send_redraw(WINDOW *w, _WORD messid, const RECT *area)
 
 void xw_send(WINDOW *w, _WORD messid)
 {
-	static const RECT dummy = { 0, 0, 0, 0 };
+	static const GRECT dummy = { 0, 0, 0, 0 };
 
 	xw_send_rect(w, messid, w->xw_ap_id, &dummy);
 }
@@ -387,10 +387,10 @@ void xw_cycle(void)
  * van een window.
  */
 
-static void xw_bar_rect(WINDOW *w, RECT *r)
+static void xw_bar_rect(WINDOW *w, GRECT *r)
 {
 	xd_objrect(w->xw_menu, w->xw_bar, r);
-	r->h += 1;
+	r->g_h += 1;
 }
 
 
@@ -405,9 +405,9 @@ static void xw_set_barpos(WINDOW *w)
 
 	if (menu)
 	{
-		menu->ob_x = w->xw_work.x;
-		menu->ob_y = w->xw_work.y;
-		menu[w->xw_bar].ob_width = w->xw_work.w;
+		menu->ob_x = w->xw_work.g_x;
+		menu->ob_y = w->xw_work.g_y;
+		menu[w->xw_bar].ob_width = w->xw_work.g_w;
 	}
 }
 
@@ -417,10 +417,10 @@ static void xw_set_barpos(WINDOW *w)
  * bijvoorbeeld na een redraw event.
  */
 
-void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r)
+void xw_redraw_menu(WINDOW *w, _WORD object, GRECT *r)
 {
 	OBJECT *menu;
-	RECT r1, r2, in;
+	GRECT r1, r2, in;
 	_WORD pxy[4];
 
 	menu = w->xw_menu;
@@ -431,13 +431,13 @@ void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r)
 	{
 		xd_objrect(menu, object, &r1);
 		if (object == w->xw_bar)
-			r1.h += 1;
+			r1.g_h += 1;
 
 		/* Begin en eind coordinaten van lijn onder de menubalk. */
 
-		pxy[0] = w->xw_work.x;
-		pxy[1] = pxy[3] = w->xw_work.y + r1.h - 1;
-		pxy[2] = w->xw_work.x + w->xw_work.w - 1;
+		pxy[0] = w->xw_work.g_x;
+		pxy[1] = pxy[3] = w->xw_work.g_y + r1.g_h - 1;
+		pxy[2] = w->xw_work.g_x + w->xw_work.g_w - 1;
 
 		if (xd_rcintersect(r, &r1, &r1))
 		{
@@ -448,11 +448,11 @@ void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r)
 
 			xw_getfirst(w, &r2);
 
-			while (r2.w != 0 && r2.h != 0)
+			while (r2.g_w != 0 && r2.g_h != 0)
 			{
 				if (xd_rcintersect(&r1, &r2, &in))
 				{
-					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.x, in.y, in.w, in.h);
+					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.g_x, in.g_y, in.g_w, in.g_h);
 					xd_clip_on(&in);
 					v_pline(xd_vhandle, 2, pxy);
 					xd_clip_off();
@@ -483,9 +483,9 @@ static void xw_find_objects(OBJECT *menu, _WORD *bar, _WORD *boxes)
  * Funktie voor het tekenen van een pulldown menu.
  */
 
-static void xw_menu_draw(OBJECT *menu, _WORD item, RECT *box)
+static void xw_menu_draw(OBJECT *menu, _WORD item, GRECT *box)
 {
-	objc_draw(menu, item, MAX_DEPTH, box->x, box->y, box->w, box->h);
+	objc_draw(menu, item, MAX_DEPTH, box->g_x, box->g_y, box->g_w, box->g_h);
 }
 
 
@@ -494,12 +494,12 @@ static void xw_menu_draw(OBJECT *menu, _WORD item, RECT *box)
  * in een pulldown menu.
  */
 
-static void xw_menu_change(OBJECT *menu, _WORD item, _WORD selectit, RECT *box)
+static void xw_menu_change(OBJECT *menu, _WORD item, _WORD selectit, GRECT *box)
 {
 	_WORD newstate = menu[item].ob_state;
 
 	newstate = selectit ? newstate | OS_SELECTED : newstate & ~OS_SELECTED;
-	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
+	objc_change(menu, item, 0, box->g_x, box->g_y, box->g_w, box->g_h, newstate, 1);
 }
 
 
@@ -525,7 +525,7 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, _WORD *pxy)
 static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 {
 	OBJECT *menu;
-	RECT r, box;
+	GRECT r, box;
 	MFDB bmfdb, smfdb;
 	long mem;
 	_WORD pxy[8];
@@ -583,10 +583,10 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 
 			xd_objrect(menu, i, &box);
 
-			box.x -= 1;
-			box.y -= 1;
-			box.w += 2;
-			box.h += 2;
+			box.g_x -= 1;
+			box.g_y -= 1;
+			box.g_w += 2;
+			box.g_h += 2;
 
 			mem = xd_initmfdb(&box, &bmfdb);
 
@@ -602,8 +602,8 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 					xd_rect2pxy(&box, pxy);
 					pxy[4] = 0;
 					pxy[5] = 0;
-					pxy[6] = box.w - 1;
-					pxy[7] = box.h - 1;
+					pxy[6] = box.g_w - 1;
+					pxy[7] = box.g_h - 1;
 					smfdb.fd_addr = NULL;
 
 					xw_copy_screen(&bmfdb, &smfdb, pxy);
@@ -648,8 +648,8 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 				{
 					pxy[0] = 0;
 					pxy[1] = 0;
-					pxy[2] = box.w - 1;
-					pxy[3] = box.h - 1;
+					pxy[2] = box.g_w - 1;
+					pxy[3] = box.g_h - 1;
 
 					xd_rect2pxy(&box, &pxy[4]);
 					smfdb.fd_addr = NULL;
@@ -757,7 +757,7 @@ void xw_menu_text(WINDOW *w, _WORD item, const char *text)
 
 void xw_menu_tnormal(WINDOW *w, _WORD item, _WORD normal)
 {
-	RECT r;
+	GRECT r;
 	_UWORD *s = &w->xw_menu[item].ob_state;
 
 	if (normal == 0)
@@ -843,7 +843,7 @@ _WORD xw_hndlkey(_WORD scancode, _WORD keystate)
  * Iconify a window.
  */
 
-void xw_iconify(WINDOW *w, RECT *r)
+void xw_iconify(WINDOW *w, GRECT *r)
 {
 	/* Set window to iconified state and find new work area */
 
@@ -858,7 +858,7 @@ void xw_iconify(WINDOW *w, RECT *r)
  * it had before iconification.
  */
 
-void xw_uniconify(WINDOW *w, RECT *r)
+void xw_uniconify(WINDOW *w, GRECT *r)
 {
 	/* Uniconify window and find new work area */
 
@@ -909,8 +909,8 @@ _WORD xw_hndlmessage(_WORD *message)
 	switch (message[0])
 	{
 	case WM_REDRAW:
-		xw_redraw_menu(w, w->xw_bar, (RECT *) m4);
-		func->wd_redraw(w, (RECT *) m4);
+		xw_redraw_menu(w, w->xw_bar, (GRECT *) m4);
+		func->wd_redraw(w, (GRECT *) m4);
 		break;
 	case WM_CLOSED:
 		if (xd_dialogs)
@@ -940,10 +940,10 @@ _WORD xw_hndlmessage(_WORD *message)
 		func->wd_vslider(w, *m4);
 		break;
 	case WM_SIZED:
-		func->wd_sized(w, (RECT *) m4);
+		func->wd_sized(w, (GRECT *) m4);
 		break;
 	case WM_MOVED:
-		func->wd_moved(w, (RECT *) m4);
+		func->wd_moved(w, (GRECT *) m4);
 		break;
 	case WM_TOPPED:
 		wwfunc->wd_topped(ww);
@@ -959,10 +959,10 @@ _WORD xw_hndlmessage(_WORD *message)
 		func->wd_bottomed(w);
 		break;
 	case WM_ICONIFY:
-		func->wd_iconify(w, (RECT *) m4);
+		func->wd_iconify(w, (GRECT *) m4);
 		break;
 	case WM_UNICONIFY:
-		func->wd_uniconify(w, (RECT *) m4);
+		func->wd_uniconify(w, (GRECT *) m4);
 		break;
 	default:
 		return FALSE;
@@ -975,14 +975,14 @@ _WORD xw_hndlmessage(_WORD *message)
 /*
  * Vervanger van wind_set(). De funktie corrigeert de grootte van
  * het werkgebied voor een eventueel aanwezige menubalk. Voor
- * WF_CURRXYWH moet als parameter een pointer naar RECT structuur
+ * WF_CURRXYWH moet als parameter een pointer naar GRECT structuur
  * worden opgegeven, in plaats van vier integers.
  */
 
 void xw_set(WINDOW *w, _WORD field, ...)
 {
 	_WORD p1, p2, p3, p4;
-	RECT *r;
+	GRECT *r;
 	va_list p;
 
 	va_start(p, field);
@@ -993,11 +993,11 @@ void xw_set(WINDOW *w, _WORD field, ...)
 	case WF_UNICONIFY:
 	case WF_CURRXYWH:
 		/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
-		r = va_arg(p, RECT *);
+		r = va_arg(p, GRECT *);
 		w->xw_size = *r;
-		wind_set(w->xw_handle, field, w->xw_size.x, w->xw_size.y, w->xw_size.w, w->xw_size.h);
-		wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.x, &w->xw_size.y, &w->xw_size.w, &w->xw_size.h);
-		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x, &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
+		wind_set(w->xw_handle, field, w->xw_size.g_x, w->xw_size.g_y, w->xw_size.g_w, w->xw_size.g_h);
+		wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.g_x, &w->xw_size.g_y, &w->xw_size.g_w, &w->xw_size.g_h);
+		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x, &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
 		xw_set_barpos(w);			/* irelevant but harmless in an iconified window */
 		break;
 	case WF_TOP:
@@ -1023,7 +1023,7 @@ void xw_set(WINDOW *w, _WORD field, ...)
  * of the work area
  */
 
-void xw_setsize(WINDOW *w, RECT *size)
+void xw_setsize(WINDOW *w, GRECT *size)
 {
 	xw_set(w, WF_CURRXYWH, size);
 }
@@ -1033,7 +1033,7 @@ void xw_setsize(WINDOW *w, RECT *size)
  * Get window size (short)
  */
 
-void xw_getsize(WINDOW *w, RECT *size)
+void xw_getsize(WINDOW *w, GRECT *size)
 {
 	xw_get(w, WF_CURRXYWH, size);
 }
@@ -1045,14 +1045,14 @@ void xw_getsize(WINDOW *w, RECT *size)
  * voor 'w'. De funktie corrigeert de grootte van het werkgebied
  * voor een eventueel aanwezige menubalk. Voor WF_FIRSTXYWH,
  * WF_NEXTXYWH, WF_FULLXYWH, WF_PREVXYWH, WF_WORKXYWH en WF_CURRXYWH
- * moet als parameter een pointer naar RECT structuur worden
+ * moet als parameter een pointer naar GRECT structuur worden
  * opgegeven, in plaats van vier pointers naar integers.
  * Beware that, if window handle is not 0, this function for some cases 
  * just returns data from the buffer and does not make any inquiry to the AES.
  * Only WF_* codes up to 32 are supported (see also xw_get_argtab[])
  */
 
-void xw_get(WINDOW *w, _WORD field, RECT *r)
+void xw_get(WINDOW *w, _WORD field, GRECT *r)
 {
 	_WORD handle = 0;
 
@@ -1070,8 +1070,8 @@ void xw_get(WINDOW *w, _WORD field, RECT *r)
 			{
 				_WORD height = w->xw_menu[w->xw_bar].ob_height + 1;
 
-				r->y += height;
-				r->h -= height;
+				r->g_y += height;
+				r->g_h -= height;
 			}
 			break;
 		}
@@ -1088,7 +1088,7 @@ void xw_get(WINDOW *w, _WORD field, RECT *r)
 	case WF_FULLXYWH:
 	case WF_PREVXYWH:
 	case WF_ICONIFY:
-		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
+		wind_get(handle, field, &r->g_x, &r->g_y, &r->g_w, &r->g_h);
 		break;
 	}
 }
@@ -1103,7 +1103,7 @@ void xw_get(WINDOW *w, _WORD field, RECT *r)
  * the window structure (height may be modified by the window menu height).
  */
 
-void xw_getwork(WINDOW *w, RECT *size)
+void xw_getwork(WINDOW *w, GRECT *size)
 {
 	xw_get(w, WF_WORKXYWH, size);
 }
@@ -1114,7 +1114,7 @@ void xw_getwork(WINDOW *w, RECT *size)
  * always make an inquiry to the AES.
  */
 
-void xw_getfirst(WINDOW *w, RECT *size)
+void xw_getfirst(WINDOW *w, GRECT *size)
 {
 	xw_get(w, WF_FIRSTXYWH, size);
 }
@@ -1126,7 +1126,7 @@ void xw_getfirst(WINDOW *w, RECT *size)
  * because of the speed penalty. Use with caution.
  */
 
-void xw_getnext(WINDOW *w, RECT *size)
+void xw_getnext(WINDOW *w, GRECT *size)
 {
 	xw_get(w, WF_NEXTXYWH, size);
 }
@@ -1140,11 +1140,11 @@ void xw_getnext(WINDOW *w, RECT *size)
  * it is the opposite.
  */
 
-void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input, RECT *output, OBJECT *menu)
+void xw_calc(_WORD w_ctype, _WORD w_flags, GRECT *input, GRECT *output, OBJECT *menu)
 {
 	_WORD height;
 
-	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h, &output->x, &output->y, &output->w, &output->h);
+	wind_calc(w_ctype, w_flags, input->g_x, input->g_y, input->g_w, input->g_h, &output->g_x, &output->g_y, &output->g_w, &output->g_h);
 
 	if (menu)
 	{
@@ -1153,8 +1153,8 @@ void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input, RECT *output, OBJECT *me
 		if (w_ctype != WC_WORK)
 			height = -height;
 
-		output->y += height;
-		output->h -= height;
+		output->g_y += height;
+		output->g_h -= height;
 	}
 }
 
@@ -1228,7 +1228,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  */
 
 WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
-				  RECT *msize, size_t wd_struct_size, OBJECT *menu, int *error)
+				  GRECT *msize, size_t wd_struct_size, OBJECT *menu, int *error)
 {
 	WINDOW *w;
 
@@ -1242,7 +1242,7 @@ WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
 
 	if (type != ACC_WIND)
 	{
-		if ((w->xw_handle = wind_create(flags, msize->x, msize->y, msize->w, msize->h)) < 0)
+		if ((w->xw_handle = wind_create_grect(flags, msize)) < 0)
 		{
 			(*xd_free) (w);				/* release memory */
 			*error = XDNMWINDOWS;
@@ -1280,13 +1280,13 @@ WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
  * size	- initiele grootte van het window.
  */
 
-void xw_open(WINDOW *w, RECT *size)
+void xw_open(WINDOW *w, GRECT *size)
 {
-	wind_open(w->xw_handle, size->x, size->y, size->w, size->h);
+	wind_open(w->xw_handle, size->g_x, size->g_y, size->g_w, size->g_h);
 
 	w->xw_size = *size;
 
-	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x, &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
+	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x, &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
 
 	xw_set_barpos(w);
 

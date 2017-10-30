@@ -21,13 +21,13 @@
  */
 
 
-/* These objects are currently never used in Teradesk
+#if 0 /* These objects are currently never used in Teradesk */
 
 static int cdecl ub_rectbuttri(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, pxy[4];
 	int state;
-	RECT clip;
+	GRECT clip;
 
 	clip.x = pb->pb_xc;
 	clip.y = pb->pb_yc;
@@ -88,7 +88,7 @@ static int cdecl ub_rectbuttri(PARMBLK *pb)
 static int cdecl ub_cyclebut(PARMBLK *pb)
 {
 	int x = pb->pb_x, y = pb->pb_y, w = pb->pb_w, h = pb->pb_h;
-	RECT clip;
+	GRECT clip;
 
 	clip.x = pb->pb_xc;
 	clip.y = pb->pb_yc;
@@ -106,4 +106,4 @@ static int cdecl ub_cyclebut(PARMBLK *pb)
 
 	return 0;
 }
-*/
+#endif

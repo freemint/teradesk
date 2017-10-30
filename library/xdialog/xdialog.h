@@ -135,7 +135,7 @@ typedef struct xdinfo
 {
 	OBJECT *tree;			/* pointer naar object boom. */
 	_WORD dialmode;			/* dialoog mode. */
-	RECT drect;				/* Maten van de dialoogbox. */
+	GRECT drect;			/* Maten van de dialoogbox. */
 	WINDOW *window;			/* Indien in window mode pointer naar window structuur. */
 	_WORD edit_object;		/* Object waarop de cursor staat. */
 	_WORD cursor_x;			/* x positie in edit_object. */
@@ -203,7 +203,7 @@ void xd_change(XDINFO *info, _WORD object, _WORD newstate, _WORD draw);
 void xd_buttnorm(XDINFO *info, _WORD button);
 void xd_drawbuttnorm(XDINFO *info, _WORD button);
 void xd_own_xobjects( bool setit );
-void clr_object(RECT *r, _WORD colour, _WORD pattern);
+void clr_object(GRECT *r, _WORD colour, _WORD pattern);
 void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h);
 void xd_vswr_trans_mode(void);
 void xd_vswr_repl_mode(void);
@@ -238,13 +238,13 @@ void exit_xdialog(void);
 
 /* Hulpfunkties */
 
-_WORD xd_isrect(RECT *r);
-_WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *intersection);
-_WORD xd_inrect(_WORD x, _WORD y, RECT *r);
-long xd_initmfdb(RECT *r, MFDB *mfdb);
-void xd_objrect(OBJECT *tree, _WORD object, RECT *r);
+_WORD xd_isrect(GRECT *r);
+_WORD xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *intersection);
+_WORD xd_inrect(_WORD x, _WORD y, GRECT *r);
+long xd_initmfdb(GRECT *r, MFDB *mfdb);
+void xd_objrect(OBJECT *tree, _WORD object, GRECT *r);
 void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock));
-void xd_rect2pxy(RECT *r, _WORD *pxy);
+void xd_rect2pxy(GRECT *r, _WORD *pxy);
 _WORD xd_obj_parent(OBJECT *tree, _WORD object);
 _WORD xd_xobtype(OBJECT *tree);
 _WORD xd_wdupdate(_WORD mode);
@@ -274,7 +274,7 @@ _WORD xd_get_tristate(_WORD ob_state);
 _WORD xd_is_tristate(OBJECT *tree);
 */
 
-void xd_clip_on(RECT *r);
+void xd_clip_on(GRECT *r);
 void xd_clip_off(void);
 
 _WORD xd_vst_point(_WORD height, _WORD *ch);
@@ -294,14 +294,14 @@ _WORD xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
 /* _WORD x, _WORD y, not used */ 
 OBJECT *menu, 
 #if _DOZOOM
-RECT *xywh, _WORD zoom, 
+GRECT *xywh, _WORD zoom, 
 #endif
 const char *title);
 
 
 void xd_nmclose(XDINFO *info
 #if _DOZOOM
-,RECT *xywh, _WORD zoom
+,GRECT *xywh, _WORD zoom
 #endif
 );
 

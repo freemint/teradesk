@@ -155,8 +155,8 @@ extern XDOBJDATA *xd_objdata;
 extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
-extern RECT xd_screen;
-extern RECT xd_desk;
+extern GRECT xd_screen;
+extern GRECT xd_desk;
 extern XDFONT xd_regular_font;
 extern XDFONT xd_small_font;
 extern _WORD xe_mbshift;
@@ -177,7 +177,7 @@ void xd_cursor_on(XDINFO *info);
 void xd_cursor_off(XDINFO *info);
 _WORD xd_hndlmessage(_WORD *message, _WORD flag);
 _WORD xd_scan_messages(_WORD flag, _WORD *mes);
-void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags);
+void xd_redraw(XDINFO *info, _WORD start, _WORD depth, GRECT *area, _WORD flags);
 XDINFO *xd_find_dialog(WINDOW *w);
 _WORD xd_form_button(XDINFO *info, _WORD object, _WORD clicks, _WORD *result);
 _WORD xd_find_obj(OBJECT *tree, _WORD start, _WORD which);

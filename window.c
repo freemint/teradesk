@@ -74,7 +74,7 @@ LNAME automask = { 0 };					/* to compose the autolocator mask */
 SNAME automask = { 0 };					/* no need for long names in single-TOS */
 #endif
 
-static RECT icwsize = { 0, 0, 0, 0 };	/* size of the iconified window */
+static GRECT icwsize = { 0, 0, 0, 0 };	/* size of the iconified window */
 
 static size_t aml = 0;					/* length of string in automask */
 
@@ -242,18 +242,18 @@ bool isfileprog(ITMTYPE type)
  * Note 2: width and height are in character-cell units, x and y in pixels!
  */
 
-static void wrect_in_screen(RECT *info, bool normalsize)
+static void wrect_in_screen(GRECT *info, bool normalsize)
 {
 	/* 
 	 * Window should be at least 32 pixels in the screen 
 	 * both horizontally and vertically
 	 */
 
-	info->x = minmax(0, info->x, xd_desk.w - 32);
-	info->y = minmax(0, info->y, xd_desk.h - 32);
+	info->g_x = minmax(0, info->g_x, xd_desk.g_w - 32);
+	info->g_y = minmax(0, info->g_y, xd_desk.g_h - 32);
 
-	info->w = min(info->w, xd_desk.w / xd_fnt_w);
-	info->h = min(info->h, xd_desk.h / xd_fnt_h);
+	info->g_w = min(info->g_w, xd_desk.g_w / xd_fnt_w);
+	info->g_h = min(info->g_h, xd_desk.g_h / xd_fnt_h);
 
 	/* Below is an arbitrary minimum window size (14 char x 5 lines) */
 
@@ -261,11 +261,11 @@ static void wrect_in_screen(RECT *info, bool normalsize)
 	{
 		/* Note: do not use max() here, code would be longer */
 
-		if (info->w < WMINW)
-			info->w = WMINW;
+		if (info->g_w < WMINW)
+			info->g_w = WMINW;
 
-		if (info->h < WMINH)
-			info->h = WMINH;
+		if (info->g_h < WMINH)
+			info->g_h = WMINH;
 	}
 }
 
@@ -276,8 +276,8 @@ static void wrect_in_screen(RECT *info, bool normalsize)
 
 void wd_in_screen(WINFO *info)
 {
-	wrect_in_screen((RECT *) (&(info->x)), (info->flags.iconified) ? FALSE : TRUE);
-	wrect_in_screen((RECT *) (&(info->ix)), TRUE);
+	wrect_in_screen((GRECT *) (&(info->x)), (info->flags.iconified) ? FALSE : TRUE);
+	wrect_in_screen((GRECT *) (&(info->ix)), TRUE);
 }
 
 
@@ -330,7 +330,7 @@ void positions(XFILE *file, int lvl, int io, int *error)
 {
 	WINFO *w = thisw.windows;
 	_WORD i;
-	size_t s = 2 * sizeof(RECT);		/* data size */
+	size_t s = 2 * sizeof(GRECT);		/* data size */
 
 	if (io == CFG_SAVE)
 	{
@@ -350,7 +350,7 @@ void positions(XFILE *file, int lvl, int io, int *error)
 			 */
 
 			if (!(w->flags.iconified))
-				memclr(&(thisw.ix), sizeof(RECT));
+				memclr(&(thisw.ix), sizeof(GRECT));
 
 			*error = CfgSave(file, positions_table, lvl, CFGEMP);
 
@@ -652,19 +652,19 @@ static _WORD *itm_list(WINDOW *w, _WORD *n)
 static bool wd_isiconified(TYP_WINDOW *w)
 {
 #if _MINT_
-	RECT r;
+	GRECT r;
 
-	r.x = 0;
+	r.g_x = 0;
 
 	if (can_iconify && w != NULL)
 	{
 		if (wd_dirortext((WINDOW *) w))
-			r.x = w->winfo->flags.iconified;
+			r.g_x = w->winfo->flags.iconified;
 		else
 			xw_get((WINDOW *) w, WF_ICONIFY, &r);
 	}
 
-	return (bool) (r.x);
+	return r.g_x != 0;
 
 #else
 
@@ -1749,7 +1749,7 @@ static void wd_defsize(_WORD type)
 
 	for (i = 0; i < MAXWINDOWS; i++)
 	{
-		x0 = xd_desk.w / 8;
+		x0 = xd_desk.g_w / 8;
 		x1 = i;
 		y1 = i;
 
@@ -1774,10 +1774,10 @@ static void wd_defsize(_WORD type)
 			h1 = 9;
 		}
 
-		wi->x = x0 + x1 * xd_fnt_w + xd_desk.x;
-		wi->y = y0 + y1 * xd_fnt_h + xd_desk.y;
-		wi->w = xd_desk.w * w1 / (xd_fnt_w * 16) + w3;	/* in char cell units */
-		wi->h = xd_desk.h * h1 / (xd_fnt_h * 16);	/* in char cell units */
+		wi->x = x0 + x1 * xd_fnt_w + xd_desk.g_x;
+		wi->y = y0 + y1 * xd_fnt_h + xd_desk.g_y;
+		wi->w = xd_desk.g_w * w1 / (xd_fnt_w * 16) + w3;	/* in char cell units */
+		wi->h = xd_desk.g_h * h1 / (xd_fnt_h * 16);	/* in char cell units */
 	}
 }
 
@@ -1790,16 +1790,16 @@ static void wd_defsize(_WORD type)
  * Window size is rounded to multiples of cell size (font or icon size).
  */
 
-static void wd_type_sizes(RECT *dest, _WORD w_flags, OBJECT *themenu, _WORD fw, _WORD fh)
+static void wd_type_sizes(GRECT *dest, _WORD w_flags, OBJECT *themenu, _WORD fw, _WORD fh)
 {
-	RECT work;
+	GRECT work;
 
 	xw_calc(WC_WORK, w_flags, &xd_desk, &work, themenu);
 
-	dest->x = xd_desk.x;
-	dest->y = xd_desk.y;
-	dest->w = work.w - (work.w % fw);
-	dest->h = work.h - (work.h % fh);
+	dest->g_x = xd_desk.g_x;
+	dest->g_y = xd_desk.g_y;
+	dest->g_w = work.g_w - (work.g_w % fw);
+	dest->g_h = work.g_h - (work.g_h % fh);
 }
 
 
@@ -1848,7 +1848,7 @@ bool wd_type_setfont(_WORD button)
 {
 	_WORD title;						/* index of dialog title string */
 	_WORD i;
-	RECT work;
+	GRECT work;
 	WINFO *wd;
 	XDFONT *the_font;
 	TYP_WINDOW *tw;
@@ -1909,7 +1909,7 @@ bool wd_type_setfont(_WORD button)
  * the calculation should apply to.
  */
 
-void calc_rc(TYP_WINDOW *w, RECT *work)
+void calc_rc(TYP_WINDOW *w, GRECT *work)
 {
 	_WORD cw, ch;
 
@@ -1917,15 +1917,15 @@ void calc_rc(TYP_WINDOW *w, RECT *work)
 
 	/* Note: do not set w->columns here */
 
-	w->rows = (work->h + ch - 1) / ch;
-	w->nrows = work->h / ch;
-	w->ncolumns = work->w / cw;
-	w->scolumns = work->w / xd_fnt_w;
+	w->rows = (work->g_h + ch - 1) / ch;
+	w->nrows = work->g_h / ch;
+	w->ncolumns = work->g_w / cw;
+	w->scolumns = work->g_w / xd_fnt_w;
 
 	if (xw_type(w) == DIR_WIND)
 	{
-		w->xw_work.w = work->w;
-		w->xw_work.h = work->h;
+		w->xw_work.g_w = work->g_w;
+		w->xw_work.g_h = work->g_h;
 		calc_nlines((DIR_WINDOW *) w);
 	}
 }
@@ -1954,10 +1954,10 @@ static _WORD wd_round(_WORD x, _WORD m)
  * real-time movement of windows in Magic and XaAES.
  */
 
-static void wd_xyround(RECT *r)
+static void wd_xyround(GRECT *r)
 {
-	r->x = wd_round(r->x, 8);
-	r->y = wd_round(r->y, (r->y > 4 * xd_fnt_h) ? 8 : 2);
+	r->g_x = wd_round(r->g_x, 8);
+	r->g_y = wd_round(r->g_y, (r->g_y > 4 * xd_fnt_h) ? 8 : 2);
 }
 
 
@@ -1973,10 +1973,9 @@ static void wd_xyround(RECT *r)
  * exceed the screen, or does not become too small.
  */
 
-void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
+void wd_wsize(TYP_WINDOW *w, GRECT *input, GRECT *output, bool iswork)
 {
 #if _MINT_
-
 	if (wd_isiconified(w))
 	{
 		/*
@@ -1988,13 +1987,13 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 		*output = *input;
 		wd_xyround(output);
 
-		output->w = icwsize.w;
-		output->h = icwsize.h;
+		output->g_w = icwsize.g_w;
+		output->g_h = icwsize.g_h;
 	} else
 #endif
 	{
 		/* Normal window size */
-		RECT work, *dtmax = &dmax;		/* maximum window work area size */
+		GRECT work, *dtmax = &dmax;		/* maximum window work area size */
 		_WORD fw;						/* window unit cell width */
 		_WORD fh;						/* window unit cell height */
 		_WORD mw;						/* minimum window size */
@@ -2019,8 +2018,8 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 
 		if (iswork)
 		{
-			work.w = input->w;
-			work.h = input->h;
+			work.g_w = input->g_w;
+			work.g_h = input->g_h;
 		}
 
 		/* 
@@ -2034,8 +2033,8 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 		mw = (WMINW * xd_fnt_w) / fw + 1;
 		mh = (WMINH * xd_fnt_h) / fh + 1;
 
-		work.w = wd_round(work.w, fw);
-		work.h = wd_round(work.h, fh) + d;
+		work.g_w = wd_round(work.g_w, fw);
+		work.g_h = wd_round(work.g_h, fh) + d;
 
 		/* 
 		 * Attempt some rounding of y position when possible...
@@ -2048,8 +2047,8 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
 
 		wd_type_sizes(dtmax, wflags, w->xw_menu, fw, fh);
 
-		work.w = minmax(mw * fw, work.w, dtmax->w);
-		work.h = minmax(mh * fh, work.h, dtmax->h);
+		work.g_w = minmax(mw * fw, work.g_w, dtmax->g_w);
+		work.g_h = minmax(mh * fh, work.g_h, dtmax->g_h);
 
 		/* Recalculate overall size from modified work size */
 
@@ -2064,11 +2063,14 @@ void wd_wsize(TYP_WINDOW *w, RECT *input, RECT *output, bool iswork)
  * Special considerations when the window is fulled.
  */
 
-void wd_calcsize(WINFO *w, RECT *size)
+void wd_calcsize(WINFO *w, GRECT *size)
 {
 	TYP_WINDOW *tw = (TYP_WINDOW *) (w->typ_window);
-	RECT *dtmax = &dmax, def = xd_desk, border;
-	_WORD wflags = DFLAGS, wtype = xw_type((WINDOW *) (tw));
+	GRECT *dtmax = &dmax;
+	GRECT def = xd_desk;
+	GRECT border;
+	_WORD wflags = DFLAGS;
+	_WORD wtype = xw_type((WINDOW *) (tw));
 	_WORD ch, cw;
 	bool iswork = FALSE;
 
@@ -2080,12 +2082,12 @@ void wd_calcsize(WINFO *w, RECT *size)
 
 	/* Find position of the window on screen */
 
-	def.x = w->x + xd_desk.x;
-	def.y = w->y + xd_desk.y;
+	def.g_x = w->x + xd_desk.g_x;
+	def.g_y = w->y + xd_desk.g_y;
 
 	/* If the window is fulled, calculate its new size, etc. */
 
-	if (w->flags.fulled == 1)
+	if (w->flags.fulled)
 	{
 		/* Adjust size of a fulled window- no more than needed */
 
@@ -2105,13 +2107,13 @@ void wd_calcsize(WINFO *w, RECT *size)
 		{
 			/* Full to the whole screen */
 
-			def.w = dtmax->w;
-			def.h = dtmax->h;
+			def.g_w = dtmax->g_w;
+			def.g_h = dtmax->g_h;
 		} else
 		{
 			/* Full only as much as needed */
 
-			def.w = tw->columns * cw;
+			def.g_w = tw->columns * cw;
 
 			/* 
 			 * Add some empty lines to fulled directory windows
@@ -2124,20 +2126,20 @@ void wd_calcsize(WINFO *w, RECT *size)
 				ll += 1;
 
 				if (options.mode != TEXTMODE)
-					def.w += XOFFSET;
+					def.g_w += XOFFSET;
 			}
 
 			/* Window overall size must not exceed max integer or so */
 
-			def.h = (_WORD) lmin(32700, ll * ch);
+			def.g_h = (_WORD) lmin(32700, ll * ch);
 		}
 
 		wd_wsize(tw, &def, size, iswork);
 
 		/* Limit window positon to screen size (excluding menu), or slightly smaller */
 
-		size->x = max(0, min(size->x, xd_desk.w - size->w - 4));
-		size->y = max(xd_desk.y, min(size->y, xd_desk.h - size->h));
+		size->g_x = max(0, min(size->g_x, xd_desk.g_w - size->g_w - 4));
+		size->g_y = max(xd_desk.g_y, min(size->g_y, xd_desk.g_h - size->g_h));
 	} else
 	{
 		/* 
@@ -2146,8 +2148,8 @@ void wd_calcsize(WINFO *w, RECT *size)
 		 * therefore a conversion is needed here (def = window work area);
 		 */
 
-		def.w = w->w * xd_fnt_w;		/* hoogte en breedte van het werkgebied. */
-		def.h = w->h * xd_fnt_h;
+		def.g_w = w->w * xd_fnt_w;		/* hoogte en breedte van het werkgebied. */
+		def.g_h = w->h * xd_fnt_h;
 
 		/* 
 		 * Calculate window width and height. As 'def' above corresponds
@@ -2157,8 +2159,8 @@ void wd_calcsize(WINFO *w, RECT *size)
 
 		xw_calc(WC_BORDER, wflags, &def, &border, NULL);
 
-		border.x = def.x;
-		border.y = def.y;
+		border.g_x = def.g_x;
+		border.g_y = def.g_y;
 
 		wd_wsize(tw, &border, size, FALSE);
 	}
@@ -2184,8 +2186,8 @@ static void icw_draw(WINDOW *w)
 
 	/* Center the icon in the window work area */
 
-	dx = (w->xw_work.w - iconw + XOFFSET) / 2;
-	dy = (w->xw_work.h - iconh + YOFFSET) / 2;
+	dx = (w->xw_work.g_w - iconw + XOFFSET) / 2;
+	dy = (w->xw_work.g_h - iconh + YOFFSET) / 2;
 
 	/* Set background object. It is needed for background colour / pattern */
 
@@ -2228,10 +2230,10 @@ static void icw_draw(WINDOW *w)
  * Merge of redraw functions for text and dir windows 
  */
 
-void wd_type_redraw(WINDOW *w, RECT *r1)
+void wd_type_redraw(WINDOW *w, GRECT *r1)
 {
-	RECT r2, in;						/* intersection rectangle */
-	RECT work;							/* window work area */
+	GRECT r2, in;						/* intersection rectangle */
+	GRECT work;							/* window work area */
 	long rows = ((TYP_WINDOW *) w)->rows;
 	long py = ((TYP_WINDOW *) w)->py;
 	long i;
@@ -2254,7 +2256,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 			{
 				_WORD nc = ((DIR_WINDOW *) w)->ncolumns;
 
-				if (work.w % iconw != XOFFSET)
+				if (work.g_w % iconw != XOFFSET)
 					nc++;
 
 				if ((obj = make_tree
@@ -2273,7 +2275,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 
 		xw_getfirst(w, &r2);
 
-		while (r2.w != 0 && r2.h != 0)
+		while (r2.g_w != 0 && r2.g_h != 0)
 		{
 			if (xd_rcintersect(r1, &r2, &in))
 			{
@@ -2320,7 +2322,7 @@ void wd_type_redraw(WINDOW *w, RECT *r1)
 
 void wd_type_draw(TYP_WINDOW *w, bool message)
 {
-	RECT area;
+	GRECT area;
 
 	xw_getsize((WINDOW *) w, &area);
 
@@ -2339,11 +2341,11 @@ void wd_type_sldraw(WINDOW *w)
 {
 	if (wd_dirortext(w))
 	{
-		RECT size;
+		GRECT size;
 
 		wd_calcsize(((TYP_WINDOW *) w)->winfo, &size);
 
-		if (size.w != w->xw_size.w || size.h != w->xw_size.h)
+		if (size.g_w != w->xw_size.g_w || size.g_h != w->xw_size.g_h)
 			xw_setsize(w, &size);
 
 		set_sliders((TYP_WINDOW *) w);
@@ -2575,17 +2577,17 @@ void wd_set_defsize(WINFO *w)
 {
 	WINDOW *ww = (WINDOW *) w->typ_window;
 
-	w->x = ww->xw_size.x - xd_desk.x;
-	w->y = ww->xw_size.y - xd_desk.y;
+	w->x = ww->xw_size.g_x - xd_desk.g_x;
+	w->y = ww->xw_size.g_y - xd_desk.g_y;
 
 	if (w->flags.iconified)
 	{
-		w->w = ww->xw_size.w;
-		w->h = ww->xw_size.h / xd_fnt_w;	/* beware: fnt_w, not fnt_h ! */
+		w->w = ww->xw_size.g_w;
+		w->h = ww->xw_size.g_h / xd_fnt_w;	/* beware: fnt_w, not fnt_h ! */
 	} else
 	{
-		w->w = ww->xw_work.w;
-		w->h = ww->xw_work.h / xd_fnt_h;
+		w->w = ww->xw_work.g_w;
+		w->h = ww->xw_work.g_h / xd_fnt_h;
 	}
 
 	w->w /= xd_fnt_w;
@@ -2605,17 +2607,17 @@ void wd_set_defsize(WINFO *w)
  * and this would probably be used only rarely.
  */
 
-void wd_forcesize(WINDOW *w, RECT *size, bool cond)
+void wd_forcesize(WINDOW *w, GRECT *size, bool cond)
 {
-	RECT s = *size;
+	GRECT s = *size;
 
 	if (cond)
 	{
-		s.w += 1;
-		s.h += 1;
+		s.g_w += 1;
+		s.g_h += 1;
 		xw_setsize(w, &s);
-		s.w -= 1;
-		s.h -= 1;
+		s.g_w -= 1;
+		s.g_h -= 1;
 	}
 
 	xw_setsize(w, &s);					/* set new size in pixels */
@@ -2627,10 +2629,10 @@ void wd_forcesize(WINDOW *w, RECT *size, bool cond)
  * "fulled" flag is reset if a window is moved
  */
 
-void wd_type_moved(WINDOW *w, RECT *newpos)
+void wd_type_moved(WINDOW *w, GRECT *newpos)
 {
 	WINFO *wd = ((TYP_WINDOW *) w)->winfo;
-	RECT size;
+	GRECT size;
 
 	/* Permit size/position of window only as multiples of character size */
 
@@ -2655,12 +2657,12 @@ void wd_type_moved(WINDOW *w, RECT *newpos)
  * window redrawn elsewhere
  */
 
-void wd_type_sized(WINDOW *w, RECT *newsize)
+void wd_type_sized(WINDOW *w, GRECT *newsize)
 {
 #if _MINT_
 	long oy;							/* old vertical slider position */
 #endif
-	RECT oldsize;						/* old window size */
+	GRECT oldsize;						/* old window size */
 
 #if _MINT_
 	_WORD ox;								/* old horizontal slider position */
@@ -2692,8 +2694,8 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 		dc = ((DIR_WINDOW *) w)->dcolumns;	/* new number of columns */
 
 		if (dc != oc &&					/* number of item columns has changed */
-			w->xw_size.x > 0 &&			/* this helps, but why ? */
-			w->xw_size.w < oldsize.w && w->xw_size.h <= oldsize.h)
+			w->xw_size.g_x > 0 &&			/* this helps, but why ? */
+			w->xw_size.g_w < oldsize.g_w && w->xw_size.g_h <= oldsize.g_h)
 			draw = TRUE;
 	}
 
@@ -2710,7 +2712,7 @@ void wd_type_sized(WINDOW *w, RECT *newsize)
 	 */
 
 #if _MINT_
-	if ((((TYP_WINDOW *) w)->px != ox || (((TYP_WINDOW *) w)->py != oy) || dc != oc) && (w->xw_size.w > oldsize.w || w->xw_size.h > oldsize.h) && mint && !geneva	/* but this may cause double redraws sometimes */
+	if ((((TYP_WINDOW *) w)->px != ox || (((TYP_WINDOW *) w)->py != oy) || dc != oc) && (w->xw_size.g_w > oldsize.g_w || w->xw_size.g_h > oldsize.g_h) && mint && !geneva	/* but this may cause double redraws sometimes */
 		)
 		draw = TRUE;
 #endif
@@ -2970,8 +2972,8 @@ static long find_firstlast(_WORD wy, _WORD ay, _WORD ah, bool *prev, _WORD ch, _
 
 void w_scroll(TYP_WINDOW *w, _WORD type)
 {
-	RECT work, r, in, src;				/* screen area bein copied from */
-	RECT dest;							/* screen area being copied to */
+	GRECT work, r, in, src;				/* screen area bein copied from */
+	GRECT dest;							/* screen area being copied to */
 	long line = 0;
 	_WORD last;
 	_WORD dl = -1;
@@ -3026,8 +3028,8 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 
 	wd_cellsize(w, &cw, &ch, TRUE);
 
-	wx = work.x;
-	wy = work.y;
+	wx = work.g_x;
+	wy = work.g_y;
 
 	/* Start updating... */
 
@@ -3048,7 +3050,7 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 
 	xw_getfirst((WINDOW *) w, &r);
 
-	while (r.w != 0 && r.h != 0)
+	while (r.g_w != 0 && r.g_h != 0)
 	{
 		if (xd_rcintersect(&r, &work, &in))
 		{
@@ -3061,38 +3063,38 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 			{
 				if (type == WA_UPLINE)
 				{
-					dest.y += ch;
+					dest.g_y += ch;
 					last = 0;
 				} else
 				{
-					src.y += ch;
+					src.g_y += ch;
 					last = 1;
 				}
 
-				line = find_firstlast(wy, in.y, in.h, &prev, ch, last);
+				line = find_firstlast(wy, in.g_y, in.g_h, &prev, ch, last);
 
 				line += w->py;
-				dest.h -= ch;
-				src.h -= ch;
+				dest.g_h -= ch;
+				src.g_h -= ch;
 			} else
 			{
 				nc = 1;
 
 				if (type == WA_LFLINE)
 				{
-					dest.x += cw;
+					dest.g_x += cw;
 					last = 0;
 				} else
 				{
-					src.x += cw;
+					src.g_x += cw;
 					last = 1;
 				}
 
-				column = (_WORD) find_firstlast(wx, in.x, in.w, &prev, cw, last);
+				column = (_WORD) find_firstlast(wx, in.g_x, in.g_w, &prev, cw, last);
 
 				column += w->px;
-				dest.w -= cw;
-				src.w -= cw;
+				dest.g_w -= cw;
+				src.g_w -= cw;
 
 				if (prev)
 					nc++;
@@ -3103,7 +3105,7 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 			 * is moved by the right amount in the appropriate direction
 			 */
 
-			if ((src.h > 0) && (src.w > 0))
+			if (src.g_h > 0 && src.g_w > 0)
 				move_screen(&dest, &src);
 
 			if (vert)					/* up/down */
@@ -3151,7 +3153,7 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 
 bool wd_adapt(WINDOW *w)
 {
-	RECT size;
+	GRECT size;
 
 	if (wd_dirortext(w))
 	{
@@ -3660,14 +3662,13 @@ void wd_reopen(void)
 
 static bool in_window(WINDOW *w, _WORD x, _WORD y)
 {
-	RECT work;
+	GRECT work;
 
 	xw_getwork(w, &work);
 
-	if ((x >= work.x) && (x < (work.x + work.w)) && (y >= work.y) && (y < (work.y + work.h)))
+	if ((x >= work.g_x) && (x < (work.g_x + work.g_w)) && (y >= work.g_y) && (y < (work.g_y + work.g_h)))
 		return TRUE;
-	else
-		return FALSE;
+	return FALSE;
 }
 
 
@@ -4065,19 +4066,19 @@ static void clip_coords(_WORD *clip, _WORD *nx, _WORD *ny)
 {
 	_WORD h, *cp = clip;
 
-	h = xd_desk.x - *cp++;
+	h = xd_desk.g_x - *cp++;
 	if (*nx < h)
 		*nx = h;
 
-	h = xd_desk.y - *cp++;
+	h = xd_desk.g_y - *cp++;
 	if (*ny < h)
 		*ny = h;
 
-	h = xd_desk.x + xd_desk.w - 1 - *cp++;
+	h = xd_desk.g_x + xd_desk.g_w - 1 - *cp++;
 	if (*nx > h)
 		*nx = h;
 
-	h = xd_desk.y + xd_desk.h - 1 - *cp;
+	h = xd_desk.g_y + xd_desk.g_h - 1 - *cp;
 	if (*ny > h)
 		*ny = h;
 }
@@ -4483,7 +4484,7 @@ void wd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kst
 void wd_set_obj0(OBJECT *obj,			/* pointer to object */
 				 bool smode,			/* smode=1: G_IBOX, smode=0: G_BOX */
 				 _WORD row, _WORD lines,	/* how many icon lines will be drawn */
-				 RECT *work			/* window work area dimensions and position */
+				 GRECT *work			/* window work area dimensions and position */
 	)
 {
 	/* Note: when object type is I_BOX it will not be redrawn */
@@ -4497,10 +4498,10 @@ void wd_set_obj0(OBJECT *obj,			/* pointer to object */
 	wxub.uv.fill.colour = options.win_colour;
 	wxub.uv.fill.pattern = options.win_pattern;
 
-	obj[0].ob_x = work->x;
-	obj[0].ob_y = row + work->y;
-	obj[0].ob_width = work->w;
-	obj[0].ob_height = minmax(iconh, lines * iconh, work->h);
+	obj[0].ob_x = work->g_x;
+	obj[0].ob_y = row + work->g_y;
+	obj[0].ob_width = work->g_w;
+	obj[0].ob_height = minmax(iconh, lines * iconh, work->g_h);
 }
 
 
@@ -4544,7 +4545,7 @@ void set_obji(OBJECT *obj, long i, long n, bool selected, bool hidden, bool link
  * Routine for text/dir window iconification 
  */
 
-void wd_type_iconify(WINDOW *w, RECT *r)
+void wd_type_iconify(WINDOW *w, GRECT *r)
 {
 #if _MINT_
 	/* Can this be done at all ? */
@@ -4552,7 +4553,7 @@ void wd_type_iconify(WINDOW *w, RECT *r)
 	if (can_iconify)
 	{
 		WINFO *wi = ((TYP_WINDOW *) w)->winfo;
-		RECT oldsize;
+		GRECT oldsize;
 
 		/* Change window title to "Tera Desktop" */
 
@@ -4598,12 +4599,12 @@ void wd_type_iconify(WINDOW *w, RECT *r)
 
 		/* Some additional redraws may be needed with forced iconifying in Geneva */
 
-		if (geneva && r->w == -1)
+		if (geneva && r->g_w == -1)
 		{
 			WINDOW *ww = xw_first();
 
-			oldsize.h += 4;
-			oldsize.w += 4;
+			oldsize.g_h += 4;
+			oldsize.g_w += 4;
 
 			while (ww)
 			{
@@ -4626,11 +4627,10 @@ void wd_type_iconify(WINDOW *w, RECT *r)
  * Routine for text/dir window deiconification 
  */
 
-void wd_type_uniconify(WINDOW *w, RECT *r)
+void wd_type_uniconify(WINDOW *w, GRECT *r)
 {
 #if _MINT_
-
-	RECT size;
+	GRECT size;
 	WINFO *wi = ((TYP_WINDOW *) w)->winfo;
 
 	wd_type_topped(w);
@@ -4642,8 +4642,8 @@ void wd_type_uniconify(WINDOW *w, RECT *r)
 	wi->flags.iconified = 0;
 	wd_calcsize(wi, &size);
 
-	r->x = size.x;
-	r->y = size.y;
+	r->g_x = size.g_x;
+	r->g_y = size.g_y;
 
 	/* Call uniconify function then resize the window */
 
@@ -4652,7 +4652,7 @@ void wd_type_uniconify(WINDOW *w, RECT *r)
 
 	/* This seems to be needed only if uniconified with -1, -1, -1, -1 size */
 
-	if (r->w == -1)
+	if (r->g_w == -1)
 		xw_send_redraw(w, WM_REDRAW, &size);
 #else
 	(void) w;
@@ -4667,10 +4667,10 @@ void wd_type_uniconify(WINDOW *w, RECT *r)
  * text windows, NOT av-client windows (which do not have a WINFO pointer)
  */
 
-void wd_iopen(WINDOW *w, RECT *oldsize, WDFLAGS *oldflags)
+void wd_iopen(WINDOW *w, GRECT *oldsize, WDFLAGS *oldflags)
 {
 	WINFO *info = ((TYP_WINDOW *) w)->winfo;
-	RECT size;
+	GRECT size;
 
 #if _MINT_
 	bool icf = can_iconify && oldflags->iconified;
@@ -4691,15 +4691,15 @@ void wd_iopen(WINDOW *w, RECT *oldsize, WDFLAGS *oldflags)
 #if _MINT_
 		if (icf)
 		{
-			info->x = oldsize->x;
-			info->y = oldsize->y;
-			info->w = oldsize->w;
-			info->h = oldsize->h;
+			info->x = oldsize->g_x;
+			info->y = oldsize->g_y;
+			info->w = oldsize->g_w;
+			info->h = oldsize->g_h;
 
 			/* note: icwsize must be set before wd_calcsize() or wd_wsize() */
 
-			icwsize.w = oldsize->w * xd_fnt_w;
-			icwsize.h = oldsize->h * xd_fnt_w;	/* Beware: fnt_w, not fnt_h! */
+			icwsize.g_w = oldsize->g_w * xd_fnt_w;
+			icwsize.g_h = oldsize->g_h * xd_fnt_w;	/* Beware: fnt_w, not fnt_h! */
 		}
 #endif
 		wd_calcsize(info, &size);

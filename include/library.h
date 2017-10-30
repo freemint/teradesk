@@ -135,14 +135,6 @@ typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
 #define _LOGFILE 0
 
 
-typedef struct
-{
-        _WORD x;
-        _WORD y;
-        _WORD w;
-        _WORD h;
-} RECT;
-
 /* Strings of specific lengths for icon labels, file types, etc. */
 
 typedef char INAME[13];	  /* Icon name/label length */

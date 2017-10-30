@@ -21,12 +21,12 @@
  */
 
 
-bool clip_desk(RECT *r);
+bool clip_desk(GRECT *r);
 void clipdesk_on(void);
-void pclear(RECT *r);
-void invert(RECT *r);
-bool rc_intersect2(RECT *r1, RECT *r2);
-void move_screen(RECT *dest, RECT *src);
+void pclear(GRECT *r);
+void invert(GRECT *r);
+bool rc_intersect2(GRECT *r1, GRECT *r2);
+void move_screen(GRECT *dest, GRECT *src);
 void set_txt_default(XDFONT *f);
 _WORD *get_colours(void);
 void set_colours(_WORD *colours);

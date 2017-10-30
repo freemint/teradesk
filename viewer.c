@@ -46,7 +46,7 @@
 
 WINFO textwindows[MAXWINDOWS];
 
-RECT tmax;
+GRECT tmax;
 
 XDFONT txt_font;
 
@@ -370,13 +370,13 @@ static _WORD txt_line(TXT_WINDOW *w,	/* pointer to window being processed */
 static void txt_comparea(TXT_WINDOW *w,	/* pointer to window */
 						 long line,		/* line number */
 						 _WORD str_len,	/* length of the string */
-						 RECT *r, RECT *work	/* RECT structure with the size of the window's work area */
+						 GRECT *r, GRECT *work	/* GRECT structure with the size of the window's work area */
 	)
 {
-	r->x = work->x;
-	r->y = work->y + (_WORD) (line - w->py) * txt_font.ch;
-	r->w = str_len * txt_font.cw;
-	r->h = txt_font.ch;
+	r->g_x = work->g_x;
+	r->g_y = work->g_y + (_WORD) (line - w->py) * txt_font.ch;
+	r->g_w = str_len * txt_font.cw;
+	r->g_h = txt_font.ch;
 }
 
 
@@ -390,11 +390,11 @@ static void txt_prtchar(TXT_WINDOW *w,	/* pointer to window */
 						_WORD column,	/* column in which the character is printed */
 						_WORD nc,		/* number of columns */
 						long line,		/* line in which the character is printed */
-						RECT *area,		/* clipping rectangle */
-						RECT *work		/* Workspace of the window */
+						GRECT *area,		/* clipping rectangle */
+						GRECT *work		/* Workspace of the window */
 	)
 {
-	RECT r, in;
+	GRECT r, in;
 	_WORD len, c;
 	char s[FWIDTH];
 
@@ -403,8 +403,8 @@ static void txt_prtchar(TXT_WINDOW *w,	/* pointer to window */
 	len = txt_line(w, s, line);
 	txt_comparea(w, line, len, &r, work);
 
-	r.x += c * txt_font.cw;
-	r.w = nc * txt_font.cw;
+	r.g_x += c * txt_font.cw;
+	r.g_w = nc * txt_font.cw;
 
 	if (xd_rcintersect(area, &r, &in))
 	{
@@ -413,7 +413,7 @@ static void txt_prtchar(TXT_WINDOW *w,	/* pointer to window */
 		if (c < len)
 		{
 			s[min(c + nc, len)] = 0;
-			w_transptext(r.x, r.y, &s[c]);
+			w_transptext(r.g_x, r.g_y, &s[c]);
 		}
 	}
 }
@@ -425,11 +425,11 @@ static void txt_prtchar(TXT_WINDOW *w,	/* pointer to window */
 
 void txt_prtline(TXT_WINDOW *w,		/* Pointer to window */
 				 long line,			/* Line that will be printed */
-				 RECT *area,		/* Clipping rectangle */
-				 RECT *work			/* Workspace of the window */
+				 GRECT *area,		/* Clipping rectangle */
+				 GRECT *work			/* Workspace of the window */
 	)
 {
-	RECT r, r2;
+	GRECT r, r2;
 	_WORD len;
 	char s[FWIDTH];
 
@@ -437,13 +437,13 @@ void txt_prtline(TXT_WINDOW *w,		/* Pointer to window */
 	txt_comparea(w, line, len, &r, work);
 
 	r2 = r;
-	r2.w = work->w;
+	r2.g_w = work->g_w;
 
 	if (rc_intersect2(area, &r2))
 		pclear(&r2);
 
 	if (rc_intersect2(area, &r))
-		w_transptext(r.x, r.y, s);
+		w_transptext(r.g_x, r.g_y, s);
 }
 
 
@@ -460,8 +460,8 @@ void txt_prtline(TXT_WINDOW *w,		/* Pointer to window */
 void txt_prtcolumn(TXT_WINDOW *w,		/* pointer naar window */
 				   _WORD column,		/* first column */
 				   _WORD nc,			/* number of columns */
-				   RECT *area,			/* clipping rechthoek */
-				   RECT *work			/* werkgebied window */
+				   GRECT *area,			/* clipping rechthoek */
+				   GRECT *work			/* werkgebied window */
 	)
 {
 	_WORD i;
@@ -1220,7 +1220,7 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 						   long py, _WORD tabsize, bool hexmode, bool setmode, int *error)
 {
 	TXT_WINDOW *w;
-	RECT oldsize;
+	GRECT oldsize;
 	WDFLAGS oldflags;
 
 	wd_in_screen(info);
@@ -1244,10 +1244,10 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 	w->hexmode = hexmode;
 	w->winfo = info;
 
-	oldsize.x = info->x;				/* remember old size */
-	oldsize.y = info->y;
-	oldsize.w = info->w;
-	oldsize.h = info->h;
+	oldsize.g_x = info->x;				/* remember old size */
+	oldsize.g_y = info->y;
+	oldsize.g_w = info->w;
+	oldsize.g_h = info->h;
 
 	wd_restoresize(info);
 

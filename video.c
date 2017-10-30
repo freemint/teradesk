@@ -219,9 +219,9 @@ void get_set_video(_WORD set)
 
 				if (ovrstat < 0)
 				{
-					ov_max_w = xd_screen.w;
-					ov_max_h = xd_screen.h;
-					menu_h = xd_screen.h - xd_desk.h;
+					ov_max_w = xd_screen.g_w;
+					ov_max_h = xd_screen.g_h;
+					menu_h = xd_screen.g_h - xd_desk.g_h;
 				}
 
 				/* Detect nonstandard overscanned resolution */
@@ -229,11 +229,11 @@ void get_set_video(_WORD set)
 				ovrstat = 0;
 				for (idi = 0; idi < 3; idi++)
 				{
-					if (xd_screen.h > std_y[idi] && xd_screen.h < std_y[idi + 1])
+					if (xd_screen.g_h > std_y[idi] && xd_screen.g_h < std_y[idi + 1])
 					{
-						ov_max_w = xd_screen.w;
-						ov_max_h = xd_screen.h;
-						menu_h = xd_screen.h - xd_desk.h;
+						ov_max_w = xd_screen.g_w;
+						ov_max_h = xd_screen.g_h;
+						menu_h = xd_screen.g_h - xd_desk.g_h;
 						ovrstat = 1;
 						break;
 					}
@@ -296,14 +296,14 @@ void get_set_video(_WORD set)
 				{
 					*acia = 0xD6;		/* value for the acia reg- switch overscan ON */
 					ovrstat = 1;
-					xd_screen.h = ov_max_h;
-					xd_screen.w = ov_max_w;
+					xd_screen.g_h = ov_max_h;
+					xd_screen.g_w = ov_max_w;
 				} else
 				{
 					*acia = 0x96;		/* value for the acia reg- switch overscan OFF */
 					ovrstat = 0;
-					xd_screen.w = std_x[idi];
-					xd_screen.h = std_y[idi];
+					xd_screen.g_w = std_x[idi];
+					xd_screen.g_h = std_y[idi];
 				}
 
 				/* 
@@ -311,10 +311,10 @@ void get_set_video(_WORD set)
 				 * provoke Lacescan to adapt 
 				 */
 
-				xd_desk.w = xd_screen.w;
-				xd_desk.h = xd_screen.h - menu_h;
-				xw_deskwin->xw_size.w = xd_screen.w;
-				xw_deskwin->xw_size.h = xd_screen.h;
+				xd_desk.g_w = xd_screen.g_w;
+				xd_desk.g_h = xd_screen.g_h - menu_h;
+				xw_deskwin->xw_size.g_w = xd_screen.g_w;
+				xw_deskwin->xw_size.g_h = xd_screen.g_h;
 
 				/* Note: return from supervisor before Setscreen()... */
 

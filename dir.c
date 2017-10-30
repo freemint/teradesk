@@ -63,7 +63,7 @@
 
 XDFONT dir_font;
 WINFO dirwindows[MAXWINDOWS];
-RECT dmax;
+GRECT dmax;
 bool clearline = TRUE;
 
 static _WORD dir_find(WINDOW *w, _WORD x, _WORD y);
@@ -1063,7 +1063,7 @@ static void dir_do_update(WINDOW *w)
 void dir_disp_mode(WINDOW *w)
 {
 #if 0									/* so long as there are no menus in dir window, this can be shorter */
-	RECT work;
+	GRECT work;
 
 	wd_type_nofull(w);
 	xw_getwork(w, &work);				/* work area is modified by menu height */
@@ -1350,7 +1350,7 @@ void calc_nlines(DIR_WINDOW *dw)
 		{
 			/* at least 8/8 - 6/8 = 2/8 of dir item name have to be visible */
 
-			mcol = (xd_screen.w / dir_font.cw - BORDERS) / ll;	/* max. columns to fit on screen */
+			mcol = (xd_screen.g_w / dir_font.cw - BORDERS) / ll;	/* max. columns to fit on screen */
 			dc = minmax(1, min((dw->ncolumns + dw->llength * 6 / 8) / ll, mcol), nvisible);
 		} else
 		{
@@ -1364,9 +1364,9 @@ void calc_nlines(DIR_WINDOW *dw)
 		/* at least 8/8 - 5/8 = 3/8 of icon column have to be visible */
 
 		if (options.aarr)
-			dc = (dw->xw_work.w + iconh * 5 / 8);
+			dc = (dw->xw_work.g_w + iconh * 5 / 8);
 		else
-			dc = (xd_screen.w - XOFFSET);
+			dc = (xd_screen.g_w - XOFFSET);
 
 		dc = minmax(1, dc / iconw, nvisible);	/* will never be less than 1 */
 		dw->dcolumns = dc;
@@ -1456,9 +1456,9 @@ _WORD linelength(DIR_WINDOW *w)
 
 static void dir_comparea(DIR_WINDOW *dw,	/* pointer to directory window */
 						 _WORD item,	/* item index */
-						 RECT *r,		/* position and size of item rectangle on the screen */
-						 RECT *dummy,	/* for compatibility with icn_comparea */
-						 RECT *work	/* window work area rectangle */
+						 GRECT *r,		/* position and size of item rectangle on the screen */
+						 GRECT *dummy,	/* for compatibility with icn_comparea */
+						 GRECT *work	/* window work area rectangle */
 	)
 {
 	_WORD ll = dw->llength + CSKIP, col;
@@ -1468,10 +1468,10 @@ static void dir_comparea(DIR_WINDOW *dw,	/* pointer to directory window */
 
 	col = dw->nlines ? (_WORD) (item / dw->nlines) : 0;
 
-	r->x = work->x + (col * ll + TOFFSET - dw->px) * dir_font.cw;
-	r->y = DELTA + work->y + (_WORD) ((item - dw->nlines * col) - dw->py) * (dir_font.ch + DELTA);
-	r->w = dir_font.cw * dw->llength;
-	r->h = dir_font.ch;
+	r->g_x = work->g_x + (col * ll + TOFFSET - dw->px) * dir_font.cw;
+	r->g_y = DELTA + work->g_y + (_WORD) ((item - dw->nlines * col) - dw->py) * (dir_font.ch + DELTA);
+	r->g_w = dir_font.cw * dw->llength;
+	r->g_h = dir_font.ch;
 }
 
 
@@ -1941,7 +1941,7 @@ OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc,	/* first icon column to display */
 				  _WORD sl,				/* first icon line to display */
 				  _WORD lines,			/* number of icon lines to display */
 				  bool smode,			/* draw all icons + background if false */
-				  RECT *work			/* work area of the window */
+				  GRECT *work			/* work area of the window */
 	)
 {
 	long oi = 0;						/* index of an object in the tree */
@@ -2035,9 +2035,9 @@ OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc,	/* first icon column to display */
  * Draw an entire object tree within a rectangle
  */
 
-void draw_tree(OBJECT *tree, RECT *clip)
+void draw_tree(OBJECT *tree, GRECT *clip)
 {
-	objc_draw(tree, ROOT, MAX_DEPTH, clip->x, clip->y, clip->w, clip->h);
+	objc_draw(tree, ROOT, MAX_DEPTH, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
 }
 
 
@@ -2045,8 +2045,8 @@ void draw_tree(OBJECT *tree, RECT *clip)
  * Draw icons in a directory window in icon mode
  */
 
-static void draw_icons(DIR_WINDOW *dw, _WORD sc, _WORD columns, _WORD sl, _WORD lines, RECT *area,
-					   bool smode, RECT *work)
+static void draw_icons(DIR_WINDOW *dw, _WORD sc, _WORD columns, _WORD sl, _WORD lines, GRECT *area,
+					   bool smode, GRECT *work)
 {
 	OBJECT *tree;
 
@@ -2068,9 +2068,9 @@ static void draw_icons(DIR_WINDOW *dw, _WORD sc, _WORD columns, _WORD sl, _WORD 
 
 static void icn_comparea(DIR_WINDOW *dw,	/* pointer to a window */
 						 _WORD item,	/* item index in the directory */
-						 RECT *r1,		/* icon (image?) rectangle */
-						 RECT *r2,		/* icon text rectangle */
-						 RECT *work	/* inside area of the window */
+						 GRECT *r1,		/* icon (image?) rectangle */
+						 GRECT *r2,		/* icon text rectangle */
+						 GRECT *work	/* inside area of the window */
 	)
 {
 	_WORD columns = dw->columns, s, x, y;
@@ -2086,24 +2086,24 @@ static void icn_comparea(DIR_WINDOW *dw,	/* pointer to a window */
 		x = columns + x;
 	}
 
-	x = work->x + x * iconw + XOFFSET;
-	y = work->y + y * iconh + YOFFSET;
+	x = work->g_x + x * iconw + XOFFSET;
+	y = work->g_y + y * iconh + YOFFSET;
 
 	h = icons[(*dw->buffer)[item]->icon].ob_spec.ciconblk;
 
-	r1->x = h->monoblk.ib_xicon;
-	r1->y = h->monoblk.ib_yicon;
-	r1->w = h->monoblk.ib_wicon;
-	r1->h = h->monoblk.ib_hicon;
-	r1->x += x;
-	r1->y += y;
+	r1->g_x = h->monoblk.ib_xicon;
+	r1->g_y = h->monoblk.ib_yicon;
+	r1->g_w = h->monoblk.ib_wicon;
+	r1->g_h = h->monoblk.ib_hicon;
+	r1->g_x += x;
+	r1->g_y += y;
 
-	r2->x = h->monoblk.ib_xtext;
-	r2->y = h->monoblk.ib_ytext;
-	r2->w = h->monoblk.ib_wtext;
-	r2->h = h->monoblk.ib_htext;
-	r2->x += x;
-	r2->y += y;
+	r2->g_x = h->monoblk.ib_xtext;
+	r2->g_y = h->monoblk.ib_ytext;
+	r2->g_w = h->monoblk.ib_wtext;
+	r2->g_h = h->monoblk.ib_htext;
+	r2->g_x += x;
+	r2->g_y += y;
 }
 
 
@@ -2114,7 +2114,7 @@ static void icn_comparea(DIR_WINDOW *dw,	/* pointer to a window */
  * "line" is in fact item index (0 to w->nvisible)
  */
 
-void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work)
+void dir_prtline(DIR_WINDOW *dw, _WORD line, GRECT *area, GRECT *work)
 {
 	/*
 	 * Don't do anything in an iconified window
@@ -2126,7 +2126,7 @@ void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work)
 
 	if (options.mode == TEXTMODE)
 	{
-		RECT r,	rc, in;
+		GRECT r, rc, in;
 		NDTA *d = NULL;
 		VLNAME s;
 		_WORD i;
@@ -2140,10 +2140,10 @@ void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work)
 		if (line < dw->nvisible)
 		{
 			d = (*dw->buffer)[(long) line];
-			rc.x = r.x - TOFFSET * dir_font.cw;
-			rc.y = r.y;
-			rc.w = r.w + BORDERS * dir_font.cw;
-			rc.h = r.h;
+			rc.g_x = r.g_x - TOFFSET * dir_font.cw;
+			rc.g_y = r.g_y;
+			rc.g_w = r.g_w + BORDERS * dir_font.cw;
+			rc.g_h = r.g_h;
 
 			if ((clearline || d->selected) && xd_rcintersect(area, &rc, &in))
 				pclear(&in);
@@ -2179,7 +2179,7 @@ void dir_prtline(DIR_WINDOW *dw, _WORD line, RECT *area, RECT *work)
 				if (effects != FE_NONE)
 					vst_effects(vdi_handle, effects);	/* set only if needed */
 
-				w_transptext(r.x, r.y, &s[i]);	/* write the string */
+				w_transptext(r.g_x, r.g_y, &s[i]);	/* write the string */
 
 				if (effects != FE_NONE)
 					vst_effects(vdi_handle, FE_NONE);	/* back to normal */
@@ -2213,17 +2213,17 @@ static long dir_pymax(DIR_WINDOW *w)
  * Funktie om een pagina naar boven te scrollen. 
  */
 
-void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, RECT *area, RECT *work)
+void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, GRECT *area, GRECT *work)
 {
-	RECT r, in;
+	GRECT r, in;
 
-	r.y = work->y;
-	r.h = work->h;
+	r.g_y = work->g_y;
+	r.g_h = work->g_h;
 
 	if (options.mode == TEXTMODE)
 	{
-		r.w = nc * dir_font.cw;
-		r.x = work->x + (column - dw->px) * dir_font.cw;
+		r.g_w = nc * dir_font.cw;
+		r.g_x = work->g_x + (column - dw->px) * dir_font.cw;
 
 		if (xd_rcintersect(area, &r, &in))
 		{
@@ -2237,8 +2237,8 @@ void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, RECT *area, RECT *wor
 		}
 	} else
 	{
-		r.w = nc * iconw;
-		r.x = work->x + (column - dw->px) * iconw + XOFFSET;
+		r.g_w = nc * iconw;
+		r.g_x = work->g_x + (column - dw->px) * iconw + XOFFSET;
 
 		if (xd_rcintersect(area, &r, &in))
 			draw_icons(dw, column, nc, (_WORD) (dw->py), dw->rows, &in, FALSE, work);
@@ -2250,7 +2250,7 @@ void dir_prtcolumn(DIR_WINDOW *dw, _WORD column, _WORD nc, RECT *area, RECT *wor
  * Display a line containing several directory columns
  */
 
-void dir_prtcolumns(DIR_WINDOW *w, long line, RECT *in, RECT *work)
+void dir_prtcolumns(DIR_WINDOW *w, long line, GRECT *in, GRECT *work)
 {
 	_WORD j;
 	_WORD k = 1;
@@ -2391,7 +2391,7 @@ void dir_close(WINDOW *w, _WORD mode)
 static WINDOW *dir_do_open(WINFO *info, char *path, char *fspec, _WORD px, _WORD py, int *error)
 {
 	DIR_WINDOW *w;
-	RECT oldsize;
+	GRECT oldsize;
 	WDFLAGS oldflags;
 
 	wd_in_screen(info);					/* modify position to come into screen */
@@ -2420,10 +2420,10 @@ static WINDOW *dir_do_open(WINFO *info, char *path, char *fspec, _WORD px, _WORD
 
 	/* In order to calculate columns and rows properly... */
 
-	oldsize.x = info->x;				/* remember old size in char-cell units */
-	oldsize.y = info->y;
-	oldsize.w = info->w;
-	oldsize.h = info->h;
+	oldsize.g_x = info->x;				/* remember old size in char-cell units */
+	oldsize.g_y = info->y;
+	oldsize.g_w = info->w;
+	oldsize.g_h = info->h;
 
 	wd_restoresize(info);				/* temporarily- noniconified size */
 
@@ -2752,9 +2752,9 @@ void dir_config(XFILE *file, int lvl, int io, int *error)
 static _WORD dir_find(WINDOW *w, _WORD x, _WORD y)
 {
 	_WORD hx, hy, cw, ch, item;
-	RECT r1, r2;
+	GRECT r1, r2;
 	DIR_WINDOW *dw;
-	void (*dw_comparea) (DIR_WINDOW *w, _WORD item, RECT *r1, RECT *r2, RECT *work);
+	void (*dw_comparea) (DIR_WINDOW *w, _WORD item, GRECT *r1, GRECT *r2, GRECT *work);
 
 	/*
 	 * Don't do anything in iconified window
@@ -2772,11 +2772,11 @@ static _WORD dir_find(WINDOW *w, _WORD x, _WORD y)
 	wd_cellsize((TYP_WINDOW *) w, &cw, &ch, TRUE);
 
 #if 0									/* see above */
-	hx = (x - work.x) / cw;
-	hy = (y - work.y) / ch;
+	hx = (x - work.g_x) / cw;
+	hy = (y - work.g_y) / ch;
 #endif
-	hx = (x - w->xw_work.x) / cw;
-	hy = (y - w->xw_work.y) / ch;
+	hx = (x - w->xw_work.g_x) / cw;
+	hy = (y - w->xw_work.g_y) / ch;
 
 	if (hx < 0 || hy < 0)
 		return -1;
@@ -2963,7 +2963,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 {
 	long i, h;
 	RPNDTA *pb = w->buffer;
-	RECT r1, r2, d, work;
+	GRECT r1, r2, d, work;
 
 #if 0									/* this can be a bit simpler if there are no menus in dir windows */
 	xw_getwork((WINDOW *) w, &work);	/* work area modified by menu height */
@@ -3037,7 +3037,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 				if (n > MSEL)
 				{
-					tree[j + 1].ob_state = (b->newstate) ? OS_SELECTED : OS_NORMAL;
+					tree[j + 1].ob_state = b->newstate ? OS_SELECTED : OS_NORMAL;
 				} else
 				{
 					/* draw all that changed state */
@@ -3062,7 +3062,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 		h = dir_pymax(w);
 		xw_getfirst((WINDOW *) w, &r2);
 
-		while (r2.w != 0 && r2.h != 0)
+		while (r2.g_w != 0 && r2.g_h != 0)
 		{
 			xd_clip_on(&r2);
 
@@ -3216,7 +3216,7 @@ static void calc_vitems(DIR_WINDOW *dw,	/* pointer to window */
  * redrawn when a window is scrolled.
  */
 
-static void rubber_box(DIR_WINDOW *w, RECT *work, _WORD x, _WORD y, RECT *r)
+static void rubber_box(DIR_WINDOW *w, GRECT *work, _WORD x, _WORD y, GRECT *r)
 {
 	_WORD x1 = x;
 	_WORD x2 = x;
@@ -3239,8 +3239,8 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, _WORD x, _WORD y, RECT *r)
 	start_rubberbox();
 	draw_rect(x1, y1, x2, y2);
 
-	rx = work->x + work->w;
-	ry = work->y + work->h;
+	rx = work->g_x + work->g_w;
+	ry = work->g_y + work->g_h;
 
 	do
 	{
@@ -3252,17 +3252,17 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, _WORD x, _WORD y, RECT *r)
 
 		/* Box should not exceed window border */
 
-		x2 = minmax(work->x, x2, rx);
-		y2 = minmax(work->y, y2, ry);
+		x2 = minmax(work->g_x, x2, rx);
+		y2 = minmax(work->g_y, y2, ry);
 
-		if ((x2 <= work->x) && (w->px > 0) && (x1 < SHRT_MAX - absdeltax))
+		if ((x2 <= work->g_x) && (w->px > 0) && (x1 < SHRT_MAX - absdeltax))
 		{
 			redraw = TRUE;
 			scrollx = WA_LFLINE;
 			deltax = absdeltax;
 		}
 
-		if ((y2 <= work->y) && (w->py > 0) && (y1 < SHRT_MAX - absdeltay))
+		if ((y2 <= work->g_y) && (w->py > 0) && (y1 < SHRT_MAX - absdeltay))
 		{
 			redraw = TRUE;
 			scrolly = WA_UPLINE;
@@ -3296,14 +3296,14 @@ static void rubber_box(DIR_WINDOW *w, RECT *work, _WORD x, _WORD y, RECT *r)
 			if (scrollx)
 			{
 				x1 += deltax;
-				wx = minmax(work->x, x1, rx);
+				wx = minmax(work->g_x, x1, rx);
 				w_scroll((TYP_WINDOW *) w, scrollx);
 			}
 
 			if (scrolly)
 			{
 				y1 += deltay;
-				hy = minmax(work->y, y1, ry);
+				hy = minmax(work->g_y, y1, ry);
 				w_scroll((TYP_WINDOW *) w, scrolly);
 			}
 
@@ -3332,10 +3332,10 @@ static void dir_rselect(WINDOW *w, _WORD x, _WORD y)
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
 	long i;
 	long h;
-	RECT r1, r2, r3;
+	GRECT r1, r2, r3;
 	NDTA *b;
 	RPNDTA * pb;
-	void (*dw_comparea) (DIR_WINDOW *w, _WORD item, RECT *r1, RECT *r2, RECT *work);
+	void (*dw_comparea) (DIR_WINDOW *w, _WORD item, GRECT *r1, GRECT *r2, GRECT *work);
 
 	/* Don't do anything in an iconified window */
 
@@ -3380,50 +3380,50 @@ static void dir_rselect(WINDOW *w, _WORD x, _WORD y)
 }
 
 
-static void get_itmd(DIR_WINDOW *wd, _WORD obj, ICND *icnd, _WORD mx, _WORD my, RECT *work)
+static void get_itmd(DIR_WINDOW *wd, _WORD obj, ICND *icnd, _WORD mx, _WORD my, GRECT *work)
 {
-	RECT ir;
+	GRECT ir;
 	_WORD *icndcoords = &icnd->coords[0];
 
 	if (options.mode == TEXTMODE)
 	{
 		dir_comparea(wd, obj, &ir, &ir, work);
 
-		ir.x -= mx;
-		ir.y -= my;
-		ir.w = DRAGLENGTH * dir_font.cw - 1;
-		ir.h -= 1;
-		*icndcoords++ = ir.x;
-		*icndcoords++ = ir.y;
-		*icndcoords++ = ir.x;
-		*icndcoords++ = ir.y + ir.h;
-		*icndcoords++ = ir.x + ir.w;
-		*icndcoords++ = icnd->coords[3] /* ir.y + ir.h */ ;
-		*icndcoords++ = icnd->coords[4] /* ir.x + ir.w */ ;
-		*icndcoords++ = ir.y;
-		*icndcoords++ = ir.x + 1;
-		*icndcoords = ir.y;
+		ir.g_x -= mx;
+		ir.g_y -= my;
+		ir.g_w = DRAGLENGTH * dir_font.cw - 1;
+		ir.g_h -= 1;
+		*icndcoords++ = ir.g_x;
+		*icndcoords++ = ir.g_y;
+		*icndcoords++ = ir.g_x;
+		*icndcoords++ = ir.g_y + ir.g_h;
+		*icndcoords++ = ir.g_x + ir.g_w;
+		*icndcoords++ = icnd->coords[3] /* ir.g_y + ir.g_h */ ;
+		*icndcoords++ = icnd->coords[4] /* ir.g_x + ir.g_w */ ;
+		*icndcoords++ = ir.g_y;
+		*icndcoords++ = ir.g_x + 1;
+		*icndcoords = ir.g_y;
 
 		icnd->item = obj;
 		icnd->np = 5;
 	} else
 	{
 		_WORD columns = wd->columns, s = obj - (_WORD) (wd->py * columns);
-		RECT tr;
+		GRECT tr;
 
 		icn_comparea(wd, obj, &ir, &tr, work);
 
-		ir.x -= mx;
-		ir.y -= my;
-		ir.w -= 1;
-		tr.x -= mx;
-		tr.y -= my;
-		tr.w -= 1;
-		tr.h -= 1;
+		ir.g_x -= mx;
+		ir.g_y -= my;
+		ir.g_w -= 1;
+		tr.g_x -= mx;
+		tr.g_y -= my;
+		tr.g_w -= 1;
+		tr.g_h -= 1;
 
 		icnd->item = obj;
-		icnd->m_x = work->x + (s % columns - wd->px) * iconw + iconw / 2 - mx;
-		icnd->m_y = work->y + (s / columns) * iconh + iconh / 2 - my;
+		icnd->m_x = work->g_x + (s % columns - wd->px) * iconw + iconw / 2 - mx;
+		icnd->m_y = work->g_y + (s / columns) * iconh + iconh / 2 - my;
 
 		icn_coords(icnd, &tr, &ir);
 	}
@@ -3518,7 +3518,7 @@ static ICND *dir_xlist(WINDOW *w, _WORD *nselected, _WORD *nvisible, _WORD **sel
 	RPNDTA *d;
 	long i;
 #if 0									/* No need if there is no menu in dir windows */
-	RECT work;
+	GRECT work;
 
 	xw_getwork(w, &work);				/* work area modified by menu height */
 #endif

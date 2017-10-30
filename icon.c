@@ -240,7 +240,7 @@ static const MFORM icnm = {
 
 static void form_dialall(_WORD what)
 {
-	form_dial(what, 0, 0, 0, 0, xd_desk.x, xd_desk.y, xd_desk.w, xd_desk.h);
+	form_dial(what, 0, 0, 0, 0, xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h);
 }
 
 
@@ -269,8 +269,8 @@ static void icn_itoa(_WORD val, _WORD obj)
 
 static void set_maxicons(void)
 {
-	m_icnx = (xd_desk.w - icn_xoff) / iconw - 1;
-	m_icny = (xd_desk.h - icn_yoff) / iconh - 1;
+	m_icnx = (xd_desk.g_w - icn_xoff) / iconw - 1;
+	m_icny = (xd_desk.g_h - icn_yoff) / iconh - 1;
 }
 
 
@@ -428,13 +428,13 @@ void icn_fix_ictype(void)
  * Redraw icons that may be partially obscured by other objects
  */
 
-void draw_icrects(WINDOW *w, OBJECT *tree, RECT *r1)
+void draw_icrects(WINDOW *w, OBJECT *tree, GRECT *r1)
 {
-	RECT r2, d;
+	GRECT r2, d;
 
 	xw_getfirst(w, &r2);
 
-	while (r2.w != 0 && r2.h != 0)
+	while (r2.g_w != 0 && r2.g_h != 0)
 	{
 		if (xd_rcintersect(r1, &r2, &d))
 			draw_tree(tree, &d);
@@ -450,7 +450,7 @@ void draw_icrects(WINDOW *w, OBJECT *tree, RECT *r1)
  * Redraw part of the desktop.
  */
 
-void redraw_desk(RECT *r1)
+void redraw_desk(GRECT *r1)
 {
 	_WORD owner = 0;
 	_WORD dummy;
@@ -486,7 +486,7 @@ void redraw_desk(RECT *r1)
 
 static void redraw_icon(_WORD object, _WORD mode)
 {
-	RECT r;
+	GRECT r;
 	_WORD o1 = object + 1;
 
 	xd_objrect(desktop, o1, &r);
@@ -545,8 +545,8 @@ static void dsk_drawsel(void)
 	ICON *icn;							/* pointer to current icon */
 	OBJECT *deskti;
 	_WORD i;							/* object counter */
-	RECT c;								/* icon object rectangle */
-	RECT r = { SHRT_MAX, SHRT_MAX, -1, -1};		/* summary rectangle */
+	GRECT c;								/* icon object rectangle */
+	GRECT r = { SHRT_MAX, SHRT_MAX, -1, -1};		/* summary rectangle */
 
 	icn = desk_icons;
 
@@ -584,20 +584,20 @@ static void dsk_drawsel(void)
 				{
 					/* For monochrome, update surrounding rectangle for all icons */
 
-					if (c.x < r.x)		/* left edge minimum  */
-						r.x = c.x;
+					if (c.g_x < r.g_x)		/* left edge minimum  */
+						r.g_x = c.g_x;
 
-					if (c.y < r.y)		/* upper edge minimum */
-						r.y = c.y;
+					if (c.g_y < r.g_y)		/* upper edge minimum */
+						r.g_y = c.g_y;
 
-					c.x += deskti->ob_width - 1;
-					c.y += deskti->ob_height - 1;
+					c.g_x += deskti->ob_width - 1;
+					c.g_y += deskti->ob_height - 1;
 
-					if (c.x > r.w)		/* right edge maximum */
-						r.w = c.x;
+					if (c.g_x > r.g_w)		/* right edge maximum */
+						r.g_w = c.g_x;
 
-					if (c.y > r.h)		/* lower edge maximum */
-						r.h = c.y;
+					if (c.g_y > r.g_h)		/* lower edge maximum */
+						r.g_h = c.g_y;
 				}
 			}
 		}
@@ -607,10 +607,10 @@ static void dsk_drawsel(void)
 
 	/* This will happen only for mono icons */
 
-	if (r.w >= 0)
+	if (r.g_w >= 0)
 	{
-		r.w -= r.x + 1;
-		r.h -= r.y + 1;
+		r.g_w -= r.g_x + 1;
+		r.g_h -= r.g_y + 1;
 
 		redraw_desk(&r);
 	}
@@ -635,7 +635,7 @@ static void dsk_drawsel(void)
  * Compute rubberbox rectangle. Beware of asymmetrical wind_update()
  */
 
-void rubber_rect(_WORD x1, _WORD x2, _WORD y1, _WORD y2, RECT *r)
+void rubber_rect(_WORD x1, _WORD x2, _WORD y1, _WORD y2, GRECT *r)
 {
 	_WORD h;
 
@@ -644,22 +644,22 @@ void rubber_rect(_WORD x1, _WORD x2, _WORD y1, _WORD y2, RECT *r)
 
 	if ((h = x2 - x1) < 0)
 	{
-		r->x = x2;
-		r->w = 1 - h;
+		r->g_x = x2;
+		r->g_w = 1 - h;
 	} else
 	{
-		r->x = x1;
-		r->w = h + 1;
+		r->g_x = x1;
+		r->g_w = h + 1;
 	}
 
 	if ((h = y2 - y1) < 0)
 	{
-		r->y = y2;
-		r->h = 1 - h;
+		r->g_y = y2;
+		r->g_h = 1 - h;
 	} else
 	{
-		r->y = y1;
-		r->h = h + 1;
+		r->g_y = y1;
+		r->g_h = h + 1;
 	}
 }
 
@@ -681,7 +681,7 @@ void start_rubberbox(void)
  * Rubberbox function
  */
 
-static void rubber_box(_WORD x, _WORD y, RECT *r)
+static void rubber_box(_WORD x, _WORD y, GRECT *r)
 {
 	_WORD x1, x2, ox, y1, y2, oy, kstate;
 	bool released;
@@ -700,8 +700,8 @@ static void rubber_box(_WORD x, _WORD y, RECT *r)
 
 		/* Menu bar is inaccessible */
 
-		if (y2 < xd_desk.y)
-			y2 = xd_desk.y;
+		if (y2 < xd_desk.g_y)
+			y2 = xd_desk.g_y;
 
 		if (released || (x2 != ox) || (y2 != oy))
 		{
@@ -786,7 +786,7 @@ static void icn_rselect(WINDOW *w, _WORD x, _WORD y)
 	ICONBLK *monoblk;
 	OBJECT *deskto;
 	ICON *icn;
-	RECT r1, r2;
+	GRECT r1, r2;
 	_WORD ox, oy, i;
 
 	(void) w;
@@ -802,30 +802,30 @@ static void icn_rselect(WINDOW *w, _WORD x, _WORD y)
 		{
 			monoblk = &(deskto->ob_spec.ciconblk->monoblk);
 
-			r2.x = monoblk->ib_xicon;
-			r2.y = monoblk->ib_yicon;
-			r2.w = monoblk->ib_wicon;
-			r2.h = monoblk->ib_hicon;
+			r2.g_x = monoblk->ib_xicon;
+			r2.g_y = monoblk->ib_yicon;
+			r2.g_w = monoblk->ib_wicon;
+			r2.g_h = monoblk->ib_hicon;
 
 			ox = desktop[0].ob_x + deskto->ob_x;
 			oy = desktop[0].ob_y + deskto->ob_y;
-			r2.x += ox;
-			r2.y += oy;
+			r2.g_x += ox;
+			r2.g_y += oy;
 
 			if (rc_intersect2(&r1, &r2))
 			{
-				icn->newstate = !(icn->selected);
+				icn->newstate = !icn->selected;
 			} else
 			{
-				r2.x = monoblk->ib_xtext;
-				r2.y = monoblk->ib_ytext;
-				r2.w = monoblk->ib_wtext;
-				r2.h = monoblk->ib_htext;
-				r2.x += ox;
-				r2.y += oy;
+				r2.g_x = monoblk->ib_xtext;
+				r2.g_y = monoblk->ib_ytext;
+				r2.g_w = monoblk->ib_wtext;
+				r2.g_h = monoblk->ib_htext;
+				r2.g_x += ox;
+				r2.g_y += oy;
 
 				if (rc_intersect2(&r1, &r2))
-					icn->newstate = !(icn->selected);
+					icn->newstate = !icn->selected;
 				else
 					icn->newstate = icn->selected;
 			}
@@ -1032,57 +1032,57 @@ static bool icn_islink(WINDOW *w, _WORD icon)
 }
 
 
-void icn_coords(ICND *icnd, RECT *tr, RECT *ir)
+void icn_coords(ICND *icnd, GRECT *tr, GRECT *ir)
 {
 	_WORD *icndcoords = &(icnd->coords[0]), c;
 
 	icnd->np = 9;
 
-	*icndcoords++ = tr->x;				/* [0] */
-	*icndcoords++ = tr->y;				/* [1] */
-	*icndcoords++ = ir->x;				/* [2] */
-	*icndcoords++ = tr->y;				/* [3] */
-	*icndcoords++ = ir->x;				/* [4] */
-	*icndcoords++ = ir->y;				/* [5] */
-	c = ir->x + ir->w;
-	*icndcoords++ = c;					/* [6] */
-	*icndcoords++ = ir->y;				/* [7] */
-	*icndcoords++ = c;					/* ir.x + ir.w    [8] */
-	*icndcoords++ = tr->y;				/* [9] */
-	c = tr->x + tr->w;
-	*icndcoords++ = c;					/*[10] */
-	*icndcoords++ = tr->y;				/*[11] */
-	*icndcoords++ = c;					/* tr.x + tr.w     [12] */
-	c = tr->y + tr->h;
-	*icndcoords++ = tr->y + tr->h;		/*[13] */
-	*icndcoords++ = tr->x;				/*[14] */
-	*icndcoords++ = c;					/* tr.y + tr.h [15] */
-	*icndcoords++ = tr->x;				/*[16] */
-	*icndcoords = tr->y + 1;			/*[17] */
+	*icndcoords++ = tr->g_x;				/* [0] */
+	*icndcoords++ = tr->g_y;				/* [1] */
+	*icndcoords++ = ir->g_x;				/* [2] */
+	*icndcoords++ = tr->g_y;				/* [3] */
+	*icndcoords++ = ir->g_x;				/* [4] */
+	*icndcoords++ = ir->g_y;				/* [5] */
+	c = ir->g_x + ir->g_w;
+	*icndcoords++ = c;						/* [6] */
+	*icndcoords++ = ir->g_y;				/* [7] */
+	*icndcoords++ = c;						/* ir.g_x + ir.g_w    [8] */
+	*icndcoords++ = tr->g_y;				/* [9] */
+	c = tr->g_x + tr->g_w;
+	*icndcoords++ = c;						/*[10] */
+	*icndcoords++ = tr->g_y;				/*[11] */
+	*icndcoords++ = c;						/* tr.g_x + tr.g_w     [12] */
+	c = tr->g_y + tr->g_h;
+	*icndcoords++ = tr->g_y + tr->g_h;		/*[13] */
+	*icndcoords++ = tr->g_x;				/*[14] */
+	*icndcoords++ = c;						/* tr.g_y + tr.g_h [15] */
+	*icndcoords++ = tr->g_x;				/*[16] */
+	*icndcoords = tr->g_y + 1;				/*[17] */
 }
 
 
 
 static void get_icnd(_WORD object, ICND *icnd, _WORD mx, _WORD my)
 {
-	RECT tr, ir;
+	GRECT tr, ir;
 	_WORD dx, dy;
 	ICONBLK *h;
 	OBJECT *desktopobj = &desktop[object + 1];
 
 	h = &(desktopobj->ob_spec.ciconblk->monoblk);
 
-	dx = desktopobj->ob_x - mx + xd_desk.x;
-	dy = desktopobj->ob_y - my + xd_desk.y;
+	dx = desktopobj->ob_x - mx + xd_desk.g_x;
+	dy = desktopobj->ob_y - my + xd_desk.g_y;
 
-	tr.x = dx + h->ib_xtext;
-	tr.y = dy + h->ib_ytext;
-	tr.w = h->ib_wtext - 1;
-	tr.h = h->ib_htext - 1;
-	ir.x = dx + h->ib_xicon;
-	ir.y = dy + h->ib_yicon;
-	ir.w = h->ib_wicon - 1;
-	ir.h = h->ib_hicon - 1;
+	tr.g_x = dx + h->ib_xtext;
+	tr.g_y = dy + h->ib_ytext;
+	tr.g_w = h->ib_wtext - 1;
+	tr.g_h = h->ib_htext - 1;
+	ir.g_x = dx + h->ib_xicon;
+	ir.g_y = dy + h->ib_yicon;
+	ir.g_w = h->ib_wicon - 1;
+	ir.g_h = h->ib_hicon - 1;
 
 	icnd->item = object;
 	icnd->m_x = dx + desktopobj->ob_width / 2;
@@ -1218,7 +1218,7 @@ static _WORD icn_find(WINDOW *w, _WORD x, _WORD y)
 
 		if (de->ob_type == G_ICON || de->ob_type == G_CICON)
 		{
-			RECT h;
+			GRECT h;
 
 			/* first look at the icon rectangle */
 
@@ -1226,12 +1226,12 @@ static _WORD icn_find(WINDOW *w, _WORD x, _WORD y)
 			oy2 = oy + de->ob_y;
 			p = &(de->ob_spec.ciconblk->monoblk);
 
-			h.x = p->ib_xicon;
-			h.y = p->ib_yicon;
-			h.w = p->ib_wicon;
-			h.h = p->ib_hicon;
-			h.x += ox2;
-			h.y += oy2;
+			h.g_x = p->ib_xicon;
+			h.g_y = p->ib_yicon;
+			h.g_w = p->ib_wicon;
+			h.g_h = p->ib_hicon;
+			h.g_x += ox2;
+			h.g_y += oy2;
 
 			if (xd_inrect(x, y, &h))
 			{
@@ -1240,12 +1240,12 @@ static _WORD icn_find(WINDOW *w, _WORD x, _WORD y)
 			{
 				/* then look at icon label rectangle */
 
-				h.x = p->ib_xtext;
-				h.y = p->ib_ytext;
-				h.w = p->ib_wtext;
-				h.h = p->ib_htext;
-				h.x += ox2;
-				h.y += oy2;
+				h.g_x = p->ib_xtext;
+				h.g_y = p->ib_ytext;
+				h.g_w = p->ib_wtext;
+				h.g_h = p->ib_htext;
+				h.g_x += ox2;
+				h.g_y += oy2;
 
 				if (xd_inrect(x, y, &h))
 					object = i - 1;
@@ -1744,12 +1744,12 @@ static void comp_icnxy(_WORD mx, _WORD my, _WORD *x, _WORD *y)
 {
 	/* Note: do not use min() here, this is shorter */
 
-	*x = (mx - xd_desk.x - icn_xoff) / iconw;
+	*x = (mx - xd_desk.g_x - icn_xoff) / iconw;
 
 	if (*x > m_icnx)
 		*x = m_icnx;
 
-	*y = (my - xd_desk.y - icn_yoff) / iconh;
+	*y = (my - xd_desk.g_y - icn_yoff) / iconh;
 
 	if (*y > m_icny)
 		*y = m_icny;
@@ -1874,7 +1874,7 @@ void set_iselector(SLIDER *slider, bool draw, XDINFO *info)
 	 * otherwise it goes out of the background box (why?)
 	 */
 
-	if (xd_desk.h < 300)
+	if (xd_desk.g_h < 300)
 		h1->ob_y -= 8;
 
 	if (draw)
@@ -2283,8 +2283,8 @@ static void mv_icons(ICND *icns, _WORD n, _WORD mx, _WORD my)
 		obj = icnsi->item;
 		redraw_icon(obj, 1);			/* erase icon */
 
-		x = (mx + icnsi->m_x - xd_desk.x - icn_xoff) / iconw;
-		y = (my + icnsi->m_y - xd_desk.y - icn_yoff) / iconh;
+		x = (mx + icnsi->m_x - xd_desk.g_x - icn_xoff) / iconw;
+		y = (my + icnsi->m_y - xd_desk.g_y - icn_yoff) / iconh;
 
 		/* Note: do not use min() here, this is shorter */
 
@@ -2809,10 +2809,10 @@ bool dsk_init(void)
 			obsp0->interiorcol = G_GREEN;
 
 			/* override size set in init_obj() */
-			desktop[0].ob_x = xd_desk.x;
-			desktop[0].ob_y = xd_desk.y;
-			desktop[0].ob_width = xd_desk.w;
-			desktop[0].ob_height = xd_desk.h;
+			desktop[0].ob_x = xd_desk.g_x;
+			desktop[0].ob_y = xd_desk.g_y;
+			desktop[0].ob_width = xd_desk.g_w;
+			desktop[0].ob_height = xd_desk.g_h;
 
 			/* Mark all icon slots as unused */
 

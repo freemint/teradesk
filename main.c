@@ -1892,9 +1892,10 @@ int main(void)
 			 * AES should supply a reasonable font size for this to work
 			 */
 
-			if (((xd_screen.w / xd_fnt_w) < 40) || ((xd_screen.h / xd_fnt_h) < 25))
+			if (((xd_screen.g_w / xd_fnt_w) < 40) || ((xd_screen.g_h / xd_fnt_h) < 25))
+			{
 				alert_abort(MRESTLOW);
-			else
+			} else
 			{
 				/* 
 				 * Proceed only if global memory is allocated OK

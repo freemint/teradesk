@@ -76,7 +76,7 @@ typedef struct
 typedef struct
 {
 	bool flag;
-	RECT size;
+	GRECT size;
 } AVSETW;
 
 void va_config(XFILE *file, int lvl, int io, int *error);

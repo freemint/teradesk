@@ -33,8 +33,8 @@
 					struct window *xw_next;	\
 					struct wd_func *xw_func;				\
 					OBJECT *xw_menu;/* menu object */		\
-					RECT xw_size;	/* window size */		\
-					RECT xw_work;	/* work area size */	\
+					GRECT xw_size;	/* window size */		\
+					GRECT xw_work;	/* work area size */	\
 					_WORD xw_handle;	/* window handle */		\
 					_WORD xw_ap_id;	/* app id of owner */	\
 					_WORD xw_bar;		/* menubar object ind */\
@@ -79,7 +79,7 @@ typedef struct wd_func
 {
 	_WORD (*wd_hndlkey) (WINDOW *w, _WORD scancode, _WORD keystate);
 	void (*wd_hndlbutton) (WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate);
-	void (*wd_redraw) 	(WINDOW *w, RECT *area);
+	void (*wd_redraw) 	(WINDOW *w, GRECT *area);
 	void (*wd_topped) 	(WINDOW *w);
 	void (*wd_bottomed)	(WINDOW *w);
 	void (*wd_newtop) 	(WINDOW *w);
@@ -88,12 +88,12 @@ typedef struct wd_func
 	void (*wd_arrowed) 	(WINDOW *w, _WORD arrows);
 	void (*wd_hslider) 	(WINDOW *w, _WORD newpos);
 	void (*wd_vslider) 	(WINDOW *w, _WORD newpos);
-	void (*wd_sized) 	(WINDOW *w, RECT *newsize);
-	void (*wd_moved) 	(WINDOW *w, RECT *newpos);
+	void (*wd_sized) 	(WINDOW *w, GRECT *newsize);
+	void (*wd_moved) 	(WINDOW *w, GRECT *newpos);
 	void (*wd_hndlmenu) (WINDOW *w, _WORD title, _WORD item);
 	void (*wd_top)     	(WINDOW *w);
-	void (*wd_iconify)	(WINDOW *w, RECT *r);
-	void (*wd_uniconify)(WINDOW *w, RECT *r);
+	void (*wd_iconify)	(WINDOW *w, GRECT *r);
+	void (*wd_uniconify)(WINDOW *w, GRECT *r);
 } WD_FUNC;
 
 /*
@@ -125,22 +125,22 @@ typedef struct wd_func
  */
 
 WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
-						 RECT *msize, size_t wd_struct_size,
+						 GRECT *msize, size_t wd_struct_size,
 						 OBJECT *menu, int *error);
-void xw_open(WINDOW *wd, RECT *size);
+void xw_open(WINDOW *wd, GRECT *size);
 void xw_close(WINDOW *w);
 void xw_delete(WINDOW *w);
 void xw_closedelete(WINDOW *w);
 
 void xw_set(WINDOW *w, _WORD field,...);
-void xw_get(WINDOW *w, _WORD field, RECT *r);
-void xw_setsize(WINDOW *w, RECT *size);
-void xw_getsize(WINDOW *w, RECT *size);
-void xw_getwork(WINDOW *w, RECT *size);
-void xw_getfirst(WINDOW *w, RECT *size);
-void xw_getnext(WINDOW *w, RECT *size);
-void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input,
-					RECT *output, OBJECT *menu);
+void xw_get(WINDOW *w, _WORD field, GRECT *r);
+void xw_setsize(WINDOW *w, GRECT *size);
+void xw_getsize(WINDOW *w, GRECT *size);
+void xw_getwork(WINDOW *w, GRECT *size);
+void xw_getfirst(WINDOW *w, GRECT *size);
+void xw_getnext(WINDOW *w, GRECT *size);
+void xw_calc(_WORD w_ctype, _WORD w_flags, GRECT *input,
+					GRECT *output, OBJECT *menu);
 
 void xw_nop1(WINDOW *w);
 void xw_nop2(WINDOW *w, _WORD i);
@@ -164,13 +164,13 @@ extern WINDOW *xw_deskwin; 			/* pointer to desktop window */
 
 void xw_cycle(void);
 void xw_send(WINDOW *w, _WORD messid);
-void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area);
-void xw_send_redraw(WINDOW *w, _WORD messid, const RECT *area);
+void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const GRECT *area);
+void xw_send_redraw(WINDOW *w, _WORD messid, const GRECT *area);
 void xw_menu_icheck(WINDOW *w, _WORD item, _WORD check);
 void xw_menu_ienable(WINDOW *w, _WORD item, _WORD enable);
 void xw_menu_text(WINDOW *w, _WORD item, const char *text);
 void xw_menu_tnormal(WINDOW *w, _WORD item, _WORD normal);
-void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r);
+void xw_redraw_menu(WINDOW *w, _WORD object, GRECT *r);
 
 _WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate);
 _WORD xw_hndlkey(_WORD scancode, _WORD keystate);
@@ -178,8 +178,8 @@ _WORD xw_hndlmessage(_WORD *message);
 
 WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions, size_t wd_struct_size, _WORD *error);
 void xw_close_desk(void);
-void xw_iconify(WINDOW *w, RECT *r); 
-void xw_uniconify(WINDOW *w, RECT *r); 
+void xw_iconify(WINDOW *w, GRECT *r); 
+void xw_uniconify(WINDOW *w, GRECT *r); 
 
 
 #endif
