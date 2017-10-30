@@ -34,32 +34,21 @@
 
 _WORD __xd_hndlkey(WINDOW *w, _WORD key, _WORD kstate)
 {
-	XDINFO
-		*info;
+	XDINFO *info;
+	KINFO *kinfo;
+	OBJECT *tree;
+	_WORD next_obj, nkeys, kr, cont;
+	_WORD key_handled = TRUE;
 
-	KINFO
-		*kinfo;
+	(void) kstate;
 
-	OBJECT
-		*tree;
-
-	_WORD
-		next_obj,
-		nkeys,
-		kr,
-		cont,
-		key_handled = TRUE;
-
-
-	(void)kstate;
-	
-	info = ((XD_NMWINDOW *)w)->xd_info;
+	info = ((XD_NMWINDOW *) w)->xd_info;
 	tree = info->tree;
 
 	xd_begupdate();
 
-	nkeys = ((XD_NMWINDOW *)w)->nkeys;
-	kinfo = ((XD_NMWINDOW *)w)->kinfo;
+	nkeys = ((XD_NMWINDOW *) w)->nkeys;
+	kinfo = ((XD_NMWINDOW *) w)->kinfo;
 
 	if ((next_obj = xd_find_key(tree, kinfo, nkeys, key)) >= 0)
 		cont = xd_form_button(info, next_obj, 1, &next_obj);
@@ -75,13 +64,12 @@ _WORD __xd_hndlkey(WINDOW *w, _WORD key, _WORD kstate)
 
 	xd_endupdate();
 
-	if(!cont)
+	if (!cont)
 	{
 		do
 		{
 			info->func->dialbutton(info, next_obj);
-		}
-		while(xd_oldarrow(info));
+		} while (xd_oldarrow(info));
 	}
 
 	return key_handled;
@@ -95,19 +83,13 @@ _WORD __xd_hndlkey(WINDOW *w, _WORD key, _WORD kstate)
 
 void __xd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 {
-	XDINFO
-		*info;
+	XDINFO *info;
+	_WORD next_obj, cmode, cont;
 
-	_WORD
-		next_obj,
-		cmode,
-		cont;
+	(void) kstate;
+	(void) bstate;
 
-
-	(void)kstate;
-	(void)bstate;
-	
-	info = ((XD_NMWINDOW *)w)->xd_info;
+	info = ((XD_NMWINDOW *) w)->xd_info;
 
 	if ((next_obj = objc_find(info->tree, ROOT, MAX_DEPTH, x, y)) != -1)
 	{
@@ -116,18 +98,17 @@ void __xd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD k
 		if ((cont = xd_form_button(info, next_obj, n, &next_obj)) != FALSE)
 			cmode = x;
 
-		if(cont)
+		if (cont)
 			xd_edit_init(info, next_obj, cmode);
 
 		xd_endupdate();
 
-		if(!cont)
+		if (!cont)
 		{
 			do
 			{
 				info->func->dialbutton(info, next_obj);
-			}
-			while(xd_oldarrow(info));
+			} while (xd_oldarrow(info));
 		}
 	}
 }
@@ -152,14 +133,14 @@ void __xd_topped(WINDOW *w)
 
 void __xd_closed(WINDOW *w, _WORD dummy_mode)
 {
-	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
+	XDINFO *info = ((XD_NMWINDOW *) w)->xd_info;
 
-	(void)dummy_mode;
+	(void) dummy_mode;
 	info->func->dialclose(info);
 }
 
 
-#if 0 /* Currently there are no menus in nonmodal dialogs in TeraDesk */
+#if 0									/* Currently there are no menus in nonmodal dialogs in TeraDesk */
 
 /*
  * Funktie die wordt aangeroepen als een menu van de niet-modale
@@ -168,7 +149,7 @@ void __xd_closed(WINDOW *w, _WORD dummy_mode)
 
 void __xd_hndlmenu(WINDOW *w, _WORD title, _WORD item)
 {
-	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
+	XDINFO *info = ((XD_NMWINDOW *) w)->xd_info;
 
 	info->func->dialmenu(info, title, item);
 }
@@ -182,9 +163,8 @@ void __xd_hndlmenu(WINDOW *w, _WORD title, _WORD item)
 
 void __xd_top(WINDOW *w)
 {
-	XDINFO *info = ((XD_NMWINDOW *)w)->xd_info;
+	XDINFO *info = ((XD_NMWINDOW *) w)->xd_info;
 
-	if(info->func->dialtop != 0L)
+	if (info->func->dialtop != 0L)
 		info->func->dialtop(info);
 }
-

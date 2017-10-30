@@ -23,10 +23,6 @@
 #ifndef __XD_INTERNAL_H__
 #define __XD_INTERNAL_H__
 
-#ifndef __PUREC__
-#define cdecl
-#endif
-
 /* Vlaggen voor xd_redraw() */
 
 #define XD_RDIALOG	0x1
@@ -75,7 +71,7 @@
 
 typedef struct xuserblk
 {
-	_WORD cdecl (*ub_code)(PARMBLK *parmblock);
+	PARMBLKFUNC ub_code;
 	struct xuserblk *ub_parm;		/* Pointer to itself */
 	_WORD ob_type;					/* Original object type */
 	_WORD ob_flags;					/* Original object flags */
@@ -125,19 +121,18 @@ typedef struct
 	_WORD ch;
 } XDFONT;
 
-extern _WORD
-	xd_vhandle,
-	xd_nplanes,
-	xd_ncolours,
-	xd_npatterns,
-	xd_nfills,
-	xd_fnt_w,
-	xd_fnt_h,
-	xd_pix_height,
-	xd_posmode,
-	xd_min_timer,
-	aes_flags,
-	xd_fdo_flag;
+extern _WORD xd_vhandle;
+extern _WORD xd_nplanes;
+extern _WORD xd_ncolours;
+extern _WORD xd_npatterns;
+extern _WORD xd_nfills;
+extern _WORD xd_fnt_w;
+extern _WORD xd_fnt_h;
+extern _WORD xd_pix_height;
+extern _WORD xd_posmode;
+extern _WORD xd_min_timer;
+extern _WORD aes_flags;
+extern _WORD xd_fdo_flag;
 
 extern const _WORD ckeytab[];
 
@@ -160,8 +155,10 @@ extern XDOBJDATA *xd_objdata;
 extern XDINFO *xd_dialogs;		/* Lijst met modale dialoogboxen. */
 extern XDINFO *xd_nmdialogs;	/* Lijst met niet modale dialoogboxen. */
 extern OBJECT *xd_menu;
-extern RECT xd_screen, xd_desk;
-extern XDFONT xd_regular_font, xd_small_font;
+extern RECT xd_screen;
+extern RECT xd_desk;
+extern XDFONT xd_regular_font;
+extern XDFONT xd_small_font;
 extern _WORD xe_mbshift;
 extern _WORD xd_vhandle;
 
@@ -192,7 +189,7 @@ _WORD xd_form_keybd(XDINFO *info, _WORD kobnext, _WORD kchar, _WORD *knxtobject,
 _WORD xd_find_key(OBJECT *tree, KINFO *kinfo, _WORD nk, _WORD key);
 _WORD xd_set_keys(OBJECT *tree, KINFO *kinfo);
 void xw_closeall(void);
-void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl(*code)(PARMBLK *parmblock));
+void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, PARMBLKFUNC code);
 _WORD xd_oldarrow(XDINFO *info);
 
 #endif

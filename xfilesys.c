@@ -1006,7 +1006,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 	*buffer = fspec;
 
 #if _MINT_
-	if (dir->type != 0)
+	if (dir->type == 0)
 #endif
 	{
 		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */

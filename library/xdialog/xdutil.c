@@ -48,7 +48,6 @@ _WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 {
 	_WORD xmin, xmax, ymin, ymax;
 
-
 	xmin = max(r1->x, r2->x);
 	ymin = max(r1->y, r2->y);
 	xmax = min(r1->x + r1->w, r2->x + r2->w);
@@ -81,16 +80,9 @@ _WORD xd_rcintersect(RECT *r1, RECT *r2, RECT *dest)
 
 _WORD xd_inrect(_WORD x, _WORD y, RECT *r)
 {
-	if
-	(
-		(x >= r->x) &&
-		(x < (r->x + r->w)) && 
-		(y >= r->y) && 
-		(y < (r->y + r->h))
-	)
+	if ((x >= r->x) && (x < (r->x + r->w)) && (y >= r->y) && (y < (r->y + r->h)))
 		return TRUE;
-	else
-		return FALSE;
+	return FALSE;
 }
 
 
@@ -110,7 +102,7 @@ long xd_initmfdb(RECT *r, MFDB *mfdb)
 	mfdb->fd_stand = 0;
 	mfdb->fd_nplanes = xd_nplanes;
 
-	size = ((long)(mfdb->fd_w) * r->h * xd_nplanes) / 8;
+	size = ((long) (mfdb->fd_w) * r->h * xd_nplanes) / 8;
 
 	return size;
 }
@@ -120,7 +112,7 @@ long xd_initmfdb(RECT *r, MFDB *mfdb)
  * Funktie voor het installeren van user-defined objects. 
  */
 
-void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock))
+void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl (*code) (PARMBLK *parmblock))
 {
 	object->ob_type = (object->ob_type & 0xFF00) | G_USERDEF;
 	userblk->ub_code = code;
@@ -136,13 +128,13 @@ void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *p
  * object type into userblk fields.
  */
 
-void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock))
+void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl (*code) (PARMBLK *parmblock))
 {
 	userblk->ub_code = code;
 	userblk->ub_parm = userblk;
 	userblk->ob_type = object->ob_type;
 	userblk->ob_flags = object->ob_flags;
-	userblk->uv.ptr = 0L;	/* clear all of .uv */
+	userblk->uv.ptr = 0L;				/* clear all of .uv */
 	userblk->ob_spec = object->ob_spec;
 
 	/* note: it is shorter to set new type in -two- lines of code, as below */
@@ -150,10 +142,10 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl(*code) (PARMBLK 
 	object->ob_type &= 0xFF00;
 	object->ob_type |= G_USERDEF;
 
-#if 0 /* no need here */
-	object->ob_flags &= ~(AES3D_1 | AES3D_2); /* see XDDRAW.C - xd_set_userobjects */
+#if 0									/* no need here */
+	object->ob_flags &= ~(AES3D_1 | AES3D_2);	/* see XDDRAW.C - xd_set_userobjects */
 #endif
-	object->ob_spec.userblk = (USERBLK *)userblk;
+	object->ob_spec.userblk = (USERBLK *) userblk;
 }
 
 
@@ -187,7 +179,8 @@ _WORD xd_xobtype(OBJECT *tree)
 
 _WORD xd_obj_parent(OBJECT *tree, _WORD object)
 {
-	_WORD i = tree[object].ob_next, j;
+	_WORD i = tree[object].ob_next,
+		j;
 
 	while (i >= 0)
 	{
@@ -199,8 +192,7 @@ _WORD xd_obj_parent(OBJECT *tree, _WORD object)
 					return i;
 
 				j = tree[j].ob_next;
-			}
-			while (j != i);
+			} while (j != i);
 		}
 
 		i = tree[i].ob_next;
@@ -219,12 +211,8 @@ _WORD xd_obj_parent(OBJECT *tree, _WORD object)
 
 _WORD xd_set_rbutton(OBJECT *tree, _WORD rb_parent, _WORD object)
 {
-	OBJECT
-		*obj;
-
-	_WORD
-		i = tree[rb_parent].ob_head;	/* first child of parent */
-
+	OBJECT *obj;
+	_WORD i = tree[rb_parent].ob_head;	/* first child of parent */
 
 	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
@@ -232,12 +220,11 @@ _WORD xd_set_rbutton(OBJECT *tree, _WORD rb_parent, _WORD object)
 
 		if (obj->ob_flags & OF_RBUTTON)	/* watch radiobuttons only */
 		{
-			if(object == rb_parent)
+			if (object == rb_parent)
 			{
 				if ((obj->ob_state & OS_SELECTED) && (obj->ob_flags & OF_RBUTTON))
 					return i;
-			}
-			else
+			} else
 			{
 				if (i == object)
 					obj->ob_state |= OS_SELECTED;	/* select this one */
@@ -270,12 +257,8 @@ _WORD xd_get_rbutton(OBJECT *tree, _WORD rb_parent)
 
 void xd_set_child(OBJECT *tree, _WORD rb_parent, _WORD enab)
 {
-	OBJECT
-		*obj;
-
-	_WORD
-		i = tree[rb_parent].ob_head;	/* first child of parent */
-
+	OBJECT *obj;
+	_WORD i = tree[rb_parent].ob_head;	/* first child of parent */
 
 	while ((i > 0) && (i != rb_parent))	/* until last child */
 	{
@@ -304,12 +287,10 @@ OBSPEC *xd_get_obspecp(OBJECT *object)
 		USERBLK *userblk = object->ob_spec.userblk;
 
 		if (IS_XUSER(userblk))
-			return &(((XUSERBLK *)userblk)->ob_spec);
-		else
-			return (OBSPEC *)&userblk->ub_parm;
+			return &(((XUSERBLK *) userblk)->ob_spec);
+		return (OBSPEC *) & userblk->ub_parm;
 	}
-	else
-		return &(object->ob_spec);
+	return &(object->ob_spec);
 }
 
 
@@ -335,16 +316,15 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 		USERBLK *userblk = object->ob_spec.userblk;
 
 		if (IS_XUSER(userblk))
-			((XUSERBLK *)userblk)->ob_spec = *obspec;
+			((XUSERBLK *) userblk)->ob_spec = *obspec;
 		else
-			userblk->ub_parm = *(long *)obspec;
-	}
-	else
+			userblk->ub_parm = *(long *) obspec;
+	} else
 		object->ob_spec = *obspec;
 }
 
 
-#if 0 /* There are currently no tristate objects in TeraDesk */
+#if 0									/* There are currently no tristate objects in TeraDesk */
 
 /* 
  * Tristate-button functions...
@@ -357,12 +337,12 @@ _WORD xd_get_tristate(_WORD ob_state)
 
 _WORD xd_set_tristate(_WORD ob_state, _WORD state)
 {
-	return (ob_state & ~TRISTATE_MASK) | (state&0xff);
+	return (ob_state & ~TRISTATE_MASK) | (state & 0xff);
 }
 
 _WORD xd_is_tristate(OBJECT *object)
 {
-	return(xd_xobtype(object) == XD_RECBUTTRI);
+	return (xd_xobtype(object) == XD_RECBUTTRI);
 }
 
 #endif
@@ -378,8 +358,7 @@ _WORD xd_is_tristate(OBJECT *object)
 
 void xd_clip_on(RECT *r)
 {
-	_WORD
-		pxy[4];
+	_WORD pxy[4];
 
 	xd_rect2pxy(r, pxy);
 	vs_clip(xd_vhandle, 1, pxy);
@@ -392,8 +371,7 @@ void xd_clip_on(RECT *r)
 
 void xd_clip_off(void)
 {
-	_WORD
-		pxy[4];
+	_WORD pxy[4];
 
 	vs_clip(xd_vhandle, 0, pxy);
 }
@@ -405,8 +383,7 @@ void xd_clip_off(void)
 
 _WORD xd_vst_point(_WORD height, _WORD *ch)
 {
-	_WORD
-		dummy;
+	_WORD dummy;
 
 	return vst_point(xd_vhandle, height, &dummy, &dummy, &dummy, ch);
 }
@@ -414,9 +391,7 @@ _WORD xd_vst_point(_WORD height, _WORD *ch)
 
 _WORD xd_fnt_point(_WORD height, _WORD *cw, _WORD *ch)
 {
-	_WORD
-		dummy,
-		r;
+	_WORD dummy, r;
 
 	r = xd_vst_point(height, ch);
 	vqt_width(xd_vhandle, ' ', cw, &dummy, &dummy);

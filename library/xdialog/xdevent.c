@@ -22,14 +22,11 @@
 
 
 #include <library.h>
+#include "xdialog.h"
 #include <vaproto.h>
 
-#include "xdialog.h"
 
-
-_WORD 
-	xe_mbshift,
-	xd_kstate; 	/* kbd state while clicking a button; */
+_WORD xe_mbshift;
 
 /* 
  * Funktie voor het converteren van een VDI scancode  naar een
@@ -38,14 +35,9 @@ _WORD
 
 _WORD xe_keycode(_WORD scancode, _WORD kstate)
 {
-	static const char 
-		num[] = {0,27,49,50,51,52,53,54,55,56,57,48,45,61,8},
-		numk[] = {55,56,57,52,53,54,49,50,51,48};
-
-	_WORD 
-		keycode, 
-		nkstate, 
-		ctrl;
+	static const char num[] = { 0, 27, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 45, 61, 8 };
+	static const char numk[] = { 55, 56, 57, 52, 53, 54, 49, 50, 51, 48 };
+	_WORD keycode, nkstate, ctrl;
 	unsigned short scan;
 
 	/* Zet key state om in eigen formaat */
@@ -56,20 +48,24 @@ _WORD xe_keycode(_WORD scancode, _WORD kstate)
 
 	/* Bepaal scancode */
 
-	scan = ((unsigned short)scancode & 0xFF00) >> 8;
+	scan = ((unsigned short) scancode & 0xFF00) >> 8;
 
 	/* Controleer of de scancode hoort bij een ASCII teken */
 
-	if(ctrl && scan < 15)
+	if (ctrl && scan < 15)
+	{
 		keycode = num[scan];
-	else if(ctrl && scan > 102 && scan < 113)
+	} else if (ctrl && scan > 102 && scan < 113)
+	{
 		keycode = numk[scan - 103];
-	else if (ctrl && scan == 74)
+	} else if (ctrl && scan == 74)
+	{
 		keycode = 45;
-	else if (ctrl && scan == 78)
+	} else if (ctrl && scan == 78)
+	{
 		keycode = 43;
-	else if ((scan < 59) || (scan == 74) || (scan == 78) || (scan == 83) ||
-		(scan == 96) || ((scan >= 99) && (scan <= 114)) || (scan >= 117))
+	} else if ((scan < 59) || (scan == 74) || (scan == 78) || (scan == 83) ||
+			 (scan == 96) || ((scan >= 99) && (scan <= 114)) || (scan >= 117))
 	{
 		if (scan >= 120)
 			scan -= 118;
@@ -77,14 +73,17 @@ _WORD xe_keycode(_WORD scancode, _WORD kstate)
 		if ((keycode = scancode & 0xFF) == 0)
 		{
 #ifdef __PUREC__
-			keycode = touppc(((unsigned char)(Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
+			keycode = touppc(((unsigned char) (Keytbl((void *) -1, (void *) -1, (void *) -1)->unshift[scan])));
 #else
-			keycode = touppc((_WORD)((unsigned char)(((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->unshift)[scan])));
+			keycode =
+				touppc((_WORD)
+					   ((unsigned
+						 char) (((char *) ((_KEYTAB *) Keytbl((void *) -1, (void *) -1, (void *) -1))->
+								 unshift)[scan])));
 #endif
 		}
 
-	}
-	else
+	} else
 	{
 		nkstate |= XD_SCANCODE;
 		keycode = scan;
@@ -100,21 +99,13 @@ _WORD xe_keycode(_WORD scancode, _WORD kstate)
  * Should dialog activity be routed to a dialog or to a nonmodal dialog?
  * This is better than just checking whether a dialog is opened.
  */
- 
+
 static _WORD xd_isdopen(void)
 {
-	if
-	(
-		xd_dialogs && 
-		!(
-			xd_dialogs->dialmode == XD_WINDOW && 
-			xd_nmdialogs && 
-			xw_top() == xd_nmdialogs->window
-		)
-	)
-		return 1;	/* normal dialog open */
+	if (xd_dialogs && !(xd_dialogs->dialmode == XD_WINDOW && xd_nmdialogs && xw_top() == xd_nmdialogs->window))
+		return 1;						/* normal dialog open */
 
-	return 0;		/* not open or nonmodal on top */
+	return 0;							/* not open or nonmodal on top */
 }
 
 
@@ -124,14 +115,8 @@ static _WORD xd_isdopen(void)
 
 _WORD xe_xmulti(XDEVENT *events)
 {
-	static _WORD
-		level = 0;
-
-	_WORD
-		r,
-		old_mtlocount,
-		old_mflags;
-
+	static _WORD level = 0;
+	_WORD r, old_mtlocount, old_mflags;
 
 	level++;
 
@@ -143,12 +128,7 @@ _WORD xe_xmulti(XDEVENT *events)
 	 * If true set to the minimum time. 
 	 */
 
-	if 
-	(
-		((events->ev_mflags & MU_TIMER) != 0) && 
-		(events->ev_mthicount == 0) && 
-		(events->ev_mtlocount < xd_min_timer)
-	)
+	if (((events->ev_mflags & MU_TIMER) != 0) && (events->ev_mthicount == 0) && (events->ev_mtlocount < xd_min_timer))
 		events->ev_mtlocount = xd_min_timer;
 
 	/* 
@@ -161,33 +141,27 @@ _WORD xe_xmulti(XDEVENT *events)
 
 	/* Wait for an event */
 
-	events->xd_keycode = 0; /* why ??? */
+	events->xd_keycode = 0;				/* why ??? */
 
 	events->ev_mwhich = evnt_multi
-	(
-		events->ev_mflags,
-		events->ev_mbclicks,
-		events->ev_mbmask,
-		events->ev_mbstate,
-		events->ev_mm1flags,
-		events->ev_mm1.g_x,
-		events->ev_mm1.g_y,
-		events->ev_mm1.g_w,
-		events->ev_mm1.g_h,
-		events->ev_mm2flags,
-		events->ev_mm2.g_x,
-		events->ev_mm2.g_y,
-		events->ev_mm2.g_w,
-		events->ev_mm2.g_h,
-		events->ev_mmgpbuf,
-		(((unsigned long)events->ev_mthicount) << 16) | (unsigned long)events->ev_mtlocount,
-		&events->ev_mmox,
-		&events->ev_mmoy,
-		&events->ev_mmobutton,
-		&events->ev_mmokstate,
-		&events->ev_mkreturn,
-		&events->ev_mbreturn
-	);
+		(events->ev_mflags,
+		 events->ev_mbclicks,
+		 events->ev_mbmask,
+		 events->ev_mbstate,
+		 events->ev_mm1flags,
+		 events->ev_mm1.g_x,
+		 events->ev_mm1.g_y,
+		 events->ev_mm1.g_w,
+		 events->ev_mm1.g_h,
+		 events->ev_mm2flags,
+		 events->ev_mm2.g_x,
+		 events->ev_mm2.g_y,
+		 events->ev_mm2.g_w,
+		 events->ev_mm2.g_h,
+		 events->ev_mmgpbuf,
+		 (((unsigned long) events->ev_mthicount) << 16) | (unsigned long) events->ev_mtlocount,
+		 &events->ev_mmox,
+		 &events->ev_mmoy, &events->ev_mmobutton, &events->ev_mmokstate, &events->ev_mkreturn, &events->ev_mbreturn);
 	xe_mbshift = events->ev_mmokstate;
 
 	/* AV_SENDKEY message is transformed into a keyboard event */
@@ -209,7 +183,7 @@ _WORD xe_xmulti(XDEVENT *events)
 		if (events->ev_mmgpbuf[0] == AV_SENDKEY)
 			events->xd_keycode |= XD_SENDKEY;
 
-		if(!xd_isdopen() && (level == 1))
+		if (!xd_isdopen() && (level == 1))
 		{
 			if (xw_hndlkey(events->xd_keycode, events->ev_mmokstate))
 				r &= ~MU_KEYBD;
@@ -221,14 +195,13 @@ _WORD xe_xmulti(XDEVENT *events)
 	if (r & MU_MESAG)
 	{
 		if ((events->ev_mmgpbuf[0] == MN_SELECTED) && xd_dialogs)
-		{ 
-#if 0 /* no need */
+		{
+#if 0									/* no need */
 			if (xd_menu)
 #endif
 				menu_tnormal(xd_menu, events->ev_mmgpbuf[3], 1);
 			r &= ~MU_MESAG;
-		}
-		else if (xw_hndlmessage(events->ev_mmgpbuf)) /* window-handling messages processed */
+		} else if (xw_hndlmessage(events->ev_mmgpbuf))	/* window-handling messages processed */
 		{
 			r &= ~MU_MESAG;
 
@@ -246,9 +219,7 @@ _WORD xe_xmulti(XDEVENT *events)
 
 		/* complete handling of the button press(es) happens within this call */
 
-		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy,
-						  events->ev_mbreturn, mmobutton,
-						  events->ev_mmokstate))
+		if (xw_hndlbutton(events->ev_mmox, events->ev_mmoy, events->ev_mbreturn, mmobutton, events->ev_mmokstate))
 			r &= ~MU_BUTTON;
 
 		/* 
@@ -259,8 +230,8 @@ _WORD xe_xmulti(XDEVENT *events)
 		 * before proceeding further
 		 */
 
-		if(mmobutton == 2)
-			while(xe_button_state());
+		if (mmobutton == 2)
+			while (xe_button_state()) ;
 	}
 
 	events->ev_mflags = old_mflags;
@@ -279,10 +250,7 @@ _WORD xe_xmulti(XDEVENT *events)
 
 _WORD xe_button_state(void)
 {
-	_WORD
-		dummy,
-		mstate;
-
+	_WORD dummy, mstate;
 
 	graf_mkstate(&dummy, &dummy, &mstate, &dummy);
 
@@ -306,12 +274,8 @@ _WORD xe_button_state(void)
 
 _WORD xe_mouse_event(_WORD mstate, _WORD *x, _WORD *y, _WORD *kstate)
 {
-	XDEVENT
-		events;
-
-	_WORD
-		flags;
-
+	XDEVENT events;
+	_WORD flags;
 
 	xd_clrevents(&events);
 	events.ev_mflags = MU_TIMER | MU_BUTTON;
@@ -327,4 +291,3 @@ _WORD xe_mouse_event(_WORD mstate, _WORD *x, _WORD *y, _WORD *kstate)
 
 	return (flags & MU_BUTTON) ? TRUE : FALSE;
 }
-

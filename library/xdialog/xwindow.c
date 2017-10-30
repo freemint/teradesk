@@ -22,19 +22,17 @@
 
 
 #include <library.h>
-
 #include "xdialog.h"
+#include "xerror.h"
 
-#define ACC_WIND	19 /* from window.h !!! */
+#define ACC_WIND	19					/* from window.h !!! */
 
 
-static WINDOW 
-	*windows = NULL;		/* lijst met windows. */
+static WINDOW *windows = NULL;			/* lijst met windows. */
 
-WINDOW *xw_deskwin; 			/* pointer to desktop window */
+WINDOW *xw_deskwin;						/* pointer to desktop window */
 
-_WORD
-	xw_dosend = 1;					/* if 0, xw_send is disabled */
+_WORD xw_dosend = 1;					/* if 0, xw_send is disabled */
 
 
 /*
@@ -59,19 +57,19 @@ void xw_nop2(WINDOW *w, _WORD i)
  * Sending is disabled if xw_dosend is set to 0.
  */
 
-
 void xw_send_rect(WINDOW *w, _WORD messid, _WORD pid, const RECT *area)
 {
-	if(xw_dosend)
+	if (xw_dosend)
 	{
-		_WORD message[8], *messagep = message;
+		_WORD message[8];
+		_WORD *messagep = message;
 
 		*messagep++ = messid;
 		*messagep++ = gl_apid;
 		*messagep++ = 0;
 		*messagep++ = w->xw_handle;
-		*(RECT *)(messagep) = *area;
-	
+		*(RECT *) (messagep) = *area;
+
 		appl_write(pid, 16, message);
 	}
 }
@@ -120,16 +118,15 @@ WINDOW *xw_hfind(_WORD handle)
 {
 	WINDOW *w = windows;
 
-
 	while (w)
 	{
 		if (w->xw_handle == handle)
-			return (w);
+			return w;
 
 		w = xw_next(w);
 	}
 
-	return (handle == 0) ? xw_deskwin : NULL;
+	return handle == 0 ? xw_deskwin : NULL;
 }
 
 
@@ -167,20 +164,16 @@ WINDOW *xw_find(_WORD x, _WORD y)
 
 WINDOW *xw_top(void)
 {
-	WINDOW
-		*w;
+	WINDOW *w;
+	_WORD thandle, dummy;
 
-	_WORD
-		thandle, dummy;
-
-
-	wind_get(0, WF_TOP, &thandle, &dummy, &dummy, &dummy);		/* the real top window */
+	wind_get(0, WF_TOP, &thandle, &dummy, &dummy, &dummy);	/* the real top window */
 
 	/* If any known window is topped, return a pointer to it */
 
 	if ((w = xw_hfind(thandle)) != NULL)
 	{
-		if ( w->xw_type == ACC_WIND ) 
+		if (w->xw_type == ACC_WIND)
 			xw_note_top(w);
 
 		return w;
@@ -193,12 +186,12 @@ WINDOW *xw_top(void)
 	while (w)
 	{
 		if ((w->xw_xflags & XWF_OPN) != 0)
-			return w;		/* first teradesk's window */
+			return w;					/* first teradesk's window */
 
 		w = xw_next(w);
 	}
 
-	return xw_deskwin;		/* or the desktop, if none other */
+	return xw_deskwin;					/* or the desktop, if none other */
 }
 
 
@@ -208,20 +201,16 @@ WINDOW *xw_top(void)
 
 WINDOW *xw_bottom(void)
 {
-	WINDOW
-		*w;
+	WINDOW *w;
+	_WORD bhandle, dummy;
 
-	_WORD
-		bhandle, dummy;
-
-
-	wind_get(0, WF_BOTTOM, &bhandle, &dummy, &dummy, &dummy);		/* the real bottom window */
+	wind_get(0, WF_BOTTOM, &bhandle, &dummy, &dummy, &dummy);	/* the real bottom window */
 
 	/* If any known window is the bottom one, return a pointer to it */
 
 	if ((w = xw_hfind(bhandle)) != NULL)
 	{
-		if ( w->xw_type == ACC_WIND ) 
+		if (w->xw_type == ACC_WIND)
 			xw_note_bottom(w);
 
 		return w;
@@ -247,10 +236,9 @@ WINDOW *xw_bottom(void)
  *			   0 in alle andere gevallen
  */
 
-_WORD xw_exist( WINDOW *w )
+_WORD xw_exist(WINDOW *w)
 {
 	WINDOW *h = windows;
-
 
 	while (h)
 	{
@@ -321,7 +309,7 @@ void xw_note_top(WINDOW *w)
 		w->xw_next = windows;
 		windows = w;
 
-		if (w->xw_func->wd_top != 0L)
+		if (w->xw_func->wd_top != 0)
 			w->xw_func->wd_top(w);
 	}
 }
@@ -356,28 +344,23 @@ void xw_note_bottom(WINDOW *w)
 
 static void xw_set_topbot(WINDOW *w, _WORD wf)
 {
-	void
-		(*notef)(WINDOW *w);
+	void (*notef) (WINDOW *w);
+	_WORD msg;
 
-	_WORD
-		msg;
-
-
-	if(wf == WF_TOP)
+	if (wf == WF_TOP)
 	{
 		msg = WM_TOPPED;
 		notef = xw_note_top;
-	}
-	else
+	} else
 	{
 		msg = WM_BOTTOMED;
 		xw_bottom();
 		notef = xw_note_bottom;
 	}
 
-	if(w->xw_type == ACC_WIND)
+	if (w->xw_type == ACC_WIND)
 		xw_send(w, msg);
-	else 
+	else
 		wind_set(w->xw_handle, wf, w->xw_handle, 0, 0, 0);
 
 	notef(w);
@@ -390,8 +373,7 @@ static void xw_set_topbot(WINDOW *w, _WORD wf)
 
 void xw_cycle(void)
 {
-	WINDOW 
-		*lw = xw_last();
+	WINDOW *lw = xw_last();
 
 	/* Set it as top window */
 
@@ -424,7 +406,7 @@ static void xw_set_barpos(WINDOW *w)
 	if (menu)
 	{
 		menu->ob_x = w->xw_work.x;
-		menu->ob_y = w->xw_work.y; 
+		menu->ob_y = w->xw_work.y;
 		menu[w->xw_bar].ob_width = w->xw_work.w;
 	}
 }
@@ -437,21 +419,15 @@ static void xw_set_barpos(WINDOW *w)
 
 void xw_redraw_menu(WINDOW *w, _WORD object, RECT *r)
 {
-	OBJECT
-		*menu;
-
-	RECT
-		r1, r2, in;
-
-	_WORD
-		pxy[4];
-
+	OBJECT *menu;
+	RECT r1, r2, in;
+	_WORD pxy[4];
 
 	menu = w->xw_menu;
 
 	/* don't redraw in iconified window */
 
-	if ( menu && ((w->xw_xflags & XWF_ICN) == 0) )
+	if (menu && ((w->xw_xflags & XWF_ICN) == 0))
 	{
 		xd_objrect(menu, object, &r1);
 		if (object == w->xw_bar)
@@ -518,11 +494,11 @@ static void xw_menu_draw(OBJECT *menu, _WORD item, RECT *box)
  * in een pulldown menu.
  */
 
-static void xw_menu_change(OBJECT *menu, _WORD item, _WORD select, RECT *box)
+static void xw_menu_change(OBJECT *menu, _WORD item, _WORD selectit, RECT *box)
 {
 	_WORD newstate = menu[item].ob_state;
 
-	newstate = (select) ? newstate | OS_SELECTED : newstate & ~OS_SELECTED;
+	newstate = selectit ? newstate | OS_SELECTED : newstate & ~OS_SELECTED;
 	objc_change(menu, item, 0, box->x, box->y, box->w, box->h, newstate, 1);
 }
 
@@ -548,38 +524,18 @@ static void xw_copy_screen(MFDB *dest, MFDB *src, _WORD *pxy)
 
 static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 {
-	OBJECT
-		*menu;
-
-	RECT
-		r,
-		box;
-
-	MFDB
-		bmfdb,
-		smfdb;
-
-	long
-		mem;
-
-	_WORD
-		pxy[8],
-		title,
-		otitle,
-		item,
-		p,
-		i,
-		c,
-		exit_mstate,
-		stop,
-		draw;
-
+	OBJECT *menu;
+	RECT r, box;
+	MFDB bmfdb, smfdb;
+	long mem;
+	_WORD pxy[8];
+	_WORD title, otitle, item, p, i, c, exit_mstate, stop, draw;
 
 	menu = w->xw_menu;
 
 	/* If no menu, or if window is iconified, return */
 
-	if (menu == NULL || ((w->xw_xflags & XWF_ICN) != 0) )
+	if (menu == NULL || ((w->xw_xflags & XWF_ICN) != 0))
 		return FALSE;
 
 	xw_bar_rect(w, &r);
@@ -636,9 +592,10 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 
 			otitle = title;
 
-			if ((bmfdb.fd_addr = (*xd_malloc)(mem)) == NULL)
+			if ((bmfdb.fd_addr = (*xd_malloc) (mem)) == NULL)
+			{
 				stop = TRUE;
-			else
+			} else
 			{
 				if ((draw = xd_rcintersect(&box, &xd_desk, &box)) == TRUE)
 				{
@@ -665,10 +622,10 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 					{
 						title = otitle;
 
-						if (((item = objc_find(menu, i, MAX_DEPTH, mx, my)) >= 0) && (menu[item].ob_state & OS_DISABLED))
+						if (((item = objc_find(menu, i, MAX_DEPTH, mx, my)) >= 0)
+							&& (menu[item].ob_state & OS_DISABLED))
 							item = -1;
-					}
-					else
+					} else
 					{
 						item = -1;
 						if (exit_mstate != 0)
@@ -682,8 +639,7 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 						if (item >= 0)
 							xw_menu_change(menu, item, TRUE, &box);
 					}
-				}
-				while ((title == otitle) && (stop == FALSE));
+				} while ((title == otitle) && (stop == FALSE));
 
 				if (item >= 0)
 					menu[item].ob_state &= ~OS_SELECTED;
@@ -700,7 +656,7 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 					xw_copy_screen(&smfdb, &bmfdb, pxy);
 				}
 
-				(*xd_free)(bmfdb.fd_addr);
+				(*xd_free) (bmfdb.fd_addr);
 			}
 
 			if (item < 0)
@@ -708,12 +664,11 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 				menu[otitle].ob_state &= ~OS_SELECTED;
 				xw_redraw_menu(w, otitle, &r);
 			}
-		}
-		while (stop == FALSE);
+		} while (stop == FALSE);
 
 		/* Wacht tot muisknop wordt losgelaten. */
 
-		while (xe_button_state() & 1);
+		while (xe_button_state() & 1) ;
 
 		xd_endmctrl();
 		xd_endupdate();
@@ -749,7 +704,7 @@ void xw_menu_icheck(WINDOW *w, _WORD item, _WORD check)
 
 
 
-#if 0 /* These functions are curently unused in TeraDesk */
+#if 0									/* These functions are curently unused in TeraDesk */
 
 /*
  * Funktie voor het enablen of disablen van een menupunt.
@@ -784,7 +739,7 @@ void xw_menu_ienable(WINDOW *w, _WORD item, _WORD enable)
 
 void xw_menu_text(WINDOW *w, _WORD item, const char *text)
 {
-	w->xw_menu[item].ob_spec.free_string = (char *)text;
+	w->xw_menu[item].ob_spec.free_string = (char *) text;
 }
 #endif
 
@@ -804,7 +759,6 @@ void xw_menu_tnormal(WINDOW *w, _WORD item, _WORD normal)
 {
 	RECT r;
 	_UWORD *s = &w->xw_menu[item].ob_state;
-
 
 	if (normal == 0)
 		*s |= OS_SELECTED;
@@ -838,14 +792,15 @@ _WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 	{
 		if (!xw_do_menu(w, x, y))
 		{
-			if (w->xw_func->wd_hndlbutton != 0L)
+			if (w->xw_func->wd_hndlbutton != 0)
 			{
 				w->xw_func->wd_hndlbutton(w, x, y, n, bstate, kstate);
 				return TRUE;
 			}
-		}
-		else
+		} else
+		{
 			return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -870,13 +825,14 @@ _WORD xw_hndlkey(_WORD scancode, _WORD keystate)
 
 	if (w != NULL)
 	{
-		if ( scancode == 0x2217 ) /* hardcoded ^W from AV-protocol client */
+		if (scancode == 0x2217)			/* hardcoded ^W from AV-protocol client */
 		{
 			xw_cycle();
 			return TRUE;
-		}		
-		else if (w->xw_func->wd_hndlkey != 0)
+		} else if (w->xw_func->wd_hndlkey != 0)
+		{
 			return w->xw_func->wd_hndlkey(w, scancode, keystate);
+		}
 	}
 
 	return FALSE;
@@ -891,7 +847,7 @@ void xw_iconify(WINDOW *w, RECT *r)
 {
 	/* Set window to iconified state and find new work area */
 
-	xw_set(w, WF_ICONIFY, r); /* wind_set() then wind_get() */ 
+	xw_set(w, WF_ICONIFY, r);			/* wind_set() then wind_get() */
 
 	w->xw_xflags |= XWF_ICN;
 }
@@ -935,7 +891,7 @@ _WORD xw_hndlmessage(_WORD *message)
 
 	ww = w;
 
-	if(xd_dialogs && !( xd_nmdialogs && w == xd_nmdialogs->window ))
+	if (xd_dialogs && !(xd_nmdialogs && w == xd_nmdialogs->window))
 		ww = xd_dialogs->window;
 
 	/* 
@@ -952,93 +908,64 @@ _WORD xw_hndlmessage(_WORD *message)
 
 	switch (message[0])
 	{
-		case WM_REDRAW:
+	case WM_REDRAW:
+		xw_redraw_menu(w, w->xw_bar, (RECT *) m4);
+		func->wd_redraw(w, (RECT *) m4);
+		break;
+	case WM_CLOSED:
+		if (xd_dialogs)
 		{
-			xw_redraw_menu(w, w->xw_bar, (RECT *)m4);
-			func->wd_redraw(w, (RECT *)m4);
-			break;
-		}
-		case WM_CLOSED:
-		{
-			if(xd_dialogs)
+			if (w != xd_dialogs->window)
 			{
-				if(w != xd_dialogs->window)
-				{
-					bell();
-					xw_set(xd_dialogs->window, WF_TOP);
-				}
-				else
-					return FALSE; /* closer in dialog window handled differently */
-			}	
-			func->wd_closed(w, 0);
-			break;
+				bell();
+				xw_set(xd_dialogs->window, WF_TOP);
+			} else
+			{
+				return FALSE;		/* closer in dialog window handled differently */
+			}
 		}
-		case WM_FULLED:
-		{
-			func->wd_fulled(w, xe_mbshift);
-			break;
-		}
-		case WM_ARROWED:
-		{
-			/* a wheeled mouse can send this even if there are no arrow widgets */
-			func->wd_arrowed(w, *m4);
-			break;
-		}
-		case WM_HSLID:
-		{
-			func->wd_hslider(w, *m4);
-			break;
-		}
-		case WM_VSLID:
-		{
-			func->wd_vslider(w, *m4);
-			break;
-		}
-		case WM_SIZED:
-		{
-			func->wd_sized(w, (RECT *)m4);
-			break;
-		}
-		case WM_MOVED:
-		{
-			func->wd_moved(w, (RECT *)m4);
-			break;
-		}
-		case WM_TOPPED:
-		{
-			wwfunc->wd_topped(ww);
-			break;
-		}
-		case WM_NEWTOP:
-		{
-			wwfunc->wd_newtop(ww);
-			break;
-		}
-		case WM_ONTOP:
-		case WM_UNTOPPED:
-		{
-			xw_top(); /* just find the new top window ? */
-			break;
-		}
-		case WM_BOTTOMED:
-		{
-			func->wd_bottomed(w);
-			break;
-		}
-		case WM_ICONIFY:
-		{
-			func->wd_iconify(w, (RECT *)m4);
-			break;
-		}
-		case WM_UNICONIFY:
-		{
-			func->wd_uniconify(w, (RECT *)m4);
-			break;
-		}
-		default :
-		{
-			return FALSE;
-		}
+		func->wd_closed(w, 0);
+		break;
+	case WM_FULLED:
+		func->wd_fulled(w, xe_mbshift);
+		break;
+	case WM_ARROWED:
+		/* a wheeled mouse can send this even if there are no arrow widgets */
+		func->wd_arrowed(w, *m4);
+		break;
+	case WM_HSLID:
+		func->wd_hslider(w, *m4);
+		break;
+	case WM_VSLID:
+		func->wd_vslider(w, *m4);
+		break;
+	case WM_SIZED:
+		func->wd_sized(w, (RECT *) m4);
+		break;
+	case WM_MOVED:
+		func->wd_moved(w, (RECT *) m4);
+		break;
+	case WM_TOPPED:
+		wwfunc->wd_topped(ww);
+		break;
+	case WM_NEWTOP:
+		wwfunc->wd_newtop(ww);
+		break;
+	case WM_ONTOP:
+	case WM_UNTOPPED:
+		xw_top();					/* just find the new top window ? */
+		break;
+	case WM_BOTTOMED:
+		func->wd_bottomed(w);
+		break;
+	case WM_ICONIFY:
+		func->wd_iconify(w, (RECT *) m4);
+		break;
+	case WM_UNICONIFY:
+		func->wd_uniconify(w, (RECT *) m4);
+		break;
+	default:
+		return FALSE;
 	}
 
 	return TRUE;
@@ -1052,7 +979,7 @@ _WORD xw_hndlmessage(_WORD *message)
  * worden opgegeven, in plaats van vier integers.
  */
 
-void xw_set(WINDOW *w, _WORD field,...)
+void xw_set(WINDOW *w, _WORD field, ...)
 {
 	_WORD p1, p2, p3, p4;
 	RECT *r;
@@ -1062,36 +989,28 @@ void xw_set(WINDOW *w, _WORD field,...)
 
 	switch (field)
 	{
-		case WF_ICONIFY: 
-		case WF_UNICONIFY:
-		case WF_CURRXYWH:
-		{
-			/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
-			r = va_arg(p, RECT *);
-			w->xw_size = *r;
-			wind_set(w->xw_handle, field, w->xw_size.x,
-					 w->xw_size.y, w->xw_size.w, w->xw_size.h);
-			wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.x,
-					 &w->xw_size.y, &w->xw_size.w, &w->xw_size.h);
-			wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
-					 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
-			xw_set_barpos(w); /* irelevant but harmless in an iconified window */
-			break;
-		}
-		case WF_TOP:
-		case WF_BOTTOM:
-		{
-			xw_set_topbot(w, field);
-			break;
-		}
-		default:
-		{
-			p1 = va_arg(p, int);
-			p2 = va_arg(p, int);
-			p3 = va_arg(p, int);
-			p4 = va_arg(p, int);
-			wind_set(w->xw_handle, field, p1, p2, p3, p4);
-		}
+	case WF_ICONIFY:
+	case WF_UNICONIFY:
+	case WF_CURRXYWH:
+		/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
+		r = va_arg(p, RECT *);
+		w->xw_size = *r;
+		wind_set(w->xw_handle, field, w->xw_size.x, w->xw_size.y, w->xw_size.w, w->xw_size.h);
+		wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.x, &w->xw_size.y, &w->xw_size.w, &w->xw_size.h);
+		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x, &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
+		xw_set_barpos(w);			/* irelevant but harmless in an iconified window */
+		break;
+	case WF_TOP:
+	case WF_BOTTOM:
+		xw_set_topbot(w, field);
+		break;
+	default:
+		p1 = va_arg(p, int);
+		p2 = va_arg(p, int);
+		p3 = va_arg(p, int);
+		p4 = va_arg(p, int);
+		wind_set(w->xw_handle, field, p1, p2, p3, p4);
+		break;
 	}
 
 	va_end(p);
@@ -1108,7 +1027,7 @@ void xw_setsize(WINDOW *w, RECT *size)
 {
 	xw_set(w, WF_CURRXYWH, size);
 }
- 
+
 
 /*
  * Get window size (short)
@@ -1137,44 +1056,40 @@ void xw_get(WINDOW *w, _WORD field, RECT *r)
 {
 	_WORD handle = 0;
 
-	if(w)
+	if (w)
 		handle = w->xw_handle;
 
 	switch (field)
 	{
-		case WF_WORKXYWH:
+	case WF_WORKXYWH:
+		if (handle != 0)
 		{
-			if (handle != 0)
+			*r = w->xw_work;
+
+			if (w->xw_menu != NULL)
 			{
-				*r = w->xw_work;
-	
-				if (w->xw_menu != NULL)
-				{
-					_WORD height = w->xw_menu[w->xw_bar].ob_height + 1;
-	
-					r->y += height;
-					r->h -= height;
-				}
-				break;
+				_WORD height = w->xw_menu[w->xw_bar].ob_height + 1;
+
+				r->y += height;
+				r->h -= height;
 			}
-		}
-		case WF_CURRXYWH:
-		{
-			if (handle != 0)
-			{
-				*r = w->xw_size;
-				break;
-			}
-		}
-		case WF_FIRSTXYWH:
-		case WF_NEXTXYWH:
-		case WF_FULLXYWH:
-		case WF_PREVXYWH:
-		case WF_ICONIFY:
-		{
-			wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
 			break;
 		}
+		/* else fall through */
+	case WF_CURRXYWH:
+		if (handle != 0)
+		{
+			*r = w->xw_size;
+			break;
+		}
+		/* else fall through */
+	case WF_FIRSTXYWH:
+	case WF_NEXTXYWH:
+	case WF_FULLXYWH:
+	case WF_PREVXYWH:
+	case WF_ICONIFY:
+		wind_get(handle, field, &r->x, &r->y, &r->w, &r->h);
+		break;
 	}
 }
 
@@ -1224,19 +1139,18 @@ void xw_getnext(WINDOW *w, RECT *size)
  * work area height is calculated from overall height; in the second case
  * it is the opposite.
  */
- 
+
 void xw_calc(_WORD w_ctype, _WORD w_flags, RECT *input, RECT *output, OBJECT *menu)
 {
 	_WORD height;
 
-	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h,
-			  &output->x, &output->y, &output->w, &output->h);
+	wind_calc(w_ctype, w_flags, input->x, input->y, input->w, input->h, &output->x, &output->y, &output->w, &output->h);
 
 	if (menu)
 	{
 		height = menu[menu->ob_head].ob_height + 1;
 
-		if(w_ctype != WC_WORK)
+		if (w_ctype != WC_WORK)
 			height = -height;
 
 		output->y += height;
@@ -1277,9 +1191,9 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
 	WINDOW *w;
 	size_t msize;
 
-	msize = (size_t)xw_tree_size(menu) * sizeof(OBJECT);
+	msize = (size_t) xw_tree_size(menu) * sizeof(OBJECT);
 
-	if ((w = (*xd_malloc)(size + msize)) == NULL)
+	if ((w = (*xd_malloc) (size + msize)) == NULL)
 		return NULL;
 
 	memclr(w, size);
@@ -1288,7 +1202,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
 	{
 		/* Menu follows immediately after window memory area */
 
-		w->xw_menu = (OBJECT *) &(((char*)w)[size]);
+		w->xw_menu = (OBJECT *) & (((char *) w)[size]);
 		memcpy(w->xw_menu, menu, msize);
 		xw_find_objects(menu, &w->xw_bar, &w->xw_mparent);
 	}
@@ -1326,19 +1240,19 @@ WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
 		return NULL;
 	}
 
-	if ( type != ACC_WIND )
+	if (type != ACC_WIND)
 	{
-		if ((w->xw_handle = wind_create(flags, msize->x, msize->y,
-									msize->w, msize->h)) < 0)
+		if ((w->xw_handle = wind_create(flags, msize->x, msize->y, msize->w, msize->h)) < 0)
 		{
-			(*xd_free)(w); /* release memory */
+			(*xd_free) (w);				/* release memory */
 			*error = XDNMWINDOWS;
 			return NULL;
 		}
+	} else
+	{
+		w->xw_handle = flags;			/* ONLY for acc window */
 	}
-	else
-		w->xw_handle = flags; /* ONLY for acc window */
-
+	
 	w->xw_type = type;
 	w->xw_flags = flags;
 	w->xw_func = functions;
@@ -1372,14 +1286,13 @@ void xw_open(WINDOW *w, RECT *size)
 
 	w->xw_size = *size;
 
-	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x,
-			 &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
+	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.x, &w->xw_work.y, &w->xw_work.w, &w->xw_work.h);
 
 	xw_set_barpos(w);
 
 	w->xw_xflags |= XWF_OPN;
 
-	if (w->xw_func->wd_top != 0L)
+	if (w->xw_func->wd_top != 0)
 		w->xw_func->wd_top(w);
 }
 
@@ -1406,7 +1319,7 @@ static void xw_rem(WINDOW *w)
 
 	/* Release memory for this window */
 
-	(*xd_free)(w);
+	(*xd_free) (w);
 }
 
 
@@ -1425,21 +1338,22 @@ void xw_close(WINDOW *w)
 	WINDOW *tw;
 
 	if (xw_exist(w))
-	{	
-		if ( w->xw_type == ACC_WIND )
+	{
+		if (w->xw_type == ACC_WIND)
 			xw_send(w, WM_CLOSED);
 		else
 			wind_close(w->xw_handle);
 
-		w->xw_xflags &= ~(XWF_ICN | XWF_OPN); /* not iconified or open anymore */	
+		w->xw_xflags &= ~(XWF_ICN | XWF_OPN);	/* not iconified or open anymore */
 
-		if ( (tw = xw_top()) != NULL)
+		if ((tw = xw_top()) != NULL)
 		{
-			if (tw->xw_func->wd_top != 0L)
+			if (tw->xw_func->wd_top != 0)
 				tw->xw_func->wd_top(tw);
-		}
-		else if ((xw_deskwin != NULL) && (xw_deskwin->xw_func->wd_top != 0L))
+		} else if (xw_deskwin != NULL && xw_deskwin->xw_func->wd_top != 0)
+		{
 			xw_deskwin->xw_func->wd_top(tw);
+		}
 	}
 }
 
@@ -1456,14 +1370,14 @@ void xw_delete(WINDOW *w)
 {
 	if (xw_exist(w))
 	{
-		if ( w->xw_type != ACC_WIND )
+		if (w->xw_type != ACC_WIND)
 			wind_delete(w->xw_handle);
 		xw_rem(w);
 	}
 }
 
 
-#if 0 /* currently not used in TeraDesk */
+#if 0									/* currently not used in TeraDesk */
 
 /*
  * Close and delete a window
@@ -1487,12 +1401,11 @@ void xw_closedelete(WINDOW *w)
  * wd_struct_size	- grootte van de window structuur,
  */
 
-WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions,
-					 size_t wd_struct_size, _WORD *error)
+WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions, size_t wd_struct_size, _WORD *error)
 {
 	WINDOW *w;
 
-	if ((w = (*xd_malloc)(wd_struct_size)) == NULL)
+	if ((w = (*xd_malloc) (wd_struct_size)) == NULL)
 	{
 		*error = XDNSMEM;
 		return NULL;
@@ -1506,7 +1419,7 @@ WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions,
 	w->xw_xflags |= XWF_OPN;
 	w->xw_func = functions;
 
-	xw_deskwin = w; /* globally available */
+	xw_deskwin = w;						/* globally available */
 
 	*error = 0;
 
@@ -1524,7 +1437,7 @@ WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions,
 
 void xw_close_desk(void)
 {
-	(*xd_free)(xw_deskwin);
+	(*xd_free) (xw_deskwin);
 	xw_deskwin = NULL;
 }
 
@@ -1535,7 +1448,7 @@ void xw_close_desk(void)
 
 void xw_closeall(void)
 {
-	while(windows)
+	while (windows)
 	{
 		if ((windows->xw_xflags & XWF_OPN) != 0)
 			xw_close(windows);
@@ -1545,4 +1458,3 @@ void xw_closeall(void)
 
 	xw_close_desk();
 }
-

@@ -22,11 +22,10 @@
 
 
 #include <library.h>
-
 #include "xdialog.h"
 
 
-static MFDB cursor_mfdb = {	NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
+static MFDB cursor_mfdb = { NULL, 1, 0, 1, 0, 0, 0, 0, 0 };
 
 
 /********************************************************************
@@ -76,8 +75,7 @@ static long xd_strlen(char *s)
 
 	l = strlen(s);
 
-#if 0 /* This capability is currently not used anywhere in Teradesk resource */
-
+#if 0									/* This capability is currently not used anywhere in Teradesk resource */
 	if (strchr(s, '#') != NULL)
 		l--;
 #endif
@@ -93,20 +91,17 @@ static long xd_strlen(char *s)
 
 static void prt_text(char *s, _WORD x, _WORD y, _WORD state)
 {
-	_WORD
-		attrib = 0;
-
-	char 
-		tmp[42], 
-		/* *h, currently unused */ 
-		*p = NULL;
+	_WORD attrib = 0;
+	char tmp[42];
+	char *p = NULL;
 
 	if (state & OS_DISABLED)
 		attrib ^= 2;
 
 	vst_effects(xd_vhandle, attrib);
 
-	/* h = */ strcpy(tmp, s); /* h is not needed for the time being, but tmp is */
+										/* h = */ strcpy(tmp, s);
+										/* h is not needed for the time being, but tmp is */
 
 	/* uses AES 4 WHITEBAK */
 
@@ -117,15 +112,13 @@ static void prt_text(char *s, _WORD x, _WORD y, _WORD state)
 		if (und >= 0)
 		{
 			und &= 0x7F;
-			if (und < strlen(tmp))
+			if (und < (_WORD)strlen(tmp))
 				p = tmp + und;
 		}
 	}
-
-#if 0 /* This capability is currently not used anywhere in Teradesk */
+#if 0									/* This capability is currently not used anywhere in Teradesk */
 
 	else
-
 		/* I_A enhanced: now you can place '#' in text itself! */
 
 		while ((h = strchr(h, '#')) != NULL)
@@ -163,26 +156,22 @@ static void prt_text(char *s, _WORD x, _WORD y, _WORD state)
  * Draw a simple rectangle
  * Note: smaller code is generated when pointers to pxy are used
  */
-
 void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
 {
-	_WORD 
-		p,
-		pxy[10],
-		*pxyp = pxy;
+	_WORD p, pxy[10], *pxyp = pxy;
 
-	*pxyp++ = x;			/* [0] */
-	*pxyp++ = y;			/* [1] */
+	*pxyp++ = x;						/* [0] */
+	*pxyp++ = y;						/* [1] */
 	p = x + w - 1;
-	*pxyp++ = p;			/* [2] */
-	*pxyp++ = y;			/* [3] */
-	*pxyp++ = p;			/* [4] */
+	*pxyp++ = p;						/* [2] */
+	*pxyp++ = y;						/* [3] */
+	*pxyp++ = p;						/* [4] */
 	p = y + h - 1;
-	*pxyp++ = p;			/* [5] */
-	*pxyp++ = x;			/* [6] */
-	*pxyp++ = p;			/* [7] */
-	*pxyp++ = x;			/* [8] */
-	*pxyp = y;				/* [9] */
+	*pxyp++ = p;						/* [5] */
+	*pxyp++ = x;						/* [6] */
+	*pxyp++ = p;						/* [7] */
+	*pxyp++ = x;						/* [8] */
+	*pxyp = y;							/* [9] */
 
 	v_pline(xd_vhandle, 5, pxy);
 }
@@ -193,7 +182,7 @@ void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
  * desired thickness of border
  */
 
-static void draw_frame(RECT *frame, _WORD start, _WORD eind)	
+static void draw_frame(RECT *frame, _WORD start, _WORD eind)
 {
 	_WORD i, s, e;
 
@@ -203,8 +192,7 @@ static void draw_frame(RECT *frame, _WORD start, _WORD eind)
 	{
 		s = eind;
 		e = start;
-	}
-	else
+	} else
 	{
 		s = start;
 		e = eind;
@@ -212,13 +200,7 @@ static void draw_frame(RECT *frame, _WORD start, _WORD eind)
 
 	for (i = s; i <= e; i++)
 	{
-		draw_xdrect
-		(
-			frame->x + i, 
-			frame->y + i, 
-			frame->w - 2 * i, 
-			frame->h - 2 * i
-		);
+		draw_xdrect(frame->x + i, frame->y + i, frame->w - 2 * i, frame->h - 2 * i);
 	}
 }
 
@@ -251,14 +233,13 @@ static void set_textdef(void)
 	vst_alignment(xd_vhandle, 0, 5, &dummy, &dummy);
 	xd_vst_point(xd_regular_font.size, &dummy);
 	vst_color(xd_vhandle, G_BLACK);
-	xd_vswr_trans_mode(); 
+	xd_vswr_trans_mode();
 }
 
 
 /* 
- * Set 'transparent'  and 'replace' drawing modes
+ * Set 'transparent' and 'replace' drawing modes
  */
-
 void xd_vswr_trans_mode(void)
 {
 	vswr_mode(xd_vhandle, MD_TRANS);
@@ -279,21 +260,17 @@ void xd_vswr_repl_mode(void)
 
 void clr_object(RECT *r, _WORD colour, _WORD pattern)
 {
-	_WORD 
-		pxy[4],
-		pn,
-		fillmode = FIS_SOLID;
+	_WORD pxy[4], pn, fillmode = FIS_SOLID;
 
 	xd_rect2pxy(r, pxy);
 
-	if ( pattern > 0 )
+	if (pattern > 0)
 	{
-		if(pattern <= xd_npatterns)
+		if (pattern <= xd_npatterns)
 		{
 			pn = pattern;
 			fillmode = FIS_PATTERN;
-		}
-		else
+		} else
 		{
 			pn = pattern - xd_npatterns;
 			fillmode = FIS_HATCH;
@@ -304,7 +281,7 @@ void clr_object(RECT *r, _WORD colour, _WORD pattern)
 
 	vsf_interior(xd_vhandle, fillmode);
 	vsf_color(xd_vhandle, colour);
-	vswr_mode(xd_vhandle, MD_REPLACE); /* for speed do not use xd_vswr_repl_mode() */
+	vswr_mode(xd_vhandle, MD_REPLACE);	/* for speed do not use xd_vswr_repl_mode() */
 	v_bar(xd_vhandle, pxy);
 }
 
@@ -319,18 +296,13 @@ void clr_object(RECT *r, _WORD colour, _WORD pattern)
  * drawing in 3d but that option being disabled by the user!
  */
 
-static bool xd_is3dobj(_WORD flags) 
+static bool xd_is3dobj(_WORD flags)
 {
 	_WORD f3d = flags & (AES3D_1 | AES3D_2);
 
-	if 
-	( 
-		f3d
-		&& (f3d != AES3D_2)   
-		&& (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes ) 
-	)
+	if (f3d && (f3d != AES3D_2) && (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes))
 		return TRUE;
-	
+
 	return FALSE;
 }
 
@@ -339,7 +311,7 @@ static bool xd_is3dobj(_WORD flags)
  * Calculate size of an object enlargement, including 3D effects
  */
 
-static void xd_3dbrd( _WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd)
+static void xd_3dbrd(_WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd)
 {
 	*xl = aes_hor3d;
 	*xr = aes_hor3d;
@@ -350,13 +322,13 @@ static void xd_3dbrd( _WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd
 	{
 		/* don't use max() here, this is shorter */
 
-		if(brd_l > *xl)
+		if (brd_l > *xl)
 			*xl = brd_l;
-		if(brd_l > *xr)
+		if (brd_l > *xr)
 			*xr = brd_r;
-		if(brd_u > *yu)
+		if (brd_u > *yu)
 			*yu = brd_u;
-		if(brd_d > *yd)
+		if (brd_d > *yd)
 			*yd = brd_d;
 	}
 }
@@ -383,31 +355,25 @@ static void xd_3dbrd( _WORD ob_state, _WORD *xl, _WORD *xr, _WORD *yu, _WORD *yd
  */
 
 
-static void xd_drawbox
-(
-	RECT *r,		/* size of the box      */
-	_WORD flags,	/* object flags relevant to drawing this box */
-	_WORD state,	/* object state         */
-	_WORD xtype		/* extended object type */
-)
+static void xd_drawbox(RECT *r,		/* size of the box      */
+					   _WORD flags,		/* object flags relevant to drawing this box */
+					   _WORD state,		/* object state         */
+					   _WORD xtype		/* extended object type */
+	)
 {
-	RECT
-		outsize;	/* external object dimensions (final) */
-
-	_WORD 
-		hxl,		/* horizontal enlargement  */
-		vxu,		/* vertical enlargement    */
-		hxr,		/* horizontal enlargement  */
-		vxd,		/* vertical enlargement    */
-		border,		/* border thickness        */
-		colour,		/* current colour          */
-		colour2,	/* other (inverse) colour  */
-		p,			/* aux.                    */		
-		pxy[10]; 	/* point array for drawing */
-
+	RECT outsize;						/* external object dimensions (final) */
+	_WORD hxl;							/* horizontal enlargement  */
+	_WORD vxu;							/* vertical enlargement    */
+	_WORD hxr;							/* horizontal enlargement  */
+	_WORD vxd;							/* vertical enlargement    */
+	_WORD border;						/* border thickness        */
+	_WORD colour;						/* current colour          */
+	_WORD colour2;						/* other (inverse) colour  */
+	_WORD p;							/* aux.                    */
+	_WORD pxy[10];						/* point array for drawing */
 
 	/* 
- 	 * Determine size of this object
+	 * Determine size of this object
 	 * (are combinations of border and 3d enlargement really 
 	 * to be implemented like in xd_3dbrd? not sure). 
 	 */
@@ -421,23 +387,24 @@ static void xd_drawbox
 
 	/* Writing mode is generally "replace" */
 
-	xd_vswr_repl_mode(); 
+	xd_vswr_repl_mode();
 
 	/* 
 	 * Fill the area with appropriate colour (except for the scrolled text);
 	 * For any object other than a button, it is always the background one
 	 */
 
-	if ( xtype != XD_SCRLEDIT && xtype != XD_BCKBOX)
+	if (xtype != XD_SCRLEDIT && xtype != XD_BCKBOX)
 	{
-		if ( xd_is3dobj(flags) )
-			colour = xd_get_3d_colour(flags);
-		else
+		if (xd_is3dobj(flags))
 		{
-			if ( (state & OS_SELECTED) && (xtype == XD_BUTTON) )
+			colour = xd_get_3d_colour(flags);
+		} else
+		{
+			if ((state & OS_SELECTED) && (xtype == XD_BUTTON))
 				colour = xd_sel_col;
 			else
- 				colour = xd_bg_col; 
+				colour = xd_bg_col;
 		}
 
 		clr_object(&outsize, colour, -1);
@@ -452,29 +419,22 @@ static void xd_drawbox
 	 * Also draw the frame if the object is flagged as an activator.
 	 */
 
-	if 
-	( 
-		!xd_colaes
-		|| xtype == XD_BUTTON 
-		|| xtype == XD_DRAGBOX 
-		|| xtype == XD_BCKBOX 
-		|| IS_ACT(flags)
-	)
+	if (!xd_colaes || xtype == XD_BUTTON || xtype == XD_DRAGBOX || xtype == XD_BCKBOX || IS_ACT(flags))
 	{
 		if (flags & OF_DEFAULT)
-			border = 2; /* actual border thickness will be 3 pixels */
+			border = 2;					/* actual border thickness will be 3 pixels */
 		else if (flags & OF_EXIT)
-			border = 1; /* actual border thickness will be 2 pixels */
+			border = 1;					/* actual border thickness will be 2 pixels */
 		else
-			border = 0; /* actual border thickness will be 1 pixel  */
+			border = 0;					/* actual border thickness will be 1 pixel  */
 
-		if ( xtype == XD_DRAGBOX )
+		if (xtype == XD_DRAGBOX)
 			colour = xd_sel_col;
 		else
 			colour = G_BLACK;
 
 		set_linedef(colour);
-		draw_frame( &outsize, 0, -border );
+		draw_frame(&outsize, 0, -border);
 	}
 
 	/* 
@@ -489,44 +449,43 @@ static void xd_drawbox
 	 * of object should look like, better not to let it draw the 3d effect.
 	 */
 
-	if ( xd_is3dobj(flags) )
+	if (xd_is3dobj(flags))
 	{
 		_WORD *pxyp = pxy;
 
 		p = outsize.x + outsize.w - 2;
-		*pxyp++ = p;							/* [0] upper right corner */
-		*pxyp++ = outsize.y + 1;				/* [1] */
-	
-		*pxyp++ = p;							/* [2] */
+		*pxyp++ = p;					/* [0] upper right corner */
+		*pxyp++ = outsize.y + 1;		/* [1] */
+
+		*pxyp++ = p;					/* [2] */
 		p = outsize.y + outsize.h - 2;
-		*pxyp++ = p;							/* [3] lower right corner */
+		*pxyp++ = p;					/* [3] lower right corner */
 
-		*pxyp++ = outsize.x + 1;				/* [4] lower left corner  */
-		*pxyp++ = p;							/* [5] */
+		*pxyp++ = outsize.x + 1;		/* [4] lower left corner  */
+		*pxyp++ = p;					/* [5] */
 
-		*pxyp++ = pxy[4];						/* [6] upper left corner  */
-		*pxyp++ = pxy[1];						/* [7] */
-		
-		*pxyp++ = pxy[0];						/* [8] upper right corner */
-		*pxyp = pxy[1];							/* [9] */
+		*pxyp++ = pxy[4];				/* [6] upper left corner  */
+		*pxyp++ = pxy[1];				/* [7] */
+
+		*pxyp++ = pxy[0];				/* [8] upper right corner */
+		*pxyp = pxy[1];					/* [9] */
 
 		/* Alternate shadowing for selected and deselected object */
 
-		if ( state & OS_SELECTED )
+		if (state & OS_SELECTED)
 		{
 			colour = G_WHITE;
 			colour2 = xd_sel_col;
-		}
-		else
+		} else
 		{
 			colour = xd_sel_col;
 			colour2 = G_WHITE;
 		}
 
 		set_linedef(colour);
-		v_pline(xd_vhandle, 3, pxy);		/* lower & right sides of rectangle */
+		v_pline(xd_vhandle, 3, pxy);	/* lower & right sides of rectangle */
 		vsl_color(xd_vhandle, colour2);
-		v_pline(xd_vhandle, 3, &pxy[4]);	/* upper & left sides of rectangle */		
+		v_pline(xd_vhandle, 3, &pxy[4]);	/* upper & left sides of rectangle */
 	}
 }
 
@@ -537,38 +496,26 @@ static void xd_drawbox
 
 static _WORD cdecl ub_drag(PARMBLK *pb)
 {
-	_WORD 
-		dhl,
-		dhr,
-		dvu,
-		dvd,
-		pxy[6],
-		b;
-
-	RECT 
-		size; 
-
-	OBSPEC 
-		*obspec = xd_get_obspecp(&pb->pb_tree[pb->pb_obj]);
-
+	_WORD dhl, dhr, dvu, dvd, pxy[6], b;
+	RECT size;
+	OBSPEC *obspec = xd_get_obspecp(&pb->pb_tree[pb->pb_obj]);
 
 	/* Define clipping area */
 
-	xd_clip_on( (RECT *)&pb->pb_xc );
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* 
 	 * Define object size and position (up-  and right-justify with dialog edge)
 	 * Note: must compensate for ST-low/med res aspect ratio oddities
 	 */
 
-	xd_3dbrd(pb->pb_tree[pb->pb_obj].ob_state, &dhl, &dhr, &dvu, &dvd); 
+	xd_3dbrd(pb->pb_tree[pb->pb_obj].ob_state, &dhl, &dhr, &dvu, &dvd);
 
-	if ( xd_regular_font.ch > 9 || xd_desk.w > 2 * xd_desk.h )
+	if (xd_regular_font.ch > 9 || xd_desk.w > 2 * xd_desk.h)
 	{
 		size.w = pb->pb_w;
 		size.x = pb->pb_x;
-	}
-	else	/* ST-low res; must change aspect ratio */
+	} else								/* ST-low res; must change aspect ratio */
 	{
 		size.w = pb->pb_w / 2;
 		size.x = pb->pb_x + size.w;
@@ -581,13 +528,7 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 	/* Draw object box */
 
-	xd_drawbox
-	(
-		&size,
-		((XUSERBLK *)(pb->pb_parm))->ob_flags,
-		pb->pb_tree[pb->pb_obj].ob_state,
-		XD_DRAGBOX
-	);
+	xd_drawbox(&size, ((XUSERBLK *) (pb->pb_parm))->ob_flags, pb->pb_tree[pb->pb_obj].ob_state, XD_DRAGBOX);
 
 	/* Draw "\" diagonal in the box */
 
@@ -601,13 +542,13 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 	/* Draw something looking like a part of the border visible behind the "ear" */
 
-	b = abs((_WORD)obspec->obspec.framesize);	/* border thickness */
+	b = abs((_WORD) obspec->obspec.framesize);	/* border thickness */
 
-	if ( b != 0 )
+	if (b != 0)
 	{
 		_WORD i;
 
-		vsl_color(xd_vhandle, (_WORD)(obspec->obspec.framecol));
+		vsl_color(xd_vhandle, (_WORD) (obspec->obspec.framecol));
 
 		pxy[0] = size.x + 1;
 		pxy[1] = size.y;
@@ -616,17 +557,17 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 		/* Draw the border */
 
-		for ( i = 0; i < b; i++ )
+		for (i = 0; i < b; i++)
 		{
-			pxy[3] = pxy[1]; 
+			pxy[3] = pxy[1];
 			pxy[4] = pxy[2];
 			v_pline(xd_vhandle, 3, pxy);
 			pxy[0]++;
 			pxy[1]++;
 			pxy[2]--;
 			pxy[5]--;
-		}	
-	}	
+		}
+	}
 
 	/* Turn clipping off */
 
@@ -641,48 +582,42 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
 
 _WORD cdecl ub_bckbox(PARMBLK *pb)
 {
-	_WORD 
-		flags;
+	_WORD flags;
+	RECT size;
+	XUSERBLK *blk = (XUSERBLK *) (pb->pb_parm);
 
-	RECT 
-		size; 
-
-	XUSERBLK 
-		*blk = (XUSERBLK *)(pb->pb_parm);
-
-	
-	if(((blk->ob_type) & 0x00FF) == G_BOX)	/* Don't draw an IBOX */
+	if (((blk->ob_type) & 0x00FF) == G_BOX)	/* Don't draw an IBOX */
 	{
 		/* Only the indicator flag is recognized */
 
 		flags = blk->ob_flags & AES3D_1;
 
-		xd_clip_on( (RECT *)&pb->pb_xc );	/* define clipping area */
+		xd_clip_on((RECT *) & pb->pb_xc);	/* define clipping area */
 
-		size = *(RECT *)(&(pb->pb_x));		/* object size */
+		size = *(RECT *) (&(pb->pb_x));	/* object size */
 
-		xd_vswr_repl_mode();				/* 'replace' drawing mode */
+		xd_vswr_repl_mode();			/* 'replace' drawing mode */
 
 		/* Draw object rectangle */
 
-		if(flags)
+		if (flags)
 			size.h -= 1;
 
 		clr_object(&size, blk->uv.fill.colour, blk->uv.fill.pattern);	/* coloured rectangle */
 
 		/* Draw (3D) frame if flags set */
 
-		if(flags)
+		if (flags)
 		{
 			size.h += 1;
 
-			if(!(xd_has3d && aes_hor3d == 0))	/* all but Magic (and MyAES) */
+			if (!(xd_has3d && aes_hor3d == 0))	/* all but Magic (and MyAES) */
 			{
 				size.x -= 1;
 				size.w += 2;
 			}
 
-			xd_drawbox( &size, flags, pb->pb_tree[pb->pb_obj].ob_state, XD_BCKBOX );
+			xd_drawbox(&size, flags, pb->pb_tree[pb->pb_obj].ob_state, XD_BCKBOX);
 		}
 
 		xd_clip_off();
@@ -714,227 +649,86 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 	 */
 
 	/* low res, full circle (deselected) */
-	static const short rbf_8x8[] = 
-	{ 
-		0x3800, 
-		0x4400, 
-	    0x8200, 
-	    0x8200, 
-	    0x8200,
-	    0x4400, 
-		0x3800, 
-		0x0000 
-	};
+	static const short rbf_8x8[] = { 0x3800, 0x4400, 0x8200, 0x8200, 0x8200, 0x4400, 0x3800, 0x0000 };
 
 	/* low res, center dot */
-	static const short rbc_8x8[] = 
-	{ 
-		0x0000, 
-		0x0000, 
-		0x3800, 
-		0x3800, 
-		0x3800,
-		0x0000, 
-		0x0000, 
-		0x0000 
-	};
+	static const short rbc_8x8[] = { 0x0000, 0x0000, 0x3800, 0x3800, 0x3800, 0x0000, 0x0000, 0x0000 };
 
 	/* low res, upper left arc and center dot */
-	static const short rbu_8x8[] = 
-	{ 
-		0x3800, 
-		0x4400, 
-		0xB800, 
-		0xB800, 
-		0xB800,
-		0x0000, 
-		0x0000, 
-		0x0000 
-	};
+	static const short rbu_8x8[] = { 0x3800, 0x4400, 0xB800, 0xB800, 0xB800, 0x0000, 0x0000, 0x0000 };
 
 	/* low res, lower right arc */
-	static const short rbl_8x8[] = 
-	{
-		0x0000, 
-		0x0000, 
-		0x0200, 
-		0x0200, 
-		0x0200,
-		0x4400, 
-		0x3800, 
-		0x0000 
-	};
+	static const short rbl_8x8[] = { 0x0000, 0x0000, 0x0200, 0x0200, 0x0200, 0x4400, 0x3800, 0x0000 };
 
 	/* med res (2:1 aspect ratio), full circle and center dot */
-	static const short rbf_16x8[] = 
-	{
-		0x1FD0, 
-		0x6018, 
-		0x8784, 
-		0x8844, 
-		0x8784,
-		0x6018, 
-		0x1FD0, 
-		0x0000 
-	};
+	static const short rbf_16x8[] = { 0x1FD0, 0x6018, 0x8784, 0x8844, 0x8784, 0x6018, 0x1FD0, 0x0000 };
 
 	/* med res (2:1 aspect ratio), center dot */
-	static const short rbc_16x8[] = 
-	{
-		0x0000, 
-		0x0000, 
-		0x0780, 
-		0x0F40, 
-		0x0780,
-		0x0000, 
-		0x0000, 
-		0x0000 
-	};
+	static const short rbc_16x8[] = { 0x0000, 0x0000, 0x0780, 0x0F40, 0x0780, 0x0000, 0x0000, 0x0000 };
 
 	/* med res (2:1 aspect ratio), upper left arc and center dot */
-	static const short rbu_16x8[] = 
-	{ 
-		0x1FD0, 
-		0x7810, 
-		0xD780, 
-		0xCFC0, 
-		0xC780,
-		0x4000, 
-		0x0000, 
-		0x0000 
-	};
+	static const short rbu_16x8[] = { 0x1FD0, 0x7810, 0xD780, 0xCFC0, 0xC780, 0x4000, 0x0000, 0x0000 };
 
 	/* med res, lower right arc */
-	static const short rbl_16x8[] = 
-	{
-		0x0000, 
-		0x0008, 
-		0x000C, 
-		0x000C, 
-		0x001C,
-		0x1078, 
-		0x1FD0, 
-		0x0000 
-	};
+	static const short rbl_16x8[] = { 0x0000, 0x0008, 0x000C, 0x000C, 0x001C, 0x1078, 0x1FD0, 0x0000 };
 
 	/* high res, full circle, deselected center dot, 2D */
-	static const short rbf_16x16[] = 
-	{ 
-		0x0000, 
-		0x03C0, 
-		0x0C30,
-		0x1008,
-		0x2184,
-		0x2664, 
-		0x4422, 
-		0x4812, 
-		0x4812, 
-		0x4422,
-		0x2664, 
-		0x2184, 
-		0x1008, 
-		0x0C30, 
-		0x03C0,
-		0x0000 
+	static const short rbf_16x16[] = {
+		0x0000, 0x03C0, 0x0C30, 0x1008, 0x2184, 0x2664, 0x4422, 0x4812,
+		0x4812, 0x4422, 0x2664, 0x2184, 0x1008, 0x0C30, 0x03C0, 0x0000
 	};
 
 	/* high res, center dot */
-	static const short rbc_16x16[] = 
-	{ 
-		0x0000, 
-		0x0000, 
-		0x0000, 
-		0x0000, 
-		0x0180,
-		0x07E0, 
-		0x07E0, 
-		0x0FF0, 
-		0x0FF0, 
-		0x07E0,
-		0x07E0, 
-		0x0180, 
-		0x0000, 
-		0x0000, 
-		0x0000,
-		0x0000 
+	static const short rbc_16x16[] = {
+		0x0000, 0x0000, 0x0000, 0x0000, 0x0180, 0x07E0, 0x07E0, 0x0FF0,
+		0x0FF0, 0x07E0, 0x07E0, 0x0180, 0x0000, 0x0000, 0x0000, 0x0000
 	};
 
-	/* high res, upper left arc and center dot, 3D */ 
-	static const short rbu_16x16x3[] = 
-	{ 
-		0x0000, 
-		0x03C0, 
-		0x0FF0,
-		0x1C18,
-		0x3180,
-		0x37E0, 
-		0x67E0, 
-		0x6FF0,  
-		0x6FF0, 
-		0x67E0,
-		0x27E0, 
-		0x3180, 
-		0x0000, 
-		0x0000, 
-		0x0000,
-		0x0000 
+	/* high res, upper left arc and center dot, 3D */
+	static const short rbu_16x16x3[] = {
+		0x0000, 0x03C0, 0x0FF0, 0x1C18, 0x3180, 0x37E0, 0x67E0, 0x6FF0,
+		0x6FF0, 0x67E0, 0x27E0, 0x3180, 0x0000, 0x0000, 0x0000, 0x0000
 	};
 
 	/* high res, lower right arc, 3D */
-	static const short rbl_16x16x3[] = 
-	{ 
-		0x0000, 
-		0x0000, 
-		0x0000, 
-		0x0000, 
-		0x000C,
-		0x0004, 
-		0x0006, 
-		0x0006, 
-		0x0006, 
-		0x0006,
-		0x000C, 
-		0x000C, 
-		0x1C38, 
-		0x0FF0, 
-		0x03C0,
-		0x0000
+	static const short rbl_16x16x3[] = {
+		0x0000, 0x0000, 0x0000, 0x0000, 0x000C, 0x0004, 0x0006, 0x0006,
+		0x0006, 0x0006, 0x000C, 0x000C, 0x1C38, 0x0FF0, 0x03C0, 0x0000
 	};
 
-	char
-		*string;		/* text beside the button */
+	char *string;						/* text beside the button */
 
-	static const _WORD
-		dmode[3] = {MD_REPLACE,	MD_TRANS, MD_TRANS}; /* drawing mode: */
+	static const _WORD dmode[3] = { MD_REPLACE, MD_TRANS, MD_TRANS };	/* drawing mode: */
 
-	_WORD
-		i, 
-		flags,										 /* object flags */
-		x = pb->pb_x, 
-		y = pb->pb_y, 
-		pxy[8] = {0, 0, 15},
-		ci[6] = {G_WHITE, G_WHITE,   G_BLACK, G_WHITE,   G_BLACK, G_WHITE};	/* colour indices for three steps */
+	_WORD i;
+	_WORD flags;						/* object flags */
+	_WORD x = pb->pb_x;
+	_WORD y = pb->pb_y;
+	_WORD pxy[8] = { 0, 0, 15 };
+	_WORD ci[6] = { G_WHITE, G_WHITE, G_BLACK, G_WHITE, G_BLACK, G_WHITE} ;	/* colour indices for three steps */
 
 	const short *t;						/* aux, for swapping pointers to bitmaps   */
-	const short *rb[3]; 				/* pointers to selected bitmaps            */
-	const short *bmu, *bml, *bmc, *bmf;	/* pointers to resolution-dependent bitmaps */
 
-	MFDB
-		smfdb,			/* source memory block definition */
-		dmfdb;			/* destination memory block definition */
+	const short *rb[3];					/* pointers to selected bitmaps            */
 
-	bool
-		do3d;			/* true if 3d effects should be employed */
+	const short *bmu;
+	const short *bml;
+	const short *bmc;
+	const short *bmf;					/* pointers to resolution-dependent bitmaps */
 
+	MFDB smfdb;							/* source memory block definition */
+	MFDB dmfdb;							/* destination memory block definition */
+
+	bool do3d;							/* true if 3d effects should be employed */
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Define text to display and object flags */
 
-	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+	flags = ((XUSERBLK *) (pb->pb_parm))->ob_flags;
+	string = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
 
 	/* Should 3d effects be drawn? */
 
@@ -950,22 +744,20 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 		smfdb.fd_h = 8;
 		pxy[3] = 7;
 
-		if ( xd_desk.w < 2 * xd_desk.h ) 	/* low res */
+		if (xd_desk.w < 2 * xd_desk.h)	/* low res */
 		{
 			bmu = rbu_8x8;
 			bml = rbl_8x8;
 			bmc = rbc_8x8;
 			bmf = rbf_8x8;
-		}
-		else 								/* med res */
+		} else							/* med res */
 		{
 			bmu = rbu_16x8;
 			bml = rbl_16x8;
 			bmc = rbc_16x8;
 			bmf = rbf_16x8;
 		}
-	}
-	else									/* other (high) resolutuon(s) */
+	} else								/* other (high) resolution(s) */
 	{
 		smfdb.fd_h = 16;
 		pxy[3] = 15;
@@ -973,7 +765,6 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 		bml = rbl_16x16x3;
 		bmc = rbc_16x16;
 		bmf = rbf_16x16;
-
 	}
 
 	/* 
@@ -981,15 +772,14 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 	 * but instead use the full circle and centre dot
 	 */
 
-	if ( do3d )
+	if (do3d)
 	{
-		rb[0] = bmu; /* upper left arc */
-		rb[1] = bml; /* lower right arc */			
-	}
-	else
+		rb[0] = bmu;					/* upper left arc */
+		rb[1] = bml;					/* lower right arc */
+	} else
 	{
-		rb[0] = bmc;  /* center dot  */
-		rb[1] = bmf;  /* full circle */
+		rb[0] = bmc;					/* center dot  */
+		rb[1] = bmf;					/* full circle */
 	}
 
 	/* 
@@ -997,10 +787,10 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 	 * should be used, use full circle
 	 */
 
-	if ( !(xd_colaes && do3d) || (do3d && IS_ACT(flags)) )
-		rb[2] = bmf;  /* full circle */
+	if (!(xd_colaes && do3d) || (do3d && IS_ACT(flags)))
+		rb[2] = bmf;					/* full circle */
 	else
-		rb[2] = bmc;  /* center dot  */
+		rb[2] = bmc;					/* center dot  */
 
 	smfdb.fd_stand = 0;
 	smfdb.fd_nplanes = 1;
@@ -1014,29 +804,28 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 
 	/* If selected, first draw the second chosen bitmap (swap places) */
 
-	ci[4] = 1; 
+	ci[4] = 1;
 
-	if( pb->pb_currstate & OS_SELECTED )
+	if (pb->pb_currstate & OS_SELECTED)
 	{
 		t = rb[0];
 		rb[0] = rb[1];
 		rb[1] = t;
-	}
-	else
+	} else
 	{
-		if ( xd_colaes && do3d )
+		if (xd_colaes && do3d)
 			ci[4] = 0;
 	}
 
 	ci[1] = xd_bg_col;
-	ci[2] = xd_sel_col; 
+	ci[2] = xd_sel_col;
 
-	/* Draw three segments of the button */ 
+	/* Draw three segments of the button */
 
-	for ( i = 0; i < 3; i++ )
+	for (i = 0; i < 3; i++)
 	{
-		smfdb.fd_addr = (void *)(long)rb[i];
-		vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i] );
+		smfdb.fd_addr = (void *) (long) rb[i];
+		vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i]);
 	}
 
 	/* Write the text, always transparent, beside the button */
@@ -1058,67 +847,58 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
 
 static _WORD cdecl ub_rectbut(PARMBLK *pb)
 {
-	_WORD
-		x = pb->pb_x, 
-		y = pb->pb_y,
-		flags;
-
-	char 
-		*string;
-
-	RECT  
-		size; 
-
+	_WORD x = pb->pb_x, y = pb->pb_y, flags;
+	char *string;
+	RECT size;
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Define text to display and object flags */
 
-	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;	
- 
+	flags = ((XUSERBLK *) (pb->pb_parm))->ob_flags;
+	string = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
+
 	/* 
 	 * Define object size and position. Height of the object is
 	 * 3/4 of character height + 2 pixels + 3D enlargements
 	 */
 
-	size.x = x; /* intentionally without "+ aes_hor3d" here */
+	size.x = x;							/* intentionally without "+ aes_hor3d" here */
 	size.y = y + xd_regular_font.ch / 8 + aes_ver3d - 1;
- 	size.h = pb->pb_h - xd_regular_font.ch / 4 - 2 * aes_ver3d + 2;
+	size.h = pb->pb_h - xd_regular_font.ch / 4 - 2 * aes_ver3d + 2;
 
-	if ( xd_desk.w > 2 * xd_desk.h )
-		size.w = 2 * size.h;	/* better looking in ST-medium */
-	else 
+	if (xd_desk.w > 2 * xd_desk.h)
+		size.w = 2 * size.h;			/* better looking in ST-medium */
+	else
 		size.w = size.h;
 
 	/* Draw object box. Specified size will be enlarged as appropriate */
 
-	xd_drawbox(&size, flags, pb->pb_currstate, XD_RECTBUT );
+	xd_drawbox(&size, flags, pb->pb_currstate, XD_RECTBUT);
 
 	/* Draw additional graphic elements - "X" diagonal lines if selected */
 
-	if ( pb->pb_currstate & OS_SELECTED )
+	if (pb->pb_currstate & OS_SELECTED)
 	{
-		_WORD
-			pxy[8], 
-			*pxyp = pxy,
-			b = 0;
+		_WORD pxy[8];
+		_WORD *pxyp = pxy;
+		_WORD b = 0;
 
-		if ( xd_is3dobj(flags) )
+		if (xd_is3dobj(flags))
 			b = 1;
 
-		*pxyp++ = x + b; 					/* x = size.x */
+		*pxyp++ = x + b;				/* x = size.x */
 		*pxyp++ = size.y + b;
 		*pxyp++ = size.x + size.w - 1 - b;
 		*pxyp++ = size.y + size.h - 1 - b;
 		*pxyp++ = pxy[2];
 		*pxyp++ = pxy[1];
 		*pxyp++ = pxy[0];
-		*pxyp   = pxy[3];
+		*pxyp = pxy[3];
 
-		set_linedef(G_BLACK);			
+		set_linedef(G_BLACK);
 		v_pline(xd_vhandle, 2, pxy);
 		v_pline(xd_vhandle, 2, &pxy[4]);
 	}
@@ -1142,37 +922,32 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
 
 static _WORD cdecl ub_scrledit(PARMBLK *pb)
 {
-	XUSERBLK *blk = (XUSERBLK *)pb->pb_parm;
+	XUSERBLK *blk = (XUSERBLK *) pb->pb_parm;
 	TEDINFO *ted = blk->ob_spec.tedinfo;
+	char s[XD_MAX_SCRLED + 1];
+	char *text = s;
+	char *save = ted->te_ptext;			/* pointer to editable text field */
 
-	char 
-		s[XD_MAX_SCRLED + 1],
-		*text = s,
-	    *save = ted->te_ptext;			/* pointer to editable text field */
+	_WORD i;							/* counter for padding with "_"s */
+	_WORD tmode;						/* transparent or replace */
+	_WORD b;								/* border thickness */
+	_WORD x = pb->pb_x;
+	_WORD y = pb->pb_y;
+	_WORD w = pb->pb_w;
+	_WORD h = pb->pb_h;
+	_WORD xl, xr;						/* positions of < > markers */
+	_WORD tw = (_WORD) strlen(save);		/* length of text in the field */
+	_WORD ow = (_WORD) strlen(ted->te_pvalid);	/* length of validation field */
 
-	_WORD 
-		i,								/* counter for padding with "_"s */
-		tmode,							/* transparent or replace */
-		b,								/* border thickness */
-		x = pb->pb_x,
-	    y = pb->pb_y,
-	    w = pb->pb_w,
-	    h = pb->pb_h,
-		xl, xr,								/* positions of < > markers */
-	    tw = (_WORD)strlen(save),				/* length of text in the field */
-	    ow = (_WORD)strlen(ted->te_pvalid);	/* length of validation field */
+	RECT size;							/* size of the text box */
+	RECT cb;							/* character-sized blanking rectange */
 
-	RECT 
-		size,							/* size of the text box */
-		cb;								/* character-sized blanking rectange */
-
-
-	ted->te_ptext = s; 
-	b = -ted->te_thickness; /* border to be positive to outside */
+	ted->te_ptext = s;
+	b = -ted->te_thickness;				/* border to be positive to outside */
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Calculate some positions... */
 
@@ -1193,14 +968,15 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 
 	/* This is an attempt to get rid of the white text background */
 
-	tmode  = MD_REPLACE;
+	tmode = MD_REPLACE;
 
-	if ( xd_colaes ) 
+	if (xd_colaes)
 	{
-		if ( aes_hor3d == 0 && ted->te_thickness != 0 && aes_version == 0x399)
+		if (aes_hor3d == 0 && ted->te_thickness != 0 && aes_version == 0x399)
+		{
 			/* hopefully this branch is valid for Magic only */
-			xd_drawbox(&size, AES3D_1, OS_SELECTED, XD_SCRLEDIT );
-		else
+			xd_drawbox(&size, AES3D_1, OS_SELECTED, XD_SCRLEDIT);
+		} else
 		{
 			/* other "gray background" AESes V4 */
 			clr_object(&size, xd_bg_col, -1);
@@ -1210,7 +986,7 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 
 	/* Define a character-sized blanking rectangle in background colour */
 
-	cb.y = y; 
+	cb.y = y;
 	cb.w = xd_regular_font.cw;
 	cb.h = xd_regular_font.ch;
 
@@ -1223,28 +999,26 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 	 * in the field ( characters < and/or > )
 	 */
 
-	if ( blk->uv.ob_shift > 0 )
+	if (blk->uv.ob_shift > 0)
 	{
 		prt_text("<", xl, y, 0);
-	}
-	else
+	} else
 	{
 		xd_vswr_repl_mode();
 		cb.x = xl;
 		clr_object(&cb, xd_bg_col, -1);
 	}
 
-	if ( tw - blk->uv.ob_shift > ow )
+	if (tw - blk->uv.ob_shift > ow)
 	{
 		xd_vswr_trans_mode();
 		prt_text(">", xr, y, 0);
-	}
-	else
+	} else
 	{
 		xd_vswr_repl_mode();
 		cb.x = xr;
 		clr_object(&cb, xd_bg_col, -1);
-	} 
+	}
 
 	/* Copy visible part of the text to display */
 
@@ -1254,7 +1028,7 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 
 	i = ow - (tw - blk->uv.ob_shift);
 
-	if ( i > 0 )
+	if (i > 0)
 	{
 		text += tw - blk->uv.ob_shift;
 		while (i--)
@@ -1282,41 +1056,34 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
 
 static _WORD cdecl ub_button(PARMBLK *pb)
 {
-	char 
-		*string;
-
-	_WORD 
-		x, 
-		y,
-		flags, 
-		offset = 0; 
-
+	char *string;
+	_WORD x, y, flags, offset = 0;
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Define text to display and object flags */
 
-	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+	flags = ((XUSERBLK *) (pb->pb_parm))->ob_flags;
+	string = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
 
 	/* Draw object box. No change in object size or position */
 
-	xd_drawbox((RECT *)&pb->pb_x, flags, pb->pb_currstate, XD_BUTTON );
+	xd_drawbox((RECT *) & pb->pb_x, flags, pb->pb_currstate, XD_BUTTON);
 
 	/* Define text position and writing mode */
 
 	set_textdef();
 
-	if ( pb->pb_currstate & OS_SELECTED )
+	if (pb->pb_currstate & OS_SELECTED)
 	{
-		if ( xd_is3dobj(flags) )
+		if (xd_is3dobj(flags))
 			offset = 1;
 		else
 			vswr_mode(xd_vhandle, MD_XOR);
 	}
-	
+
 	x = pb->pb_x + (pb->pb_w - (_WORD) xd_strlen(string) * xd_regular_font.cw) / 2 + offset;
 	y = pb->pb_y + (pb->pb_h - xd_regular_font.ch) / 2 + offset;
 
@@ -1340,29 +1107,21 @@ static _WORD cdecl ub_button(PARMBLK *pb)
 
 static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 {
-	_WORD 
-		x, y,		/* text position */
-		dh,			/* height change */
-		flags;		/* state flags */
-
-	const _WORD
-		gap = 2; 	/* distance between the frame and the text (pixels) */
-
-	char 
-		*string;	/* text to be written */
-
-	RECT 
-		size;		/* object frame to be drawn */
-
+	_WORD x, y;							/* text position */
+	_WORD dh;							/* height change */
+	_WORD flags;						/* state flags */
+	const _WORD gap = 2;				/* distance between the frame and the text (pixels) */
+	char *string;						/* text to be written */
+	RECT size;							/* object frame to be drawn */
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Get object flags and title text */
 
-	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+	flags = ((XUSERBLK *) (pb->pb_parm))->ob_flags;
+	string = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
 
 	/* Define object area */
 
@@ -1374,7 +1133,7 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 
 	/* Draw object box */
 
-	xd_drawbox(&size, flags, pb->pb_currstate, XD_RBUTPAR );
+	xd_drawbox(&size, flags, pb->pb_currstate, XD_RBUTPAR);
 
 	/* Define position of title text */
 
@@ -1387,10 +1146,10 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 
 	size.x = x - gap;
 	size.y = y - 1;
-	size.w = (_WORD)xd_strlen(string) * xd_regular_font.cw + 2 * gap;
-	size.h = xd_regular_font.ch + 2; 
+	size.w = (_WORD) xd_strlen(string) * xd_regular_font.cw + 2 * gap;
+	size.h = xd_regular_font.ch + 2;
 
-	clr_object(&size, xd_bg_col, -1);	
+	clr_object(&size, xd_bg_col, -1);
 
 	/* Draw text */
 
@@ -1417,41 +1176,32 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
 
 static _WORD cdecl ub_title(PARMBLK *pb)
 {
-	_WORD 
-		dx,
-		pxy[4],
-		flags;
-
-	char 
-		*string;
-
-	RECT 
-		size;
-
+	_WORD dx, pxy[4], flags;
+	char *string;
+	RECT size;
 
 	/* Define clipping area */
 
-	xd_clip_on((RECT *)&pb->pb_xc);
+	xd_clip_on((RECT *) & pb->pb_xc);
 
 	/* Get object flags and text to write */
 
-	flags = ((XUSERBLK *)(pb->pb_parm))->ob_flags;
-	string = ((XUSERBLK *)(pb->pb_parm))->ob_spec.free_string;
+	flags = ((XUSERBLK *) (pb->pb_parm))->ob_flags;
+	string = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;
 
 	/* Draw a box (or an underline, if there are too few colours) */
 
-	if ( xd_colaes && xd_is3dobj(flags) )
+	if (xd_colaes && xd_is3dobj(flags))
 	{
 		dx = 2;
 		size.x = pb->pb_x;
 		size.y = pb->pb_y - 1;
 		size.w = pb->pb_w;
 		size.h = pb->pb_h;
-		xd_drawbox( &size, flags, pb->pb_currstate, XD_TITLE );
-	}
-	else
+		xd_drawbox(&size, flags, pb->pb_currstate, XD_TITLE);
+	} else
 	{
-		dx = 0;		
+		dx = 0;
 		pxy[0] = pb->pb_x;
 		pxy[3] = pxy[1] = pb->pb_y + pb->pb_h;
 		pxy[2] = pxy[0] + pb->pb_w - 1;
@@ -1484,9 +1234,7 @@ static _WORD cdecl ub_unknown(PARMBLK *pb)
 {
 	/* this would be a mistake anyway, so why draw anything at all ? */
 
-	RECT 
-		*clip = (RECT *)&pb->pb_xc,
-		*frame = (RECT *)&pb->pb_x;
+	RECT *clip = (RECT *) & pb->pb_xc, *frame = (RECT *) & pb->pb_x;
 
 	xd_clip_on(clip);
 
@@ -1517,7 +1265,7 @@ static void xd_calc_cursor(XDINFO *info, RECT *cursor)
 
 	cursor->x += xd_abs_curx(info->tree, info->edit_object, info->cursor_x) * xd_regular_font.cw;
 
-#if 0 /* A slightly smaller cursor looks better in Magic */
+#if 0									/* A slightly smaller cursor looks better in Magic */
 	cursor->y -= 1;
 	cursor->w = 1;
 	cursor->h = xd_regular_font.ch + 2;
@@ -1538,15 +1286,15 @@ static void xd_credraw(XDINFO *info, RECT *area)
 		cursor_mfdb.fd_h = xd_regular_font.ch + 4;
 		cursor_mfdb.fd_nplanes = xd_nplanes;
 		cursor_mfdb.fd_addr = xd_malloc((long) cursor_mfdb.fd_wdwidth *
-										(long) cursor_mfdb.fd_h *
-										(long) xd_nplanes * 2L);
+										(long) cursor_mfdb.fd_h * (long) xd_nplanes * 2L);
 	}
 
 	if (cursor_mfdb.fd_addr != NULL)
 	{
 		RECT cursor, r;
 		MFDB smfdb;
-		_WORD pxy[8], *pxyp = pxy;
+		_WORD pxy[8];
+		_WORD *pxyp = pxy;
 
 		xd_calc_cursor(info, &cursor);
 		smfdb.fd_addr = NULL;
@@ -1554,7 +1302,7 @@ static void xd_credraw(XDINFO *info, RECT *area)
 		if (xd_rcintersect(area, &cursor, &r))
 		{
 			/* Save area below cursor. */
-			
+
 			*pxyp++ = r.x;
 			*pxyp++ = r.y;
 			*pxyp++ = r.x + r.w - 1;
@@ -1562,12 +1310,12 @@ static void xd_credraw(XDINFO *info, RECT *area)
 			*pxyp++ = r.x - cursor.x;
 			*pxyp++ = r.y - cursor.y;
 			*pxyp++ = pxy[4] + r.w - 1;
-			*pxyp   = pxy[5] + r.h - 1;
+			*pxyp = pxy[5] + r.h - 1;
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb, &cursor_mfdb);
 
 			/* Draw cursor. */
-			
+
 			xd_clip_on(&r);
 			xd_vswr_repl_mode();
 			set_linedef(G_BLACK);
@@ -1591,17 +1339,10 @@ static void xd_cur_remove(XDINFO *info)
 {
 	if (cursor_mfdb.fd_addr != NULL)
 	{
-		RECT
-			cursor, 
-			r1,
-			r2;
-
-		MFDB
-			dmfdb;
-
-		_WORD
-			pxy[8],
-			*pxyp = pxy;
+		RECT cursor, r1, r2;
+		MFDB dmfdb;
+		_WORD pxy[8];
+		_WORD *pxyp = pxy;
 
 		xd_calc_cursor(info, &cursor);
 		xd_mouse_off();
@@ -1618,16 +1359,15 @@ static void xd_cur_remove(XDINFO *info)
 			*pxyp++ = cursor.x;
 			*pxyp++ = cursor.y;
 			*pxyp++ = cursor.x + pxy[2];
-			*pxyp   = cursor.y + pxy[3];
+			*pxyp = cursor.y + pxy[3];
 
 			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 			xd_clip_off();
-		}
-		else
+		} else
 		{
 			xw_getfirst(info->window, &r1);
 
-			while(r1.w != 0 && r1.h != 0)
+			while (r1.w != 0 && r1.h != 0)
 			{
 				if (xd_rcintersect(&r1, &cursor, &r2))
 				{
@@ -1642,7 +1382,7 @@ static void xd_cur_remove(XDINFO *info)
 					*pxyp++ = r2.x;
 					*pxyp++ = r2.y;
 					*pxyp++ = r2.x + r2.w - 1;
-					*pxyp   = r2.y + r2.h - 1;
+					*pxyp = r2.y + r2.h - 1;
 
 					vro_cpyfm(xd_vhandle, S_ONLY, pxy, &cursor_mfdb, &dmfdb);
 
@@ -1664,17 +1404,9 @@ static void xd_cur_remove(XDINFO *info)
 
 void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 {
-	RECT
-		r1,
-		r2,
-		cursor;
-
-	_WORD
-		draw_cur;
-
-	OBJECT
-		*tree = info->tree;
-
+	RECT r1, r2, cursor;
+	_WORD draw_cur;
+	OBJECT *tree = info->tree;
 
 	xd_mouse_off();
 
@@ -1682,10 +1414,11 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 	{
 		xd_calc_cursor(info, &cursor);
 		draw_cur = xd_rcintersect(area, &cursor, &cursor);
-	}
-	else
+	} else
+	{
 		draw_cur = FALSE;
-
+	}
+	
 	if (info->dialmode != XD_WINDOW)
 	{
 		if (flags & XD_RDIALOG)
@@ -1693,8 +1426,7 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, RECT *area, _WORD flags)
 
 		if (draw_cur)
 			xd_credraw(info, &cursor);
-	}
-	else
+	} else
 	{
 		xw_getfirst(info->window, &r1);
 
@@ -1783,36 +1515,23 @@ void xd_drawthis(XDINFO *info, _WORD start)
 
 void xd_change(XDINFO *info, _WORD object, _WORD newstate, _WORD draw)
 {
-	OBJECT
-		*tree = info->tree;
+	OBJECT *tree = info->tree;
+	_WORD twostates;
 
-	_WORD
-		twostates;
-
-	if ( object < 0 ) 
+	if (object < 0)
 		return;
 
 	twostates = (newstate & 0xff) | (tree[object].ob_state & (0xff00 | OS_WHITEBAK));	/* preserve extended states */
 
 	if (info->dialmode != XD_WINDOW)
-		objc_change
-		(
-			tree, 
-			object, 
-			0,
-			info->drect.x,
-			info->drect.y,
-			info->drect.w,
-			info->drect.h,
-			twostates, 
-			draw
-		);
-	else
+	{
+		objc_change(tree, object, 0, info->drect.x, info->drect.y, info->drect.w, info->drect.h, twostates, draw);
+	} else
 	{
 		tree[object].ob_state = twostates;
 
 		if (draw)
-			xd_drawthis(info, object); /* draw only this object */
+			xd_drawthis(info, object);	/* draw only this object */
 	}
 }
 
@@ -1872,11 +1591,11 @@ static void xd_translate(OBJECT *tree, _WORD parent, _WORD offset)
  * configuration file, because this data is needed before the file is read.
  */
 
-static bool own_userdef = 0; /* =1 if Teradesk will always draw all userdef objects */
+static bool own_userdef = 0;			/* =1 if Teradesk will always draw all userdef objects */
 
 static bool must_userdef(OBJECT *ob)
 {
-	if ( !own_userdef )
+	if (!own_userdef)
 	{
 		if (!(aes_flags & GAI_WHITEBAK))
 			return TRUE;
@@ -1897,8 +1616,8 @@ static bool must_userdef(OBJECT *ob)
  * but currently there is no way to store that information, because
  * the resource is initialized before the configuration file is read.
  */
- 
-void xd_own_xobjects( bool setit )
+
+void xd_own_xobjects(bool setit)
 {
 	own_userdef = setit;
 }
@@ -1921,12 +1640,8 @@ void xd_own_xobjects( bool setit )
 
 static _WORD cnt_user(OBJECT *tree, _WORD *n, _WORD *nx)
 {
-	OBJECT
-		*object = tree;
-
-	_WORD 
-		etype;
-
+	OBJECT *object = tree;
+	_WORD etype;
 
 	*n = 0;
 	*nx = 0;
@@ -1935,39 +1650,33 @@ static _WORD cnt_user(OBJECT *tree, _WORD *n, _WORD *nx)
 	{
 		etype = xd_xobtype(object);
 
-#if 0 /* with a good resource file there is no need for this test */
+#if 0									/* with a good resource file there is no need for this test */
 		if (xd_is_xtndelement(etype) && ((object->ob_type & 0xFF) != G_USERDEF))
 #endif
 
-		if( xd_is_xtndelement(etype) )		
-		{
-			switch(etype)
+			if (xd_is_xtndelement(etype))
 			{
+				switch (etype)
+				{
 				case XD_DRAGBOX:	/* dragbox "ear" on a dialog */
 				case XD_BCKBOX:		/* background box */
 				case XD_SCRLEDIT:	/* scrolled text field */
 				case XD_FONTTEXT:	/* sample text in font selector */
-				{
 					(*nx)++;		/* always userdef, ignore AESses which may support this (none?) */
 					break;
-				}
 				case XD_RECTBUT:	/* checkbox button */
 				case XD_ROUNDRB:	/* round radio button */
 				case XD_TITLE:		/* title */
-				case XD_RBUTPAR: 	/* titled fram */
-				case XD_BUTTON :	/* rectangular button with text */
-				{
-					if ( must_userdef(object) )
+				case XD_RBUTPAR:	/* titled fram */
+				case XD_BUTTON:		/* rectangular button with text */
+					if (must_userdef(object))
 						(*nx)++;	/* userdef only if unsuported by AES */
 					break;
-				}
-				default :
-				{
+				default:
 					(*n)++;			/* not using extended parameter blocks */
 					break;
 				}
 			}
-		}
 
 		if (object->ob_flags & OF_LASTOB)
 			return (*n + *nx);
@@ -1986,28 +1695,18 @@ static _WORD cnt_user(OBJECT *tree, _WORD *n, _WORD *nx)
 
 void xd_set_userobjects(OBJECT *tree)
 {
-	_WORD 
-		etype, 		/* extended object type */
-		n,			/* object count */ 
-		nx, 
-		d, 
-		hmin,		/* minimum object size */
-		object = 0,	/* object index */
-		xuserblk,	/* true if extended parameterblock is used */
-		newflags;	/* remember object flags */
-
-	OBJECT 
-		*c_obj;		/* pointer to analyzed object */
-
-	USERBLK 
-		*c_ub;
-
-	XDOBJDATA 
-		*data;
-
-	_WORD 
-		cdecl(*c_code) (PARMBLK *parmblock);
-
+	_WORD etype;						/* extended object type */
+	_WORD n;							/* object count */
+	_WORD nx;
+	_WORD d;
+	_WORD hmin;							/* minimum object size */
+	_WORD object = 0;					/* object index */
+	_WORD xuserblk;						/* true if extended parameterblock is used */
+	_WORD newflags;						/* remember object flags */
+	OBJECT *c_obj;						/* pointer to analyzed object */
+	USERBLK *c_ub;
+	XDOBJDATA *data;
+	PARMBLKFUNC c_code;
 
 	/* If there is nothing to do, return (count progdefined objects) */
 
@@ -2016,14 +1715,7 @@ void xd_set_userobjects(OBJECT *tree)
 
 	/* Allocate memory for objects; return from this routine if failed */
 
-	if 
-	(
-		(
-			data = xd_malloc(sizeof(XDOBJDATA) + 
-			sizeof(USERBLK) * (long)n +
-			sizeof(XUSERBLK) * (long)nx)
-		) == NULL
-	)
+	if ((data = xd_malloc(sizeof(XDOBJDATA) + sizeof(USERBLK) * (long) n + sizeof(XUSERBLK) * (long) nx)) == NULL)
 		return;
 
 	data->next = xd_objdata;
@@ -2034,65 +1726,53 @@ void xd_set_userobjects(OBJECT *tree)
 
 	for (;;)
 	{
-		c_code = 0L;					/* no pointer to user code */
+		c_code = 0;						/* no pointer to user code */
 		c_obj = tree + object;			/* object index */
 		xuserblk = FALSE;				/* no extended block */
 		etype = xd_xobtype(c_obj);		/* extended type */
 
-#if 0 /* with a correct resource file there is no need for this test */
+#if 0									/* with a correct resource file there is no need for this test */
 		if (xd_is_xtndelement(etype) && ((c_obj->ob_type & 0xFF) != G_USERDEF))
 #endif
-		if(  xd_is_xtndelement(etype) )
-		{
-			/*
-			 * It seems that AESes are not consistent in treating progdef objects 
-			 * if they are flagged as "indicator" or "activator"; some seem to 
-			 * draw 3d effect anyway (AES4.1, NAES), and some do not (Geneva?). 
-			 * Therefore, those flags are here saved in the extended userblock  
-			 * and then disabled so that only user code will draw 3d effects.
-			 */ 
-
-			newflags = c_obj->ob_flags & ~(AES3D_1 | AES3D_2);
-			xuserblk = TRUE; /* but only if AES does not support this type */
-
-			switch (etype)
+			if (xd_is_xtndelement(etype))
 			{
-				case XD_DRAGBOX :
+				/*
+				 * It seems that AESes are not consistent in treating progdef objects 
+				 * if they are flagged as "indicator" or "activator"; some seem to 
+				 * draw 3d effect anyway (AES4.1, NAES), and some do not (Geneva?). 
+				 * Therefore, those flags are here saved in the extended userblock  
+				 * and then disabled so that only user code will draw 3d effects.
+				 */
+
+				newflags = c_obj->ob_flags & ~(AES3D_1 | AES3D_2);
+				xuserblk = TRUE;		/* but only if AES does not support this type */
+
+				switch (etype)
 				{
-					/* Dragbox "ear" on the dialogs; always userdefined */ 
+				case XD_DRAGBOX:
+					/* Dragbox "ear" on the dialogs; always userdefined */
 					c_code = ub_drag;
 					break;
-				}
-				case XD_ROUNDRB :
-				{
+				case XD_ROUNDRB:
 					/* Round radio button */
 					if (must_userdef(c_obj))
 						c_code = ub_roundrb;
 					break;
-				}
-				case XD_RECTBUT :
-				{
+				case XD_RECTBUT:
 					/* Rectangular "checkbox" button */
 					if (must_userdef(c_obj))
 						c_code = ub_rectbut;
 					break;
-				}
-	/* Currently not used anywhere in Teradesk
-	
-				case XD_RECTBUTTRI :
-				{
-					if (must_userdef(c_obj))
-						c_code = ub_rectbuttri;
-					break;
-				}
-				case XD_CYCLBUT :
-				{
-					c_code = ub_cyclebut;
-					break;
-				}
-	*/
-				case XD_BUTTON :
-				{
+#if 0 /* Currently not used anywhere in Teradesk */
+			   case XD_RECTBUTTRI :
+				   if (must_userdef(c_obj))
+					   c_code = ub_rectbuttri;
+				   break;
+			   case XD_CYCLBUT :
+				   c_code = ub_cyclebut;
+				   break;
+#endif
+				case XD_BUTTON:
 					/* 
 					 * Rectangular button with (possibly) underlined text;   
 					 * This object should have a minimum height in order   
@@ -2100,47 +1780,43 @@ void xd_set_userobjects(OBJECT *tree)
 					 * Modification should affect both userdefined and 
 					 * AES-supported objects.
 					 */
-					hmin = xd_regular_font.ch + 2; /* minimum height */
-	
-					if ( xd_has3d && (aes_ver3d == 0) ) /* 3D but without enlargements */
+					hmin = xd_regular_font.ch + 2;	/* minimum height */
+
+					if (xd_has3d && (aes_ver3d == 0))	/* 3D but without enlargements */
 						hmin += 2;
-	
-					if ( c_obj->ob_height < hmin )
+
+					if (c_obj->ob_height < hmin)
 					{
 						c_obj->ob_y -= (hmin - c_obj->ob_height) / 2;
 						c_obj->ob_height = hmin;
 					}
-	
+
 					if (must_userdef(c_obj))
 						c_code = ub_button;
-	
+
 					break;
-				}
-				case XD_RBUTPAR :
-				{
+				case XD_RBUTPAR:
 					/* 
 					 * Frame with a title on the upper contour;
 					 * Increase object height slightly, because
-					 * the upper side will alwas be drawn about
+					 * the upper side will always be drawn about
 					 * 1/2 character heights inside the object;
-					 * withut increasing object size, the upper
+					 * without increasing object size, the upper
 					 * edge would be too close to objects  
 					 * inside. This affects both userdefined and
 					 * AES-supported objects.
 					 */
 					d = xd_regular_font.ch / 2;
-	
+
 					c_obj->ob_y -= d;
 					c_obj->ob_height += d;
 					xd_translate(tree, object, d);
-	
-					if (must_userdef(c_obj)) 
+
+					if (must_userdef(c_obj))
 						c_code = ub_rbutpar;
-	
+
 					break;
-				}
-				case XD_TITLE :
-				{
+				case XD_TITLE:
 					/* 
 					 * Dialog title; object height must always be
 					 * increased a little bit, for better look.
@@ -2148,74 +1824,64 @@ void xd_set_userobjects(OBJECT *tree)
 					 * underline gets too close to the text
 					 * (in fact, it is drawn OVER the text)
 					 */
-	
+
 					if (must_userdef(c_obj))
 						c_code = ub_title;
-	
-					d = ( xd_colaes && (aes_ver3d == 0) ) ? 3 : 1;
-					c_obj->ob_height += 2 * d; 
+
+					d = (xd_colaes && (aes_ver3d == 0)) ? 3 : 1;
+					c_obj->ob_height += 2 * d;
 					c_obj->ob_y -= d + 1;
 					break;
-				}
-				case XD_SCRLEDIT:	
-				{
+				case XD_SCRLEDIT:
 					/* Scrolled editable text; always userdefined */
 					c_code = ub_scrledit;
 					break;
-				}
 				case XD_FONTTEXT:
-				{
 					/* 
 					 * Sample text in the font selector dialog;
 					 * ub_drag is replaced later by a pointer to
 					 * actual code; see font.c
 					 */
-	
+
 					c_code = ub_drag;	/* does not matter, so use any existing one */
 					break;
-				}
 				case XD_BCKBOX:
-				{
 					/* window background box. Always userdefined  */
-	
-					if(c_obj->ob_flags & AES3D_1)
+
+					if (c_obj->ob_flags & AES3D_1)
 					{
 						c_obj->ob_y -= 1;
 						c_obj->ob_height += 2;
 					}
-	
-					c_code = ub_bckbox;	
+
+					c_code = ub_bckbox;
 					break;
-				}
-#if 0 /* this should never happen */
+#if 0									/* this should never happen */
 				default:
-				{
 					/* Yet unknown userdef; this should never happen! */
 					c_code = ub_unknown;
 					xuserblk = FALSE;
 					break;
-				}
 #endif
-			}
-
-			if (c_code)	
-			{
-				if (xuserblk)
-				{
-					XUSERBLK *c_xub = (XUSERBLK *)c_ub;
-	
-					xd_xuserdef(c_obj,  c_xub, c_code);
-					c_ub = (USERBLK *)(c_xub + 1);
-					c_obj->ob_flags = newflags;
 				}
-				else
-				{
-					xd_userdef(c_obj, c_ub, c_code);
-					c_ub++;
-				}
-			}
 
-		}
+				if (c_code)
+				{
+					if (xuserblk)
+					{
+						XUSERBLK *c_xub = (XUSERBLK *) c_ub;
+
+						xd_xuserdef(c_obj, c_xub, c_code);
+						c_ub = (USERBLK *) (c_xub + 1);
+						c_obj->ob_flags = newflags;
+					} else
+					{
+						xd_userdef(c_obj, c_ub, c_code);
+						c_ub++;
+					}
+				}
+
+			}
 
 		if (c_obj->ob_flags & OF_LASTOB)
 			return;
@@ -2234,8 +1900,8 @@ _WORD xd_gaddr(_WORD iindex, void *addr)
 {
 	_WORD result;
 
-	if ((result = rsrc_gaddr(R_TREE, iindex, addr)) != 0) 
-		xd_set_userobjects(*(OBJECT **)addr);
+	if ((result = rsrc_gaddr(R_TREE, iindex, addr)) != 0)
+		xd_set_userobjects(*(OBJECT **) addr);
 
 	return result;
 }
@@ -2249,6 +1915,7 @@ _WORD xd_gaddr(_WORD iindex, void *addr)
 char *xd_set_srcl_text(OBJECT *tree, _WORD item, char *txt)
 {
 	TEDINFO *ted = xd_get_obspecp(tree + item)->tedinfo;
+
 	ted->te_ptext = txt;
 	*txt = 0;
 	return txt;
