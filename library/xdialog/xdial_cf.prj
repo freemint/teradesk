@@ -29,8 +29,6 @@ xdialog.lib
 ; -P: absolute calls; 
 ; -G: size optimization;
 
-.C [-D__USE_MACROS=1];
-
 ; With debug info:
 
 ;.C[ -C -K -Y -G -I..\..\include]

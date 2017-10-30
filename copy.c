@@ -659,18 +659,7 @@ _WORD cnt_items(const char *path,		/* path to look into */
 }
 
 
-#if __USE_MACROS
-
-#define dir_error(x,y)	xhndl_error(MESHOWIF, x, y)
-
-#else
-
-static _WORD dir_error(_WORD error, const char *file)
-{
-	return xhndl_error(MESHOWIF, error, file);
-}
-
-#endif
+#define dir_error(x,y) xhndl_error(MESHOWIF, x, y)
 
 
 /*

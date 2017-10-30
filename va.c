@@ -1431,15 +1431,6 @@ void handle_av_protocol(const _WORD *message)
 
 /*
  * Remove all AV-clients status data from the list
- */
-void rem_all_avstat(void)
-{
-	lsrem_all((LSTYPE **) (&avstatus), rem_avstat);
-}
-
-
-#if !__USE_MACROS
-/*
  * Initialize AV-clients status data.
  * This routine is not really necessary; it exists 
  * just for the consistency of style.
@@ -1447,7 +1438,7 @@ void rem_all_avstat(void)
  */
 void vastat_default(void)
 {
-	rem_all_avstat();
+	lsrem_all((LSTYPE **) (&avstatus), rem_avstat);
 }
 
 
@@ -1463,7 +1454,6 @@ void va_close(WINDOW *w)
 	xw_close(w);
 }
 
-#endif
 
 
 /*
@@ -1591,5 +1581,5 @@ static CfgEntry va_table[] = {
 
 void va_config(XFILE *file, int lvl, int io, int *error)
 {
-	*error = handle_cfg(file, va_table, lvl, CFGEMP, io, rem_all_avstat, vastat_default);
+	*error = handle_cfg(file, va_table, lvl, CFGEMP, io, vastat_default, vastat_default);
 }

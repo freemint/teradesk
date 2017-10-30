@@ -256,12 +256,6 @@ void wd_hndlmenu(_WORD item, _WORD keystate);
 void wd_menu_ienable(_WORD item, _WORD enable);
 void wd_sizes(void);
 
-#if __USE_MACROS
-#define wd_init wd_default
-#else
-void wd_init(void);
-#endif
-
 void wd_default(void);
 bool wd_tmpcls(void);
 void wd_reopen(void);

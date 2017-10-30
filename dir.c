@@ -1905,19 +1905,8 @@ void dir_line(DIR_WINDOW *dw, char *s, _WORD item)
  * If a macro is used instead of a function, a few bytes
  * are saved in size, and a little bit gained in speed.
  */
-
-#if __USE_MACROS
-
 #define start_ic(w,sl) (long)(sl * w->columns + w->px)
 
-#else
-
-static long start_ic(DIR_WINDOW * w, _WORD sl)
-{
-	return (long) (sl * w->columns + w->px);
-}
-
-#endif
 
 /*
  * Tell how many icons have to be drawn in a window.

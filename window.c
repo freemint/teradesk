@@ -1821,6 +1821,9 @@ void wd_sizes(void)
 }
 
 
+/*
+ * Initialize windows data
+ */
 void wd_default(void)
 {
 	wd_deselect_all();					/* deselect everything */
@@ -1833,20 +1836,6 @@ void wd_default(void)
 	wd_defsize(DIR_WIND);				/* default window sizes and font size */
 	wd_sizes();							/* limit window size (min/max) */
 }
-
-
-#if !__USE_MACROS
-
-/*
- * Initialize windows data
- */
-
-void wd_init(void)
-{
-	wd_default();
-}
-
-#endif
 
 
 /* 
@@ -3481,7 +3470,7 @@ CfgEntry window_table[] = {
 
 void wd_config(XFILE *file, int lvl, int io, int *error)
 {
-	*error = handle_cfg(file, window_table, lvl, CFGEMP, io, wd_init, wd_default);
+	*error = handle_cfg(file, window_table, lvl, CFGEMP, io, wd_default, wd_default);
 }
 
 

@@ -28,8 +28,6 @@ xdialog.lib
 ; -P: absolute calls; 
 ; -G: size optimization;
 
-.C [-D__USE_MACROS=1];
-
 .C[-C-]
 .C[-K]
 .C[-G]

@@ -90,18 +90,9 @@ extern char const thisapp[];
 void va_init(void);
 WINDOW *va_accw(void);
 void va_delall(_WORD ap_id, bool force);
-void rem_all_avstat(void);
-
-#if __USE_MACROS
-#define vastat_default rem_all_avstat
-/*
-#define va_close  xw_closedelete
-*/
-#define va_close xw_close
-#else
 void vastat_default(void);
+
 void va_close(WINDOW *w);
-#endif
 
 void handle_av_protocol(const _WORD *message);
 _WORD va_start_prg(const char *program, ApplType type, const char *cmdline);

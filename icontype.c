@@ -358,7 +358,7 @@ void icnt_init(void)
  * Clear all icontypes (files, folders and programs)
  */
 
-void rem_all_icontypes(void)
+void icnt_default(void)
 {
 	lsrem_three((LSTYPE **) iconlists, lsrem);
 }
@@ -397,20 +397,6 @@ static ICONTYPE *itadd_one(ICONTYPE **list, char *filetype, _WORD icon)
 
 #endif
 
-
-
-#if !__USE_MACROS
-
-/*
- * Set default icon assignment: no icontypes
- */
-
-void icnt_default(void)
-{
-	rem_all_icontypes();
-}
-
-#endif
 
 
 /*
@@ -615,5 +601,5 @@ static CfgEntry icontypes_table[] = {
  */
 void icnt_config(XFILE *file, int lvl, int io, int *error)
 {
-	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, rem_all_icontypes, icnt_default);
+	*error = handle_cfg(file, icontypes_table, lvl, CFGEMP, io, icnt_default, icnt_default);
 }

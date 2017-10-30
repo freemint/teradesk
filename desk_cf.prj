@@ -52,12 +52,6 @@ desk_cf.prg				; with _MINT_=1  for all systems
 .C [-D_OVSCAN=0] ;
 
 
-; Define __USE_MACROS as 1 to use macros instead of some function calls
-; and so save a little in program size
-
-.C [-D__USE_MACROS=1];
-
-
 ; Define CFGEMP as 1 if you want to write empty (i.e. value = 0) config fields
 ; CFGEMP is passed to every CfgSave call; so it is still
 ; configurable per individual config table

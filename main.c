@@ -1171,7 +1171,7 @@ static bool init(void)
 		prg_init();						/* program types  */
 		app_init();						/* installed apps */
 		va_init();						/* AV-protocol    */
-		wd_init();						/* windows        */
+		wd_default();					/* windows        */
 
 		hyppage = empty;
 

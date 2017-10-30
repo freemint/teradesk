@@ -483,19 +483,7 @@ void txt_prtcolumn(TXT_WINDOW *w,		/* pointer naar window */
  * If a macro is used instead of a function, a couple of bytes
  * are saved
  */
-
-#if __USE_MACROS
-
 #define set_menu(x) xw_menu_icheck((WINDOW *)(x), VMHEX, x->hexmode)
-
-#else
-
-static void set_menu(TXT_WINDOW *w)
-{
-	xw_menu_icheck((WINDOW *) w, VMHEX, w->hexmode);
-}
-
-#endif
 
 
 /*
