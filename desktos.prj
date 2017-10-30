@@ -1,4 +1,4 @@
-
+;
 ;  Teradesk. Copyright (c) 1993 - 2002  W. Klaren.
 ;                          2002 - 2003  H. Robbers,
 ;                          2003 - 2007  Dj. Vukovic
@@ -40,18 +40,19 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 ; -L: local symbols (linker)
 ; -V: verbose output (assembler & linker)
 
+.C[-C-]
+.C[-P]
+.C[-G]
+.C[-Y]
+.C[-Ilibrary\xdialog -Iinclude]
+.S[-S -Iinclude]
+.L[-S=32000]
 
 ; without debug info
-
-.C [-C -P -G -Ilibrary\xdialog -Iinclude]
-.S [-S -Iinclude]
-.L [-S=8192]
+;.L[-G- -L- -Y-]
 
 ; with debug info
-
-;.C [-Y -C -P -G -Ilibrary\xdialog -Iinclude]
-;.S [-S -Iinclude]
-;.L [-G -L -Y -S=8192 -H=512]
+;.L[-G -L -Y]
 
 =
 
@@ -81,7 +82,6 @@ font.c
 va.c
 dragdrop.c
 
-;TOS gedeelte
 ;TOS part
 
 environm.c
@@ -99,7 +99,6 @@ viewer.c
 
 
 
-;Vervangingen en aanvullingen van bibliotheekfuncties
 ;Replacements of and additions to library functions
 
 events.c
@@ -111,8 +110,23 @@ error.c
 
 ;Specific libraries:
 
-library\xdialog\xdialog.prj
-library\utility\library.prj
+library\xdialog\xdialog.c
+library\xdialog\xdnmdial.c
+library\xdialog\xdevent.c
+library\xdialog\xddraw.c
+library\xdialog\xdutil.c
+library\xdialog\xdemodes.c
+library\xdialog\xwindow.c
+
+library\utility\pathutil.c
+library\utility\cookie.c
+library\utility\gettos.c
+library\utility\xerror.c
+library\utility\strsncpy.c
+library\utility\minmax.c
+library\utility\other.c
+library\utility\nf_ops.c
+library\utility\nf_shutd.c
 
 
 ;Standard libraries
@@ -120,5 +134,3 @@ library\utility\library.prj
 pcstdlib.lib
 pctoslib.lib
 pcgemlib.lib
-
-;pcextlib.lib ; needed for debugging only

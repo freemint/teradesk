@@ -26,7 +26,6 @@ desk_cf.prg				; with _MINT_=1  for all systems
 .C [-27]				; Coldfire/68020 compatible
 
 
-
 ; Compiler and linker options:
 ;
 ; -K: unsigned char;
@@ -37,17 +36,19 @@ desk_cf.prg				; with _MINT_=1  for all systems
 ; -L: local symbols (linker)
 ; -V: verbose output (assembler & linker)
 
-; without debug info
+.C[-C-]
+.C[-P]
+.C[-G]
+.C[-Y]
+.C[-Ilibrary\xdialog -Iinclude]
+.S[-S -Iinclude]
+.L[-S=32000]
 
-.C [-C -P -G -Ilibrary\xdialog -Iinclude]
-.S [-S -Iinclude]
-.L [-S=32000]
+; without debug info
+;.L[-G- -L- -Y-]
 
 ; with debug info
-
-;.C [-Y -C -P -G -Ilibrary\xdialog -Iinclude]
-;.S [-Y -S -Iinclude]
-;.L [-G -L -Y -S=8192 -H=512]
+;.L[-G -L -Y]
 
 =
 
@@ -77,7 +78,6 @@ font.c
 va.c
 dragdrop.c
 
-;TOS gedeelte
 ;TOS part
 
 environm.c
@@ -95,7 +95,6 @@ viewer.c
 
 
 
-;Vervangingen en aanvullingen van bibliotheekfuncties
 ;Replacements of and additions to library functions
 
 events.c
@@ -107,8 +106,24 @@ error.c
 
 ;Specific libraries:
 
-library\xdialog\xdial_cf.prj
-library\utility\lib_cf.prj
+library\xdialog\xdialog.c
+library\xdialog\xdnmdial.c
+library\xdialog\xdevent.c
+library\xdialog\xddraw.c
+library\xdialog\xdutil.c
+library\xdialog\xdemodes.c
+library\xdialog\xwindow.c
+
+library\utility\pathutil.c
+library\utility\cookie.c
+library\utility\gettos.c
+library\utility\xerror.c
+library\utility\strsncpy.c
+library\utility\minmax.c
+library\utility\other.c
+library\utility\nf_ops.c
+library\utility\nf_shutd.c
+
 
 ;Standard libraries
 
