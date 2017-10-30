@@ -2284,7 +2284,7 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 	/* Don't use xw_get() here... */
 
-	wind_get(0, WF_WORKXYWH, &xd_desk.g_x, &xd_desk.g_y, &xd_desk.g_w, &xd_desk.g_h);
+	wind_get_grect(0, WF_WORKXYWH, &xd_desk);
 	xd_vhandle = graf_handle(&xd_fnt_w, &xd_fnt_h, &dummy, &dummy);
 
 	/* Open virtual workstation on screen */

@@ -452,7 +452,7 @@ void xw_redraw_menu(WINDOW *w, _WORD object, GRECT *r)
 			{
 				if (xd_rcintersect(&r1, &r2, &in))
 				{
-					objc_draw(menu, w->xw_bar, MAX_DEPTH, in.g_x, in.g_y, in.g_w, in.g_h);
+					objc_draw_grect(menu, w->xw_bar, MAX_DEPTH, &in);
 					xd_clip_on(&in);
 					v_pline(xd_vhandle, 2, pxy);
 					xd_clip_off();
@@ -476,16 +476,6 @@ static void xw_find_objects(OBJECT *menu, _WORD *bar, _WORD *boxes)
 {
 	*bar = menu->ob_head;
 	*boxes = menu->ob_tail;
-}
-
-
-/*
- * Funktie voor het tekenen van een pulldown menu.
- */
-
-static void xw_menu_draw(OBJECT *menu, _WORD item, GRECT *box)
-{
-	objc_draw(menu, item, MAX_DEPTH, box->g_x, box->g_y, box->g_w, box->g_h);
 }
 
 
@@ -607,7 +597,7 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 					smfdb.fd_addr = NULL;
 
 					xw_copy_screen(&bmfdb, &smfdb, pxy);
-					xw_menu_draw(menu, i, &box);
+					objc_draw_grect(menu, i, MAX_DEPTH, &box);
 				}
 
 				do
@@ -995,9 +985,9 @@ void xw_set(WINDOW *w, _WORD field, ...)
 		/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
 		r = va_arg(p, GRECT *);
 		w->xw_size = *r;
-		wind_set(w->xw_handle, field, w->xw_size.g_x, w->xw_size.g_y, w->xw_size.g_w, w->xw_size.g_h);
-		wind_get(w->xw_handle, WF_CURRXYWH, &w->xw_size.g_x, &w->xw_size.g_y, &w->xw_size.g_w, &w->xw_size.g_h);
-		wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x, &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
+		wind_set_grect(w->xw_handle, field, &w->xw_size);
+		wind_get_grect(w->xw_handle, WF_CURRXYWH, &w->xw_size);
+		wind_get_grect(w->xw_handle, WF_WORKXYWH, &w->xw_work);
 		xw_set_barpos(w);			/* irelevant but harmless in an iconified window */
 		break;
 	case WF_TOP:
@@ -1088,7 +1078,7 @@ void xw_get(WINDOW *w, _WORD field, GRECT *r)
 	case WF_FULLXYWH:
 	case WF_PREVXYWH:
 	case WF_ICONIFY:
-		wind_get(handle, field, &r->g_x, &r->g_y, &r->g_w, &r->g_h);
+		wind_get_grect(handle, field, r);
 		break;
 	}
 }
@@ -1144,7 +1134,7 @@ void xw_calc(_WORD w_ctype, _WORD w_flags, GRECT *input, GRECT *output, OBJECT *
 {
 	_WORD height;
 
-	wind_calc(w_ctype, w_flags, input->g_x, input->g_y, input->g_w, input->g_h, &output->g_x, &output->g_y, &output->g_w, &output->g_h);
+	wind_calc_grect(w_ctype, w_flags, input, output);
 
 	if (menu)
 	{
@@ -1286,7 +1276,7 @@ void xw_open(WINDOW *w, GRECT *size)
 
 	w->xw_size = *size;
 
-	wind_get(w->xw_handle, WF_WORKXYWH, &w->xw_work.g_x, &w->xw_work.g_y, &w->xw_work.g_w, &w->xw_work.g_h);
+	wind_get_grect(w->xw_handle, WF_WORKXYWH, &w->xw_work);
 
 	xw_set_barpos(w);
 

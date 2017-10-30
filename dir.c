@@ -2037,7 +2037,7 @@ OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc,	/* first icon column to display */
 
 void draw_tree(OBJECT *tree, GRECT *clip)
 {
-	objc_draw(tree, ROOT, MAX_DEPTH, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
+	objc_draw_grect(tree, ROOT, MAX_DEPTH, clip);
 }
 
 

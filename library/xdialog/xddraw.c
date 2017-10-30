@@ -1423,7 +1423,7 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, GRECT *area, _WORD flags)
 	if (info->dialmode != XD_WINDOW)
 	{
 		if (flags & XD_RDIALOG)
-			objc_draw(tree, start, depth, area->g_x, area->g_y, area->g_w, area->g_h);
+			objc_draw_grect(tree, start, depth, area);
 
 		if (draw_cur)
 			xd_credraw(info, &cursor);
@@ -1434,7 +1434,7 @@ void xd_redraw(XDINFO *info, _WORD start, _WORD depth, GRECT *area, _WORD flags)
 		while (r1.g_w != 0 && r1.g_h != 0)
 		{
 			if ((flags & XD_RDIALOG) && xd_rcintersect(&r1, area, &r2))
-				objc_draw(tree, start, depth, r2.g_x, r2.g_y, r2.g_w, r2.g_h);
+				objc_draw_grect(tree, start, depth, &r2);
 
 			if (draw_cur && xd_rcintersect(&r1, &cursor, &r2))
 				xd_credraw(info, &r2);
