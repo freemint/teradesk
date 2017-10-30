@@ -25,83 +25,9 @@
 desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 
 
-; Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
+; Define for singletos only
 
-.C [-D_MINT_=0]			; 0 for single-TOS-only desktop
-
-
-; Define _MORE_AV as 1 for fuller support of AV-protocol features
-; at the expense of larger memory needs.
-; (sensible mostly for the multitasking version)
-
-.C [-D_MORE_AV=0] 		; 0 for Single-TOS-only desktop
-
-
-; Disk-volume label editing feature is disabled ror the time being,
-; as it does not behave consistently in Mint vs. Magic and may be
-; confusing.
-
-.C [-D_EDITLABELS=0] 	
-
-; Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.
-; Relevant only for ST-series machines.
-; It is of no use for anyone who doesn't have this hardware installed.
-
-
-.C [-D_OVSCAN=1] ;
-
-
-; Define CFGEMP as 1 if you want to write empty (i.e. value = 0) config fields
-; CFGEMP is passed to every CfgSave call; so it is still
-; configurable per individual config table
-
-.C [-DCFGEMP=0]
-
-
-; Define PALETTES as 0 if you don't want the palette load/save stuff
-; (palette won't be saved at all then)
-
-.C [-DPALETTES=1]
-
-
-; Define _PREDEF as 1 to compile setting of some predefined values
-; (for file types, keyboard shortcuts, etc.) - or define as 0 for
-; minimum executable size
-; (save about 0.5 KB but have to set everything manually then)
-
-.C [-D_PREDEF=1]
-
-
-; Define _SHOWFIND as 1 to activate code which opens a text window
-; at appropriate position in the file which is the result of a string
-; search- but this may be an overdoing, therefore disabled here.
-
-.C [-D_SHOWFIND=0]
-
-
-; Define _MENUDEL as 1 to delete some menu items in TOS 1.4 and older which
-; have a limited screen buffer size. If TeraDesk will not be used with these
-; tos versions, it can be set to 0 to reduce slightly the size of the program.
-
-.C [-D_MENUDEL=1]
-
-
-;Define _FONT_SEL as 1 to compile system-wide font selector (FONT protocol)
-
-.C [-D_FONT_SEL=1]
-
-
-; Define AES_RECT as 1 if you use GRECT(x,y,w,h} instead of GRECT{g_x,g_y,g_w,g_h}
-
-.C [-DAES_RECT=1]
-
-
-; This is for debugging during development. TERADESK.LOG will be created.
-; Note that the content of the log file is not defined; the developer may
-; add specific code as needed.
-
-.C [-D_LOGFILE=0]
-
+.C [-D_TOS_ONLY=1]
 
 
 ; Compiler and linker options:

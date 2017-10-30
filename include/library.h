@@ -46,6 +46,95 @@ typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
 #include <sys/stat.h>
 #include <tos.h>
 
+
+/*
+ * Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
+ */
+#ifdef _TOS_ONLY
+#define _MINT_ 0				/* 0 for single-TOS-only desktop */
+#else
+#define _MINT_ 1				/* 1 for full-featured desktop */
+#endif
+
+/*
+ * Define _MORE_AV as 1 for fuller support of AV-protocol features
+ * at the expense of larger memory needs.
+ * (sensible mostly for the multitasking version)
+ */
+#define _MORE_AV _MINT_			/* 0 for Single-TOS-only desktop */
+
+/*
+ * Disk-volume label editing feature is disabled for the time being,
+ * as it does not behave consistently in Mint vs. Magic and may be
+ * confusing.
+ */
+#define _EDITLABELS 0
+
+/*
+ * Define _OVSCAN as 1 to compile code for overscan (Lacescan) support.
+ * Relevant only for ST-series machines.
+ * It is of no use for anyone who doesn't have this hardware installed,
+ * and therefore of no use on a Coldfire system.
+ */
+#if defined(__COLDFIRE__) || defined(__mcoldfire__)
+#define _OVSCAN 0
+#else
+#define _OVSCAN 1
+#endif
+
+/*
+ * Define CFGEMP as 1 if you want to write empty (i.e. value = 0) config fields
+ * CFGEMP is passed to every CfgSave call; so it is still
+ * configurable per individual config table
+ */
+#define CFGEMP 0
+
+/*
+ * Define PALETTES as 0 if you don't want the palette load/save stuff
+ * (palette won't be saved at all then)
+ */
+#define PALETTES 1
+
+/*
+ * Define _PREDEF as 1 to compile setting of some predefined values
+ * (for file types, keyboard shortcuts, etc.) - or define as 0 for
+ * minimum executable size
+ * (save about 0.5 KB but have to set everything manually then)
+ */
+#define _PREDEF 1
+
+/*
+ * Define _SHOWFIND as 1 to activate code which opens a text window
+ * at appropriate position in the file which is the result of a string
+ * search- but this may be an overdoing, therefore disabled here.
+ */
+#define _SHOWFIND 0
+
+/*
+ * Define _MENUDEL as 1 to delete some menu items in TOS 1.4 and older which
+ * have a limited screen buffer size. If TeraDesk will not be used with these
+ * tos versions, it can be set to 0 to reduce slightly the size of the program.
+ * Probably safe to set to 0 for a Coldfire system.
+ */
+#if defined(__COLDFIRE__) || defined(__mcoldfire__)
+#define _MENUDEL 0
+#else
+#define _MENUDEL 1
+#endif
+
+/*
+ * Define _FONT_SEL as 1 to compile the system-wide font selector (FONT protocol)
+ */
+#define _FONT_SEL 1
+
+/*
+ * This is for debugging during development. TERADESK.LOG will be created.
+ * Note that the content of the log file is not defined; the developer may
+ * add specific code as needed.
+ */
+#define _LOGFILE 0
+
+
 typedef struct
 {
         _WORD x;
