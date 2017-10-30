@@ -50,7 +50,6 @@ dist srcdist:: .srcdistdir
 	mkdir -p $${SRCDISTDIR}/support; \
 	mkdir -p $${SRCDISTDIR}/include; \
 	mkdir -p $${SRCDISTDIR}/library; \
-	mkdir -p $${SRCDISTDIR}/library/ahcm; \
 	mkdir -p $${SRCDISTDIR}/library/utility; \
 	mkdir -p $${SRCDISTDIR}/library/xdialog; \
 	for i in Makefile Makefile.dist COPYING readme.txt resource.txt hist_v34.txt teradesk.stg udo_fo.img *.c *.h *.prj desktop.rs* icons.rs* cicons.rs*; do \
@@ -61,9 +60,6 @@ dist srcdist:: .srcdistdir
 	done; \
 	for i in support/*; do \
 		cp -a $$i $${SRCDISTDIR}/support; \
-	done; \
-	for i in library/ahcm/*.c library/ahcm/*.h library/ahcm/*.prj; do \
-		cp -a $$i $${SRCDISTDIR}/library/ahcm; \
 	done; \
 	for i in library/utility/*.c library/utility/*.prj; do \
 		cp -a $$i $${SRCDISTDIR}/library/utility; \

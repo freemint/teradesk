@@ -111,13 +111,6 @@ error.c
 
 ;Specific libraries:
 
-;Note: AHCM source is not part of the TeraDesk package.
-;binary only is provided; for the source see:
-;http://members.ams.chello.nl/h.robbers/ahcm.zip
-;If some other library is used, it must be able to execute free(NULL) 
-;without bad effects (i.e. no action should occur in such case)
-
-library\ahcm\ahcm.prj
 library\xdialog\xdialog.prj
 library\utility\library.prj
 

@@ -107,11 +107,6 @@ error.c
 
 ;Specific libraries:
 
-;AHCM is part of AHCC libs
-;If some other memory  management library is used, it must be able 
-;to execute free(NULL) without bad effects (i.e. no action should
-;occur in such case)
-
 library\xdialog\xdial_cf.prj
 library\utility\lib_cf.prj
 
