@@ -21,12 +21,6 @@
  */
 
 
-/*
- * Define _MINT_ as 1 to compile for multitasking; 0 for singletos only
- */
-#define _MINT_ 1			/* 0 for single-TOS-only desktop */
-
-
 /* Note: at most 31 entry type can be defined here */
 
 typedef enum
