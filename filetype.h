@@ -28,9 +28,6 @@ typedef struct ftype
 } FTYPE;
 
 
-extern CfgEntry ft_table[];
-extern CfgEntry filetypes_table[];
-
 extern FTYPE fwork;
 extern FTYPE *fthis;
 extern FTYPE **ffthis;

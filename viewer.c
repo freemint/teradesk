@@ -1344,16 +1344,16 @@ bool txt_add_window(WINDOW *w, _WORD item, _WORD kstate, char *thefile)
  */
 
 static CfgEntry txtw_table[] = {
-	{ CFG_HDR, "text", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D, "indx", { &that.index } },
-	{ CFG_S, "name", { that.path } },
-	{ CFG_D, "xrel", { &that.px } },
-	{ CFG_L, "yrel", { &that.py } },
-	{ CFG_D, "hexm", { &that.hexmode } },
-	{ CFG_D, "tabs", { &that.tabsize } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+	CFG_HDR("text"),
+	CFG_BEG(),
+	CFG_D("indx", that.index),
+	CFG_S("name", that.path),
+	CFG_D("xrel", that.px),
+	CFG_L("yrel", that.py),
+	CFG_D("hexm", that.hexmode),
+	CFG_D("tabs", that.tabsize),
+	CFG_END(),
+	CFG_LAST()
 };
 
 /* 
@@ -1409,6 +1409,20 @@ void text_one(XFILE *file, int lvl, int io, int *error)
 
 
 /*
+ * Configuration table for one window type
+ */
+
+static CfgEntry const vtype_table[] = {
+	CFG_HDR("views"),
+	CFG_BEG(),
+	CFG_NEST("font", cfg_wdfont),
+	CFG_NEST("pos", positions),							/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
+};
+
+
+/*
  * Save or load configuration for text (viewer) windows
  */
 
@@ -1421,7 +1435,6 @@ void view_config(XFILE *file, int lvl, int io, int *error)
 	}
 	
 	cfg_font = &txt_font;
-	wtype_table[0].s = "views";
 	thisw.windows = &textwindows[0];
-	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL);
+	*error = handle_cfg(file, vtype_table, lvl, CFGEMP, io, NULL, NULL);
 }

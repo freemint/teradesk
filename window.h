@@ -211,13 +211,9 @@ extern SNAME automask; /* to compose the autolocator mask */
 #endif
 
 
-extern CfgEntry fnt_table[];
-extern CfgEntry positions_table[];
-extern CfgEntry wtype_table[];
-
 extern XDFONT *cfg_font;
 
-extern WD_FUNC wd_type_functions;
+extern const WD_FUNC wd_type_functions;
 
 void positions(XFILE *file, int lvl, int io, int *error);
 void cfg_wdfont(XFILE *file, int lvl, int io, int *error);

@@ -45,6 +45,7 @@ typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <tos.h>
+#include <mint/arch/nf_ops.h>
 
 
 /*

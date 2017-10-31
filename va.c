@@ -1470,13 +1470,13 @@ typedef struct
 
 static SINFO this;
 
-CfgEntry stat_table[] = {
-	{ CFG_HDR, "status", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_S, "name", { this.name } },
-	{ CFG_S, "stat", { this.stat } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const stat_table[] = {
+	CFG_HDR("status"),
+	CFG_BEG(),
+	CFG_S("name", this.name),
+	CFG_S("stat", this.stat),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -1566,12 +1566,12 @@ static void one_avstat(XFILE *file, int lvl, int io, int *error)
 }
 
 
-static CfgEntry va_table[] = {
-	{ CFG_HDR,  "avstats", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_NEST, "status", { one_avstat } },	/* Repeating group */
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const va_table[] = {
+	CFG_HDR("avstats"),
+	CFG_BEG(),
+	CFG_NEST("status", one_avstat),	/* Repeating group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 

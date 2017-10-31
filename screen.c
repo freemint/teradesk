@@ -229,13 +229,13 @@ typedef struct rgb
 static RGB cwork;
 
 
-static const CfgEntry colour_table[] = {
-	{ CFG_HDR, "col", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D | CFG_INHIB, "ind", { &cwork.ind } },	/* index is not essential, but accept it */
-	{ CFG_DDD, "rgb", { &cwork.red } },
-	{ CFG_END,  NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const colour_table[] = {
+	CFG_HDR("col"),
+	CFG_BEG(),
+	CFG_DI("ind", cwork.ind),	/* index is not essential, but accept it */
+	CFG_DDD("rgb", cwork.red),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -288,13 +288,13 @@ static void rgb_config(XFILE *file, int lvl, int io, int *error)
 }
 
 
-static CfgEntry palette_table[] = {
-	{ CFG_HDR,  "palette", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_D,    "size", { &palsize } },
-	{ CFG_NEST, "col", { rgb_config } },
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const palette_table[] = {
+	CFG_HDR("palette"),
+	CFG_BEG(),
+	CFG_D("size", palsize),
+	CFG_NEST("col", rgb_config),
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -333,10 +333,10 @@ static void pal_config(XFILE *file, int lvl, int io, int *error)
 }
 
 
-static CfgEntry palette_root[] = {
-	{ CFG_NEST, "palette", { pal_config } },
-	{ CFG_FINAL, NULL, { 0  } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const palette_root[] = {
+	CFG_NEST("palette", pal_config),
+	CFG_FINAL(),
+	CFG_LAST()
 };
 
 /*

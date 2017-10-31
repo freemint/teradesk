@@ -868,7 +868,8 @@ void xw_uniconify(WINDOW *w, GRECT *r)
 
 _WORD xw_hndlmessage(_WORD *message)
 {
-	WD_FUNC *func, *wwfunc;
+	const WD_FUNC *func;
+	const WD_FUNC *wwfunc;
 	WINDOW *w, *ww;
 	_WORD *m4 = &message[4];
 
@@ -1217,7 +1218,7 @@ static WINDOW *xw_add(size_t size, OBJECT *menu)
  *					  van het window of NULL.
  */
 
-WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
+WINDOW *xw_create(_WORD type, const WD_FUNC *functions, _WORD flags,
 				  GRECT *msize, size_t wd_struct_size, OBJECT *menu, int *error)
 {
 	WINDOW *w;

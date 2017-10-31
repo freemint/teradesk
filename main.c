@@ -147,18 +147,18 @@ static void short_config(XFILE *file, int lvl, int io, int *error);
 
 /* Root level of configuration data */
 
-static const CfgEntry Config_table[] = {
-	{ CFG_NEST, "options",      { opt_config } },
-	{ CFG_NEST, "shortcuts",    { short_config } },
-	{ CFG_NEST, "filetypes",    { ft_config } },
-	{ CFG_NEST, "apptypes",     { prg_config } },	/* must be before icons and apps */
-	{ CFG_NEST, "icontypes",    { icnt_config } },
-	{ CFG_NEST, "deskicons",    { dsk_config } },
-	{ CFG_NEST, "applications", { app_config } },
-	{ CFG_NEST, "windows",      { wd_config } },
-	{ CFG_NEST, "avstats",      { va_config } },
-	{ CFG_FINAL, NULL,          { 0 } },				/* file completness check */
-	{ CFG_LAST,  NULL,          { 0 } }
+static CfgEntry const Config_table[] = {
+	CFG_NEST("options", opt_config),
+	CFG_NEST("shortcuts", short_config),
+	CFG_NEST("filetypes", ft_config),
+	CFG_NEST("apptypes", prg_config),	/* must be before icons and apps */
+	CFG_NEST("icontypes", icnt_config),
+	CFG_NEST("deskicons", dsk_config),
+	CFG_NEST("applications", app_config),
+	CFG_NEST("windows", wd_config),
+	CFG_NEST("avstats", va_config),
+	CFG_FINAL(),				/* file completness check */
+	CFG_LAST()
 };
 
 
@@ -169,40 +169,40 @@ static const CfgEntry Config_table[] = {
  * manipulation by humans.
  */
 
-CfgEntry Options_table[] = {
-	{ CFG_HDR, "options", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
+static CfgEntry const Options_table[] = {
+	CFG_HDR("options"),
+	CFG_BEG(),
 	/* file version */
-	{ CFG_X, "infv", { &options.version } },	/* file version */
+	CFG_X("infv", options.version),	/* file version */
 	/* desktop preferences */
-	{ CFG_X, "save", { &options.sexit } },	/* what to save at exit */
-	{ CFG_X, "dial", { &options.dial_mode } },	/* bit flags !!! dialog mode and position */
-	{ CFG_X, "xpre", { &options.xprefs } },	/* bit flags !!! diverse prefs */
+	CFG_X("save", options.sexit),	/* what to save at exit */
+	CFG_X("dial", options.dial_mode),	/* bit flags !!! dialog mode and position */
+	CFG_X("xpre", options.xprefs),	/* bit flags !!! diverse prefs */
 	/* Copy preferences */
-	{ CFG_X, "pref", { &options.cprefs } },	/* bit flags !!! copy prefs */
+	CFG_X("pref", options.cprefs),	/* bit flags !!! copy prefs */
 	/* sizes of diverse items */
-	{ CFG_D, "buff", { &options.bufsize } },	/* copy buffer size */
-	{ CFG_L, "maxd", { &options.max_dir } },	/* initial dir size */
-	{ CFG_D, "plin", { &options.plinelen } },	/* printer line length */
-	{ CFG_D, "tabs", { &options.tabsize } },	/* tab size    */
-	{ CFG_D, "cwin", { &options.cwin } },	/* compare match size */
+	CFG_D("buff", options.bufsize),	/* copy buffer size */
+	CFG_L("maxd", options.max_dir),	/* initial dir size */
+	CFG_D("plin", options.plinelen),	/* printer line length */
+	CFG_D("tabs", options.tabsize),	/* tab size    */
+	CFG_D("cwin", options.cwin),	/* compare match size */
 	/* settings of the View menu */
-	{ CFG_D, "mode", { &options.mode } },	/* text/icon mode */
-	{ CFG_D, "sort", { &options.sort } },	/* sorting key */
-	{ CFG_D, "aarr", { &options.aarr } },	/* auto arrange */
-	{ CFG_X, "attr", { &options.attribs } },	/* Bit flags !!! global attributes to show */
-	{ CFG_X, "flds", { &options.fields } },	/* Bit flags !!! dir. fields to show  */
+	CFG_D("mode", options.mode),	/* text/icon mode */
+	CFG_D("sort", options.sort),	/* sorting key */
+	CFG_D("aarr", options.aarr),	/* auto arrange */
+	CFG_X("attr", options.attribs),	/* Bit flags !!! global attributes to show */
+	CFG_X("flds", options.fields),	/* Bit flags !!! dir. fields to show  */
 	/* video options */
-	{ CFG_X, "vidp", { &options.vprefs } },	/* Bit flags ! */
-	{ CFG_D, "vres", { &options.vrez } },	/* video resolution  (currently unused) */
+	CFG_X("vidp", options.vprefs),	/* Bit flags ! */
+	CFG_D("vres", options.vrez),	/* video resolution  (currently unused) */
 	/* patterns and colours */
-	{ CFG_D, "dpat", { &options.dsk_pattern } },	/* desk pattern */
-	{ CFG_D, "dcol", { &options.dsk_colour } },	/* desk colour  */
-	{ CFG_D, "wpat", { &options.win_pattern } },	/* window pattern */
-	{ CFG_D, "wcol", { &options.win_colour } },	/* window colour  */
+	CFG_D("dpat", options.dsk_pattern),	/* desk pattern */
+	CFG_D("dcol", options.dsk_colour),	/* desk colour  */
+	CFG_D("wpat", options.win_pattern),	/* window pattern */
+	CFG_D("wcol", options.win_colour),	/* window colour  */
 
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -211,78 +211,76 @@ CfgEntry Options_table[] = {
  * TeraDesk is changed,  this table should always be updated to 
  * match the actual state.
  */
-
-
-CfgEntry Shortcut_table[] = {
-	{ CFG_HDR, "shortcuts", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
+static CfgEntry const Shortcut_table[] = {
+	CFG_HDR("shortcuts"),
+	CFG_BEG(),
 
 	/* File menu */
-	{ CFG_X, "open", { &options.kbshort[MOPEN - MFIRST] } },
-	{ CFG_X, "show", { &options.kbshort[MSHOWINF - MFIRST] } },
-	{ CFG_X, "newd", { &options.kbshort[MNEWDIR - MFIRST] } },
-	{ CFG_X, "comp", { &options.kbshort[MCOMPARE - MFIRST] } },
-	{ CFG_X, "srch", { &options.kbshort[MSEARCH - MFIRST] } },
-	{ CFG_X, "prin", { &options.kbshort[MPRINT - MFIRST] } },
-	{ CFG_X, "dele", { &options.kbshort[MDELETE - MFIRST] } },
-	{ CFG_X, "sela", { &options.kbshort[MSELALL - MFIRST] } },
-#if MFCOPY
-	{ CFG_X, "copy", { &options.kbshort[MFCOPY - MFIRST] } },
-	{ CFG_X, "form", { &options.kbshort[MFFORMAT - MFIRST] } },
+	CFG_X("open", options.kbshort[MOPEN - MFIRST]),
+	CFG_X("show", options.kbshort[MSHOWINF - MFIRST]),
+	CFG_X("newd", options.kbshort[MNEWDIR - MFIRST]),
+	CFG_X("comp", options.kbshort[MCOMPARE - MFIRST]),
+	CFG_X("srch", options.kbshort[MSEARCH - MFIRST]),
+	CFG_X("prin", options.kbshort[MPRINT - MFIRST]),
+	CFG_X("dele", options.kbshort[MDELETE - MFIRST]),
+	CFG_X("sela", options.kbshort[MSELALL - MFIRST]),
+#ifdef MFCOPY
+	CFG_X("copy", options.kbshort[MFCOPY - MFIRST]),
+	CFG_X("form", options.kbshort[MFFORMAT - MFIRST]),
 #else
-	{ CFG_X | CFG_INHIB, { "copy", &inhibit } },
-	{ CFG_X | CFG_INHIB, { "form", &inhibit } },
+	CFG_XI("copy", inhibit),
+	CFG_XI("form", inhibit),
 #endif
-	{ CFG_X, "quit", { &options.kbshort[MQUIT - MFIRST] } },
+	CFG_X("quit", options.kbshort[MQUIT - MFIRST]),
 
 	/* View menu */
 #ifdef MSHOWTXT
-	{ CFG_X, "shtx", { &options.kbshort[MSHOWTXT - MFIRST] } },
+	CFG_X("shtx", options.kbshort[MSHOWTXT - MFIRST]),
 #endif
-	{ CFG_X, "shic", { &options.kbshort[MSHOWICN - MFIRST] } },
-	{ CFG_X, "sarr", { &options.kbshort[MAARNG - MFIRST] } },
-	{ CFG_X, "snam", { &options.kbshort[MSNAME - MFIRST] } },
-	{ CFG_X, "sext", { &options.kbshort[MSEXT - MFIRST] } },
-	{ CFG_X, "sdat", { &options.kbshort[MSDATE - MFIRST] } },
-	{ CFG_X, "ssiz", { &options.kbshort[MSSIZE - MFIRST] } },
-	{ CFG_X, "suns", { &options.kbshort[MSUNSORT - MFIRST] } },
-	{ CFG_X, "revo", { &options.kbshort[MREVS - MFIRST] } },
+	CFG_X("shic", options.kbshort[MSHOWICN - MFIRST]),
+	CFG_X("sarr", options.kbshort[MAARNG - MFIRST]),
+	CFG_X("snam", options.kbshort[MSNAME - MFIRST]),
+	CFG_X("sext", options.kbshort[MSEXT - MFIRST]),
+	CFG_X("sdat", options.kbshort[MSDATE - MFIRST]),
+	CFG_X("ssiz", options.kbshort[MSSIZE - MFIRST]),
+	CFG_X("suns", options.kbshort[MSUNSORT - MFIRST]),
+	CFG_X("revo", options.kbshort[MREVS - MFIRST]),
 #if _MINT_
-	{ CFG_X, "noca", { &options.kbshort[MNOCASE - MFIRST] } },
+	CFG_X("noca", options.kbshort[MNOCASE - MFIRST]),
 #endif
-	{ CFG_X, "asiz", { &options.kbshort[MSHSIZ - MFIRST] } },
-	{ CFG_X, "adat", { &options.kbshort[MSHDAT - MFIRST] } },
-	{ CFG_X, "atim", { &options.kbshort[MSHTIM - MFIRST] } },
-	{ CFG_X, "aatt", { &options.kbshort[MSHATT - MFIRST] } },
+	CFG_X("asiz", options.kbshort[MSHSIZ - MFIRST]),
+	CFG_X("adat", options.kbshort[MSHDAT - MFIRST]),
+	CFG_X("atim", options.kbshort[MSHTIM - MFIRST]),
+	CFG_X("aatt", options.kbshort[MSHATT - MFIRST]),
 #if _MINT_
-	{ CFG_X, "aown", { &options.kbshort[MSHOWN - MFIRST] } },
+	CFG_X("aown", options.kbshort[MSHOWN - MFIRST]),
 #endif
-	{ CFG_X, "smsk", { &options.kbshort[MSETMASK - MFIRST] } },
+	CFG_X("smsk", options.kbshort[MSETMASK - MFIRST]),
 
 	/* Window menu */
-	{ CFG_X, "wico", { &options.kbshort[MICONIF - MFIRST] } },
-	{ CFG_X, "wful", { &options.kbshort[MFULL - MFIRST] } },
-	{ CFG_X, "clos", { &options.kbshort[MCLOSE - MFIRST] } },
-	{ CFG_X, "wclo", { &options.kbshort[MCLOSEW - MFIRST] } },
-	{ CFG_X, "cloa", { &options.kbshort[MCLOSALL - MFIRST] } },
-	{ CFG_X, "wdup", { &options.kbshort[MDUPLIC - MFIRST] } },
-	{ CFG_X, "cycl", { &options.kbshort[MCYCLE - MFIRST] } },
+	CFG_X("wico", options.kbshort[MICONIF - MFIRST]),
+	CFG_X("wful", options.kbshort[MFULL - MFIRST]),
+	CFG_X("clos", options.kbshort[MCLOSE - MFIRST]),
+	CFG_X("wclo", options.kbshort[MCLOSEW - MFIRST]),
+	CFG_X("cloa", options.kbshort[MCLOSALL - MFIRST]),
+	CFG_X("wdup", options.kbshort[MDUPLIC - MFIRST]),
+	CFG_X("cycl", options.kbshort[MCYCLE - MFIRST]),
 
 	/* Options menu */
-	{ CFG_X, "appl", { &options.kbshort[MAPPLIK - MFIRST] } },
-	{ CFG_X, "ptyp", { &options.kbshort[MPRGOPT - MFIRST] } },
-	{ CFG_X, "dski", { &options.kbshort[MIDSKICN - MFIRST] } },
-	{ CFG_X, "wini", { &options.kbshort[MIWDICN - MFIRST] } },
-	{ CFG_X, "pref", { &options.kbshort[MOPTIONS - MFIRST] } },
-	{ CFG_X, "copt", { &options.kbshort[MCOPTS - MFIRST] } },
-	{ CFG_X, "wopt", { &options.kbshort[MWDOPT - MFIRST] } },
-	{ CFG_X, "vopt", { &options.kbshort[MVOPTS - MFIRST] } },
-	{ CFG_X, "ldop", { &options.kbshort[MLOADOPT - MFIRST] } },
-	{ CFG_X, "svop", { &options.kbshort[MSAVESET - MFIRST] } },
-	{ CFG_X, "svas", { &options.kbshort[MSAVEAS - MFIRST] } },
+	CFG_X("appl", options.kbshort[MAPPLIK - MFIRST]),
+	CFG_X("ptyp", options.kbshort[MPRGOPT - MFIRST]),
+	CFG_X("dski", options.kbshort[MIDSKICN - MFIRST]),
+	CFG_X("wini", options.kbshort[MIWDICN - MFIRST]),
+	CFG_X("pref", options.kbshort[MOPTIONS - MFIRST]),
+	CFG_X("copt", options.kbshort[MCOPTS - MFIRST]),
+	CFG_X("wopt", options.kbshort[MWDOPT - MFIRST]),
+	CFG_X("vopt", options.kbshort[MVOPTS - MFIRST]),
+	CFG_X("ldop", options.kbshort[MLOADOPT - MFIRST]),
+	CFG_X("svop", options.kbshort[MSAVESET - MFIRST]),
+	CFG_X("svas", options.kbshort[MSAVEAS - MFIRST]),
 
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 

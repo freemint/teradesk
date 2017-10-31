@@ -97,7 +97,7 @@ static void wd_type_hndlmenu(WINDOW *w, _WORD title, _WORD item);
 
 
 
-WD_FUNC wd_type_functions = {
+const WD_FUNC wd_type_functions = {
 	wd_type_hndlkey,
 	wd_hndlbutton,
 	wd_type_redraw,
@@ -122,15 +122,15 @@ WD_FUNC wd_type_functions = {
  * Window font configuration table
  */
 
-CfgEntry fnt_table[] = {
-	{ CFG_HDR, "font", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D, "iden", { &thisw.font.id } },
-	{ CFG_D, "size", { &thisw.font.size } },
-	{ CFG_D, "fcol", { &thisw.font.colour } },
-	{ CFG_X, "feff", { &thisw.font.effects } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const fnt_table[] = {
+	CFG_HDR("font"),
+	CFG_BEG(),
+	CFG_D("iden", thisw.font.id),
+	CFG_D("size", thisw.font.size),
+	CFG_D("fcol", thisw.font.colour),
+	CFG_X("feff", thisw.font.effects),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -138,20 +138,20 @@ CfgEntry fnt_table[] = {
  * Window position configuration table
  */
 
-CfgEntry positions_table[] = {
-	{ CFG_HDR, "pos", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_X, "flag", { &thisw.flags } },
-	{ CFG_D, "xpos", { &thisw.x } },		/* note: can't go off the left edge */
-	{ CFG_D, "ypos", { &thisw.y } },
-	{ CFG_D, "winw", { &thisw.ww } },
-	{ CFG_D, "winh", { &thisw.wh } },
-	{ CFG_D, "xicw", { &thisw.ix } },
-	{ CFG_D, "yicw", { &thisw.iy } },
-	{ CFG_D, "wicw", { &thisw.iw } },
-	{ CFG_D, "hicw", { &thisw.ih } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const positions_table[] = {
+	CFG_HDR("pos"),
+	CFG_BEG(),
+	CFG_X("flag", thisw.flags),
+	CFG_D("xpos", thisw.x),		/* note: can't go off the left edge */
+	CFG_D("ypos", thisw.y),
+	CFG_D("winw", thisw.ww),
+	CFG_D("winh", thisw.wh),
+	CFG_D("xicw", thisw.ix),
+	CFG_D("yicw", thisw.iy),
+	CFG_D("wicw", thisw.iw),
+	CFG_D("hicw", thisw.ih),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -166,7 +166,7 @@ void cfg_wdfont(XFILE *file, int lvl, int io, int *error)
 	if (io == CFG_SAVE)
 		thisw.font = *cfg_font;
 	else
-		memclr(&thisw.font, sizeof(XDFONT));
+		memclr(&thisw.font, sizeof(thisw.font));
 
 	*error = handle_cfg(file, fnt_table, lvl, CFGEMP, io, NULL, NULL);
 
@@ -367,7 +367,7 @@ void positions(XFILE *file, int lvl, int io, int *error)
 
 		*error = CfgLoad(file, positions_table, MAX_KEYLEN, lvl);
 
-		if ((*error == 0) && (thisw.i < MAXWINDOWS))
+		if (*error == 0 && thisw.i < MAXWINDOWS)
 		{
 			w += thisw.i;
 
@@ -379,20 +379,6 @@ void positions(XFILE *file, int lvl, int io, int *error)
 		}
 	}
 }
-
-
-/*
- * Configuration table for one window type
- */
-
-CfgEntry wtype_table[] = {
-	{ CFG_HDR, NULL, { 0 } },									/* keyword will be substituted */
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_NEST, "font", { cfg_wdfont} },
-	{ CFG_NEST, "pos", { positions} },							/* Repeating group */
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
-};
 
 
 /********************************************************************
@@ -1092,9 +1078,10 @@ void wd_update_drv(_WORD drive)
 			thefunc = ((ITM_WINDOW *) w)->itm_func;
 
 			if (drive == -1)
+			{
 				/* update all */
 				thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
-			else
+			} else
 			{
 				const char *path = thefunc->wd_path(w);
 
@@ -1104,8 +1091,9 @@ void wd_update_drv(_WORD drive)
 				if (mint)
 				{
 					if ((drive == ('U' - 'A')) && goodpath)	/* this is for U drive */
+					{
 						thefunc->wd_set_update(w, WD_UPD_ALLWAYS, NULL, NULL);
-					else
+					} else
 					{
 						XATTR attr;
 
@@ -1477,7 +1465,7 @@ void wd_hndlmenu(_WORD item, _WORD keystate)
 				cv_fntoform(searching, SMASK, itm_name(ww, list[0]));
 
 			if (item == MSHOWINF || !app_specstart(AT_SRCH, ww, list, n, 0))
-				item_showinfo(ww, n, list, (item == MSEARCH));
+				item_showinfo(ww, n, list, item == MSEARCH);
 
 			if (w == NULL)			/* deselect all in a simulated window */
 				wd_noselection();
@@ -2211,7 +2199,9 @@ static void icw_draw(WINDOW *w)
 			else
 				icon_ind = HDINAME;		/* hard disk icon */
 		} else
+		{
 			icon_ind = FOINAME;			/* folder icon */
+		}
 	}
 
 	icon_no = rsrc_icon_rscid(icon_ind, icname);
@@ -2829,10 +2819,12 @@ void w_page(TYP_WINDOW *w, _WORD newpx, long newpy)
 	if (dpx != 0)
 	{
 		if (dpx == 1)
+		{
 			arrow = WA_RTLINE;
-		else if (dpx == -1)
+		} else if (dpx == -1)
+		{
 			arrow = WA_LFLINE;
-		else
+		} else
 		{
 			arrow = 0;
 			w->px = newpx;
@@ -2846,10 +2838,12 @@ void w_page(TYP_WINDOW *w, _WORD newpx, long newpy)
 	if (dpy != 0)
 	{
 		if (dpy == 1)
+		{
 			arrow = WA_DNLINE;
-		else if (dpy == -1)
+		} else if (dpy == -1)
+		{
 			arrow = WA_UPLINE;
-		else
+		} else
 		{
 			arrow = 0;
 			w->py = newpy;
@@ -3208,8 +3202,9 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 				free(list);			/* list is needed just to see if anything selected */
 				wd_hndlmenu(MOPEN, keystate);
 			} else
+			{
 				result = 0;
-
+			}
 			break;
 		}
 
@@ -3219,7 +3214,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 		act = WA_DNLINE;
 		w_scroll(tyw, act);
 		break;
-	case CURUP:						/* scroll up one line */
+	case CURUP:							/* scroll up one line */
 		act = WA_UPLINE;
 		w_scroll(tyw, act);
 		break;
@@ -3231,7 +3226,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 		act = WA_RTLINE;
 		w_scroll(tyw, act);
 		break;
-	case SPACE:						/* scroll down one page except when autolocating */
+	case SPACE:							/* scroll down one page except when autolocating */
 		if (wt == DIR_WIND)
 		{
 			if (autoloc)
@@ -3241,7 +3236,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 			break;
 		}
 		/* else fall through */
-	case PAGE_DOWN:					/* PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
+	case PAGE_DOWN:						/* PgUp/PgDn keys on PC keyboards (Emulators and MILAN) */
 	case SHFT_CURDOWN:
 		w_pagedown(tyw);
 		break;
@@ -3258,7 +3253,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 	case HOME:							/* Reset sliders to window top */
 		w_page(tyw, 0, 0L);
 		break;
-	case SHFT_HOME:					/* Set sliders to window bottom */
+	case SHFT_HOME:						/* Set sliders to window bottom */
 		if (tyw->nrows < tyw->nlines)
 			w_page(tyw, 0, (long) (tyw->nlines - tyw->nrows));
 
@@ -3287,8 +3282,9 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 		if (wt != DIR_WIND)
 			break;
 		if (autoloc || (unsigned short) scancode == UNDO)
+		{
 			autoloc_off();
-		else
+		} else
 		{
 			autoloc = TRUE;
 			aml = 0;
@@ -3327,7 +3323,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 						if (lm < 0)
 							lm = 12;	/* override error (?) in x_pathconf */
 						else
-							lm = lmin(lm, (long) sizeof(LNAME) - 1);
+							lm = lmin(lm, sizeof(LNAME) - 1);
 
 						autoloc_upd = TRUE;
 
@@ -3396,8 +3392,9 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 									if (!((aml == 7) && key))
 									{
 										if (aml == 8)
+										{
 											key = 0;
-										else
+										} else
 										{
 #if _MINT_
 											if (!mint)
@@ -3411,7 +3408,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 
 							/* long names possible ? */
 							/* This should prevent too long namemasks */
-							if (key && (aml == lm - 1))
+							if (key && aml == lm - 1)
 								ei = 11;	/* index of "\0" */
 
 							if (aml == lm)
@@ -3459,14 +3456,14 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
  * Configuration table for all windows
  */
 
-CfgEntry window_table[] = {
-	{ CFG_HDR, "windows", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_NEST, "directories", { dir_config } },							/* directory windows */
-	{ CFG_NEST, "views", { view_config } },									/* text windows */
-	{ CFG_NEST, "open", { open_config } },									/* open windows (any type */
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const window_table[] = {
+	CFG_HDR("windows"),
+	CFG_BEG(),
+	CFG_NEST("directories", dir_config),							/* directory windows */
+	CFG_NEST("views", view_config),									/* text windows */
+	CFG_NEST("open", open_config),									/* open windows (any type */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -3484,15 +3481,15 @@ void wd_config(XFILE *file, int lvl, int io, int *error)
  * Configuration tables for start/end of group for open windows
  */
 
-static const CfgEntry open_start_table[] = {
-	{ CFG_HDR, "open", {0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const open_start_table[] = {
+	CFG_HDR("open"),
+	CFG_BEG(),
+	CFG_LAST()
 };
 
-static const CfgEntry open_end_table[] = {
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const open_end_table[] = {
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -3500,13 +3497,13 @@ static const CfgEntry open_end_table[] = {
  * Read-only configuration table for all open windows
  */
 
-static CfgEntry open_table[] = {
-	{ CFG_HDR, "open", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_NEST, "dir", { dir_one } },
-	{ CFG_NEST, "text", { text_one } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const open_table[] = {
+	CFG_HDR("open"),
+	CFG_BEG(),
+	CFG_NEST("dir", dir_one),
+	CFG_NEST("text", text_one),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -3514,10 +3511,10 @@ static CfgEntry open_table[] = {
  * Configuration table for temporary saving and reopening windows 
  */
 
-CfgEntry reopen_table[] = {
-	{ CFG_NEST, "open", { open_config } },	/* open windows (any type) */
-	{ CFG_FINAL, NULL, { 0 } },				/* file completness check  */
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const reopen_table[] = {
+	CFG_NEST("open", open_config),	/* open windows (any type) */
+	CFG_FINAL(),				/* file completness check  */
+	CFG_LAST()
 };
 
 
@@ -3685,8 +3682,7 @@ _WORD itm_find(WINDOW *w, _WORD x, _WORD y)
 {
 	if (in_window(w, x, y))
 		return (((ITM_WINDOW *) w)->itm_func->itm_find) (w, x, y);
-	else
-		return -1;
+	return -1;
 }
 
 
@@ -3773,7 +3769,7 @@ char *itm_tgtname(WINDOW *w, _WORD item)
 
 
 /*
- * Get iem attributes; on mode=0 follow link, on mode=1 don't
+ * Get item attributes; on mode=0 follow link, on mode=1 don't
  */
 
 _WORD itm_attrib(WINDOW *w, _WORD item, _WORD mode, XATTR *attrib)
@@ -4277,7 +4273,9 @@ bool itm_move(WINDOW *src_wd,			/* source window */
 			if (!mreleased)
 				draw_icns(icnlist, nv, x, y, clip);
 		} else if (mreleased)
+		{
 			draw_icns(icnlist, nv, x, y, clip);
+		}
 	} while (mreleased == FALSE);
 
 	arrow_mouse();
@@ -4330,7 +4328,9 @@ bool itm_move(WINDOW *src_wd,			/* source window */
 				break;
 			}
 		} else
+		{
 			result = itm_drop(src_wd, n, list, kstate, x, y);	/* MultiTOS drag & drop */
+		}
 	}
 
 	free(list);
@@ -4730,8 +4730,9 @@ void wd_iopen(WINDOW *w, GRECT *oldsize, WDFLAGS *oldflags)
 	/* Tell AES to iconify this window; set the flag */
 
 	if (icf)
+	{
 		wd_type_iconify(w, &size);
-	else
+	} else
 #endif
 	{
 		(void) oldsize;

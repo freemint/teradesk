@@ -34,7 +34,7 @@ typedef struct prgtype
  /* ---^^^--- compatible with FTYPE and LSTYPE structures */
 	ApplType appl_type;		/* type of program */
 	long limmem;			/* memory limit for this type in multitasking */
-	_WORD flags;				/* argv + path + single */
+	_WORD flags;			/* argv + path + single */
 } PRGTYPE;
 
 /* For consistency with other flags which are saved as bits... */
@@ -56,7 +56,6 @@ typedef struct prgtype
 #define PD_PPAR 0x4000	/* directory of the first parameter is the default */
 #define PT_BACK 0x8000	/* background */
 
-extern CfgEntry prg_table[];
 extern PRGTYPE pwork;
 extern PRGTYPE *prgtypes;   	/* list of executable filetypes */
 

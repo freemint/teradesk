@@ -998,7 +998,7 @@ static bool cmp_path(const char *path, const char *fname)
 	if (isroot(path))
 		l++;
 
-	if (strlen(path) != l)
+	if ((long)strlen(path) != l)
 		return FALSE;
 
 	return (strncmp(path, fname, l) != 0) ? FALSE : TRUE;
@@ -2639,16 +2639,16 @@ bool dir_onalt(_WORD key, WINDOW *w)
  * Configuration table for one open directory window
  */
 
-static CfgEntry dirw_table[] = {
-	{ CFG_HDR, "dir", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D, "indx", { &that.index } },
-	{ CFG_S, "path", { that.path } },
-	{ CFG_S, "mask", { that.spec } },
-	{ CFG_D, "xrel", { &that.px } },
-	{ CFG_L, "yrel", { &that.py } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const dirw_table[] = {
+	CFG_HDR("dir"),
+	CFG_BEG(),
+	CFG_D("indx", that.index),
+	CFG_S("path", that.path),
+	CFG_S("mask", that.spec),
+	CFG_D("xrel", that.px),
+	CFG_L("yrel", that.py),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -2721,6 +2721,20 @@ void dir_one(XFILE *file, int lvl, int io, int *error)
 }
 
 
+/*
+ * Configuration table for one window type
+ */
+
+static CfgEntry const dirtype_table[] = {
+	CFG_HDR("directories"),
+	CFG_BEG(),
+	CFG_NEST("font", cfg_wdfont),
+	CFG_NEST("pos", positions),							/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
+};
+
+
 void dir_config(XFILE *file, int lvl, int io, int *error)
 {
 	if (io == CFG_LOAD)
@@ -2730,10 +2744,9 @@ void dir_config(XFILE *file, int lvl, int io, int *error)
 	}
 
 	cfg_font = &dir_font;
-	wtype_table[0].s = "directories";
 	thisw.windows = &dirwindows[0];
 
-	*error = handle_cfg(file, wtype_table, lvl, CFGEMP, io, NULL, NULL);
+	*error = handle_cfg(file, dirtype_table, lvl, CFGEMP, io, NULL, NULL);
 }
 
 

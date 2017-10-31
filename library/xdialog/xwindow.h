@@ -31,7 +31,7 @@
 
 #define XW_INTVARS	struct window *xw_prev;	\
 					struct window *xw_next;	\
-					struct wd_func *xw_func;				\
+					const struct wd_func *xw_func;			\
 					OBJECT *xw_menu;/* menu object */		\
 					GRECT xw_size;	/* window size */		\
 					GRECT xw_work;	/* work area size */	\
@@ -124,7 +124,7 @@ typedef struct wd_func
  * Declaratie van de voor de gebruiker beschikbare funkties.
  */
 
-WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
+WINDOW *xw_create(_WORD type, const WD_FUNC *functions, _WORD flags,
 						 GRECT *msize, size_t wd_struct_size,
 						 OBJECT *menu, int *error);
 void xw_open(WINDOW *wd, GRECT *size);

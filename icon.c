@@ -2525,20 +2525,20 @@ static ICONINFO this;
  * Configuration table for one desktop icon
  */
 
-static CfgEntry Icon_table[] = {
-	{ CFG_HDR, "icon", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_S, "name", { this.ic.icon_name } },
-	{ CFG_S, "labl", { this.ic.label } },
-	{ CFG_D, "type", { &this.ic.item_type } },
-	{ CFG_D, "tgtt", { &this.ic.tgt_type } },
-	{ CFG_D, "link", { &this.ic.link } },
-	{ CFG_D, "driv", { &this.ic.icon_dat.drv } },
-	{ CFG_S, "path", { this.name } },
-	{ CFG_D, "xpos", { &this.ic.x } },
-	{ CFG_D, "ypos", { &this.ic.y } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const Icon_table[] = {
+	CFG_HDR("icon"),
+	CFG_BEG(),
+	CFG_S("name", this.ic.icon_name),
+	CFG_S("labl", this.ic.label),
+	CFG_E("type", this.ic.item_type),
+	CFG_E("tgtt", this.ic.tgt_type),
+	CFG_BD("link", this.ic.link),
+	CFG_D("driv", this.ic.icon_dat.drv),
+	CFG_S("path", this.name),
+	CFG_D("xpos", this.ic.x),
+	CFG_D("ypos", this.ic.y),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -2640,17 +2640,16 @@ static void icon_cfg(XFILE *file, int lvl, int io, int *error)
  * Configuration table for desktop icons
  */
 
-static CfgEntry DskIcons_table[] = {
-	{ CFG_HDR, "deskicons", { 0 } },
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_D, "xoff", { &icn_xoff } },
-	{ CFG_D, "yoff", { &icn_yoff } },
-	{ CFG_D, "iconw", { &iconw } },
-	{ CFG_D, "iconh", { &iconh } },
-	{ CFG_NEST, "icon", { icon_cfg } },
-	/* Repeating group */
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const DskIcons_table[] = {
+	CFG_HDR("deskicons"),
+	CFG_BEG(),
+	CFG_D("xoff", icn_xoff),
+	CFG_D("yoff", icn_yoff),
+	CFG_D("iconw", iconw),
+	CFG_D("iconh", iconh),
+	CFG_NEST("icon", icon_cfg), /* Repeating group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 

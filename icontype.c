@@ -457,13 +457,13 @@ void icnt_fix_ictypes(void)
  * Table for configuring one window icon (icontype)
  */
 
-static CfgEntry icnt_table[] = {
-	{ CFG_HDR,  "itype", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_S,    "mask", { iwork.type } },
-	{ CFG_S,    "name", { iwork.icon_name } },
-	{ CFG_END,  NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const icnt_table[] = {
+	CFG_HDR("itype"),
+	CFG_BEG(),
+	CFG_S("mask", iwork.type),
+	CFG_S("name", iwork.icon_name),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -517,12 +517,30 @@ static void one_itype(XFILE *file, int lvl, int io, int *error)
  * Table for configuring one group of window icons (files/folders/programs)
  */
 
-static CfgEntry icngrp_table[] = {
-	{ CFG_HDR,  NULL, { 0 } },				/* keyword will be substituted */
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_NEST, "itype", { one_itype } },	/* Repeating group */
-	{ CFG_END,  NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const filegrp_table[] = {
+	CFG_HDR("files"),
+	CFG_BEG(),
+	CFG_NEST("itype", one_itype),	/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
+};
+
+
+static CfgEntry const foldergrp_table[] = {
+	CFG_HDR("folders"),
+	CFG_BEG(),
+	CFG_NEST("itype", one_itype),	/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
+};
+
+
+static CfgEntry const programgrp_table[] = {
+	CFG_HDR("programs"),
+	CFG_BEG(),
+	CFG_NEST("itype", one_itype),	/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -530,12 +548,12 @@ static CfgEntry icngrp_table[] = {
  * Save or load "files", "folders" or "programs" group of icon definitions 
  */
 
-static void icngrp_cfg(XFILE *file, int lvl, int io, int *error)
+static void icngrp_cfg(XFILE *file, const CfgEntry *table, int lvl, int io, int *error)
 {
 	if (io == CFG_LOAD)
 		lsrem_all_one((LSTYPE **) (*ppthis));
 
-	*error = handle_cfg(file, icngrp_table, lvl, (CFGEMP | (pthis ? 0 : CFGSKIP)), io, NULL, NULL);
+	*error = handle_cfg(file, table, lvl, CFGEMP | (pthis ? 0 : CFGSKIP), io, NULL, NULL);
 }
 
 
@@ -547,9 +565,8 @@ static void file_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	pthis = iconlists[0];
 	ppthis = &iconlists[0];
-	icngrp_table[0].s = "files";
 	defictype = ITM_FILE;
-	icngrp_cfg(file, lvl, io, error);
+	icngrp_cfg(file, filegrp_table, lvl, io, error);
 }
 
 
@@ -561,9 +578,8 @@ static void folder_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	ppthis = &iconlists[1];
 	pthis = iconlists[1];
-	icngrp_table[0].s = "folders";
 	defictype = ITM_FOLDER;
-	icngrp_cfg(file, lvl, io, error);
+	icngrp_cfg(file, foldergrp_table, lvl, io, error);
 }
 
 
@@ -575,9 +591,8 @@ static void program_cfg(XFILE *file, int lvl, int io, int *error)
 {
 	pthis = iconlists[2];
 	ppthis = &iconlists[2];
-	icngrp_table[0].s = "programs";
 	defictype = ITM_PROGRAM;
-	icngrp_cfg(file, lvl, io, error);
+	icngrp_cfg(file, programgrp_table, lvl, io, error);
 }
 
 
@@ -585,14 +600,14 @@ static void program_cfg(XFILE *file, int lvl, int io, int *error)
  * Table for configuring all window icons (icontypes)
  */
 
-static CfgEntry icontypes_table[] = {
-	{ CFG_HDR,  "icontypes", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_NEST, "files", { file_cfg } },	/* group */
-	{ CFG_NEST, "folders", { folder_cfg } },	/* group */
-	{ CFG_NEST, "programs", { program_cfg } },	/* group */
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const icontypes_table[] = {
+	CFG_HDR("icontypes"),
+	CFG_BEG(),
+	CFG_NEST("files", file_cfg),	/* group */
+	CFG_NEST("folders", folder_cfg),	/* group */
+	CFG_NEST("programs", program_cfg),	/* group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 

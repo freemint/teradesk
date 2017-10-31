@@ -419,12 +419,12 @@ void ft_default(void)
  * Configuration table for one filetype or doctype
  */
 
-CfgEntry ft_table[] = {
-	{ CFG_HDR, NULL, { 0 } },				/* keyword will be substituted */
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_S,   "mask", { fwork.filetype } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const ft_table[] = {
+	CFG_HDR("ftype"),
+	CFG_BEG(),
+	CFG_S("mask", fwork.filetype),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -472,12 +472,12 @@ static void one_ftype(XFILE *file, int lvl, int io, int *error)
  * Configuration table for filetypes (filename masks)
  */
 
-CfgEntry filetypes_table[] = {
-	{ CFG_HDR, NULL, { 0 } },								/* keyword will be substituted */
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_NEST, NULL, { one_ftype } },						/* Repeating group */
-	{ CFG_ENDG, NULL, { 0 } } ,
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const filetypes_table[] = {
+	CFG_HDR("filetypes"),
+	CFG_BEG(),
+	CFG_NEST("ftype", one_ftype),						/* Repeating group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -486,14 +486,8 @@ CfgEntry filetypes_table[] = {
  */
 void ft_config(XFILE *file, int lvl, int io, int *error)
 {
-	const char *fff = "ftype";
-
 	fthis = filetypes;
 	ffthis = &filetypes;
-	ft_table[0].s = fff;
-	filetypes_table[0].s = "filetypes";
-	filetypes_table[2].s = fff;
-	filetypes_table[3].type = CFG_ENDG;
 
 	*error = handle_cfg(file, filetypes_table, lvl, CFGEMP, io, rem_all_filetypes, ft_default);
 }

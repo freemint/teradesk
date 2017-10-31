@@ -362,15 +362,15 @@ void prg_default(void)
  * Configuration table for one program type
  */
 
-CfgEntry prg_table[] = {
-	{ CFG_HDR, NULL, { 0} },									/* keyword will be substituted */
-	{ CFG_BEG, NULL, { 0 } },
-	{ CFG_S, "name", { pwork.name } },
-	{ CFG_L, "limm", { &pwork.limmem } },
-	{ CFG_D, "appt", { &pwork.appl_type } },
-	{ CFG_X, "flag", { &pwork.flags } },
-	{ CFG_END, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const prgtype_table[] = {
+	CFG_HDR("ptype"),
+	CFG_BEG(),
+	CFG_S("name", pwork.name),
+	CFG_L("limm", pwork.limmem),
+	CFG_E("appt", pwork.appl_type),
+	CFG_X("flag", pwork.flags),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -393,7 +393,7 @@ static void one_ptype(XFILE *file, int lvl, int io, int *error)
 			pwork.limmem = p->limmem;
 			pwork.flags = p->flags;
 
-			*error = CfgSave(file, prg_table, lvl, CFGEMP);
+			*error = CfgSave(file, prgtype_table, lvl, CFGEMP);
 
 			p = p->next;
 		}
@@ -401,7 +401,7 @@ static void one_ptype(XFILE *file, int lvl, int io, int *error)
 	{
 		memclr(&pwork, sizeof(pwork));
 
-		*error = CfgLoad(file, prg_table, (int) sizeof(SNAME), lvl);
+		*error = CfgLoad(file, prgtype_table, (int) sizeof(SNAME), lvl);
 
 		if (*error == 0)
 		{
@@ -425,11 +425,11 @@ static void one_ptype(XFILE *file, int lvl, int io, int *error)
  */
 
 static CfgEntry prgty_table[] = {
-	{ CFG_HDR,  "apptypes", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_NEST, "ptype", { one_ptype } },	/* Repeating group */
-	{ CFG_ENDG, NULL, { 0  } },
-	{ CFG_LAST, NULL, { 0 } }
+	CFG_HDR("apptypes"),
+	CFG_BEG(),
+	CFG_NEST("ptype", one_ptype),	/* Repeating group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -439,8 +439,5 @@ static CfgEntry prgty_table[] = {
 
 void prg_config(XFILE *file, int lvl, int io, int *error)
 {
-	prg_table[0].s = "ptype";
-	prg_table[2].type &= CFG_MASK;
-
 	*error = handle_cfg(file, prgty_table, lvl, CFGEMP, io, rem_all_prgtypes, prg_default);
 }

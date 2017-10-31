@@ -459,7 +459,7 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 	_WORD button2;						/* for a subdialog */
 	_WORD fkey;							/* code of associated F-key */
 
-	bool stat = FALSE;
+	bool status = FALSE;
 	bool qquit = FALSE;				/* true when ok to exit loop */
 
 	static const char ord[] = { ISEDIT, ISAUTO, ISSHUT, ISVIDE, ISSRCH, ISFRMT, ISVIEW, ISCOMP, ISRBXT };
@@ -653,7 +653,9 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 						free(appl->name);
 						appl->name = newpath;
 					} else
+					{
 						goto exit2;
+					}
 				}
 
 				/* 
@@ -668,7 +670,9 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 						free(appl->cmdline);
 						appl->cmdline = newcmd;
 					} else
+					{
 						goto exit2;
+					}
 				}
 
 				/* Same for local environment */
@@ -681,7 +685,9 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 						free(appl->localenv);
 						appl->localenv = newenv;
 					} else
+					{
 						goto exit2;
+					}
 				}
 
 				/* 
@@ -726,7 +732,7 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 							   flags & (AT_EDIT | AT_SRCH | AT_FFMT | AT_VIEW | AT_COMP | AT_CONS | AT_RBXT)));
 
 				qquit = TRUE;
-				stat = TRUE;
+				status = TRUE;
 				break;
 
 			default:
@@ -751,7 +757,7 @@ static bool app_dialog(LSTYPE **llist,	/* list to check for duplicates in */
 		xd_close(&info);
 	}
 
-	return stat;
+	return status;
 }
 
 
@@ -796,8 +802,10 @@ void app_install(_WORD use, APPLINFO **applist)
 		else
 			*(setmask[FILETYPE].ob_spec.tedinfo->te_ptext) = 0;
 	} else
+	{
 		title = DTINSAPP;
-
+	}
+	
 	rsc_title(setmask, DTSMASK, title);
 
 	/* 
@@ -903,9 +911,8 @@ char *app_find_name(const char *fname, bool full)
 	theapp = app_find(fname, (full) ? TRUE : FALSE);
 
 	if (theapp)
-		return (full) ? theapp->name : theapp->shname;
-	else
-		return NULL;
+		return full ? theapp->name : theapp->shname;
+	return NULL;
 }
 
 
@@ -990,7 +997,7 @@ static char *app_build_cml(const char *format,	/* (Template for) the command lin
 	if ((qformat = requote_cmd(format)) != NULL)
 	{
 		const char *c = qformat;		/* pointer to a position in qformat */
-		long ml;						/* needed buffer length for the command line */
+		size_t ml;						/* needed buffer length for the command line */
 		ITMTYPE type;					/* current item type */
 
 		/* 
@@ -1091,7 +1098,7 @@ static char *app_build_cml(const char *format,	/* (Template for) the command lin
 
 							sellist++;
 
-						}				/* for... */
+						}
 					} else
 					{
 						/* must get rid of blanks after %f, etc. */
@@ -1105,7 +1112,7 @@ static char *app_build_cml(const char *format,	/* (Template for) the command lin
 			{
 				*d++ = h;
 			}
-		}								/* while */
+		}
 
 		/* add zero termination byte */
 
@@ -1185,8 +1192,10 @@ static char *app_parpath(char *cmline)
 
 			q = !q;
 		} else if (q && *p == fqc && p[1] == fqc)
+		{
 			p++;
-
+		}
+		
 		p++;
 	}
 
@@ -1539,6 +1548,22 @@ static SINFO this;
 
 
 /*
+ * Configuration table for one application type
+ */
+
+static CfgEntry const apptype_table[] = {
+	CFG_HDR("atype"),
+	CFG_BEG(),
+	CFG_SI("name", pwork.name),
+	CFG_L("limm", pwork.limmem),
+	CFG_E("appt", pwork.appl_type),
+	CFG_X("flag", pwork.flags),
+	CFG_END(),
+	CFG_LAST()
+};
+
+
+/*
  * Save or load program type configuration for one application
  */
 
@@ -1546,23 +1571,23 @@ static void this_atype(XFILE *file, _WORD lvl, _WORD io, _WORD *error)
 {
 	*error = 0;
 
-	prg_table[0].s = "atype";
-	prg_table[2].type |= CFG_INHIB;
-
 	if (io == CFG_SAVE)
 	{
 		copy_prgtype((LSTYPE *) & pwork, (LSTYPE *) & awork);
-		*error = CfgSave(file, prg_table, lvl, CFGEMP);
+		*error = CfgSave(file, apptype_table, lvl, CFGEMP);
 	} else
 	{
 		memclr(&pwork, sizeof(pwork));
 
-		*error = CfgLoad(file, prg_table, (_WORD) sizeof(SNAME), lvl);
+		*error = CfgLoad(file, apptype_table, (_WORD) sizeof(SNAME), lvl);
 
 		if (pwork.appl_type > PTTP)		/* PTTP is the last one */
+		{
 			*error = EFRVAL;
-		else
+		} else
+		{
 			copy_prgtype((LSTYPE *) & awork, (LSTYPE *) & pwork);
+		}
 	}
 }
 
@@ -1577,22 +1602,77 @@ static void rem_all_doctypes(void)
 }
 
 
+static CfgEntry const dt_table[] = {
+	CFG_HDR("dtype"),
+	CFG_BEG(),
+	CFG_S("mask", fwork.filetype),
+	CFG_END(),
+	CFG_LAST()
+};
+
+
+/* 
+ * This routine handles saving of all defined filetypes, but it handles
+ * loading of -only one- 
+ */
+static void one_dtype(XFILE *file, int lvl, int io, int *error)
+{
+	*error = 0;
+
+	if (io == CFG_SAVE)
+	{
+		/* Save data: all defined filetypes */
+
+		while ((*error == 0) && fthis)
+		{
+			fwork = *fthis;
+			*error = CfgSave(file, dt_table, lvl, CFGEMP);
+			fthis = fthis->next;
+		}
+	} else
+	{
+		/* Load data; one filetype */
+
+		memclr(&fwork, sizeof(fwork));	/* must set ALL of .filetype to 0 !!! */
+		*error = CfgLoad(file, dt_table, (int) sizeof(SNAME), lvl);
+
+		if (*error == 0)
+		{
+			if (fwork.filetype[0] == 0)
+			{
+				*error = EFRVAL;
+			} else
+			{
+				if (lsadd_end((LSTYPE **) ffthis, sizeof(FTYPE), (LSTYPE *) & fwork, copy_ftype) == NULL)
+					*error = ENOMSG;	/* there was an alert in lsadd */
+			}
+		}
+	}
+}
+
+
+/*
+ * Configuration table for filetypes (filename masks)
+ */
+
+static CfgEntry const doctypes_table[] = {
+	CFG_HDR("doctypes"),
+	CFG_BEG(),
+	CFG_NEST("dtype", one_dtype),						/* Repeating group */
+	CFG_END(),
+	CFG_LAST()
+};
+
+
 /*
  * Load or save configuration for associated documenttypes 
  */
-
 static void dt_config(XFILE *file, int lvl, int io, int *error)
 {
-	const char *sss = "dtype";
-
 	fthis = awork.filetypes;
-	ffthis = &(awork.filetypes);
-	ft_table[0].s = sss;
-	filetypes_table[0].s = "doctypes";
-	filetypes_table[2].s = sss;
-	filetypes_table[3].type = CFG_END;
+	ffthis = &awork.filetypes;
 
-	*error = handle_cfg(file, filetypes_table, lvl, (CFGEMP | ((fthis) ? 0 : CFGSKIP)), io, rem_all_doctypes, NULL);
+	*error = handle_cfg(file, doctypes_table, lvl, CFGEMP | (fthis ? 0 : CFGSKIP), io, rem_all_doctypes, NULL);
 }
 
 
@@ -1600,17 +1680,17 @@ static void dt_config(XFILE *file, int lvl, int io, int *error)
  * Configuration table for one application
  */
 
-static CfgEntry app_table[] = {
-	{ CFG_HDR,  "app", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_S,    "path", { this.name } },
-	{ CFG_S,    "cmdl", { this.cmdline } },
-	{ CFG_S,    "envr", { this.localenv } },
-	{ CFG_D,    "fkey", { &awork.fkey } },
-	{ CFG_NEST, "atype", { this_atype } },
-	{ CFG_NEST, "doctypes", { dt_config } },
-	{ CFG_END,  NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const app_table[] = {
+	CFG_HDR("app"),
+	CFG_BEG(),
+	CFG_S("path", this.name),
+	CFG_S("cmdl", this.cmdline),
+	CFG_S("envr", this.localenv),
+	CFG_D("fkey", awork.fkey),
+	CFG_NEST("atype", this_atype),
+	CFG_NEST("doctypes", dt_config),
+	CFG_END(),
+	CFG_LAST()
 };
 
 
@@ -1653,8 +1733,9 @@ static void one_app(XFILE *file, int lvl, int io, int *error)
 		if (*error == 0)				/* got one ? */
 		{
 			if (this.name[0] == 0)
+			{
 				*error = EFRVAL;
-			else
+			} else
 			{
 				/* For awork, strings are just pointed to, not copied */
 
@@ -1705,12 +1786,12 @@ static void one_app(XFILE *file, int lvl, int io, int *error)
  * Configuration table for all applications
  */
 
-static CfgEntry applications_table[] = {
-	{ CFG_HDR,  "applications", { 0 } },
-	{ CFG_BEG,  NULL, { 0 } },
-	{ CFG_NEST, "app", { one_app } },		/* Repeating group */
-	{ CFG_ENDG, NULL, { 0 } },
-	{ CFG_LAST, NULL, { 0 } }
+static CfgEntry const applications_table[] = {
+	CFG_HDR("applications"),
+	CFG_BEG(),
+	CFG_NEST("app", one_app),		/* Repeating group */
+	CFG_ENDG(),
+	CFG_LAST()
 };
 
 
@@ -1739,9 +1820,9 @@ void app_config(XFILE *file, int lvl, int io, int *error)
  * (successfully or otherwise)
  */
 
-_WORD app_specstart(_WORD flags, WINDOW * w, _WORD * list, _WORD nn, _WORD kstate)
+_WORD app_specstart(_WORD flags, WINDOW *w, _WORD *list, _WORD nn, _WORD kstate)
 {
-	APPLINFO * app = applikations;
+	APPLINFO *app = applikations;
 	_WORD n = 0, delayt = 1000;
 
 	if ((flags & AT_SHUT) || (flags & AT_VIDE))
@@ -1779,7 +1860,8 @@ _WORD app_specstart(_WORD flags, WINDOW * w, _WORD * list, _WORD nn, _WORD kstat
 			 */
 
 			if ((startup && (app->flags & AT_AUTO)) ||
-				(shutdown && (app->flags & AT_SHUT)) || (app->flags & (AT_VIDE | AT_FFMT)))
+				(shutdown && (app->flags & AT_SHUT)) ||
+				(app->flags & (AT_VIDE | AT_FFMT)))
 				onone = TRUE;			/* ignore this app if alrady running */
 
 			app_exec(NULL, app, w, list, nn, kstate);

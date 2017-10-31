@@ -98,8 +98,6 @@ static void append_fmt(CFG_TYPE cfgtype,	/* entry type         */
 	if (src != NULL)
 		strcpy(dest, src);
 
-	/* CFG_NOFMT can be tested for here if it becomes needed */
-
 	switch (cftype)
 	{
 	case CFG_HDR:
@@ -124,14 +122,13 @@ static void append_fmt(CFG_TYPE cfgtype,	/* entry type         */
 	case CFG_C:
 		strcat(dest, "=%c");
 		break;
-	case CFG_BD:
-		strcat(dest, "=%d");
-		break;
 	case CFG_H:
 		strcat(dest, "=%u");
 		break;
 #endif
+	case CFG_BD:
 	case CFG_D:
+	case CFG_E:
 		strcat(dest, "=%d");
 		break;
 	case CFG_DDD:
@@ -292,6 +289,7 @@ int CfgSave(XFILE *fp,					/* pointer to open file parameters */
 							error = fprintf_wtab(fp, lvl, fmt, *v);
 					}
 					break;
+#endif
 				case CFG_BD:
 					{
 						/* Write integer value (diverse formats) */
@@ -302,12 +300,20 @@ int CfgSave(XFILE *fp,					/* pointer to open file parameters */
 							error = fprintf_wtab(fp, lvl, fmt, *v);
 					}
 					break;
-#endif
 				case CFG_D:
 				case CFG_X:
 					{
 						/* Write integer value (diverse formats) */
 						_UWORD *v = tab->a.u;
+
+						if (*v || emp)
+							error = fprintf_wtab(fp, lvl, fmt, *v);
+					}
+					break;
+				case CFG_E:
+					{
+						/* Write integer value (diverse formats) */
+						int *v = tab->a.e;
 
 						if (*v || emp)
 							error = fprintf_wtab(fp, lvl, fmt, *v);
@@ -581,14 +587,18 @@ int CfgLoad(XFILE *fp,					/* pointer to file definition structure */
 					/* Decode a positive decimal byte value */
 					*tab->a.c = (char) max(atoi(s), 0);
 					break;
+#endif
 				case CFG_BD:
 					/* Decode a positive decimal integer value */
 					*tab->a.b = max(atoi(s), 0) > 0;
 					break;
-#endif
 				case CFG_D:
 					/* Decode a positive decimal integer value */
 					*tab->a.i = max(atoi(s), 0);
+					break;
+				case CFG_E:
+					/* Decode a positive decimal integer value */
+					*tab->a.e = max(atoi(s), 0);
 					break;
 				case CFG_DDD:
 					{
@@ -665,7 +675,7 @@ int CfgLoad(XFILE *fp,					/* pointer to file definition structure */
 	 * If there has been too many errors, return status of invalid value read
 	 */
 
-	return (skip) ? EFRVAL : error;
+	return skip ? EFRVAL : error;
 }
 
 
@@ -675,7 +685,7 @@ int CfgLoad(XFILE *fp,					/* pointer to file definition structure */
  */
 
 int handle_cfg(XFILE *fp,				/* open file definition data */
-			   CfgEntry *cfgtab,		/* pointer to configuration table used */
+			   const CfgEntry *cfgtab,	/* pointer to configuration table used */
 			   int level,				/* nesting level */
 			   int emp,					/* if 0x0001 save empty fields, if 0x0002 skip all */
 			   int io,					/* CFG_SAVE or 1= save data;  0= load data */
@@ -709,7 +719,7 @@ int handle_cfg(XFILE *fp,				/* open file definition data */
 
 		error = CfgLoad(fp, cfgtab, MAX_KEYLEN, level);
 
-		if (error == EFRVAL && (def != NULL))
+		if (error == EFRVAL && def != NULL)
 		{
 			alert_printf(1, ALOADCFG, cname, get_message(error));
 
@@ -799,9 +809,12 @@ int handle_cfgfile(const char *name,	/* name of configuration file to read/write
 				 */
 
 				if (strncmp(identbuf, ident, strlen(ident)) == 0)
+				{
 					error = CfgLoad(file, tab, MAX_CFGLINE, -1);
-				else
+				} else
+				{
 					error = EFRVAL;
+				}
 			} else
 			{
 				if (n < 0)
