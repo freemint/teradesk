@@ -1077,7 +1077,7 @@ static char *app_build_cml(const char *format,	/* (Template for) the command lin
 
 								if (strlenq(tmp) + strlen(build) >= ml)
 								{
-									xform_error(ECOMTL);
+									xform_error(E2BIG);
 									goto error_exit2;
 								}
 
@@ -1462,8 +1462,9 @@ bool app_exec(const char *program, APPLINFO *app, WINDOW *w, _WORD *sellist, _WO
 		/* Check if the commandline is too long (max 125 if ARGV is not recognized)  */
 
 		if (!argv && (cmllen > 125))
-			xform_error(ECOMTL);
-		else							/* No error, start the program. */
+		{
+			xform_error(E2BIG);
+		} else							/* No error, start the program. */
 		{
 			if (name)
 			{

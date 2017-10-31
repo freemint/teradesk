@@ -49,13 +49,6 @@ typedef enum
 	GAI_WHITEBAK = 0x4000	/* WHITEBAK objects */
 } GAI;
 
-/* Errorcodes. Take care to use same values as in XERROR.H */
-
-#define ENSMEM		-39			/* From xerror.h */
-#define XDVDI		-4096		/* Geen vdi handle meer beschikbaar. */
-#define XDNMWINDOWS -4097		/* Geen windows meer. */
-#define XDNSMEM		ENSMEM		/* Niet voldoende geheugen. */
-
 /* key-status constants */
 
 #define XD_SHIFT		0x0100

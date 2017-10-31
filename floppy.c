@@ -189,7 +189,7 @@ static _WORD readfp(_WORD dev, unsigned char *sect0, _WORD *bps, _WORD *spt, _WO
 		*tracks = secs / (*spt * (*sides));
 
 		if (!checktracks(*sides, *tracks, *spt, 40, *bps))
-			istat = UNKNOWN_MEDIA;
+			istat = EMEDIUMTYPE;
 	}
 
 	return istat;

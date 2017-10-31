@@ -328,7 +328,7 @@ static void pal_config(XFILE *file, int lvl, int io, int *error)
 		free(palette);
 	} else
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	}
 }
 

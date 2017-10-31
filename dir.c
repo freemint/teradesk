@@ -640,7 +640,7 @@ static _WORD copy_DTA(NDTA **dest, char *name, XATTR *src, _WORD iindex, bool li
 	}
 
 	*dest = NULL;
-	return ENSMEM;
+	return ENOMEM;
 }
 
 
@@ -802,11 +802,11 @@ static _WORD read_dir(DIR_WINDOW *w)
 			x_closedir(dir);
 		}
 
-		if (error == ENMFIL || error == EFILNF)
+		if (error == ENMFILES || error == ENOENT)
 			error = 0;
 	} else
 	{
-		error = ENSMEM;					/* Can't allocate poiners for the new directory */
+		error = ENOMEM;					/* Can't allocate poiners for the new directory */
 	}
 
 	/* Number of files, total size, maximum name length */
@@ -1240,7 +1240,7 @@ static _WORD dir_makenew(DIR_WINDOW *dw, _WORD title)
 			}
 		}
 
-		if (error == EACCDN)
+		if (error == EACCES)
 			alert_iprint(MDEXISTS);
 		else
 			xform_error(error);
@@ -2714,7 +2714,7 @@ void dir_one(XFILE *file, int lvl, int io, int *error)
 			{
 				free(path);
 				free(spec);
-				*error = ENSMEM;
+				*error = ENOMEM;
 			}
 		}
 	}

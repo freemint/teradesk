@@ -339,7 +339,7 @@ static _WORD push(COPYDATA **stack, const char *spath, const char *dpath, bool c
 
 	if ((new = malloc(sizeof(COPYDATA))) == NULL)
 	{
-		error = ENSMEM;
+		error = ENOMEM;
 	} else
 	{
 		new->spath = spath;
@@ -399,7 +399,7 @@ static _WORD stk_readdir(COPYDATA *stack, char *name, XATTR *attr, bool *eod)
 
 	strsncpy(name, fname, ms);
 
-	if (error == ENMFIL || error == EFILNF)
+	if (error == ENMFILES || error == ENOENT)
 	{
 		error = 0;
 		*eod = TRUE;
@@ -529,7 +529,7 @@ _WORD cnt_items(const char *path,		/* path to look into */
 
 	if ((error = push(&stack, path, NULL, FALSE)) != 0)
 	{
-		if (search && error == EPTHNF)
+		if (search && error == ENOTDIR)
 		{
 			nodir = TRUE;
 			error = 0;					/* a fix needed to search in selected items */
@@ -580,7 +580,7 @@ _WORD cnt_items(const char *path,		/* path to look into */
 					add_size(bytes, attr.st_size);
 					inftype = ITM_FILE;
 				}
-			} else if (search && !eod && (nodir || error == EPTHNF))
+			} else if (search && !eod && (nodir || error == ENOTDIR))
 			{
 				/* this branch is only for searching in a list of files */
 
@@ -854,7 +854,7 @@ static _WORD filecopy(const char *sname,	/* source name */
 						dlength = x_write(fh2, slength, buffer);
 
 						if ((dlength < 0) || (slength != dlength))
-							error = (dlength < 0) ? (_WORD) dlength : EDSKFULL;
+							error = (dlength < 0) ? (_WORD) dlength : ENOSPC;
 
 						/* If full buffer read, probably not end of file */
 
@@ -887,7 +887,7 @@ static _WORD filecopy(const char *sname,	/* source name */
 		free(buffer);
 	} else
 	{
-		error = ENSMEM;
+		error = ENOMEM;
 	}
 
 	return error;
@@ -915,7 +915,7 @@ static _WORD linkcopy(const char *sname,	/* source name */
 	/* Determine link target name */
 
 	if ((tgtname = x_fllink(sname)) == NULL)
-		return ENSMEM;
+		return ENOMEM;
 
 	/* If an identically named link already exists at destination, try to delete it */
 
@@ -1048,7 +1048,7 @@ static bool check_copy(WINDOW *w,		/* source directory window */
 static _WORD chk_access(XATTR *attr)
 {
 	if ((attr->st_attr & FA_RDONLY) != 0)
-		return EACCDN;
+		return EACCES;
 
 	return 0;
 }
@@ -1152,7 +1152,7 @@ static _WORD exist(const char *sname,	/* source item name */
 		else
 			return XEXIST;
 	}
-	return error == EFILNF ? 0 : copy_error(error, fn_get_name(dname), function);
+	return error == ENOENT ? 0 : copy_error(error, fn_get_name(dname), function);
 }
 
 
@@ -1412,7 +1412,7 @@ static _WORD hndl_nameconflict(char **dname,	/* name of the destination */
 
 					if ((new = fn_make_newname(*dname, name)) == NULL)
 					{
-						result = copy_error(ENSMEM, fn_get_name(*dname), function);
+						result = copy_error(ENOMEM, fn_get_name(*dname), function);
 						again = FALSE;
 					} else
 					{
@@ -1576,7 +1576,7 @@ _WORD touch_file(const char *fullname,	/* name of the object (i.e. file) */
 				 */
 
 				if ((linktgt = x_fllink(fullname)) == NULL)
-					return ENSMEM;
+					return ENOMEM;
 
 				error = x_unlink(fullname);
 
@@ -1756,7 +1756,7 @@ static _WORD copy_file(const char *sname,	/* name of the source item */
 							 ((options.cprefs & CF_CTIME) != 0)	/* or timestamp is to be changed */
 							))
 						{
-							error = EACCDN;
+							error = EACCES;
 						} else
 						{
 							error = touch_file(sname, thetime, theattr, FALSE);
@@ -2143,7 +2143,7 @@ static bool copy_list(WINDOW *w,		/* pointer to source window */
 		}
 
 		if (path == NULL)
-			result = copy_error(ENSMEM, itm_name(w, *list), function);
+			result = copy_error(ENOMEM, itm_name(w, *list), function);
 		else
 		{
 			cpath = fn_get_path(path);	/* allocate */
@@ -2470,7 +2470,7 @@ static bool del_list(WINDOW *w, _WORD n, _WORD *list, long *folders, long *files
 
 		if (path == NULL)
 		{
-			result = copy_error(ENSMEM, itm_name(w, *list), CMD_DELETE);
+			result = copy_error(ENOMEM, itm_name(w, *list), CMD_DELETE);
 		} else
 		{
 			name = fn_get_name(path);

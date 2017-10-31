@@ -728,7 +728,7 @@ static _WORD read_txtfile(const char *name,	/* name of file to read */
 
 			if ((*buffer = malloc(*flength + 4L)) == NULL)
 			{
-				error = ENSMEM;
+				error = ENOMEM;
 			} else
 			{
 				read = x_read(handle, *flength, *buffer);
@@ -760,14 +760,14 @@ static _WORD read_txtfile(const char *name,	/* name of file to read */
 							set_lines(*buffer, *lines, *flength);
 						else
 						{
-							error = ENSMEM;
+							error = ENOMEM;
 							free(*lines);
 							free(*buffer);
 						}
 					}
 				} else
 				{
-					error = (read < 0) ? (_WORD) read : EREAD;
+					error = (read < 0) ? (_WORD) read : EIO;
 					free(*buffer);
 				}
 			}
@@ -1401,7 +1401,7 @@ void text_one(XFILE *file, int lvl, int io, int *error)
 				wd_checkopen(error);
 			} else
 			{
-				*error = ENSMEM;
+				*error = ENOMEM;
 			}
 		}
 	}

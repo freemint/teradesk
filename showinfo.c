@@ -776,7 +776,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 
 				/* Path can be too long in subfolder, allow change */
 
-				if (error == EPTHTL || error == EFNTL)
+				if (error == ENAMETOOLONG || error == EFNTL)
 				{
 					error = 0;
 					result = 0;
@@ -1037,7 +1037,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 			}
 		} else
 		{
-			error = EDRIVE;
+			error = ENXIO;
 		}
 		if (error != 0)
 			result = si_error(oldn, error);
@@ -1197,7 +1197,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 							}
 						} else
 						{
-							error = ENSMEM;
+							error = ENOMEM;
 						}
 					}
 #endif
@@ -1229,7 +1229,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 								(((attrib ^ new_attribs.st_attr) != FA_RDONLY) ||
 								 (optime.date != dos_mdate(attr)) || (optime.time != dos_mtime(attr))))
 							{
-								error = EACCDN;
+								error = EACCES;
 							} else
 							{
 								changed = TRUE;
@@ -1321,7 +1321,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 
 					/* Path can be too long in a folder, allow change */
 
-					if (error == EPTHTL || error == EFNTL)
+					if (error == ENAMETOOLONG || error == EFNTL)
 					{
 						error = 0;
 						result = 0;

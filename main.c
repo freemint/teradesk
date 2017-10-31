@@ -296,7 +296,7 @@ void *malloc_chk(size_t size)
 	void *address = malloc(size);
 
 	if (address == NULL)
-		xform_error(ENSMEM);
+		xform_error(ENOMEM);
 
 	return address;
 }
@@ -506,8 +506,8 @@ static void disp_short(char *string,	/* resultant string */
 					   _WORD left		/* left-justify and 0-terminate string if true */
 	)
 {
-	char k = (char) (kbshort & 0x00FF),
-		*strp = &string[3];
+	char k = (char) (kbshort & 0x00FF);
+	char *strp = &string[3];
 
 	switch (k)
 	{
@@ -579,12 +579,12 @@ static void ins_shorts(void)
 				where = menu[menui].ob_spec.free_string + (long) (lm - 5);
 
 				disp_short(where, shortcut, FALSE);
-
-			}							/* ' ' ?            */
-		} /* string ?         */
-		else
+			}
+		} else
+		{
 			options.kbshort[menui - MFIRST] = XD_ALT;	/* under new title from now on */
-	}									/* for...           */
+		}
+	}
 }
 
 
@@ -792,7 +792,9 @@ static void setpreferences(void)
 				options.dial_mode |= DIALPOS_MODE;
 				posmode = XD_MOUSE;
 			} else
+			{
 				options.dial_mode &= ~DIALPOS_MODE;
+			}
 
 			get_opt(setprefs, &options.sexit, SAVE_CFG, SEXIT);
 
@@ -887,7 +889,7 @@ static void opt_default(void)
 
 static void short_default(void)
 {
-	memclr(&options.kbshort[MOPEN - MFIRST], (size_t) (MSAVESET - MFIRST + 1));
+	memclr(&options.kbshort[MOPEN - MFIRST], (MSAVESET - MFIRST + 1) * sizeof(options.kbshort[0]));
 
 #if _PREDEF
 	options.kbshort[MOPEN - MFIRST] = XD_CTRL | 'O';	/* ^O, etc. */
@@ -905,7 +907,7 @@ static void short_default(void)
 }
 
 
-/* 
+/*
  * Read configuration from the configuration file 
  */
 
@@ -948,7 +950,6 @@ static _WORD load_options(void)
 /*
  * Configuration routine for basic desktop options
  */
-
 void opt_config(XFILE *file, int lvl, int io, int *error)
 {
 	if (io == CFG_SAVE)
@@ -978,15 +979,17 @@ void opt_config(XFILE *file, int lvl, int io, int *error)
 			if (options.plinelen < MIN_PLINE)	/* probably not entered in the dialog */
 				options.plinelen = DEF_PLINE;
 
-			if (options.version < MIN_VERSION
-				|| options.version > CFG_VERSION
-				|| (options.sort & ~(WD_REVSORT | WD_NOCASE)) > WD_NOSORT
-				|| options.plinelen > MAX_PLINE || options.max_dir < 32 || (options.dial_mode & DIAL_MODE) > XD_WINDOW)
+			if (options.version < MIN_VERSION ||
+				options.version > CFG_VERSION ||
+				(options.sort & ~(WD_REVSORT | WD_NOCASE)) > WD_NOSORT ||
+				options.plinelen > MAX_PLINE ||
+				options.max_dir < 32 ||
+				(options.dial_mode & DIAL_MODE) > XD_WINDOW)
+			{
 				*error = EFRVAL;
-
+			}
 			if (*error >= 0)
 			{
-
 				/* Block possible junk from some fields in config file */
 
 				options.attribs &= 0x0077;
@@ -1034,10 +1037,9 @@ static void short_config(XFILE *file, int lvl, int io, int *error)
 }
 
 
-/* 
+/*
  * Save configuration into default config file 
  */
-
 static void save_options(const char *fname)
 {
 	hourglass_mouse();
@@ -1097,7 +1099,9 @@ void load_settings(char *newinfname)
 			infname = oldinfname;
 			load_options();
 		} else
+		{
 			free(oldinfname);
+		}
 	}
 }
 
@@ -1117,7 +1121,7 @@ bool find_cfgfiles(char **cfgname)
 		*cfgname = fullname;
 	} else								/* fullname is NULL, so error must be nonzero */
 	{
-		if ((error == EFILNF) && ((fullname = x_fullname(*cfgname, &error)) != NULL))
+		if (error == ENOENT && (fullname = x_fullname(*cfgname, &error)) != NULL)
 		{
 			free(*cfgname);
 			*cfgname = fullname;
@@ -1126,7 +1130,7 @@ bool find_cfgfiles(char **cfgname)
 
 	xform_error(error);
 
-	return (error >= 0) ? TRUE : FALSE;
+	return error >= 0 ? TRUE : FALSE;
 }
 
 
@@ -1208,8 +1212,8 @@ static bool init(void)
 		startup = FALSE;
 
 		return TRUE;
-	} else
-		return FALSE;
+	}
+	return FALSE;
 }
 
 
@@ -1283,7 +1287,7 @@ static _WORD alloc_global_memory(void)
 	else
 		global_memory = (char *)Malloc(global_mem_size);
 
-	return (global_memory) ? 0 : ENSMEM;
+	return global_memory ? 0 : ENOMEM;
 }
 
 
@@ -1398,8 +1402,9 @@ static _WORD scansh(_WORD key,			/* code of the key pressed (see XD_ routines)  
 	_WORD h = key & 0x80;					/* upper half of the 255-characters set */
 
 	if (key & XD_SCANCODE)
+	{
 		return -1;
-	else if ((kstate & (K_CTRL | K_ALT)) == K_CTRL)	/* Ctrl... or Shift-Ctrl... */
+	} else if ((kstate & (K_CTRL | K_ALT)) == K_CTRL)	/* Ctrl... or Shift-Ctrl... */
 	{
 		if (a == SPACE)					/* ^SP           */
 			a |= XD_CTRL;
@@ -1666,7 +1671,7 @@ bool wait_to_quit(void)
 
 	do
 	{
-		Syield();						/* some other shutdown apps do this? */
+		(void) Syield();						/* some other shutdown apps do this? */
 
 		event = xe_xmulti(&loopevents);
 
@@ -1718,12 +1723,12 @@ static long lobo(void)
 {
 	if (ct60)
 	{
-		*((char *)0xFA800000L) = 1;				/* turn off CT60 power */	
+		*((char *)0xFA800000L) = 1;				/* turn off CT60 power */
 	} else
 	{
-		(void) Setexc(0x070, (void (*)()) loopcpu);		/* vert.blank */
-		(void) Setexc(0x070, (void (*)()) loopcpu);		/* hor. blank */
-		(void) Setexc(0x114, (void (*)()) loopcpu);		/* 200 Hz */
+		(void) Setexc(0x070, (void (*)()) loopcpu);	/* vert.blank */
+		(void) Setexc(0x070, (void (*)()) loopcpu);	/* hor. blank */
+		(void) Setexc(0x114, (void (*)()) loopcpu);	/* 200 Hz */
 	}
 
 	loopcpu();
@@ -1796,7 +1801,7 @@ int main(void)
 
 	mint |= magx;						/* Quick & dirty */
 
-	Pdomain(1);
+	(void) Pdomain(1);
 	if (mint)
 	{
 		Psigsetmask(0x7FFFE14EL);
@@ -1805,7 +1810,6 @@ int main(void)
 #endif
 
 	/* Find if files can be locked in this version of OS */
-
 	x_init();
 
 	/* 
@@ -1852,8 +1856,9 @@ int main(void)
 		/* Proceed only if successful */
 
 		if (error < 0)
+		{
 			xform_error(error);
-		else
+		} else
 		{
 			/*
 			 * Inform AES of TeraDesk's capabilities regarding messages 
@@ -1911,7 +1916,7 @@ int main(void)
 					 * Proceed only of OK
 					 */
 
-					if (((palname = strdup("teradesk.pal")) != NULL) && ((infname = strdup("teradesk.inf")) != NULL))
+					if ((palname = strdup("teradesk.pal")) != NULL && (infname = strdup("teradesk.inf")) != NULL)
 					{
 						/* Proceed if icons are loaded from icons resource file */
 
@@ -2053,12 +2058,12 @@ int main(void)
 		 * to kill the system on its own. 
 		 */
 
-		if (!shutting && !chrez)		
+		if (!shutting && !chrez)
 		{
-			long (*rv)(void);		/* reset vector */
+			long (*rv) (void);	/* reset vector */
 
 #if _MINT_
-			Syield();
+			(void) Syield();
 			wait(100);
 			appl_exit();
 
@@ -2087,11 +2092,11 @@ int main(void)
 			{
 				/* This is supposed to be a cold reset */
 
-				rv = (long (*)(void))(*((long *)os_start + 4));	/* pointer to reset handler */
-				memval = 0L;		/* corrupt some variables for a reset */				
-				memval2 = 0L;		/* same... */
-				resvector = 0L;		/* same... */
-				resvalid = 0L;		/* same... */
+				rv = (long (*)(void)) (*((long *) os_start + 4));	/* pointer to reset handler */
+				memval = 0L;			/* corrupt some variables for a reset */
+				memval2 = 0L;			/* same... */
+				resvector = 0L;			/* same... */
+				resvalid = 0L;			/* same... */
 			} else
 			{
 				/* 

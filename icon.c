@@ -2061,7 +2061,7 @@ void dsk_insticon(WINDOW *w, _WORD n, _WORD *list)
 
 			if (name == NULL)
 			{
-				xform_error(ENSMEM);
+				xform_error(ENOMEM);
 				break;					/* go to update */
 			} else
 			{
@@ -2628,7 +2628,7 @@ static void icon_cfg(XFILE *file, int lvl, int io, int *error)
 						 icon, this.ic.label, this.ic.icon_dat.drv + 'A', this.ic.x, this.ic.y, FALSE, name);
 				} else
 				{
-					*error = ENSMEM;
+					*error = ENOMEM;
 				}
 			}
 		}
@@ -2829,8 +2829,8 @@ bool dsk_init(void)
 		}
 	} else
 	{
-		if (error == XDNSMEM)
-			xform_error(ENSMEM);
+		if (error == ENOMEM)
+			xform_error(ENOMEM);
 	}
 
 	return FALSE;

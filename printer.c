@@ -408,7 +408,7 @@ bool print_list(WINDOW *w,				/* pointer to window in which itemsh have been sel
 
 			if ((path = itm_fullname(w, *item)) == NULL)
 			{
-				result = copy_error(ENSMEM, name, function);
+				result = copy_error(ENOMEM, name, function);
 			} else
 			{
 				type = itm_type(w, *item);

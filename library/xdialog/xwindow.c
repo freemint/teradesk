@@ -1226,7 +1226,7 @@ WINDOW *xw_create(_WORD type, WD_FUNC *functions, _WORD flags,
 
 	if ((w = xw_add(wd_struct_size, menu)) == NULL)
 	{
-		*error = XDNSMEM;
+		*error = ENOMEM;
 		return NULL;
 	}
 
@@ -1397,7 +1397,7 @@ WINDOW *xw_open_desk(_WORD type, WD_FUNC *functions, size_t wd_struct_size, _WOR
 
 	if ((w = (*xd_malloc) (wd_struct_size)) == NULL)
 	{
-		*error = XDNSMEM;
+		*error = ENOMEM;
 		return NULL;
 	}
 

@@ -60,43 +60,43 @@ char *get_message(_WORD error)
 
 	switch (error)
 	{
-	case UNKNOWN_MEDIA:					/* -7 */
+	case EMEDIUMTYPE:					/* -7 */
 		msg = TUNKM;
 		break;
-	case SEEK_ERROR:					/* -6 */
-	case SECTOR_NOT_FOUND:				/* -8 */
+	case ESPIPE:						/* -6 */
+	case ESECTOR:						/* -8 */
 		msg = TSEEKE;
 		break;
-	case WRITE_PROTECT:					/* -13 */
+	case EROFS:							/* -13 */
 		msg = TWPROT;
 		break;
-	case BAD_SECTORS:					/* -16 */
+	case EBADSEC:						/* -16 */
 		msg = TBADS;
 		break;
-	case EFILNF:						/* -33 */
+	case ENOENT:						/* -33 */
 		msg = TFILNF;
 		break;
-	case DRIVE_NOT_READY:				/* -2 */
-	case EDRIVE:						/* -46 */
-	case EPTHNF:						/* -34 */
+	case EBUSY:							/* -2 */
+	case ENXIO:							/* -46 */
+	case ENOTDIR:						/* -34 */
 		msg = TPATHNF;
 		break;
-	case EACCDN:						/* -36 */
+	case EACCES:						/* -36 */
 		msg = TACCDN;
 		break;
-	case ENSMEM:						/* -39 */
+	case ENOMEM:						/* -39 */
 		msg = TENSMEM;
 		break;
 	case ELOCKED:						/* -58 */
 		msg = TLOCKED;
 		break;
-	case EPLFMT:						/* -66 */
+	case ENOEXEC:						/* -66 */
 		msg = TPLFMT;
 		break;
-	case EREAD:							/* -2049 */
+	case EIO:							/* -90 */
 		msg = TREAD;
 		break;
-	case EDSKFULL:						/* -2050 */
+	case ENOSPC:						/* -91 */
 		msg = TDSKFULL;
 		break;
 	case EEOF:							/* -2051 */
@@ -105,10 +105,10 @@ char *get_message(_WORD error)
 	case EFRVAL:						/* -2053 */
 		msg = TFRVAL;
 		break;
-	case ECOMTL:						/* -2064 */
+	case E2BIG:							/* -125 */
 		msg = TCMDTLNG;
 		break;
-	case EPTHTL:						/* -2065 */
+	case ENAMETOOLONG:					/* -86 */
 		msg = TPTHTLNG;
 		break;
 	case EFNTL:							/* -2066 */
@@ -121,7 +121,7 @@ char *get_message(_WORD error)
 		msg = MTMWIND;
 		break;
 	default:
-		sprintf(buffer, get_freestring(error < INSERT_DISK ? TERROR : TXBERROR), error);
+		sprintf(buffer, get_freestring(error < ENOMEDIUM ? TERROR : TXBERROR), error);
 		return buffer;
 	}
 
@@ -248,7 +248,7 @@ void xform_error(_WORD error)
 
 void hndl_error(_WORD message, _WORD error)
 {
-	if (error > EINVFN)
+	if (error > ENOSYS)
 		return;
 
 	alert_printf(1, message, get_message(error));
@@ -276,7 +276,7 @@ _WORD xhndl_error(_WORD msg, _WORD error, const char *file)
 		return XFATAL;
 	/* Display the appropriate alert-box */
 
-	if (error == EFILNF || error == EACCDN || error == ELOCKED || error == EFNTL || error == EPTHTL)
+	if (error == ENOENT || error == EACCES || error == ELOCKED || error == EFNTL || error == ENAMETOOLONG)
 		/* For: File not found, Access denied, File locked, Name too long: */
 		txtid = TSKIPABT;
 	else if (error != ENOMSG)

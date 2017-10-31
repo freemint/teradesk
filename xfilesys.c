@@ -77,7 +77,7 @@ _WORD x_checkname(const char *path, const char *name)
 		if (*path)						/* and a path is given */
 		{
 			if (!isdisk(path))			/* if it is not on a disk, return error */
-				return EPTHNF;
+				return ENOTDIR;
 
 			mp = x_pathconf(path, DP_PATHMAX);	/* maximum possible length */
 
@@ -94,7 +94,7 @@ _WORD x_checkname(const char *path, const char *name)
 	}
 
 	if ((long) (strlen(path) + nl + 2L) > lmin(mp, (long) sizeof(VLNAME)))
-		return EPTHTL;
+		return ENAMETOOLONG;
 
 	return 0;
 }
@@ -120,7 +120,7 @@ char *x_makepath(const char *path, const char *name, _WORD *error)
 		}
 	} else
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	}
 	
 	return p;
@@ -238,8 +238,8 @@ char *x_getpath(_WORD drive, _WORD *error)
 
 		e = Dgetcwd(t, drive, (_WORD) sizeof(VLNAME) - 2);
 
-		if (e == GERANGE)
-			e = EPTHTL;
+		if (e == EBADARG)
+			e = ENAMETOOLONG;
 	} else
 #endif
 	{
@@ -333,7 +333,7 @@ char *x_fullname(const char *file, _WORD *error)
 
 	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	} else
 	{
 		strsncpy(buffer, file, sizeof(VLNAME));
@@ -358,7 +358,7 @@ char *x_fullname(const char *file, _WORD *error)
 _WORD x_mklink(const char *linkname, const char *refname)
 {
 	if (x_exist(linkname, EX_LINK))
-		return EACCDN;
+		return EACCES;
 
 	return xerror((_WORD) Fsymlink(refname, linkname));
 }
@@ -374,7 +374,7 @@ _WORD x_mklink(const char *linkname, const char *refname)
 _WORD x_rdlink(size_t tgtsize, char *tgt, const char *linkname)
 {
 	char *slash;
-	_WORD err = EACCDN;
+	_WORD err = EACCES;
 
 	if (!x_netob(linkname))
 		err = xerror((_WORD) Freadlink((_WORD) tgtsize, tgt, linkname));
@@ -466,7 +466,7 @@ char *x_fllink(const char *linkname)
 	if (linkname)
 	{
 #if _MINT_
-		_WORD error = EACCDN;
+		_WORD error = EACCES;
 
 		if (mint)
 		{
@@ -572,7 +572,7 @@ _WORD x_getlabel(_WORD drive, char *label)
 		if ((error = Fsfirst(path, FA_LABEL)) == 0)
 			strsncpy(lblbuf, dta.dta_name, (size_t) LBLMAX);
 		else
-			error = EFILNF;
+			error = ENOENT;
 
 		Fsetdta(olddta);
 	}
@@ -582,7 +582,7 @@ _WORD x_getlabel(_WORD drive, char *label)
 	else
 		*label = 0;
 
-	return error == ENMFIL || error == EFILNF ? 0 : error;
+	return error == ENMFILES || error == ENOENT ? 0 : error;
 }
 
 
@@ -683,7 +683,7 @@ _WORD x_fattrib(const char *file,		/* file name */
 
 		/* Quietly fail on folders if necessary in Mint (why?) */
 
-		if (!magx && (attr->st_mode & S_IFMT) == S_IFDIR && error == EFILNF)
+		if (!magx && (attr->st_mode & S_IFMT) == S_IFDIR && error == ENOENT)
 			error = 0;
 
 		/* Set access rights and owner IDs if possible */
@@ -705,7 +705,7 @@ _WORD x_fattrib(const char *file,		/* file name */
 			if (error >= 0)
 				error = xerror((_WORD) Fchown(file, attr->st_uid, attr->st_gid));
 
-			if (error == EACCDN)
+			if (error == EACCES)
 			{
 				char b[8];
 				const char *c = "U:\\NFS\\";
@@ -826,7 +826,7 @@ long x_seek(long offset, _WORD handle, _WORD seekmode)
 
 static void dta_to_xattr(_DTA *dta, XATTR *attrib)
 {
-	attrib->st_mode = S_IRUSR | S_IRGRP | S_IROTH; 	/* everything is readonly */
+	attrib->st_mode = S_IRUSR | S_IRGRP | S_IROTH;	/* everything is readonly */
 
 	if ((dta->dta_attribute & FA_RDONLY) == 0)	/* can write as well */
 		attrib->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
@@ -947,7 +947,7 @@ XDIR *x_opendir(const char *path, _WORD *error)
 
 	if ((dir = malloc(sizeof(XDIR))) == NULL)
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	} else
 	{
 		dir->path = path;
@@ -1026,11 +1026,12 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 
 		if (error == 0)
 		{
-			if ((_WORD) strlen(dir->data.gdata.dta.d_fname) >= len)
-				error = EFNTL;
-			else
+			if (strlen(dir->data.gdata.dta.dta_name) >= len)
 			{
-				*buffer = dir->data.gdata.dta.d_fname;
+				error = EFNTL;
+			} else
+			{
+				*buffer = dir->data.gdata.dta.dta_name;
 
 				dta_to_xattr(&dir->data.gdata.dta, attrib);
 			}
@@ -1068,13 +1069,6 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 
 	if (mint)
 	{
-		/* If names are not case-sensitive, use uppercase only */
-
-#if 0									/* FIXME: need to distinguish case-sensitive/case-preserving */
-		if ((dir->type & FS_CSE) == 0)	/* no need to waste time otherwise */
-			strupr(*buffer);
-#endif
-
 		/* If access rights are not supported, don't set them */
 
 		if ((dir->type & FS_UID) == 0)
@@ -1233,7 +1227,7 @@ long x_pflags(const char *filename)
 		if ((result = x_read(fh, 26L, buf)) == 26)
 			result = (*((long *) (&buf[22]))) & 0x00001037L;
 		else
-			result = EREAD;
+			result = EIO;
 
 		x_close(fh);
 		return result;
@@ -1276,7 +1270,7 @@ long x_exec(_WORD mode, const char *fname, void *ptr2, void *ptr3)
 {
 	_WORD result = xerror((_WORD) Pexec(mode, fname, ptr2, ptr3));
 
-	if (result != EFILNF && result != EPTHNF && result != ENSMEM && result != EPLFMT)
+	if (result != ENOENT && result != ENOTDIR && result != ENOMEM && result != ENOEXEC)
 		result = 0;
 
 	return result;
@@ -1293,7 +1287,7 @@ char *xshel_find(const char *file, _WORD *error)
 
 	if ((buffer = malloc(sizeof(VLNAME))) == NULL)
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	} else
 	{
 		strcpy(buffer, file);
@@ -1302,7 +1296,7 @@ char *xshel_find(const char *file, _WORD *error)
 
 		if (shel_find(buffer) == 0)
 		{
-			*error = EFILNF;
+			*error = ENOENT;
 		} else
 		{
 			if ((*error = _fullname(buffer)) == 0)
@@ -1417,7 +1411,7 @@ static _WORD write_buffer(XFILE *file)
 
 			return 0;
 		}
-		return EDSKFULL;
+		return ENOSPC;
 	}
 	return 0;
 }
@@ -1436,7 +1430,7 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 
 	if ((xfile = malloc(sizeof(XFILE) + XBUFSIZE)) == NULL)
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	} else
 	{
 		memclr(xfile, sizeof(*xfile));
@@ -1457,7 +1451,7 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 				xfile->handle = x_open(file, mode);
 #if _CHECK_RWMODE
 			else
-				xfile->handle = EINVFN;
+				xfile->handle = ENOSYS;
 #endif
 		}
 
@@ -1477,8 +1471,8 @@ XFILE *x_fopen(const char *file, _WORD mode, _WORD *error)
 
 /* 
  * Open a memory area as a file (in fact, mode is always 0x01 | 0x02 )
- * If allocation is unsuccessful, return ENSMEM (-39)
- * If not read/write mode it returned EINVFN (-32) 
+ * If allocation is unsuccessful, return ENOMEM (-39)
+ * If not read/write mode it returned ENOSYS (-32) 
  * (why bother?, this routine is used only once, so this check
  * can be disabled, but use carefully then!). If OK, return 0
  */
@@ -1496,7 +1490,7 @@ XFILE *x_fmemopen(_WORD mode, _WORD *error)
 
 	if ((xfile = malloc(sizeof(*xfile))) == NULL)
 	{
-		*error = ENSMEM;
+		*error = ENOMEM;
 	} else
 	{
 		memclr(xfile, sizeof(*xfile));
@@ -1507,7 +1501,7 @@ XFILE *x_fmemopen(_WORD mode, _WORD *error)
 #if _CHECK_RWMODE
 		if (rwmode != O_RDWR)			/* 0x02 */
 		{
-			result = EINVFN;			/* unknown function ? */
+			result = ENOSYS;			/* unknown function ? */
 			free(xfile);
 			xfile = NULL;
 		}
@@ -1662,7 +1656,7 @@ long x_fwrite(XFILE *file, const void *ptr, long length)
 
 #if _CHECK_RWMODE
 	if ((file->mode & O_RWMODE) == O_RDONLY)
-		return EINVFN;
+		return ENOSYS;
 #endif
 
 	if (file->memfile)
@@ -1696,7 +1690,7 @@ long x_fwrite(XFILE *file, const void *ptr, long length)
 					}
 				} else
 				{
-					return ENSMEM;
+					return ENOMEM;
 				}
 
 				dest = file->buffer = new;
@@ -1744,7 +1738,7 @@ long x_fwrite(XFILE *file, const void *ptr, long length)
 					return n;
 
 				if (n != size)
-					return EDSKFULL;
+					return ENOSPC;
 
 				remd -= n;
 			}

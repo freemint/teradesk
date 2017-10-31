@@ -20,56 +20,67 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* -1 t/m -1023 TOS fout codes */
+/*
+ * we need the TOS/MiNT error codes here,
+ * not the ones the C library might use
+ */
 
-#define GERROR              -1
-#define DRIVE_NOT_READY     -2
-#define UNKNOWN_CMD         -3
-#define CRC_ERROR           -4
-#define BAD_REQUEST         -5
-#define SEEK_ERROR          -6
-#define UNKNOWN_MEDIA       -7
-#define SECTOR_NOT_FOUND    -8
-#define NO_PAPER            -9
-#define WRITE_FAULT         -10
-#define READ_FAULT          -11
-#define GENERAL_MISHAP      -12
-#define WRITE_PROTECT       -13
-#define MEDIA_CHANGE        -14
-#define UNKNOWN_DEVICE      -15
-#define BAD_SECTORS         -16
-#define INSERT_DISK         -17
+/*
+ * BIOS error codes
+ */
+#undef EBUSY
+#define EBUSY               -2		/* Resource busy.  */
+#undef ESPIPE
+#define ESPIPE              -6		/* Illegal seek.  */
+#undef EMEDIUMTYPE
+#define EMEDIUMTYPE         -7		/* Wrong medium type.  */
+#undef ESECTOR
+#define ESECTOR             -8		/* Sector not found.  */
+#undef EROFS
+#define EROFS               -13		/* Write protect.  */
+#undef ECHMEDIA
+#define ECHMEDIA            -14		/* Media change.  */
+#undef EBADSEC
+#define EBADSEC             -16		/* Bad sectors found.  */
+#undef ENOMEDIUM
+#define ENOMEDIUM           -17		/* No medium found.  */
 
-#define EINVFN  -32     /* Onbekend funktienummer */
-#define EFILNF  -33     /* File not found */
-#define EPTHNF  -34     /* Path not found */
-#define ENHNDL  -35     /* Geen file-handles meer */
-#define EACCDN  -36		/* Access denied (file readonly or already exists ) */ 
-#define EIHNDL  -37     /* Handle-nummer van file niet geldig */
-#define ENSMEM  -39     /* Niet genoeg geheugen */
-#define EIMBA   -40     /* Adres van geheugenblok niet geldig */
-#define EDRIVE  -46		/* Invalid drive specification */
-#define ENSAME  -48     /* Files niet op hetzelfde logische loopwerk */
-#define ENMFIL  -49     /* Er kunnen geen files meer geopend worden */
+/*
+ * TOS error codes
+ */
+#undef ENOSYS
+#define ENOSYS              -32		/* Function not implemented.  */
+#undef ENOENT
+#define ENOENT              -33		/* No such file or directory.  */
+#undef ENOTDIR
+#define ENOTDIR             -34		/* Not a directory.  */
+#undef EACCES
+#define EACCES              -36     /* Permission denied.  */
+#undef EPERM
+#define EPERM               -38		/* Operation not permitted.  */
+#undef ENOMEM
+#define ENOMEM              -39		/* Cannot allocate memory.  */
+#undef ENXIO
+#define ENXIO               -46		/* No such device or address.  */
+#undef ENMFILES
+#define ENMFILES            -49		/* No more matching file names.  */
 #undef ELOCKED
-#define ELOCKED	-58		/* File is locked */
-#undef ENSLOCK
-#define ENSLOCK	-59		/* Lock niet gevonden */
-#define GERANGE -64     /* Filepointer in ongeldig bereik */
-#define EINTRN  -65     /* Internal error */
-#undef EPLFMT
-#define EPLFMT  -66     /* Programma heeft niet het korrekte formaat om geladen te worden */
-#define EGSBF   -67     /* Fout bij Mshrink of Mfree */
-
-/* -1024 t/m -2047 gereserveerd voor gebruiker */
+#define ELOCKED             -58		/* Locking conflict.  */
+#undef EBADARG
+#define EBADARG             -64		/* Bad argument.  */
+#undef ENOEXEC
+#define ENOEXEC             -66		/* Invalid executable file format.  */
+#undef ENAMETOOLONG
+#define ENAMETOOLONG        -86		/* Pathname too long.  */
+#undef EIO
+#define EIO                 -90		/* I/O error */
+#undef ENOSPC
+#define ENOSPC              -91		/* No space left on device.  */
+#undef E2BIG
+#define E2BIG              -125		/* Argument list too long.  */
 
 /* -2048 t/m -2063 file fouten */
 
-#undef EWRITE
-#define EWRITE		-2048		/* Write error on file */
-#undef EREAD
-#define EREAD		-2049		/* Read error on file */
-#define EDSKFULL	-2050		/* Disk full */
 #define EEOF		-2051		/* End of file */
 
 /* Some other more-less file related errors */
@@ -80,17 +91,15 @@
 
 /* -2064 t/m -2079 lengte fouten */
 
-#define ECOMTL		-2064		/* command line too long */
-#define EPTHTL		-2065		/* path too long */
 #define EFNTL		-2066		/* filename too long. */
 
 /* -2096 t/m -2112 algemene fouten */
 
-#define XUNKNOWN	-2096		/* Onbekende GEMDOS fout */
+#define XUNKNOWN	-2096		/* Unknown GEMDOS error */
 
 /* -4096 t/m 6120 fouten in Xdialog bibliotheek */
 
-#define XDVDI		-4096		/* Geen vdi handle meer beschikbaar */
+#define XDVDI		-4096		/* no more VDI handles */
 #define XDNMWINDOWS -4097		/* no more windows available */
 
 

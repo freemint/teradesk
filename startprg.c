@@ -199,7 +199,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 	/* If 'save colour' option is set, save the current colours. */
 
 	if ((options.vprefs & SAVE_COLOURS) && ((colours = get_colours()) == NULL))
-		return ENSMEM;
+		return ENOMEM;
 
 	/* 
 	 * If use file handle 2 as standard error option is set, 
@@ -367,7 +367,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 						strcpy(pinfo.name, h);
 					} else
 					{
-						error = EPTHTL;
+						error = ENAMETOOLONG;
 						pinfo.new = FALSE;
 					}
 

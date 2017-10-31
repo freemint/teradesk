@@ -100,7 +100,7 @@ _WORD ddcreate(_WORD dpid, _WORD spid, _WORD winid, _WORD msx, _WORD msy, _WORD 
 		/* Mode 2 means "get EOF if nobody has pipe open for reading" */
 
 		fd = (_WORD) Fcreate(pipename, 0x02);
-	} while (fd == EACCDN);
+	} while (fd == EACCES);
 
 	if (fd < 0)							/* fcreate error */
 		return fd;

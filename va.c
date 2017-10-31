@@ -1558,7 +1558,7 @@ static void one_avstat(XFILE *file, int lvl, int io, int *error)
 					}
 				} else
 				{
-					*error = ENSMEM;
+					*error = ENOMEM;
 				}
 			}
 		}

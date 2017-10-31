@@ -1298,7 +1298,9 @@ static void wd_ontext(WINDOW *ww, char **thepath)
 		thename = fn_get_name(thisname);
 		dir_simw((DIR_WINDOW *) ww, *thepath, thename, ITM_FILE);
 	} else
-		xform_error(ENSMEM);
+	{
+		xform_error(ENOMEM);
+	}
 }
 
 
@@ -1500,7 +1502,9 @@ void wd_hndlmenu(_WORD item, _WORD keystate)
 				dir_newlink(wtop, thepath);
 				free(thepath);
 			} else
-				xform_error(ENSMEM);
+			{
+				xform_error(ENOMEM);
+			}
 		} else
 #endif
 		if (n == 0 && wtoptype == DIR_WIND)
@@ -3632,7 +3636,7 @@ bool wd_tmpcls(void)
 
 void wd_reopen(void)
 {
-	int error = EINVFN;
+	int error = ENOSYS;
 
 	chklevel = 0;
 

@@ -23,6 +23,7 @@
 
 #include <library.h>
 #include "xdialog.h"
+#include "xerror.h"
 
 #include "xscncode.h"
 #include "xerror.h"
@@ -2003,7 +2004,7 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 		if (info->mfdb.fd_addr == NULL)
 		{
 			xd_endupdate();
-			return XDNSMEM;
+			return ENOMEM;
 		}
 
 		tree[db].ob_flags &= ~OF_HIDETREE;

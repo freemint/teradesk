@@ -53,7 +53,7 @@ int make_path(char *name, const char *path, const char *fname)
 	/* "-1" below because a backlash may be added to the string */
 
 	if (l + strlen(fname) >= sizeof(VLNAME) - 1)
-		return EPTHTL;
+		return ENAMETOOLONG;
 
 	strcpy(name, path);
 
@@ -429,7 +429,7 @@ void get_fsel(XDINFO *info,				/* dialog data */
 	long ml;							/* possible maximum for tl */
 
 	_WORD tid = FSTLANY;
-	_WORD err = EPTHTL;
+	_WORD err = ENAMETOOLONG;
 
 	VLNAME name;							/* name obtained */
 
@@ -927,7 +927,7 @@ L158:
 static long cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	if (d == chdrv)
-		return MEDIA_CHANGE;
+		return ECHMEDIA;
 	else
 		return (*Oldrwabs) (d, buf, a, b, c, l);
 }

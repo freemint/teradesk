@@ -23,13 +23,13 @@
 
 #include <xerror.h>
 
-/* Resultaten voor hndl_error */
+/* return codes for hndl_error */
 
 #define XERROR		-1024		/* Non fatal error */
 #define XABORT		-1025		/* Abort copy */
 #define XFATAL		-1026		/* Fatal error during copy */
 
-/* Resultaten hndl_nameconflict */
+/* return codes for hndl_nameconflict */
 
 #define XSKIP		-1027		/* Skip file */
 #define XOVERWRITE	-1028		/* Overwrite file */
