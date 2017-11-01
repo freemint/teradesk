@@ -132,9 +132,10 @@ void xw_close(WINDOW *w);
 void xw_delete(WINDOW *w);
 void xw_closedelete(WINDOW *w);
 
-void xw_set(WINDOW *w, _WORD field,...);
+void xw_setpos(WINDOW *w, _WORD field, const GRECT *r);
 void xw_get(WINDOW *w, _WORD field, GRECT *r);
-void xw_setsize(WINDOW *w, GRECT *size);
+void xw_set_topbot(WINDOW *w, _WORD wf);
+void xw_setsize(WINDOW *w, const GRECT *size);
 void xw_getsize(WINDOW *w, GRECT *size);
 void xw_getwork(WINDOW *w, GRECT *size);
 void xw_getfirst(WINDOW *w, GRECT *size);

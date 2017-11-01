@@ -121,7 +121,7 @@ void __xd_hndlbutton(WINDOW *w, _WORD x, _WORD y, _WORD n, _WORD bstate, _WORD k
 
 void __xd_topped(WINDOW *w)
 {
-	xw_set(w, WF_TOP);
+	xw_set_topbot(w, WF_TOP);
 }
 
 

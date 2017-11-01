@@ -342,7 +342,7 @@ void xw_note_bottom(WINDOW *w)
  * Set a window to top or bottom
  */
 
-static void xw_set_topbot(WINDOW *w, _WORD wf)
+void xw_set_topbot(WINDOW *w, _WORD wf)
 {
 	void (*notef) (WINDOW *w);
 	_WORD msg;
@@ -837,7 +837,7 @@ void xw_iconify(WINDOW *w, GRECT *r)
 {
 	/* Set window to iconified state and find new work area */
 
-	xw_set(w, WF_ICONIFY, r);			/* wind_set() then wind_get() */
+	xw_setpos(w, WF_ICONIFY, r);			/* wind_set() then wind_get() */
 
 	w->xw_xflags |= XWF_ICN;
 }
@@ -852,7 +852,7 @@ void xw_uniconify(WINDOW *w, GRECT *r)
 {
 	/* Uniconify window and find new work area */
 
-	xw_set(w, WF_UNICONIFY, r);
+	xw_setpos(w, WF_UNICONIFY, r);
 
 	w->xw_xflags &= ~XWF_ICN;
 }
@@ -909,7 +909,7 @@ _WORD xw_hndlmessage(_WORD *message)
 			if (w != xd_dialogs->window)
 			{
 				bell();
-				xw_set(xd_dialogs->window, WF_TOP);
+				xw_set_topbot(xd_dialogs->window, WF_TOP);
 			} else
 			{
 				return FALSE;		/* closer in dialog window handled differently */
@@ -970,41 +970,21 @@ _WORD xw_hndlmessage(_WORD *message)
  * worden opgegeven, in plaats van vier integers.
  */
 
-void xw_set(WINDOW *w, _WORD field, ...)
+void xw_setpos(WINDOW *w, _WORD field, const GRECT *r)
 {
-	_WORD p1, p2, p3, p4;
-	GRECT *r;
-	va_list p;
-
-	va_start(p, field);
-
 	switch (field)
 	{
 	case WF_ICONIFY:
 	case WF_UNICONIFY:
 	case WF_CURRXYWH:
 		/* call wind_get() here because rectangle can be -1, -1, -1, -1 */
-		r = va_arg(p, GRECT *);
 		w->xw_size = *r;
 		wind_set_grect(w->xw_handle, field, &w->xw_size);
 		wind_get_grect(w->xw_handle, WF_CURRXYWH, &w->xw_size);
 		wind_get_grect(w->xw_handle, WF_WORKXYWH, &w->xw_work);
 		xw_set_barpos(w);			/* irelevant but harmless in an iconified window */
 		break;
-	case WF_TOP:
-	case WF_BOTTOM:
-		xw_set_topbot(w, field);
-		break;
-	default:
-		p1 = va_arg(p, int);
-		p2 = va_arg(p, int);
-		p3 = va_arg(p, int);
-		p4 = va_arg(p, int);
-		wind_set(w->xw_handle, field, p1, p2, p3, p4);
-		break;
 	}
-
-	va_end(p);
 }
 
 
@@ -1014,9 +994,9 @@ void xw_set(WINDOW *w, _WORD field, ...)
  * of the work area
  */
 
-void xw_setsize(WINDOW *w, GRECT *size)
+void xw_setsize(WINDOW *w, const GRECT *size)
 {
-	xw_set(w, WF_CURRXYWH, size);
+	xw_setpos(w, WF_CURRXYWH, size);
 }
 
 
@@ -1273,7 +1253,7 @@ WINDOW *xw_create(_WORD type, const WD_FUNC *functions, _WORD flags,
 
 void xw_open(WINDOW *w, GRECT *size)
 {
-	wind_open(w->xw_handle, size->g_x, size->g_y, size->g_w, size->g_h);
+	wind_open_grect(w->xw_handle, size);
 
 	w->xw_size = *size;
 

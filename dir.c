@@ -453,7 +453,7 @@ void dir_info(DIR_WINDOW *w)
 
 	sprintf(w->info, get_freestring(m), mask, p, n, get_freestring((n == 1) ? MISINGUL : MIPLURAL));
 
-	xw_set((WINDOW *) w, WF_INFO, w->info);
+	wind_set_str(w->xw_handle, WF_INFO, w->info);
 }
 
 

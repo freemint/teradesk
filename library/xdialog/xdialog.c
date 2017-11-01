@@ -26,7 +26,6 @@
 #include "xerror.h"
 
 #include "xscncode.h"
-#include "xerror.h"
 
 
 /* 
@@ -1934,7 +1933,7 @@ static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD s
 #endif
 			if ((w = xw_create(thetype, thefuncs, XD_WDFLAGS, &wsize, thesize, themenu, &error)) != NULL)
 			{
-				xw_set(w, WF_NAME, (title) ? title : xd_prgname);
+				wind_set_str(w->xw_handle, WF_NAME, title ? title : xd_prgname);
 
 				info->window = w;
 
@@ -2110,7 +2109,7 @@ static void xd_close_wzoom(XDINFO *info,
 				xd_nmdialogs = info->prev;
 		} else if (prev)
 		{
-			xw_set(prev->window, WF_TOP);
+			xw_set_topbot(prev->window, WF_TOP);
 		}
 	}
 

@@ -2378,14 +2378,14 @@ void wd_drawall(void)
 void wd_type_topped(WINDOW *w)
 {
 	autoloc_off();
-	xw_set(w, WF_TOP);
+	xw_set_topbot(w, WF_TOP);
 }
 
 
 void wd_type_bottomed(WINDOW *w)
 {
 	autoloc_off();
-	xw_set(w, WF_BOTTOM);
+	xw_set_topbot(w, WF_BOTTOM);
 }
 
 
@@ -2437,7 +2437,7 @@ void wd_type_title(TYP_WINDOW *w)
 	{
 		cramped_name(fulltitle, w->title, (size_t) columns);
 		free(fulltitle);
-		xw_set((WINDOW *) w, WF_NAME, w->title);
+		wind_set_str(w->xw_handle, WF_NAME, w->title);
 	}
 
 	set_sliders(w);
@@ -2770,8 +2770,8 @@ void set_hslsize_pos(TYP_WINDOW *w)
 
 	/* both size and position of the slider are always set; */
 
-	xw_set((WINDOW *) w, WF_HSLSIZE, p);
-	xw_set((WINDOW *) w, WF_HSLIDE, pos);
+	wind_set_int(w->xw_handle, WF_HSLSIZE, p);
+	wind_set_int(w->xw_handle, WF_HSLIDE, pos);
 }
 
 
@@ -2788,8 +2788,8 @@ void set_vslsize_pos(TYP_WINDOW *w)
 
 	calc_wslider(w->nrows, w->nlines, &(w->py), &p, &pos);
 
-	xw_set((WINDOW *) w, WF_VSLSIZE, p);
-	xw_set((WINDOW *) w, WF_VSLIDE, pos);
+	wind_set_int(w->xw_handle, WF_VSLSIZE, p);
+	wind_set_int(w->xw_handle, WF_VSLIDE, pos);
 }
 
 
@@ -4561,7 +4561,7 @@ void wd_type_iconify(WINDOW *w, GRECT *r)
 
 		/* Change window title to "Tera Desktop" */
 
-		xw_set((WINDOW *) w, WF_NAME, nonwhite(get_freestring(MENUREG)));
+		wind_set_str(w->xw_handle, WF_NAME, nonwhite(get_freestring(MENUREG)));
 
 		/* Remember size of noniconified window */
 
