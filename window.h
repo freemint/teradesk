@@ -147,7 +147,7 @@ typedef struct
 {
 	ITM_INTVARS;				/* Interne variabelen bibliotheek. */
 	WD_VARS;					/* other common header data */
-}TYP_WINDOW;
+} TYP_WINDOW;
 
 typedef struct winfo
 {

@@ -40,9 +40,8 @@ typedef struct
 	long bytes;
 }LSUM;
 
-extern DOSTIME
-		now,
-		optime;
+extern _DOSTIME now;
+extern _DOSTIME optime;
 
 #if _MINT_
 extern _WORD opmode;

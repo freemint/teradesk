@@ -211,6 +211,8 @@ bool item_open(WINDOW *inw,				/* window in which the selection is made */
 				cmline = (char *) (long) empty;	/* first, cmline points to an empty string */
 
 				qline = malloc_chk(strlenq(openline));
+				if (qline == NULL)
+					return FALSE;
 				strcpyrq(qline, openline, '"', &blank);	/* 34 = double quote */
 
 				if (blank)

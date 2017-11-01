@@ -57,8 +57,6 @@ typedef struct
 
 /* Note: take care of compatibility between TXT_WINDOW, DIR_WINDOW, TYP_WINDOW */
 
-typedef NDTA *RPNDTA[];			/* () ref NDTA */ /* array of pointers */
-
 typedef struct
 {
 	ITM_INTVARS;			/* Interne variabelen bibliotheek. */
@@ -85,18 +83,7 @@ typedef struct
 	_WORD par_px;			/* Position of the slider in the parent window */
 	long par_py;			/* Position of the slider in the parent window */
 	long par_itm;			/* index of this dir in the parent dir */
-	RPNDTA *buffer;			/* HR 120803: change to pointer to pointer array */
-							/* ref to row of ref to NDTA */
-							/* ref () ref NDTA */
-							/* ptr to ptr_array */
-
-	/* I first defined simply NDTA **buffer, which is not the same,
-	   doesnt look correct and indeed didnt work.
-	   I didnt see a way to define type ref () ref NDTA (algol 68) in C
-	   without the intermediate RPNDTA type .
-	   But at least this way it works.
-	*/
-
+	NDTA **buffer;
 	bool refresh;
 	bool va_refresh;
 

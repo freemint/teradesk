@@ -71,7 +71,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 {
 	const char *s;						/* pointer to a location in input format */
 	char *d;							/* pointer to a location in output buffer */
-	char *h;							/* pointer to a location in input string */
+	const char *h;						/* pointer to a location in input string */
 	char fill;							/* padding character */
 	char tmp[16];						/* temporary buffer */
 	bool lng;							/* true if a numeric variable is of a long type */
@@ -104,7 +104,9 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 				{
 				case 's':
 					/* alphanumeric string format */
-					h = va_arg(argpoint, char *);
+					h = va_arg(argpoint, const char *);
+					if (h == NULL)
+						h = "(null)";
 					goto copyit;
 				case 'l':
 					/* next numeric output will be of a 'long' variable */

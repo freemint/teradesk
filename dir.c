@@ -369,7 +369,7 @@ static void sort_directory(DIR_WINDOW *w)
 	/* Reverse the order, if so selected */
 
 	if (options.sort & WD_REVSORT)
-		revord((NDTA **) (w->buffer), w->nvisible);
+		revord(w->buffer, w->nvisible);
 }
 
 
@@ -463,14 +463,14 @@ void dir_info(DIR_WINDOW *w)
 
 static void dir_free_buffer(DIR_WINDOW *w)
 {
-	RPNDTA *b = w->buffer;
+	NDTA **b = w->buffer;
 
 	if (b)
 	{
 		long i;
 
 		for (i = 0; i < w->nfiles; i++)
-			free((*b)[i]);				/* free NDTA + name */
+			free(b[i]);					/* free NDTA + name */
 
 		free(b);						/* free pointer array */
 		w->buffer = NULL;
@@ -497,7 +497,7 @@ static void set_visible(DIR_WINDOW *w)
 
 		for (i = 0; i < w->nfiles; i++)
 		{
-			b = (*w->buffer)[i];
+			b = w->buffer[i];
 			b->selected = FALSE;
 			b->newstate = FALSE;
 
@@ -777,12 +777,10 @@ static _WORD read_dir(DIR_WINDOW *w)
 						 * This routine returns name length in 'error'.
 						 */
 #if _MINT_
-						error = copy_DTA(*w->buffer + n, fulln, name, &attr, &tgtattr, (_WORD) n, link);
+						error = copy_DTA(w->buffer + n, fulln, name, &attr, &tgtattr, (_WORD) n, link);
 #else
-						error = copy_DTA(*w->buffer + n, name, &attr, (_WORD) n, link);
+						error = copy_DTA(w->buffer + n, name, &attr, (_WORD) n, link);
 #endif
-						/* DO NOT put () around w->buffer + n !!! */
-
 						if (error >= 0)
 						{
 							add_size(&length, attr.st_size);
@@ -1085,7 +1083,7 @@ void dir_disp_mode(WINDOW *w)
 static void dir_geticons(WINDOW *w)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	RPNDTA *pb;
+	NDTA **pb;
 	NDTA *b;
 	long i;
 	long n;
@@ -1095,7 +1093,7 @@ static void dir_geticons(WINDOW *w)
 
 	for (i = 0; i < n; i++)
 	{
-		b = (*pb)[i];
+		b = pb[i];
 		b->icon = icnt_geticon(b->name, b->item_type, b->tgt_type);
 	}
 }
@@ -1688,7 +1686,7 @@ void dir_line(DIR_WINDOW *dw, char *s, _WORD item)
 
 	if (item < dw->nvisible)
 	{
-		h = (*dw->buffer)[item];		/* file data */
+		h = dw->buffer[item];		/* file data */
 		hmode = h->attrib.mode & S_IFMT;
 		d = s;							/* beginning of the destination string for the line */
 
@@ -1997,7 +1995,7 @@ OBJECT *make_tree(DIR_WINDOW *dw, _WORD sc,	/* first icon column to display */
 
 			if (colour_icons || ((ci >= sc) && (ci <= (sc + ncolumns))))
 			{
-				h = (*dw->buffer)[j];
+				h = dw->buffer[j];
 
 				hidden = ((h->attrib.attrib & FA_HIDDEN) != 0);
 				icon_no = h->icon;
@@ -2080,7 +2078,7 @@ static void icn_comparea(DIR_WINDOW *dw,	/* pointer to a window */
 	x = s % columns - dw->px;
 	y = s / columns;
 
-	if ((s < 0) && (x != 0))
+	if (s < 0 && x != 0)
 	{
 		y -= 1;
 		x = columns + x;
@@ -2089,7 +2087,7 @@ static void icn_comparea(DIR_WINDOW *dw,	/* pointer to a window */
 	x = work->g_x + x * iconw + XOFFSET;
 	y = work->g_y + y * iconh + YOFFSET;
 
-	h = icons[(*dw->buffer)[item]->icon].ob_spec.ciconblk;
+	h = icons[dw->buffer[item]->icon].ob_spec.ciconblk;
 
 	r1->g_x = h->monoblk.ib_xicon;
 	r1->g_y = h->monoblk.ib_yicon;
@@ -2121,7 +2119,7 @@ void dir_prtline(DIR_WINDOW *dw, _WORD line, GRECT *area, GRECT *work)
 	 * (and perhaps this is not even needed ?) 
 	 */
 
-	if ((dw->winfo)->flags.iconified != 0)
+	if (dw->winfo->flags.iconified)
 		return;
 
 	if (options.mode == TEXTMODE)
@@ -2139,7 +2137,7 @@ void dir_prtline(DIR_WINDOW *dw, _WORD line, GRECT *area, GRECT *work)
 
 		if (line < dw->nvisible)
 		{
-			d = (*dw->buffer)[(long) line];
+			d = dw->buffer[line];
 			rc.g_x = r.g_x - TOFFSET * dir_font.cw;
 			rc.g_y = r.g_y;
 			rc.g_w = r.g_w + BORDERS * dir_font.cw;
@@ -2554,7 +2552,7 @@ bool dir_add_window(char *path,			/* path of the window to open */
 
 					for (i = 0; i < nv; i++)
 					{
-						h = (*dw->buffer)[i];
+						h = dw->buffer[i];
 
 						if (strcmp(h->name, name) == 0)
 						{
@@ -2832,7 +2830,7 @@ static _WORD dir_find(WINDOW *w, _WORD x, _WORD y)
 static bool dir_state(WINDOW *w, _WORD item)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	return (*dw->buffer)[item]->selected;
+	return dw->buffer[item]->selected;
 }
 
 
@@ -2843,7 +2841,7 @@ static bool dir_state(WINDOW *w, _WORD item)
 static ITMTYPE dir_itmtype(WINDOW *w, _WORD item)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	return (*dw->buffer)[item]->item_type;
+	return dw->buffer[item]->item_type;
 }
 
 
@@ -2851,7 +2849,7 @@ static ITMTYPE dir_itmtype(WINDOW *w, _WORD item)
 static ITMTYPE dir_tgttype(WINDOW *w, _WORD item)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	return (*dw->buffer)[item]->tgt_type;
+	return dw->buffer[item]->tgt_type;
 }
 
 
@@ -2862,7 +2860,7 @@ static ITMTYPE dir_tgttype(WINDOW *w, _WORD item)
 static const char *dir_itmname(WINDOW *w, _WORD item)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	return (*dw->buffer)[item]->name;
+	return dw->buffer[item]->name;
 }
 
 
@@ -2875,7 +2873,7 @@ static const char *dir_itmname(WINDOW *w, _WORD item)
 static char *dir_fullname(WINDOW *w, _WORD item)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	NDTA *itm = (*dw->buffer)[item];
+	NDTA *itm = dw->buffer[item];
 
 	if (itm->item_type == ITM_PREVDIR)
 		return fn_get_path(dw->path);
@@ -2890,7 +2888,7 @@ static char *dir_fullname(WINDOW *w, _WORD item)
 static _WORD dir_attrib(WINDOW *w, _WORD item, _WORD mode, XATTR *attr)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	NDTA *itm = (*dw->buffer)[item];
+	NDTA *itm = dw->buffer[item];
 	char *name;
 	_WORD error;
 
@@ -2912,7 +2910,7 @@ static bool dir_islink(WINDOW *w, _WORD item)
 {
 #if _MINT_
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
-	return (*dw->buffer)[item]->link;
+	return dw->buffer[item]->link;
 #else
 	(void) w;
 	(void) item;
@@ -2927,7 +2925,7 @@ static bool dir_islink(WINDOW *w, _WORD item)
 
 static void dir_setnws(DIR_WINDOW *w, bool draw)
 {
-	RPNDTA *pb;
+	NDTA **pb;
 	_WORD i, hh, n = 0;
 	LSUM bytes;
 
@@ -2939,7 +2937,7 @@ static void dir_setnws(DIR_WINDOW *w, bool draw)
 
 	for (i = 0; i < hh; i++)
 	{
-		NDTA *h = (*pb)[i];
+		NDTA *h = pb[i];
 
 		h->selected = h->newstate;
 
@@ -2975,7 +2973,7 @@ static void dir_setnws(DIR_WINDOW *w, bool draw)
 static void dir_drawsel(DIR_WINDOW *w)
 {
 	long i, h;
-	RPNDTA *pb = w->buffer;
+	NDTA **pb = w->buffer;
 	GRECT r1, r2, d, work;
 
 #if 0									/* this can be a bit simpler if there are no menus in dir windows */
@@ -3008,7 +3006,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 			for (j = 0; j < ncre; j++)
 			{
-				b = (*pb)[j + j0];
+				b = pb[j + j0];
 				if (b->selected != b->newstate)
 					n++;
 			}
@@ -3046,7 +3044,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 			for (j = 0; j < ncre; j++)
 			{
-				b = (*pb)[j + j0];
+				b = pb[j + j0];
 
 				if (n > MSEL)
 				{
@@ -3081,7 +3079,7 @@ static void dir_drawsel(DIR_WINDOW *w)
 
 			for (i = w->py; i < h; i++)
 			{
-				NDTA *b = (*pb)[i];
+				NDTA *b = pb[i];
 
 				if (b->selected != b->newstate)
 				{
@@ -3116,7 +3114,7 @@ static void dir_select(WINDOW *w, _WORD selected, _WORD mode, bool draw)
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
 	_WORD i, h;
-	RPNDTA *pb;
+	NDTA **pb;
 
 	/* 
 	 * Don't do anything in iconified window.
@@ -3137,13 +3135,13 @@ static void dir_select(WINDOW *w, _WORD selected, _WORD mode, bool draw)
 
 	for (i = 0; i < h; i++)
 	{
-		NDTA *b = (*pb)[i];
+		NDTA *b = pb[i];
 
-		changestate(mode, &(b->newstate), i, selected, b->selected, (b->item_type == ITM_PREVDIR) ? b->selected : TRUE);
+		changestate(mode, &(b->newstate), i, selected, b->selected, b->item_type == ITM_PREVDIR ? b->selected : TRUE);
 	}
 
 	if (mode == 1)
-		(*pb)[selected]->newstate = ((*pb)[selected]->selected) ? FALSE : TRUE;
+		pb[selected]->newstate = pb[selected]->selected ? FALSE : TRUE;
 
 	if (draw)
 		dir_drawsel(dw);
@@ -3159,14 +3157,14 @@ static void dir_select(WINDOW *w, _WORD selected, _WORD mode, bool draw)
 void dir_autoselect(DIR_WINDOW *w)
 {
 	_WORD k, k1 = 0, nk = w->nvisible - 1;
-	RPNDTA *pb = w->buffer;
+	NDTA **pb = w->buffer;
 
 	if (pb == NULL)
 		return;
 
 	for (k = nk; k >= 0; k--)			/* this loops ends with k being 0 */
 	{
-		NDTA *b = (*pb)[k];
+		NDTA *b = pb[k];
 
 		b->selected = FALSE;
 		b->newstate = FALSE;
@@ -3347,7 +3345,7 @@ static void dir_rselect(WINDOW *w, _WORD x, _WORD y)
 	long h;
 	GRECT r1, r2, r3;
 	NDTA *b;
-	RPNDTA * pb;
+	NDTA **pb;
 	void (*dw_comparea) (DIR_WINDOW *w, _WORD item, GRECT *r1, GRECT *r2, GRECT *work);
 
 	/* Don't do anything in an iconified window */
@@ -3366,7 +3364,7 @@ static void dir_rselect(WINDOW *w, _WORD x, _WORD y)
 
 	for (i = 0; i < h; i++)
 	{
-		b = (*pb)[i];
+		b = pb[i];
 
 		if (options.mode == TEXTMODE)
 			dw_comparea = dir_comparea;
@@ -3460,7 +3458,7 @@ static _WORD *get_list(DIR_WINDOW *w, _WORD *nselected, _WORD *nvisible)
 	_WORD h;								/* estimated number of visible items */
 	_WORD i;								/* item index */
 	_WORD m;								/* number of visible items in window specification */
-	RPNDTA *d;
+	NDTA **d;
 
 	/* Find selected items */
 
@@ -3479,7 +3477,7 @@ static _WORD *get_list(DIR_WINDOW *w, _WORD *nselected, _WORD *nvisible)
 
 	for (i = 0; i < m; i++)
 	{
-		if ((*d)[i]->selected)
+		if (d[i]->selected)
 		{
 			n++;
 
@@ -3506,7 +3504,7 @@ static _WORD *get_list(DIR_WINDOW *w, _WORD *nselected, _WORD *nvisible)
 
 			for (i = 0; i < m; i++)
 			{
-				if ((*d)[i]->selected)
+				if (d[i]->selected)
 					*list++ = i;
 			}
 
@@ -3528,7 +3526,7 @@ static ICND *dir_xlist(WINDOW *w, _WORD *nselected, _WORD *nvisible, _WORD **sel
 {
 	DIR_WINDOW *dw = (DIR_WINDOW *)w;
 	ICND *icns, *icnlist;
-	RPNDTA *d;
+	NDTA **d;
 	long i;
 #if 0									/* No need if there is no menu in dir windows */
 	GRECT work;
@@ -3565,7 +3563,7 @@ static ICND *dir_xlist(WINDOW *w, _WORD *nselected, _WORD *nvisible, _WORD **sel
 
 			for (i = s; (_WORD) i < h; i++)
 			{
-				if ((*d)[i]->selected)
+				if (d[i]->selected)
 #if 0 /* see above */
 					get_itmd(dw, (_WORD)i, icnlist++, mx, my, &work);
 #endif
@@ -3702,7 +3700,7 @@ void dir_simw(DIR_WINDOW *dw, char *path, const char *name, ITMTYPE type)
 	dw->itm_func = &itm_func;			/* pointers to specific functions */
 	dw->nfiles = 1;						/* number of files in window */
 	dw->nvisible = 1;					/* one visible item */
-	dw->buffer = &pbuffer;				/* location of NDTA pointer array */
+	dw->buffer = pbuffer;				/* location of NDTA pointer array */
 
 	pbuffer[0] = &buffer;				/* point to buffer */
 
