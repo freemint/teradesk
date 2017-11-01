@@ -73,7 +73,7 @@ Options options;						/* configuration options */
 
 XDFONT def_font;						/* Data for the default (system) font */
 
-const char *teraenv;					/* pointer to value of TERAENV environment variable */
+static const char *teraenv;				/* pointer to value of TERAENV environment variable */
 
 const char *fsdefext;					/* default filename extension in current OS      */
 
@@ -139,27 +139,6 @@ static char const msg_resnfnd[] = "[1][Can not find the resource file.|"
 	"Impossible de trouver le|fichier resource.][ OK ]";
 
 static XDEVENT loopevents;				/* events awaited for in the main loop */
-
-
-static void opt_config(XFILE *file, int lvl, int io, int *error);
-
-static void short_config(XFILE *file, int lvl, int io, int *error);
-
-/* Root level of configuration data */
-
-static CfgEntry const Config_table[] = {
-	CFG_NEST("options", opt_config),
-	CFG_NEST("shortcuts", short_config),
-	CFG_NEST("filetypes", ft_config),
-	CFG_NEST("apptypes", prg_config),	/* must be before icons and apps */
-	CFG_NEST("icontypes", icnt_config),
-	CFG_NEST("deskicons", dsk_config),
-	CFG_NEST("applications", app_config),
-	CFG_NEST("windows", wd_config),
-	CFG_NEST("avstats", va_config),
-	CFG_FINAL(),				/* file completness check */
-	CFG_LAST()
-};
 
 
 /*
@@ -574,7 +553,7 @@ static void ins_shorts(void)
 					onekey_shorts = TRUE;
 
 				lm = (_WORD) strlen(menu[menui].ob_spec.free_string);	/* includes trailing spaces */
-				where = menu[menui].ob_spec.free_string + (long) (lm - 5);
+				where = menu[menui].ob_spec.free_string + lm - 5;
 
 				disp_short(where, shortcut, FALSE);
 			}
@@ -906,49 +885,9 @@ static void short_default(void)
 
 
 /*
- * Read configuration from the configuration file 
- */
-
-static _WORD load_options(void)
-{
-	_WORD error = 0;
-
-	autoloc_off();
-	noicons = FALSE;					/* so that missing ones be reported */
-
-	error = handle_cfgfile(infname, Config_table, infide, CFG_LOAD);
-
-	/* 
-	 * If there was an error when loading options, load defaults.
-	 */
-
-	if (error != 0)
-	{
-		opt_default();					/* options */
-		wd_default();					/* windows */
-		dsk_default();					/* desktop */
-		get_set_video(1);				/* set video */
-		short_default();				/* kbd shortcuts */
-		ft_default();					/* filetypes */
-		prg_default();					/* programtypes */
-		icnt_default();					/* icontypes */
-		app_default();					/* applications */
-		vastat_default();				/* AV status strings */
-	}
-
-	/* Set dialogs mode */
-
-	xd_setposmode((options.dial_mode & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
-	set_dialmode();
-
-	return error;
-}
-
-
-/*
  * Configuration routine for basic desktop options
  */
-void opt_config(XFILE *file, int lvl, int io, int *error)
+static void opt_config(XFILE *file, int lvl, int io, int *error)
 {
 	if (io == CFG_SAVE)
 	{
@@ -1035,6 +974,62 @@ static void short_config(XFILE *file, int lvl, int io, int *error)
 }
 
 
+/* Root level of configuration data */
+
+static CfgEntry const Config_table[] = {
+	CFG_NEST("options", opt_config),
+	CFG_NEST("shortcuts", short_config),
+	CFG_NEST("filetypes", ft_config),
+	CFG_NEST("apptypes", prg_config),	/* must be before icons and apps */
+	CFG_NEST("icontypes", icnt_config),
+	CFG_NEST("deskicons", dsk_config),
+	CFG_NEST("applications", app_config),
+	CFG_NEST("windows", wd_config),
+	CFG_NEST("avstats", va_config),
+	CFG_FINAL(),				/* file completness check */
+	CFG_LAST()
+};
+
+
+/*
+ * Read configuration from the configuration file 
+ */
+static _WORD load_options(void)
+{
+	_WORD error = 0;
+
+	autoloc_off();
+	noicons = FALSE;					/* so that missing ones be reported */
+
+	error = handle_cfgfile(infname, Config_table, infide, CFG_LOAD);
+
+	/* 
+	 * If there was an error when loading options, load defaults.
+	 */
+
+	if (error != 0)
+	{
+		opt_default();					/* options */
+		wd_default();					/* windows */
+		dsk_default();					/* desktop */
+		get_set_video(1);				/* set video */
+		short_default();				/* kbd shortcuts */
+		ft_default();					/* filetypes */
+		prg_default();					/* programtypes */
+		icnt_default();					/* icontypes */
+		app_default();					/* applications */
+		vastat_default();				/* AV status strings */
+	}
+
+	/* Set dialogs mode */
+
+	xd_setposmode((options.dial_mode & DIALPOS_MODE) ? XD_MOUSE : XD_CENTERED);
+	set_dialmode();
+
+	return error;
+}
+
+
 /*
  * Save configuration into default config file 
  */
@@ -1108,7 +1103,7 @@ void load_settings(char *newinfname)
  * Set complete specification for configuration file(s)
  */
 
-bool find_cfgfiles(char **cfgname)
+static bool find_cfgfiles(char **cfgname)
 {
 	char *fullname;
 	_WORD error;

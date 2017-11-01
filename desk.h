@@ -230,6 +230,5 @@ void set_opt(OBJECT *tree, _WORD flags, _WORD opt, _WORD button );
 void get_opt(OBJECT *tree, _WORD *flags, _WORD opt, _WORD button );
 _WORD hndlmessage(_WORD *message);
 bool wait_to_quit(void);
-bool find_cfgfiles (char **cfgfile); 
 
 

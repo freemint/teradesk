@@ -178,18 +178,14 @@ typedef struct
 
 typedef struct
 {
-	_WORD 
-		index,
-		px, 
-		hexmode, 
-		tabsize;
-	long
-		py; 
-	VLNAME 
-		path, 
-		spec;
-	WINDOW 
-		*w;
+	_WORD index;
+	_WORD px;
+	_WORD hexmode;
+	_WORD tabsize;
+	long py; 
+	VLNAME path;
+	VLNAME spec;
+	WINDOW *w;
 } SINFO2;
 
 extern bool	clearline;

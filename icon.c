@@ -240,7 +240,7 @@ static const MFORM icnm = {
 
 static void form_dialall(_WORD what)
 {
-	form_dial(what, 0, 0, 0, 0, xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h);
+	form_dial(what, xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h, xd_desk.g_x, xd_desk.g_y, xd_desk.g_w, xd_desk.g_h);
 }
 
 

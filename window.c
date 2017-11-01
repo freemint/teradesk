@@ -3318,7 +3318,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 
 					if (autoloc)
 					{
-						size_t lm = x_pathconf(((DIR_WINDOW *) w)->path, DP_NAMEMAX);
+						long lm = x_pathconf(((DIR_WINDOW *) w)->path, DP_NAMEMAX);
 
 						if (lm < 0)
 							lm = 12;	/* override error (?) in x_pathconf */
@@ -3408,10 +3408,10 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 
 							/* long names possible ? */
 							/* This should prevent too long namemasks */
-							if (key && aml == lm - 1)
+							if (key && (long)aml == lm - 1)
 								ei = 11;	/* index of "\0" */
 
-							if (aml == lm)
+							if ((long)aml == lm)
 							{
 								key = 0;
 								ei = 11;	/* index of "\0" */

@@ -1006,41 +1006,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 	*buffer = fspec;
 
 #if _MINT_
-	if (dir->type == 0)
-#endif
-	{
-		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */
-
-		_WORD error;
-
-		if (dir->data.gdata.first != 0)
-		{
-			error = make_path(fspec, dir->path, TOSDEFAULT_EXT);	/* presets[1] = "*.*"  */
-
-			if (error == 0)
-				error = xerror(Fsfirst(fspec, FA_ANY));
-
-			dir->data.gdata.first = 0;
-		} else
-			error = xerror(Fsnext());
-
-		if (error == 0)
-		{
-			if (strlen(dir->data.gdata.dta.dta_name) >= len)
-			{
-				error = EFNTL;
-			} else
-			{
-				*buffer = dir->data.gdata.dta.dta_name;
-
-				dta_to_xattr(&dir->data.gdata.dta, attrib);
-			}
-		}
-
-		result = (long) error;
-	}
-#if _MINT_
-	else
+	if (dir->type != 0)
 	{
 		/*
 		 * File system with long filenames. Mint (or Magic) is surely present.
@@ -1060,6 +1026,40 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 			attrib->st_attr |= FA_HIDDEN;
 
 		result = x_retresult(error);
+	} else
+#endif
+	{
+		/* Mint/Magic is not present or, if it is, it is a FAT-fs volume */
+
+		_WORD error;
+
+		if (dir->data.gdata.first != 0)
+		{
+			error = make_path(fspec, dir->path, TOSDEFAULT_EXT);	/* presets[1] = "*.*"  */
+
+			if (error == 0)
+				error = xerror(Fsfirst(fspec, FA_ANY));
+
+			dir->data.gdata.first = 0;
+		} else
+		{
+			error = xerror(Fsnext());
+		}
+
+		if (error == 0)
+		{
+			if (strlen(dir->data.gdata.dta.dta_name) >= len)
+			{
+				error = EFNTL;
+			} else
+			{
+				*buffer = dir->data.gdata.dta.dta_name;
+
+				dta_to_xattr(&dir->data.gdata.dta, attrib);
+			}
+		}
+
+		result = (long) error;
 	}
 
 	/* 
@@ -1067,6 +1067,7 @@ long x_xreaddir(XDIR *dir, char **buffer, size_t len, XATTR *attrib)
 	 * Also correct stupid assignment of execute rights in Magic.
 	 */
 
+#if _MINT_
 	if (mint)
 	{
 		/* If access rights are not supported, don't set them */

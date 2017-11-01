@@ -14,6 +14,7 @@ INCLUDES = -I$(srcdir)/library/xdialog  -I$(srcdir)/include
 WARN = \
 	-Wall \
 	-Wmissing-prototypes \
+	-W \
 	-Wshadow \
 	-Wpointer-arith \
 	-Wcast-qual \
