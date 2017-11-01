@@ -80,6 +80,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 	int maxl;							/* maximum output string length */
 	int ls;								/* string length */
 	int i;								/* counter */
+	bool uns;
 
 	s = format;
 	d = buffer;
@@ -91,7 +92,7 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 			/* Beginning of a format specifier detected... */
 
 			s++;
-			lng = ready = FALSE;
+			lng = ready = uns = FALSE;
 			maxl = 0;
 			radix = 10;
 			fill = ' ';
@@ -117,12 +118,25 @@ int vsprintf(char *buffer, const char *format, va_list argpoint)
 					radix = 16;
 					fill = '0';
 					/* fall through */
+				case 'u':
+					uns = TRUE;
+					/* fall through */
 				case 'd':
+				case 'i':
 					/* decimal or hexadecimal numeric output */
 					if (lng)
-						ltoa(va_arg(argpoint, long), tmp, radix);
-					else
-						itoa(va_arg(argpoint, int), tmp, radix);
+					{
+						if (uns)
+							ultoa(va_arg(argpoint, unsigned long), tmp, radix);
+						else
+							ltoa(va_arg(argpoint, long), tmp, radix);
+					} else
+					{
+						if (uns)
+							ultoa(va_arg(argpoint, unsigned int), tmp, radix);
+						else
+							itoa(va_arg(argpoint, int), tmp, radix);
+					}
 					h = tmp;
 
 				  copyit:;
