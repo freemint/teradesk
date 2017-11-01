@@ -43,13 +43,18 @@ long find_cookie(long name)
 
 #if _MINT_
 	if (have_ssystem)
+	{
 		Ssystem(S_GETCOOKIE, name, (long) &cvalue);
-	else
+	} else
 #endif
 	{
-		void *old_stack = (void *) Super(NULL);
+		/*
+		 * cookie jar ptr is longword aligned, thus
+		 * we can use Setexc to fetch its value
+		 */
+		cookie = (COOKIE *)Setexc(0x5A0 / 4, (void (*)())-1);
 
-		if ((cookie = p_cookie) != NULL)
+		if (cookie != NULL)
 		{
 			while ((cookie->name != 0) && (cookie->name != name))
 				cookie++;
@@ -57,8 +62,6 @@ long find_cookie(long name)
 			if (cookie->name != 0L)
 				cvalue = cookie->value;
 		}
-
-		Super(old_stack);
 	}
 
 	return cvalue;

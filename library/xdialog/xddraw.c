@@ -99,9 +99,7 @@ static void prt_text(const char *s, _WORD x, _WORD y, _WORD state)
 		attrib ^= 2;
 
 	vst_effects(xd_vhandle, attrib);
-
-										/* h = */ strcpy(tmp, s);
-										/* h is not needed for the time being, but tmp is */
+	strcpy(tmp, s);
 
 	/* uses AES 4 WHITEBAK */
 
@@ -181,7 +179,6 @@ void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
  * Draw a frame by drawing concentric rectangles to obtain 
  * desired thickness of border
  */
-
 static void draw_frame(GRECT *frame, _WORD start, _WORD eind)
 {
 	_WORD i, s, e;
@@ -208,7 +205,6 @@ static void draw_frame(GRECT *frame, _WORD start, _WORD eind)
 /*
  * Set suitable (default) line attributes. Full line, width 1 pixel.
  */
-
 void set_linedef(_WORD colour)
 {
 	vsl_color(xd_vhandle, colour);
@@ -223,7 +219,6 @@ void set_linedef(_WORD colour)
  * Font is the regular system font. Colour is always black.
  * Writing mode is always transparent.
  */
-
 static void set_textdef(void)
 {
 	_WORD dummy;
@@ -869,7 +864,7 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
 	size.g_y = y + xd_regular_font.ch / 8 + aes_ver3d - 1;
 	size.g_h = pb->pb_h - xd_regular_font.ch / 4 - 2 * aes_ver3d + 2;
 
-	if (xd_desk.g_w > 2 * xd_desk.g_h)
+	if (xd_regular_font.ch < 16 && xd_desk.g_w > 2 * xd_desk.g_h)
 		size.g_w = 2 * size.g_h;			/* better looking in ST-medium */
 	else
 		size.g_w = size.g_h;
