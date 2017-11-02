@@ -489,7 +489,7 @@ static void xd_drawbox(GRECT *r,		/* size of the box      */
  * Code for drawing progdefined "dragbox" ear on dialogs
  */
 
-static _WORD cdecl ub_drag(PARMBLK *pb)
+static _WORD _CDECL ub_drag(PARMBLK *pb)
 {
 	_WORD dhl, dhr, dvu, dvd, pxy[6], b;
 	GRECT size;
@@ -575,7 +575,7 @@ static _WORD cdecl ub_drag(PARMBLK *pb)
  * Code for drawing progdefined "background box"
  */
 
-_WORD cdecl ub_bckbox(PARMBLK *pb)
+_WORD _CDECL ub_bckbox(PARMBLK *pb)
 {
 	_WORD flags;
 	GRECT size;
@@ -626,7 +626,7 @@ _WORD cdecl ub_bckbox(PARMBLK *pb)
  * Code for drawing progdefined circular radiobutton
  */
 
-static _WORD cdecl ub_roundrb(PARMBLK *pb)
+static _WORD _CDECL ub_roundrb(PARMBLK *pb)
 {
 	/*
 	 * Bitmasks for round radio buttons.
@@ -840,7 +840,7 @@ static _WORD cdecl ub_roundrb(PARMBLK *pb)
  * Code for drawing progdefined rectangular "checkbox" button 
  */
 
-static _WORD cdecl ub_rectbut(PARMBLK *pb)
+static _WORD _CDECL ub_rectbut(PARMBLK *pb)
 {
 	_WORD x = pb->pb_x, y = pb->pb_y, flags;
 	char *string;
@@ -915,7 +915,7 @@ static _WORD cdecl ub_rectbut(PARMBLK *pb)
  * Code which handles scrolled editable text fields 
  */
 
-static _WORD cdecl ub_scrledit(PARMBLK *pb)
+static _WORD _CDECL ub_scrledit(PARMBLK *pb)
 {
 	XUSERBLK *blk = (XUSERBLK *) pb->pb_parm;
 	TEDINFO *ted = blk->ob_spec.tedinfo;
@@ -1049,7 +1049,7 @@ static _WORD cdecl ub_scrledit(PARMBLK *pb)
  * Code for drawing a progdefined rectangular button with an underlined text
  */
 
-static _WORD cdecl ub_button(PARMBLK *pb)
+static _WORD _CDECL ub_button(PARMBLK *pb)
 {
 	char *string;
 	_WORD x, y, flags, offset = 0;
@@ -1100,7 +1100,7 @@ static _WORD cdecl ub_button(PARMBLK *pb)
  * background colour, and then the text is placed there.
  */
 
-static _WORD cdecl ub_rbutpar(PARMBLK *pb)
+static _WORD _CDECL ub_rbutpar(PARMBLK *pb)
 {
 	_WORD x, y;							/* text position */
 	_WORD dh;							/* height change */
@@ -1169,7 +1169,7 @@ static _WORD cdecl ub_rbutpar(PARMBLK *pb)
  * (but only if a box is drawn), and not increase object width.
  */
 
-static _WORD cdecl ub_title(PARMBLK *pb)
+static _WORD _CDECL ub_title(PARMBLK *pb)
 {
 	_WORD dx, pxy[4], flags;
 	char *string;
@@ -1225,7 +1225,7 @@ static _WORD cdecl ub_title(PARMBLK *pb)
  * Code for (not) drawing a rectangle for an unknown object type
  */
 #if 0
-static _WORD cdecl ub_unknown(PARMBLK *pb)
+static _WORD _CDECL ub_unknown(PARMBLK *pb)
 {
 	/* this would be a mistake anyway, so why draw anything at all ? */
 

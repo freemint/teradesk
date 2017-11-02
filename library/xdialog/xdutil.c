@@ -112,7 +112,7 @@ long xd_initmfdb(GRECT *r, MFDB *mfdb)
  * Funktie voor het installeren van user-defined objects. 
  */
 
-void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl (*code) (PARMBLK *parmblock))
+void xd_userdef(OBJECT *object, USERBLK *userblk, PARMBLKFUNC code)
 {
 	object->ob_type = (object->ob_type & 0xFF00) | G_USERDEF;
 	userblk->ub_code = code;
@@ -128,7 +128,7 @@ void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl (*code) (PARMBLK *
  * object type into userblk fields.
  */
 
-void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, _WORD cdecl (*code) (PARMBLK *parmblock))
+void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, PARMBLKFUNC code)
 {
 	userblk->ub_code = code;
 	userblk->ub_parm = userblk;

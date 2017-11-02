@@ -89,7 +89,7 @@ void fnt_setfont(_WORD font, _WORD height, XDFONT *data)
  * This is the code for the userdef 'sample text' object
  */
 
-static _WORD cdecl draw_text(PARMBLK *pb)
+static _WORD _CDECL draw_text(PARMBLK *pb)
 {
 	FONTBLOCK *thefbl = (FONTBLOCK *) (((XUSERBLK *) (pb->pb_parm))->uv.ptr);
 	char *thetext = ((XUSERBLK *) (pb->pb_parm))->ob_spec.free_string;

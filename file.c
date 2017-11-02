@@ -811,21 +811,21 @@ bool cmp_wildcard(const char *fname, const char *pat)
 
 static _WORD chdrv;
 
-static long cdecl(*Oldgetbpb) (_WORD);
+static long _CDECL (*Oldgetbpb) (_WORD);
 
-static long cdecl(*Oldmediach) (_WORD);
+static long _CDECL (*Oldmediach) (_WORD);
 
-static long cdecl(*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
+static long _CDECL (*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
 
-#define hdv_bpb              ( *( long cdecl (**)( _WORD dev ) ) 0x472L )
-#define hdv_rw               ( *( long cdecl (**)( _WORD rwflag,void *buf,_WORD cnt,_WORD recnr,_WORD dev,long lrecno)) 0x476L )
-#define hdv_mediach  ( *( long cdecl (**)( _WORD dev ) ) 0x47EL )
+#define hdv_bpb              ( *( long _CDECL (**)( _WORD dev ) ) 0x472L )
+#define hdv_rw               ( *( long _CDECL (**)( _WORD rwflag,void *buf,_WORD cnt,_WORD recnr,_WORD dev,long lrecno)) 0x476L )
+#define hdv_mediach  ( *( long _CDECL (**)( _WORD dev ) ) 0x47EL )
 
 /* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
 /*     04'10 Coldfire */
 
 #ifdef __AHCC__
-static long __asm__ cdecl Newgetbpb(_WORD d)
+static long __asm__ _CDECL Newgetbpb(_WORD d)
 {
 	move.l	d2,-(a7)
 	move.l	d3,-(a7)
@@ -848,7 +848,7 @@ L44:
 	rts
 }
 #else
-static long cdecl Newgetbpb(_WORD d)
+static long _CDECL Newgetbpb(_WORD d)
 {
 	if (d == chdrv)
 	{
@@ -869,7 +869,7 @@ static long cdecl Newgetbpb(_WORD d)
  */
 
 #if 0									/* __AHCC__ */
-static long __asm__ cdecl Newmediach(_WORD d)
+static long __asm__ _CDECL Newmediach(_WORD d)
 {
 	movem.l	d2-d3,-(a7)
 	move	12(sp),d3		; 4(sp) + 8
@@ -888,7 +888,7 @@ L94:
 	bra.s	L86
 }
 #else
-static long cdecl Newmediach(_WORD d)
+static long _CDECL Newmediach(_WORD d)
 {
 	if (d == chdrv)
 		return 2;
@@ -899,7 +899,7 @@ static long cdecl Newmediach(_WORD d)
 
 
 #if 0									/* __AHCC__ */
-static long __asm__ cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
+static long __asm__ _CDECL Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	move.l	sp,a0			; stackframe pointer --> a0
 	movem.l	d2-d3,-(a7)
@@ -924,7 +924,7 @@ L158:
 	bra.s	L150
 }
 #else
-static long cdecl Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
+static long _CDECL Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
 {
 	if (d == chdrv)
 		return ECHMEDIA;

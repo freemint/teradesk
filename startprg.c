@@ -52,7 +52,7 @@ typedef struct
 	bool new;
 } PRG_INFO;
 
-static _WORD cdecl (*old_critic) (_WORD error);
+static _WORD _CDECL (*old_critic) (_WORD error);
 
 static PRG_INFO pinfo;
 
@@ -100,7 +100,7 @@ void clean_up(void)
 }
 
 
-static _WORD cdecl new_critic(_WORD error /*,_WORD drive */ )
+static _WORD _CDECL new_critic(_WORD error /*,_WORD drive */ )
 {
 	return error;
 }
@@ -108,7 +108,7 @@ static _WORD cdecl new_critic(_WORD error /*,_WORD drive */ )
 
 static void install_critic(void)
 {
-	old_critic = (_WORD cdecl(*)(_WORD error)) Setexc(0x101, (void (*)()) new_critic);
+	old_critic = (_WORD _CDECL (*)(_WORD error)) Setexc(0x101, (void (*)()) new_critic);
 }
 
 

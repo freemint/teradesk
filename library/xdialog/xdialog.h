@@ -23,10 +23,6 @@
 #ifndef __XDIALOG_H__
 #define __XDIALOG_H__
 
-#ifndef __PUREC__
-#define cdecl
-#endif
-
 #ifndef __XWINDOW_H__
 #include "xwindow.h"
 #endif
@@ -225,7 +221,7 @@ _WORD xd_rcintersect(GRECT *r1, GRECT *r2, GRECT *intersection);
 _WORD xd_inrect(_WORD x, _WORD y, GRECT *r);
 long xd_initmfdb(GRECT *r, MFDB *mfdb);
 void xd_objrect(OBJECT *tree, _WORD object, GRECT *r);
-void xd_userdef(OBJECT *object, USERBLK *userblk, _WORD cdecl(*code) (PARMBLK *parmblock));
+void xd_userdef(OBJECT *object, USERBLK *userblk, PARMBLKFUNC code);
 void xd_rect2pxy(GRECT *r, _WORD *pxy);
 _WORD xd_obj_parent(OBJECT *tree, _WORD object);
 _WORD xd_xobtype(OBJECT *tree);
@@ -290,7 +286,7 @@ void xd_nmclose(XDINFO *info
 void get_fsel(XDINFO *info, char *result, _WORD flags);
 void opn_hyphelp (void);
 
-_WORD cdecl ub_bckbox(PARMBLK *pb);
+_WORD _CDECL ub_bckbox(PARMBLK *pb);
 
 #include "internal.h"
 
