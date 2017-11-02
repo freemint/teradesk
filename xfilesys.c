@@ -1863,8 +1863,5 @@ bool x_feof(XFILE *file)
 
 void x_init(void)
 {
-	if (find_cookie(C__FLK) != -1)
-		flock = TRUE;
-	else
-		flock = FALSE;
+	flock = find_cookie(C__FLK, NULL);
 }

@@ -36,15 +36,16 @@
  * input value of "name" instead of -1 if there was no cookie jar
  */
 
-long find_cookie(long name)
+bool find_cookie(long name, long *value)
 {
 	COOKIE *cookie;
-	long cvalue = -1L;
+	long cvalue = 0;
 
 #if _MINT_
 	if (have_ssystem)
 	{
-		Ssystem(S_GETCOOKIE, name, (long) &cvalue);
+		if (Ssystem(S_GETCOOKIE, name, (long) &cvalue) != 0)
+			return FALSE;
 	} else
 #endif
 	{
@@ -54,17 +55,19 @@ long find_cookie(long name)
 		 */
 		cookie = (COOKIE *)Setexc(0x5A0 / 4, (void (*)())-1);
 
-		if (cookie != NULL)
-		{
-			while ((cookie->name != 0) && (cookie->name != name))
-				cookie++;
+		if (cookie == NULL)
+			return FALSE;
+		while (cookie->name != 0 && cookie->name != name)
+			cookie++;
 
-			if (cookie->name != 0L)
-				cvalue = cookie->value;
-		}
+		if (cookie->name == 0)
+			return FALSE;
+		cvalue = cookie->value;
 	}
 
-	return cvalue;
+	if (value)
+		*value = cvalue;
+	return TRUE;
 }
 
 

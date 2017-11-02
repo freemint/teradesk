@@ -48,7 +48,6 @@ _WORD xd_bg_col = G_WHITE;				/* colour of background object */
 _WORD xd_ind_col = G_LWHITE;			/* colour of indicator object  */
 _WORD xd_act_col = G_LWHITE;			/* colour of activator object  */
 _WORD xd_sel_col = G_BLACK;				/* colour of selected object   */
-long magx;								/* Version of MagiC if present  */
 
 _WORD brd_l, brd_r, brd_u, brd_d;		/* object border sizes */
 
@@ -2260,7 +2259,6 @@ static void xd_aes4col(void)
 static _WORD has_appl_getinfo(void)
 {
     static _WORD has_agi = -1; /* do the check only once */
-    _WORD out1 = 0, out2, out3, out4;
     
     /* check for appl_getinfo() being present */
     if (has_agi < 0)
@@ -2269,18 +2267,8 @@ static _WORD has_appl_getinfo(void)
         /* AES 4.0? */
         if (gl_ap_version >= 0x400)
              has_agi = 1;
-        else
-        /* Mag!X 2.0? */
-        if (magx >= 0x200)
-            has_agi = 2;
-        else
-        if (appl_find( "?AGI\0\0\0\0") >= 0)
+        else if (appl_find( "?AGI\0\0\0\0") >= 0)
             has_agi = 3;
-        else
-        /* WiNX >= 2.2 ? */
-        if (wind_get(0, WF_WINX, &out1, &out2, &out3, &out4) == WF_WINX &&
-        	(out1 & 0xfff) >= 0x220)
-            has_agi = 4;
     }
     return has_agi;
 }

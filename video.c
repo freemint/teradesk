@@ -155,10 +155,7 @@ void get_set_video(_WORD set)
 
 		/* Find about video hardware (shifter; will be 0xffffffff without cookie */
 
-		vdo = find_cookie(C__VDO);
-
-		if (vdo == -1)
-			vdo = 0L;					/* if no cookie, ST will be assumed */
+		find_cookie(C__VDO, &vdo);
 
 		vdohi = (_WORD) (vdo >> 16);	/* use only the upper word */
 
@@ -213,7 +210,7 @@ void get_set_video(_WORD set)
 			 */
 
 #if _OVSCAN
-			if ((over = find_cookie(C_OVER)) != -1 || (over = find_cookie(C_Lace)) != -1)
+			if (find_cookie(C_OVER, &over) || find_cookie(C_Lace, &over))
 			{
 				/* There is ST-overscan/lacescan. Set initial values */
 

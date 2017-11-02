@@ -211,6 +211,7 @@ extern _WORD
 
 #if _MINT_
 extern bool mint;	/* mint or magic present */
+extern bool magx;	/* magic present */
 extern bool naes;	/* naes present */
 extern bool geneva;	/* geneva present */
 
@@ -228,5 +229,3 @@ void set_opt(OBJECT *tree, _WORD flags, _WORD opt, _WORD button );
 void get_opt(OBJECT *tree, _WORD *flags, _WORD opt, _WORD button );
 _WORD hndlmessage(_WORD *message);
 bool wait_to_quit(void);
-
-

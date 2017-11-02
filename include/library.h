@@ -179,7 +179,7 @@ void cramped_name(const char *s, char *t, size_t w);
 
 /* Funkties voor cookie-jar */
 
-long find_cookie( long name );
+bool find_cookie( long name, long *value);
 _WORD install_cookie( long name,long value,COOKIE *buffer,long l );
 
 /* GEM uitbreidingen */

@@ -168,7 +168,6 @@ extern _WORD colour_icons;
 
 extern _WORD aes_wfunc;	/* result of appl_getinfo(11, ...) */
 extern _WORD aes_ctrl;
-extern long magx;	/* magic present  */
 
 
 /* Funkties voor het openen en sluiten van een dialoog */

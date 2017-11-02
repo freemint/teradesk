@@ -108,6 +108,7 @@ static const _WORD menu_items[] = { MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIO
 #if _MINT_
 bool have_ssystem = FALSE;
 bool mint;								/* True if Mint  is present  */
+bool magx;								/* True if MagiC is present  */
 bool naes;								/* True if N.AES is present  */
 bool geneva;							/* True if Geneva is present */
 #endif
@@ -1780,12 +1781,10 @@ int main(void)
 	 * OK for Mint, Magic, Geneva  and N.AES.
 	 */
 
-	mint = (find_cookie(C_MiNT) == -1) ? FALSE : TRUE;
-	geneva = (find_cookie(C_Gnva) == -1) ? FALSE : TRUE;
-	naes = (find_cookie(C_nAES) == -1) ? FALSE : TRUE;
-	magx = find_cookie(C_MagX);
-	if (magx == -1)
-		magx = 0;
+	mint = find_cookie(C_MiNT, NULL);
+	geneva = find_cookie(C_Gnva, NULL);
+	naes = find_cookie(C_nAES, NULL);
+	magx = find_cookie(C_MagX, NULL);
 
 	/* 
 	 * In most cases behaviour of this program in Magic should be the same
@@ -1793,7 +1792,7 @@ int main(void)
 	 * magx cookie should be checked.
 	 */
 
-	mint |= magx != 0;						/* Quick & dirty */
+	mint |= magx;						/* Quick & dirty */
 
 	(void) Pdomain(1);
 	if (mint)
@@ -1827,7 +1826,7 @@ int main(void)
 	 * by a direct register access at shutdown
 	 */
 
-	ct60 = (find_cookie(C_CT60) == -1) ? FALSE : TRUE;
+	ct60 = find_cookie(C_CT60, NULL);
 
 	/* 
 	 * Load the dekstop.rsc resource file. Another required resource file
@@ -2036,7 +2035,7 @@ int main(void)
 #if _MINT_
 			int ignor = 0;
 
-			quit = shel_write(SHW_SHUTDOWN, 2, 2, (naes) ? (void *) &ignor : NULL, NULL);	/* complete shutdown */
+			quit = shel_write(SHW_SHUTDOWN, 2, 2, naes ? (void *) &ignor : NULL, NULL);	/* complete shutdown */
 #else
 			quit = shel_write(SHW_SHUTDOWN, 2, 2, NULL, NULL);	/* complete shutdown */
 #endif
