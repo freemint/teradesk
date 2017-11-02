@@ -261,13 +261,13 @@ void clr_object(GRECT *r, _WORD colour, _WORD pattern)
 
 	if (pattern > 0)
 	{
-		if (pattern <= xd_npatterns)
+		if (pattern <= 24)
 		{
 			pn = pattern;
 			fillmode = FIS_PATTERN;
 		} else
 		{
-			pn = pattern - xd_npatterns;
+			pn = pattern - 24;
 			fillmode = FIS_HATCH;
 		}
 

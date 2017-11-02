@@ -124,8 +124,6 @@ typedef struct
 extern _WORD xd_vhandle;
 extern _WORD xd_nplanes;
 extern _WORD xd_ncolours;
-extern _WORD xd_npatterns;
-extern _WORD xd_nfills;
 extern _WORD xd_fnt_w;
 extern _WORD xd_fnt_h;
 extern _WORD xd_pix_height;

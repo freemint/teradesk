@@ -3007,7 +3007,7 @@ _WORD limcolour(_WORD col)
 
 _WORD limpattern(_WORD pat)
 {
-	return minmax(1, pat, xd_nfills);
+	return minmax(1, pat, 37);
 }
 
 

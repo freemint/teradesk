@@ -63,8 +63,6 @@ _WORD xd_ncolours;						/* Number of colours in the current resolution */
 _WORD xd_fnt_w;							/* screen font width */
 _WORD xd_fnt_h;							/* screen font height */
 _WORD xd_pix_height;					/* pixel size */
-_WORD xd_npatterns;						/* Number of available patterns */
-_WORD xd_nfills;						/* numbr of available fills */
 _WORD xd_rbdclick = 1;					/* if 1, right button is always doubleclick */
 _WORD xd_min_timer;						/* Minimum time passed to xe_multi(). */
 
@@ -2340,16 +2338,6 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 	/* It was successful */
 	xd_pix_height = work_out[4];
 	xd_ncolours = work_out[13];
-
-	/* 
-	 * It is not clear which is the available number of fill designs.
-	 * Here are summed the  number of fillpatterns and the number 
-	 * of hatches. Still, it sems that one design more is available
-	 * than this sum would indicate?
-	 */
-
-	xd_npatterns = work_out[11];
-	xd_nfills = xd_npatterns + work_out[12] + 1;
 
 	if (xd_ncolours >= 16)
 		xd_colaes = 1;
