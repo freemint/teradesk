@@ -23,9 +23,9 @@
 
 #include <library.h>
 #include "xdialog.h"
-#include "xerror.h"
 
 #include "xscncode.h"
+#include "xerror.h"
 
 
 /* 
@@ -48,6 +48,7 @@ _WORD xd_bg_col = G_WHITE;				/* colour of background object */
 _WORD xd_ind_col = G_LWHITE;			/* colour of indicator object  */
 _WORD xd_act_col = G_LWHITE;			/* colour of activator object  */
 _WORD xd_sel_col = G_BLACK;				/* colour of selected object   */
+long magx;								/* Version of MagiC if present  */
 
 _WORD brd_l, brd_r, brd_u, brd_d;		/* object border sizes */
 
@@ -2256,6 +2257,54 @@ static void xd_aes4col(void)
 }
 
 
+static _WORD has_appl_getinfo(void)
+{
+    static _WORD has_agi = -1; /* do the check only once */
+    _WORD out1 = 0, out2, out3, out4;
+    
+    /* check for appl_getinfo() being present */
+    if (has_agi < 0)
+    {
+        has_agi = 0;
+        /* AES 4.0? */
+        if (gl_ap_version >= 0x400)
+             has_agi = 1;
+        else
+        /* Mag!X 2.0? */
+        if (magx >= 0x200)
+            has_agi = 2;
+        else
+        if (appl_find( "?AGI\0\0\0\0") >= 0)
+            has_agi = 3;
+        else
+        /* WiNX >= 2.2 ? */
+        if (wind_get(0, WF_WINX, &out1, &out2, &out3, &out4) == WF_WINX &&
+        	(out1 & 0xfff) >= 0x220)
+            has_agi = 4;
+    }
+    return has_agi;
+}
+
+static _WORD appl_x_getinfo(_WORD type, _WORD *out1, _WORD *out2, _WORD *out3, _WORD *out4)
+{
+    _WORD ret;
+
+    /* no appl_getinfo? return error code */
+	if (!has_appl_getinfo() || (ret = appl_getinfo(type, out1, out2, out3, out4)) == 0)
+	{
+	    if (out1 != NULL)
+	    	*out1 = 0;
+	    if (out2 != NULL)
+		    *out2 = 0;
+		if (out3 != NULL)
+		    *out3 = 0;
+		if (out4 != NULL)
+		    *out4 = 0;
+		return 0;
+	}
+	return ret;
+}
+
 /********************************************************************
  *																	*
  * Funkties voor de initialisatie en deinitialisatie van de module.	*
@@ -2268,6 +2317,7 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 	_WORD dummy, i;
 	_WORD work_in[11];
 	_WORD work_out[57];
+	_WORD ag1, ag2, ag3, ag4;
 
 	xd_malloc = malloc_func;
 	xd_free = free_func;
@@ -2326,47 +2376,27 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 	else
 		*nfonts = 0;
 
-	/*
-	 * Proper appl_getinfo protocol, works also with MagiC:
-	 *
-	 * Some AESses (at least Geneva 4, AES 4.1, NAES 1.1...) 
-	 * do not react to "?AGI" but in fact support appl_getinfo;
-	 * So below is forcing to use appl_getinfo with any AES 4.
-	 * In fact this is not so bad; a document on TOS recommends:
-	 *	has_agi = ((_AESversion == 0x399 && get_cookie ("MagX", &dummy))
-     *	|| (_AESversion == 0x400 && type < 4)
-     *	|| (_AESversion > 0x400)
-     *	|| (appl_find ("?AGI") >= 0));
-	 */
-
-	/* if ( appl_find( "?AGI" ) == 0 )	*/	/* appl_getinfo() supported? */
-
-	if (appl_find("?AGI") == 0)
-		aes_flags |= GAI_INFO;
-
 	/* If appl_getinfo is supported, then get diverse information: */
 
-	if (aes_flags & GAI_INFO)
+	if (has_appl_getinfo())
 	{
-		_WORD ag1, ag2, ag3, ag4;
-
 		/* Assume some colour settings */
 
 		xd_aes4col();
 
 		/* Information on "normal" AES font */
 
-		appl_xgetinfo(AES_LARGEFONT, &xd_regular_font.size, &xd_regular_font.id, &dummy, &dummy);
+		appl_x_getinfo(AES_LARGEFONT, &xd_regular_font.size, &xd_regular_font.id, &dummy, &dummy);
 #if _SMALL_FONT
 
 		/* Information on "small" AES font */
 
-		appl_xgetinfo(AES_SMALLFONT, &xd_small_font.size, &xd_small_font.id, &dummy, &dummy);
+		appl_x_getinfo(AES_SMALLFONT, &xd_small_font.size, &xd_small_font.id, &dummy, &dummy);
 
 #endif
 		/* Information on colour icons and supported rsc format */
 
-		appl_xgetinfo(AES_SYSTEM, &ag1, &ag2, &colour_icons, &dummy);
+		appl_x_getinfo(AES_SYSTEM, &ag1, &ag2, &colour_icons, &dummy);
 
 		/* 
 		 * Information on supported window handling capabilities;
@@ -2375,14 +2405,12 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 		 * (AES 4.0 ?) recognizes these inquiries anyway
 		 */
 
-		appl_xgetinfo(AES_WINDOW, &aes_wfunc, &dummy, &dummy, &dummy );
+		appl_x_getinfo(AES_WINDOW, &aes_wfunc, &dummy, &dummy, &dummy);
 
 		/* Information on object handling capabilites */
 
-		if (appl_xgetinfo(AES_OBJECT, &xd_has3d, &ag2, &ag3, &ag4))
+		if (appl_x_getinfo(AES_OBJECT, &xd_has3d, &ag2, &ag3, &ag4))
 		{
-			if (ag4 & 0x08)					/* G_SHORTCUT supported ? */
-				aes_flags |= GAI_GSHORTCUT;
 			if (ag4 & 0x04)					/* MagiC (OS_WHITEBAK) objects */
 				aes_flags |= GAI_WHITEBAK;
 
@@ -2419,7 +2447,7 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 		/* Is appl_control supported ? */
 
-		if (appl_xgetinfo(AES_NAES, &ag1, &ag2, &ag3, &ag4))
+		if (appl_x_getinfo(AES_NAES, &ag1, &ag2, &ag3, &ag4))
 			aes_ctrl = ag1;
 	} else
 	{

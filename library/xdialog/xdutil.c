@@ -349,11 +349,11 @@ _WORD xd_is_tristate(OBJECT *object)
 
 
 /*
- * Funktie voor het aanzetten van clipping.
+ * Function to turn clipping on
  *
  * Parameter:
  *
- * r	- clipping rechthoek.
+ * r	- clipping rectangle
  */
 
 void xd_clip_on(GRECT *r)
@@ -366,7 +366,7 @@ void xd_clip_on(GRECT *r)
 
 
 /*
- * Funktie voor het uitschakelen van clipping.
+ * Function to turn clipping off
  */
 
 void xd_clip_off(void)

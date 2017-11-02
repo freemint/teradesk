@@ -108,7 +108,6 @@ static const _WORD menu_items[] = { MINFO, TDESK, TLFILE, TVIEW, TWINDOW, TOPTIO
 #if _MINT_
 bool have_ssystem = FALSE;
 bool mint;								/* True if Mint  is present  */
-bool magx;								/* True if MagiC is present  */
 bool naes;								/* True if N.AES is present  */
 bool geneva;							/* True if Geneva is present */
 #endif
@@ -1782,9 +1781,11 @@ int main(void)
 	 */
 
 	mint = (find_cookie(C_MiNT) == -1) ? FALSE : TRUE;
-	magx = (find_cookie(C_MagX) == -1) ? FALSE : TRUE;
 	geneva = (find_cookie(C_Gnva) == -1) ? FALSE : TRUE;
 	naes = (find_cookie(C_nAES) == -1) ? FALSE : TRUE;
+	magx = find_cookie(C_MagX);
+	if (magx == -1)
+		magx = 0;
 
 	/* 
 	 * In most cases behaviour of this program in Magic should be the same
@@ -1792,7 +1793,7 @@ int main(void)
 	 * magx cookie should be checked.
 	 */
 
-	mint |= magx;						/* Quick & dirty */
+	mint |= magx != 0;						/* Quick & dirty */
 
 	(void) Pdomain(1);
 	if (mint)

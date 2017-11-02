@@ -28,24 +28,13 @@
 #endif
 
 #ifndef __XWINDOW_H__
- #include "xwindow.h"
+#include "xwindow.h"
 #endif
 
 #define _DOZOOM 0
 
 typedef enum
 {
-	GAI_WDLG = 0x0001,		/* wdlg_xx()-Funktionen vorhanden */
-	GAI_LBOX = 0x0002,		/* lbox_xx()-Funktionen vorhanden */
-	GAI_FNTS = 0x0004,		/* fnts_xx()-Funktionen vorhanden */
-	GAI_FSEL = 0x0008,		/* neue Dateiauswahl vorhanden */
-
-	GAI_MAGIC= 0x0100,		/* MagiC-AES vorhanden */
-	GAI_INFO = 0x0200,		/* appl_getinfo() vorhanden */
-	GAI_3D   = 0x0400,		/* 3D-Look vorhanden */
-	GAI_CICN = 0x0800,		/* Color-Icons vorhanden */
-	GAI_APTERM = 0x1000,	/* AP_TERM wird unterstÿtzt */
-	GAI_GSHORTCUT = 0x2000,	/* Objekttyp G_SHORTCUT wird unterstÿtzt */
 	GAI_WHITEBAK = 0x4000	/* WHITEBAK objects */
 } GAI;
 
@@ -179,6 +168,7 @@ extern _WORD colour_icons;
 
 extern _WORD aes_wfunc;	/* result of appl_getinfo(11, ...) */
 extern _WORD aes_ctrl;
+extern long magx;	/* magic present  */
 
 
 /* Funkties voor het openen en sluiten van een dialoog */

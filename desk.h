@@ -210,11 +210,9 @@ extern _WORD
 /* Flags to show a specific OS or AES type (detected from cookies) */
 
 #if _MINT_
-extern bool 
-	mint,			/* mint or magic present */
-	magx,			/* magic present  */
-	naes,			/* naes present */
-	geneva;			/* geneva present */
+extern bool mint;	/* mint or magic present */
+extern bool naes;	/* naes present */
+extern bool geneva;	/* geneva present */
 
 #endif
 
