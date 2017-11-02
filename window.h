@@ -151,14 +151,8 @@ typedef struct
 
 typedef struct winfo
 {
-	_WORD x;						/* positie van het window */
-	_WORD y;
-	_WORD w;						/* afmetingen van het werkgebied */
-	_WORD h;
-	_WORD ix; /* position and size at iconify time */
-	_WORD iy; 
-	_WORD iw;
-	_WORD ih;
+	GRECT pos;						/* position and size of window */
+	GRECT ipos;						/* position and size at iconify time */
 	TYP_WINDOW *typ_window;
 	WDFLAGS flags;
 	bool used;
@@ -169,7 +163,9 @@ typedef struct winfo
 
 typedef struct
 {
-	_WORD i, x, y, ww, wh, ix, iy, iw, ih;
+	_WORD i;
+	GRECT pos;
+	GRECT ipos;
 	WDFLAGS flags;
 	XDFONT font;
 	WINFO *windows;

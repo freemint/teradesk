@@ -2418,10 +2418,7 @@ static WINDOW *dir_do_open(WINFO *info, char *path, char *fspec, _WORD px, _WORD
 
 	/* In order to calculate columns and rows properly... */
 
-	oldsize.g_x = info->x;				/* remember old size in char-cell units */
-	oldsize.g_y = info->y;
-	oldsize.g_w = info->w;
-	oldsize.g_h = info->h;
+	oldsize = info->pos;				/* remember old size in char-cell units */
 
 	wd_restoresize(info);				/* temporarily- noniconified size */
 

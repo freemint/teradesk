@@ -142,14 +142,14 @@ static CfgEntry const positions_table[] = {
 	CFG_HDR("pos"),
 	CFG_BEG(),
 	CFG_X("flag", thisw.flags),
-	CFG_D("xpos", thisw.x),		/* note: can't go off the left edge */
-	CFG_D("ypos", thisw.y),
-	CFG_D("winw", thisw.ww),
-	CFG_D("winh", thisw.wh),
-	CFG_D("xicw", thisw.ix),
-	CFG_D("yicw", thisw.iy),
-	CFG_D("wicw", thisw.iw),
-	CFG_D("hicw", thisw.ih),
+	CFG_D("xpos", thisw.pos.g_x),		/* note: can't go off the left edge */
+	CFG_D("ypos", thisw.pos.g_y),
+	CFG_D("winw", thisw.pos.g_w),
+	CFG_D("winh", thisw.pos.g_h),
+	CFG_D("xicw", thisw.ipos.g_x),
+	CFG_D("yicw", thisw.ipos.g_y),
+	CFG_D("wicw", thisw.ipos.g_w),
+	CFG_D("hicw", thisw.ipos.g_h),
 	CFG_END(),
 	CFG_LAST()
 };
@@ -276,8 +276,8 @@ static void wrect_in_screen(GRECT *info, bool normalsize)
 
 void wd_in_screen(WINFO *info)
 {
-	wrect_in_screen((GRECT *) (&(info->x)), (info->flags.iconified) ? FALSE : TRUE);
-	wrect_in_screen((GRECT *) (&(info->ix)), TRUE);
+	wrect_in_screen(&info->pos, (info->flags.iconified) ? FALSE : TRUE);
+	wrect_in_screen(&info->ipos, TRUE);
 }
 
 
@@ -330,7 +330,6 @@ void positions(XFILE *file, int lvl, int io, int *error)
 {
 	WINFO *w = thisw.windows;
 	_WORD i;
-	size_t s = 2 * sizeof(GRECT);		/* data size */
 
 	if (io == CFG_SAVE)
 	{
@@ -340,8 +339,8 @@ void positions(XFILE *file, int lvl, int io, int *error)
 		{
 			thisw.i = i;
 
-			memcpy(&thisw.x, &(w->x), s);	/* copy all in one row */
-
+			thisw.pos = w->pos;
+			thisw.ipos = w->ipos;
 			thisw.flags = w->flags;
 
 			/* 
@@ -350,7 +349,7 @@ void positions(XFILE *file, int lvl, int io, int *error)
 			 */
 
 			if (!(w->flags.iconified))
-				memclr(&(thisw.ix), sizeof(GRECT));
+				thisw.ipos.g_x = thisw.ipos.g_y = thisw.ipos.g_w = thisw.ipos.g_h = 0;
 
 			*error = CfgSave(file, positions_table, lvl, CFGEMP);
 
@@ -363,7 +362,9 @@ void positions(XFILE *file, int lvl, int io, int *error)
 	{
 		/* Load data... */
 
-		memclr(&thisw.x, (size_t) (s + sizeof(thisw.flags)));
+		thisw.pos.g_x = thisw.pos.g_y = thisw.pos.g_w = thisw.pos.g_h = 0;
+		thisw.ipos.g_x = thisw.ipos.g_y = thisw.ipos.g_w = thisw.ipos.g_h = 0;
+		memset(&thisw.flags, 0, sizeof(thisw.flags));
 
 		*error = CfgLoad(file, positions_table, MAX_KEYLEN, lvl);
 
@@ -371,8 +372,8 @@ void positions(XFILE *file, int lvl, int io, int *error)
 		{
 			w += thisw.i;
 
-			memcpy(&(w->x), &(thisw.x), s);	/* copy all in one row */
-
+			w->pos = thisw.pos;
+			w->ipos = thisw.ipos;
 			w->flags = thisw.flags;
 
 			thisw.i++;
@@ -1126,10 +1127,7 @@ void wd_restoresize(WINFO *winfo)
 {
 	if (winfo->flags.iconified)
 	{
-		winfo->x = winfo->ix;
-		winfo->y = winfo->iy;
-		winfo->w = winfo->iw;
-		winfo->h = winfo->ih;
+		winfo->pos = winfo->ipos;
 
 		if (!can_iconify)
 			winfo->flags.iconified = 0;
@@ -1766,10 +1764,10 @@ static void wd_defsize(_WORD type)
 			h1 = 9;
 		}
 
-		wi->x = x0 + x1 * xd_fnt_w + xd_desk.g_x;
-		wi->y = y0 + y1 * xd_fnt_h + xd_desk.g_y;
-		wi->w = xd_desk.g_w * w1 / (xd_fnt_w * 16) + w3;	/* in char cell units */
-		wi->h = xd_desk.g_h * h1 / (xd_fnt_h * 16);	/* in char cell units */
+		wi->pos.g_x = x0 + x1 * xd_fnt_w + xd_desk.g_x;
+		wi->pos.g_y = y0 + y1 * xd_fnt_h + xd_desk.g_y;
+		wi->pos.g_w = xd_desk.g_w * w1 / (xd_fnt_w * 16) + w3;	/* in char cell units */
+		wi->pos.g_h = xd_desk.g_h * h1 / (xd_fnt_h * 16);	/* in char cell units */
 	}
 }
 
@@ -2074,8 +2072,8 @@ void wd_calcsize(WINFO *w, GRECT *size)
 
 	/* Find position of the window on screen */
 
-	def.g_x = w->x + xd_desk.g_x;
-	def.g_y = w->y + xd_desk.g_y;
+	def.g_x = w->pos.g_x + xd_desk.g_x;
+	def.g_y = w->pos.g_y + xd_desk.g_y;
 
 	/* If the window is fulled, calculate its new size, etc. */
 
@@ -2140,8 +2138,8 @@ void wd_calcsize(WINFO *w, GRECT *size)
 		 * therefore a conversion is needed here (def = window work area);
 		 */
 
-		def.g_w = w->w * xd_fnt_w;		/* hoogte en breedte van het werkgebied. */
-		def.g_h = w->h * xd_fnt_h;
+		def.g_w = w->pos.g_w * xd_fnt_w;		/* hoogte en breedte van het werkgebied. */
+		def.g_h = w->pos.g_h * xd_fnt_h;
 
 		/* 
 		 * Calculate window width and height. As 'def' above corresponds
@@ -2571,20 +2569,20 @@ void wd_set_defsize(WINFO *w)
 {
 	WINDOW *ww = (WINDOW *) w->typ_window;
 
-	w->x = ww->xw_size.g_x - xd_desk.g_x;
-	w->y = ww->xw_size.g_y - xd_desk.g_y;
+	w->pos.g_x = ww->xw_size.g_x - xd_desk.g_x;
+	w->pos.g_y = ww->xw_size.g_y - xd_desk.g_y;
 
 	if (w->flags.iconified)
 	{
-		w->w = ww->xw_size.g_w;
-		w->h = ww->xw_size.g_h / xd_fnt_w;	/* beware: fnt_w, not fnt_h ! */
+		w->pos.g_w = ww->xw_size.g_w;
+		w->pos.g_h = ww->xw_size.g_h / xd_fnt_w;	/* beware: fnt_w, not fnt_h ! */
 	} else
 	{
-		w->w = ww->xw_work.g_w;
-		w->h = ww->xw_work.g_h / xd_fnt_h;
+		w->pos.g_w = ww->xw_work.g_w;
+		w->pos.g_h = ww->xw_work.g_h / xd_fnt_h;
 	}
 
-	w->w /= xd_fnt_w;
+	w->pos.g_w /= xd_fnt_w;
 }
 
 
@@ -4567,10 +4565,7 @@ void wd_type_iconify(WINDOW *w, GRECT *r)
 
 		if (!(wi->flags.iconified))
 		{
-			wi->ix = wi->x;
-			wi->iy = wi->y;
-			wi->iw = wi->w;
-			wi->ih = wi->h;
+			wi->ipos = wi->pos;
 		}
 
 		oldsize = w->xw_size;
@@ -4695,10 +4690,7 @@ void wd_iopen(WINDOW *w, GRECT *oldsize, WDFLAGS *oldflags)
 #if _MINT_
 		if (icf)
 		{
-			info->x = oldsize->g_x;
-			info->y = oldsize->g_y;
-			info->w = oldsize->g_w;
-			info->h = oldsize->g_h;
+			info->pos = *oldsize;
 
 			/* note: icwsize must be set before wd_calcsize() or wd_wsize() */
 

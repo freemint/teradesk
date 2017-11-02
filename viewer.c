@@ -1244,10 +1244,7 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 	w->hexmode = hexmode;
 	w->winfo = info;
 
-	oldsize.g_x = info->x;				/* remember old size */
-	oldsize.g_y = info->y;
-	oldsize.g_w = info->w;
-	oldsize.g_h = info->h;
+	oldsize = info->pos;				/* remember old size */
 
 	wd_restoresize(info);
 
