@@ -138,7 +138,8 @@ void path_to_disp(char *fpath)
 
 		/* Attempt to find '\.\' or a trailing '\.' */
 
-		while ((p = strstr(fpath, "\\.")) != NULL)
+		p = fpath;
+		while ((p = strstr(p, "\\.")) != NULL)
 		{
 			q = p + 2L;
 
@@ -146,9 +147,9 @@ void path_to_disp(char *fpath)
 
 			if (*q == '\\' || *q == '\0')
 			{
-				*p = 0;
-				strcat(fpath, q);
+				memmove(p, q, strlen(q) + 1);
 			}
+			p = q;
 		}
 	}
 }
