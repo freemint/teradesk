@@ -828,7 +828,7 @@ int handle_cfgfile(const char *name,	/* name of configuration file to read/write
 
 	/* Display error information */
 
-	if ((error < 0) && (error != ENOMSG))
+	if (error < 0 && error != ENOMSG && io != CFG_LOAD_INITIAL)
 		alert_printf(1, ALOADCFG, cname, get_message(error));
 
 	/* Restore previous filename, nest name and level if any */

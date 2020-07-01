@@ -117,8 +117,9 @@ typedef struct
 
 /* Mnemonic for easier reading of code: value for parameter "io" of CFG_NEST */
 
-#define CFG_LOAD 0
-#define CFG_SAVE 1
+#define CFG_LOAD         0
+#define CFG_SAVE         1
+#define CFG_LOAD_INITIAL 2
 
 /* 
  * Maximum acceptable length of a line in configuration file defined below.

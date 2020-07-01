@@ -997,14 +997,14 @@ static CfgEntry const Config_table[] = {
 /*
  * Read configuration from the configuration file 
  */
-static _WORD load_options(void)
+static _WORD load_options(int io)
 {
 	_WORD error = 0;
 
 	autoloc_off();
 	noicons = FALSE;					/* so that missing ones be reported */
 
-	error = handle_cfgfile(infname, Config_table, infide, CFG_LOAD);
+	error = handle_cfgfile(infname, Config_table, infide, io);
 
 	/* 
 	 * If there was an error when loading options, load defaults.
@@ -1089,11 +1089,11 @@ void load_settings(char *newinfname)
 
 		infname = newinfname;
 
-		if (load_options() != 0 && oldinfname)
+		if (load_options(CFG_LOAD) != 0 && oldinfname)
 		{
 			free(infname);
 			infname = oldinfname;
-			load_options();
+			load_options(CFG_LOAD);
 		} else
 		{
 			free(oldinfname);
@@ -1196,7 +1196,7 @@ static bool init(void)
 
 		/* Load the configuration file */
 
-		load_options();
+		load_options(CFG_LOAD_INITIAL);
 
 		/* 
 		 * Start applications which have been defined as autostart.
