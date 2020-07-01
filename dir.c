@@ -3677,8 +3677,8 @@ static bool dir_copy
  */
 void dir_simw(DIR_WINDOW *dw, char *path, const char *name, ITMTYPE type)
 {
-	NDTA buffer;
-	NDTA *pbuffer[1];
+	static NDTA buffer;
+	static NDTA *pbuffer[1];
 	XATTR att;
 	char *fname;
 
