@@ -1,0 +1,4386 @@
+@if VERSION >= 6
+@os "atari"
+@charset atarist
+@inputenc atarist
+@lang "de"
+@endif
+@database "User-Manual fr TeraDesk"
+@default "Main"
+@options "-i +z -t4"
+@author "Wout Klaren, Henk Robbers, Djordje Vukovic"
+@$VER: February 2017
+@subject "Dokumentation/Utilities"
+@width 75
+
+
+@node "Main" "Inhalt"
+@symbol ar "Inhalt"
+
+@{U} Inhalt                                                          TeraDesk@{u}
+
+
+
+
+
+                User's Manual fr Tera Desktop V4.08
+
+             Wout Klaren, Henk Robbers, Djordje Vukovic
+
+                           February 2017
+
+                  Deutscher Hypertext von @{"Latzmaster" LINK "Adresse"}
+
+
+
+    1  Allgemeines
+    2  Installation
+    3  Grundlagen
+    4  Mens und Dialoge
+    5  Icons und Objekte
+    6  Symbolische Links
+    7  TeraDesk Fenster
+    8  Spezial-Anwendung
+    9  Konfigurations-Dateien
+   10  Untersttzte Protokolle
+   11  Danksagung
+ 
+@endnode
+
+
+@node "Allgemeines"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}1  Allgemeines                                                   TeraDesk@{u}
+
+ 1.1  šber Tera Desktop
+ 1.2  Hardware- und Systemvoraussetzungen
+ 1.3  Einige TeraDesk-spezifische Features
+ 1.4  Rechtliches
+ 
+@endnode
+
+
+@node "šber Tera Desktop"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+
+@{U}1.1  šber Tera Desktop                                           TeraDesk@{u}
+
+Tera Desktop (TeraDesk) ist ein Ersatz fr das ST-, STE-, TT- oder
+Falcon-Desktop und bietet diesen gegenber viele erweiterte
+Funktionen.
+
+TeraDesk ist ein Open-Source Desktop fr 16-Bit und 32-Bit Atari-Computer.
+Das Ziel der Entwickler ist es, mit TeraDesk ein kleines, schnelles,
+einfaches und sicheres Desktop anzubieten, das sowohl in moderner
+Multitasking-Umgebung als auch mit allen Versionen und Arten von 
+OS-kompatiblen Betriebssystemen funktioniert, sich aber trotzdem
+-soweit m”glich- am original TOS-Desktop orientiert.
+
+TeraDesk ist nicht als direkter Ersatz fr die exzellenten, aber
+Resourcen-fordernden Desktops wie Thing oder Jinnee gedacht; sondern
+fr die F„lle, wo wenig Speicherplatz, wenig RAM, geringe System-
+geschwindigkeit (oder der Preis) den Einsatz von diesen guten Desktops
+unpraktisch oder unm”glich machen.
+(z.B. betr„gt TeraDesk's Gr”e und Speicherbedarf bei „hnlichem Setup
+im Moment nur ca. 1/3 bis 1/2 von Jinnee!!).
+
+Zuerst wurde TeraDesk von Wout Klaren entwickelt. Version 1.41 erschien
+1994, danach passierte eine Weile nichts mehr.
+
+Version 1.42 wurde als erste unter der GPL (General Public License)
+ver”ffentlicht (2002).
+
+Version 2.0 wurde Ende 2002 von Henk Robbers als Adaption fr die
+modernen AES's (N.AES, XaAES und MagiC) geschrieben.
+
+Version 2.3 war das erste Ergebnis des gemeinsamen Einsatzes von
+Henk Robbers und Djordje Vukovic; es wurden einige neue Funktionen ein-
+gebaut.
+
+Die Version 3.0 war das Ergebnis der Zusammenarbeit von H.Robbers und
+D. Vukovic; es wurden weitgehende Verbesserungen in Sachen Funktionalit„t
+erreicht und das Programm wurde in groen Teilen neu gestaltet.
+
+Ab Version 3.0 hat haupts„chlich Djordje Vukovich die Entwicklung
+bernommen.
+
+Seit Version 4.04 gibt es TeraDesk auch als Coldfire-kompatibles
+Programm (DESK-CF.PRG, im Archiv enthalten). Diese Sources k”nnen mit
+dem AHCC-Compiler von H. Robbers kompiliert werden.
+
+Das Programm und die dazugeh”renden Dateien sind Freeware und open source.
+Es darf frei kopiert und vertrieben werden, solange die Bedingungen der
+GPL (siehe Datei 'COPYING') respektiert werden. Wird das Programm in einer
+PD-Sammlung vertrieben, so drfen nur die Material- und Versandkosten
+berechnet werden.
+
+Zu Tera Desktop geh”rende Dateien (im 'User-Archiv' TERA***B.ZIP):
+
+     COPYING          Kopie der GPL
+     DESKTOP.PRG      Das Tera Desktop Programm
+     DESKTOS.PRG      TOS-Version (kleiner, NUR TOS)
+     DESK_CF.PRG      Coldfire-kompatible Programmversion
+     DESKTOP.RSC      Englische Resource-Datei
+     DESKTOP.RSD      Englische Resource Definitions-Datei
+     ICONS.RSC        Monochrome Icons-Resource
+     CICONS.RSC       Farb-Icons Resource
+     README.TXT       Allgemeines (Englisch)
+     HIST_V34.TXT     Development-History (Englisch)
+     TERADESK.HYP     ST-Guide Hypertext (Englisch)
+     TERADESK.REF     Ref.-Datei fr Hypertext
+     TERADESK.INF     Konfigurations-Datei (Beispiel)
+     TERADESK.PAL     Paletten-Datei (Beispiel)
+
+Es ist auch ein 'Programmierer-Archiv' (TERA***S.ZIP) mit dem kompletten
+Source-Code (fr PureC 1.1) von Tera Desktop verfgbar.
+Die Coldfire-kompatible Version mu aber mit AHCC kompiliert werden!
+ 
+@endnode
+
+
+@node "Hardware- und Systemvoraussetzungen"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+
+@{U}1.2  Hardware- und Systemvoraussetzungen                         TeraDesk@{u}
+
+1.2.1 Hardware-Anforderungen
+1.2.2 TOS-Kompatibilit„t
+1.2.3 Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Hardware-Anforderungen"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+@image "udo_fo.img" 7
+          Hardware- und Systemvoraussetzungen
+
+@{U}1.2.1  Hardware-Anforderungen                                    TeraDesk@{u}
+
+Tera Desktop l„uft auf allen Atari-Computern der ST/STE-Serie und deren
+Nachfolgern TT, Falcon, Hades, Milan oder Emulatoren. Der Speicherbedarf
+ist ca. 200 kB - 300 kB (abh„ngig von der Konfiguration).
+Seit Version 4.04 gibt es eine Programmversion fr FireBee/Coldfire.
+
+Installiertes TT-RAM oder Alt-RAM wird von Teradesk automatisch erkannt
+und verwendet.
+
+Tera Desktop ist auch nur mit Diskettenlaufwerk voll funktionsf„hig; die
+Verwendung einer Festplatte wird jedoch dringend empfohlen.
+Auf Rechnern ohne Festplatte (aber mit genug RAM) k”nnen die TeraDesk-
+Dateien auf einer resetfesten RAM-Disk gespeichert werden, um die
+Startsequenz zu beschleunigen.
+
+Tera Desktop ist bezglich Datei-Kopieroperationen auf Rechnern ohne
+Festplatte und nur einem Diskettenlaufwerk nicht optimiert. Dateien und
+Ordner werden bei Tera Desktop einzeln (file-by-file) kopiert; das fhrt
+auf solchen Computern zu andauerndem Diskettenwechsel.
+
+Tera Desktop wurde nicht mit ROM-Port Cartridges getestet, die als
+Laufwerk 'c' (klein c) angemeldet sind. Es ist m”glich, das solche
+'Laufwerke' nicht erkannt werden oder andere Probleme entstehen.
+ 
+@endnode
+
+
+@node "TOS-Kompatibilit„t"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+@image "udo_fo.img" 7
+          Hardware- und Systemvoraussetzungen
+
+@{U}1.2.2 TOS-Kompatibilit„t                                         TeraDesk@{u}
+
+Tera Desktop funktioniert mit allen existierenden TOS-Versionen, aber
+erst ab TOS-Version 1.04 (auch 1.4 genannt) ist Tera Desktop wirklich
+vernnftig anzuwenden. Denn ab TOS-Version 1.04 gilt:
+
+- Man kann Ordner neu benennen.
+
+- Die Routinen fr Dateiprozesse sind viel besser und erlauben viel
+  mehr M”glichkeiten.
+
+- GEM-Programme (auch Tera Desktop selbst) k”nnen nach dem Booten
+  automatisch gestartet werden.
+
+- In TOS 1.0 und TOS 1.02 (1.2) gibt es einige gravierende Fehler.
+
+- Wegen der begrenzten Mengr”e bei TOS < 1.4 ist die Funktionalit„t
+  von Tera Desktop dort sehr eingeschr„nkt.
+
+Seit Version 2 l„uft Tera Desktop in modernen Multitask-Umgebungen wie
+MagiC, TOS mit Geneva, MinT mit N.AES, XaAES, MyAES oder Atari AES 4.1.
+Tera Desktop funktioniert auch mit Speicherschutz; allerdings kann es
+dadurch zu Problemen mit unsauber programmierten oder konfigurierten
+AV-Protokoll Clients kommen. Dies fhrt dann zum Absturz von TeraDesk.
+Siehe Das AV-Protokoll.
+
+TeraDesk wurde mit vielen Systemkonfigurationen getestet, ist aber
+keineswegs auf diese beschr„nkt:
+
+TOS 1.00 (RAM-loaded)
+
+TOS 1.02 + MinT 1.15.12 + AES 4.1 / N.AES / XaAES
+
+TOS 1.04
+TOS 1.04 (RAM-loaded)
+TOS 1.04 + NVDI 2.0
+TOS 1.04 + MinT 1.15.12 + AES 4.1 / N.AES / XaAES
+
+TOS 2.06
+TOS 2.06 + NVDI 4.11
+TOS 2.06 + NVDI 4.11 + WDialog 2
+TOS 2.06 + NVDI 4.11 + AES 4.1
+TOS 2.06 + NVDI 4.11 + MyAES
+TOS 2.06 + Geneva 4 / 6 + NVDI 4.11
+TOS 2.06 + MinT 1.15.12 + AES 4.1 / N.AES / XaAES
+TOS 2.06 + MinT 1.17.0  + NVDI 4.11 + AES 4.1 / N.AES / XaAES / MyAES
+
+TOS 3.05 + NVDI 2.0
+TOS 3.06
+
+Hades TOS 3.06 + oVDI
+Hades TOS 3.06 + MinT 1.16 + oVDI + N.AES / XaAES
+
+TOS 4.04
+TOS 4.04 + MinT 1.16 + AES 4.1 / N.AES / XaAES / MyAES
+
+Milan TOS 4.09 + MinT 1.15.12 + N.AES / XaAES
+
+KAOS TOS
+
+MagiC 6.0 + NVDI 5.0
+MagiC 6.1 + NVDI 4.11
+MagiC 6.2 + NVDI 4.11
+
+TeraDesk l„uft normalerweise (mit Einschr„nkungen) auch mit TOS 1.0; die
+letzten Versionen von Tera Desktop wurden allerdings damit nicht sehr
+intensiv getestet. Somit ist das Auftauchen von Problemen mit TOS 1.0
+durchaus m”glich.
+
+Tera Desktop kann bei alten Versionen von MinT oder Magic („lter als 1.12
+bzw. 3.0) abstrzen.
+
+Mit TOS 2.06 gab es ein Problem bei Mausklicks auf DesktopIcons; dies
+wurde versucht zu beheben aber es ist nicht ganz sicher, ob der Bug
+komplett entfernt ist. Dieses Problem k”nnte auch mit TOS 3.06 auftreten.
+
+Der Wechsel der Bildschirmaufl”sung funktioniert -je nach AES-
+unterschiedlich gut (nur untersttzt bei AES 4-Versionen). Mit TOS +
+Geneva oder TOS (+ Mint) + AES4.1 gibt es keinerlei Probleme, bei anderen
+Systemkonfigurationen funktioniert es bisher teilweise oder eventuell
+noch gar nicht.
+
+TeraDesk erkennt beim Start die vorhandenen TOS- und AES-Versionen sowie
+deren F„higkeiten und Einschr„nkungen automatisch. Falls eine TOS- oder
+AES-Version nicht korrekt antwortet, versucht TeraDesk die wahrschein-
+lichsten Werte zu ermitteln; diese sind nicht immer korrekt. Es kann also
+sein, das TeraDesk aufgrund falscher TOS/AES-Informationen mit unn”tigen
+Einschr„nkungen l„uft oder aber versucht, nicht vorhandene System-
+funktionen aufzurufen.
+
+Wird TeraDesk mit AESs wie z.B. XaAES oder MyAES verwendet, kann es zu
+unerwnschtem Verhalten von TeraDesk fhren; manche Funktionen sind bei
+diesen AESs noch nicht vollst„ndig implementiert. Probleme dieser Art
+werden normalerweise in der n„chsten AES-Version behoben.
+
+Wird TeraDesk mit Emulatoren verwendet, kann es (wegen teilweise unvoll-
+st„ndiger Emulation) zu Funktionseinschr„nkungen kommen. Eventuell werden
+dann z.B. manche Tastaturcodes nicht erkannt, die unsortierte Darstellung
+in Fenstern funktioniert nicht oder es kommt zu seltsamen Angaben bei
+'Eigentmer-ID' und 'Schreibschutz' fr Ordner/Dateien.
+
+Bei der aktuellen Version von Tera Desktop ist die Anzahl der Objekte
+in einem Verzeichnis und die Anzahl selektierter Objekte in einem
+Verzeichnisbaum auf 32767 begrenzt. Die maximale Gr”e pro Verzeichnis/
+Selektion betr„gt 2047 GB (2 TB), die Gr”e der Dateien in Unterordnern
+werden dabei nicht mitgerechnet. Partitionsgr”en werden bis maximal
+1 Milliarde Cluster korrekt angezeigt (min. 1 TB); diese Begrenzung kann
+in zuknftigen Versionen auf 2 EB erweitert werden.
+Die Gr”e einer einzelnen Datei darf maximal 2 GB betragen.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Untersttzte Bildschirm-Aufl”sungen"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+@image "udo_fo.img" 7
+          Hardware- und Systemvoraussetzungen
+
+@{U}1.2.3 Untersttzte Bildschirm-Aufl”sungen                        TeraDesk@{u}
+
+Tera Desktop funktioniert mit jeder Aufl”sung ab 320x200 Pixel (ST-LOW);
+der Betrieb mit h”heren Aufl”sungen ist jedoch zu empfehlen, weil
+-abh„ngig von der TOS-Version- wegen der begrenzten Mengr”e TeraDesk
+nur eingeschr„nkt nutzbar ist (zu kleiner Screen-Buffer).
+Diese Einschr„nkung betrifft dann einige entfernte Men-Objekte wenn ein
+zu kleiner Screen-Buffer erkannt wird (das sollte allerdings auer in
+ST-LOW und ST-MEDIUM Aufl”sung niemals auftreten):
+
+- In TOS 1.04 und „lter werden die Trennlinien entfernt.
+
+- In TOS 1.02 und „lter werden Objekte entfernt, so z.B.:
+
+       -L”schen...
+       -Drucken...
+       -@{"Darstellung unsortiert" LINK "Sortierung"}
+       -Sortierung umkehren
+       -GROSS/klein gemischt
+       -Diskette kopieren...
+       -@{"Gr”e zeigen" LINK "Datei-Informationen"}
+       -@{"Datum zeigen" LINK "Datei-Informationen"}
+       -@{"Zeit zeigen" LINK "Datei-Informationen"}
+       -@{"Attribute zeigen" LINK "Datei-Informationen"}
+       -Programmtypen...
+       -Farben und Fonts...
+       -Bildschirmoptionen...
+       -Sichern als...
+
+Alle diese (evtl. entfernten) Optionen k”nnen dann in der Konfigurations-
+Datei direkt ge„ndert werden. Natrlich sind diese Optionen immer noch
+durch Tasten-Shortcuts erreichbar. Siehe auch:  Desktop...
+
+Mit ST-HIGH Aufl”sung sollten mit keiner „lteren TOS-Version solche
+Probleme auftauchen. Siehe auch:  TOS-Kompatibilit„t.
+
+Manche AESs (z.B. XaAES) haben nicht alle Grafik-Objekte (z.B. radio-
+buttons) fr ST-LOW Aufl”sung optimiert, das kann mit TeraDesk zu
+fehlerhaften Darstellungen und/oder šberlappungen fhren.
+In solchen F„llen kann bei Tera Desktop die Darstellung von Objekten mit
+der Environment-Variable TERAENV ver„ndert werden.
+Siehe auch:  Darstellung von Dialog-Objekten.
+
+Wer TeraDesk (DESKTOP.RSC) in andere Sprachen bersetzen will sollte
+darauf achten da die Dialogboxen klein genug fr die ST-LOW-Aufl”sung
+sind. Leider kann das bei manche Sprachen zum Problem werden.
+
+Wird TeraDesk ausschlielich mit hoher Aufl”sung und mit Betriebssystemen
+verwendet,  welche lange Dateinamen untersttzen, so k”nnen mit einem
+Resource-Editor die Dialogboxen vergr”ert und somit auch die L„nge der
+scrollbaren Datei- und Pfadname-Feldern und des Suchbegriff-Feldes
+erweitert werden (siehe Scrollbare Eingabefelder).
+TeraDesk verwendet dafr eine sichere Routine, somit kann man die Gr”e
+dieser Felder an die eigenen Bedrfnisse anpassen.
+Achtung: Die L„nge von anderen alphanumerischen Eingabefeldern
+(z.B. Name-Masken) drfen NICHT ver„ndert werden!
+
+Die Bildschirm-Aufl”sung und -Farben k”nnen zusammen mit anderen Optionen
+-abh„ngig von verwendetem AES, TOS und Hardware- im Menu Optionen/
+Bildschirmoptionen... ver„ndert werden.
+Diese Option funktioniert nicht mit allen AESs; eine AES 4-Version ist
+jedenfalls unbedingt erforderlich.
+ 
+@endnode
+
+
+@node "Einige TeraDesk-spezifische Features"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+
+@{U}1.3  Einige TeraDesk-spezifische Features                        TeraDesk@{u}
+
+TeraDesk soll komfortabel und einfach zu benutzen sein, deshalb wurden
+einige Funktionen eingebaut, die andere Desktops nicht anbieten.
+Hier eine kleine Auswahl (ohne besondere Reihenfolge):
+
+- Die Tastatur-Shortcuts k”nnen fr alle Menoptionen frei definiert
+  werden.
+
+- Fr Verzeichnis-Fenster und angemeldete Dateitypen k”nnen „usserst
+  komplexe Masken verwendet werden (mehrere Wildcards, [ ], !, ~).
+  Siehe:  Maske setzen...
+
+- Es k”nnen Desktop-Icons und symbolische Links fr Netzwerk-Objekte
+  (http://, ftp://, mailto:, ...) definiert werden, diese kann man
+  selbstverst„ndlich auch den entsprechenden Programmen zuordnen.
+  Siehe:  Symbolische Links  DeskIcons zuweisen...
+          Anwendung anmelden...
+
+- Bei Eingabefeldern in Dialogen kann durch einen Tastendruck die Datei-
+  Auswahlbox ge”ffnet werden, um m”glichst komfortabel Ordner- oder
+  Dateinamen einzutragen. Dies ist bei Kommandozeilen fr TTP-Programme
+  besonders praktisch.  Siehe:  ™ffnen...
+
+- Kopier-Operationen k”nnen im 'Update'- und 'Wiederherstellen'-Modus
+  ausgefhrt werden.  Siehe:  Objekte 'draggen'
+
+- Auch bei sehr groen Partitionen oder Dateien wird die Gr”e korrekt
+  angezeigt.  Siehe:  Info...  Verzeichnis-Fenster
+
+- Disketten k”nnen sowohl mit Standard-Formaten als auch mit 'exotischen'
+  (vom Standard abweichenden) Werten formatiert werden.
+  Siehe:  Diskette formatieren...
+
+- Es kann mehr als nur ein Programm einem Dateityp zugeordnet werden.
+  Siehe:  Anwendung anmelden...
+
+- Bei Dateien, die bisher keinem Programm zugeordnet sind, kann ein
+  (angemeldetes) Programm zum ™ffnen ausgew„hlt werden; diese Zuordnung
+  kann dann auch direkt gespeichert werden.  Siehe:  ™ffnen...
+
+- Programme k”nnen als verschiedene 'Spezial-Anwendungen' angemeldet
+  werden, um TeraDesk-eigene Routinen zu erweitern bzw. zu ersetzen.
+  Siehe:  Spezial-Anwendung
+
+- Eine dieser Spezial-Anwendungen ist die Zuordnung eines Programms auf
+  die rechte Maustaste (z.B. Taskleiste, externer Dateiviewer, Kopier-
+  programm...).  Siehe:  Spezial-Anwendung
+
+- Es k”nnen Dateiinhalte verglichen werden.  Siehe:  Vergleichen...
+
+- TeraDesk hat eine systemweite Font-Auswahl; diese kann von anderen
+  Programmen genutzt werden.  Siehe:  Der Font Auswahl-Dialog.
+
+- Dateien k”nnen in TeraDesk's Dateiviewer im Hex-Modus oder im Text-
+  Modus angezeigt werden.  Siehe:  Viewer-Fenster
+ 
+@endnode
+
+
+@node "Rechtliches"
+@toc "Allgemeines"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Allgemeines
+
+@{U}1.4  Rechtliches                                                 TeraDesk@{u}
+
+TeraDesk wurde ausgiebig getestet, kann aber immer noch Fehler enthalten.
+Es ist auch m”glich, da TeraDesk mit anderen als den getesteten Systemen
+und Konfigurationen nur eingeschr„nkt funktioniert.
+Siehe TOS-Kompatibilit„t.
+
+Trotz sorgf„ltiger Entwicklung und umfangreicher Tests kann keine Gew„hr-
+leistung fr die Richtigkeit des Inhalts dieser Dokumentation und die
+einwandfreie Funktion von Tera Desktop bernommen werden.
+
+DIE AUTOREN šBERNEHMEN KEINERLEI HAFTUNG FšR IRGENDWELCHE DIREKTEN ODER
+INDIREKTEN SCHDEN JEDER ART, die durch die Benutzung von "Tera Desktop"
+oder dessen Untauglichkeit fr einen bestimmten Zweck entstehen.
+Die Verwendung von TeraDesk erfolgt auf eigene Gefahr!
+Siehe auch die Datei 'COPYING' (Regeln der General Public License).
+ 
+@endnode
+
+
+@node "Installation"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}2  Installation                                                  TeraDesk@{u}
+
+Tera Desktop wird wie folgt installiert:
+
+1. Erstellen Sie einen neuen Ordner (z.B. DESKTOP oder TERADESK) auf
+Diskette, Festplatte (oder auf einer RAM-Disk) fr die Tera Desktop-
+Dateien. Tera Desktop kann auch ins Root-Verzeichnis geschrieben werden;
+dies ist allerdings keine saubere L”sung.
+
+2. Kopieren Sie folgende Dateien in den neuen Ordner:
+
+       DESKTOP.PRG  (fr Multitasking-Systeme) @{B}ODER@{b}
+       DESKTOS.PRG  wenn NUR Single-TOS verwendet wird @{B}ODER@{b}
+       DESK_CF.PRG  Die Version fr Coldfire/FireBee.
+       DESKTOP.RSC
+       ICONS.RSC    (die monochrome-Icons) UND/ODER
+       CICONS.RSC   (NUR wenn das AES @{"Farb-Icons" LINK "Die Icons-Dateien"} untersttzt)
+
+DESKTOP.PRG funktioniert auch mit Single-TOS; DESKTOS.PRG spart
+lediglich ein paar Kilobyte Arbeitsspeicher, indem Funktionen, welche
+fr Single-TOS nicht relevant sind, entfernt wurden.
+Ebenso wird auch das AV-Protokoll unter Single-TOS nur eingeschr„nkt
+untersttzt und berflssige Funktionen wurden entfernt.
+Achtung: Konfigurations-Dateien von DESKTOP.PRG sollten nicht fr die
+Single-TOS Version verwendet werden, da einige Eintr„ge zu Problemen
+fhren k”nnten (z.B. Referenzen zu symbolischen Links oder lange
+Dateinamen).
+
+Wenn einzig DESKTOS.PRG benutzt wird, kann man es (wenn man will) nach
+dem Kopieren in DESKTOP.PRG umbenennen; das Programm meldet sich beim
+AES in jedem Fall als 'DESKTOP' an.
+
+Auf der FireBee (Coldfire-System) mu "DESK_CF.PRG" verwendet werden.
+Auch hier kann man den Programmnamen „ndern, wenn man will.
+
+Die Coldfire-Version l„uft auch auf MC68020 und schnelleren Systemen.
+
+Optional k”nnen die Beispiel-Konfigurationsdateien TERADESK.INF und
+TERADESK.PAL aus dem \EXAMPLES-Ordner kopiert werden. Diese sind voll
+lauff„hig, sind aber lediglich als Beispiel gedacht und vielleicht fr
+Ihr System nicht optimal.
+Wird beim Start von TeraDesk keine TERADESK.INF-Datei gefunden, so
+erscheint eine Warnmeldung. Damit diese nicht wieder auftaucht sollte
+man danach im Menu 'Optionen' auf 'Einstellungen sichern' klicken.
+Selbstverst„ndlich kann man Tera Desktop vor dem Sichern noch in
+vielerlei Hinsicht auf die eigenen Bedrfnisse konfigurieren.
+
+Wer TeraDesk lieber in einer anderen Sprache bevorzugt, mu einfach die
+Datei DESKTOP.RSC (und evtl. ICONS.RSC und CICONS.RSC) durch die ber-
+setzten Resource-Dateien ersetzen; Links dazu finden sich auf der
+TeraDesk-Homepage. Auer Standard-Dateinamen und der '.RSC not found'-
+Warnung sind alle Text-Strings in der Resource-Datei untergebracht. Wer
+Tera Desktop in andere Sprachen bersetzen will, bitte eine Mail an den
+Autor schicken.
+
+3. Wenn ST-Guide oder ein anderer Hypertext-Viewer installiert ist, kann
+man TERADESK.HYP und TERADESK.REF aus dem \DOC-Ordner in das Verzeichnis
+kopieren, in dem auch die anderen Hypertexte gespeichert sind. Melden
+Sie dann Ihren Hypertext-Viewer (Programm oder Accessory) als
+ausfhrendes Programm fr .HYP-Dateien an und sichern Sie die
+Einstellungen. Danach k”nnen Sie jederzeit die Hypertext-Hilfe von
+TeraDesk mit [Shift][Help] aufrufen.
+Links zu anderssprachigen Hypertexten finden sich auf der
+TeraDesk-Homepage.
+
+Nachdem alle notwendigen Dateien kopiert sind, kann TeraDesk wie blich
+durch Doppelklick gestartet werden.
+
+4. Damit andere Anwendungen optimal mit TeraDesk arbeiten, sollten die
+folgenden Environment-Variablen gesetzt werden:
+
+ AVSERVER=DESKTOP
+ FONTSELECT=DESKTOP
+
+Diese melden TeraDesk als AV-Server (siehe Das AV-Protokoll)  und als
+Font-Selektor (siehe Das FONT-Protokoll) an. Bei Single-TOS werden diese
+Protokolle von manchen Accessories benutzt (wie z.B. ST-Guide); bei
+Multitasking-Systemen von gleichzeitig laufenden Applikationen.
+Siehe auch:  Untersttzte Protokolle.
+
+Wie Environment-Variablen definiert werden ist abh„ngig vom verwendeten
+Betriebssystem und Utilities.
+
+5. TeraDesk sollte beim Booten des Rechners automatisch mitgestartet
+werden. Bei TOS-Versionen ab 1.04 (auch TOS 1.4 genannt) mu man dafr
+DESKTOS.PRG als Applikation anmelden und den Bootstatus von 'Normal' auf
+'Auto' umstellen. Beim n„chsten Booten bernimmt TeraDesk dann alle
+Desktop-Tasks, deshalb sollte man jetzt erst noch alle anderen
+Applikationen abmelden, alle unn”tigen Icons vom Original-Desktop
+entfernen und alle Fenster schlieen. Danach 'Arbeit sichern' nicht
+vergessen!
+Das ist nicht unbedingt n”tig, reduziert aber die Gr”e von DESKTOP.INF
+(oder NEWDESK.INF) und spart auch ein wenig RAM.
+
+Mit TOS-Version 1.0 oder 1.02 mu man ein Programm wie z.B. STARTGEM
+verwenden, mit dem DESKTOP.PRG aus dem AUTO-Ordner gestartet werden kann.
+
+Wird Atari AES 4.1 verwendet, mu man in der GEM.CNF Datei folgenden
+Eintrag erg„nzen oder „ndern:
+
+ shell Pfad\zu\TeraDesk\desktop.prg
+
+Wobei man hier natrlich statt 'Pfad\zu\TeraDesk\desktop.prg' den
+tats„chlich verwendeten Pfad/Namen angeben mu
+(z.B. C:\Teradesk\desktop.prg).
+
+Dann wird das AES 4.1-Desktop beim Booten gar nicht geladen und TeraDesk
+bernimmt alle Desktop-Funktionen. Das ist die eleganteste L”sung und
+spart nebenbei ein wenig RAM.
+
+Verwendet man Geneva, N.AES, XaAES oder MyAES, mu man auf „hnliche Weise
+in den entsprechenden Konfigurations-Dateien TeraDesk als Standard-Shell
+eintragen (z.B. in GEM.CNF, N_AES.CNF, XAAES.CNF oder MYAES.CNF).
+N„heres dazu findet sich in den entsprechenden AES-Dokumentationen.
+
+Bei MagiC mu man in der Datei MAGX.INF folgende Zeile eintragen (oder
+„ndern):
+
+ #_SHL PFAD\ZU\TERADESK\DESKTOP.PRG
+
+Wobei man hier wiederum natrlich statt 'Pfad\zu\TeraDesk\desktop.prg'
+den tats„chlich verwendeten Pfad/Namen angeben mu.
+
+Bei einem gr”eren Crash verwendet MagiC beim Neustart nicht die hier
+angegebene Shell sondern das MagiC-eigene Desktop (Magxdesk). Das ist
+'hard-coded' in MagiC und k”nnte nur durch ndern von MAGIC.RAM ge„ndert
+werden.
+
+6. Manche AES-Versionen (z.B. Geneva 4) untersttzen eigentlich die
+Verwendung von @{"Farb-Icons" LINK "Die Icons-Dateien"}, mit Tera Desktop funktionieren manche Farb-
+Icons aber nicht.
+In solchen F„llen (und wenn die problematischen Icons nicht ersetzt
+werden k”nnen) mu die Datei CICONS.RSC entfernt werden, TeraDesk ver-
+wendet dann nur die monochromen Icons. Wenn man so viel Arbeitsspeicher
+wie m”glich sparen will, kann man das natrlich auf jedem Rechner/OS
+machen.
+
+7. Die Icons-Dateien von TeraDesk enthalten lediglich einen kleinen Satz
+Icons. Wem das nicht ausreicht, der kann mit einem Resource-Editor eigene
+Icons hinzufgen oder die TOS-Resource-Datei(en) DESKICON.RSC und/oder
+DESKCICN.RSC in ICONS.RSC bzw. CICONS.RSC umbenennen und im TeraDesk-
+Ordner speichern.
+Resource-Dateien fr Tera Desktop mssen aber auf jeden Fall ein paar
+grundlegende Icons enthalten, denn TeraDesk registriert seit V2.0 die
+Icons nach Namen und nicht nach Index.
+Folgende Icon-Namen sollten in jeder Icons-Resource vorhanden sein:
+
+ FLOPPY, HARD DISC, TRASH, PRINTER, FOLDER, FILE, APP
+
+Siehe auch:  Die Icons-Dateien.
+
+8. Das grundlegende Verhalten von TeraDesk kann (oder wird in Zukunft)
+durch die Environment-Variable TERAENV bestimmt, haupts„chlich weil
+manche Parameter vor den Konfigurations-Dateien bestimmt sein mssen.
+Der Wert der TERAENV-Variable mu in Grobuchstaben angegeben werden; im
+Moment werden nur die Flags 'A' und 'D' verwendet:
+
+ TERAENV=A   oder  TERAENV=D   oder TERAENV=AD
+
+Diese beeinflussen die Implementierung des ARGV-Protokolls sowie die
+Darstellung von Dialog-Objekten. Wenn die Variable TERAENV nicht
+definiert ist, funktioniert TeraDesk in normaler Weise.
+
+Diese Variable wird nur beim Start von TeraDesk ausgewertet, sp„tere
+nderungen von TERAENV haben keine Wirkung.
+
+9. Da sich das Format der Konfigurations-Dateien von Version zu Version
+ein wenig ver„ndern kann, sollte man bei einer neuen Version erst mal
+'Einstellungen laden...' und dann 'Einstellungen sichern', dann bleiben
+diese Dateien up-to-date.
+
+
+Siehe auch: Das ARGV-Protokoll  Darstellung von Dialog-Objekten
+ 
+@endnode
+
+
+@node "Grundlagen"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}3  Grundlagen                                                    TeraDesk@{u}
+
+ 3.1  Konventionen
+ 3.2  Programmtypen
+ 3.3  Programme starten
+ 
+@endnode
+
+
+@node "Konventionen"
+@toc "Grundlagen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Grundlagen
+
+@{U}3.1  Konventionen                                                TeraDesk@{u}
+
+1. Es wird vorausgesetzt, das der Leser mit der Bedienung des Standard-
+Atari Desktop vertraut ist, da Tera Desktop -soweit sinnvoll und m”glich-
+sich an diesen Konventionen orientiert.
+
+2. Objekte werden selektiert, indem man den Mauszeiger darber platziert
+und einmal mit dem linken Mausknopf klickt. Das Icon wird dann invers
+dargestellt oder, wenn es ein animiertes Icon ist, wird die 'selektierte'
+Form dargestellt. Viele Icons und Objekte in Dialogboxen k”nnen ebenfalls
+durch Tastatur-Shortcuts ausgew„hlt werden.
+
+Man kann mehrere Objekte ausw„hlen, indem man beim Anklicken der Objekte
+die [SHIFT]-Taste gedrckt h„lt. Bei gehaltener [SHIFT]-Taste kann man
+einzelne Objekte auch wieder deselektieren.
+
+Des weiteren kann man mehrere Objekte auf einmal selektieren, indem man
+ein 'Gummiband' aufzieht: Dazu platziert man den Mauszeiger am besten
+links ber dem ersten Objekt und zieht bei gehaltener linker Maustaste
+einen 'Kasten' um die auszuw„hlenden Items; wenn man die Taste losl„t,
+so sind alle Objekte in diesem 'Kasten' selektiert.
+
+Objekte im obersten ge”ffneten Fenster k”nnen auch durch Verwendung des
+@{"Autoselektors" LINK "Verzeichnis-Fenster"} gefunden und selektiert werden:
+Man gibt einfach die ersten Buchstaben des gesuchten Objektes auf der
+Tastatur ein und alle Dateien und Ordner, deren Namen in diese Maske
+passen, werden selektiert.
+
+3. Dateien werden 'ge”ffnet', indem man den Mauszeiger darber platziert
+und mit der linken Maustaste doppelt klickt (ein einfacher Klick mit der
+rechten Maustaste geht auch, solange diese nicht mit einer installierten
+Anwendung belegt ist - siehe Spezial-Anwendung). Man kann die Datei auch
+zuerst selektieren und dann mit der Option '™ffnen...' aus dem Men
+@{"'Datei'" LINK "Men: Datei"} ”ffnen.
+
+4. Mit Buchstaben oder W”rtern in rechteckigen Klammern sind immer die
+entsprechenden Tasten auf der Tastatur gemeint, z.B. [Return], [Q] usw.
+
+5. Mit Masken kann man aufgrund einer Angabe von Buchstaben oder Zeichen
+eine Vorauswahl treffen. Masken k”nnen sowohl 'normale' Zeichen als
+auch die Symbole '*' und '?' enthalten. TeraDesk erlaubt ebenfalls
+spezielle Angaben wie [<Zeichen>] und !<Zeichen>, somit kann man sehr
+einfach Objektgruppen selektieren (oder von der Selektion ausschlieen).
+
+'*' steht fr jedes Zeichen in beliebiger Anzahl, somit gilt:
+
+- A*B pat auf AB, AAB, ACB, AAAB, ACCB, ABCB usw.
+- A* pat auf A, AB, AAA, ABC, ABCD usw.
+
+'?' steht fr ein einzelnes Zeichen:
+
+- A?B pat auf AAB, ACB, A B usw.
+
+Bei Single-TOS ist die Standard-Maske normalerweise '*.*' (alle Dateien
+werden angezeigt); bei Multitasking-Systemen meistens einfach '*'.
+Siehe auch:  Maske setzen...
+
+6. Die meisten Men-Items und Dialog-Buttons sind auch durch eine Taste
+(oder Tastenkombination) zu erreichen.
+
+Siehe auch:  Tastatur-Shortcuts.
+ 
+@endnode
+
+
+@node "Programmtypen"
+@toc "Grundlagen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Grundlagen
+
+@{U}3.2  Programmtypen                                               TeraDesk@{u}
+
+Es gibt mehrere Typen von Programmen (Applikationen, Anwendungen):
+
+Der Programmtyp h„ngt davon ab, wie es geschrieben wurde und in wie weit
+es vom Benutzer gesteuert werden soll. Programme werden meistens durch
+die Datei-Endung erkannt, das ist allerdings nicht immer so!!
+
+Es werden 5 Programmtypen erkannt:
+
+             Typ   Datei-      Beschreibung
+                   Endungen
+
+        1.   GEM   .PRG, .APP  Programm benutzt GEM und verlangt keine
+                               Parameter-Eingabe.
+
+        2.   GTP   .GTP        Programm benutzt GEM und verlangt die
+                               Eingabe von Parametern. (Die GTP-Endung
+                               wird beim Standard-Desktop nicht erkannt)
+
+        3.   TOS   .TOS        Programm benutzt kein GEM und verlangt
+                               keine Parameter.
+
+        4.   TTP   .TTP        Programm benutzt kein GEM, verlangt aber
+                               die Eingabe von Parametern.
+
+        5.   ACC   .ACC        Accessory
+
+Parameter sind zus„tzliche Daten, die Programmen beim Start bergeben
+werden, das k”nnen auch Dateinamen sein.
+
+Das Desktop erkennt diese Programmtypen aufgrund der Endung und reagiert
+bei deren Start entsprechend. Bei TTP- und GTP-Programmen wird eine
+Dialog-Box ge”ffnet, in die man eine 'Kommandozeile' eingeben kann.
+
+Auch wenn es m”glich ist, Programme umzubenennen, sollte man das nicht
+unbedingt tun. TeraDesk erlaubt es trotzdem, auch andere Dateiendungen
+als ausfhrbare Programme anzumelden.
+
+Wenn man also ein GEM- oder TOS-Programm in .GTP oder .TTP umbenennt, so
+werden alle in der Kommandozeile eingegebenen Parameter ignoriert;
+umgekehrt funktionieren GTP- oder TTP-Programme vielleicht nicht richtig,
+wenn ihnen wichtige Startparameter fehlen.
+
+Siehe auch:  Anwendung anmelden...  Programmtypen...  ™ffnen...
+             Der Programmtyp-Dialog   Der Kommandozeilen-Dialog
+ 
+@endnode
+
+
+@node "Programme starten"
+@toc "Grundlagen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Grundlagen
+
+@{U}3.3  Programme starten                                           TeraDesk@{u}
+
+Programme k”nnen -beim Standard-Desktop wie bei Tera Desktop- auf mehrere
+Arten gestartet (ausgefhrt) werden:
+
+1.  Durch Doppelklick (oder Rechtsklick) auf dessen Namen oder Icon in
+einem Verzeichnis-Fenster. Bei TTP- oder GTP-Programmen ”ffnet sich der
+Kommandozeilen-Dialog, bevor das Programm gestartet wird.
+
+2.  Durch Doppelklick (oder Rechtsklick) auf ein Desktop-Icon, welches
+man fr dieses Programm angemeldet hat.
+
+3.  Man kann das Programm beim System anmelden und einer Funktions-Taste
+(F 1- F 20) zuweisen ('Anwendung anmelden...'-Dialog); das Programm
+wird dann durch Drcken der entsprechende F-Taste gestartet.
+
+4.  Man kann das Programm beim System anmelden und als 'Boot' (oder bei
+TeraDesk als 'Autostart') markieren; in TeraDesk werden diese Programme
+beim Start automatisch eins nach dem anderen mitgestartet.
+Siehe Anwendung anmelden...
+
+5.  Man kann auf ein diesem Programm zugeordneten Dateityp doppelklicken
+(siehe Anwendung anmelden...). Das Programm wird dann gestartet und der
+Dateiname dem Programm als Parameter bergeben.
+
+6.  Letztlich kann man ein Dokument mit gehaltener linker Maustaste auf
+ein Programm-Icon ziehen und dort ablegen. Wenn das Programm das Format
+des Dokuments akzeptiert (siehe Anwendung anmelden...), wird es wie in
+Methode 5 gestartet.
+
+Accessories k”nnen bei Single-TOS nicht vom Desktop aus gestartet werden,
+diese werden immer beim Booten gestartet und durch Klicken auf ihren
+Men-Eintrag aktiviert.
+
+Allerdings kann man bei Single-TOS allen Accessories auch Dateitypen
+zuordnen, so da die Accessories bei Doppelklick auf die jeweilige Datei
+ge”ffnet werden. Dazu mu das Accessory die VA_START-Nachricht verstehen
+(siehe Das AV-Protokoll). Man sollte z.B. ST-Guide als ausfhrendes
+Programm fr .HYP-Dateien anmelden, auch wenn ST-Guide als Accessory
+l„uft.
+
+Bei Multitasking-Systemen ist es m”glich, Programme mehrfach zu starten.
+Tera Desktop bietet hierzu folgende M”glichkeiten:
+
+- L„uft das Programm noch nicht, wird es -logischerweise- gestartet.
+
+- Ist das Programm bereits aktiv, dann gilt:
+  . Bei den Methoden 5 und 6 wird immer der Dateiname an das bereits
+    laufende Programm bergeben.
+  . In allen anderen F„llen und auch wenn ein Dokument mit gehaltener
+    [Alternate]-Taste  auf ein Programm-Icon gezogen wird, fragt TeraDesk
+    nach ob das Programm ein weiteres Mal gestartet werden soll. Bei 'Ja'
+    wird das Programm mit den bergebenen Parametern nochmals gestartet,
+    bei 'Nein' werden die Parameter an die bereits laufende Applikation
+    bergeben.
+
+Siehe auch:  Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Mens und Dialoge"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}4  Mens und Dialoge                                             TeraDesk@{u}
+
+4.1  Men: Desk
+4.2  Men: Datei
+4.3  Men: Darstellung
+4.4  Men: Fenster
+4.5  Men: Optionen
+
+4.6  Tastatur-Shortcuts
+
+4.7  Der ListBox-Dialog
+4.8  Der Programmtyp-Dialog
+4.9  Der Icon Auswahl-Dialog
+4.10 Der Font Auswahl-Dialog
+4.11 Der Kopieren-Dialog
+4.12 Der Namenskonflikt-Dialog
+4.13 Der Kommandozeilen-Dialog
+4.14 Der Hilfe-Dialog
+
+4.15 Scrollbare Eingabefelder
+
+4.16 Darstellung von Dialog-Objekten
+ 
+@endnode
+
+
+@node "Men: Desk"
+@toc "Mens und Dialoge"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.1  Men: Desk                                                  TeraDesk@{u}
+
+Der erste Eintrag ist hier immer fr Programminformationen reserviert.
+Die anderen Eintr„ge sind Slots fr die aktiven Accessories.
+
+4.1.1  šber TeraDesk...
+ 
+@endnode
+
+
+@node "šber TeraDesk..."
+@toc "Men: Desk"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Desk
+
+@{U}4.1.1  šber TeraDesk...                                          TeraDesk@{u}
+
+Hier finden sich Informationen ber TeraDesk selbst; so z.B. Copyright-
+Informationen, die Versions-Nummer und das Erstellungs-Datum von
+Tera Desktop.
+
+Des weiteren werden hier die TOS- und AES-Version und der gr”te freie
+Speicherblock (ST- und TT-RAM) angezeigt. Achtung: Hier wird NUR der
+gr”te freie Speicherblock gezeigt, evtl. kleinere freie Bl”cke werden
+nicht bercksichtigt.
+ 
+@endnode
+
+
+@node "Men: Datei"
+@toc "Mens und Dialoge"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.2  Men: Datei                                                 TeraDesk@{u}
+
+Die Funktionen im Men 'Datei' betreffen verschiedene Datei-, Ordner-,
+Disketten- und Festplatten-Operationen.
+
+   4.2.1  ™ffnen...
+   4.2.2  Info...
+   4.2.3  Neu...
+   4.2.4  Vergleichen...
+   4.2.5  Suchen...
+   4.2.6  Drucken...
+   4.2.7  L”schen...
+   4.2.8  Alle ausw„hlen
+   4.2.9  Diskette kopieren...
+   4.2.10 Diskette formatieren...
+   4.2.11 Ende/Shutdown
+ 
+@endnode
+
+
+@node "™ffnen..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.1  ™ffnen...                                                 TeraDesk@{u}
+
+Mit dieser Aktion kann man ein oder mehrere selektierte Objekte ”ffnen,
+abh„ngig vom Typ des (der) Objekts(e).
+
+Ist das ausgew„hlte Objekt ein Laufwerk oder ein Ordner, so wird ein
+Verzeichnisfenster mit dem @{"Inhalt" LINK "Main"} ge”ffnet. Sind mehrere Objekte ausge-
+w„hlt, wird fr jedes Objekt ein eigenes Fenster ge”ffnet.
+
+Ist das ausgew„hlte Objekt ein ausfhrbares Programm, wird es gestartet
+(oder die Kommandozeilen-Parameter werden an ein bereits aktives Programm
+bergeben, siehe Programme starten). Sind mehrere Objekte ausgew„hlt, so
+wird bei Single-TOS nur das erste selektierte Programm gestartet.
+Bei Multitasking-Systemen werden die Programme nacheinander mit ein paar
+Sekunden Abstand gestartet, damit jedes Programm genug Zeit hat, um sich
+zu konfigurieren, Speicher freizugeben usw.
+
+Ist das ausgew„hlte Objekt eine Datei und dieser Dateityp wurde bereits
+einer Anwendung zugeordnet, so wird das Programm mit der selektierten
+Datei ge”ffnet (siehe oben). Ist dieser Dateityp mehr als einer Anwendung
+zugeordnet, wird ein Auswahldialog mit den angemeldeten Programmen
+gezeigt.
+
+An bereits aktive Anwendungen wird die Datei mittels VA_START-Nachricht
+bergeben (siehe Das AV-Protokoll).
+
+Ist das Objekt ein symbolischer Link, sucht TeraDesk erst das Original-
+Objekt und fhrt dann -wie oben- die entsprechende Aktion aus.
+(Siehe Symbolische Links)
+
+Wenn 'Netzwerk-Objekte' wie Web-Seiten oder ftp-Server Applikationen als
+'Dateitypen' zugeordnet sind, k”nnen auch diese mit '™ffnen' ge”ffnet
+werden. Bei solchen 'Netzwerk-Objekten' sollten die Namen mit 'http:',
+'https:', 'ftp:' oder 'mailto:' beginnen. Siehe  Anwendung anmelden...
+
+Ist das Objekt weder ein Programm noch ein zugeordneter Dateityp, so wird
+ein Auswahl-Dialog mit mehreren Optionen ge”ffnet:
+
+- 'Zeigen' ”ffnet ein Text-Fenster (Viewer) mit der ausgew„hlten Datei.
+  Die Datei kann wahlweise als Text oder im 'HEX dump'-Format angezeigt
+  werden.
+
+- 'Editieren' ”ffnet einen Editor (wenn angemeldet) mit der ausgew„hlten
+  Datei.
+
+- Bei '™ffnen' wird die Datei als ausfhrbares Programm behandelt, auch
+  wenn dieser Dateityp nicht als ausfhrbares Programm angemeldet wurde.
+  Der Programmtyp-Dialog erscheint, in welchem man fr die selektierte
+  Datei einen Programmtyp setzen kann (Zuordnung ist nicht permanent).
+  Dann wird die Datei als Programm gestartet.
+
+- 'Mit' ”ffnet den ListBox-Dialog; dort kann man ein Programm ausw„hlen,
+  mit dem die Datei ge”ffnet werden soll. Man kann entweder einen Eintrag
+  selektieren und dann auf 'OK' klicken oder einen Eintrag doppelklicken;
+  die entsprechende Anwendung wird dann sofort mit der Datei gestartet.
+  Auch kann man hier gleich diese Datei oder den Dateityp einer Anwendung
+  zuordnen, damit die Datei (der Dateityp) immer mit diesem Programm
+  ge”ffnet wird.
+
+Dieser Auswahl-Dialog wird immer angezeigt, wenn man beim ™ffnen einer
+Datei die [Alternate]-Taste gedrckt h„lt.
+
+Ist kein Objekt selektiert, wird bei '™ffnen' eine Dialogbox ge”ffnet, in
+der man die Pfadangaben und den Namen eines Objekts in ein
+'@{"Scrollbares Eingabefeld" LINK "Scrollbare Eingabefelder"}' eingeben kann.
+TeraDesk versucht den Datei-Typ zu erkennen (Datei, Ordner, Programm oder
+ein bereits zugeordneter Dateityp) und handelt entsprechend (siehe oben).
+Wird hier eine Anwendung angegeben, so kann man nach einem Leerzeichen
+zus„tzliche Startparameter bergeben.
+
+Der Eintrag in dieser Box bleibt solange erhalten, bis eine andere
+Anwendung gestartet wird.
+
+Ist der Textcursor in einem Eingabefeld platziert, kann man durch Drcken
+der [Insert]-Taste oder durch Doppelklick in das Feld eine Dateiauswahl-
+Box aufrufen.
+
+Enth„lt der Name oder ein anderer Parameter in der Kommandozeile ein oder
+mehrere Leerzeichen, so sollten diese Namen in Anfhrungszeichen
+( ' oder " ) gesetzt werden.
+ 
+@endnode
+
+
+@node "Info..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.2  Info...                                                   TeraDesk@{u}
+
+Mit Info... kann man Informationen ber selektierte Objekte auf dem
+Desktop oder in Verzeichnis-Fenstern erhalten:
+
+1. Bei einer Datei werden Name, Pfad, Zeit/Datum des letzten Zugriffs,
+die Gr”e und die Datei-Attribute angezeigt. Ist diese Datei (Typ) einer
+Anwendung zugeordnet, so wird auch der Name dieses Programms angezeigt.
+Bei einem ausfhrbaren Programm sind hier zus„tzlich die Header-Flags
+des Programms zu finden.
+
+Name, Zugriffsdatum und -Zeit einer Datei k”nnen ge„ndert werden; ebenso
+die Dateiattribute (Schreibschutz, Archiv, Hidden und System).
+Natrlich mu ein eventueller Schreibschutz zuerst entfernt werden, bevor
+man andere Informationen „ndern kann. L„t man Zeit- und Datumsfeld leer,
+wird die momentane Systemzeit eingetragen.
+
+Wenn das selektierte Objekt auf einer 'ext2' oder anderen Unix-Partition
+gespeichert ist, werden anstelle der FAT-Dateiattribute die Zugriffs-
+rechte und User/Group-IDs angezeigt. In diesem Fall kann man in 12 Boxen
+Lese-, Schreib- und 'Execute'-Rechte sowie die Spezial-Flags (Sticky,
+SetGID, SetUID) fr 'World', 'Group' und 'User' (Eigentmer) ver„ndern.
+'User' (Eigentmer)- und 'Group'-IDs sind ebenfalls ver„nderbar.
+
+@{U}Wichtig:@{u}
+- Die SetGID- und SetUID-Flags sollte man nur „ndern, wenn man
+  wirklich wei, was man tut!! Siehe Dokumentation/Fchmod()-Funktion.
+
+- Bei manchen NFS (Network File Systems) funktioniert das Ver„ndern von
+  Benutzerrechten und Gruppen/User-IDs nicht, wenn dort die Funktion
+  "User-ID mapping" aktiviert ist.
+
+2. Bei einem Ordner werden Name, Erstellungs-Zeit/Datum, die Anzahl der
+darin enthaltenen Dateien/Ordner und die Gr”e in Bytes angezeigt; ebenso
+die Ordner-Attribute (Readonly, Archive, Hidden und System). Diese k”nnen
+bei TOS allerdings nicht ver„ndert werden. Auf Unix-Dateisystemen gilt
+dasselbe wie oben.
+
+Ab TOS-Version 1.04 k”nnen Ordner umbenannt werden.
+
+3. Bei einem symbolischen Link werden der Name, Erstellungs-Zeit/Datum
+und die Gr”e angezeigt. Datei-Attribute werden ebenfalls dargestellt,
+Ver„nderungen an diesen haben aber KEINEN Einflu auf den Link selbst.
+Der Pfad und Name des Original-Objekts k”nnen editiert werden (dabei
+wird der Symbolische Link gel”scht und ein neuer erstellt).
+
+4. Ist das selektierte Objekt ein Laufwerk, so wird der Laufwerks-
+Buchstabe und -Name, die Gesamtgr”e und Cluster-Gr”e sowie die Anzahl
+der belegten und freien Bytes angezeigt.
+Wenn das Laufwerk (Diskette) leer ist, k”nnen sich die Angaben bei
+'Gesamtgr”e' und 'Bytes frei' unterscheiden; dies ist jedoch ein Fehler
+in TOS.
+
+Mit dem Button 'Mehr' werden die Anzahl der Dateien (+Links) und Ordner
+auf diesem Laufwerk angezeigt. Bei groen Partitionen kann das etwas
+l„nger dauern.
+
+5. Wurde kein Objekt selektiert, zeigt Tera Desktop die Laufwerks-Info
+des obersten ge”ffneten Fensters; ist der TeraDesk-Viewer ge”ffnet, so
+werden Informationen ber die darin ge”ffnete Datei angezeigt.
+
+Ist die Gr”e eines selektierten Objekts gr”er als 9999999 Byte, so wird
+diese in Kilobyte (1 KB = 1024 B) oder in Megabyte (1 MB = 1048576 B)
+angezeigt (nicht in Bytes); es wird dann auf den n„chsth”heren Wert auf-
+gerundet. Bei Objektgr”en ber 2 TB (oder bei Partitionsgr”en ber
+1 Milliarde Cluster) kann TeraDesk diese Daten allerdings nicht mehr
+korrekt anzeigen. Die aktuelle Version kann maximal Informationen ber
+32676 Objekte pro Ordner/Partition korrekt anzeigen.
+Siehe TOS-Kompatibilit„t.
+
+Man kann auch mehrere Objekte ausw„hlen; die entsprechenden Informations-
+dialoge werden dann nacheinander angezeigt.
+
+Mit dem Button 'Alle' kann man die momentanen Dateiattribute und/oder
+Zeit/Datum auf alle selektierten Objekte bertragen.
+Ist ein Ordner ausgew„hlt, werden die Attribute/Zeit/Datum lediglich auf
+alle DATEIEN in diesem Ordner (und seinen Unterornern) bertragen; die
+Ordner-Attribute selbst werden jedoch nicht nicht ver„ndert.
+In einer Auswahlbox kann man dann w„hlen, welche Attribute gesetzt werden
+sollen.
+
+Mit dem Button 'OK' werden alle nderungen fr das aktuelle Objekt
+bernommen.
+
+Mit dem Button 'N„chste' werden alle nderungen fr das aktuelle Objekt
+verworfen und das n„chste selektierte Objekt wird angezeigt.
+
+Mit dem Button 'Abbruch' wird der Dialog geschlossen und alle nderungen
+werden verworfen.
+
+Der Info...-Dialog erscheint auch nach dem Formatieren von Disketten und
+zeigt die Ergebnisse der TeraDesk Suchen-Funktion an. Beim Suchen werden
+zus„tzliche Angaben ber den Text-String angezeigt.
+
+Siehe auch:  Scrollbare Eingabefelder  Suchen...  Diskette formatieren...
+             Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Neu..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.3  Neu...                                                    TeraDesk@{u}
+
+Mit dieser Option kann man im obersten ge”ffneten Fenster (Verzeichnis)
+einen neuen Ordner erstellen. Wenn bereits ein Objekt selektiert ist, so
+wird im obersten ge”ffneten Fenster (Verzeichnis) ein symbolischer Link
+zu diesem Objekt angelegt. Symbolische Links mssen dazu natrlich vom
+Betriebssystem untersttzt werden.
+
+TeraDesk nennt einen symbolischen Link 'Link_zu_<Name des Objekts>; der
+Name des Links sowie der Name des Originals k”nnen in der Dialogbox
+natrlich (nach eigenem Wunsch oder nach Vorgaben des Dateisystems)
+ge„ndert werden.
+
+Siehe auch:  Scrollbare Eingabefelder  Symbolische Links
+ 
+@endnode
+
+
+@node "Vergleichen..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.4   Vergleichen...                                           TeraDesk@{u}
+
+Tera Desktop kann Datei-Inhalte vergleichen. Bei dieser Option erscheint
+eine Dialogbox, in die man die Namen von zwei zu vergleichenden Dateien
+eingeben kann. Wurden vorher in einem Verzeichnis-Fenster bereits eine
+oder zwei Dateien selektiert, so sind deren Namen bereits eingetragen.
+
+Durch Doppelklick auf ein Eingabefeld oder durch Drcken der [Insert]-
+Taste wird eine Datei-Auswahlbox ge”ffnet.
+
+Mit dem Button 'OK' wird der Vergleich gestartet. Wurde ein Unterschied
+zwischen den beiden Dateien gefunden, so wird diese Stelle bei beiden
+Dateien im Dialogfenster angezeigt; ebenso die Zeichen-Nummer (Index) des
+gefundenen Unterschieds (gez„hlt ab Start der 1. Datei).
+Anstelle von Null-Zeichen werden Platzhalter (das [Del]-Zeichen, meistens
+ein kleines Dreieck) dargestellt.
+
+Die Dateivergleich-Funktion verwendet eine intelligente Routine und
+synchronisiert nach dem ersten gefundenen Unterschied den weiteren
+Vergleichvorgang.
+Im Vergleichen-Dialog kann angegeben werden, wieviel Zeichen auf einmal
+verglichen werden sollen (1 bis 99). Mit kleinen Vergleichs-'Bl”cken'
+kann man Unterschiede bei einzelnen, direkt aufeinanderfolgenden Zeichen
+finden; bei gr”eren Werten werden diese als ein einziger Unterschied
+behandelt. Man sollte allerdings die Blockgr”e nicht gr”er als
+30 Zeichen w„hlen, damit alle Unterschiede eines Blocks im Anzeigefenster
+dargestellt werden k”nnen.
+
+Beide Dateien werden komplett ins RAM geladen, somit ist die Funktion auf
+Rechnern mit wenig Speicher dementsprechend eingeschr„nkt.
+
+Fr den Dateivergleich kann eine externe Applikation angemeldet werden;
+diese ersetzt dann die TeraDesk-eigenen Routinen.
+Siehe: Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Suchen..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.5   Suchen...                                                TeraDesk@{u}
+
+Mit dieser Option kann man Dateien und auch Textstellen (Strings) finden.
+Dazu mu ein Laufwerk, Ordner oder eine Datei selektiert sein, sonst wird
+im obersten ge”ffneten Fenster gesucht. Im Eingabefeld kann man dann einen
+Namen oder auch eine 'Maske' (mit Platzhaltern wie '*' oder '?') angeben,
+nach der gesucht werden soll. Ist eine Datei im TeraDesk-Viewer ge”ffnet,
+kann hier durch Eingabe eines Strings nach entsprechenden Textstellen
+gesucht werden.
+
+Es mu immer ein Name (oder Maske) angegeben werden; die Angaben bei
+Datum, Zeit und Gr”e sind optional.
+
+Wurde ein Text-String angegeben (optional), wird in den Dateien, auf
+die der Name (Maske) pat nach der entsprechenden Textstelle gesucht.
+Zus„tzlich kann man w„hlen, ob bei der Textstellen-Suche Gro- und Klein-
+schreibung ignoriert werden soll (Dies funktioniert evtl. nicht richtig
+bei L„nder-spezifischen Buchstaben mit ASCII-Codes zwischen 128 und 255).
+
+Normalerweise wird auch in allen Unterordnern eines Laufwerks/Ordners
+gesucht. Das kann hier ebenfalls eingestellt werden.
+
+Bei Eingabe eines Text-Strings oder einer bestimmten Dateigr”e wird die
+Suche automatisch auf Dateien beschr„nkt, d.h. Ordner mit passendem
+Namen werden ignoriert.
+
+Bei einem Treffer wird der Info...-Dialog mit Angaben ber das gefundene
+Objekt angezeigt. Wurde ein String angegeben, wird der Datei-@{"Inhalt" LINK "Main"} rund
+um die gefundene Textstelle angezeigt; um Platz zu sparen wird der String
+selbst durch [...] ersetzt (so sieht man mehr vom Text drumherum).
+Manche Zeichen (Tabs...) wrden das Format des angezeigten Texts „ndern
+und werden deshalb durch Platzhalter (das [Del]-Zeichen, meistens ein
+kleines Dreieck) ersetzt.
+
+Bei der Textstring-Suche wird jede Datei zuerst komplett in den Speicher
+geladen; bei groen Dateien und Rechnern mit wenig RAM kann das somit zu
+Problemen fhren. Ohne Angabe eines Strings werden nur die Datei- und
+Ordnernamen verglichen, somit ist wenig RAM kein Problem.
+
+Die Suche kann jederzeit durch die Taste [Esc] abgebrochen werden.
+
+Fr die Suchen-Funktion kann eine externe Applikation angemeldet werden;
+diese ersetzt dann die TeraDesk-eigenen Routinen.
+Siehe: Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Drucken..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.6  Drucken...                                                TeraDesk@{u}
+
+Wenn eine druckbare Datei selektiert ist, so wird diese gedruckt.
+
+Ist kein Objekt ausgew„hlt, wird eine Liste mit dem @{"Inhalt" LINK "Main"} des obersten
+ge”ffneten Fensters gedruckt, die Reihenfolge und Informationen h„ngen
+von den Einstellungen im Men 'Darstellung' ab (wie auf dem Monitor).
+
+Sind mehrere Dateien selektiert, so werden diese 'unsortiert' gedruckt,
+also eine nach der anderen.
+
+Ist eine Datei im TeraDesk-Viewer ge”ffnet, so wird diese Datei gedruckt.
+
+Man kann auch die Objekte auf das Desktop-DruckerIcon ziehen.
+
+Im Kopieren und Drucken...-Dialog k”nnen verschiedene Optionen ver„ndert
+werden. Je nach Einstellung erscheint auch der 'Kopieren'-Dialog, in dem
+weitere Einstellungen m”glich sind:
+
+- Die Druckausgabe kann in eine Datei erfolgen. Wird diese Option ausge-
+  w„hlt, so ”ffnet sich eine Dateiauswahl-Box. Hier kann man eine Datei
+  w„hlen, die Standard-Endung ist .PRN.
+
+- Man kann zwischen drei Druckmodi ausw„hlen:
+
+  .Text-Modus: Dateien werden als Text gedruckt, d.h. mit Absatz und
+   Zeilenvorschub, bis die eingestellte Drucker-Zeilenl„nge (Optionen/
+   Kopieren und Drucken) erreicht ist. L„ngere Zeilen werden umgebrochen.
+   Wird eine Datei als ausfhrendes Programm erkannt, so wird diese Datei
+   im 'HEX dump'-Modus gedruckt (siehe unten).
+
+  .Hex-dump: Dateien werden -wie im TeraViewer im HEX-Modus angezeigt-
+   gedruckt.
+
+  .Raw Daten: Dateien werden ohne jegliche Modifikationen/Formatierung
+   an den Drucker weitergegeben. Dies sollte man fr Druck-Dateien
+   verwenden, die von Applikationen erstellt wurden.
+
+Bei der aktuellen Version von TeraDesk werden alle Druckoperationen ber
+GEMDOS ausgefhrt ( Cprnout()-Funktion ).
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt. Die Funktion ist dann aber immer noch
+durch Tastatur-Shortcuts erreichbar.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "L”schen..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.7  L”schen...                                                TeraDesk@{u}
+
+Mit dieser Option kann man selektierte Ordner, Dateien oder symbolische
+Links l”schen. Ist ein Objekt schreibgeschtzt, mu zuerst der Schreib-
+schutz entfernt werden (siehe Info...).
+
+Im Men Optionen/Kopieren und Drucken... kann man einstellen, ob vor dem
+L”schen von Dateien eine Sicherheitsabfrage erfolgen soll.
+
+Soll ein symbolischer Link gel”scht werden (siehe  Symbolische Links),
+kann man mit der Einstellung bei 'Links folgen' w„hlen, ob nur der Link
+oder ebenfalls die Originaldatei gel”scht wird. Ist 'Links folgen' akti-
+viert (abgehakt), werden Link UND Originaldatei gel”scht; ansonsten nur
+der symbolische Link. (Option ist nur verfgbar bei MinT und Magic).
+
+L”schen... ist die gleiche Funktion wie ein Objekt auf den Mlleimer
+ziehen.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt. Die Funktion ist dann aber immer noch
+durch Tastatur-Shortcuts erreichbar.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Alle ausw„hlen"
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.8  Alle ausw„hlen                                            TeraDesk@{u}
+
+Durch diese Option werden alle Dateien und Ordner im obersten Fenster
+selektiert. Auch auf dem Desktop k”nnen so alle Items ausgew„hlt werden.
+ 
+@endnode
+
+
+@node "Diskette kopieren..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.9 Diskette kopieren...                                       TeraDesk@{u}
+
+Bei dieser Option mu zuerst ein Diskettenlaufwerks-Icon selektiert sein,
+dann wird hiermit -Sektor fr Sektor- eine Kopie der Diskette erstellt.
+Vor dem Kopieren wird berprft, ob Quell- und Zieldiskette das gleiche
+Format haben; dazu mssen auf beiden Disketten im Boot-Sektor gltige
+Informationen ber Anzahl der Seiten, Spuren und Sektoren vorhanden sein.
+Somit kann durch diesen Check bei speziell formatierten Disketten eine
+Kopieraktion verweigert werden.
+
+Wenn beim Kopieren eines Sektors ein Fehler auftritt, so wird die Aktion
+mehrfach wiederholt bevor eine Fehlermeldung erscheint. Die Anzahl der
+Wiederholungen kann im Dialog eingestellt werden.
+
+Die Gr”e des Pufferspeichers fr solche Kopieraktionen kann man im Men
+Optionen/Kopieren und Drucken... einstellen.
+
+Bei Multitasking-Systemen wie MinT oder MagiC wird versucht, das Laufwerk
+gegen andere Zugriffe zu verriegeln.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt. Die Funktion ist dann aber immer noch
+durch Tastatur-Shortcuts erreichbar.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Diskette formatieren..."
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.10 Diskette formatieren...                                   TeraDesk@{u}
+
+Bei dieser Option mu zuerst ein Diskettenlaufwerks-Icon selektiert sein,
+dann wird hiermit ein Dialog zum Formatieren von Disketten ge”ffnet.
+
+In diesem Dialog sind folgende Einstellungen m”glich:
+
+- Vier Standard-Formate (Schreibdichten) fr 3.5" Disketten:
+
+    .Einseitig                     (SSDD -  360 KB)
+    .Zweiseitig                    (DSDD -  720 KB)
+    .Hohe Dichte 'High Density'    (DSHD - 1440 KB)
+    .Extra Dichte 'Extra Density'  (DSED - 2880 MB)
+
+- Formatieren mit den vorhandenen Parametern; diese werden zuerst von der
+  Diskette gelesen.
+
+- Man kann jedes dieser Standard-Formate -wenn ausgew„hlt- weitergehend
+  modifizieren:
+
+    .Anzahl der Seiten
+    .Anzahl der Spuren
+    .Anzahl der Sektoren pro Spur
+    .Gr”e des Root-Verzeichnisses 'Dir.Size'
+    .Disketten-Name 'Label'
+
+- Wenn beim Formatieren ein Fehler auftritt, so wird die Aktion mehrfach
+  wiederholt, bevor eine Fehlermeldung erscheint. Die Anzahl der
+  Wiederholungen kann hier eingestellt werden.
+
+- 'Schnell' formatieren: Ist diese Option selektiert, so werden nur die
+  ersten zwei Spuren neu formatiert; diese enthalten den Boot-Sektor,
+  die FATs (File Allocation Tables) und das Root-Verzeichnis.
+  'Schnell' darf nur dann aktiviert werden, wenn beim Formatieren der
+  vorherige Format-Typ (Anzahl der Spuren und Sektoren pro Spur)
+  beibehalten wird.
+
+Bei Multitasking-Systemen wie MinT oder MagiC wird versucht, das Laufwerk
+gegen andere Zugriffe zu verriegeln. Wenn dies fehlschl„gt, z.B. weil auf
+das Laufwerk bereits zugegriffen wird, so wird der Vorgang abgebrochen.
+
+Bei der Option 'Vorh. Format' wird nicht der Original-Bootsektor
+reproduziert; es werden lediglich die Anzahl der Seiten, Spuren,
+Sektoren pro Spur, die Gr”e des Root-Verzeichnisses und die
+Gr”e der FAT von der Diskette gelesen und verwendet.
+
+Das Formatieren kann jederzeit durch Drcken der [Esc]-Taste abgebrochen
+werden.
+
+Fr 'Formatieren' kann eine externe Applikation angemeldet werden; diese
+ersetzt dann die TeraDesk-eigenen Routinen und Dialoge.
+Siehe: Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Ende/Shutdown"
+@toc "Men: Datei"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.2.11 Ende/Shutdown                                             TeraDesk@{u}
+
+In diesem Dialog kann zwischen folgenden Optionen gew„hlt werden:
+
+1: Herunterfahren des Computers (Shutdown)
+2: Neustarten des Computers
+3: Zurckkehren zum Standard- oder AES-Desktop (Ende).
+4: Abbruch
+
+Bei jeder Option ausser 'Abbruch' schliet TeraDesk erst alle Fenster und
+meldet dann alle AV-Protokoll- Clients ab; bei 'Shutdown' oder 'Neustart'
+wird danach ein System-Shutdown ausgefhrt. Bei MagiC wird mit 'Neustart'
+ein 'Warmstart' ausgefhrt, d.h. es wird nur MagiC neugestartet.
+Bei 'Ende' wird TeraDesk beendet und es wird zum Original-Desktop
+zurckgekehrt. Dies ist bei MagiC nicht m”glich.
+
+Die Shutdown-Prozedur ist sehr einfach gehalten:
+Zuerst ruft TeraDesk die shel_write() Funktion im 'full shutdown'-Modus
+auf, dann wartet es fr zwei Sekunden auf eine 'Terminate'-Nachricht.
+Danach wird die Shutdown()-Funktion aufgerufen, je nach gew„hlter Option
+entweder im 'Ausschalten'- oder im 'Kaltstart'-Modus.
+Wenn Shutdown() keine Wirkung zeigt, schaltet TeraDesk ein paar Interrupts
+aus und startet eine Endlosschleife oder macht einen 'Kaltstart' (Reset)
+-wiederum je nach gew„hlter Shutdown-Option.
+
+CT60/63: TeraDesk schaltet beim Shutdown den Falcon/CT60 aus (StandBy).
+
+Es ist m”glich, fr die Shutdown-Funktion externe Programme anzumelden.
+
+Siehe auch:  Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Men: Darstellung"
+@toc "Mens und Dialoge"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.3  Men: Darstellung                                           TeraDesk@{u}
+
+Mit diesen Optionen kann man die Darstellung von Ordnern und Dateien in
+Fenstern beeinflussen.
+
+ 4.3.1  Als Icons
+ 4.3.2  Automatisch anordnen
+ 4.3.3  Sortierung
+ 4.3.4  Sortierung umkehren
+ 4.3.5  GROSS/klein gemischt
+ 4.3.6  Datei-Informationen
+ 4.3.7  Maske setzen...
+ 
+@endnode
+
+
+@node "Als Icons"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.1  Als Icons                                                 TeraDesk@{u}
+
+Ist diese Option selektiert, werden Ordner und Dateien in Verzeichnis-
+Fenstern als Icons dargestellt; ansonsten in Textform.
+
+Bei der Darstellung als Icons werden die Dateinamen auf eine maximale
+L„nge von 12 Zeichen gekrzt; Icons von versteckten ('hidden') Dateien
+werden 'halb-transparent' dargestellt (im Moment nur, wenn der Fenster-
+Hintergrund wei ist). Icons von symbolischen Links haben links einen
+Haken.
+
+Bei der Darstellung als Text kann man Dateigr”e, Erstellungsdatum/Zeit,
+Dateiattribute und Zugriffsrechte neben dem Namen anzeigen lassen.
+
+Siehe auch: Der Icon Auswahl-Dialog  FensterIcons zuweisen...
+ 
+@endnode
+
+
+@node "Automatisch anordnen"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.2  Automatisch anordnen                                      TeraDesk@{u}
+
+Mit dieser Option wird die Anordnung von Dateien und Ordnern in Fenstern
+optimiert, das heit:
+
+- Im Text-Modus (siehe Als Icons) werden die Verzeichnisse mehrspaltig
+  dargestellt, wenn die Fensterbreite und die Zeilenl„nge das erlauben;
+  dies h„ngt wiederum von der Anzahl der zus„tzlichen Dateiinformationen
+  ab. Somit k”nnen so viele Objekte wie m”glich in einem Fenster angezeigt
+  werden. Durch einen kleineren Verzeichnis-Font kann man die Anzahl der
+  dargestellten Objekte weiter erh”hen.
+
+- Im Icon-Modus werden die Objekte auf die momentane Fensterbreite
+  verteilt. Horizontales Scrollen ist somit unn”tig (horiz. Slider ist
+  deaktiviert).
+
+Ist diese Option deselektiert:
+
+- Im Text-Modus werden die Verzeichnisse einspaltig dargestellt.
+
+- Im Icon-Modus werden die Objekte auf die gesamte Bildschirm-Breite ver-
+  teilt. Mit dem horiz. Slider kann durch das Fenster gescrollt werden.
+
+Wichtig: Ist diese Option selektiert, so sind Fenstermanipulationen wie
+Scrollen, Gr”e „ndern usw. im Text-Modus etwas langsamer, im Icon-Modus
+aber etwas schneller.
+ 
+@endnode
+
+
+@node "Sortierung"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.3  Sortierung                                                TeraDesk@{u}
+
+Hier kann bestimmt werden, wie die Objekte in Verzeichnis-Fenstern
+sortiert werden sollen:
+
+               1.   Nach Name
+               2.   Nach Extension
+               3.   Nach Datum
+               4.   Nach Gr”e
+               5.   Unsortiert
+
+Objekte werden aufsteigend sortiert. Die Sortierung bei 'Nach Gr”e' und
+'Nach Datum' ist gegens„tzlich zum Original-TOS Desktop, dort wurden die
+gr”ten und neuesten Dateien zuerst gelistet.
+Siehe dazu:  Sortierung umkehren.
+
+Bei der Sortierung 'Nach Name' und 'Nach Extension' kann man zwischen
+gemischter oder getrennter Anzeige von GROSS/kleinschreibung w„hlen.
+Siehe GROSS/klein gemischt.
+
+Bei unsortierter Darstellung werden Dateien und Ordner in der Reihenfolge
+angezeigt, in der sie gespeichert wurden. Das ist nicht unbedingt das
+Erstellungsdatum, sondern ist u.a. abh„ngig von den bisher erstellten und
+gel”schten Dateien in diesem Verzeichnis. Diese Option kann bei manchen
+Dateisystemen und auf Emulatoren eventuell nicht funktionieren.
+
+Die Sortierung wirkt sofort auf alle offenen Fenster.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Sortierung umkehren"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.4  Sortierung umkehren                                       TeraDesk@{u}
+
+Normalerweise zeigt Teradesk in einem Verzeichnis-Fenster alle Objekte in
+aufsteigender Sortierung; Unterordner werden dabei zuerst angezeigt.
+Mit 'Sortierung umkehren' kann man die Reihenfolge umkehren, somit werden
+auch die Unterordner am Ende der Liste angezeigt.
+
+Die Einstellung wirkt sofort auf alle offenen Fenster.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt.
+
+Siehe auch:  Sortierung  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "GROSS/klein gemischt"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.5  GROSS/klein gemischt                                      TeraDesk@{u}
+
+Ist die Option 'GROSS/klein gemischt' aktiviert, unterscheidet TeraDesk
+bei der Sortierung nicht zwischen Gross- und Kleinschreibung von Datei-
+und Ordnernamen. Ansonsten werden grossgeschriebene Dateien und Ordner
+zuerst aufgelistet.
+
+Diese Option ist natrlich nur bei Dateisystemen sinvoll, die Gross- und
+Kleinschreibung untersttzen (z.B. MagiC oder MiNT). Deshalb ist diese
+Option in der TOS-Version von TeraDesk nicht verfgbar.
+
+Siehe auch:  Sortierung
+ 
+@endnode
+
+
+@node "Datei-Informationen"
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.6  Datei-Informationen                                       TeraDesk@{u}
+
+Hiermit kann man, wenn die Darstellung im Text-Modus erfolgt, zus„tzliche
+Datei-Informationen anzeigen lassen. Selektierte Optionen sind abgehakt.
+
+         1.   Gr”e zeigen
+         2.   Datum zeigen
+         3.   Zeit zeigen
+         4.   Attribute zeigen
+         5.   Eigentmer zeigen
+
+Die Einstellung wirkt sofort auf alle offenen Fenster.
+
+Die Gr”e wird in Bytes angegeben; ist die Gr”e eines Objekts gr”er als
+9999999 Byte, so wird diese in Kilobyte (1 KB = 1024 B) oder in Megabyte
+(1 MB = 1048576 B) angezeigt. Es wird dann auf den n„chsth”heren Wert
+aufgerundet.
+
+Das Datum wird im 'dd-mm-yy'-Format (Tag, Monat, Jahr) angezeigt.
+
+Die Objekt-Attribute werden durch folgende Krzel dargestellt:
+
+         -    Attribute nicht gesetzt oder kein Zugriffsrecht
+         d    Verzeichnis
+
+       Bei TOS- (FAT) Dateisystemen:
+
+         s    System-Datei
+         h    Versteckte Datei ('hidden')
+         w    'Writable' Datei (Gegenteil von schreibgeschtzt)
+         a    Archiv-Datei
+
+       Bei VFAT- oder Unix-Dateisystemen:
+
+         l    Symbolischer Link
+
+       Bei Unix-Dateisystemen (jeweils fr User, Group und World):
+
+         r    Lese-Rechte (read)
+         w    Schreib-Rechte (write)
+         x    'Execute'-Rechte
+
+'Group'- und 'User'-IDs bei 'Owner' werden als zwei 4-digit Integer-Werte
+angezeigt. Diese Option ist bei Single-TOS nicht verfgbar.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt. Die Funktion ist dann aber immer noch
+durch Tastatur-Shortcuts erreichbar.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Maske setzen..."
+@toc "Men: Darstellung"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Darstellung
+
+@{U}4.3.7  Maske setzen...                                           TeraDesk@{u}
+
+Mit dieser Option kann man aufgrund einer Angabe von Buchstaben oder
+Zeichen bestimmen, welche Dateien in einem Verzeichnis angezeigt werden.
+In der Dialogbox kann man entweder eine Namen-Maske eingeben oder eine
+bereits vorhandene Maske ausw„hlen.
+
+Masken aus der Liste kann man durch Selektieren und Klicken auf 'OK' oder
+durch Doppelklick ausw„hlen.
+
+Ebenfalls kann man hier Masken aus der Liste l”schen, editieren oder neue
+hinzufgen. Siehe  Der ListBox-Dialog.
+
+Die ausgew„hlte Maske wirkt NUR auf das oberste ge”ffnete Fenster.
+
+Einige Zeichen funktionieren in Namen-Masken als Platzhalter (Wildcards),
+so kann ein bestimmter Bereich von Namen eingegrenzt werden:
+
+   *                        - eine beliebige Anzahl von Zeichen
+   ?                        - ein einzelnes Zeichen
+   !<Zeichen>               - jedes Zeichen auer <Zeichen>
+   [<char1><char2><...?>]   - jedes der Zeichen <char1>, <char2>...
+
+Man kann natrlich auch komplette Namen als Masken angeben; entweder
+durch manuelle Eingabe oder durch vorheriges Selektieren eines Objektes
+in einem Verzeichnis-Fenster.
+
+Durch Eingabe von '~' vor der Maske k”nnen Objekte von der Selektion
+ausgeschlossen werden:
+
+   ~test*                   - zeigt alle Objekte AUSSER test1, test.txt,
+                              test.zip usw.
+
+Auf langsamen Rechnern k”nnen sehr komplexe Masken allerdings das ™ffnen
+und Darstellen von Verzeichnissen „usserst verlangsamen.
+Auch sind manche Masken unsinnig und werden von TeraDesk nicht verstanden,
+zum Beispiel sollte man '!...' oder '[...]' nicht zwischen '*' und einem
+anderen Platzhalter verwenden.
+
+Wenn keine Maske gesetzt ist, verwendet Tera Desktop die Standard-Maske,
+damit alle Dateien und Ordner angezeigt werden. Bei Single-TOS ist die
+Standard-Maske '*.*'; bei Multitasking-Systemen meistens einfach '*'.
+Durch L”schen des Eingabefelds und Klick auf 'OK' kann jederzeit wieder
+zur Standard-Darstellung zurckgekehrt werden.
+
+Bei Single-TOS sind eigentlich nur die Platzhalter '*' und '?' legal;
+TeraDesk erlaubt bei Single-TOS '!...', '[...]' und '~' nur unter der
+Voraussetzung, da das 8+3 Format bei Dateinamen unbedingt eingehalten
+wird.
+
+Um Objekte in Verzeichnissen zu finden, kann man auch den Auto-Selektor
+verwenden. Siehe auch:  Konventionen  Verzeichnis-Fenster
+
+Neben der Namen-Maske k”nnen vier weiter Optionen fr Verzeichnis-Fenster
+gew„hlt werden:
+
+ -Zeige Hidden          Versteckte Dateien werden angezeigt
+ -Zeige System          System-Dateien werden angezeigt
+ -Zeige Unterordner     Unterordner werden angezeigt
+ -Zeige Parent Dir.     Der bergeordnete Ordner wird durch
+                        ' .. ' dargestellt.
+
+Diese Optionen sind 'global', das heit sie wirken auf ALLE Verzeichnis-
+Fenster.
+
+Wenn die Option 'Zeige Parent Dir.' gesetzt ist, wird durch den 'Fenster
+schlieen'-Button (Closer) das Fenster immer ganz geschlossen; ansonsten
+wird in das bergeordnete Verzeichnis gewechselt (falls vorhanden).
+ 
+@endnode
+
+
+@node "Men: Fenster"
+@toc "Mens und Dialoge"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.4  Men: Fenster                                               TeraDesk@{u}
+
+Alle Aktionen in diesem Menu (bis auf 'Alle schlieen') wirken auf das
+oberste ge”ffnete Fenster.
+
+   4.4.1  Iconify/De-Iconify
+   4.4.2  Volle Gr”e
+   4.4.3  Schlieen
+   4.4.4  Fenster schlieen
+   4.4.5  Alle schlieen
+   4.4.6  Fenster kopieren
+   4.4.7  Wechseln
+ 
+@endnode
+
+
+@node "Iconify/De-Iconify"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.1  Iconify/De-Iconify                                        TeraDesk@{u}
+
+Diese Menoption ist nur ab AES v.4 verfgbar.
+
+Hiermit wird das momentan oberste Fenster ikonifiziert oder
+'de-ikonifiziert', je nach vorherigem Zustand (siehe TeraDesk Fenster).
+
+Fenster von Applikationen, die am AV-Protokoll teilnehmen, werden bei
+TeraDesk in die 'Liste der offenen Fenster' eingetragen. In diesem Fall
+wirkt 'Iconify/De-Iconify' auch auf ge”ffnete Fenster dieser Programme.
+
+Siehe auch:  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Volle Gr”e"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.2  Volle Gr”e                                               TeraDesk@{u}
+
+Hiermit wird das momentan oberste Fenster auf 'normale Gr”e' (es werden
+m”glichst alle Dateien dargestellt) oder -in Verbindung mit [SHIFT]-
+auf volle Bildschirmgr”e vergr”ert, je nach vorherigem Zustand.
+
+Fenster von Applikationen, die am AV-Protokoll teilnehmen, werden bei
+TeraDesk in die 'Liste der offenen Fenster' eingetragen. In diesem Fall
+wirkt 'Volle Gr”e' auch auf ge”ffnete Fenster dieser Applikationen.
+
+Siehe auch:  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Schlieen"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.3  Schlieen                                                 TeraDesk@{u}
+
+Mit dieser Option wird entweder in das bergeordnete Verzeichnis ge-
+wechselt oder, wenn das Fenster das oberste Laufwerks-Verzeichnis ist,
+wird es ganz geschlossen. TeraDesk's Viewer-Fenster werden ebenfalls
+ganz geschlossen.
+
+Fenster von Applikationen, die am AV-Protokoll teilnehmen, werden bei
+TeraDesk in die 'Liste der offenen Fenster' eingetragen. In diesem Fall
+wirkt 'Schlieen' auch auf ge”ffnete Fenster dieser Applikationen.
+
+Siehe auch:  Fenster schlieen  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Fenster schlieen"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.4  Fenster schlieen                                         TeraDesk@{u}
+
+Mit dieser Option wird das oberste ge”ffnete Fenster ganz geschlossen.
+
+Fenster von Applikationen, die am AV-Protokoll teilnehmen, werden bei
+TeraDesk in die 'Liste der offenen Fenster' eingetragen. In diesem Fall
+wirkt 'Fenster schlieen' auch auf ge”ffnete Fenster dieser Applikationen.
+
+Siehe auch:  Schlieen  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Alle schlieen"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.5  Alle schlieen                                            TeraDesk@{u}
+
+Mit dieser Option werden alle ge”ffneten Fenster geschlossen, ebenfalls
+die der 'AV-Protokoll Clients'.
+
+Siehe auch:  Schlieen  Fenster schlieen  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Fenster kopieren"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Fenster
+
+@{U}4.4.6  Fenster kopieren                                          TeraDesk@{u}
+
+Es wird ein neues Fenster mit dem gleichen @{"Inhalt" LINK "Main"} wie im obersten Fenster
+ge”ffnet.
+ 
+@endnode
+
+
+@node "Wechseln"
+@toc "Men: Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Datei
+
+@{U}4.4.7 Wechseln                                                   TeraDesk@{u}
+
+Mit dieser Option wird das unterste ge”ffnete Fenster nach oben geholt.
+Das ist „usserst praktisch, wenn ein Fenster von einem anderen komplett
+verdeckt wird; man kann sich somit das Schlieen oder Verschieben der
+Fenster sparen.
+
+Fenster von Applikationen, die am AV-Protokoll teilnehmen, werden bei
+TeraDesk in die 'Liste der offenen Fenster' eingetragen. In diesem Fall
+wirkt 'Wechseln' auch auf ge”ffnete Fenster dieser Applikationen.
+
+ACHTUNG: Manche AV-Protokoll-Clients senden [Control][W] als Tastatur-
+Shortcut-Kommando fr einen 'globalen' Fensterwechsel. Dies wurde von/fr
+Gemini-Desktop eingebaut, kann aber Probleme bei Desktops geben, die frei
+konfigurierbare Men-Shortcuts untersttzen und 'Wechseln' mit einem
+anderen Shortcut belegt haben.
+
+Siehe auch:  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Men: Optionen"
+@toc "Mens und Dialoge"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.5  Men: Optionen                                              TeraDesk@{u}
+
+ 4.5.1   Anwendung anmelden...
+ 4.5.2   Programmtypen...
+ 4.5.3   DeskIcons zuweisen...
+ 4.5.4   FensterIcons zuweisen...
+ 4.5.5   Desktop...
+ 4.5.6   Kopieren und Drucken...
+ 4.5.7   Farben und Fonts...
+ 4.5.8   Bildschirmoptionen...
+ 4.5.9   Einstellungen laden...
+ 4.5.10  Einstellungen sichern
+ 4.5.11  Sichern als...
+ 
+@endnode
+
+
+@node "Anwendung anmelden..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.1  Anwendung anmelden...                                   TeraDesk@{u}
+
+Bei dieser Option wird der ListBox-Dialog mit einer Liste aller angemel-
+deten Applikationen ge”ffnet. Es werden nur die Programmnamen (ohne Pfad-
+angaben) angezeigt; berlange Namen werden in gekrzter Form dargestellt.
+Man kann hier nun neue Programme anmelden und bei bereits angemeldeten
+Applikationen Parameter „ndern oder diese l”schen.
+
+Folgende Parameter k”nnen entweder durch eine Dateiauswahl-Box oder
+manuell eingegeben werden (oder es war bereits ein Programm selektiert
+und die Eintr„ge sind schon vorhanden):
+
+- Pfad:
+  Genaue Pfadangabe, wo das Programm zu finden ist.
+
+- Name:
+  Name des Programms.
+
+- Standard-Kommandozeile:
+  Hier kann man Parameter eingeben, die dem Programm beim Start bergeben
+  werden sollen. Meistens sind die Parameter bei jedem Programmstart
+  anders; dann gibt man diese am besten beim Start im Kommandozeilen-
+  Dialog an. Hat man jedoch konstante Startparameter fr ein Programm,
+  gibt man diese hier ein.
+
+  Alle hier gemachten Eingaben werden dann dem Programm beim Start ber-
+  geben; egal ob ein Objekt auf das ProgrammIcon ge-'dragged' wurde oder
+  das Programm durch Doppelkick gestartet wird.
+
+  Die Parameter %f, %n und %p haben bei TeraDesk eine besondere
+  Bedeutung:
+
+  %f - Dies wird ersetzt durch die kompletten Pfadangaben von einem
+       Dokument, welches dem Prorgramm bergeben wurde.
+
+  %F - Dasselbe wie %f, Dateinamen werden jedoch zu Kleinbuchstaben
+       konvertiert.
+
+  %n - Es wird nur der Dateiname (keine Pfadangaben) bergeben.
+
+  %N - Dasselbe wie %n, Dateinamen werden jedoch zu Kleinbuchstaben
+       konvertiert.
+
+  %p - Es wird nur der Pfad bergeben.
+
+  %P - Dasselbe wie %p, Dateinamen werden jedoch zu Kleinbuchstaben
+       konvertiert.
+
+  Meistens kommt wohl nur einer dieser Parameter zur Anwendung und wird
+  zusammen mit allen anderen Namen/Parametern an die Applikation ber-
+  geben; die Eingabe von mehreren dieser TeraDesk-Parametern ist jedoch
+  auch erlaubt.
+
+  Enth„lt der Name oder ein anderer Parameter in der Kommandozeile ein
+  oder mehrere Leerzeichen, so sollten diese Namen in Anfhrungszeichen
+  ( ' oder " ) gesetzt werden. Auch Anfhrungszeichen selbst (wenn in
+  Parametern enthalten) mssen mit ' oder " eingegrenzt werden.
+
+- Es k”nnen lokale Environment-Variablen angegeben werden:
+  Hier k”nnen mehrere Variablen mit dem Format: VAR1=VAL1 VAR2=VAL2 usw.
+  eingetragen werden. Als Trennung wird ein Leerzeichen verwendet, es
+  drfen also keine Leerzeichen vor oder hinter dem '='-Zeichen stehen.
+  Diese Option funktioniert bei verschiedenen AESes unterschiedlich.
+
+  Fr Environment-Variablen mit Leerzeichen oder Anfhrungszeichen gilt
+  dasselbe wie fr Kommandozeilen.
+
+- Man kann dem Programm eine Funktionstaste (F-Taste) zuordnen:
+  Zahlen von 1 bis 10 entsprechen den Tasten [F1] bis [F10]; 11 bis 20
+  entsprechen [Shift][F1] bis [Shift][F10].
+
+- Spezial-Anwendung:
+  Hier kann man das Programm als 'Dienstprogramm' (z.B. Editor, Viewer)
+  fr TeraDesk anmelden.  Siehe Spezial-Anwendung
+
+- Programmtyp:
+  Der Programmtyp-Dialog wird ge”ffnet, hier kann man den Programmtyp
+  von dieser Anwendung „ndern.
+
+- Liste der zugeordneten Dateitypen:
+  In diesem Dialog kann man Dateien oder Dateitypen angeben und „ndern,
+  die mit diesem Programm ge”ffnet werden sollen. Es gelten die selben
+  Regeln wie bei 'Maske setzen...'.
+
+  Das Standard TOS-Desktop erlaubt nur die Angabe von einem Dateityp pro
+  Applikation; Tera Desktop ist hier viel flexibler: Man kann mehrere
+  Dateinamen oder Namen-Masken inklusive Wildcards eingeben.
+
+  Hat man einen Dateityp einer Anwendung zugeordnet, wird durch Doppel-
+  klick auf eine solche Datei das zugeordnete Programm gestartet und die
+  Datei wird sogleich ge”ffnet. Ist die Anwendung bereits aktiv, so wird
+  eine 'Datei ”ffnen'-Nachricht an diese Applikation gesendet.
+
+  Ein Dateityp kann mehr als einer Applikation zugeordnet werden. Wird
+  eine solche Datei ge”ffnet, erscheint der ListBox-Dialog, in dem man
+  zwischen den zugeordneten Programmen w„hlen kann. Parameter dieser
+  Applikationen k”nnen hier nicht ge„ndert werden.
+
+  Man kann Applikationen auch Internetadressen als 'Dateitypen' zuordnen.
+  Bei MinT oder MagiC sind z.B die Masken 'http:*', 'https:*', 'ftp:*'
+  oder 'mailto:*' erlaubt. Bei Single-TOS mssen solche Masken als
+  'HTTP*.*', 'HTTPS*.*', 'FTP*.*' oder 'MAILTO*.*' benannt werden.
+
+  Wichtig: Zugeordnete Dateien werden immer mit dem entsprechenden
+  Programm ge”ffnet. Drckt man die [Alternate]-Taste beim ™ffnen der
+  Datei, so wird die Zuordnung ignoriert.
+ 
+@endnode
+
+
+@node "Programmtypen..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.2  Programmtypen...                                          TeraDesk@{u}
+
+Hier kann man bestimmen, welche Dateitypen von TeraDesk als ausfhrende
+Programme erkannt werden sollen. In diesem Dialog sind auch weitere
+Optionen fr Programme einstellbar:
+
+1. Nach TOS-Prg's auf Taste warten: Tera Desktop wartet nach dem Beenden
+eines TOS (o. TTP)-Programms auf einen Tastendruck, somit kann man die
+Bildschirmausgabe noch in Ruhe lesen.
+
+2. 'Handle 2' als Std.-Error: Mit dieser Option werden Programmausgaben
+als GEMDOS-Standard 'handle 2' auf den Bildschirm umgeleitet. Bei
+Programmen, die mit GNU C erstellt wurden, sollte man diese Option ggf.
+aktivieren.
+
+3. Listbox mit Programmtypen: In dieser Liste sind alle Dateitypen einge-
+tragen, die von TeraDesk als ausfhrbare Programme erkannt werden sollen.
+Auch hier kann man mit den entsprechenden Buttons neue Typen eingeben und
+bereits angemeldete Programmtypen „ndern oder l”schen.
+Siehe auch:  Der ListBox-Dialog
+
+Beim Hinzufgen oder ndern ”ffnet sich eine Dialogbox, in der man den
+Dateityp (Maske) und zus„tzliche Parameter eingeben kann.
+
+Auf Unix-Dateisystemen interpretiert TeraDesk neben den hier angegebenen
+Typen alle Dateien ohne Extension (Dateiendung) die mit 'Execute'-Rechten
+versehen sind als ausfhrbare Programme (.TTP).
+Die Dateinamen drfen keinen Punkt (.) enthalten. Bei Single-TOS ist
+diese Funktion nicht verfgbar.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt.
+
+Siehe auch:  Programmtypen  Der Programmtyp-Dialog  TOS-Kompatibilit„t
+             Untersttzte Bildschirm-Aufl”sungen  Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "DeskIcons zuweisen..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.3  DeskIcons zuweisen...                                     TeraDesk@{u}
+
+Mit dieser Option kann man Desktop-Icons installieren, „ndern oder ent-
+fernen. Beim Klicken auf DeskIcons zuweisen... erscheint ein Mini-Icon,
+das man auf dem Desktop platzieren und mit Links-Klick an der gewnschten
+Stelle ablegen kann.
+
+Dann erscheint der Icon Auswahl-Dialog (wurden vorher ein oder mehrere
+DeskIcons selektiert, erscheint das Mini-Icon nicht und der Icon Auswahl-
+Dialog wird direkt ge”ffnet).
+
+Hier kann man dann Icon-Typ, Name und das Icon selbst ausw„hlen.
+Es gibt vier verschiedene Icon-Typen mit unterschiedlichen Funktionen:
+
+1. Laufwerk     Objekte, die auf solch ein Icon ge'dragged' werden,
+                werden auf dieses Laufwerk kopiert.
+
+2. Drucker      Dateien, die auf solch ein Icon ge'dragged' werden,
+                werden gedruckt.
+
+3. Mlleimer   Objekte, die auf solch ein Icon ge'dragged' werden,
+                werden gel”scht.
+
+4. Datei/Ordner Dieser Icon-Typ repr„sentiert ein 'Verzeichnis-Objekt',
+                (Ordner, Dateien oder symbolische Links).
+
+Es gibt viele verschiedene Arten von Icons. TeraDesk liest seine schwarz-
+wei (monochrome)-Icons aus der Datei 'ICONS.RSC' und @{"Farb-Icons" LINK "Die Icons-Dateien"} aus der
+Datei 'CICONS.RSC'. Siehe auch: Die Icons-Dateien.
+
+Aus der Liste kann man ein Icon ausw„hlen, einen Namen fr das Icon ein-
+geben und (bei Laufwerks-Icons) einen Buchstaben fr das Laufwerk
+bestimmen.
+
+Ordner-, Datei- oder Link-Icons kann man auch einfach aus ihrem
+Verzeichnis auf das Desktop ziehen. Alternativ kann man ein oder mehrere
+Objekte selektieren und im Menu 'DeskIcons zuweisen...' anklicken. Dann
+”ffnet sich der Icon Auswahl-Dialog, in dem man -wenn gewnscht- andere
+Icons fr diese Objekte w„hlen kann.
+
+Es k”nnen ebenfalls Desktop-Icons von 'Netzwerk-Objekten' wie Web-Seiten
+oder ftp-Servern angelegt werden. Dazu wird im Men 'Optionen/DeskIcons
+zuweisen' ein Icon vom Typ 'Datei/Ordner' erstellt und bei 'Pfad' die
+entsprechende Internet-@{"Adresse" LINK "Adresse"} eingegeben. Diese Adresse mu mit 'http:',
+'https:', 'ftp:' oder 'mailto:' beginnen; Gro- oder Kleinschreibung wird
+hierbei nicht beachtet.
+
+Ist ein symbolischer Link selektiert, so kann das zu erstellende Desktop-
+Icon entweder den Link repr„sentieren oder aber die Originaldatei, auf
+die der Link verweist. Das kann man mit der 'Link folgen'-Option in
+diesem Dialog bestimmen (nur mit MinT oder Magic).
+
+TeraDesk erkennt den Typ eines selektierten Objekts automatisch und zeigt
+das jeweilige Standard-Icon als Vorauswahl an. Wurde fr dieses Objekt
+bereits ein Fenster-Icon zugeordnet, so wird dieses Icon als Vorauswahl
+angezeigt.
+Nachtr„gliches ndern von FensterIcon-Zuordnungen haben keinerlei Aus-
+wirkungen auf die jeweiligen Desktop-Icons und umgekehrt.
+
+Wenn das Desktop-Icon ein 'Verzeichnis-Objekt' repr„sentiert, erscheint
+ein editierbares Textfeld, in dem der Pfad zu dem Objekt eingegeben wird.
+Siehe auch:  Scrollbare Eingabefelder.
+
+Wurde ein Laufwerks-Icon angemeldet ohne einen Namen anzugeben, versucht
+TeraDesk den Disk-Namen der Partition zu lesen und tr„gt diesen dann
+-wenn erfolgreich- als Icon-Namen ein.
+
+Wurde ein Laufwerks-Icon angemeldet ohne einen Laufwerks-Buchstaben anzu-
+geben, so werden fr alle bisher nicht angemeldeten Laufwerke Icons auf
+dem Desktop platziert; beginnend ab der Position des ersten Icons.
+Das funktioniert nur beim Zuweisen neuer Icons und nicht beim Editieren
+von bereits angemeldeten Icons.
+
+Man kann Desktop-Icons entweder durch 'L”schen' im Icon Auswahl-Dialog
+entfernen oder aber einfach das Icon auf den Mlleimer ziehen. Dann
+”ffnet sich eine Alert-Box; mit 'Entfernen' wird nur das Icon vom Desktop
+entfernt, mit 'L”schen' werden auch die jeweiligen Dateien gel”scht.
+
+Siehe auch:  Der Icon Auswahl-Dialog  FensterIcons zuweisen...
+             Als Icons
+ 
+@endnode
+
+
+@node "FensterIcons zuweisen..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.4  FensterIcons zuweisen...                                  TeraDesk@{u}
+
+Hiermit kann man die Darstellung von Dateien, symbolischen Links und
+Ordnern in Verzeichnis-Fenstern bestimmen (wenn im Men 'Darstellung'
+die Option 'Als Icons' gew„hlt ist).
+
+In dem ListBox-Dialog kann man mit 'Zeige Dateien', 'Zeige Ordner' und
+'Zeige Programme' zwischen den jeweiligen Zuordnungs-Listen w„hlen.
+
+Jede Liste enth„lt eine Reihe von Namen-Masken; mit den Pfeilen kann man
+durch die Liste scrollen. Jede dieser Masken ist ein Icon zugeordnet und
+somit werden alle Dateien/Ordner/Programme, deren Namen auf die Maske
+pat, durch das zugeordnete Icon dargestellt.
+
+Durch Verwendung von Platzhaltern (Wildcards) kann man auch einem ganzen
+Bereich von Dateien ein Icon zuordnen. Siehe auch:  Maske setzen...
+
+Mit 'Neu' erscheint der Icon Auswahl-Dialog, hier kann man eine Maske
+eingeben und ein Icon fr diesen Dateityp ausw„hlen. Mit 'ndern' kann
+man einen selektierten Eintrag editieren und mit 'L”schen' wird ein aus-
+gew„hlter Eintrag aus der Liste gel”scht.
+
+Wurde vorher in einem Fenster oder auf dem Desktop eine Datei/Ordner
+selektiert, ”ffnet sich sofort der Icon Auswahl-Dialog; der Icon-Typ
+(Datei/Ordner/Programm) wird automatisch erkannt. Somit kann man -wie man
+es vom Original TOS-Desktop kennt- FensterIcons zuordnen. Es kann aber
+hierfr nur ein Objekt auf einmal selektiert werden.
+
+Siehe auch:  Der Icon Auswahl-Dialog  DeskIcons zuweisen...
+             Als Icons
+ 
+@endnode
+
+
+@node "Desktop..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.5  Desktop...                                                TeraDesk@{u}
+
+In diesem Dialog kann man allgemeine Einstellungen fr TeraDesktop
+„ndern:
+
+- Darstellung von Dialog-Boxen:
+  Dialog-Boxen k”nnen auf zwei Arten dargestellt werden; jede hat Vor-
+  und Nachteile.
+
+    1. 'Flying'-Modus (gepuffert):
+       Hiermit werden Dialoge in Boxen dargestellt, welche man an einem
+       'Eselsohr' rechts oben verschieben kann.
+       Der Bildsschirminhalt hinter dieser Box wird in einem Puffer ge-
+       speichert; somit erfolgt das Neuzeichnen beim Verscheiben sehr
+       schnell. Diese Einstellung empfiehlt sich vor allem fr langsame
+       Systeme.
+
+    2. 'Fenster'-Modus:
+       Hiermit werden Dialoge in Fenstern dargestellt. Dies hat den
+       Vorteil, da man Accessories starten kann; ist aber dafr etwas
+       langsamer als der 'Flying'-Modus. Diese Einstellung empfiehlt
+       sich vor allem fr schnellere Systeme.
+
+  Dialog-Boxen von Programmen werden durch diese Einstellungen nicht
+  beeinflut!
+
+- Position der Dialog-Box:
+
+    1. Zentriert:
+       Dialog-Boxen werden in der Mitte des Bidschirms ge”ffnet. Wird
+       allerdings diese Box verschoben und dann ein Unter-Dialog ge-
+       ”ffnet, so erscheint dieser an der neuen Position und nicht in
+       der Mitte.
+
+    2. Unter Maus:
+       Die Dialog-Box wird an der momentanen Position des Mauszeigers
+       ge”ffnet. Damit kann man Dialoge ”ffnen, ohne das diese andere
+       Fenster oder Objekte verdecken.
+
+- Men-Shortcuts einstellen:
+
+  Mit den Pfeilen w„hlt man ein Menu-Item aus, dann gibt man einen
+  Shortcut fr diese Funktion ein. Erlaubte Eingaben sind:
+
+  . Einfache Zeichen (nur Zeichen eingeben)
+  . In Kombination mit [Control]: Vor dem Zeichen ein '^' eingeben.
+  . Die 'Spezial-Tasten' [Tab], [Backspace], [Delete] und [Space] k”nnen
+    ebenfalls verwendet werden. Diese Tasten werden dann in Textform
+    eingegeben: TAB, BS, DEL und SP.
+
+  Wegen den begrenzten Scan Codes der Atari-Keyboards k”nnen allerdings
+  manche Kombinationen nicht richtig unterschieden werden und andere
+  werden evtl. als 'ngltig' erkannt.
+
+- Beim Beenden sichern:
+  Ist diese Option selektiert, werden beim Beenden von TeraDesk die
+  Einstellungen gespeichert.
+ 
+@endnode
+
+
+@node "Kopieren und Drucken..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.6  Kopieren und Drucken...                                   TeraDesk@{u}
+
+Mit dieser Men-Option kann man -wie beim Standard-Desktop- verschiedene
+Abfragen aktivieren/deaktivieren. Es erscheint eine Dialog-Box, hier sind
+folgende Einstellungen m”glich:
+
+1.  Sicherheitsabfrage beim Kopieren und Verschieben an/aus.
+
+2.  Sicherheitsabfrage beim šberschreiben von Dateien an/aus.
+
+3.  Sicherheitsabfrage beim L”schen von Dateien an/aus.
+
+4.  Sicherheitsabfrage beim Drucken an/aus.
+
+5.  Einstellen, ob der Kopieren-Dialog erscheinen soll.
+
+6.  Einstellen, ob selektierte Objekte auch nach dem Kopieren noch
+    selektiert sein sollen.
+
+7.  W„hlen, ob beim Kopieren von Dateien mit langen Namen auf FAT-
+    Partitionen (8.3) die Namen automatisch gekrzt werden sollen.
+
+8.  W„hlen, ob beim Drucken vor jeder Datei eine šberschrift (Pfadangabe)
+    gedruckt wird und danach ein Seitenvorschub erfolgen soll.
+
+9.  Die Gr”e des Kopier-Puffers einstellen. Dies ist ein Bereich des RAM,
+    in dem zu kopierende Dateien zwischengespeichert werden. Je gr”er der
+    Wert gew„hlt wird um so schneller erfolgt das Kopieren von groen
+    Dateien.
+
+10. Drucker-Zeilenl„nge: L„ngere Zeilen als hier eingestellt werden
+    umgebrochen.
+
+Die Sicherheitsabfragen sind „hnlich denen des TOS Standard-Desktops,
+bieten aber erweiterte Optionen.
+
+Siehe auch:  Der Kopieren-Dialog.
+ 
+@endnode
+
+
+@node "Farben und Fonts..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.7  Farben und Fonts...                                       TeraDesk@{u}
+
+Hiermit kann man fr Desktop, Fenster und Viewer die Farben und Schrift-
+arten einstellen:
+
+1. Das Muster fr den Desktop-Hintergrund.
+
+2. Die Farbe fr den Desktop-Hintergrund.
+
+3. Das Muster fr den Fenster-Hintergrund (alle Fenster).
+
+4. Die Farbe fr den Fenster-Hintergrund (alle Fenster).
+
+5. Mit den Buttons 'Verzeichnis-Font' und 'Viewer-Font' ”ffnet sich der
+   Font Auswahl-Dialog, in dem man jeweils den Schrift-Font, die -Farbe,
+   die -Gr”e und -Stil einstellen kann. Momentan werden nur 'monospaced'-
+   Fonts untersttzt und der Schriftstil (bold, italic, usw.) kann nur fr
+   Viewer-Fenster gesetzt werden.
+
+6. Einstellen, ob offene Fenster ebenfalls in der Konfigurations-Datei
+   gespeichert werden sollen.
+
+7. Die Tabulator-Breite fr die Textdarstellung im Viewer einstellen.
+
+8. Horizontales und vertikales Raster fr Desktop- und Fenster-Icons.
+
+Die Anzahl der verschiedenen Muster wird durch das verwendete VDI, die
+Anzahl der verfgbaren Farben wird durch die momentan gew„hlte
+Bildschirm-Aufl”sung bestimmt. Damit Hintergrund-Muster dargestellt
+werden k”nnen mu eine andere Farbe als wei selektiert sein.
+
+Bei XaAES und MyAES kann man ein Desktop-Hintergrundbild anstelle von
+Farbe+Muster anmelden; mit PICDESK von Didier Mequignon ist dies
+ebenfalls m”glich. In beiden F„llen mu bei TeraDesk die Desktop-
+Farbe 'wei' gew„hlt werden. Nach 'Einstellungen sichern' und Neustart
+von TeraDesk wird dann das Hintergrundbild dargestellt.
+
+Leider wird das Neuzeichnen von monochromen Desktop-Icons bei weiem
+Hintergrund sehr langsam, somit sollte man diese Einstellung (und auch
+ein Hintergrundbild) auf langsamen Rechnern mit wenig RAM vermeiden.
+
+Im 'Tab.-Breite'-Feld kann man einstellen, wieviel Leerzeichen fr ein
+<TAB>-Zeichen gesetzt werden sollen. Diese Einstellung ist die globale
+Standard-Einstellung, im jwlg. Viewer-Fenster kann man die Tabulator-
+Breite auch einzeln verstellen.
+
+Man kann hier ebenfalls die horizontalen und vertikalen Abst„nde von
+Desktop- und Fenster-Icons einstellen, inklusive dem Abstand der Icons
+vom linken bzw. oberen Rand. Die Eingabefelder haben das folgende Format:
+
+    Hor. Raster: aaa +x
+   Vert. Raster: bbb +y
+
+"aaa" und "bbb" sind die horizontalen bzw. vertikalen Icon-Abst„nde
+(in Pixeln), "+x" ist der Abstand vom linken Bildschirm- (Fenster-) Rand
+und "+y" der Abstand vom oberen Rand.
+
+Die erlaubten Mindestwerte (Standardeinstellung) sind:
+
+aaa=80 bbb=46 x=0 y=0
+
+Diese Option ist haups„chlich fr h”here Bildschirm-Aufl”sungen und/oder
+bei der Verwendung von gr”eren Icons interessant.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt. Die Funktion ist dann aber immer noch
+durch Tastatur-Shortcuts erreichbar.
+
+Siehe auch:  Untersttzte Bildschirm-Aufl”sungen
+ 
+@endnode
+
+
+@node "Bildschirmoptionen..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.8  Bildschirmoptionen...                                     TeraDesk@{u}
+
+Einige der Optionen in diesem Dialog funktionieren evtl. nicht bei allen
+Systemen. Das h„ngt sehr von der verwendeten Video-Hardware und dem
+Betriebssystem ab.
+
+- Standard-Aufl”sung:
+
+  Hier kann man eine der 6 Standard ST/TT/Falcon-Aufl”sungen w„hlen;
+  abh„ngig von der erkannten Video-Hardware sind manche nicht verfgbar.
+
+  . ST-LOW
+  . ST-MEDIUM
+  . ST-HIGH
+  . TT-LOW    (40 Spalten auf dem Falcon)
+  . TT-MEDIUM (80 Spalten auf dem Falcon)
+  . TT-HIGH
+
+
+- Optionen:
+
+  1. Palette sichern: Ist diese Option selektiert, wird die aktuelle
+     Farb-Palette beim Start eines Programms gesichert und bei dessen
+     Ende wieder hergestellt. Das ist gut bei Programmen, welche die
+     Palette „ndern ohne diese selbst wieder herzustellen. Es wird
+     ebenfalls beim Sichern/Laden der Konfigurations-Datei eine Datei
+     'TERADESK.PAL' gesichert/gelesen. Bei Multitasking-Systemen sollte
+     diese Option nicht aktiviert werden.
+     Siehe:  Konfigurations-Dateien.
+
+  2. Blitter Chip aktivieren/deaktivieren: Diese Option ist nur bei
+     ST/STE Computern verfgbar, ansonsten ist sie deaktiviert.
+
+  3. Overscan-Modus aktivieren/deaktivieren: Diese Option ist momentan
+     nur kompatibel zum Original Overscan/Lacescan Hardware-Hack auf
+     ST-Typen und schaltet das entsprechende Signal auf dem Keyboard-
+     ACIA Chip. Bei Falcon Computern wird hier der Overscan-Modus beim
+     Anschlu an einen TV aktiviert.
+
+  4. Zeilenverdoppelung aktivieren/deaktivieren (Bei angeschlossenem
+     TV: Interlace-Modus): Diese Option ist nur auf Falcon Computern
+     verfgbar.
+
+  5. Anzahl der Farben: Diese Option ist nur auf Falcon Computern ein-
+     stellbar; ansonsten wird der Wert nur angezeigt.
+
+Mit dem 'OK'-Button werden alle evtl. gemachten nderungen bernommen
+und (bei einem entsprechenden AES) ein Shutdown und Aufl”sungswechsel
+durchgefhrt. Diese Option funktioniert nur bei manchen AES 4-Versionen.
+
+Auch ohne nderungen bewirkt der 'OK'-Button immer ein Neuzeichnen des
+Desktops und der Fenster. Somit kann man leicht den Bildschirminhalt
+wieder herstellen, wenn andere Programme diesen 'versaut' haben. Auch
+wenn dann der Dialog eventuell nicht sauber angezeigt wird, kann man ihn
+natrlich durch den entsprechenden Tastatur-Shortcut gefolgt von [Return]
+ausfhren.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt.
+
+Der Bildschirmoptionen-Dialog erscheint nicht, wenn ein anderes Programm
+bei 'Spezial-Anwendung' als 'Aufl”sungswechsel' angemeldet wurde. Dieses
+Programm mu alle n”tigen Aktionen fr einen Aufl”sungswechsel ausfhren.
+
+Siehe auch:  TOS-Kompatibilit„t  Untersttzte Bildschirm-Aufl”sungen
+             Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Einstellungen laden..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.9  Einstellungen laden...                                    TeraDesk@{u}
+
+Mit dieser Option kann man TeraDesk-Konfigurationsdateien laden. In der
+Datei-Auswahlbox kann man eine Datei w„hlen; der Standard-Name ist
+'TERADESK.INF'. Je nach Einstellung bei Bildschirmoptionen... wird auch
+die Farbpaletten-Datei 'TERADESK.PAL' geladen.
+
+Ist auf dem Desktop oder in einem Fenster bereits eine Datei selektiert,
+wird bei Einstellungen laden... diese Datei direkt geladen, ohne eine
+Datei-Auswahlbox zu ”ffnen.
+
+Man kann auch TeraDesk (DESKTOP.PRG) selbst als ausfhrende Applikation
+fr TERADESK.INF und „hnliche Dateien anmelden (z.B. TERA*.INF); dann
+wird diese Datei bei Doppelklick direkt geladen.
+Wird DESKTOS.PRG verwendet, mu trotzdem DESKTOP.PRG als Applikation
+angemeldet werden (nicht DESKTOS.PRG).
+
+Siehe auch:  Einstellungen sichern  Sichern als...
+             Konfigurations-Dateien  Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Einstellungen sichern"
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.10  Einstellungen sichern                                    TeraDesk@{u}
+
+Mit dieser Option werden alle aktuellen Einstellungen in der Datei
+'TERADESK.INF' gesichert. Dies ist die gleiche Funktion wie
+'Arbeit sichern' beim TOS Standard-Desktop.
+Je nach Einstellung bei Bildschirmoptionen... wird auch die Farbpaletten-
+Datei 'TERADESK.PAL' gesichert.
+
+Siehe auch:  Einstellungen laden...  Sichern als...
+             Konfigurations-Dateien
+ 
+@endnode
+
+
+@node "Sichern als..."
+@toc "Men: Optionen"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+@image "udo_fo.img" 7
+         Men: Optionen
+
+@{U}4.5.11  Sichern als...                                           TeraDesk@{u}
+
+Mit dieser Option werden alle aktuellen Einstellungen in einer beliebigen
+Datei gesichert. Somit kann man verschiedene Konfigurationen fr z.B.
+verschiedene Aufl”sungen, Systeme oder Arbeitsumgebungen speichern.
+Beim Start l„dt TeraDesk allerdings immer die Datei TERADESK.INF.
+
+In der Datei-Auswahlbox kann man auch hier eine Dateinamen eingeben.
+
+Die Farbpaletten-Datei wird immer unter dem Namen 'TERADESK.PAL'
+gesichert; egal wie die Konfigurations-Datei benannt wurde.
+
+Wenn TeraDesk mit TOS 1.0 in LOW- oder MEDIUM-Aufl”sung l„uft, ist dieses
+Men-Item evtl. nicht angezeigt.
+
+Siehe auch:  Einstellungen laden...  Einstellungen sichern
+             Konfigurations-Dateien
+ 
+@endnode
+
+
+@node "Tastatur-Shortcuts"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.6 Tastatur-Shortcuts                                           TeraDesk@{u}
+
+Fr alle Men-Items k”nnen auch Tastatur-Shortcuts vergeben werden, somit
+kann man durch Drcken einer Taste (oder Kombination) das entsprechende
+Men ”ffnen. Diese Tastatur-Shortcuts k”nnen im Desktop...-Dialog nach
+eigenen Wnschen eingestellt werden.
+
+Ebenso kann man auch in den meisten Dialogboxen Buttons oder Optionen
+durch eine Taste bet„tigen/ausw„hlen: Man drckt einfach [Alternate] und
+den Buchstaben, der unterstrichen ist.
+
+Bei Listboxen mit Pfeilen kann mit [Control]+[Pfeil hoch] oder [Control]+
+[Pfeil runter] durch die Liste gescrollt werden.
+
+Laufwerks-Verzeichnisse kann man durch [Alternate]+[Laufwerksbuchstaben]
+”ffnen (A - P oder A - Z). Drckt man [Alternate]+[Shift]+[Buchstaben],
+so wird das entsprechende Laufwerk im obersten Fenster ge”ffnet.
+
+Mit [Shift]+[Help] wird der TeraDesk-Hypertext im Hypertext-Viewer
+(ST-Guide) ge”ffnet, wenn dieser als ausfhrende Applikation fr *.HYP-
+Dateien angemeldet ist. Der installierte Hypertext-Viewer sollte dieselbe
+Syntax wie ST-Guide verstehen:
+TeraDesk's Hilfe wird als "*:\TERADESK.HYP <Seitenname>" ge”ffnet.
+
+Drckt man [Help] w„hrend ein TeraDesk-Dialog ge”ffnet ist, so wird
+die entsprechende Hilfeseite (Hypertext) zu diesem Dialog ge”ffnet.
+Dazu mu im Men 'Desktop...' die Dialogbox-Einstellung 'Fenster'
+selektiert sein.
+Wenn der Font Auswahl-Dialog von einem anderen Programm aufgerufen wird,
+ist diese Hilfe nicht verfgbar.
+
+Ist kein Dialog ge”ffnet, erscheint mit [Help] ein Hilfe-Dialog mit
+allgemeinen Hilfen zu TeraDesk.
+
+Mit [Undo] werden alle Objekte auf dem Desktop oder in Verzeichnissen
+de-selektiert.
+
+In Verzeichnis-Fenstern sind noch mehr Shortcuts verfgbar, abh„ngig vom
+jeweiligen Fenster-Typ.
+
+Siehe auch:  TeraDesk Fenster  Konventionen  Objekte 'draggen'
+ 
+@endnode
+
+
+@node "Der ListBox-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.7 Der ListBox-Dialog                                           TeraDesk@{u}
+
+TeraDesk verwaltet Listen von Dateitypen-Masken, FensterIcon-Typen, Typen
+von ausfhrbaren Programmen, angemeldeten Applikationen und zugeordneten
+Dateitypen. Diese Listen werden alle im selben Dialog mit einer scroll-
+baren Listbox und fnf Buttons bearbeitet; abh„ngig von der ausgew„hlten
+Men-Option:
+
+Maske setzen...           Liste mit Dateitypen-Masken fr TeraDesk's
+                          Verzeichnis-Fenster.
+
+Anwendung anmelden...     Liste mit installierten Applikationen.
+
+Programmtypen...          Liste mit ausfhrbaren Programmtypen.
+
+FensterIcons zuweisen...  Liste mit zugeordneten Icons zu Dateinamen,
+                          Dateitypen und Ordnernamen.
+
+Dateitypen zuordnen...    Liste mit Dateitypen, die Applikationen zuge-
+                          ordnet sind. Dieser Unter-Dialog befindet sich
+                          im Anwendung anmelden...-Dialog.
+
+Die Listeneintr„ge k”nnen mit fnf Buttons (Neu, ndern, L”schen, Pfeil
+hoch und Pfeil runter) bearbeitet werden.
+
+Neu: ™ffnet einen Dialog, mit dem man einen neuen Eintrag erzeugen kann.
+     Dieser wird an der ausgew„hlten Position in die Liste eingetragen;
+     abh„ngig vom Objekt-Typ sind verschiedene Eingaben m”glich.
+
+ndern: ™ffnet einen Dialog, mit dem man einen vorhandenen Eintrag „ndern
+        kann. bh„ngig vom Objekt-Typ sind verschiedene Eingaben m”glich.
+
+L”schen: Entfernt den selektierten Eintrag aus der Liste.
+
+Pfeil hoch: Verschiebt einen Eintrag in der Liste eine Position nach
+            oben.
+
+Pfeil runter: Verschiebt einen Eintrag in der Liste eine Position nach
+              unten.
+
+Mit Pfeil hoch/runter kann man somit leicht die Sortierung „ndern.
+TeraDesk durchsucht diese Listen @{B}immer von oben nach unten, bis die erste
+šbereinstimmung gefunden wurde@{b}. Man sollte somit oft benutzte Eintr„ge am
+Anfang der Liste positionieren; die 'allgemeinen' Masken ('*' und '*.*')
+mssen aber auf jeden Fall am Ende der Liste stehen.
+Bei der Reihenfolge mu man generell darauf achten, da spezifische
+Masken (z.B. "xyz.txt") VOR den eventuell „hnlichen, aber allgemeineren
+Zuordnungen (z.B. "*z.txt") stehen.
+
+Objekte k”nnen bei allen Listen (auer bei der Dateitypen-Zuordnung zu
+Applikationen) auf zwei verschiedene Arten hinzugefgt oder ge„ndert
+werden:
+Entweder kann man alle Daten manuell eingeben oder man selektiert ein
+Objekt auf dem Desktop oder in einem Fenster und ”ffnet dann den ent-
+sprechenden Dialog; man kann dann die von TeraDesk voreingestellten Daten
+eventuell noch „ndern.
+Dateitypen-Zuordnungen zu Applikationen k”nnen nur manuell eingegeben/
+ge„ndert werden.
+ 
+@endnode
+
+
+@node "Der Programmtyp-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.8 Der Programmtyp-Dialog                                       TeraDesk@{u}
+
+Hier kann man das Verhalten einer Applikation bestimmen, wenn diese auf
+andere Art als durch Dopelklick gestartet wird:
+
+Der Programmtyp bestimmt unter anderem, ob Startparameter an das Programm
+bergeben werden k”nnen.
+
+Es werden 5 Programmtypen erkannt:
+
+      GEM       AES/VDI GEM-Applikation
+      GTP       Gem Takes Parameters (GEM mit Parameterbergabe)
+      ACC       Accessory
+      TOS       TOS Programm (kein GEM)
+      TTP       TOS Takes Parameters (TOS mit Parameterbergabe);
+                Unix-Stil Kommandozeilen-Programme
+
+Siehe auch:  Programmtypen
+
+Hier kann auch das Standard-Startverzeichnis fr Programme oder Programm-
+typen eingestellt werden:
+
+Jedes Programm, das zus„tzliche Dateien (Resource- oder Konfigurations-
+dateien) verwendet, muss diese auch finden k”nnen. Mit den Optionen in
+der Box 'Verzeichnis' wird bestimmt, wo die Dateien zu finden sind.
+
+    Fenster   Im obersten ge”ffneten Fenster von Tera Desktop.
+    Programm  Im Start-Verzeichnis des Programms.
+    Datei     Pfad des ersten Dateinamens in der Kommandozeile.
+
+Verwendung des ARGV-Protokolls bei GTP- und TTP-Programmen:
+
+Beim Standard-Desktop ist die Anzahl der Zeichen in einer Kommandozeile
+auf 125 beschr„nkt; durch die Verwendung des ARGV-Protokolls sind bei
+Tera Desktop jedoch mehr Zeichen erlaubt. Manche GTP- und TTP-Programme
+haben allerdings Probleme damit; hier kann man diese Option ein- und
+ausschalten.
+
+Mit der Option 'Hintergrund' kann bei Multitasking-Systemen (MagiC/MinT)
+das Programm im Hintergrund gestartet werden. Es k”nnen allerdings nur
+Nicht-GEM-Programme im Hintergrund gestartet werden, sonst erscheint eine
+Fehlermeldung. Dies funktioniert auch bei Single-TOS; in dem Fall wird
+das Programm durch Pexec() ohne Menzeile gestartet und ohne andere
+Fenster zu schlieen. Bei Single-TOS ist die Option besonders praktisch,
+um z.B. Sound-Player 'nebenbei' laufen zu lassen.
+
+Ein Programm kann ebenfalls in Hintergrund gestartet werden, wenn man
+beim Starten [Control] gedrckt h„lt.
+
+Fr „ltere Programme, die Probleme in einer Multitasking-Umgebung haben,
+kann die Option 'Kein Multitask' gesetzt werden. Dann werden bei dessen
+Start alle anderen Programme 'eingefroren' und das Programm l„uft wie bei
+Single-TOS. Achtung: Diese Option ist allerdings noch nicht vollst„ndig
+implementiert und funktioniert bisher nur mit MagiC.
+
+Man kann hier auch den maximalen Speicher fr ein Programm reduzieren,
+wenn dieses normalerweise den gesamten verfgbaren Speicher fr sich
+beansprucht.
+Diese Option ist nur bei Multitasking-Systemen verfgbar; jeder hier ein-
+gesetzte Wert auer Null aktiviert diese Option.
+ 
+@endnode
+
+
+@node "Der Icon Auswahl-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.9 Der Icon Auswahl-Dialog                                      TeraDesk@{u}
+
+Dieser Dialog erscheint beim Anmelden oder ndern von Desktop- oder
+Fenster-Icons. Man kann hier aus einer Listbox ein Icon ausw„hlen und
+einen Namen fr das Icon eingeben (je nach Aufl”sung sind die @{"Farb-Icons" LINK "Die Icons-Dateien"}
+oder die monochromen Icons verfgbar). Mit den Hoch/Runter-Pfeilen und
+dem Slider kann man durch die Liste scrollen, mit dem OK-Button wird das
+Icon zugeordnet.
+
+Durch Klicken auf das Icon wird die selektierte Darstellung dieses Icons
+angezeigt; der Hintergrund in diesem Fenster entspricht dem aktuellen
+Desktop- oder Fenster-Hintergrund, je nach Icon-Typ.
+
+Siehe auch:  DeskIcons zuweisen...  FensterIcons zuweisen...
+             Untersttzte Protokolle
+ 
+@endnode
+
+
+@node "Der Font Auswahl-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.10 Der Font Auswahl-Dialog                                     TeraDesk@{u}
+
+Im Font Auswahl-Dialog werden die Schriftfonts fr Verzeichnis-Fenster
+und fr die Darstellung im Viewer-Fenster eingestellt. In der oberen
+Listbox sind die verfgbaren Fonts (nur monospace) aufgelistet.
+Wird ein Font selektiert, so wird in der Box darunter ein Beispieltext in
+dieser Schrift angezeigt; Schrift-Gr”e und -Farbe k”nnen hier ebenfalls
+eingestellt werden. Fr Viewer-Fenster kann hier zus„tzlich ein anderer
+Schriftstil gew„hlt werden.
+
+Durch Klicken auf den Beispieltext wird auch hier die selektierte Dar-
+stellung angezeigt; der Hintergrund in diesem Fenster entspricht dem
+aktuell gew„hlten Fenster-Hintergrund.
+
+Ist die Environment-Variable 'FONTSELECT' gesetzt, wird dieser Dialog
+von TeraDesk als systemweiter Font-Selektor verwendet.
+Dann kann er durch eine FONT_SELECT-Nachricht von anderen Programmen
+aufgerufen werden und auer den 'monospaced'-Fonts sind auch
+Proportional-Fonts verfgbar.
+ 
+@endnode
+
+
+@node "Der Kopieren-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.11 Der Kopieren-Dialog                                         TeraDesk@{u}
+
+Je nach Einstellung bei Kopieren und Drucken... erscheint bei den ent-
+sprechenden Aktionen zur Best„tigung der Kopieren-Dialog.
+
+Hier werden -je nach Aktion- die zu bearbeitenden Dateien, der Quellpfad
+und der Zielpfad angezeigt.
+
+Beim Kopieren/Verschieben/Umbenennen sind drei Optionen verfgbar:
+
+- Datum/Zeit „ndern
+- Attribute (und Zugriffsrechte) zurcksetzen
+- Links folgen (bei Kopieren/Verschieben/Umbenennen und L”schen)
+
+Mit 'Datum/Zeit „ndern' werden bei allen zu bearbeitenden Dateien die
+Eintr„ge bei Datum und Zeit durch die aktuellen Daten (System-Datum/Zeit)
+oder durch die im Info...-Dialog ge„nderten Daten ersetzt.
+
+Mit 'Reset Attribute' werden bei allen zu bearbeitenden Dateien die
+Attribute (read-only, system, usw.) oder Zugriffsrechte (read, write...)
+auf Standard-Werte gesetzt (oder durch die im Info...-Dialog ge„nderten
+Daten ersetzt).
+
+Mit 'Links folgen' werden Symbolische Links zu ihren Originaldateien
+zurckverfolgt; es werden also anstatt der Links die Originale kopiert,
+ge„ndert oder gel”scht. Beim L”schen werden allerdings die Originaldatei
+UND der symbolische Link gel”scht.
+Diese Option ist nur bei MagiC oder MinT verfgbar.
+
+Auch beim Drucken erscheint dieser Dialog, in dem Fall sind einige zu-
+s„tzliche Optionen verfgbar. Siehe Drucken...
+
+Siehe auch:  Info...  Kopieren und Drucken...
+ 
+@endnode
+
+
+@node "Der Namenskonflikt-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.12  Der Namenskonflikt-Dialog                                  TeraDesk@{u}
+
+Wenn beim Kopieren oder Umbenennen von Dateien der gew„hlte Name bereits
+existiert, so erscheint der Namenskonflikt-Dialog. Hier kann man eine
+oder beide beteiligten Dateien umbenennen, die Kopieraktion trotzdem
+starten (Datei berschreiben) oder die Aktion abbrechen.
+ 
+@endnode
+
+
+@node "Der Kommandozeilen-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.13 Der Kommandozeilen-Dialog                                   TeraDesk@{u}
+
+Wenn ein TTP- oder GTP-Programm (siehe Programmtypen) durch Doppelkick
+auf Name/Icon oder durch '™ffnen...' gestartet wird, so erscheint eine
+Dialog-Box, in der man die erforderlichen Parameter eingeben kann.
+Beim 'draggen' einer anderen Datei auf solch ein Programm erscheint diese
+Box nicht.
+
+Die Kommandozeile wird in ein @{"scrollbares Eingabefeld" LINK "Scrollbare Eingabefelder"} eingegeben; es
+k”nnen somit bis zu 250 Zeichen eingetragen werden.
+
+Man kann hier durch Drcken der [Insert]-Taste oder durch Doppelklick in
+das Feld eine Dateiauswahl-Box aufrufen, so kann man Dateinamen/Pfade
+schnell eintragen.
+
+Enth„lt der Name oder ein anderer Parameter in der Kommandozeile ein oder
+mehrere Leerzeichen, so sollten diese Namen in Anfhrungszeichen
+( ' oder " ) gesetzt werden.
+
+Der Eintrag in dieser Box bleibt solange erhalten, bis eine andere TTP-
+oder GTP-Anwendung gestartet wird.
+
+Siehe auch:  Scrollbare Eingabefelder
+ 
+@endnode
+
+
+@node "Der Hilfe-Dialog"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.14 Der Hilfe-Dialog                                            TeraDesk@{u}
+
+Ist kein Dialog ge”ffnet, erscheint mit [Help] ein Hilfe-Dialog mit
+allgemeinen Hilfen zu TeraDesk und seinen Tastatur-Shortcuts.
+
+Drckt man [Help] w„hrend ein TeraDesk-Dialog ge”ffnet ist, so wird
+die entsprechende Hilfeseite (Hypertext) zu diesem Dialog ge”ffnet.
+Dazu mu im Men 'Desktop...' die Dialogbox-Einstellung 'Fenster'
+selektiert sein.
+Wenn der Font Auswahl-Dialog von einem anderen Programm aufgerufen wird,
+ist diese Hilfe nicht verfgbar.
+
+Mit [Shift]+[Help] wird jederzeit der Hypertext (Startseite) aufgerufen.
+ 
+@endnode
+
+
+@node "Scrollbare Eingabefelder"
+@symbol ar "scrollbares Eingabefeld"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.15 Scrollbare Eingabefelder                                    TeraDesk@{u}
+
+In vielen F„llen ist es n”tig, einen langen Text (normalerweise einen
+Pfad oder einen langen Dateinamen) in Eingabefelder einzutragen. Durch
+die verwendete Aufl”sung und durch die Gr”e des Dialog-Fensters war die
+Anzahl der Zeichen bisher begrenzt.
+
+Deshalb wurde bei TeraDesk ein neuer Objekt-Typ implementiert:
+Eingabefelder, welche mehr Zeichen enthalten k”nnen als sichtbar sind.
+'šberh„ngende' Zeichen werden durch '<' und '>' rechts und/oder links des
+Eingabefeldes angezeigt. Mit den [Links] und [Rechts] Pfeil-Tasten kann
+man in der Zeile vorw„rts und rckw„rts scrollen. So k”nnen bis zu 250
+Zeichen eingegeben werden.
+
+Man kann hier durch Drcken der [Insert]-Taste oder durch Doppelklick in
+das Feld eine Dateiauswahl-Box aufrufen; der ausgew„hlte Datei- oder
+Pfad-Name wird dann an der entsprechenden Stelle eingetragen.
+
+Wenn TeraDesk in TOS-Umgebungen l„uft, haben manche dieser Eingabefelder
+die '8+3 Form'; bei Betriebssystemen mit langen Dateinamen (MinT/MagiC)
+sind diese immer scrollbar.
+
+Scrollbare Eingabefelder gibt es in folgenden Dialogen:
+
+    ™ffnen...
+    Info...
+    Neu...
+    Suchen...
+    Anwendung anmelden...
+    Der Kommandozeilen-Dialog
+    Der Namenskonflikt-Dialog
+ 
+@endnode
+
+
+@node "Darstellung von Dialog-Objekten"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Mens und Dialoge
+
+@{U}4.16 Darstellung von Dialog-Objekten                             TeraDesk@{u}
+
+Manche Objekt-Typen in TeraDesk's Dialogen wie z.B. die runden 'Radio-
+Buttons', 'Checkbox-Buttons', Buttons mit unterstrichenem Text und Rahmen
+mit Titeln werden nicht von allen AES-Versionen untersttzt.
+TeraDesk fragt deshalb beim AES nach, ob das 'WHITEBAK'-flag in Resource-
+Dateien untersttzt wird. Wenn ja, nimmt TeraDesk an, da das AES alle
+diese Objekte zeichnen kann und das AES bernimmt deren Darstellung;
+ansonsten werden die Objekte von TeraDesk gezeichnet.
+
+Der Vorteil liegt nun darin, da diese Objekte bei TeraDesk genauso aus-
+sehen wie die vom AES gezeichneten Objekte in anderen Applikationen.
+Der Nachteil ist, da manche dieser Objekte bei manchen AESs schlechter
+aussehen, als wenn TeraDesk die Darstellung bernommen h„tte.
+Ein weiterer Nachteil daran ist, da z.B. Geneva relevante Objekte anders
+markiert als z.B. MagiC oder N.AES; dies wird von TeraDesk nicht erkannt
+und somit bleiben diese F„higkeiten von Geneva ungenutzt.
+
+Mit der TERAENV Environment-Variable kann man TeraDesk dazu veranlassen,
+diese Objekte immer selbst zu zeichnen, egal ob das AES dies kann oder
+nicht.
+Dazu mu die TERAENV Variable 'D' (wie 'draw') gesetzt werden.
+
+Siehe auch:  Installation
+ 
+@endnode
+
+
+@node "Icons und Objekte"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}5  Icons und Objekte                                             TeraDesk@{u}
+
+ 5.1  Icons und Objekte: Allgemeines
+ 5.2  Objekte und Icons ”ffnen
+ 5.3  Objekte 'draggen'
+ 5.4  Die Icons-Dateien
+ 
+@endnode
+
+
+@node "Icons und Objekte: Allgemeines"
+@toc "Icons und Objekte"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Icons und Objekte
+
+@{U}5.1  Icons und Objekte: Allgemeines                              TeraDesk@{u}
+
+S„mtliche Objekte (Laufwerke, Ordner, Dateien...) werden auf dem Desktop
+und in Fenstern durch Icons repr„sentiert, in Fenstern optional als
+Text (Name und zus„tzliche Informationen). Alle diese Objekte k”nnen
+verschoben, kopiert und ge”ffnet werden, ebenfalls kann man andere
+Objekte darauf ziehen ('drag+drop').
+Siehe auch:  Objekte und Icons ”ffnen  Objekte 'draggen'
+
+Es gibt verschiedene Objekt-Typen, auf dem Desktop werden diese IMMER
+durch Icons dargestellt. In Fenstern kann man zwischen Text- und
+Icon-Darstellung w„hlen.
+
+1. Laufwerk (Partition):
+
+Dieser Typ repr„sentiert das Wurzelverzeichnis einer Festplattenpartition
+oder eines Laufwerks (Diskette, CDROM) und kann nur auf dem Desktop
+angelegt werden.
+Laufwerke/Partitionen bekommen immer einen Kennbuchstaben (A-Z), man kann
+dem Icon zus„tzlich einen bis zu 12 Zeichen langen Icon-Namen zuweisen.
+
+Wird kein Name angegeben und das Icon repr„sentiert eine Partition, wird
+der (durch den Festplattentreiber vergebene) Partitionsname angezeigt.
+
+2. Ordner:
+
+Dieser Typ repr„sentiert einen (Unter-) Ordner auf einer Partition.
+
+Ordnernamen haben bei Single-TOS oder auf FAT-Dateisystemen das
+'8+3-Format' und k”nnen bei Systemen mit langen Dateinamen bis zu 127
+Zeichen lang sein.
+Der komplette Pfad zu einem Ordner darf bei Single-TOS 127 Zeichen lang
+sein, bei erweiterten Systemen bis zu 255 Zeichen.
+Der Ordnername wird (ggf. in gekrzter Form) unter dem Icon dargestellt,
+kann aber auch -unabh„ngig vom Originalnamen- umbenannt werden.
+
+3. Datei:
+
+Dieser Typ repr„sentiert entweder eine normale Datei oder die speziellen
+Objekte auf Laufwerk U:\. Der Dateiname wird (ggf. in gekrzter Form)
+unter dem Icon dargestellt und kann ebenfalls umbenannt werden (s.o.).
+
+4. Symbolische Links (Alias):
+
+Bei erweiterten Dateisystemen (bei Single-TOS nicht verfgbar)
+repr„sentiert dieser Typ spezielle Verweise auf andere Dateien oder
+Ordner. Es gelten die selben Namens-Regeln wie fr Dateien.
+Siehe auch:  Symbolische Links
+
+5. Netzwerk-Objekte:
+
+Dieser Typ repr„sentiert auf dem Desktop die URL einer Netzadresse
+(z.B. Internetseite oder ftp-Server). Siehe: DeskIcons zuweisen...
+
+6. Drucker:
+
+Dieser Typ repr„sentiert den am Parallel-Port angeschlossenen Drucker
+und ist nur auf dem Desktop verfgbar. Es kann ein bis zu 12 Zeichen
+langer Icon-Name angegeben werden. Siehe auch:  Drucken...
+
+7. Mlleimer:
+
+Dieses Objekt dient zum L”schen von Dateien und Ordnern und ist nur auf
+dem Desktop verfgbar. Objekte, die auf den Mlleimer ge-'dragged' werden,
+werden -nach optionaler Sicherheitsabfrage- gel”scht. Es kann ein bis zu
+12 Zeichen langer Icon-Name angegeben werden. Siehe auch:  L”schen...
+ 
+@endnode
+
+
+@node "Objekte und Icons ”ffnen"
+@toc "Icons und Objekte"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Icons und Objekte
+
+@{U}5.2  Objekte und Icons ”ffnen                                    TeraDesk@{u}
+
+Objekte und deren Icons werden ge”ffnet, indem man den Mauszeiger darber
+platziert und mit der linken Maustaste doppelklickt (ein einfacher Klick
+mit der rechten Maustaste geht auch). Man kann die Datei auch zuerst
+selektieren und dann mit der Option '™ffnen...' aus dem Men @{"'Datei'" LINK "Men: Datei"}
+”ffnen.
+
+Was dann passiert, h„ngt vom jeweiligen Objekt-Typ ab; wenn man beim
+™ffnen [Alternate] gedrckt h„lt, kann man zwischen mehreren Optionen
+ausw„hlen.
+
+Beim ™ffnen der jeweiligen Objekte passiert folgendes:
+
+1. Laufwerk (Partition):
+
+Es wird ein neues Fenster mit dem Wurzel-Verzeichnis des entsprechenden
+Laufwerks ge”ffnet.
+
+Laufwerke/Partitionen kann man durch [Alternate]+[Laufwerksbuchstaben]
+”ffnen (A - P oder A - Z).
+Drckt man [Alternate]+[Shift]+[Buchstaben], so wird das entsprechende
+Laufwerk im obersten Fenster ge”ffnet.
+
+2. Ordner:
+
+Ist ein Ordner-Icon auf dem Desktop abgelegt, wird beim ™ffnen ein neues
+Fenster mit dessen @{"Inhalt" LINK "Main"} angezeigt.
+
+Bei Ordnern in Verzeichnis-Fenstern wird der @{"Inhalt" LINK "Main"} des Ordners im
+selben Fenster angezeigt, d.h. es wird kein neues Fenster ge”ffnet. Durch
+Drcken von [Alternate] beim ™ffnen kann man den Ordnerinhalt auch in
+einem neuen Fenster anzeigen lassen.
+
+Der Ordner namens '..' steht fr das bergeordnete Verzeichnis; durch
+Doppelklick hierauf kann man somit ein Verzeichnis-Level h”her springen.
+Auch hier kann man durch Drcken von [Alternate] das bergeordnete
+Verzeichnis in einem neuen Fenster ”ffnen lassen.
+
+Wenn man einen Ordner oder ein Laufwerksverzeichnis durch Doppelklick auf
+einen @{"symbolischen Link" LINK "Symbolische Links"} in einem Verzeichnis-Fenster ”ffnet, so wird
+in der Titelzeile des ge”ffneten Fensters der Pfad bezogen auf den
+@{B}Ursprung des Links@{b} angezeigt. Drckt man beim ™ffnen des Links die linke
+[Shift]-Taste wird der "echte" Pfad (zum Original, bezogen auf die
+tats„chliche Verzeichnis-Struktur) angezeigt.
+
+3. Datei:
+
+A. Wenn eine Datei als ausfhrendes Programm erkannt wird, so wird es
+   gestartet. Ist es ein GTP- oder TTP-Programm, ”ffnet sich zuerst der
+   Kommandozeilen-Dialog, in dem man Startparameter eingeben kann.
+
+B. Wenn ein Dateiname auf eine Maske pat, die bei 'Anwendungen anmelden'
+   einem Programm zugeordnet sind, so wird das Programm gestartet und der
+   Dateiname als Parameter bergeben.
+
+Beim ™ffnen der Datei mit [Alternate] wird weder das zugeordnete Programm
+gestartet, noch wird die Datei als Applikation erkannt; es wird dann
+immer ein Auswahl-Dialog ge”ffnet (siehe C.).
+
+C. Bei ™ffnen aller anderen Dateien erscheint ein Auswahl-Dialog, in dem
+   man zwischen verschiedenen '™ffnen'-Optionen w„hlen kann:
+
+   - Zeigen: Die Datei wird im Teradesk-Viewer ge”ffnet und angezeigt.
+     Wenn die ersten 256 Bytes mindestens 90% normale (druckbare) ASCII-
+     Zeichen beinhalten wird die Datei im Text-Modus angezeigt, sonst im
+     HEX-Modus.  Siehe Viewer-Fenster.
+
+   - Editieren: ™ffnet einen Editor (wenn angemeldet) mit der gew„hlten
+     Datei.
+
+   - Bei '™ffnen' wird die Datei als ausfhrbares Programm behandelt,
+     auch wenn dieser Dateityp nicht als ausfhrbares Programm angemeldet
+     wurde.
+     Der Programmtyp-Dialog erscheint, in welchem man fr die selektierte
+     Datei einen Programmtyp setzen kann (Zuordnung ist nicht permanent).
+     Dann wird die Datei als Programm gestartet.
+
+   - 'Mit' ”ffnet den ListBox-Dialog; dort kann man ein Programm w„hlen,
+     mit dem die Datei ge”ffnet werden soll.
+
+Siehe auch:  Konventionen  Tastatur-Shortcuts  Men: Datei
+             ™ffnen...
+ 
+@endnode
+
+
+@node "Objekte 'draggen'"
+@toc "Icons und Objekte"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Icons und Objekte
+
+@{U}5.3  Objekte 'draggen'                                           TeraDesk@{u}
+
+Icons oder Objekte (das Quell-Objekt) k”nnen auf andere Icons/Objekte
+(das Zielobjekt) ge-'dragged' werden, indem man sie selektiert und mit
+gehaltener linker Maustaste ber das Zielobjekt bewegt und dort die Taste
+losl„t.
+Was dann passiert ist abh„ngig von der Art der Objekte.
+
+Bei den ersten drei M”glichkeiten kann das Quell-Objekt eine Datei oder
+ein Ordner sein:
+
+1. Datei(en), Ordner -> Laufwerk (Partition)
+
+Die Quell-Dateien und Ordner (mit @{"Inhalt" LINK "Main"}) werden in das Wurzelverzeichnis
+des jeweiligen Laufwerks kopiert.
+
+2. Datei(en), Ordner -> Ordner
+
+Quell-Dateien und Ordner (mit @{"Inhalt" LINK "Main"}) werden in den Ziel-Ordner kopiert.
+
+3. Datei(en), Ordner, DeskIcons -> Mlleimer
+
+Quell-Dateien und Ordner (mit @{"Inhalt" LINK "Main"}) werden gel”scht, bei DesktopIcons
+hat man die Wahl zwischen 'Icon entfernen' (Quell-Datei/Ordner bleibt
+unangetastet) oder 'Verzeichnisse l”schen' (Quell-Datei/Ordner wird
+ebenfalls gel”scht).
+
+Bei den n„chsten drei M”glichkeiten kann das Quell-Objekt nur eine Datei
+sein:
+
+4. Datei -> Programm
+
+Das Programm wird mit dem Dateinamen als Startparameter gestartet (es
+kann sein, da dies bei nicht-TTP/GTP-Programmen nicht funktioniert).
+
+5. Datei -> Drucker
+
+Der Datei-@{"Inhalt" LINK "Main"} wird ausgedruckt.
+
+6. Datei(en), Ordner -> Verzeichnis-Fenster
+
+Objekte, die man in ein Verzeichnis-Fenster 'dragged', werden dort hinein
+kopiert oder verschoben (je nachdem, ob dabei [Control] gehalten wird).
+
+Siehe auch:  Kopieren und Drucken...
+
+7. Datei -> Viewer-Fenster
+
+Wird eine einzelne Datei in ein offenes Viewer-Fenster ge-'dragged', so
+wird die Datei in diesem Fenster angezeigt. Wird versucht, mehr als eine
+Datei oder andere Objekte in ein Viewer-Fenster zu 'draggen', so
+erscheint die Fehlermeldung 'Illegale Kopieroperation'.
+
+8. Datei(en), Ordner -> Applikations-Fenster
+
+Wenn die Applikation das AV-Protokoll versteht, wird eine VA_DRAGACCWIND-
+Nachricht mit Zeigern auf die Namen der Quell-Objekte an das Programm ge-
+sendet; dieses bernimmt dann alle Aktionen.
+
+Wenn TeraDesk auf Multitasking-Systemen l„uft und die Ziel-Applikation
+kein AV-Protokoll-Client ist, so wird eine Drag&Drop-Nachricht gesendet.
+Versteht das Programm das Drag&Drop-Protokoll, so fhrt es alle im Pro-
+gramm definierten Aktionen fr diese(s) Objekt(e) aus.
+Reagiert die Applikation nicht, dann wird die Aktion abgebrochen und der
+Benutzer wird gewarnt.
+
+Siehe auch:  Untersttzte Protokolle
+
+9. Datei(en), Ordner, Laufwerk(e) -> Desktop
+
+Wenn das Quell-Objekt bereits auf dem Desktop platziert war, wird es an
+die neue Position verschoben.
+
+Wenn das Quell-Objekt in einem Verzeichnis-Fenster war, so wird sein Icon
+auf dem Desktop 'installiert' und kann genauso wie im Fenster verwendet
+werden.
+
+Bei allen Methoden auer 7. und 8. k”nnen durch Drcken von [Control]
+(beim Loslassen des Maus-Buttons) die Objekte verschoben werden; d.h. die
+Quell-Objekte werden nach dem Kopieren gel”scht (wenn Quell-Datei/Ordner
+und Ziel sich im selben Verzeichnis befinden bewirkt das Verschieben
+lediglich eine Umbenennen-Aktion).
+
+Durch Drcken von [Alternate] erscheint eine Dialog-Box, mit deren Hilfe
+man beim Kopieren die Ziel-Datei(en) gleich umbenennen kann.
+
+Beim Kopieren kann man durch die [Shift links]- und [Shift rechts]-Tasten
+weitere verschiedene Kopier-Aktionen ausfhren:
+
+Mit [Shift links] werden Dateien nur dann kopiert (und im Ziel-Verzeich-
+nis berschrieben), wenn sie ein neueres Datum/Zeit haben als die dort
+evtl. bereits existierenden Dateien ('Dateien updaten').
+
+Mit [Shift rechts] werden Dateien nur dann kopiert (und im Ziel-Verzeich-
+nis berschrieben), wenn sie ein „lteres Datum/Zeit haben
+('Dateien wiederherstellen').
+
+Wenn ein Icon einer Datei oder einem Ordner zugeordnet ist und die Datei
+(Ordner) gel”scht wird, so wird bei TeraDesk auch die Icon-Zuordnung aus
+der Liste gel”scht.
+
+Wenn beim Kopieren im Ziel-Verzeichnis ein Ordner oder eine Datei mit dem
+gleichen Namen gefunden wird, so erscheint der Namenskoflikt-Dialog:
+Hier kann man Quell- und Ziel-Objekt umbenennen, das Zielobjekt ber-
+schreiben (OK), dieses Objekt berspringen (N„chste), alle Objekte ohne
+weitere Nachfrage berschreiben (Alle) oder die Aktion abbrechen.
+
+Alle Kopieren-, Verschieben-, ndern-, L”schen- oder Druck-Operationen
+k”nnen durch Drcken von [Esc] abgebrochen werden. ndern- und L”schen-
+Aktionen werden nach dem momentan bearbeiteten Objekt abgebrochen;
+Kopier- und Verschiebe-Aktionen werden sofort beendet sobald der
+momentane @{"Inhalt" LINK "Main"} der Kopier-Pufferspeichers bearbeitet ist. Eine evtl.
+bereits vorhandene Zieldatei wird in diesem Fall gel”scht.
+
+Siehe auch:  Kopieren und Drucken...
+ 
+@endnode
+
+
+@node "Die Icons-Dateien"
+@symbol ar "Farb-Icons"
+@toc "Icons und Objekte"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Icons und Objekte
+
+@{U}5.4  Die Icons-Dateien                                           TeraDesk@{u}
+
+Die Icons fr TeraDesk sind in den Dateien 'ICONS.RSC' und 'CICONS.RSC'
+gespeichert; erstere enth„lt schwarz/wei (monochrome) Icons und die
+andere die Farb-Icons. Beide Dateien sollten sich im TeraDesk-Ordner
+befinden (siehe Installation).
+
+Diese Dateien enthalten alle Icon-Bitmaps, welche man in den Mens
+'DeskIcons zuweisen...' und 'FensterIcons zuweisen...' einem Objekt zu-
+ordnen kann.
+
+TeraDesk entscheidet aufgrund der AES-Version, ob 'ICONS.RSC' oder
+'CICONS.RSC' geladen wird. Kann die Datei 'CICONS.RSC' nicht gefunden
+werden, verwendet TeraDesk die monochrome 'ICONS.RSC'.
+
+Es wird empfohlen, nur monochrome Icons in ICONS.RSC zu speichern, sonst
+kann TeraDesk bei alten Single-TOS Versionen evtl. abstrzen. In der
+Datei 'CICONS.RSC' sind alle Arten erlaubt.
+
+Bei Systemen mit wenig RAM kann man die Datei 'CICONS.RSC' l”schen und
+damit eine Menge Speicher sparen; es werden dann die monochromen Icons
+verwendet.
+
+Mit einem Resource-Editor (RSM, Interface...) kann man eigene Icons hin-
+zufgen oder Icons „ndern. Die maximale Gr”e der Icons ist 64 Pixel
+(Breite) und 32 Pixel (H”he).
+Es drfen keine anderen Objekte auer Icons in den Dateien sein, sonst
+werden diese nicht geladen. Besitzer eines Mega STE, TT oder Falcon
+k”nnen auch die originalen Icons-Dateien in 'ICONS.RSC' beziehungsweise
+'CICONS.RSC' umbenennen und in den TeraDesk-Ordner kopieren; es mssen
+darin aber einige grundlegende Icons enthalten sein. Es finden sich auch
+eine Menge von Icon-Sammlungen im Internet.
+
+Die Icons werden anhand ihrer Namen identifiziert; diese haben eine max.
+L„nge von 12 Zeichen und sind im 6X6-Systemfont unter oder ber dem Icon
+platziert. Somit mu in der Resource-Datei keine besondere Reihenfolge
+der Icons eingehalten werden.
+ACHTUNG: Das '@@'-Zeichen darf nicht fr Icon-Namen verwendet werden, weil
+es in der TeraDesk Konfigurations-Datei als Platzhalter fr Leerzeichen
+benutzt wird.
+
+In der Resource-Datei mssen unbedingt die folgenden Icon-Namen
+vorhanden sein:
+
+  Fr Diskettenlaufwerke:       Icon-Name:  'FLOPPY'
+  Fr Festplatten-Partitionen:  Icon-Name:  'HARD DISC'
+  Fr Dateien:                  Icon-Name:  'FILE'
+  Fr Programme:                Icon-Name:  'APP'
+  Fr Ordner:                   Icon-Name:  'FOLDER'
+  Fr Mlleimer:                Icon-Name:  'TRASH'
+  Fr Drucker:                  Icon-Name:  'PRINTER'
+
+Bei neuen Resource-Dateien, die diese Icon-Namen nicht enthalten, sollten
+mit einem Resource-Editor die grundlegenden Icons mit diesen Namen
+versehen werden.
+
+Wichtig: Die Namen der Standard-Icons sind nicht 'hard-coded', sondern
+werden aus der Datei 'DESKTOP.RSC' gelesen; somit kann man diese Namen
+ebenfalls bei der šbersetzung in andere Sprachen anpassen.
+
+Anm. des @{"šbersetzers" LINK "Adresse"}: Diese Standard Icon-Namen habe ich in der deutschen
+DESKTOP.RSC nicht bersetzt; ich denke, dadurch kann man einfacher die
+Original-CICONS.RSC verwenden, ohne diese erst „ndern zu mssen.
+
+Kann ein Icon in der Resource-Datei nicht gefunden werden, verwendet
+TeraDesk das entsprechende Standard-Icon fr diesen Objekt-Typ (s.o.).
+Wird auch dieses Icon nicht gefunden, so wird das erste Icon in der
+Resource-Datei verwendet.
+ 
+@endnode
+
+
+@node "Symbolische Links"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}6  Symbolische Links                                             TeraDesk@{u}
+
+Symbolische Links sind spezielle Dateien, die lediglich einen Zeiger auf
+Dateien oder Ordner darstellen; diese k”nnen sich irgendwo anders auf der
+Festplatte befinden. Symbolische Links werden vom Standard-GEMDOS nicht
+untersttzt und sind nur verfgbar mit MagiC oder MinT.
+
+Symbolische Links werden mit der Option 'Neu...' im Men Datei erstellt:
+Man selektiert ein Objekt, mit 'Neu...' wird dann im OBERSTEN GE™FFNETEN
+FENSTER ein symbolischer Link zu diesem Objekt erstellt.
+
+Symbolische Links werden wie normale Dateien/Ordner kopiert, verschoben
+oder gel”scht. Dabei wird aber nur der Link kopiert/verschoben/gel”scht
+und NICHT die Originaldatei, auf die der Link zeigt.
+Mit der Option 'Links folgen' im Kopieren-Dialog oder im DeskIcon-Dialog
+wird dieses Verhalten umgekehrt: Ist 'Links folgen' selektiert, so werden
+die Originaldateien kopiert/verschoben und nicht die Links. Beim L”schen
+werden dann jedoch immer beide Dateien (Original+Link) gel”scht.
+
+Die 'Links folgen'-Option wirkt nur auf direkt selektierte Links. Zeigt
+solch ein Link auf einen Ordner, der wiederum weitere symbolische Links
+enth„lt, so werden diese -auch bei sel. 'Links folgen'- als Links kopiert
+und nicht deren Original-Dateien.
+Somit werden unkontrollierte Datei-Operationen und endloses Zurckverfol-
+gen von symbolischen Links vermieden.
+
+Wenn man einen Ordner oder ein Laufwerksverzeichnis durch Doppelklick auf
+einen symbolischen Link in einem Verzeichnis-Fenster ”ffnet, so wird
+in der Titelzeile des ge”ffneten Fensters der Pfad bezogen auf den
+@{B}Ursprung des Links@{b} angezeigt. Drckt man beim ™ffnen des Links die linke
+[Shift]-Taste wird der "echte" Pfad (zum Original, bezogen auf die
+tats„chliche Verzeichnis-Struktur) angezeigt.
+
+Informationen ber symbolische Links k”nnen mit dem Info...-Dialog auf-
+gerufen werden; dort kann man Links und deren Original-Objekte umbenennen
+und ebenfalls dem Link ein anderes Original-Objekt zuweisen (in dem Fall
+wird in Wirklichkeit der Link gel”scht und ein neuer erstellt).
+
+Wird ein symbolischer Link ge”ffnet, sucht TeraDesk erst das Original-
+Objekt und fhrt dann -je nach Typ (Datei, Ordner oder Programm) des
+Objekts- die ensprechende Aktion aus.
+
+Wird ein symbolischer Link einem Programm bergeben, so wird dieser zum
+Original-Objekt zurckverfolgt; es wird also immer Name und Pfad des
+Original-Objekts bergeben.
+
+In der derzeitigen Version von TeraDesk funktioniert das noch nicht immer
+zufriedenstellend, z.B. wenn ein Objekt in einem Ordner ge”ffnet wird,
+welcher wiederum nur ein Link zu einem 'echten' Ordner ist, so wird der
+Pfad nicht bergeben.
+
+Allgemein sollte man keine symbolischen Links auf symbolische Links er-
+stellen, das k”nnte (nicht nur) Tera Desktop verwirren.
+
+Wenn ein symbolischer Link nur den Namen (keinen Pfad) zu einem Objekt
+enth„lt, so nimmt TeraDesk den Pfad des Links selbst (und h„ngt den Namen
+des Objekts an).
+Man kann auch fr 'Netzwerk-Objekte' wie Web-Seiten oder ftp-Server einen
+symbolischen Link erstellen. Im Moment kann das noch nicht direkt
+geschehen, man mu deshalb erst einen Link zu einer existierenden Datei
+anlegen und dann bei 'Orig.' die Netz-Adresse eintragen.
+Bei solchen 'Netzwerk-Objekten' sollten die Namen mit 'http:', 'https:',
+'ftp:' oder 'mailto:' beginnen; Gro- und Kleinschreibung wird nicht
+beachtet.
+ 
+@endnode
+
+
+@node "TeraDesk Fenster"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}7  TeraDesk Fenster                                              TeraDesk@{u}
+
+TeraDesk zeigt zwei Arten von Fenstern:
+
+7.1  Verzeichnis-Fenster
+7.2  Viewer-Fenster
+
+Diese Fenster k”nnen wie gewohnt durch die Buttons und Slider bedient
+werden. Bei Tera Desktop kann man die Fenster auch durch Men-Optionen
+oder Tastatur-Kommandos steuern:
+
+[Clr Home]  Zum Verzeichnis-Anfang springen
+
+[Shift]+[Clr Home]  Zum Verzeichnis-Ende springen
+
+[<User-definierter Shortcut>]  Oberstes Fenster @{"ikonifizieren" LINK "Iconify/De-Iconify"}/de-ikonif.
+
+[<User-definierter Shortcut>]  Oberstes Fenster Volle Gr”e/normale Gr”e
+
+[<User-definierter Shortcut>]  Fenster schlieen
+
+[<User-definierter Shortcut>]  Alle Fenster schlieen
+
+[<User-definierter Shortcut>]  @{"Fenster wechseln" LINK "Wechseln"}
+
+[<User-definierter Shortcut>]  Oberstes Fenster kopieren
+
+[Pfeiltasten]  Mit den Pfeiltasten kann man in die jeweilige Richtung
+scrollen (zeilenweise bewegen). Wird [Shift]+[Pfeiltaste] gedrckt, so
+wird der Fensterinhalt seitenweise weiterbewegt.
+Benutzt man eine PC-Tastatur, so haben die [Bild hoch]- und die
+[Bild runter]-Tasten die gleiche Funktion wie [Shift]+[Pfeiltaste hoch]
+und [Shift]+[Pfeiltaste runter].
+
+Es gibt fr die verscheidenen Fenster-Typen weitere spezifische Tastatur-
+Kommandos.
+
+Fenster k”nnen 'ikonifiziert' werden, wenn das verwendete AES (AES 4-
+kompatibel) dies untersttzt. Dabei wird das Fenster verkleinert, so da
+darin nur ein Icon angezeigt wird: Eine Datei, ein Ordner oder ein Lauf-
+werk, je nach @{"Inhalt" LINK "Main"}. Die Gr”e des ikonifizierten Fensters wird durch
+AES bestimmt. Bei manchen AESs kann die Gr”e der ikonif. Fenster ver-
+„ndert werden: Hier wird eine Gr”e von 80x64 Pixel empfohlen.
+
+Ikonifizierte Fenster werden (durch das AES bestimmt) normalerweise an
+der unteren Kante des Bildschirms platziert und immer an der Original-
+Position (und mit den Maen) de-ikonifiziert.
+
+Man ikonifiziert Fenster, indem man auf den Button mit dem kleinen
+Dreieck klickt, das sich rechts oben im Fenster direkt links neben dem
+'Volle Gr”e'-Button befindet. Durch Doppelklick wird ein ikonifiziertes
+Fenster wieder vergr”ert. Bei TeraDesk k”nnen Fenster auch durch die
+Menoption 'Iconify/De-Iconify' oder durch einen Tastatur-Shortcut
+ikonifiziert werden.
+
+Mit dem 'Volle Gr”e-Button' (Fuller) ganz rechts oben im Fenster kann
+man -wie der Name schon sagt- das Fenster auf volle Bildschirmgr”e
+vergr”ern. Wenn allerdings zur Anzeige des kompletten Fenster-Inhalts
+kein so groes Fenster ben”tigt wird, so wird es nur auf die notwendigen
+Mae vergr”ert (verkleinert). Durch Drcken von [Shift] beim Klicken auf
+den 'Volle Gr”e-Button' wird das Fenster immer auf volle Bildschirmgr”e
+vergr”ert (ab und zu kann das Fenster etwas kleiner sein als der 'volle
+Bildschirm', abh„ngig von der fr Fenster eingestellte Font-Gr”e und der
+Einstellung bei 'Als Icons').
+
+Bei erneutem Klicken auf den 'Fuller'-Button wird das Fenster wieder mit
+seine vorherigen Maen dargestellt.
+Jede Aktion, welche die Mae des Fenster (-Inhalts) ver„ndert (z.B. Ver-
+gr”ern/Verkleinern, Font-Wechsel, Darstellung als Icons->als Text usw.)
+setzt den 'fulled'-Status des Fensters zurck; der n„chste Klick auf den
+'Volle Gr”e-Button' pat das Fenster dann wieder auf die notwendigen
+Mae an.
+Auch die 'Volle Gr”e'-Funktion kann bei TeraDesk durch das Men oder
+durch einen Tastatur-Shortcut ausgefhrt werden.
+
+Siehe auch:  Tastatur-Shortcuts  Objekte 'draggen'   Mens und Dialoge
+ 
+@endnode
+
+
+@node "Verzeichnis-Fenster"
+@toc "TeraDesk Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      TeraDesk Fenster
+
+@{U}7.1  Verzeichnis-Fenster                                         TeraDesk@{u}
+
+Verzeichnis-Inhalte (Ordner/Dateien/Links) werden wie beim TOS Standard-
+Desktop dargestellt und k”nnen als Icons oder in Textform angezeigt
+werden.
+
+Im Men 'Darstellung' kann eingestellt werden, welche Informationen im
+Text-Modus angezeigt werden sollen.
+
+Im Text-Modus werden Ordner durch ein 'Fuller'-Zeichen ('Volle Gr”e')
+gekennzeichnet, ausfhrbare Programme haben einen Strich ( - ) vor ihrem
+Namen und symbolische Links sind in kursiver Schrift dargestellt.
+
+Verzeichnis-Fenster verfgen ber einen Auto-Selektor; Objekte k”nnen
+damit durch direkte Tastatur-Eingabe von Namens-Teilen oder Masken sehr
+leicht gefunden und selektiert werden.
+Folgende Muster werden bei der Eingabe selektiert:
+
+  <Eingegebene Buchstaben>*.* (nur bei FAT-Dateisystemen mit 8+3 Namen)
+  <Eingegebene Buchstaben>.*  (nur bei FAT-Dateisystemen mit 8+3 Namen)
+  <Eingegebene Buchstaben>*
+
+Platzhalter (Wildcards) wie '?' und '[<Buchstabe>]' sind erlaubt.
+Siehe  Maske setzen...
+
+Da die Eingabe von Buchstaben aber auch als Men-Shortcut interpretiert
+werden k”nnte, werden derartige Konflikte auf folgende Weise vermieden:
+
+ - Ist kein Men-Shortcut mit einem einzelnen Buchstaben belegt (auer
+   [Tab] oder [Delete], im Auto-Selektor verboten), so ist der Auto-
+   Selektor immer aktiv.
+
+ - Wenn irgendein Men-Shortcut mit einem einzelnen Buchstaben belegt
+   ist, mu der Auto-Selektor mit der [Insert]-Taste an/ausgeschaltet
+   werden. So wechselt man zwischen Men-Shortcuts und Auto-Selektor.
+
+ - Selektierte Objekte (durch den Auto-Selektor oder manuell) k”nnen auch
+   mit der [Return]-Taste ge”ffnet werden; es ist m”glich, da der im
+   Men zugeordnete Shortcut fr '™ffnen...' im Auto-Selektor-Modus zeit-
+   weise deaktiviert ist.
+
+Der Auto-Selektor wird bei jedem Fensterwechsel, beim Laden einer Konfi-
+gurationsdatei und beim Drcken der [Insert]-Taste zurckgesetzt.
+Mit [Backspace] wird der zuletzt eingegebene Buchstabe im Auto-Selektor
+gel”scht.
+
+Mit [Esc] wird der Verzeichnis-@{"Inhalt" LINK "Main"} neu eingelesen und im Fenster dar-
+gestellt.
+
+Dateien und Ordner, die in ein Verzeichnis-Fenster ge-'dragged' werden,
+werden je nach zus„tzlich gedrckter Taste in dieses Verzeichnis kopiert,
+verschoben...usw. Siehe  Objekte 'draggen'.
+
+Im Men 'Fenster' finden sich weitere Bearbeitungsm”glichkeiten fr
+Verzeichnis-Fenster; diese sind auch durch Tastatur-Shortcuts ausfhrbar.
+
+Siehe auch:  Men: Datei  Men: Darstellung  Konventionen
+ 
+@endnode
+
+
+@node "Viewer-Fenster"
+@toc "TeraDesk Fenster"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      TeraDesk Fenster
+
+@{U}7.2  Viewer-Fenster                                              TeraDesk@{u}
+
+Hier werden bei TeraDesk alle Arten von Datei-Inhalten entweder im Text-
+(ASCII)-Modus oder im HEX-Modus angezeigt.
+
+Lesbare Text-Dateien werden im ASCII-Modus dargestellt, w„hrend der HEX-
+Modus fr Bin„r-Dateien verwendet wird. TeraDesk versucht beim ™ffnen
+oder Neuladen einer Datei deren Typ anhand des Inhalts zu erkennen.
+
+Jedes Viewer-Fenster hat eine eigene Men-Zeile; durch Klicken auf
+'Viewer' kann man zwischen den beiden Eintr„gen ausw„hlen
+('Pull-Down Men' anstatt 'Drop-down Men').
+
+Mit der Option 'Tab.-Breite' kann man fr dieses Fenster einstellen,
+wieviel Leerzeichen fr einen Tabulator dargestellt werden sollen.
+
+Mit 'Hex-Modus' kann man zwischen Darstellung im ASCII-Modus und im HEX-
+Modus umschalten.
+
+In Viewer-Fenstern sind zus„tzliche (o. ver„nderte) Tastatur-Kommandos
+verfgbar:
+
+Mit [Space] (Leertaste) wird der Text seitenweise vorw„rts bewegt.
+
+Mit [Return] wird der Text zeilenweise vorw„rts bewegt.
+
+Mit [Esc] wird der Dateiinhalt neu eingelesen und im Fenster angezeigt.
+
+Man kann auch einzelne Dateien direkt in ein Viewer-Fenster 'draggen';
+diese werden dann sofort angezeigt.
+
+Als Viewer kann eine externe Applikation angemeldet werden und ersetzt
+dann die TeraDesk-eigenen Routinen.
+
+Siehe auch:  Men: Datei  Tastatur-Shortcuts  Farben und Fonts...
+             Anwendung anmelden...
+ 
+@endnode
+
+
+@node "Spezial-Anwendung"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}8 Spezial-Anwendung                                              TeraDesk@{u}
+
+Hiermit kann man ein Programm als 'Dienstprogramm' fr TeraDesk anmelden.
+Diese Option findet man im Dialog 'Anwendung anmelden...'.
+
+Im Moment k”nnen einem Programm folgende Spezial-Funktionen zugewiesen
+werden:
+
+  . Editor                (Nur ein Programm kann hier zugewiesen werden)
+  . Viewer                (Nur ein Programm kann hier zugewiesen werden)
+  . Autostart             (Mehrere Programm-Zuweisungen m”glich)
+  . Shutdown              (Mehrere Programm-Zuweisungen m”glich)
+  . Aufl”sungswechsel     (Nur ein Programm kann hier zugewiesen werden)
+  . Dateisuche            (Nur ein Programm kann hier zugewiesen werden)
+  . Dateivergleich        (Nur ein Programm kann hier zugewiesen werden)
+  . Formatieren (Floppy)  (Nur ein Programm kann hier zugewiesen werden)
+  . Auf rechter Maustaste (Nur ein Programm kann hier zugewiesen werden)
+
+Applikationen, die bei Viewer, Shutdown, Aufl”sungswechel, Dateisuche,
+Dateivergleich  und Formatieren (Floppy) zugewiesen sind, ersetzen die
+TeraDesk-internen Routinen.
+
+Ein Programm, das mit 'Auf rechter Maustaste' markiert ist, kann
+jederzeit durch Drcken der rechten Maustaste gestartet werden; ist das
+Programm bereits aktiv, wird eine VA_START-Nachricht gesendet.
+Wenn (auf dem Desktop oder in Verzeichnis-Fenstern) Objekte selektiert
+sind, werden deren Namen an das Programm bergeben.
+Die Belegung der rechten Maustaste mit einer Anwendung hebt natrlich
+die 'normale' Funktion der Taste (Rechtsklick = rechte Taste halten +
+Doppelklick links) auf.
+
+Applikationen, die als 'Autostart' markiert sind, werden beim Start von
+TeraDesk nacheinander mit ein paar Sekunden Abstand gestartet, damit
+jedes Programm genug Zeit hat, um sich zu konfigurieren, Speicher
+freizugeben usw.
+
+Applikationen, die als 'Shutdown' markiert sind, werden bei der
+Men-Option 'Ende/Shutdown' mit jeweils 6 Sekunden Pause dazwischen
+ausgefhrt.
+Die hier selektierte(n) Applikation(en) mssen alle Shutdown-Prozesse
+selbst ausfhren; die TeraDesk-interne Shutdown-Prozedur wird
+deaktiviert.
+
+Manche dieser Einstellungen sind direkt aktiviert, andere erst nach
+einem Neustart von TeraDesk (natrlich nur, wenn die Einstellungen
+gespeichert wurden).
+
+Applikationen, die als 'Autostart', 'Shutdown', 'Formatieren (Floppy)'
+oder 'Aufl”sungswechsel' angemeldet sind und bereits laufen, werden
+kein zweites Mal als 'Spezial-Anwendung' gestartet (z.B. wenn ein
+'Autostart'-Programm bereits l„uft und TeraDesk neugestartet wird,
+wird dieses rogramm nicht noch einmal gestartet).
+
+Siehe Anwendung anmelden...  Programme starten
+ 
+@endnode
+
+
+@node "Konfigurations-Dateien"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}9 Konfigurations-Dateien                                         TeraDesk@{u}
+
+TeraDesk 4.* verwendet zwei Konfigurations-Dateien:
+
+TERADESK.INF beinhaltet die komplette Konfiguration von TeraDesktop.
+TERADESK.PAL beinhaltet die Farb-Palette.
+
+Mit 'Einstellungen laden...' und 'Sichern als...' kann man Konfigura-
+tions-Dateien (aber nicht die Paletten-Datei) auch unter anderen Namen
+sichern oder laden.
+
+Beim Start sucht Tera Desktop immer nach der Konfigurations-Datei mit dem
+Namen 'TERADESK.INF' zuerst im aktuellen Ordner, dann im Wurzelverzeich-
+nis, dann im dem durch die Environment-Variable PATH definierten Ordner
+und letzendlich im Start-Ordner von DESKTOP.PRG (DESKTOS.PRG).
+
+Die Konfigurations-Dateien von TeraDesk V4.* sind in ASCII-Text-Form; die
+Informationen in diesen Dateien sind in Blocks ( in { } ) aufgeteilt und
+durch Schlssel-Worte bezeichnet, z.B.:
+
+  icon=
+  {
+    name=EVEREST
+    labl=EVEREST
+    type=5
+    tgtt=5
+    path=D:\EDITORS\EVEREST\EVEREST.PRG
+    xpos=7
+    ypos=3
+  }
+
+Die einzelnen Blocks sind durch Leerzeilen voneinander getrennt und sind
+durch Tabulatoren strukturiert. Dies dient nur zur besseren šbersicht.
+
+Um Platz zu sparen werden in der Konfigurations-Datei die Zeilen nur mit
+<LF> beendet (das k”nnte aber im Programm von TeraDesk leicht ge„ndert
+werden). Zeilenenden mit <CR><LF> werden von TeraDesk jedoch ebenfalls
+akzeptiert.
+
+Die Konfigurations-Dateien von TeraDesk 3.* sind in Text-Form; man sollte
+sie aber NICHT manuell „ndern (auch wenn das m”glich ist)!
+Die Text-Form der Konfigurations-Datei resultiert aus der Implementierung
+des 'Schlssel-Wort = Wert'-Konzepts; somit sind Datei-Inhalte leicht zu
+testen und bei Upgrades ist die Kompatibilit„t gew„hrleistet.
+Wenn  man nicht -genau- wei, was man tut, kann man beim manuellen Edi-
+tieren dieser Datei im schlimmsten Fall TeraDesk zum Absturz bringen.
+
+Allerdings gibt es momentan einen Eintrag in der Konfigurationsdatei,
+der -nur- manuell gesetzt oder ge„ndert werden kann (das ist aber
+normalerweise nicht n”tig):
+
+In der Sektion "options{}":
+maxd=256   Anzahl der Verzeichnis-Eintr„ge in Fenstern, fr die
+           Speicherplatz reserviert wird
+
+Bei Systemen mit sehr wenig RAM kann man den Wert bei maxd verringern, um
+Speicher zu sparen; auf leistungsf„higeren Systemen werden durch Erh”hen
+des Wertes Verzeichnisse mit sehr vielen Eintr„gen schneller ge”ffnet.
+
+Die Paletten-Datei ist optional und wird verwendet, um die Farb-Palette
+nach deren Ver„nderung durch ein Programm wieder herzustellen oder um
+Tera Desktop mit einer definierten Palette zu starten. Ob die Paletten-
+Datei verwendet wird oder nicht wird bei Bildschirmoptionen... einge-
+stellt. Diese Option sollte bei Multitasking-Systemen nicht aktiviert
+werden!
+ 
+@endnode
+
+
+@node "Untersttzte Protokolle"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}10  Untersttzte Protokolle                                      TeraDesk@{u}
+
+TeraDesk untersttzt verschiedene Protokolle zum Austausch von
+Informationen zwischen Programmen:
+
+  10.1 Das ARGV-Protokoll
+  10.2 Das AV-Protokoll
+  10.3 Das FONT-Protokoll
+  10.4 Das Drag & Drop-Protokoll
+ 
+@endnode
+
+
+@node "Das ARGV-Protokoll"
+@toc "Untersttzte Protokolle"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Untersttzte Protokolle
+
+@{U}10.1  Das ARGV-Protokoll                                         TeraDesk@{u}
+
+Im GEMDOS ist die L„nge einer Kommandozeile auf 125 Zeichen begrenzt.
+Das ARGV-Protokoll erm”glicht l„ngere Kommandozeilen; dabei werden die
+Parameter durch die ARGV Environment-Variable bergeben.
+
+Ein Nachteil an diesem Protokoll ist, das viele Programme solch lange
+Kommandozeilen nicht untersttzen und deshalb abstrzen. Deshalb kann bei
+TeraDesk bei Anwendung anmelden... und Programmtypen...  das ARGV-
+Protokoll an- und ausgeschaltet werden.
+
+Man kann Probleme mit dem ARGV-Protokoll auf folgende Weisen vermeiden:
+
+1. Im Men 'Optionen/Programmtypen...' die Programme eintragen, die das
+ARGV-Protokoll nicht untersttzen und dort fr sie die ARGV-Option aus-
+schalten. Diese Programme mssen am Anfang der Liste stehen (vor anderen
+Masken, auf die sie evtl. passen).
+
+2. Das umgekehrte von 1.: Das ARGV-Protokoll fr alle Programme ausschal-
+ten und die, die es untersttzen, separat eintragen.
+
+Man kann natrlich diese Programme auch als Anwendungen anmelden und dort
+das ARGV-Protokoll abschalten.
+
+Bei Programmen, die nicht als Anwendungen angemeldet sind (aber fr die
+das ARGV-Flag bei Programmtypen... gesetzt ist), wird das Protokoll nur
+bei Kommadozeilen >125 Zeichen verwendet; ansonsten wird die Standard-
+Routine des Betriebssystems benutzt.
+
+Nicht alle AESes verhalten sich bezglich des ARGV-Protokolls und der
+Kommandozeilen-šbergabe gleich. Das liegt an der leicht unterschiedlichen
+Behandlung der shel_write()-Funktion.
+Es k”nnen Probleme bei der Parameter-šbergabe von Dateinamen mit Leer-
+zeichen oder Anfhrungszeichen auftauchen oder wenn Parameter und lokale
+Environment-Variablen zusammen verwendet werden.
+
+Bei Tera Desktop wird die Verwendung des ARGV-Protokolls durch das Flag
+"A" in der Environment-Variable TERAENV bestimmt:
+
+    TERAENV=A
+
+Hiermit umgeht Tera Desktop den ARGV-Mechanismus in shel_write() und er-
+zeugt immer einen lokalen Environment-String mit der ARGV-Variablen, wenn
+ein Programm gestartet wird, da das ARGV-Protokoll untersttzt (unge-
+achtet der L„nge der Kommandozeile).
+Bei Problemen bez. des ARGV-Protokolls kann diese Option helfen.
+ 
+@endnode
+
+
+@node "Das AV-Protokoll"
+@toc "Untersttzte Protokolle"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Untersttzte Protokolle
+
+@{U}10.2  Das AV-Protokoll                                           TeraDesk@{u}
+
+Dieses Protokoll (erstmals vorgestellt von Gemini Desktop) erlaubt es,
+verschiedene Informations-Bl”cke zwischen gleichzeitig laufenden Appli-
+kationen auszutauschen und damit Programm-Aktionen auszul”sen.
+Dazu mu -mit einer Environment-Variablen- ein 'AV-Server' angemeldet
+werden, z.B. fr TeraDesk:
+
+  AVSERVER=DESKTOP
+
+Clients, die dieses Protokoll untersttzen, melden sich beim AV-Server an
+und lassen durch entsprechende Nachrichten versch. Aktionen ausfhren.
+Der AV-Server fhrt dann die Aktion aus und antwortet mit einer
+Best„tigungs-Nachricht.
+
+TeraDesk untersttzt fast alle AV-Nachrichten, unten aufgelistet nach
+Client-Anfrage (Nachricht)/Serverantwort:
+
+
+AV_PROTOKOLL/VA_PROTOSTATUS: Startet die Client/Server-Kommunikation und
+                             Informationen ber deren F„higkeiten werden
+                             ausgetauscht.
+
+AV_EXIT:                     Beendet die Kommunikation.
+
+AV_SENDKEY:                  šbergibt ein in der Applikation unbenutzes
+                             Tastatur-Kommando an den AV-Server.
+
+VA_START/AV_STARTED:         šbergibt Parameter an den Client.
+                             AV_STARTED wird ignoriert.
+
+AV_ASKFILEFONT/VA_FILEFONT:  Fragt beim Server nach dem in Verzeichnis-
+                             Fenstern verwendeten Schrift-Font.
+
+AV_ASKCONFONT/VA_CONFONT:    Fragt beim Server nach dem Font, der im
+                             Konsolen-Fenster verwendet wird. Momentan
+                             sendet TeraDesk als Antwort den Verzeichnis-
+                             Fenster-Font.
+
+VA_FONTCHANGED:              Informiert den AV-Client, wenn der Schrift-
+                             Font gewechselt wurde.
+
+AV_OPENWIND/VA_WINDOPEN:     Mit dieser Nachricht ”ffnet der AV-Server
+                             ein Fenster mit dem bergebenen Pfad.
+
+AV_XWIND/VA_XOPEN:           Das selbe wie oben, es werden aber zus„tz-
+                             liche Parameter bergeben. Momentan werden
+                             einige dieser Parameter noch ignoriert; das
+                             AV-Protokoll wird hier noch nicht voll
+                             ausgenutzt.
+
+AV_ACCWINDOPEN:              Informiert den Server, da der Client ein
+                             Fenster ge”ffnet hat. Dieses Fenster nimmt
+                             dann am globalen Fenster-Wechsel teil und
+                             kann dann auch durch TeraDesk's Fenster-
+                             Men geschlossen, ikonifiziert oder auf
+                             volle Bildschirmgr”e gebracht werden.
+
+AV_ACCWINDCLOSED:            Informiert den Server, da der Client das
+                             Fenster geschlossen hat.
+
+VA_DRAGACCWIND:              Informiert den Client, da Objekte in sein
+                             Fenster verschoben wurden.
+
+AV_COPY_DRAGGED/VA_COPY_COMPLETE:   Antwort auf VA_DRAGACCWIND.
+
+AV_DRAG_ON_WINDOW/VA_DRAG_COMPLETE: Informiert den Server, da Objekte in
+                                    eins seiner Fenster oder auf den
+                                    Desktop verschoben wurden.
+
+AV_STARTPROG/VA_PROGSTART:  Veranlat den Server, eine Applikation mit
+                            bergeb. Namen zu starten oder eine Appli-
+                            kation mit einer Datei zu ”ffnen.
+
+AV_VIEW/VA_VIEWED:          Veranlat den Server, eine Applikation zu
+                            starten, die als Viewer fr die bergebene
+                            Datei angemeldet ist. Momentan unterscheidet
+                            TeraDesk nicht zwischen Dateityp-spezifischen
+                            Viewern und laufenden Applikationen, und
+                            startet die erste Applikation, die diesem
+                            Dateityp zugewiesen ist.
+
+AV_PATH_UPDATE:             Veranlat den Server, das Fenster mit dem
+                            bergebenen Pfad zu aktualisieren.
+
+AV_FILEINFO/VA_FILECHANGED: Veranlat den Server, Informationen ber die
+                            ihm bergebenen Dateien anzuzeigen.
+
+AV_DELFILE/VA_FILEDELETED:  Veranlat den Server, Dateien zu l”schen.
+
+AV_COPYFILE/VA_FILECOPIED:  Veranlat den Server, Dateien zu kopieren.
+                            Momentan wird hier das AV-Protokoll noch
+                            nicht voll ausgenutzt: Symbolische Links
+                            k”nnen nicht erstellt werden.
+
+VA_PATH_UPDATE:             Informiert Clients ber Ver„nderungen in Ver-
+                            zeichnissen. Momentan kann der Server diese
+                            Information nicht an den Client senden,
+                            w„hrend andere Daten an diesen bergeben
+                            werden.
+
+AV_STATUS:                  Veranlat den Server, den Status des Clients
+                            zu speichern.
+
+AV_GETSTATUS/VA_SETSTATUS:  Fragt beim Server den gespeicherten Status
+                            des Clients ab.
+
+AV_SETWINDPOS:              Setzt die Position des n„chsten Fensters, das
+                            der Client ”ffnet.
+
+
+Momentan noch nicht untersttzte AV-Nachrichten:
+
+AV_OPENCONSOLE/VA_CONSOLEOPEN  Konsole ”ffnen.
+AV_ASKOBJECT/VA_OBJECT         Die Namen von selektierten Objekten werden
+                               abgefragt.
+
+In der Single-TOS-Version werden nur folgende AV-Nachrichten untersttzt:
+
+AV_PROTOKOLL/VA_PROTOSTATUS
+AV_EXIT
+AV_SENDKEY
+VA_START/AV_STARTED
+AV_ASKFILEFONT/VA_FILEFONT
+AV_ACCWINDOPEN
+AV_ACCWINDCLOSED
+VA_DRAGACCWIND
+AV_COPY_DRAGGED/VA_COPY_COMPLETE
+AV_STARTPROG/VA_PROGSTARTED
+
+Diese Einschr„nkung beruht auf dem Gedanken, TeraDesk m”glichst klein zu
+halten. Deshalb wurden AV-Kommandos, die unter Single-TOS nicht vernnftig
+erscheinen, entfernt.
+Trotzdem kann Tera Desktop auch mit voller Untersttzung des
+AV-Protokolls unter Single-TOS programmiert werden.
+
+Manche AV-Protokoll-Daten werden von TeraDesk und den Clients ber einen
+allgemeinen Pufferspeicher ausgetauscht. Die Gr”e dieses Puffers betr„gt
+zwischen 0.2% und 0.4% des gr”ten freien Speicherblocks, jedoch niemals
+weniger als 1KB und nicht mehr als 128KB. In seltenen F„llen kann die
+Gr”e dieses Puffers die Anzahl der Dateinamen pro AV-Protokoll-Aktion
+vermindern.
+
+In einer Multitasking-Umgebung mit Speicher-Schutz kann es bei TeraDesk
+zu Problemen mit einigen AV-Protokoll-Clients kommen; dann erscheint die
+Fehlermeldung: 'memory protection: type private'.
+Dies ist meistens ein Fehler von unsauber programmierten AV-Protokoll-
+Clients, die den Pufferspeicher nicht allgemein zug„nglich machen.
+Das Problem kann manchmal umgangen werden, indem das Speicherschutz-Flag
+des problematischen Clients auf 'readable' gesetzt wird, oder (wenn das
+nicht hilft) auf 'supervisor' oder 'global'.
+Dieses Problem taucht z.B. bei ST-Guide und aMail auf.
+
+Es liegt in der Natur des AV-Protokolls, da bei fehlerhaften AV-Clients
+immer zuerst der AV-Server (in diesem Fall TeraDesk) abstrzt; der Client
+aber unbeeintr„chtgt bleibt.
+
+Siehe auch:  Installation  TOS-Kompatibilit„t
+ 
+@endnode
+
+
+@node "Das FONT-Protokoll"
+@toc "Untersttzte Protokolle"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Untersttzte Protokolle
+
+@{U}10.3  Das FONT-Protokoll                                         TeraDesk@{u}
+
+TeraDesk untersttzt die wichtigsten Funktionen des FONT-Protokolls,
+erstmals vorgestellt von Christian Grunenberg.
+
+TeraDesk kann als Font-Selektor fr andere Applikationen funktionieren,
+die dieses Protokoll untersttzen (z.B. ST-Guide,QED oder aMail).
+Wenn bei einer Applikation der Font gewechselt wird ”ffnet sich der
+Font-Selektor von TeraDesk.
+
+Dazu mssen folgende Bedingungen erfllt sein:
+
+-TeraDesk mu parallel zu der Applikation laufen. Entweder mu unter
+ Single-TOS die Applikation als Desk-Accessory laufen oder es mu ein
+ Multitasking-Betriebssystem vorhanden sein.
+
+-Die Environment-Variable FONTSELECT mu gesetzt sein:
+
+ FONTSELECT=DESKTOP
+
+In der momentanen TeraDesk-Version kann nur ein Font-Selektor
+auf einmal ge”ffnet werden.
+
+Siehe auch:  Installation
+ 
+@endnode
+
+
+@node "Das Drag & Drop-Protokoll"
+@toc "Untersttzte Protokolle"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+@image "udo_fo.img" 4
+      Untersttzte Protokolle
+
+@{U}10.4  Das Drag & Drop-Protokoll                                  TeraDesk@{u}
+
+Dieses Protokoll wurde von Atari fr MultiTOS vorgestellt und ist nur
+in Multitasking-Umgebungen verfgbar.
+
+Das Drag & Drop-Protokoll wird automatisch ausgefhrt, wenn ein oder
+mehrere Objekte aus einem Fenster in das Fenster einer anderen Appli-
+kation ge-'dragged' (gezogen) werden.
+
+TeraDesk funktioniert momentan nur als Drag & Drop-Sender; das heit, es
+kann keine Objekte empfangen welche aus einem Applikations-Fenster in ein
+TeraDesk-Fenster ge-'dragged' werden (TeraDesk kann aber als Sender und
+Empf„nger funktionieren, wenn das AV-Protokoll verwendet wird).
+
+Siehe auch:  Objekte 'draggen'  Das AV-Protokoll
+ 
+@endnode
+
+
+@node "Danksagung"
+@toc "Main"
+@image "udo_fo.img" 1
+   @{"Inhalt" LINK "Main"}
+
+@{U}11  Danksagung                                                   TeraDesk@{u}
+
+The  authors  would like  to  thank  the  following  people  for their
+contribution to various stages of the development of the Tera Desktop:
+
+   Ric Klaren,
+   Ger Hobbelt and
+   Hans Wessels            for testing Tera Desktop V1.*, designing
+                           some icons and making some  improvements
+                           to the Programm code.
+   Keith Frisby and
+   Mark Matts              for distributing and supporting the Tera
+                           Desktop V1.* in the United Kingdom.
+
+   Ted Richards            for rewritting the English manual of V1.*
+
+   Jean Jacques Cortes     for translating  the  resource  file  of
+                           TeraDesk V1.* to French.
+
+   Joachim Farbowky        for the German resource file of TeraDesk
+                           V1.* and for F_KEYS.RSC.
+
+   Martin Tarenskeen       for kindly updating and translating V2.*
+                           'manual.txt' to hypertext by using UDO.
+
+   Jo Even Skarstein       for making some very useful remarks which
+                           led to improvements in TeraDesk.
+
+   Dima Sobolev            for undertaking to translate Tera Desktop
+                           into Russian, and for pointing to many
+                           errors in the English version of hypertext
+                           documentation.
+
+   Lars Schmidbauer        For translating Tera Desktop to German and
+                           for performing a number of tests upon the
+                           pre-release binaries.
+
+   Emmanuel Baranger       For translating Tera Desktop to French.
+
+   Christos Tziotzis       For translating Tera Desktop to Greek.
+
+   Derryck Croker          For improving the English translation.
+
+   Dennis W. van der Burg
+   Milan Jurik
+   Markus Lutz
+   Miro Kropacek
+   Odd Skancke
+   and others              For testing and reporting on TeraDesk.
+ 
+@endnode
+
+
+@pnode "Adresse"
+Mailto:
+latzmaster@@gmx.de
+@endnode

@@ -1,0 +1,118 @@
+           Resource File Italiano per Tera Desktop V.4.06
+           ----------------------------------------------
+
+TERADESK COPYRIGHTS E RICONOSCIMENTI
+------------------------------------
+Tera Desktop V1.41           Copyright 1991-1995  W. Klaren.
+             V2.1            Copyright 2002       H. Robbers.
+             V2.3 e V3.0     Copyright 2003       H. Robbers, Dj. Vukovic
+             V3.01 -> V4.06  Copyright 2003-2014  Dj. Vukovic
+
+
+Il Tera Desktop, ä un sostituto  del desktop TOS incorporato nei  computer
+Atari a 16/32  bit. E'  pubblicato secondo la  GNU-General Public  Licence
+(GNU-GPL),  che  significa   che  ä  possibile   copiarlo  e   modificarlo
+liberamente, a patto che siano riconosciuti gli autori originali e che  lo
+stesso, o  i  suoi derivati,  siano  distribuiti alle  stesse  condizioni,
+insieme al nuovo  sorgente. Per  i dettagli completi  sulla licenza,  fare
+riferimento  ai  documenti  inclusi  nella  distribuzione  principale   di
+Teradesk.
+
+
+AVVISO
+------
+Per le istruzioni  sull'utilizzo  del   desktop,  fare  riferimento   alla
+documentazione contenuta nella distribuzione di Teradesk.
+
+La versione aggiornata di Teradesk release ä disponibile su:
+
+             http://solair.eunet.rs/~vdjole/teradesk.htm
+
+             ===========================================
+
+RESOURCE FILE IN ITALIANO
+-------------------------
+Il file  di  risorsa (DESKTOP.RSC)  di  questa distribuzione  ä  solo  per
+Teradesk  4.06  e  non  ä  compatibile  con  le  versioni  precedenti  del
+programma. Il file ä distribuito "as it is" (cosç come ä) e, anche se sono
+stati condotti  test  approfonditi,  non  si  assicura  l'esattezza  della
+traduzione o la piena funzionalitÖ del file di risorsa.
+ 
+Eventuali  domande  o  suggerimenti  potranno  essere  postate  sul  forum
+Italiano ataricomputer, nel pió recente topic su Teradesk.
+
+http://www.ataricomputers.mastertopforum.net/software-vf14.html
+
+IL TRADUTTORE
+16/10/2014
+     
+        
+COPYRIGHTS
+----------                                                  
+RSC Italiano:  v4.04 to V4.06  Copyright 2013-2014  Lodovico Zanier (ldv)
+
+La traduzione italiana del file DESKTOP.RSC per TeraDesk 4.06, eredita  lo
+schema di licenza  del software  parente. E' pertanto  pubblicato in  base
+alla GNU-General  Public License  (GPL), che vuole  dire che  ä  possibile
+copiarla e modificarla liberamente, a condizione che siano menzionati  gli
+autori originali e che la stessa o i suoi derivati, siano distribuiti alle
+stesse  condizioni.  Per  dettagli   sulla  licenza  GNU-GPL,   consultare
+l'incluso file COPYING (in Inglese) e la traduzione ufficiosa in  Italiano
+COPY_ITA.
+
+DECLINO DI RESPONSABILITA'
+--------------------------
+Questo archivio  ä  fornito  COSI'  COM'E' e  gli  autori  DECLINANO  OGNI
+RESPONSABILITA' PER  EVENTUALI  DANNI  O PERDITE  DI  DOCUMENTI  derivanti
+dall'uso dei file  inclusi, qualunque  ne sia  la causa,  o per  eventuali
+errori nelle traduzioni o nelle procedure di installazione.
+
+L'USO DEI FILE  CONTENUTI IN  QUESTO ARCHIVIO  E' AD  ESCLUSIVO RISCHIO  E
+PERICOLO DEGLI UTENTI.
+
+
+CONTENUTO
+---------
+- DESKTOP.RSC: Traduzione Italiana del file RSC per Teradesk 4.06;
+- LEGGIMI.TXT: Questo file;
+- README.TXT : Traduzione in Inglese di questo file;
+- COPYING    : Licenza d'uso GNU-GPL. Originale in Inglese;
+- COPY_ITA   : Traduzione Italiana non ufficiale della Licenza d'uso.
+
+
+PRIMI PASSI
+-----------
+Confrontare le versioni di  Teradesk e del  file risorsa Italiano:  devono
+coincidere. In  caso contrario,  verificare sul  sito web  di Teradesk  la
+presenza di aggiornamenti o avvisi di compatibilitÖ:
+
+http://solair.eunet.rs/~vdjole/teradesk.htm
+
+In caso non siano disponibili nuove  versioni o note di compatibilitÖ,  SI
+SCONSIGLIA VIVAMENTE DI PROCEDERE ALL'AGGIORNAMENTO !!!
+
+PROCEDURA DI INSTALLAZIONE
+--------------------------
+- Per primo, fare il backup del file originale DESKTOP.RSC presente  nella
+  cartella principale di Teradesk.                                         
+- rinominare/cancellare il file  DESKTOP.RSC nella cartella principale  di
+  Teradesk (per es., rinominarlo in DESKTOP.RSX).
+- Copiare il file DESKTOP.RSC  Italiano dalla cartella di questo  archivio
+  alla cartella principale di Teradesk.
+- Avviare/Riavviare il Tera Desktop. Se viene visualizzato il desktop ed ä
+  possibile utilizzarlo correttamente, l'aggiornamento ä riuscito.
+
+
+SE QUALCOSA NON HA FUNZIONATO:
+-----------------------------
+If Teradesk  va in  crash all'avvio,  o  se viene  aperto un  pannello  di
+dialogo, o pió  semplicemente un  dialogo ha  un aspetto  sbagliato o  non
+funziona come dovrebbe, ä possibile che il file di risorsa sia danneggiato
+o sbagliato.
+
+L'unica soluzione ä quella  di ripristinare il  file di risorsa  originale
+(DESKTOP.RSC) di cui avete fatto il backup e riavviare il Desktop. 
+
+Per eventuali aggiornamenti, controllate periodicamente il sito:
+ 
+             http://solair.eunet.rs/~vdjole/teradesk.htm

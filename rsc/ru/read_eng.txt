@@ -1,0 +1,26 @@
+Russian Resource File and Hypertext document for TERADESK 4.08
+(http://solair.eunet.rs/~vdjole/teradesk.htm).
+
+Archive contents:
+----------------
+-DESKTOP.RSC : Resource File
+-DESKTOP.RSD : Resource File Definitions (Interface format)
+-TERADESK.HYP : ST-Guide Hypertext file
+-TERADESK.REF : ST-Guide Reference file
+-READ_ENG.TXT : This file
+
+
+Install Procedure:
+------------------
+Rename the original file DESKTOP.RSC in .RSX and copy the new
+Russian Resource file in the main program folder.
+
+Copy TERADESK.HYP and TERADESK.REF in the main ST-Guide folder 
+(i.e. C:\Guides).
+
+Translation by: Dima Sobolev
+
+http://www.avtandil.narod.ru/index.html
+
+
+Use at your own risk !
