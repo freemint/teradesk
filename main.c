@@ -1198,13 +1198,15 @@ static bool init(void)
 
 		load_options(CFG_LOAD_INITIAL);
 
+#if _MINT_
 		/* 
 		 * Start applications which have been defined as autostart.
 		 * app_specstart must be executed here in order to set
 		 * the xd_rbdcklick flag.
 		 */
-
-		app_specstart(AT_AUTO, NULL, NULL, 0, 0);
+		if (_AESnumapps != 1)
+			app_specstart(AT_AUTO, NULL, NULL, 0, 0);
+#endif
 		startup = FALSE;
 
 		return TRUE;
