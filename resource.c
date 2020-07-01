@@ -88,10 +88,6 @@ VLNAME dirname;
 VLNAME envline;
 
 
-extern _WORD
-	aes_wfunc;	/* result of appl_getinfo(11, ...) */
-
-
 /*
  * Hide some dialog objects
  * List of items must terminate with a 0

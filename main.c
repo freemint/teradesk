@@ -536,8 +536,8 @@ static void disp_short(char *string,	/* resultant string */
 static void ins_shorts(void)
 {
 	_WORD menui;						/* menu item counter */
-	_WORD lm;							/* length of string in menu item */
 	char *where;						/* address of location of shortcut in a menu string */
+	char *str;
 
 	onekey_shorts = FALSE;
 
@@ -552,9 +552,12 @@ static void ins_shorts(void)
 				if (shortcut == BACKSPC || (shortcut >= ' ' && shortcut <= '~'))
 					onekey_shorts = TRUE;
 
-				lm = (_WORD) strlen(menu[menui].ob_spec.free_string);	/* includes trailing spaces */
-				where = menu[menui].ob_spec.free_string + lm - 5;
-
+				str = menu[menui].ob_spec.free_string;
+				where = str + strlen(str);	/* includes trailing spaces */
+				while (where > str && where[-1] == ' ')
+					where--;
+				while (where > str && where[-1] == '_')
+					where--;
 				disp_short(where, shortcut, FALSE);
 			}
 		} else

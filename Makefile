@@ -20,7 +20,8 @@ WARN = \
 	-Wcast-qual \
 	-Waggregate-return \
 	-Wundef \
-	-Wwrite-strings
+	-Wwrite-strings \
+	-Werror
 
 CFLAGS = $(DEFS) $(OPTS) $(INCLUDES) $(WARN)
 
