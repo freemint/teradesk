@@ -30,10 +30,18 @@ extern const char *presets[];
 
 /* Modes voor x_open en x_fopen */
 
+#undef O_RDONLY
+#undef O_WRONLY
+#undef O_RDWR
+#undef O_ACCMODE
 #undef O_DENYRW
 #undef O_DENYW
 #undef O_DENYR
 #undef O_DENYNONE
+#define O_RDONLY    0
+#define O_WRONLY    1
+#define O_RDWR      2
+#define O_ACCMODE   3
 #define O_DENYRW	0x10
 #define O_DENYW		0x20
 #define O_DENYR		0x30

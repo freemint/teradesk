@@ -40,6 +40,8 @@
 #define EROFS               -13		/* Write protect.  */
 #undef ECHMEDIA
 #define ECHMEDIA            -14		/* Media change.  */
+#undef ENODEV
+#define ENODEV              -15		/* No such device.  */
 #undef EBADSEC
 #define EBADSEC             -16		/* Bad sectors found.  */
 #undef ENOMEDIUM

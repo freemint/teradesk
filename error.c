@@ -61,6 +61,7 @@ char *get_message(_WORD error)
 	switch (error)
 	{
 	case EMEDIUMTYPE:					/* -7 */
+	case ENODEV:
 		msg = TUNKM;
 		break;
 	case ESPIPE:						/* -6 */

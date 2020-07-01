@@ -721,7 +721,10 @@ static _WORD read_txtfile(const char *name,	/* name of file to read */
 
 		/* Open the file */
 
-		if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
+		if ((attr.st_mode & S_IFMT) != S_IFREG)
+		{
+			error = ENODEV;
+		} else if ((handle = x_open(name, O_DENYW | O_RDONLY)) >= 0)
 		{
 			/* Allocate buffer for complete file; read file into it  */
 
@@ -1238,7 +1241,7 @@ static WINDOW *txt_do_open(WINFO *info, char *file, _WORD px,
 	info->typ_window = (TYP_WINDOW *) w;
 	w->px = px;
 	w->py = py;
-	w->path = (char *) file;
+	w->path = file;
 	w->tabsize = tabsize;
 	w->hexmode = hexmode;
 	w->winfo = info;
