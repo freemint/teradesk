@@ -24,7 +24,6 @@
 #include <library.h>
 #include <xdialog.h>
 #include <xscncode.h>
-#include <fcntl.h>
 
 
 #include "resource.h"

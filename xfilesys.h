@@ -28,6 +28,17 @@
 
 extern const char *presets[];
 
+/* Modes voor x_open en x_fopen */
+
+#undef O_DENYRW
+#undef O_DENYW
+#undef O_DENYR
+#undef O_DENYNONE
+#define O_DENYRW	0x10
+#define O_DENYW		0x20
+#define O_DENYR		0x30
+#define O_DENYNONE	0x40
+
 /* TOS file attributtes */
 
 #define FA_PARDIR       0x40 /* pseudo attribute for parent dir FIXME: used by MagiC */

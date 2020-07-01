@@ -23,7 +23,6 @@
 
 #include <library.h>
 #include <xdialog.h>
-#include <fcntl.h>
 
 #include "resource.h"
 #include "desk.h"

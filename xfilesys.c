@@ -24,7 +24,6 @@
 #include <library.h>
 #include <xdialog.h>
 #include <mint/cookie.h>
-#include <fcntl.h>
 
 #include "resource.h"
 #include "desk.h"

@@ -25,7 +25,6 @@
 #include <xdialog.h>
 #include <time.h>
 #include <xscncode.h>
-#include <fcntl.h>
 
 #include "resource.h"
 #include "desk.h"
