@@ -73,7 +73,9 @@ LNAME automask = { 0 };					/* to compose the autolocator mask */
 SNAME automask = { 0 };					/* no need for long names in single-TOS */
 #endif
 
+#if _MINT_
 static GRECT icwsize = { 0, 0, 0, 0 };	/* size of the iconified window */
+#endif
 
 static size_t aml = 0;					/* length of string in automask */
 

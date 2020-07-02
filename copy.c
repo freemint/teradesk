@@ -2150,9 +2150,7 @@ static bool copy_list(WINDOW *w,		/* pointer to source window */
 
 			switch (type)
 			{
-#if _MINT_
 			case ITM_LINK:
-#endif
 			case ITM_FILE:
 			case ITM_PROGRAM:
 				if ((error = itm_attrib(w, *list, fa, &attr)) == 0)

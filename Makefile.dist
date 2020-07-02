@@ -3,6 +3,7 @@
 
 bindist:: .bindistdir
 	$(AM_V_at)set -e; \
+	BINDISTDIR=`cat .bindistdir`; \
 	$(MAKE) clean; \
 	$(MAKE) CPU= DEFS=-D_TOS_ONLY=1; \
 	mv desktop.prg desktos.prg \
@@ -10,7 +11,6 @@ bindist:: .bindistdir
 	$(MAKE) CPU=; \
 	$(MAKE) CPU=v4e; \
 	$(MAKE) -C doc || exit 1; \
-	BINDISTDIR=`cat .bindistdir`; \
 	mkdir -p $${BINDISTDIR}/doc; \
 	mkdir -p $${BINDISTDIR}/doc/de; \
 	mkdir -p $${BINDISTDIR}/doc/ru; \

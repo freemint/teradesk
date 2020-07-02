@@ -84,10 +84,12 @@ static bool nofound = TRUE;					/* TRUE if no items founnd */
  * Save some bytes in program size...
  */
 
+#if _MINT_
 static int fi_atoi(_WORD obj)
 {
 	return atoi(fileinfo[obj].ob_spec.tedinfo->te_ptext);
 }
+#endif
 
 /*
  * Convert DOS time to a string to be displayed in a form.
