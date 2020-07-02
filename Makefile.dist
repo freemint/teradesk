@@ -1,28 +1,33 @@
 .bindistdir:
-	$(AM_V_at)echo `mktemp -d`/tera3b > $@
+	$(AM_V_at)echo `mktemp -d`/tera4b > $@
 
 bindist:: .bindistdir
 	$(AM_V_at)set -e; \
 	BINDISTDIR=`cat .bindistdir`; \
 	$(MAKE) clean; \
 	$(MAKE) CPU= DEFS=-D_TOS_ONLY=1; \
-	mv desktop.prg desktos.prg \
+	$(STRIP) desktop.prg; \
+	mv desktop.prg desktos.prg; \
+	$(MAKE) clean; \
+	$(MAKE) CPU=v4e; \
+	$(STRIP) desktop.prg; \
+	mv desktop.prg desk_cf.prg; \
 	$(MAKE) clean; \
 	$(MAKE) CPU=; \
-	$(MAKE) CPU=v4e; \
+	$(STRIP) desktop.prg; \
 	$(MAKE) -C doc || exit 1; \
 	mkdir -p $${BINDISTDIR}/doc; \
 	mkdir -p $${BINDISTDIR}/doc/de; \
 	mkdir -p $${BINDISTDIR}/doc/ru; \
-	cp -a desktop.prg desktop.rsc desktop.rso desktop.hrd desktos.prg desk_cf.prg $${BINDISTDIR}; \
+	cp -a desktop.prg desktop.rsc desktos.prg desk_cf.prg $${BINDISTDIR}; \
 	cp -a readme.txt $${BINDISTDIR}; \
 	cp -a icons.rsc $${BINDISTDIR}; \
 	cp -a cicons.rsc $${BINDISTDIR}; \
-	cp -a hist_v34.txt $${BINDISTDIR}/doc; \
+	cp -a doc/hist_v34.txt $${BINDISTDIR}/doc; \
 	cp -a COPYING $${BINDISTDIR}/doc; \
-	cp -a en/teradesk.hyp en/teradesk.ref $${BINDISTDIR}/doc; \
-	cp -a de/teradesk.hyp de/teradesk.ref $${BINDISTDIR}/doc/de; \
-	cp -a de/teradesk.hyp ru/teradesk.ref $${BINDISTDIR}/doc/ru; \
+	cp -a doc/en/teradesk.hyp doc/en/teradesk.ref $${BINDISTDIR}/doc; \
+	cp -a doc/de/teradesk.hyp doc/de/teradesk.ref $${BINDISTDIR}/doc/de; \
+	cp -a doc/de/teradesk.hyp doc/ru/teradesk.ref $${BINDISTDIR}/doc/ru; \
 	mkdir -p $${BINDISTDIR}/rsc/{en,de,ru,fr,it}; \
 	cp -a "rsc/resource.txt" "$${BINDISTDIR}/rsc"; \
 	cp -a desktop.rsc desktop.rso desktop.hrd "$${BINDISTDIR}/rsc/en"; \
@@ -36,12 +41,11 @@ bindist:: .bindistdir
 dist zips:: bindist
 	$(AM_V_at)set -e; \
 	BINDISTDIR=`cat .bindistdir`; \
+	test "$${BINDISTDIR}" = "" && exit 1; \
 	VERSION=`echo $(VERSION) | tr -d '.'`; \
 	here=`pwd`; \
-	git archive --format=zip HEAD > "$$here/tera$${VERSION}s.zip""
-	cd $${BINDISTDIR} || exit 1; \
+	git archive --format=zip --prefix=tera$${VERSION}s/ HEAD > "$$here/tera$${VERSION}s.zip"; \
+	cd "$${BINDISTDIR}" || exit 1; \
 	zip -r "$$here/tera$${VERSION}b.zip" .; \
+	$(RM) "$$here/.bindistdir"; \
 	echo "created tera$${VERSION}s.zip and tera$${VERSION}b.zip"
-
-clean::
-	$(RM) .srcdistdir .bindistdir

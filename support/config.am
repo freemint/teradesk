@@ -22,6 +22,7 @@ endif
 # gcc than 2.95.2 you will run into severe problems.
 CC=$(toolprefix)gcc
 AS=$(toolprefix)gcc
+STRIP=$(toolprefix)strip
 
 # Define this to "${AR} s" if your system lacks the ranlib program.
 AR=$(toolprefix)ar

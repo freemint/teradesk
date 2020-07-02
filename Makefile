@@ -1,6 +1,5 @@
 # Define this to the version of the package.
-# used only for archive names, so no dot here
-VERSION=408
+VERSION=4.08
 
 srcdir=.
 
