@@ -35,7 +35,7 @@ RANLIB=$(toolprefix)ranlib
 OPTS=-Os -fomit-frame-pointer
 
 # Flags for building executables
-LDFLAGS=-Wl,--stack,32k
+LDFLAGS=-Wl,--stack,32k -s
 
 
 .c.o:

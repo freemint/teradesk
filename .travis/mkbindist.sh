@@ -15,7 +15,7 @@ mkdir -p "$BUILDROOT/RSC/RU"
 #
 mcopy -b "$SRCDIR/desktop.prg" "$BUILDROOT/DESKTOP.PRG"
 mcopy -b "$SRCDIR/desktos.prg" "$BUILDROOT/DESKTOS.PRG"
-#mcopy -b "$SRCDIR/desk_cf.prg" "$BUILDROOT/DESK_CF.PRG"
+test -f desk_cf.prg && cp -a desk_cf.prg "$BUILDROOT/DESK_CF.PRG"
 cp -a "desktop.rsc" "$BUILDROOT/DESKTOP.RSC"
 cp -a "cicons.rsc" "$BUILDROOT/CICONS.RSC"
 cp -a "icons.rsc" "$BUILDROOT/ICONS.RSC"

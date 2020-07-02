@@ -52,6 +52,10 @@ export UDO
 HCP=~/tmp/hcp/bin/hcp
 export HCP
 
+make clean
+make CPU=v4e
+mv desktop.prg desk_cf.prg
+
 make -C doc
 
 . .travis/mkbindist.sh

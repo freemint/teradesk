@@ -6,15 +6,12 @@ bindist:: .bindistdir
 	BINDISTDIR=`cat .bindistdir`; \
 	$(MAKE) clean; \
 	$(MAKE) CPU= DEFS=-D_TOS_ONLY=1; \
-	$(STRIP) desktop.prg; \
 	mv desktop.prg desktos.prg; \
 	$(MAKE) clean; \
 	$(MAKE) CPU=v4e; \
-	$(STRIP) desktop.prg; \
 	mv desktop.prg desk_cf.prg; \
 	$(MAKE) clean; \
 	$(MAKE) CPU=; \
-	$(STRIP) desktop.prg; \
 	$(MAKE) -C doc || exit 1; \
 	mkdir -p $${BINDISTDIR}/doc; \
 	mkdir -p $${BINDISTDIR}/doc/de; \

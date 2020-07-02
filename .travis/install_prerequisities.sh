@@ -11,6 +11,30 @@ sudo apt-get install -y \
 	libjson-perl \
 	libwww-perl \
 
+
+if [ -z "$BINTRAY_API_KEY" ]
+then
+CURL_USER=""
+else
+BINTRAY_USER="${BINTRAY_USER:-th-otto}"
+CURL_USER="-u ${BINTRAY_USER}:${BINTRAY_API_KEY}"
+fi
+
+sudo mkdir -p "/usr/m68k-atari-mint"
+cd "/usr/m68k-atari-mint"
+for package in mintlib fdlibm gemlib
+do
+	unset PACKAGE_VERSION
+	unset PACKAGE_PATH
+	PACKAGE_VERSION=$(curl -s ${CURL_USER} -X GET "https://api.bintray.com/packages/freemint/freemint/$package" | jq -r '.latest_version')
+	read PACKAGE_PATH \
+		<<< $(curl -s ${CURL_USER} -X GET "https://api.bintray.com/packages/freemint/freemint/$package/versions/$PACKAGE_VERSION/files" \
+			| jq -r '.[].path')
+	wget -q -O - "https://dl.bintray.com/freemint/freemint/$PACKAGE_PATH" | sudo tar xjf -
+done
+cd -
+
+
 mkdir -p ~/tmp/udo
 (
 cd ~/tmp/udo

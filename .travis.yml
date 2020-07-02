@@ -5,6 +5,15 @@ matrix:
       dist: trusty
       sudo: required
 
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:vriviere/ppa'
+    packages:
+      - binutils-m68k-atari-mint
+      - gcc-m68k-atari-mint
+      - mintbin-m68k-atari-mint
+
 branches:
   only:
     - master
@@ -15,6 +24,9 @@ compiler:
 env:
   global:
     - MAKEFLAGS="-j 2"
+    - BINTRAY_USER="th-otto"
+    # BINTRAY_API_KEY is defined in Travis Settings of freemint/cops
+    - BINTRAY_REPO=teradesk-files
 
 before_install:
   - .travis/install_ssh_id.sh
