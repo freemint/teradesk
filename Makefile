@@ -1,5 +1,6 @@
 # Define this to the version of the package.
-VERSION=4.08
+# used only for archive names, so no dot here
+VERSION=408
 
 srcdir=.
 
@@ -24,6 +25,12 @@ WARN = \
 	-Werror
 
 CFLAGS = $(DEFS) $(OPTS) $(INCLUDES) $(WARN)
+
+ifeq ($(CPU),v4e)
+CFLAGS += -mcpu=5475
+else
+CFLAGS += -m68000
+endif
 
 PROGRAMS = desktop.prg
 

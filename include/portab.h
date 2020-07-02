@@ -65,7 +65,7 @@
 #define BYTE	signed char
 #define UBYTE	unsigned char
 
-#if (!defined(__PUREC__) || !defined(__MSHORT__) || defined(__GEMLIB__)) && !defined(__USE_GEMLIB)
+#if (!(defined(__PUREC__) || defined(__TURBOC__)) || (defined(_COMPILER_H) && !defined(__MSHORT__)) || defined(__GEMLIB__)) && !defined(__USE_GEMLIB)
 #define __USE_GEMLIB 1
 #endif
 #ifdef __USE_GEMLIB
@@ -89,7 +89,6 @@
 
 #define REG     register                      /* Register variable           */
 #define AUTO    auto                          /* Local to function           */
-#define EXTERN  extern                        /* External variable           */
 #define LOCAL   static                        /* Local to module             */
 #define MLOCAL  LOCAL                         /* Local to module             */
 #define GLOBAL                                /* Global variable             */
@@ -158,7 +157,7 @@
 #define _LONG LONG
 #define _LONG_PTR _LONG
 #define _ULONG ULONG
-#define _VOID VOID
+#define _VOID void
 #define _BOOL BOOLEAN
 #define _DOUBLE double
 
@@ -173,7 +172,6 @@
 #define LOCAL static
 #define RLOCAL LOCAL
 #define GLOBAL /**/
-#define EXTERN extern
 #define _HUGE 
 #define EXP_PTR
 #define EXP_PROC
@@ -194,7 +192,7 @@
 #  define BigEndian (is_big_endian())
 #  define IfBigEndian if (BigEndian)
 #  define IfNotBigEndian if (!BigEndian)
-_BOOL is_big_endian ( _VOID );
+_BOOL is_big_endian ( void );
 #else
 #  if BigEndian
 #    define IfBigEndian /**/
@@ -215,7 +213,7 @@ _BOOL is_big_endian ( _VOID );
 #  endif
 #endif
 
-#ifdef __PUREC__
+#if defined(__PUREC__) || defined(__TURBOC__)
 #  define ANONYMOUS_STRUCT_DUMMY(x) struct x { int dummy; };
 #endif
 
@@ -234,9 +232,9 @@ _BOOL is_big_endian ( _VOID );
 
 #ifndef NO_CONST
 #  ifdef __GNUC__
-#    define NO_CONST(p) __extension__({ union { CONST _VOID *cs; _VOID *s; } x; x.cs = p; x.s; })
+#    define NO_CONST(p) __extension__({ union { CONST void *cs; void *s; } x; x.cs = p; x.s; })
 #  else
-#    define NO_CONST(p) ((_VOID *)(p))
+#    define NO_CONST(p) ((void *)(p))
 #  endif
 #endif
 
