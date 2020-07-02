@@ -10,7 +10,7 @@ sudo apt-get install -y \
 	mtools \
 	libjson-perl \
 	libwww-perl \
-
+	libsdl1.2-dev \
 
 if [ -z "$BINTRAY_API_KEY" ]
 then
@@ -27,9 +27,10 @@ do
 	unset PACKAGE_VERSION
 	unset PACKAGE_PATH
 	PACKAGE_VERSION=$(curl -s ${CURL_USER} -X GET "https://api.bintray.com/packages/freemint/freemint/$package" | jq -r '.latest_version')
-	read PACKAGE_PATH \
-		<<< $(curl -s ${CURL_USER} -X GET "https://api.bintray.com/packages/freemint/freemint/$package/versions/$PACKAGE_VERSION/files" \
-			| jq -r '.[].path')
+	echo PACKAGE_VERSION=$PACKAGE_VERSION
+	PACKAGE_PATH=`curl -s ${CURL_USER} -X GET "https://api.bintray.com/packages/freemint/freemint/$package/versions/$PACKAGE_VERSION/files" \
+			| jq -r '.[].path'`
+	echo fetching https://dl.bintray.com/freemint/freemint/$PACKAGE_PATH
 	wget -q -O - "https://dl.bintray.com/freemint/freemint/$PACKAGE_PATH" | sudo tar xjf -
 done
 cd -
@@ -55,7 +56,8 @@ mkdir "$ARANYM"
 cd "$ARANYM"
 
 curl --get https://tho-otto.de/download/mag-hdd.tar.bz2 --output mag-hdd.tar.bz2
-curl --get https://tho-otto.de/download/aranym-1.0.2-trusty-x86_64-a9de1ec.tar.xz --output aranym.tar.xz
+#curl --get https://tho-otto.de/download/aranym-1.0.2-trusty-x86_64-a9de1ec.tar.xz --output aranym.tar.xz
+curl --get https://tho-otto.de/download/aranym-1.1.0-xenial-x86_64-4ebb186.tar.xz --output aranym.tar.xz
 
 tar xvf mag-hdd.tar.bz2
 test -f config-hdd || exit 1
