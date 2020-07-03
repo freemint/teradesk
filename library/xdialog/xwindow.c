@@ -165,9 +165,9 @@ WINDOW *xw_find(_WORD x, _WORD y)
 WINDOW *xw_top(void)
 {
 	WINDOW *w;
-	_WORD thandle, dummy;
+	_WORD thandle;
 
-	wind_get(0, WF_TOP, &thandle, &dummy, &dummy, &dummy);	/* the real top window */
+	wind_get_int(0, WF_TOP, &thandle);	/* the real top window */
 
 	/* If any known window is topped, return a pointer to it */
 
@@ -202,9 +202,9 @@ WINDOW *xw_top(void)
 WINDOW *xw_bottom(void)
 {
 	WINDOW *w;
-	_WORD bhandle, dummy;
+	_WORD bhandle;
 
-	wind_get(0, WF_BOTTOM, &bhandle, &dummy, &dummy, &dummy);	/* the real bottom window */
+	wind_get_int(0, WF_BOTTOM, &bhandle);	/* the real bottom window */
 
 	/* If any known window is the bottom one, return a pointer to it */
 
@@ -361,7 +361,7 @@ void xw_set_topbot(WINDOW *w, _WORD wf)
 	if (w->xw_type == ACC_WIND)
 		xw_send(w, msg);
 	else
-		wind_set(w->xw_handle, wf, w->xw_handle, 0, 0, 0);
+		wind_set_int(w->xw_handle, wf, w->xw_handle);
 
 	notef(w);
 }

@@ -127,20 +127,19 @@ static void remove_critic(void)
 static void close_windows(void)
 {
 	_WORD handle;
-	_WORD dummy;
 
 	if (aes_version >= 0x140)
 	{
 		wind_new();
 	} else
 	{
-		wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
+		wind_get_int(0, WF_TOP, &handle);
 
 		while (handle > 0)
 		{
 			wind_close(handle);
 			wind_delete(handle);
-			wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
+			wind_get_int(0, WF_TOP, &handle);
 		}
 	}
 }

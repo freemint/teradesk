@@ -1152,13 +1152,12 @@ void handle_av_protocol(const _WORD *message)
 		{
 			_WORD item;
 			_WORD wind_ap_id;
-			_WORD dummy;
 
 			*global_memory = 0;			/* clear any old strings */
 
 			/* Find the owner of the window (can't be always done in single-tos) */
 
-			wind_get(wind_find(m3, message[4]), WF_OWNER, &wind_ap_id, &dummy, &dummy, &dummy);
+			wind_get_int(wind_find(m3, message[4]), WF_OWNER, &wind_ap_id);
 
 			/* Note: it is not clear what should be returned in answer[3] */
 

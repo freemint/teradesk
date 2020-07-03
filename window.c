@@ -508,7 +508,7 @@ static void wd_top_app(_WORD apid)
 	if (naes || aes_ctrl)
 		appl_control(apid, 12, NULL);	/* N.AES, XaAES */
 	else
-		wind_set(-1, WF_TOP, apid, 0, 0, 0);	/* Magic */
+		wind_set_int(-1, WF_TOP, apid);	/* Magic */
 }
 #endif
 
@@ -527,8 +527,6 @@ static void wd_top_app(_WORD apid)
 #if _MINT_
 void wd_restoretop(_WORD code, _WORD *whandle, _WORD *wap_id)
 {
-	_WORD p2, p3, p4;
-
 	if (mint || geneva)
 	{
 		if (code == 0)
@@ -546,8 +544,8 @@ void wd_restoretop(_WORD code, _WORD *whandle, _WORD *wap_id)
 #if 0									/* maybe there is no need ??? */
 			if ((aes_wfunc & 17) == 17)	/* WF_TOP and WF_OWNER supported ? */
 #endif
-				if (wind_get(0, WF_TOP, whandle, &p2, &p3, &p4))
-					if (!wind_get(*whandle, WF_OWNER, wap_id, &p2, &p3, &p4))
+				if (wind_get_int(0, WF_TOP, whandle))
+					if (!wind_get_int(*whandle, WF_OWNER, wap_id))
 						*wap_id = -1;
 		} else
 		{
@@ -3891,12 +3889,11 @@ static bool itm_drop(WINDOW *w,			/* source window */
 	_WORD i;							/* item counter */
 	_WORD apid = -1;					/* destination app id */
 	_WORD hdl;							/* destination window handle */
-	_WORD dummy;
 
 	/* Find the owner of the window at x,y */
 
 	if ((hdl = wind_find(x, y)) > 0)
-		wind_get(hdl, WF_OWNER, &apid, &dummy, &dummy, &dummy);
+		wind_get_int(hdl, WF_OWNER, &apid);
 
 	/* Drag & drop is possible only in Mint or Magic (what about geneva 6?) */
 

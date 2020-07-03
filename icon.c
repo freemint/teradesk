@@ -453,7 +453,6 @@ void draw_icrects(WINDOW *w, OBJECT *tree, GRECT *r1)
 void redraw_desk(GRECT *r1)
 {
 	_WORD owner = 0;
-	_WORD dummy;
 	bool redraw = TRUE;
 
 	xd_begupdate();
@@ -464,7 +463,7 @@ void redraw_desk(GRECT *r1)
 
 	if (aes_version >= 0x399)
 	{
-		wind_get(0, WF_OWNER, &owner, &dummy, &dummy, &dummy);
+		wind_get_int(0, WF_OWNER, &owner);
 
 		if (ap_id != owner)
 			redraw = FALSE;
