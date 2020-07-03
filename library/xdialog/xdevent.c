@@ -23,7 +23,7 @@
 
 #include <library.h>
 #include "xdialog.h"
-#include <vaproto.h>
+#include "vaproto.h"
 
 
 _WORD xe_mbshift;

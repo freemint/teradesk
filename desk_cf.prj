@@ -40,8 +40,7 @@ desk_cf.prg				; with _MINT_=1  for all systems
 .C[-P]
 .C[-G]
 .C[-Y]
-.C[-Ilibrary\xdialog -Iinclude]
-.S[-S -Iinclude]
+.C[-Ilibrary\xdialog -Ilibrary\utility]
 .L[-S=32000]
 
 ; without debug info

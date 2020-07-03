@@ -44,8 +44,7 @@ desktos.prg			; with _MINT_=0  i.e. for single-TOS only
 .C[-P]
 .C[-G]
 .C[-Y]
-.C[-Ilibrary\xdialog -Iinclude]
-.S[-S -Iinclude]
+.C[-Ilibrary\xdialog -Ilibrary\utility]
 .L[-S=32000]
 
 ; without debug info

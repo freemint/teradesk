@@ -24,19 +24,6 @@
 #define __LIBRARY__ 1
 
 #include <stdbool.h>
-#ifdef __PUREC__
-#include <portaes.h>
-#include <portvdi.h>
-#else
-#include <portab.h>
-#include <gem.h>
-typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
-#undef _AESrscfile
-#define	_AESrscfile   ((*((OBJECT ***)&aes_global[5])))
-#undef _AESrscmem
-#define	_AESrscmem    ((*((void **)&aes_global[7])))
-#define bfobspec BFOBSPEC
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,9 +31,46 @@ typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
 #include <ctype.h>
 #include <stdarg.h>
 #include <sys/stat.h>
+#ifdef __PUREC__
+#include <portaes.h>
+#include <portvdi.h>
 #include <tos.h>
+#else
+#ifndef FALSE
+#define FALSE   0                    /* Function FALSE value        */
+#define TRUE    1                    /* Function TRUE  value        */
+#endif
+#ifndef _CDECL
+#define _CDECL
+#endif
+#define _WORD short
+#define _UWORD unsigned short
+#include <gem.h>
+typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
+#undef _AESrscfile
+#define	_AESrscfile   ((*((OBJECT ***)&aes_global[5])))
+#undef _AESrscmem
+#define	_AESrscmem    ((*((void **)&aes_global[7])))
+#define bfobspec BFOBSPEC
+#include <mint/mintbind.h>
+#endif
 #include <mint/arch/nf_ops.h>
+#include "xattr.h"
 
+
+#ifndef __attribute__
+#  ifndef __GNUC__
+#    define __attribute__(x)
+#  endif
+#endif
+
+#ifndef NO_CONST
+#  ifdef __GNUC__
+#    define NO_CONST(p) __extension__({ union { CONST void *cs; void *s; } x; x.cs = p; x.s; })
+#  else
+#    define NO_CONST(p) ((void *)(p))
+#  endif
+#endif
 
 /*
  * Define _MINT_ as 1 to compile for multitasking; 0 for singletos only

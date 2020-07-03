@@ -8,7 +8,7 @@ include support/silent.am
 
 # Additional defines.
 DEFS =
-INCLUDES = -I$(srcdir)/library/xdialog  -I$(srcdir)/include 
+INCLUDES = -I$(srcdir)/library/xdialog  -I$(srcdir)/library/utility
 
 # Define this to the warning level you want.
 WARN = \
