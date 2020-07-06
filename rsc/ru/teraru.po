@@ -1,0 +1,2160 @@
+# Russian translation for Teradesk.
+# Copyright (C) 2020
+# This file is distributed under the same license as the teradesk package.
+# Dima Sobolev, 2020.
+#
+msgid  ""
+msgstr ""
+"Project-Id-Version: teradesk HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-07-06 20:59+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Dima Sobolev\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Output-Encoding: russian-atarist\n"
+
+#: MENU:0:3
+msgid  " Desk"
+msgstr " Панель"
+
+#: MENU:0:4
+msgid  " File"
+msgstr " Файл"
+
+#: MENU:0:5
+msgid  " View"
+msgstr " Вид"
+
+#: MENU:0:6
+msgid  " Window"
+msgstr " Окно"
+
+#: MENU:0:7
+msgid  " Options"
+msgstr " Опции"
+
+#: MENU:0:10
+msgid  "  TeraDesk Info..."
+msgstr "  Информация о TeraDesk..."
+
+#: MENU:0:12
+msgid  "  1 accessory slot 1"
+msgstr "  1 accessory slot 1"
+
+#: MENU:0:13
+msgid  "  2"
+msgstr "  2"
+
+#: MENU:0:14
+msgid  "  3"
+msgstr "  3"
+
+#: MENU:0:15
+msgid  "  4"
+msgstr "  4"
+
+#: MENU:0:16
+msgid  "  5"
+msgstr "  5"
+
+#: MENU:0:17
+msgid  "  6"
+msgstr "  6"
+
+#: MENU:0:19
+msgid  "  Open...        ____"
+msgstr "  Открыть...            ____"
+
+#: MENU:0:20
+msgid  "  Info...        ____"
+msgstr "  Информация...         ____"
+
+#: MENU:0:21
+msgid  "  New...         ____"
+msgstr "  Новый...              ____"
+
+#: MENU:0:22
+msgid  "  Compare...     ____"
+msgstr "  Сравнить...           ____"
+
+#: MENU:0:23
+msgid  "  Search...      ____"
+msgstr "  Поиск...              ____"
+
+#: MENU:0:24
+msgid  "  Print...       ____"
+msgstr "  Печать...             ____"
+
+#: MENU:0:25
+msgid  "  Delete...      ____"
+msgstr "  Удалить...            ____"
+
+#: MENU:0:27
+msgid  "  Select all     ____"
+msgstr "  Выбрать всë           ____"
+
+#: MENU:0:29
+msgid  "  Copy disk...   ____"
+msgstr "  Копировать диск...    ____"
+
+#: MENU:0:30
+msgid  "  Format disk... ____"
+msgstr "  Форматировать диск... ____"
+
+#: MENU:0:32
+msgid  "  Quit/Shutdown  ____"
+msgstr "  Выход/Выключение      ____"
+
+#: MENU:0:34
+msgid  "  Show as icons     ____"
+msgstr "  Показать как иконки    ____"
+
+#: MENU:0:35
+msgid  "  Auto arrange      ____"
+msgstr "  Автосортировка         ____"
+
+#: MENU:0:37
+msgid  "  Sort by name      ____"
+msgstr "  Сортировать по имени   ____"
+
+#: MENU:0:38
+msgid  "  Sort by extension ____"
+msgstr "  ...по расширению       ____"
+
+#: MENU:0:39
+msgid  "  Sort by date      ____"
+msgstr "  ...по дате             ____"
+
+#: MENU:0:40
+msgid  "  Sort by size      ____"
+msgstr "  ...по размеру          ____"
+
+#: MENU:0:41
+msgid  "  View unsorted     ____"
+msgstr "  Не сортировать         ____"
+
+#: MENU:0:42
+msgid  "  Reverse order     ____"
+msgstr "  Обратный порядок       ____"
+
+#: MENU:0:43
+msgid  "  Case insensitive  ____"
+msgstr "  Независимо от регистра ____"
+
+#: MENU:0:45
+msgid  "  Show size         ____"
+msgstr "  Показывать размер      ____"
+
+#: MENU:0:46
+msgid  "  Show date         ____"
+msgstr "  Показывать дату        ____"
+
+#: MENU:0:47
+msgid  "  Show time         ____"
+msgstr "  Показывать время       ____"
+
+#: MENU:0:48
+msgid  "  Show attributes   ____"
+msgstr "  Показывать атрибуты    ____"
+
+#: MENU:0:49
+msgid  "  Show owner        ____"
+msgstr "  Показывать владельца   ____"
+
+#: MENU:0:51
+msgid  "  Set mask...       ____"
+msgstr "  Маска выбора...        ____"
+
+#: MENU:0:53
+msgid  "  Iconified      ____"
+msgstr "  Иконизированное  ____"
+
+#: MENU:0:54
+msgid  "  Full           ____"
+msgstr "  Полное           ____"
+
+#: MENU:0:55
+msgid  "  Close          ____"
+msgstr "  На шаг вверх     ____"
+
+#: MENU:0:56
+msgid  "  Close window   ____"
+msgstr "  Закрыть окно     ____"
+
+#: MENU:0:57
+msgid  "  Close all      ____"
+msgstr "  Закрыть всë      ____"
+
+#: MENU:0:58
+msgid  "  Duplicate      ____"
+msgstr "  Дублировать      ____"
+
+#: MENU:0:59
+msgid  "  Cycle windows  ____"
+msgstr "  Переключить окна ____"
+
+#: MENU:0:61
+msgid  "  Set applications... ____"
+msgstr "  Установить программы...     ____"
+
+#: MENU:0:62
+msgid  "  Set program types...____"
+msgstr "  Установить типы программ... ____"
+
+#: MENU:0:64
+msgid  "  Set desk icons...   ____"
+msgstr "  Установить иконки панели... ____"
+
+#: MENU:0:65
+msgid  "  Set window icons... ____"
+msgstr "  Установить иконки окна...   ____"
+
+#: MENU:0:67
+msgid  "  Desk preferences... ____"
+msgstr "  Настройки панели...         ____"
+
+#: MENU:0:68
+msgid  "  Copy and print...   ____"
+msgstr "  Копия и печать...           ____"
+
+#: MENU:0:69
+msgid  "  Window options...   ____"
+msgstr "  Настройки окна...           ____"
+
+#: MENU:0:70
+msgid  "  Video options...    ____"
+msgstr "  Настройки видео...          ____"
+
+#: MENU:0:72
+msgid  "  Load settings...    ____"
+msgstr "  Загрузить настройки...      ____"
+
+#: MENU:0:73
+msgid  "  Save settings       ____"
+msgstr "  Сохранить настройки         ____"
+
+#: MENU:0:74
+msgid  "  Save settings as... ____"
+msgstr "  Сохранить настройки как...  ____"
+
+#: INFOBOX:1:2
+msgid  "v"
+msgstr "v"
+
+#: INFOBOX:1:3
+msgid  "Single-TOS version"
+msgstr "Версия для однозадачной TOS "
+
+#: INFOBOX:1:4
+msgid  "c"
+msgstr "c"
+
+#: INFOBOX:1:5
+msgid  "o"
+msgstr "o"
+
+#: INFOBOX:1:6
+msgid  "With thanks to all who helped"
+msgstr "Спасибо всем,кто помог. Русификация - Дима Соболев"
+
+#: INFOBOX:1:7
+msgid  "Free memory:"
+msgstr "Своб.памяти:"
+
+#: INFOBOX:1:8
+msgid  "________ bytes ST-RAM"
+msgstr "________ байт ST-RAM"
+
+#: INFOBOX:1:9
+msgid  "_________ bytes TT-RAM"
+msgstr "_________ байт TT-RAM"
+
+#: INFOBOX:1:10
+msgid  "TOS-version:__.__"
+msgstr "Версия TOS:__.__"
+
+#: INFOBOX:1:11
+msgid  "AES-version:__.__"
+msgstr "Версия AES:__.__"
+
+#: INFOBOX:1:12
+#: GETCML:2:4
+#: NEWDIR:3:5
+#: ADDICON:4:11
+#: ADDICON:4:16
+#: APPLIKAT:5:15
+#: FILEINFO:6:60
+#: COPYINFO:7:23
+#: NAMECONF:8:8
+#: SETMASK:9:23
+#: OPTIONS:10:11
+#: ADDPTYPE:11:19
+#: STABSIZE:13:4
+#: WOPTIONS:14:10
+#: WDFONT:15:15
+#: FLOPPY:16:20
+#: VOPTIONS:17:20
+#: ADDFTYPE:18:4
+#: COPTIONS:19:13
+#: SEARCH:20:12
+#: SPECAPP:21:14
+#: COMPARE:24:4
+msgid  "OK"
+msgstr "ОК"
+
+#: INFOBOX:1:13
+#: ADDICON:4:13
+#: NAMECONF:8:10
+msgid  "Abort"
+msgstr "Прервать"
+
+#: GETCML:2:1
+msgid  "Command line:"
+msgstr "Командная строка:"
+
+#: GETCML:2:3
+#: NEWDIR:3:4
+#: ADDICON:4:17
+#: APPLIKAT:5:16
+#: FILEINFO:6:62
+#: COPYINFO:7:22
+#: SETMASK:9:22
+#: OPTIONS:10:10
+#: ADDPTYPE:11:20
+#: STABSIZE:13:3
+#: WOPTIONS:14:9
+#: WDFONT:15:14
+#: FLOPPY:16:19
+#: VOPTIONS:17:19
+#: ADDFTYPE:18:3
+#: COPTIONS:19:12
+#: SEARCH:20:13
+#: SPECAPP:21:13
+#: OPENW:22:3
+#: HELP1:23:4
+#: COMPARE:24:3
+#: QUITOPT:25:8
+msgid  "Cancel"
+msgstr "Отмена"
+
+#: NEWDIR:3:1
+#: ADDICON:4:1
+#: APPLIKAT:5:1
+#: FILEINFO:6:1
+#: FILEINFO:6:59
+#: COPYINFO:7:1
+#: NAMECONF:8:1
+#: SETMASK:9:1
+#: ADDPTYPE:11:1
+#: WDFONT:15:1
+#: WDFONT:15:6
+#: WDFONT:15:7
+#: WDFONT:15:8
+#: FLOPPY:16:1
+#: ADDFTYPE:18:1
+msgid  "t"
+msgstr "t"
+
+#: NEWDIR:3:3
+#: APPLIKAT:5:4
+#: FILEINFO:6:19
+#: NAMECONF:8:3
+#: SEARCH:20:3
+msgid  "Name:"
+msgstr "Имя: "
+
+#: NEWDIR:3:8
+#: FILEINFO:6:37
+#: COPYINFO:7:5
+msgid  "To:"
+msgstr "На:"
+
+#: ADDICON:4:3
+msgid  "Drive : _"
+msgstr "Диск  : _"
+
+#: ADDICON:4:5
+#: APPLIKAT:5:3
+#: FILEINFO:6:17
+msgid  "Path:"
+msgstr "Путь:"
+
+#: ADDICON:4:8
+msgid  "Icon label:           ____________"
+msgstr "Имя иконки:           ____________"
+
+#: ADDICON:4:9
+#: ADDFTYPE:18:6
+#: TFTYPE:67
+msgid  "File type:"
+msgstr "Тип файла:"
+
+#: ADDICON:4:12
+#: FILEINFO:6:61
+#: NAMECONF:8:9
+msgid  "Skip"
+msgstr "Пропуск"
+
+#: ADDICON:4:14
+msgid  "Remove"
+msgstr "Удалить"
+
+#: ADDICON:4:25
+msgid  "Icon type"
+msgstr "Тип иконки"
+
+#: ADDICON:4:27
+msgid  "Disk"
+msgstr "Диск"
+
+#: ADDICON:4:28
+msgid  "Printer"
+msgstr "Принтер"
+
+#: ADDICON:4:29
+msgid  "Trashcan"
+msgstr "Корзина"
+
+#: ADDICON:4:30
+msgid  "File/Folder"
+msgstr "Файл/Папка"
+
+#: ADDICON:4:31
+#: ADDPTYPE:11:6
+msgid  "File"
+msgstr "Файл"
+
+#: ADDICON:4:32
+msgid  "Folder"
+msgstr "Папка"
+
+#: ADDICON:4:33
+#: ADDPTYPE:11:5
+msgid  "Program"
+msgstr "Программа"
+
+#: ADDICON:4:34
+#: COPYINFO:7:29
+msgid  "Follow links"
+msgstr "Сл. за объектами"
+
+#: APPLIKAT:5:5
+msgid  "Command:"
+msgstr "Команда:"
+
+#: APPLIKAT:5:6
+msgid  "Environment:"
+msgstr "Окружение:"
+
+#: APPLIKAT:5:11
+msgid  "F-key: __"
+msgstr "F-клав:__"
+
+#: APPLIKAT:5:12
+msgid  "Set special use"
+msgstr "Спецпрограммы"
+
+#: APPLIKAT:5:13
+msgid  "Set application type"
+msgstr "Установить тип программы"
+
+#: APPLIKAT:5:14
+msgid  "Assign document types"
+msgstr "Связать типы документов"
+
+#: FILEINFO:6:3
+msgid  "Bytes used:"
+msgstr "Байт используется:"
+
+#: FILEINFO:6:6
+msgid  "Readonly"
+msgstr "ТлкЧтение"
+
+#: FILEINFO:6:7
+msgid  "Hidden"
+msgstr "Скрытый"
+
+#: FILEINFO:6:8
+msgid  "System"
+msgstr "Системный"
+
+#: FILEINFO:6:9
+msgid  "Attributes:"
+msgstr "Атрибуты:"
+
+#: FILEINFO:6:10
+msgid  "Archive"
+msgstr "Архивный"
+
+#: FILEINFO:6:12
+msgid  "of ___:"
+msgstr "из ___:"
+
+#: FILEINFO:6:14
+msgid  "String match #___"
+msgstr "Строк соответствия #___"
+
+#: FILEINFO:6:15
+msgid  "Cluster size:                ______"
+msgstr "Размер кластера:             ______"
+
+#: FILEINFO:6:21
+#: TACCTIM:108
+msgid  "Last access:"
+msgstr "Последний доступ:"
+
+#: FILEINFO:6:25
+msgid  "Number of folders:           ______"
+msgstr "Количество папок:            ______"
+
+#: FILEINFO:6:26
+msgid  "Number of files and links:   ______"
+msgstr "Количество файлов и ярлыков: ______"
+
+#: FILEINFO:6:28
+msgid  "A"
+msgstr "A"
+
+#: FILEINFO:6:30
+msgid  "Volume label:"
+msgstr "Метка диска:"
+
+#: FILEINFO:6:31
+msgid  "Disk drive:"
+msgstr "Имя диска: "
+
+#: FILEINFO:6:33
+msgid  "Total space:             __________"
+msgstr "Общее место:             __________"
+
+#: FILEINFO:6:34
+msgid  "Bytes free:              __________"
+msgstr "Байт свободно:           __________"
+
+#: FILEINFO:6:39
+msgid  "World:"
+msgstr "Мир:"
+
+#: FILEINFO:6:40
+msgid  "Group: ____"
+msgstr "ID группы: ____"
+
+#: FILEINFO:6:41
+msgid  "Owner: ____"
+msgstr "ID владельца: ____"
+
+#: FILEINFO:6:42
+#: FILEINFO:6:46
+#: FILEINFO:6:50
+msgid  "r"
+msgstr "r"
+
+#: FILEINFO:6:43
+#: FILEINFO:6:47
+#: FILEINFO:6:51
+msgid  "w"
+msgstr "w"
+
+#: FILEINFO:6:44
+#: FILEINFO:6:48
+#: FILEINFO:6:52
+msgid  "x"
+msgstr "x"
+
+#: FILEINFO:6:45
+#: FILEINFO:6:49
+#: FILEINFO:6:53
+#: SETMASK:9:20
+#: ADDPTYPE:11:13
+msgid  "s"
+msgstr "s"
+
+#: FILEINFO:6:55
+#: FILEINFO:6:58
+msgid  "                           "
+msgstr "                           "
+
+#: FILEINFO:6:56
+msgid  "Flags:"
+msgstr "Флаги:"
+
+#: FILEINFO:6:57
+msgid  "Memory:"
+msgstr "Память:"
+
+#: FILEINFO:6:63
+msgid  "abcdefghijklmnopq"
+msgstr "abcdefghijklmnopq"
+
+#: FILEINFO:6:64
+msgid  "Opens with:"
+msgstr "Открыть с:"
+
+#: COPYINFO:7:3
+msgid  "Folder:"
+msgstr "Папка: "
+
+#: COPYINFO:7:4
+msgid  "File:"
+msgstr "Файл:"
+
+#: COPYINFO:7:7
+msgid  "Reset date/time"
+msgstr "Сброс даты/времени"
+
+#: COPYINFO:7:9
+msgid  "Folders:"
+msgstr "Папки:  "
+
+#: COPYINFO:7:10
+msgid  "Files and links:"
+msgstr "Файлы и ярлыки:"
+
+#: COPYINFO:7:11
+msgid  "Bytes:"
+msgstr "Байт: "
+
+#: COPYINFO:7:13
+#: COPYINFO:7:14
+msgid  "123456"
+msgstr "123456"
+
+#: COPYINFO:7:15
+msgid  "1234567890"
+msgstr "1234567890"
+
+#: COPYINFO:7:21
+#: FLOPPY:16:18
+#: SEARCH:20:15
+msgid  "Press [ESC] to abort"
+msgstr "Нажмите [ESC] для отмены"
+
+#: COPYINFO:7:25
+msgid  "Text mode"
+msgstr "Текстовый вид"
+
+#: COPYINFO:7:26
+msgid  "Hex dump"
+msgstr "Hex-режим"
+
+#: COPYINFO:7:27
+msgid  "Raw data"
+msgstr "Raw-данные"
+
+#: COPYINFO:7:28
+msgid  "Print to file"
+msgstr "Печать в файл"
+
+#: NAMECONF:8:4
+msgid  "Copy:"
+msgstr "Копия:"
+
+#: NAMECONF:8:7
+#: TFIALL:163
+msgid  "All"
+msgstr "Все"
+
+#: NAMECONF:8:11
+#: NAMECONF:8:12
+msgid  "12345678 bytes 01-02-03 11:59:59"
+msgstr " 12345678 байт 01-02-03 11:59:59"
+
+#: SETMASK:9:15
+msgid  "⇧"
+msgstr "⇧"
+
+#: SETMASK:9:16
+msgid  "⇩"
+msgstr "⇩"
+
+#: SETMASK:9:17
+msgid  "Add"
+msgstr "Добавить"
+
+#: SETMASK:9:18
+#: OPENW:22:7
+msgid  "Edit"
+msgstr "Изменить"
+
+#: SETMASK:9:19
+msgid  "Delete"
+msgstr "Удалить"
+
+#: SETMASK:9:25
+msgid  "Show Files"
+msgstr "Пок.файлы"
+
+#: SETMASK:9:26
+msgid  "Show Folders"
+msgstr "Пок.папки"
+
+#: SETMASK:9:27
+msgid  "Show Programs"
+msgstr "Пок.программы"
+
+#: SETMASK:9:29
+msgid  "Show Hidden"
+msgstr "Пок.скрытые"
+
+#: SETMASK:9:30
+msgid  "Show System"
+msgstr "Пок.системные"
+
+#: SETMASK:9:31
+msgid  "Show Subfolders"
+msgstr "Показ.поддир."
+
+#: SETMASK:9:32
+msgid  "Show Parent    "
+msgstr "Показ.родит.   "
+
+#: SETMASK:9:34
+msgid  "Wait for key after TOS programs"
+msgstr "Ждать нажатия после TOS программ"
+
+#: SETMASK:9:35
+msgid  "Use handle 2 as stderr"
+msgstr "Исп.handle 2 как stderr"
+
+#: OPTIONS:10:1
+msgid  "Desktop Preferences"
+msgstr "Настройки панели"
+
+#: OPTIONS:10:3
+msgid  "Dialog options"
+msgstr "Опции диалогового окна"
+
+#: OPTIONS:10:5
+msgid  "Flying"
+msgstr "Летящий"
+
+#: OPTIONS:10:6
+#: ADDPTYPE:11:4
+msgid  "Window"
+msgstr "Окно"
+
+#: OPTIONS:10:8
+msgid  "Under mouse"
+msgstr "За мышкой"
+
+#: OPTIONS:10:9
+msgid  "Centered"
+msgstr "В центре"
+
+#: OPTIONS:10:12
+msgid  "Menu shortcuts"
+msgstr "Горячие клавиши"
+
+#: OPTIONS:10:13
+msgid  "Item:"
+msgstr "Пункт:"
+
+#: OPTIONS:10:14
+msgid  "Keys: ____"
+msgstr "Клав.:____"
+
+#: OPTIONS:10:15
+msgid  "Clear all"
+msgstr "Очистить всë"
+
+#: OPTIONS:10:18
+msgid  "                     "
+msgstr "                     "
+
+#: OPTIONS:10:19
+msgid  "Save desk on exit"
+msgstr "Сохранить при выходе"
+
+#: ADDPTYPE:11:3
+msgid  "Directory"
+msgstr "Директория"
+
+#: ADDPTYPE:11:7
+msgid  "Program type"
+msgstr "Тип программы"
+
+#: ADDPTYPE:11:8
+msgid  "GEM"
+msgstr "GEM"
+
+#: ADDPTYPE:11:9
+msgid  "GTP"
+msgstr "GTP"
+
+#: ADDPTYPE:11:10
+msgid  "ACC"
+msgstr "ACC"
+
+#: ADDPTYPE:11:11
+msgid  "TOS"
+msgstr "TOS"
+
+#: ADDPTYPE:11:12
+msgid  "TTP"
+msgstr "TTP"
+
+#: ADDPTYPE:11:15
+msgid  "Use ARGV"
+msgstr "Исп. ARGV"
+
+#: ADDPTYPE:11:16
+msgid  "Don't multitask"
+msgstr "Без многозадачности"
+
+#: ADDPTYPE:11:17
+msgid  "Memory limit: ____ KB"
+msgstr "Лимит памяти: ____ КБ"
+
+#: ADDPTYPE:11:18
+msgid  "Background"
+msgstr "Фон"
+
+#: VIEWMENU:12:3
+msgid  " Viewer"
+msgstr " Просмотр"
+
+#: VIEWMENU:12:6
+msgid  "  Tab size..."
+msgstr "  Размер табуляции..."
+
+#: VIEWMENU:12:7
+msgid  "  Hexmode"
+msgstr "  Hex-режим"
+
+#: STABSIZE:13:1
+msgid  "Set Tab Size"
+msgstr "Установка табуляции"
+
+#: STABSIZE:13:5
+msgid  "Tab size:         __"
+msgstr "Размер табуляции: __"
+
+#: WOPTIONS:14:1
+msgid  "Window Options"
+msgstr "Настройки окна"
+
+#: WOPTIONS:14:3
+msgid  "Desktop pattern:"
+msgstr "Образец десктопа:"
+
+#: WOPTIONS:14:4
+msgid  "Desktop colour:"
+msgstr "Цвет десктопа:"
+
+#: WOPTIONS:14:5
+msgid  "Window pattern:"
+msgstr "Образец окна:"
+
+#: WOPTIONS:14:6
+msgid  "Window colour:"
+msgstr "Цвет окна:"
+
+#: WOPTIONS:14:7
+msgid  "Directory font"
+msgstr "Фонт директорий"
+
+#: WOPTIONS:14:8
+msgid  "Viewer font"
+msgstr "Фонт вьюера"
+
+#: WOPTIONS:14:21
+msgid  "Tab size:  __"
+msgstr "Табулятор:  __"
+
+#: WOPTIONS:14:22
+msgid  "Save windows"
+msgstr "Сохр.настройки"
+
+#: WOPTIONS:14:23
+msgid  "Hor.grid: ___"
+msgstr "Гор.сеть: ___"
+
+#: WOPTIONS:14:25
+msgid  "Ver.grid: ___"
+msgstr "Вер.сеть: ___"
+
+#: WDFONT:15:5
+#: COMPARE:24:11
+#: COMPARE:24:12
+msgid  "1234567890123456789012345678901"
+msgstr "1234567890123456789012345678901"
+
+#: WDFONT:15:13
+msgid  "Size:"
+msgstr "Размер:"
+
+#: WDFONT:15:17
+msgid  "123"
+msgstr "123"
+
+#: WDFONT:15:20
+msgid  " Sample 1 "
+msgstr " Образец 1 "
+
+#: WDFONT:15:21
+msgid  "Colour:"
+msgstr "Цвет:"
+
+#: WDFONT:15:26
+msgid  "Bold"
+msgstr "Жирный"
+
+#: WDFONT:15:27
+msgid  "Light"
+msgstr "Лëгкий"
+
+#: WDFONT:15:28
+msgid  "Italic"
+msgstr "Наклон"
+
+#: WDFONT:15:29
+msgid  "Underlined"
+msgstr "Подчëркнутый"
+
+#: WDFONT:15:30
+msgid  "Hollow"
+msgstr "Полый"
+
+#: WDFONT:15:31
+msgid  "Shadowed"
+msgstr "С тенью"
+
+#: WDFONT:15:32
+msgid  "Inverse"
+msgstr "Негатив"
+
+#: FLOPPY:16:3
+msgid  "Drive: _:"
+msgstr "Диск:  _:"
+
+#: FLOPPY:16:4
+msgid  "to  _:"
+msgstr "на  _:"
+
+#: FLOPPY:16:5
+msgid  "Format type"
+msgstr "Тип формата"
+
+#: FLOPPY:16:6
+msgid  "Single sided"
+msgstr "Односторонний"
+
+#: FLOPPY:16:7
+msgid  "Double sided"
+msgstr "Двусторонний"
+
+#: FLOPPY:16:8
+msgid  "High density  "
+msgstr "Высокая плотн."
+
+#: FLOPPY:16:9
+msgid  "Extra density "
+msgstr "Экстра плотн."
+
+#: FLOPPY:16:10
+msgid  "Previous "
+msgstr "Предыдущий"
+
+#: FLOPPY:16:11
+msgid  "Parameters"
+msgstr "Параметры"
+
+#: FLOPPY:16:13
+msgid  "Sides:      _"
+msgstr "Сторон:     _"
+
+#: FLOPPY:16:14
+msgid  "Tracks:    __"
+msgstr "Дорожек:   __"
+
+#: FLOPPY:16:15
+msgid  "Sectors:   __"
+msgstr "Секторов:  __"
+
+#: FLOPPY:16:16
+msgid  "Dir.size: ___"
+msgstr "Разм.дир.:___"
+
+#: FLOPPY:16:17
+msgid  "Retries:    _"
+msgstr "Попыток:    _"
+
+#: FLOPPY:16:21
+msgid  "Label: ________.___"
+msgstr "Метка: ________.___"
+
+#: FLOPPY:16:23
+msgid  "Completed: ___%"
+msgstr "Завершено: ___%"
+
+#: FLOPPY:16:24
+msgid  "Quick format"
+msgstr "Быстр.формат"
+
+#: VOPTIONS:17:1
+msgid  "Video Options"
+msgstr "Настройки видео"
+
+#: VOPTIONS:17:3
+msgid  "Standard resolution"
+msgstr "Стандартное разрешение"
+
+#: VOPTIONS:17:4
+msgid  "ST-Low"
+msgstr "ST-Низкое"
+
+#: VOPTIONS:17:5
+msgid  "ST-Medium"
+msgstr "ST-Среднее"
+
+#: VOPTIONS:17:6
+msgid  "ST-High"
+msgstr "ST-Высокое"
+
+#: VOPTIONS:17:7
+msgid  "TT-Low"
+msgstr "TT-Низкое"
+
+#: VOPTIONS:17:8
+msgid  "TT-Medium"
+msgstr "TT-Среднее"
+
+#: VOPTIONS:17:9
+msgid  "TT-High"
+msgstr "TT-Высокое"
+
+#: VOPTIONS:17:10
+msgid  "Options"
+msgstr "Опции"
+
+#: VOPTIONS:17:11
+msgid  "Save palette"
+msgstr "Сохр.палитру"
+
+#: VOPTIONS:17:12
+msgid  "Blitter     "
+msgstr "Blitter     "
+
+#: VOPTIONS:17:13
+msgid  "Overscan    "
+msgstr "Overscan    "
+
+#: VOPTIONS:17:15
+msgid  "   "
+msgstr "   "
+
+#: VOPTIONS:17:18
+msgid  "Colours:"
+msgstr "Цвета:"
+
+#: COPTIONS:19:1
+msgid  "Copy and Print Options"
+msgstr "Опции копирования и печати"
+
+#: COPTIONS:19:4
+msgid  "Confirm Moves and Copies"
+msgstr "Подтвердить перенос/копию"
+
+#: COPTIONS:19:5
+msgid  "Confirm Overwrites"
+msgstr "Подтвердить перезапись"
+
+#: COPTIONS:19:6
+msgid  "Confirm Deletes"
+msgstr "Подтвердить удаление"
+
+#: COPTIONS:19:7
+msgid  "Confirm Printing"
+msgstr "Подтвердить печать"
+
+#: COPTIONS:19:8
+msgid  "Always show dialog"
+msgstr "Всегда показывать диалог"
+
+#: COPTIONS:19:9
+msgid  "Keep selection"
+msgstr "Сохранить выбор"
+
+#: COPTIONS:19:10
+msgid  "Truncate long names"
+msgstr "Обрезать длинные имена"
+
+#: COPTIONS:19:11
+msgid  "Print header & separator"
+msgstr "Печ.заголовка/разделителя"
+
+#: COPTIONS:19:14
+msgid  "Copy buffer: ____ KB"
+msgstr "Буфер копирования: ____ КБ"
+
+#: COPTIONS:19:15
+msgid  "Printer line length: ___"
+msgstr "Длина строки печати: ___"
+
+#: SEARCH:20:1
+msgid  "Search for File or Folder"
+msgstr "Поиск файла или папки"
+
+#: SEARCH:20:5
+msgid  "Date from:  __-__-__"
+msgstr "Дата   от:  __-__-__"
+
+#: SEARCH:20:6
+msgid  "to:  __-__-__"
+msgstr "до:  __-__-__"
+
+#: SEARCH:20:7
+msgid  "Size from: _________"
+msgstr "Размер от: _________"
+
+#: SEARCH:20:8
+msgid  "to: _________"
+msgstr "до: _________"
+
+#: SEARCH:20:9
+msgid  "String:"
+msgstr "Строка:"
+
+#: SPECAPP:21:1
+msgid  "Special Application Use"
+msgstr "Использование спецпрограмм"
+
+#: SPECAPP:21:4
+msgid  "Editor"
+msgstr "Редактор"
+
+#: SPECAPP:21:5
+msgid  "Viewer"
+msgstr "Вьюер"
+
+#: SPECAPP:21:6
+msgid  "Autostart"
+msgstr "Автозапуск"
+
+#: SPECAPP:21:7
+#: QUITOPT:25:5
+msgid  "Shutdown"
+msgstr "Выключить"
+
+#: SPECAPP:21:8
+msgid  "Video mode change"
+msgstr "Изменение разрешения"
+
+#: SPECAPP:21:9
+msgid  "Search"
+msgstr "Поиск файлов"
+
+#: SPECAPP:21:10
+msgid  "Compare"
+msgstr "Сравнение файлов"
+
+#: SPECAPP:21:11
+msgid  "Format floppy disk"
+msgstr "Форматирование дискеты"
+
+#: SPECAPP:21:12
+msgid  "Right button extension"
+msgstr "Меню правой кнопки"
+
+#: OPENW:22:1
+msgid  "Open Unassigned Item"
+msgstr "Открыть файл неизвестного типа"
+
+#: OPENW:22:4
+msgid  "Show"
+msgstr "Показать"
+
+#: OPENW:22:5
+msgid  "Run"
+msgstr "Запуск"
+
+#: OPENW:22:6
+msgid  "With"
+msgstr "С"
+
+#: OPENW:22:8
+msgid  "This item is neither a program, nor"
+msgstr "Этот файл не является ни программой,"
+
+#: OPENW:22:9
+msgid  "a document of a type assigned to an"
+msgstr "ни документом типа,связанного"
+
+#: OPENW:22:10
+msgid  "application, or else its assignment"
+msgstr "с программой, или эта его связь"
+
+#: OPENW:22:11
+msgid  "has been overridden."
+msgstr "с программой была отменена."
+
+#: HELP1:23:1
+msgid  "Help on Keyboard Commands"
+msgstr "Помощь - команды клавиатуры"
+
+#: HELP1:23:3
+#: TFIMORE:164
+msgid  "More"
+msgstr "Ещê"
+
+#: HELP1:23:6
+msgid  "Folder Operations:"
+msgstr "Операции с папками:"
+
+#: HELP1:23:7
+msgid  "[Alt]+<open>    - Open folder in a"
+msgstr "[Alt]+<open>    - Открыть папку в"
+
+#: HELP1:23:8
+msgid  "new window"
+msgstr "новом окне"
+
+#: HELP1:23:9
+msgid  "- View/Print file"
+msgstr "- Просм./Печ. файла"
+
+#: HELP1:23:10
+msgid  "[Alt][?]        - Show directory of"
+msgstr "[Alt][?]        - Показать папку"
+
+#: HELP1:23:11
+msgid  "drive ? in a new"
+msgstr "диска ? в новом"
+
+#: HELP1:23:12
+msgid  "window"
+msgstr "окне"
+
+#: HELP1:23:13
+msgid  "[Alt][Shift][?] - Show directory of"
+msgstr "[Alt][Shift][?] - Показать папку"
+
+#: HELP1:23:14
+msgid  "drive ? in the"
+msgstr "диска ? в"
+
+#: HELP1:23:15
+msgid  "same window"
+msgstr "текущем окне"
+
+#: HELP1:23:16
+msgid  "[Undo]        - Deselect all"
+msgstr "[Esc]         - Отмена выбора всего"
+
+#: HELP1:23:17
+msgid  "[Insert]      - Toggle autoselector"
+msgstr "[Insert]      - Перекл.автоселектор"
+
+#: HELP1:23:19
+msgid  "Window Operations:"
+msgstr "Операции с окнами:"
+
+#: HELP1:23:20
+msgid  "[Home]        - Page to window top"
+msgstr "[Home]    - К началу файла"
+
+#: HELP1:23:21
+msgid  "[⇧⇩⇦⇨]        - Scroll window"
+msgstr "[⇧⇩⇦⇨]    - Прокр. содержимого окна"
+
+#: HELP1:23:22
+msgid  "[Return]      - Scroll text window"
+msgstr "[Return]  - Прокр. текстового окна"
+
+#: HELP1:23:23
+msgid  "[Space]       - Page text window"
+msgstr "[Space]   - След.страница текста"
+
+#: HELP1:23:24
+msgid  "[Shift][⇧⇩⇦⇨] - Page window"
+msgstr "[Shift][⇧⇩⇦⇨]  - Перекл.страницу"
+
+#: HELP1:23:25
+msgid  "[Esc]         - Refresh window"
+msgstr "[Esc]     - Обновить окно"
+
+#: HELP1:23:26
+msgid  "[PageUp]      - Page window up"
+msgstr "[PageUp]  - На страницу вверх"
+
+#: HELP1:23:27
+msgid  "[PageDown]    - Page window down"
+msgstr "[PageDown]- На страницу вниз"
+
+#: HELP1:23:28
+msgid  "[Shift][Home] - Page to bottom"
+msgstr "[Shift][Home]  - К концу файла"
+
+#: HELP1:23:30
+msgid  "Drag and Drop Operations:"
+msgstr "Операции Drag and Drop:"
+
+#: HELP1:23:31
+msgid  "<drag>             - Copy items"
+msgstr "<drag>           - Копировать объекты"
+
+#: HELP1:23:32
+msgid  "[Ctl]+<drag>       - Move items"
+msgstr "[Ctl]+<drag>     - Перемест. объекты"
+
+#: HELP1:23:33
+msgid  "[Alt]+<drag>       - Copy & rename"
+msgstr "[Alt]+<drag>     - Копир. & переимен."
+
+#: HELP1:23:34
+msgid  "[Ctl][Alt]+<drag>  - Move & rename"
+msgstr "[Ctl][Alt]+<drag>- Перемест.& переим."
+
+#: HELP1:23:35
+msgid  "[LShift]+<drag>    - Update copy"
+msgstr "[LShift]+<drag>  - Обновить копию"
+
+#: HELP1:23:36
+msgid  "[RShift]+<drag>    - Restore copy"
+msgstr "[RShift]+<drag>  - Восстановить копию"
+
+#: HELP1:23:37
+msgid  "[Esc]              - Cancel action"
+msgstr "[Esc]            - Отменить действие"
+
+#: HELP1:23:39
+msgid  "Other:"
+msgstr "Разное:"
+
+#: HELP1:23:40
+msgid  "[Help]        - Show Help dialog"
+msgstr "[Help]        - Показать окно помощи"
+
+#: HELP1:23:41
+msgid  "[Shift][Help] - Show hypertext help"
+msgstr "[Shift][Help] - Показ. гиперт. помощь"
+
+#: HELP1:23:42
+msgid  "Dialog and Menu Operations:"
+msgstr "Операции меню и диалоговых окон:"
+
+#: HELP1:23:43
+msgid  "[Ctl][⇧⇩]  - Scroll item selector"
+msgstr "[Ctl][⇧⇩] - Прокр. селектора объектов"
+
+#: HELP1:23:44
+msgid  "[Insert]   - Fileselector in"
+msgstr "[Insert]  - Селектор файлов в"
+
+#: HELP1:23:45
+msgid  "editable text field"
+msgstr "редактируемом текст.поле"
+
+#: HELP1:23:46
+msgid  "[?]        - Shortcut to menu"
+msgstr "[?]       - Горячая клавиша меню"
+
+#: HELP1:23:47
+msgid  "[Ctl][?]   - Shortcut to menu"
+msgstr "[Ctl][?]  - Ярлык меню"
+
+#: COMPARE:24:1
+msgid  "Compare Files"
+msgstr "Сравнить файлы"
+
+#: COMPARE:24:7
+msgid  "File #1:"
+msgstr "Файл #1:"
+
+#: COMPARE:24:8
+msgid  "File #2:"
+msgstr "Файл #2:"
+
+#: COMPARE:24:10
+msgid  "Files differ at byte #__________:"
+msgstr "Найдено отличие в байте #__________:"
+
+#: COMPARE:24:13
+msgid  "#1:"
+msgstr "#1:"
+
+#: COMPARE:24:14
+msgid  "#2:"
+msgstr "#2:"
+
+#: COMPARE:24:15
+msgid  "Match-window width: __"
+msgstr "Ширина окна сравнения: __"
+
+#: QUITOPT:25:1
+msgid  "Quit / Shutdown Options"
+msgstr "Опции Выхода/Выключения"
+
+#: QUITOPT:25:2
+msgid  "You are now about to"
+msgstr "Вы близки к выходу"
+
+#: QUITOPT:25:3
+msgid  "quit Tera Desktop or to"
+msgstr "из Tera Desktop или"
+
+#: QUITOPT:25:4
+msgid  "shut down the computer."
+msgstr "выключению компьютера."
+
+#: QUITOPT:25:6
+msgid  "Reboot"
+msgstr "Перезагрузка"
+
+#: QUITOPT:25:7
+msgid  "Quit"
+msgstr "Выйти"
+
+#: DTADDMSK:0
+msgid  "Add Name Mask"
+msgstr "Добавить маску имени"
+
+#: DTCOPY:1
+msgid  "Copy Files and Folders"
+msgstr "Копировать файлы и папки"
+
+#: DTCOPYRN:2
+msgid  "Copy and Rename Files and Folders"
+msgstr "Копировать и переименовать файлы и папки"
+
+#: DTMOVE:3
+msgid  "Move Files and Folders"
+msgstr "Переместить файлы и папки"
+
+#: DTMOVERN:4
+msgid  "Move and Rename Files and Folders"
+msgstr "Переместить и переименовать файлы и папки"
+
+#: DTDELETE:5
+msgid  "Delete Files and Folders"
+msgstr "Удалить файлы и папки"
+
+#: DTRENAME:6
+msgid  "Rename Files and Folders"
+msgstr "Переименовать файлы и папки"
+
+#: DTNMECNF:7
+msgid  "Name Conflict"
+msgstr "Конфликт имêн"
+
+#: DTADDICN:8
+msgid  "Install Desk Icon"
+msgstr "Установить иконку панели"
+
+#: DTCHNICN:9
+msgid  "Change Desk Icon"
+msgstr "Изменить иконку панели"
+
+#: DTADDPRG:10
+msgid  "Add Program Type"
+msgstr "Добавить тип программы"
+
+#: DTEDTPRG:11
+msgid  "Edit Program Type"
+msgstr "Изменить тип программы"
+
+#: DTADDICT:12
+msgid  "Add Icon Type"
+msgstr "Добавить тип иконки"
+
+#: DTEDTICT:13
+msgid  "Edit Icon Type"
+msgstr "Изменить тип иконки"
+
+#: DTDFONT:14
+msgid  "Directory Font"
+msgstr "Фонт директорий"
+
+#: DTVFONT:15
+msgid  "Viewer Font"
+msgstr "Фонт вьюера"
+
+#: FSTLFILE:16
+msgid  "Locate File"
+msgstr "Найти файл"
+
+#: FSTLPRG:17
+msgid  "Locate Program"
+msgstr "Найти программу"
+
+#: FSTLFLDR:18
+msgid  "Locate Folder"
+msgstr "Найти папку"
+
+#: FSTLOADS:19
+msgid  "Load Settings"
+msgstr "Загрузить настройки"
+
+#: FSTSAVES:20
+msgid  "Save Settings as"
+msgstr "Сохранить настройки как"
+
+#: MPRINTER:21
+msgid  "A printer"
+msgstr "Принтер"
+
+#: MTRASHCN:22
+msgid  "A trashcan"
+msgstr "Корзина"
+
+#: MDRIVE:23
+msgid  "A drive icon"
+msgstr "Иконка диска"
+
+#: MFOLDER:24
+msgid  "A folder"
+msgstr "Папка"
+
+#: MPROGRAM:25
+msgid  "A program"
+msgstr "Программа"
+
+#: MITEMS:26
+msgid  "%s %s bytes used in %d %s."
+msgstr "%s %s байт используется в %d %s."
+
+#: MSITEMS:27
+msgid  "%s %s bytes used in %d selected %s."
+msgstr "%s %s байт используется в %d выбранных %s."
+
+#: MIPLURAL:28
+msgid  "items"
+msgstr "объектах"
+
+#: MISINGUL:29
+msgid  "item"
+msgstr "объекте"
+
+#: MDRVNAME:30
+msgid  "drive %c"
+msgstr "диск %c"
+
+#: MKEYCONT:31
+msgid  ""
+"\r\n"
+"Press a key to continue."
+msgstr ""
+"\r\n"
+"Чтобы продолжить, нажмите любую клавишу..."
+
+#: TERROR:32
+msgid  "TOS error #%d"
+msgstr "Ошибка TOS #%d"
+
+#: TFILNF:33
+msgid  "File not found"
+msgstr "Файл не найден"
+
+#: TPATHNF:34
+msgid  "Path not found"
+msgstr "Путь не найден"
+
+#: TACCDN:35
+msgid  "Access denied.|Item is protected |or it already exists"
+msgstr "Доступ запрещêн.|Объект защищêн |или уже существует"
+
+#: TENSMEM:36
+msgid  "Insufficient memory"
+msgstr "Недостаточно памяти"
+
+#: TDSKFULL:37
+msgid  "Disk full"
+msgstr "Диск полон"
+
+#: TLOCKED:38
+msgid  "File is locked"
+msgstr "Файл заблокирован"
+
+#: TPLFMT:39
+msgid  "This item is not a |GEMDOS program file"
+msgstr "Этот объект не является |программой GEMDOS"
+
+#: TFNTLNG:40
+msgid  "Filename too long |or too many filenames"
+msgstr "Имя файла слишком длинное |или слишком много имêн файлов"
+
+#: TPTHTLNG:41
+msgid  "Path too long"
+msgstr "Путь слишком длинный"
+
+#: TREAD:42
+msgid  "Read error on file"
+msgstr "Ошибка чтения файла"
+
+#: TEOF:43
+msgid  "Unexpected end of file"
+msgstr "Неожиданный конец файла"
+
+#: TABORT:44
+msgid  " Abort "
+msgstr " Прервать "
+
+#: TSKIPABT:45
+msgid  " Skip | Abort "
+msgstr " Пропуск | Прервать "
+
+#: FLINAME:46
+msgid  "FLOPPY"
+msgstr "FLOPPY"
+
+#: HDINAME:47
+msgid  "HARD DISC"
+msgstr "HARD DISC"
+
+#: TRINAME:48
+msgid  "TRASH"
+msgstr "TRASH"
+
+#: PRINAME:49
+msgid  "PRINTER"
+msgstr "PRINTER"
+
+#: FIINAME:50
+msgid  "FILE"
+msgstr "FILE"
+
+#: APINAME:51
+msgid  "APP"
+msgstr "APP"
+
+#: FOINAME:52
+msgid  "FOLDER"
+msgstr "FOLDER"
+
+#: TCMDTLNG:53
+msgid  "Command line too long"
+msgstr "Слишком длинная командная строка"
+
+#: DTPRINT:54
+msgid  "Print Files"
+msgstr "Печать файлов"
+
+#: DTPRINTD:55
+msgid  "Print Directory"
+msgstr "Печать директории"
+
+#: DTFFMT:56
+msgid  "Format Floppy Disk"
+msgstr "Форматировать дискету"
+
+#: DTFCPY:57
+msgid  "Copy Disk"
+msgstr "Копировать диск"
+
+#: TWPROT:58
+msgid  "Write-prottected disk"
+msgstr "Диск защищêн от записи"
+
+#: TDIROF:59
+msgid  "Directory of "
+msgstr "Директория "
+
+#: DTFTYPES:60
+msgid  "Set Name Mask"
+msgstr "Установить маску имени"
+
+#: DTITYPES:61
+msgid  "Set Icon Types"
+msgstr "Установить типы иконок"
+
+#: DTPTYPES:62
+msgid  "Set Program Types"
+msgstr "Установить типы программ"
+
+#: DTINSAPP:63
+msgid  "Install Applications"
+msgstr "Установить программы"
+
+#: DTDTYPES:64
+msgid  "Assign Document Types"
+msgstr "Связать типы документов"
+
+#: DTEDTMSK:65
+msgid  "Edit Name Mask"
+msgstr "Изменить маску имени"
+
+#: DTEDTDT:66
+msgid  "Edit Document Type"
+msgstr "Изменить тип документа"
+
+#: TAPP:68
+msgid  "Application:"
+msgstr "Программа:"
+
+#: DTADDDT:69
+msgid  "Add Document Type"
+msgstr "Добавить тип документа"
+
+#: DTADDAPP:70
+msgid  "Add Application"
+msgstr "Добавить программу"
+
+#: DTEDTAPP:71
+msgid  "Edit Application"
+msgstr "Изменить программу"
+
+#: DTSETAPT:72
+msgid  "Set Application Type"
+msgstr "Установить тип программы"
+
+#: DTTOUCH:73
+msgid  "Set Object Information"
+msgstr "Установить информацию об объекте"
+
+#: MECOPY:74
+msgid  "Can not copy "
+msgstr "Ошибка копирования "
+
+#: MEMOVE:75
+msgid  "Can not move/rename "
+msgstr "Ошибка перемещения/переименования "
+
+#: MEDELETE:76
+msgid  "Can not delete "
+msgstr "Ошибка удаления "
+
+#: MEPRINT:77
+msgid  "Can not print "
+msgstr "Ошибка печати "
+
+#: MESHOWIF:78
+msgid  "Can not read or set info for "
+msgstr "Не могу прочитать или/установить информацию для "
+
+#: MINVSRCH:79
+msgid  "Invalid or missing |parameters set"
+msgstr "Неверный или отсутствует|набор параметров"
+
+#: MDIFERR:80
+msgid  "Source and target disks |do not have the same format."
+msgstr "Диски источника и целевой|неодинакового формата."
+
+#: MFPARERR:81
+msgid  "Invalid format parameters."
+msgstr "Неверные параметры форматирования."
+
+#: MCANTACC:82
+msgid  "Accessories can not be|started in singletasking OS"
+msgstr "Аксессорные программы не могут|быть запущены в однозадачной OS"
+
+#: MECOLORS:83
+msgid  "The saved colour palette|does not have the same size|as the palette of the|current screen mode."
+msgstr "Сохранêнная цветовая палитра|отличается по размеру|от палитры|текущего режима экрана."
+
+#: MFSELERR:84
+msgid  "Error in file selector."
+msgstr "Ошибка селектора файлов."
+
+#: MTMICONS:85
+msgid  "Too many icons."
+msgstr "Слишком много иконок."
+
+#: APPNOEXT:86
+msgid  "Destination application|does not know the type|of object dropped to it"
+msgstr "Целевая программа|не узнаêт тип объекта,|перетащенного на неê"
+
+#: APPNODD:87
+msgid  "Destination application|does not know of|Drag and Drop, or it |does not accept data"
+msgstr "Целевая программа|не понимает режим|Drag and Drop, или |не принимает данные"
+
+#: MDRVEXIS:88
+msgid  "Drive does not exist"
+msgstr "Диск не существует"
+
+#: MDIRTBIG:89
+msgid  "Directory is too big"
+msgstr "Директория слишком велика"
+
+#: MDEXISTS:90
+msgid  "An object with that name|already exists"
+msgstr "Объект с таким именем|уже существует"
+
+#: MTMWIND:91
+msgid  "Too many windows opened"
+msgstr "Открыто слишком много окон"
+
+#: MFNEMPTY:92
+msgid  "Filenames can not be empty."
+msgstr "Имена файлов не могут быть пустыми."
+
+#: MCOPYSLF:93
+msgid  "An object can not be|copied to itself"
+msgstr "Объект не может быть|скопирован сам на себя"
+
+#: MVALIDCF:94
+msgid  "This file is not a|valid configuration|or palette file"
+msgstr "Этот файл не является|правильным файлом|конфигурации или палитры"
+
+#: BADCFG:95
+msgid  "This may not be a valid |configuration or palette |file at all"
+msgstr "Это вообще не может быть |правильным файлом |конфигурации или палитры"
+
+#: TFRVAL:96
+msgid  "Invalid values in file"
+msgstr "Неправильные данные в файле"
+
+#: MCOMPOK:97
+msgid  "Contents of compared files |are identical"
+msgstr "Содержимое сравниваемых файлов |одинаково"
+
+#: DTFONSEL:98
+msgid  "Font Selector"
+msgstr "Селектор фонта"
+
+#: DTNEWDIR:99
+msgid  "New Folder"
+msgstr "Новая папка"
+
+#: DTOPENIT:100
+msgid  "Open Item"
+msgstr "Открыть объект"
+
+#: MNOITEM:101
+msgid  "Item not found or item type |can not be determined"
+msgstr "Объект не найден или его тип |не может быть определêн"
+
+#: TDONTEDI:102
+msgid  "; Avoid editing this file by hand !!!"
+msgstr "; Избегайте редактирования этого файла вручную !!!"
+
+#: TNOLOCK:103
+msgid  "Floppy device can not |be locked for (X)BIOS |operations"
+msgstr "Дисковод не может быть |заблокирован для (X)BIOS |операций"
+
+#: DTFIINF:104
+msgid  "File Information"
+msgstr "Информация о файле"
+
+#: DTFOINF:105
+msgid  "Folder Information"
+msgstr "Информация о папке"
+
+#: DTDRINF:106
+msgid  "Disk Volume Information"
+msgstr "Информация о диске"
+
+#: TCRETIM:107
+msgid  "Created on:"
+msgstr "Создан:"
+
+#: TNOEDIT:109
+msgid  "No editor installed"
+msgstr "Редактор не установлен"
+
+#: DTAFONT:110
+msgid  "Application font"
+msgstr "Фонт программы"
+
+#: DTNEWLNK:111
+msgid  "New Symbolic Link"
+msgstr "Новая символическая связь (ярлык)"
+
+#: TLINKTO:112
+msgid  "Link_to_"
+msgstr "Ярлык к"
+
+#: DTLIINF:113
+msgid  "Symbolic Link Information"
+msgstr "Информация о ярлыке"
+
+#: TNOTGT:114
+msgid  "Linked object |does not exist"
+msgstr "Связанный с ярлыком |объект не существует"
+
+#: DTUPDAT:115
+msgid  "Update Files and Folders"
+msgstr "Обновить файлы и папки"
+
+#: DTRESTO:116
+msgid  "Restore Files and Folders"
+msgstr "Восстановить файлы и папки"
+
+#: TNFILES:117
+msgid  "Number of files:             "
+msgstr "Количество файлов:           "
+
+#: TFILES:118
+msgid  "Files:"
+msgstr "Файлы:"
+
+#: TMULTI:119
+msgid  "Multitask-OS version"
+msgstr "Версия для многозадачной OS"
+
+#: DWTITLE:120
+msgid  "Tera Desktop"
+msgstr "Tera Desktop"
+
+#: MENUREG:121
+msgid  "  Tera Desktop"
+msgstr "  Tera Desktop"
+
+#: DTSELAPP:122
+msgid  "Select Application"
+msgstr "Выберите программу"
+
+#: CANCTXT:123
+msgid  "|Cancel|Abort|"
+msgstr "|Отмена|Прервать|"
+
+#: MSRFINI:124
+msgid  "Search finished.|No (more) matches found"
+msgstr "Поиск закончен.|(Больше) соответствий не найдено"
+
+#: FSPRINT:125
+msgid  "Locate Print File"
+msgstr "Найти файл для печати"
+
+#: TFALLOW:126
+msgid  "VGA-40-column"
+msgstr "VGA-40-колонок"
+
+#: TFALMED:127
+msgid  "VGA-80-column"
+msgstr "VGA-80-колонок"
+
+#: TINTERL:128
+msgid  "Doubleline"
+msgstr "Двойная линия"
+
+#: MRESTLOW:129
+msgid  "Screen resolution is too low |(or default font too large)  |to run Tera Desktop."
+msgstr "Разрешение экрана слишком низкое |(или фонт по умолчанию слишком велик)  |для запуска Tera Desktop."
+
+#: MICNFRD:130
+msgid  "Read error on icons file |or file not found. "
+msgstr "Ошибка чтения файла иконок |или файл не найден. "
+
+#: MVDIERR:131
+msgid  "Unable to open|VDI-workstation. "
+msgstr "Невозможно открыть|рабочую станцию VDI. "
+
+#: MDUPAPP:132
+msgid  "This application is |already running. |Start it again? "
+msgstr "Эта программа |уже запущена. |Перезапустить еê? "
+
+#: MFAILPRG:133
+msgid  "Failed to start|selected application. |It may be protected |or maybe is not|a valid program file"
+msgstr "Ошибка запуска|выбранной программы. |Она может быть защищена |или этот файл▕ не является файлом программы "
+
+#: MICNFND:134
+msgid  "Icon(s) not found |in the resource file"
+msgstr "Иконка(-и) не найдены |в файле ресурсов"
+
+#: DTDEVINF:135
+msgid  "Special BIOS File or Device Info"
+msgstr "Специальный файл BIOS или информация об устройстве"
+
+#: DTPIPINF:136
+msgid  "Pipe Information"
+msgstr "Pipe-информация"
+
+#: DTMEMINF:137
+msgid  "Process or Shared memory Info"
+msgstr "Информация о процессе или памяти общего доступа"
+
+#: DTPRGINF:138
+msgid  "Program File Information"
+msgstr "Информация о файле программы"
+
+#: MGEMBACK:139
+msgid  "GEM programs can not be |started in background"
+msgstr "Программа GEM |не может быть запущена▕в фоновом режиме"
+
+#: PFFLOAD:140
+msgid  " FastLoad"
+msgstr " FastLoad"
+
+#: PFALOAD:141
+msgid  " AltLoad"
+msgstr " AltLoad"
+
+#: PFAMEM:142
+msgid  " AltMalloc"
+msgstr " AltMalloc"
+
+#: PPPRIVAT:143
+msgid  " Private"
+msgstr " Private"
+
+#: PPGLOBAL:144
+msgid  " Global"
+msgstr " Global"
+
+#: PPSUPER:145
+msgid  " Super"
+msgstr " Super"
+
+#: PPREAD:146
+msgid  " Readonly"
+msgstr " Readonly"
+
+#: PPSHARE:147
+msgid  " ShareText"
+msgstr " ShareText"
+
+#: FSTLANY:148
+msgid  "Locate Object"
+msgstr "Найти объект"
+
+#: TDOPEN:149
+msgid  "The requested dialog |is already open"
+msgstr "Запрашиваемый диалог |уже открыт"
+
+#: TFNVALID:150
+msgid  "fffffffffff"
+msgstr "fffffffffff"
+
+#: TFNTMPLT:151
+msgid  "________.___"
+msgstr "________.___"
+
+#: TBYTES:152
+msgid  "bytes "
+msgstr " байт "
+
+#: MUNKNOWN:153
+msgid  "An unknown object"
+msgstr "Неизвестный объект"
+
+#: MNETOB:154
+msgid  "A network object"
+msgstr "Сетевой объект"
+
+#: MNOCOPY:155
+msgid  "can not be copied"
+msgstr "не может быть скопирован"
+
+#: MNOPRINT:156
+msgid  "can not be printed"
+msgstr "не может быть напечатан"
+
+#: MNODRAGP:157
+msgid  "can not be passed |to a program"
+msgstr "не может быть передан |программе"
+
+#: MNOOPEN:158
+msgid  "can not be opened"
+msgstr "не может быть открыт"
+
+#: TBADS:159
+msgid  "Bad sectors."
+msgstr "Плохие сектора."
+
+#: TXBERROR:160
+msgid  "BIOS/XBIOS error #%d"
+msgstr "Ошибка BIOS/XBIOS #%d"
+
+#: TSEEKE:161
+msgid  "Sector not found."
+msgstr "Сектор не найден."
+
+#: TUNKM:162
+msgid  "Unknown media format."
+msgstr "Неизвестный формат носителя."
+
+#: XFNVALID:165
+msgid  "FFFFFFFFFFF"
+msgstr "FFFFFFFFFFF"
+
+#: TCFIRE:166
+msgid  "Version for Coldfire"
+msgstr "Версия для Coldfire"
+
+#: ALOADCFG:167
+msgid  "[1][Error while loading or saving |the configuration file|%s: |%s. ][ OK ]"
+msgstr "[1][Ошибка загрузки или сохранения |файла конфигурации|%s: |%s. ][ ОК ]"
+
+#: APRGNFND:168
+msgid  "[1][Program file  |%s |not found.][ OK ]"
+msgstr "[1][Файл программы  |%s |не найден.][ ОК ]"
+
+#: AAPPNFND:169
+msgid  "[2][Item named|%s |could not be found.|What do you want to do? ][Locate|Remove|Cancel]"
+msgstr "[2][Объект с именем|%s |не может быть найден.|Что вы хотите сделать ? ][Найти|Удалить|Отмена]"
+
+#: AILLCOPY:170
+msgid  "[1][Illegal copy operation. ][ Abort ]"
+msgstr "[1][Неправильная операция |копирования.][ Прервать ]"
+
+#: AILLDEST:171
+msgid  "[1][Illegal destination. ][ Abort ]"
+msgstr "[1][Неверный целевой объект. ][ Прервать ]"
+
+#: APRNRESP:172
+msgid  "[2][Printer is not |responding.][Continue|Abort]"
+msgstr "[2][Принтер |не отвечает.][Продолжить|Прервать]"
+
+#: AERADISK:173
+msgid  "[1][All data on the target|floppy disk will be erased! ][ OK |Cancel]"
+msgstr "[1][Все данные на целевой дискете|будут удалены ! ][ ОК |Отмена]"
+
+#: AFMTERR:174
+msgid  "[1][Error in formatting track %d |on floppy disk.|%s][Retry|Continue|Abort]"
+msgstr "[1][Ошибка форматирования          |дорожки %d дискеты.|%s][Повторить|Продолжить|Прервать]"
+
+#: AERRACC:175
+msgid  "[1][Error while trying to access |the floppy disk.|%s][ OK ]"
+msgstr "[1][Ошибка при попытке доступа     |к дискете.|%s][ ОК ]"
+
+#: ADUPKEY:176
+msgid  "[1][This key has already been|assigned, or else it is not |a valid shortcut key: %s ][ OK ]"
+msgstr "[1][Эта клавиша уже присвоена|или не может быть назначена |горячей клавишей: %s ][ ОК ]"
+
+#: AABOOP:177
+msgid  "[2][Abort current operation? ][Abort|Continue]"
+msgstr "[2][Прервать текущую операцию ? ][Прервать|Продолжить]"
+
+#: AGENALRT:178
+msgid  "[1][%s. ][ OK ]"
+msgstr "[1][%s. ][ ОК ]"
+
+#: AFILEDEF:179
+msgid  "[1][This file or filetype has |already been assigned:| |%s ][ OK ]"
+msgstr "[1][Этот файл или тип файла |уже был назначен:| |%s ][ ОК ]"
+
+#: AGFALERT:180
+msgid  "[1][%s |%s: |%s.][%s]"
+msgstr "[1][%s |%s: |%s.][%s]"
+
+#: AUNKRTYP:181
+msgid  "[1][Unknown record type found in|configuration or palette file: |\"%s\" |ignored in or after|\"%s\". ][ OK ]"
+msgstr "[1][Неизвестный тип записи найден  |в файле конфигурации или       |палитры: \"%s\" |игнорирован в или после        |\"%s\". ][ ОК ]"
+
+#: AVALIDCF:182
+msgid  "[1][This may not be a valid|configuration or palette file. |Illegal or missing value near|\"%s\". ][ OK ]"
+msgstr "[1][Это не может быть правильный|файл конфигурации или палитры. |Неверная или отсутствует       |величина \"%s\". ][ ОК ]"
+
+#: ADUPFLG:183
+msgid  "[1][Same flag or function key is |already set for application|%s. ][ Set |Cancel]"
+msgstr "[1][Этот же флаг или функциональная|клавиша уже установлены для    |программы %s. ][Установить|Отмена]"
+
+#: AWOPERR:184
+msgid  "[1][Can not open a window: |%s. ][ OK ]"
+msgstr "[1][Не могу открыть окно: |%s. ][ ОК ]"
+
+#: ARESCH:185
+msgid  "[1][A change of video mode |will terminate all|running applications.][ OK |Cancel]"
+msgstr "[1][Изменение видеорежима |прервêт все|работающие программы.][ ОК |Отмена]"
+
+#: AFABORT:186
+msgid  "[3][%s][ Abort ]"
+msgstr "[3][%s][ Прервать ]"
+
+#: AQUERY:187
+msgid  "[2][%s][ OK |Cancel]"
+msgstr "[2][%s][ ОК |Отмена]"
+
+#: AREMICNS:188
+msgid  "[2][Remove icons or delete |directory items?][Remove|Delete|Cancel]"
+msgstr "[2][Убрать иконки или|удалить объекты директорий?][Убрать|Удалить|Отмена]"
+
+#: ACANTDO:189
+msgid  "[1][%s|%s. ][ Abort ]"
+msgstr "[1][%s|%s. ][ Прервать ]"
+

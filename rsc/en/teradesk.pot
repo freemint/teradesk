@@ -1,0 +1,2158 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2020
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid  ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-07-06 21:51+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Output-Encoding: atarist\n"
+
+#: MENU:0:3
+msgid  " Desk"
+msgstr ""
+
+#: MENU:0:4
+msgid  " File"
+msgstr ""
+
+#: MENU:0:5
+msgid  " View"
+msgstr ""
+
+#: MENU:0:6
+msgid  " Window"
+msgstr ""
+
+#: MENU:0:7
+msgid  " Options"
+msgstr ""
+
+#: MENU:0:10
+msgid  "  TeraDesk Info..."
+msgstr ""
+
+#: MENU:0:12
+msgid  "  1 accessory slot 1"
+msgstr ""
+
+#: MENU:0:13
+msgid  "  2"
+msgstr ""
+
+#: MENU:0:14
+msgid  "  3"
+msgstr ""
+
+#: MENU:0:15
+msgid  "  4"
+msgstr ""
+
+#: MENU:0:16
+msgid  "  5"
+msgstr ""
+
+#: MENU:0:17
+msgid  "  6"
+msgstr ""
+
+#: MENU:0:19
+msgid  "  Open...        ____"
+msgstr ""
+
+#: MENU:0:20
+msgid  "  Info...        ____"
+msgstr ""
+
+#: MENU:0:21
+msgid  "  New...         ____"
+msgstr ""
+
+#: MENU:0:22
+msgid  "  Compare...     ____"
+msgstr ""
+
+#: MENU:0:23
+msgid  "  Search...      ____"
+msgstr ""
+
+#: MENU:0:24
+msgid  "  Print...       ____"
+msgstr ""
+
+#: MENU:0:25
+msgid  "  Delete...      ____"
+msgstr ""
+
+#: MENU:0:27
+msgid  "  Select all     ____"
+msgstr ""
+
+#: MENU:0:29
+msgid  "  Copy disk...   ____"
+msgstr ""
+
+#: MENU:0:30
+msgid  "  Format disk... ____"
+msgstr ""
+
+#: MENU:0:32
+msgid  "  Quit/Shutdown  ____"
+msgstr ""
+
+#: MENU:0:34
+msgid  "  Show as icons     ____"
+msgstr ""
+
+#: MENU:0:35
+msgid  "  Auto arrange      ____"
+msgstr ""
+
+#: MENU:0:37
+msgid  "  Sort by name      ____"
+msgstr ""
+
+#: MENU:0:38
+msgid  "  Sort by extension ____"
+msgstr ""
+
+#: MENU:0:39
+msgid  "  Sort by date      ____"
+msgstr ""
+
+#: MENU:0:40
+msgid  "  Sort by size      ____"
+msgstr ""
+
+#: MENU:0:41
+msgid  "  View unsorted     ____"
+msgstr ""
+
+#: MENU:0:42
+msgid  "  Reverse order     ____"
+msgstr ""
+
+#: MENU:0:43
+msgid  "  Case insensitive  ____"
+msgstr ""
+
+#: MENU:0:45
+msgid  "  Show size         ____"
+msgstr ""
+
+#: MENU:0:46
+msgid  "  Show date         ____"
+msgstr ""
+
+#: MENU:0:47
+msgid  "  Show time         ____"
+msgstr ""
+
+#: MENU:0:48
+msgid  "  Show attributes   ____"
+msgstr ""
+
+#: MENU:0:49
+msgid  "  Show owner        ____"
+msgstr ""
+
+#: MENU:0:51
+msgid  "  Set mask...       ____"
+msgstr ""
+
+#: MENU:0:53
+msgid  "  Iconified      ____"
+msgstr ""
+
+#: MENU:0:54
+msgid  "  Full           ____"
+msgstr ""
+
+#: MENU:0:55
+msgid  "  Close          ____"
+msgstr ""
+
+#: MENU:0:56
+msgid  "  Close window   ____"
+msgstr ""
+
+#: MENU:0:57
+msgid  "  Close all      ____"
+msgstr ""
+
+#: MENU:0:58
+msgid  "  Duplicate      ____"
+msgstr ""
+
+#: MENU:0:59
+msgid  "  Cycle windows  ____"
+msgstr ""
+
+#: MENU:0:61
+msgid  "  Set applications... ____"
+msgstr ""
+
+#: MENU:0:62
+msgid  "  Set program types...____"
+msgstr ""
+
+#: MENU:0:64
+msgid  "  Set desk icons...   ____"
+msgstr ""
+
+#: MENU:0:65
+msgid  "  Set window icons... ____"
+msgstr ""
+
+#: MENU:0:67
+msgid  "  Desk preferences... ____"
+msgstr ""
+
+#: MENU:0:68
+msgid  "  Copy and print...   ____"
+msgstr ""
+
+#: MENU:0:69
+msgid  "  Window options...   ____"
+msgstr ""
+
+#: MENU:0:70
+msgid  "  Video options...    ____"
+msgstr ""
+
+#: MENU:0:72
+msgid  "  Load settings...    ____"
+msgstr ""
+
+#: MENU:0:73
+msgid  "  Save settings       ____"
+msgstr ""
+
+#: MENU:0:74
+msgid  "  Save settings as... ____"
+msgstr ""
+
+#: INFOBOX:1:2
+msgid  "v"
+msgstr ""
+
+#: INFOBOX:1:3
+msgid  "Single-TOS version"
+msgstr ""
+
+#: INFOBOX:1:4
+msgid  "c"
+msgstr ""
+
+#: INFOBOX:1:5
+msgid  "o"
+msgstr ""
+
+#: INFOBOX:1:6
+msgid  "With thanks to all who helped"
+msgstr ""
+
+#: INFOBOX:1:7
+msgid  "Free memory:"
+msgstr ""
+
+#: INFOBOX:1:8
+msgid  "________ bytes ST-RAM"
+msgstr ""
+
+#: INFOBOX:1:9
+msgid  "_________ bytes TT-RAM"
+msgstr ""
+
+#: INFOBOX:1:10
+msgid  "TOS-version:__.__"
+msgstr ""
+
+#: INFOBOX:1:11
+msgid  "AES-version:__.__"
+msgstr ""
+
+#: INFOBOX:1:12
+#: GETCML:2:4
+#: NEWDIR:3:5
+#: ADDICON:4:11
+#: ADDICON:4:16
+#: APPLIKAT:5:15
+#: FILEINFO:6:60
+#: COPYINFO:7:23
+#: NAMECONF:8:8
+#: SETMASK:9:23
+#: OPTIONS:10:11
+#: ADDPTYPE:11:19
+#: STABSIZE:13:4
+#: WOPTIONS:14:10
+#: WDFONT:15:15
+#: FLOPPY:16:20
+#: VOPTIONS:17:20
+#: ADDFTYPE:18:4
+#: COPTIONS:19:13
+#: SEARCH:20:12
+#: SPECAPP:21:14
+#: COMPARE:24:4
+msgid  "OK"
+msgstr ""
+
+#: INFOBOX:1:13
+#: ADDICON:4:13
+#: NAMECONF:8:10
+msgid  "Abort"
+msgstr ""
+
+#: GETCML:2:1
+msgid  "Command line:"
+msgstr ""
+
+#: GETCML:2:3
+#: NEWDIR:3:4
+#: ADDICON:4:17
+#: APPLIKAT:5:16
+#: FILEINFO:6:62
+#: COPYINFO:7:22
+#: SETMASK:9:22
+#: OPTIONS:10:10
+#: ADDPTYPE:11:20
+#: STABSIZE:13:3
+#: WOPTIONS:14:9
+#: WDFONT:15:14
+#: FLOPPY:16:19
+#: VOPTIONS:17:19
+#: ADDFTYPE:18:3
+#: COPTIONS:19:12
+#: SEARCH:20:13
+#: SPECAPP:21:13
+#: OPENW:22:3
+#: HELP1:23:4
+#: COMPARE:24:3
+#: QUITOPT:25:8
+msgid  "Cancel"
+msgstr ""
+
+#: NEWDIR:3:1
+#: ADDICON:4:1
+#: APPLIKAT:5:1
+#: FILEINFO:6:1
+#: FILEINFO:6:59
+#: COPYINFO:7:1
+#: NAMECONF:8:1
+#: SETMASK:9:1
+#: ADDPTYPE:11:1
+#: WDFONT:15:1
+#: WDFONT:15:6
+#: WDFONT:15:7
+#: WDFONT:15:8
+#: FLOPPY:16:1
+#: ADDFTYPE:18:1
+msgid  "t"
+msgstr ""
+
+#: NEWDIR:3:3
+#: APPLIKAT:5:4
+#: FILEINFO:6:19
+#: NAMECONF:8:3
+#: SEARCH:20:3
+msgid  "Name:"
+msgstr ""
+
+#: NEWDIR:3:8
+#: FILEINFO:6:37
+#: COPYINFO:7:5
+msgid  "To:"
+msgstr ""
+
+#: ADDICON:4:3
+msgid  "Drive : _"
+msgstr ""
+
+#: ADDICON:4:5
+#: APPLIKAT:5:3
+#: FILEINFO:6:17
+msgid  "Path:"
+msgstr ""
+
+#: ADDICON:4:8
+msgid  "Icon label:           ____________"
+msgstr ""
+
+#: ADDICON:4:9
+#: ADDFTYPE:18:6
+#: TFTYPE:67
+msgid  "File type:"
+msgstr ""
+
+#: ADDICON:4:12
+#: FILEINFO:6:61
+#: NAMECONF:8:9
+msgid  "Skip"
+msgstr ""
+
+#: ADDICON:4:14
+msgid  "Remove"
+msgstr ""
+
+#: ADDICON:4:25
+msgid  "Icon type"
+msgstr ""
+
+#: ADDICON:4:27
+msgid  "Disk"
+msgstr ""
+
+#: ADDICON:4:28
+msgid  "Printer"
+msgstr ""
+
+#: ADDICON:4:29
+msgid  "Trashcan"
+msgstr ""
+
+#: ADDICON:4:30
+msgid  "File/Folder"
+msgstr ""
+
+#: ADDICON:4:31
+#: ADDPTYPE:11:6
+msgid  "File"
+msgstr ""
+
+#: ADDICON:4:32
+msgid  "Folder"
+msgstr ""
+
+#: ADDICON:4:33
+#: ADDPTYPE:11:5
+msgid  "Program"
+msgstr ""
+
+#: ADDICON:4:34
+#: COPYINFO:7:29
+msgid  "Follow links"
+msgstr ""
+
+#: APPLIKAT:5:5
+msgid  "Command:"
+msgstr ""
+
+#: APPLIKAT:5:6
+msgid  "Environment:"
+msgstr ""
+
+#: APPLIKAT:5:11
+msgid  "F-key: __"
+msgstr ""
+
+#: APPLIKAT:5:12
+msgid  "Set special use"
+msgstr ""
+
+#: APPLIKAT:5:13
+msgid  "Set application type"
+msgstr ""
+
+#: APPLIKAT:5:14
+msgid  "Assign document types"
+msgstr ""
+
+#: FILEINFO:6:3
+msgid  "Bytes used:"
+msgstr ""
+
+#: FILEINFO:6:6
+msgid  "Readonly"
+msgstr ""
+
+#: FILEINFO:6:7
+msgid  "Hidden"
+msgstr ""
+
+#: FILEINFO:6:8
+msgid  "System"
+msgstr ""
+
+#: FILEINFO:6:9
+msgid  "Attributes:"
+msgstr ""
+
+#: FILEINFO:6:10
+msgid  "Archive"
+msgstr ""
+
+#: FILEINFO:6:12
+msgid  "of ___:"
+msgstr ""
+
+#: FILEINFO:6:14
+msgid  "String match #___"
+msgstr ""
+
+#: FILEINFO:6:15
+msgid  "Cluster size:                ______"
+msgstr ""
+
+#: FILEINFO:6:21
+#: TACCTIM:108
+msgid  "Last access:"
+msgstr ""
+
+#: FILEINFO:6:25
+msgid  "Number of folders:           ______"
+msgstr ""
+
+#: FILEINFO:6:26
+msgid  "Number of files and links:   ______"
+msgstr ""
+
+#: FILEINFO:6:28
+msgid  "A"
+msgstr ""
+
+#: FILEINFO:6:30
+msgid  "Volume label:"
+msgstr ""
+
+#: FILEINFO:6:31
+msgid  "Disk drive:"
+msgstr ""
+
+#: FILEINFO:6:33
+msgid  "Total space:             __________"
+msgstr ""
+
+#: FILEINFO:6:34
+msgid  "Bytes free:              __________"
+msgstr ""
+
+#: FILEINFO:6:39
+msgid  "World:"
+msgstr ""
+
+#: FILEINFO:6:40
+msgid  "Group: ____"
+msgstr ""
+
+#: FILEINFO:6:41
+msgid  "Owner: ____"
+msgstr ""
+
+#: FILEINFO:6:42
+#: FILEINFO:6:46
+#: FILEINFO:6:50
+msgid  "r"
+msgstr ""
+
+#: FILEINFO:6:43
+#: FILEINFO:6:47
+#: FILEINFO:6:51
+msgid  "w"
+msgstr ""
+
+#: FILEINFO:6:44
+#: FILEINFO:6:48
+#: FILEINFO:6:52
+msgid  "x"
+msgstr ""
+
+#: FILEINFO:6:45
+#: FILEINFO:6:49
+#: FILEINFO:6:53
+#: SETMASK:9:20
+#: ADDPTYPE:11:13
+msgid  "s"
+msgstr ""
+
+#: FILEINFO:6:55
+#: FILEINFO:6:58
+msgid  "                           "
+msgstr ""
+
+#: FILEINFO:6:56
+msgid  "Flags:"
+msgstr ""
+
+#: FILEINFO:6:57
+msgid  "Memory:"
+msgstr ""
+
+#: FILEINFO:6:63
+msgid  "abcdefghijklmnopq"
+msgstr ""
+
+#: FILEINFO:6:64
+msgid  "Opens with:"
+msgstr ""
+
+#: COPYINFO:7:3
+msgid  "Folder:"
+msgstr ""
+
+#: COPYINFO:7:4
+msgid  "File:"
+msgstr ""
+
+#: COPYINFO:7:7
+msgid  "Reset date/time"
+msgstr ""
+
+#: COPYINFO:7:9
+msgid  "Folders:"
+msgstr ""
+
+#: COPYINFO:7:10
+msgid  "Files and links:"
+msgstr ""
+
+#: COPYINFO:7:11
+msgid  "Bytes:"
+msgstr ""
+
+#: COPYINFO:7:13
+#: COPYINFO:7:14
+msgid  "123456"
+msgstr ""
+
+#: COPYINFO:7:15
+msgid  "1234567890"
+msgstr ""
+
+#: COPYINFO:7:21
+#: FLOPPY:16:18
+#: SEARCH:20:15
+msgid  "Press [ESC] to abort"
+msgstr ""
+
+#: COPYINFO:7:25
+msgid  "Text mode"
+msgstr ""
+
+#: COPYINFO:7:26
+msgid  "Hex dump"
+msgstr ""
+
+#: COPYINFO:7:27
+msgid  "Raw data"
+msgstr ""
+
+#: COPYINFO:7:28
+msgid  "Print to file"
+msgstr ""
+
+#: NAMECONF:8:4
+msgid  "Copy:"
+msgstr ""
+
+#: NAMECONF:8:7
+#: TFIALL:163
+msgid  "All"
+msgstr ""
+
+#: NAMECONF:8:11
+#: NAMECONF:8:12
+msgid  "12345678 bytes 01-02-03 11:59:59"
+msgstr ""
+
+#: SETMASK:9:15
+msgid  "⇧"
+msgstr ""
+
+#: SETMASK:9:16
+msgid  "⇩"
+msgstr ""
+
+#: SETMASK:9:17
+msgid  "Add"
+msgstr ""
+
+#: SETMASK:9:18
+#: OPENW:22:7
+msgid  "Edit"
+msgstr ""
+
+#: SETMASK:9:19
+msgid  "Delete"
+msgstr ""
+
+#: SETMASK:9:25
+msgid  "Show Files"
+msgstr ""
+
+#: SETMASK:9:26
+msgid  "Show Folders"
+msgstr ""
+
+#: SETMASK:9:27
+msgid  "Show Programs"
+msgstr ""
+
+#: SETMASK:9:29
+msgid  "Show Hidden"
+msgstr ""
+
+#: SETMASK:9:30
+msgid  "Show System"
+msgstr ""
+
+#: SETMASK:9:31
+msgid  "Show Subfolders"
+msgstr ""
+
+#: SETMASK:9:32
+msgid  "Show Parent    "
+msgstr ""
+
+#: SETMASK:9:34
+msgid  "Wait for key after TOS programs"
+msgstr ""
+
+#: SETMASK:9:35
+msgid  "Use handle 2 as stderr"
+msgstr ""
+
+#: OPTIONS:10:1
+msgid  "Desktop Preferences"
+msgstr ""
+
+#: OPTIONS:10:3
+msgid  "Dialog options"
+msgstr ""
+
+#: OPTIONS:10:5
+msgid  "Flying"
+msgstr ""
+
+#: OPTIONS:10:6
+#: ADDPTYPE:11:4
+msgid  "Window"
+msgstr ""
+
+#: OPTIONS:10:8
+msgid  "Under mouse"
+msgstr ""
+
+#: OPTIONS:10:9
+msgid  "Centered"
+msgstr ""
+
+#: OPTIONS:10:12
+msgid  "Menu shortcuts"
+msgstr ""
+
+#: OPTIONS:10:13
+msgid  "Item:"
+msgstr ""
+
+#: OPTIONS:10:14
+msgid  "Keys: ____"
+msgstr ""
+
+#: OPTIONS:10:15
+msgid  "Clear all"
+msgstr ""
+
+#: OPTIONS:10:18
+msgid  "                     "
+msgstr ""
+
+#: OPTIONS:10:19
+msgid  "Save desk on exit"
+msgstr ""
+
+#: ADDPTYPE:11:3
+msgid  "Directory"
+msgstr ""
+
+#: ADDPTYPE:11:7
+msgid  "Program type"
+msgstr ""
+
+#: ADDPTYPE:11:8
+msgid  "GEM"
+msgstr ""
+
+#: ADDPTYPE:11:9
+msgid  "GTP"
+msgstr ""
+
+#: ADDPTYPE:11:10
+msgid  "ACC"
+msgstr ""
+
+#: ADDPTYPE:11:11
+msgid  "TOS"
+msgstr ""
+
+#: ADDPTYPE:11:12
+msgid  "TTP"
+msgstr ""
+
+#: ADDPTYPE:11:15
+msgid  "Use ARGV"
+msgstr ""
+
+#: ADDPTYPE:11:16
+msgid  "Don't multitask"
+msgstr ""
+
+#: ADDPTYPE:11:17
+msgid  "Memory limit: ____ KB"
+msgstr ""
+
+#: ADDPTYPE:11:18
+msgid  "Background"
+msgstr ""
+
+#: VIEWMENU:12:3
+msgid  " Viewer"
+msgstr ""
+
+#: VIEWMENU:12:6
+msgid  "  Tab size..."
+msgstr ""
+
+#: VIEWMENU:12:7
+msgid  "  Hexmode"
+msgstr ""
+
+#: STABSIZE:13:1
+msgid  "Set Tab Size"
+msgstr ""
+
+#: STABSIZE:13:5
+msgid  "Tab size:         __"
+msgstr ""
+
+#: WOPTIONS:14:1
+msgid  "Window Options"
+msgstr ""
+
+#: WOPTIONS:14:3
+msgid  "Desktop pattern:"
+msgstr ""
+
+#: WOPTIONS:14:4
+msgid  "Desktop colour:"
+msgstr ""
+
+#: WOPTIONS:14:5
+msgid  "Window pattern:"
+msgstr ""
+
+#: WOPTIONS:14:6
+msgid  "Window colour:"
+msgstr ""
+
+#: WOPTIONS:14:7
+msgid  "Directory font"
+msgstr ""
+
+#: WOPTIONS:14:8
+msgid  "Viewer font"
+msgstr ""
+
+#: WOPTIONS:14:21
+msgid  "Tab size:  __"
+msgstr ""
+
+#: WOPTIONS:14:22
+msgid  "Save windows"
+msgstr ""
+
+#: WOPTIONS:14:23
+msgid  "Hor.grid: ___"
+msgstr ""
+
+#: WOPTIONS:14:25
+msgid  "Ver.grid: ___"
+msgstr ""
+
+#: WDFONT:15:5
+#: COMPARE:24:11
+#: COMPARE:24:12
+msgid  "1234567890123456789012345678901"
+msgstr ""
+
+#: WDFONT:15:13
+msgid  "Size:"
+msgstr ""
+
+#: WDFONT:15:17
+msgid  "123"
+msgstr ""
+
+#: WDFONT:15:20
+msgid  " Sample 1 "
+msgstr ""
+
+#: WDFONT:15:21
+msgid  "Colour:"
+msgstr ""
+
+#: WDFONT:15:26
+msgid  "Bold"
+msgstr ""
+
+#: WDFONT:15:27
+msgid  "Light"
+msgstr ""
+
+#: WDFONT:15:28
+msgid  "Italic"
+msgstr ""
+
+#: WDFONT:15:29
+msgid  "Underlined"
+msgstr ""
+
+#: WDFONT:15:30
+msgid  "Hollow"
+msgstr ""
+
+#: WDFONT:15:31
+msgid  "Shadowed"
+msgstr ""
+
+#: WDFONT:15:32
+msgid  "Inverse"
+msgstr ""
+
+#: FLOPPY:16:3
+msgid  "Drive: _:"
+msgstr ""
+
+#: FLOPPY:16:4
+msgid  "to  _:"
+msgstr ""
+
+#: FLOPPY:16:5
+msgid  "Format type"
+msgstr ""
+
+#: FLOPPY:16:6
+msgid  "Single sided"
+msgstr ""
+
+#: FLOPPY:16:7
+msgid  "Double sided"
+msgstr ""
+
+#: FLOPPY:16:8
+msgid  "High density  "
+msgstr ""
+
+#: FLOPPY:16:9
+msgid  "Extra density "
+msgstr ""
+
+#: FLOPPY:16:10
+msgid  "Previous "
+msgstr ""
+
+#: FLOPPY:16:11
+msgid  "Parameters"
+msgstr ""
+
+#: FLOPPY:16:13
+msgid  "Sides:      _"
+msgstr ""
+
+#: FLOPPY:16:14
+msgid  "Tracks:    __"
+msgstr ""
+
+#: FLOPPY:16:15
+msgid  "Sectors:   __"
+msgstr ""
+
+#: FLOPPY:16:16
+msgid  "Dir.size: ___"
+msgstr ""
+
+#: FLOPPY:16:17
+msgid  "Retries:    _"
+msgstr ""
+
+#: FLOPPY:16:21
+msgid  "Label: ________.___"
+msgstr ""
+
+#: FLOPPY:16:23
+msgid  "Completed: ___%"
+msgstr ""
+
+#: FLOPPY:16:24
+msgid  "Quick format"
+msgstr ""
+
+#: VOPTIONS:17:1
+msgid  "Video Options"
+msgstr ""
+
+#: VOPTIONS:17:3
+msgid  "Standard resolution"
+msgstr ""
+
+#: VOPTIONS:17:4
+msgid  "ST-Low"
+msgstr ""
+
+#: VOPTIONS:17:5
+msgid  "ST-Medium"
+msgstr ""
+
+#: VOPTIONS:17:6
+msgid  "ST-High"
+msgstr ""
+
+#: VOPTIONS:17:7
+msgid  "TT-Low"
+msgstr ""
+
+#: VOPTIONS:17:8
+msgid  "TT-Medium"
+msgstr ""
+
+#: VOPTIONS:17:9
+msgid  "TT-High"
+msgstr ""
+
+#: VOPTIONS:17:10
+msgid  "Options"
+msgstr ""
+
+#: VOPTIONS:17:11
+msgid  "Save palette"
+msgstr ""
+
+#: VOPTIONS:17:12
+msgid  "Blitter     "
+msgstr ""
+
+#: VOPTIONS:17:13
+msgid  "Overscan    "
+msgstr ""
+
+#: VOPTIONS:17:15
+msgid  "   "
+msgstr ""
+
+#: VOPTIONS:17:18
+msgid  "Colours:"
+msgstr ""
+
+#: COPTIONS:19:1
+msgid  "Copy and Print Options"
+msgstr ""
+
+#: COPTIONS:19:4
+msgid  "Confirm Moves and Copies"
+msgstr ""
+
+#: COPTIONS:19:5
+msgid  "Confirm Overwrites"
+msgstr ""
+
+#: COPTIONS:19:6
+msgid  "Confirm Deletes"
+msgstr ""
+
+#: COPTIONS:19:7
+msgid  "Confirm Printing"
+msgstr ""
+
+#: COPTIONS:19:8
+msgid  "Always show dialog"
+msgstr ""
+
+#: COPTIONS:19:9
+msgid  "Keep selection"
+msgstr ""
+
+#: COPTIONS:19:10
+msgid  "Truncate long names"
+msgstr ""
+
+#: COPTIONS:19:11
+msgid  "Print header & separator"
+msgstr ""
+
+#: COPTIONS:19:14
+msgid  "Copy buffer: ____ KB"
+msgstr ""
+
+#: COPTIONS:19:15
+msgid  "Printer line length: ___"
+msgstr ""
+
+#: SEARCH:20:1
+msgid  "Search for File or Folder"
+msgstr ""
+
+#: SEARCH:20:5
+msgid  "Date from:  __-__-__"
+msgstr ""
+
+#: SEARCH:20:6
+msgid  "to:  __-__-__"
+msgstr ""
+
+#: SEARCH:20:7
+msgid  "Size from: _________"
+msgstr ""
+
+#: SEARCH:20:8
+msgid  "to: _________"
+msgstr ""
+
+#: SEARCH:20:9
+msgid  "String:"
+msgstr ""
+
+#: SPECAPP:21:1
+msgid  "Special Application Use"
+msgstr ""
+
+#: SPECAPP:21:4
+msgid  "Editor"
+msgstr ""
+
+#: SPECAPP:21:5
+msgid  "Viewer"
+msgstr ""
+
+#: SPECAPP:21:6
+msgid  "Autostart"
+msgstr ""
+
+#: SPECAPP:21:7
+#: QUITOPT:25:5
+msgid  "Shutdown"
+msgstr ""
+
+#: SPECAPP:21:8
+msgid  "Video mode change"
+msgstr ""
+
+#: SPECAPP:21:9
+msgid  "Search"
+msgstr ""
+
+#: SPECAPP:21:10
+msgid  "Compare"
+msgstr ""
+
+#: SPECAPP:21:11
+msgid  "Format floppy disk"
+msgstr ""
+
+#: SPECAPP:21:12
+msgid  "Right button extension"
+msgstr ""
+
+#: OPENW:22:1
+msgid  "Open Unassigned Item"
+msgstr ""
+
+#: OPENW:22:4
+msgid  "Show"
+msgstr ""
+
+#: OPENW:22:5
+msgid  "Run"
+msgstr ""
+
+#: OPENW:22:6
+msgid  "With"
+msgstr ""
+
+#: OPENW:22:8
+msgid  "This item is neither a program, nor"
+msgstr ""
+
+#: OPENW:22:9
+msgid  "a document of a type assigned to an"
+msgstr ""
+
+#: OPENW:22:10
+msgid  "application, or else its assignment"
+msgstr ""
+
+#: OPENW:22:11
+msgid  "has been overridden."
+msgstr ""
+
+#: HELP1:23:1
+msgid  "Help on Keyboard Commands"
+msgstr ""
+
+#: HELP1:23:3
+#: TFIMORE:164
+msgid  "More"
+msgstr ""
+
+#: HELP1:23:6
+msgid  "Folder Operations:"
+msgstr ""
+
+#: HELP1:23:7
+msgid  "[Alt]+<open>    - Open folder in a"
+msgstr ""
+
+#: HELP1:23:8
+msgid  "new window"
+msgstr ""
+
+#: HELP1:23:9
+msgid  "- View/Print file"
+msgstr ""
+
+#: HELP1:23:10
+msgid  "[Alt][?]        - Show directory of"
+msgstr ""
+
+#: HELP1:23:11
+msgid  "drive ? in a new"
+msgstr ""
+
+#: HELP1:23:12
+msgid  "window"
+msgstr ""
+
+#: HELP1:23:13
+msgid  "[Alt][Shift][?] - Show directory of"
+msgstr ""
+
+#: HELP1:23:14
+msgid  "drive ? in the"
+msgstr ""
+
+#: HELP1:23:15
+msgid  "same window"
+msgstr ""
+
+#: HELP1:23:16
+msgid  "[Undo]        - Deselect all"
+msgstr ""
+
+#: HELP1:23:17
+msgid  "[Insert]      - Toggle autoselector"
+msgstr ""
+
+#: HELP1:23:19
+msgid  "Window Operations:"
+msgstr ""
+
+#: HELP1:23:20
+msgid  "[Home]        - Page to window top"
+msgstr ""
+
+#: HELP1:23:21
+msgid  "[⇧⇩⇦⇨]        - Scroll window"
+msgstr ""
+
+#: HELP1:23:22
+msgid  "[Return]      - Scroll text window"
+msgstr ""
+
+#: HELP1:23:23
+msgid  "[Space]       - Page text window"
+msgstr ""
+
+#: HELP1:23:24
+msgid  "[Shift][⇧⇩⇦⇨] - Page window"
+msgstr ""
+
+#: HELP1:23:25
+msgid  "[Esc]         - Refresh window"
+msgstr ""
+
+#: HELP1:23:26
+msgid  "[PageUp]      - Page window up"
+msgstr ""
+
+#: HELP1:23:27
+msgid  "[PageDown]    - Page window down"
+msgstr ""
+
+#: HELP1:23:28
+msgid  "[Shift][Home] - Page to bottom"
+msgstr ""
+
+#: HELP1:23:30
+msgid  "Drag and Drop Operations:"
+msgstr ""
+
+#: HELP1:23:31
+msgid  "<drag>             - Copy items"
+msgstr ""
+
+#: HELP1:23:32
+msgid  "[Ctl]+<drag>       - Move items"
+msgstr ""
+
+#: HELP1:23:33
+msgid  "[Alt]+<drag>       - Copy & rename"
+msgstr ""
+
+#: HELP1:23:34
+msgid  "[Ctl][Alt]+<drag>  - Move & rename"
+msgstr ""
+
+#: HELP1:23:35
+msgid  "[LShift]+<drag>    - Update copy"
+msgstr ""
+
+#: HELP1:23:36
+msgid  "[RShift]+<drag>    - Restore copy"
+msgstr ""
+
+#: HELP1:23:37
+msgid  "[Esc]              - Cancel action"
+msgstr ""
+
+#: HELP1:23:39
+msgid  "Other:"
+msgstr ""
+
+#: HELP1:23:40
+msgid  "[Help]        - Show Help dialog"
+msgstr ""
+
+#: HELP1:23:41
+msgid  "[Shift][Help] - Show hypertext help"
+msgstr ""
+
+#: HELP1:23:42
+msgid  "Dialog and Menu Operations:"
+msgstr ""
+
+#: HELP1:23:43
+msgid  "[Ctl][⇧⇩]  - Scroll item selector"
+msgstr ""
+
+#: HELP1:23:44
+msgid  "[Insert]   - Fileselector in"
+msgstr ""
+
+#: HELP1:23:45
+msgid  "editable text field"
+msgstr ""
+
+#: HELP1:23:46
+msgid  "[?]        - Shortcut to menu"
+msgstr ""
+
+#: HELP1:23:47
+msgid  "[Ctl][?]   - Shortcut to menu"
+msgstr ""
+
+#: COMPARE:24:1
+msgid  "Compare Files"
+msgstr ""
+
+#: COMPARE:24:7
+msgid  "File #1:"
+msgstr ""
+
+#: COMPARE:24:8
+msgid  "File #2:"
+msgstr ""
+
+#: COMPARE:24:10
+msgid  "Files differ at byte #__________:"
+msgstr ""
+
+#: COMPARE:24:13
+msgid  "#1:"
+msgstr ""
+
+#: COMPARE:24:14
+msgid  "#2:"
+msgstr ""
+
+#: COMPARE:24:15
+msgid  "Match-window width: __"
+msgstr ""
+
+#: QUITOPT:25:1
+msgid  "Quit / Shutdown Options"
+msgstr ""
+
+#: QUITOPT:25:2
+msgid  "You are now about to"
+msgstr ""
+
+#: QUITOPT:25:3
+msgid  "quit Tera Desktop or to"
+msgstr ""
+
+#: QUITOPT:25:4
+msgid  "shut down the computer."
+msgstr ""
+
+#: QUITOPT:25:6
+msgid  "Reboot"
+msgstr ""
+
+#: QUITOPT:25:7
+msgid  "Quit"
+msgstr ""
+
+#: DTADDMSK:0
+msgid  "Add Name Mask"
+msgstr ""
+
+#: DTCOPY:1
+msgid  "Copy Files and Folders"
+msgstr ""
+
+#: DTCOPYRN:2
+msgid  "Copy and Rename Files and Folders"
+msgstr ""
+
+#: DTMOVE:3
+msgid  "Move Files and Folders"
+msgstr ""
+
+#: DTMOVERN:4
+msgid  "Move and Rename Files and Folders"
+msgstr ""
+
+#: DTDELETE:5
+msgid  "Delete Files and Folders"
+msgstr ""
+
+#: DTRENAME:6
+msgid  "Rename Files and Folders"
+msgstr ""
+
+#: DTNMECNF:7
+msgid  "Name Conflict"
+msgstr ""
+
+#: DTADDICN:8
+msgid  "Install Desk Icon"
+msgstr ""
+
+#: DTCHNICN:9
+msgid  "Change Desk Icon"
+msgstr ""
+
+#: DTADDPRG:10
+msgid  "Add Program Type"
+msgstr ""
+
+#: DTEDTPRG:11
+msgid  "Edit Program Type"
+msgstr ""
+
+#: DTADDICT:12
+msgid  "Add Icon Type"
+msgstr ""
+
+#: DTEDTICT:13
+msgid  "Edit Icon Type"
+msgstr ""
+
+#: DTDFONT:14
+msgid  "Directory Font"
+msgstr ""
+
+#: DTVFONT:15
+msgid  "Viewer Font"
+msgstr ""
+
+#: FSTLFILE:16
+msgid  "Locate File"
+msgstr ""
+
+#: FSTLPRG:17
+msgid  "Locate Program"
+msgstr ""
+
+#: FSTLFLDR:18
+msgid  "Locate Folder"
+msgstr ""
+
+#: FSTLOADS:19
+msgid  "Load Settings"
+msgstr ""
+
+#: FSTSAVES:20
+msgid  "Save Settings as"
+msgstr ""
+
+#: MPRINTER:21
+msgid  "A printer"
+msgstr ""
+
+#: MTRASHCN:22
+msgid  "A trashcan"
+msgstr ""
+
+#: MDRIVE:23
+msgid  "A drive icon"
+msgstr ""
+
+#: MFOLDER:24
+msgid  "A folder"
+msgstr ""
+
+#: MPROGRAM:25
+msgid  "A program"
+msgstr ""
+
+#: MITEMS:26
+msgid  "%s %s bytes used in %d %s."
+msgstr ""
+
+#: MSITEMS:27
+msgid  "%s %s bytes used in %d selected %s."
+msgstr ""
+
+#: MIPLURAL:28
+msgid  "items"
+msgstr ""
+
+#: MISINGUL:29
+msgid  "item"
+msgstr ""
+
+#: MDRVNAME:30
+msgid  "drive %c"
+msgstr ""
+
+#: MKEYCONT:31
+msgid  ""
+"\r\n"
+"Press a key to continue."
+msgstr ""
+
+#: TERROR:32
+msgid  "TOS error #%d"
+msgstr ""
+
+#: TFILNF:33
+msgid  "File not found"
+msgstr ""
+
+#: TPATHNF:34
+msgid  "Path not found"
+msgstr ""
+
+#: TACCDN:35
+msgid  "Access denied.|Item is protected |or it already exists"
+msgstr ""
+
+#: TENSMEM:36
+msgid  "Insufficient memory"
+msgstr ""
+
+#: TDSKFULL:37
+msgid  "Disk full"
+msgstr ""
+
+#: TLOCKED:38
+msgid  "File is locked"
+msgstr ""
+
+#: TPLFMT:39
+msgid  "This item is not a |GEMDOS program file"
+msgstr ""
+
+#: TFNTLNG:40
+msgid  "Filename too long |or too many filenames"
+msgstr ""
+
+#: TPTHTLNG:41
+msgid  "Path too long"
+msgstr ""
+
+#: TREAD:42
+msgid  "Read error on file"
+msgstr ""
+
+#: TEOF:43
+msgid  "Unexpected end of file"
+msgstr ""
+
+#: TABORT:44
+msgid  " Abort "
+msgstr ""
+
+#: TSKIPABT:45
+msgid  " Skip | Abort "
+msgstr ""
+
+#: FLINAME:46
+msgid  "FLOPPY"
+msgstr ""
+
+#: HDINAME:47
+msgid  "HARD DISC"
+msgstr ""
+
+#: TRINAME:48
+msgid  "TRASH"
+msgstr ""
+
+#: PRINAME:49
+msgid  "PRINTER"
+msgstr ""
+
+#: FIINAME:50
+msgid  "FILE"
+msgstr ""
+
+#: APINAME:51
+msgid  "APP"
+msgstr ""
+
+#: FOINAME:52
+msgid  "FOLDER"
+msgstr ""
+
+#: TCMDTLNG:53
+msgid  "Command line too long"
+msgstr ""
+
+#: DTPRINT:54
+msgid  "Print Files"
+msgstr ""
+
+#: DTPRINTD:55
+msgid  "Print Directory"
+msgstr ""
+
+#: DTFFMT:56
+msgid  "Format Floppy Disk"
+msgstr ""
+
+#: DTFCPY:57
+msgid  "Copy Disk"
+msgstr ""
+
+#: TWPROT:58
+msgid  "Write-prottected disk"
+msgstr ""
+
+#: TDIROF:59
+msgid  "Directory of "
+msgstr ""
+
+#: DTFTYPES:60
+msgid  "Set Name Mask"
+msgstr ""
+
+#: DTITYPES:61
+msgid  "Set Icon Types"
+msgstr ""
+
+#: DTPTYPES:62
+msgid  "Set Program Types"
+msgstr ""
+
+#: DTINSAPP:63
+msgid  "Install Applications"
+msgstr ""
+
+#: DTDTYPES:64
+msgid  "Assign Document Types"
+msgstr ""
+
+#: DTEDTMSK:65
+msgid  "Edit Name Mask"
+msgstr ""
+
+#: DTEDTDT:66
+msgid  "Edit Document Type"
+msgstr ""
+
+#: TAPP:68
+msgid  "Application:"
+msgstr ""
+
+#: DTADDDT:69
+msgid  "Add Document Type"
+msgstr ""
+
+#: DTADDAPP:70
+msgid  "Add Application"
+msgstr ""
+
+#: DTEDTAPP:71
+msgid  "Edit Application"
+msgstr ""
+
+#: DTSETAPT:72
+msgid  "Set Application Type"
+msgstr ""
+
+#: DTTOUCH:73
+msgid  "Set Object Information"
+msgstr ""
+
+#: MECOPY:74
+msgid  "Can not copy "
+msgstr ""
+
+#: MEMOVE:75
+msgid  "Can not move/rename "
+msgstr ""
+
+#: MEDELETE:76
+msgid  "Can not delete "
+msgstr ""
+
+#: MEPRINT:77
+msgid  "Can not print "
+msgstr ""
+
+#: MESHOWIF:78
+msgid  "Can not read or set info for "
+msgstr ""
+
+#: MINVSRCH:79
+msgid  "Invalid or missing |parameters set"
+msgstr ""
+
+#: MDIFERR:80
+msgid  "Source and target disks |do not have the same format."
+msgstr ""
+
+#: MFPARERR:81
+msgid  "Invalid format parameters."
+msgstr ""
+
+#: MCANTACC:82
+msgid  "Accessories can not be|started in singletasking OS"
+msgstr ""
+
+#: MECOLORS:83
+msgid  "The saved colour palette|does not have the same size|as the palette of the|current screen mode."
+msgstr ""
+
+#: MFSELERR:84
+msgid  "Error in file selector."
+msgstr ""
+
+#: MTMICONS:85
+msgid  "Too many icons."
+msgstr ""
+
+#: APPNOEXT:86
+msgid  "Destination application|does not know the type|of object dropped to it"
+msgstr ""
+
+#: APPNODD:87
+msgid  "Destination application|does not know of|Drag and Drop, or it |does not accept data"
+msgstr ""
+
+#: MDRVEXIS:88
+msgid  "Drive does not exist"
+msgstr ""
+
+#: MDIRTBIG:89
+msgid  "Directory is too big"
+msgstr ""
+
+#: MDEXISTS:90
+msgid  "An object with that name|already exists"
+msgstr ""
+
+#: MTMWIND:91
+msgid  "Too many windows opened"
+msgstr ""
+
+#: MFNEMPTY:92
+msgid  "Filenames can not be empty."
+msgstr ""
+
+#: MCOPYSLF:93
+msgid  "An object can not be|copied to itself"
+msgstr ""
+
+#: MVALIDCF:94
+msgid  "This file is not a|valid configuration|or palette file"
+msgstr ""
+
+#: BADCFG:95
+msgid  "This may not be a valid |configuration or palette |file at all"
+msgstr ""
+
+#: TFRVAL:96
+msgid  "Invalid values in file"
+msgstr ""
+
+#: MCOMPOK:97
+msgid  "Contents of compared files |are identical"
+msgstr ""
+
+#: DTFONSEL:98
+msgid  "Font Selector"
+msgstr ""
+
+#: DTNEWDIR:99
+msgid  "New Folder"
+msgstr ""
+
+#: DTOPENIT:100
+msgid  "Open Item"
+msgstr ""
+
+#: MNOITEM:101
+msgid  "Item not found or item type |can not be determined"
+msgstr ""
+
+#: TDONTEDI:102
+msgid  "; Avoid editing this file by hand !!!"
+msgstr ""
+
+#: TNOLOCK:103
+msgid  "Floppy device can not |be locked for (X)BIOS |operations"
+msgstr ""
+
+#: DTFIINF:104
+msgid  "File Information"
+msgstr ""
+
+#: DTFOINF:105
+msgid  "Folder Information"
+msgstr ""
+
+#: DTDRINF:106
+msgid  "Disk Volume Information"
+msgstr ""
+
+#: TCRETIM:107
+msgid  "Created on:"
+msgstr ""
+
+#: TNOEDIT:109
+msgid  "No editor installed"
+msgstr ""
+
+#: DTAFONT:110
+msgid  "Application font"
+msgstr ""
+
+#: DTNEWLNK:111
+msgid  "New Symbolic Link"
+msgstr ""
+
+#: TLINKTO:112
+msgid  "Link_to_"
+msgstr ""
+
+#: DTLIINF:113
+msgid  "Symbolic Link Information"
+msgstr ""
+
+#: TNOTGT:114
+msgid  "Linked object |does not exist"
+msgstr ""
+
+#: DTUPDAT:115
+msgid  "Update Files and Folders"
+msgstr ""
+
+#: DTRESTO:116
+msgid  "Restore Files and Folders"
+msgstr ""
+
+#: TNFILES:117
+msgid  "Number of files:             "
+msgstr ""
+
+#: TFILES:118
+msgid  "Files:"
+msgstr ""
+
+#: TMULTI:119
+msgid  "Multitask-OS version"
+msgstr ""
+
+#: DWTITLE:120
+msgid  "Tera Desktop"
+msgstr ""
+
+#: MENUREG:121
+msgid  "  Tera Desktop"
+msgstr ""
+
+#: DTSELAPP:122
+msgid  "Select Application"
+msgstr ""
+
+#: CANCTXT:123
+msgid  "|Cancel|Abort|"
+msgstr ""
+
+#: MSRFINI:124
+msgid  "Search finished.|No (more) matches found"
+msgstr ""
+
+#: FSPRINT:125
+msgid  "Locate Print File"
+msgstr ""
+
+#: TFALLOW:126
+msgid  "VGA-40-column"
+msgstr ""
+
+#: TFALMED:127
+msgid  "VGA-80-column"
+msgstr ""
+
+#: TINTERL:128
+msgid  "Doubleline"
+msgstr ""
+
+#: MRESTLOW:129
+msgid  "Screen resolution is too low |(or default font too large)  |to run Tera Desktop."
+msgstr ""
+
+#: MICNFRD:130
+msgid  "Read error on icons file |or file not found. "
+msgstr ""
+
+#: MVDIERR:131
+msgid  "Unable to open|VDI-workstation. "
+msgstr ""
+
+#: MDUPAPP:132
+msgid  "This application is |already running. |Start it again? "
+msgstr ""
+
+#: MFAILPRG:133
+msgid  "Failed to start|selected application. |It may be protected |or maybe is not|a valid program file"
+msgstr ""
+
+#: MICNFND:134
+msgid  "Icon(s) not found |in the resource file"
+msgstr ""
+
+#: DTDEVINF:135
+msgid  "Special BIOS File or Device Info"
+msgstr ""
+
+#: DTPIPINF:136
+msgid  "Pipe Information"
+msgstr ""
+
+#: DTMEMINF:137
+msgid  "Process or Shared memory Info"
+msgstr ""
+
+#: DTPRGINF:138
+msgid  "Program File Information"
+msgstr ""
+
+#: MGEMBACK:139
+msgid  "GEM programs can not be |started in background"
+msgstr ""
+
+#: PFFLOAD:140
+msgid  " FastLoad"
+msgstr ""
+
+#: PFALOAD:141
+msgid  " AltLoad"
+msgstr ""
+
+#: PFAMEM:142
+msgid  " AltMalloc"
+msgstr ""
+
+#: PPPRIVAT:143
+msgid  " Private"
+msgstr ""
+
+#: PPGLOBAL:144
+msgid  " Global"
+msgstr ""
+
+#: PPSUPER:145
+msgid  " Super"
+msgstr ""
+
+#: PPREAD:146
+msgid  " Readonly"
+msgstr ""
+
+#: PPSHARE:147
+msgid  " ShareText"
+msgstr ""
+
+#: FSTLANY:148
+msgid  "Locate Object"
+msgstr ""
+
+#: TDOPEN:149
+msgid  "The requested dialog |is already open"
+msgstr ""
+
+#: TFNVALID:150
+msgid  "fffffffffff"
+msgstr ""
+
+#: TFNTMPLT:151
+msgid  "________.___"
+msgstr ""
+
+#: TBYTES:152
+msgid  "bytes "
+msgstr ""
+
+#: MUNKNOWN:153
+msgid  "An unknown object"
+msgstr ""
+
+#: MNETOB:154
+msgid  "A network object"
+msgstr ""
+
+#: MNOCOPY:155
+msgid  "can not be copied"
+msgstr ""
+
+#: MNOPRINT:156
+msgid  "can not be printed"
+msgstr ""
+
+#: MNODRAGP:157
+msgid  "can not be passed |to a program"
+msgstr ""
+
+#: MNOOPEN:158
+msgid  "can not be opened"
+msgstr ""
+
+#: TBADS:159
+msgid  "Bad sectors."
+msgstr ""
+
+#: TXBERROR:160
+msgid  "BIOS/XBIOS error #%d"
+msgstr ""
+
+#: TSEEKE:161
+msgid  "Sector not found."
+msgstr ""
+
+#: TUNKM:162
+msgid  "Unknown media format."
+msgstr ""
+
+#: XFNVALID:165
+msgid  "FFFFFFFFFFF"
+msgstr ""
+
+#: TCFIRE:166
+msgid  "Version for Coldfire"
+msgstr ""
+
+#: ALOADCFG:167
+msgid  "[1][Error while loading or saving |the configuration file|%s: |%s. ][ OK ]"
+msgstr ""
+
+#: APRGNFND:168
+msgid  "[1][Program file  |%s |not found.][ OK ]"
+msgstr ""
+
+#: AAPPNFND:169
+msgid  "[2][Item named|%s |could not be found.|What do you want to do? ][Locate|Remove|Cancel]"
+msgstr ""
+
+#: AILLCOPY:170
+msgid  "[1][Illegal copy operation. ][ Abort ]"
+msgstr ""
+
+#: AILLDEST:171
+msgid  "[1][Illegal destination. ][ Abort ]"
+msgstr ""
+
+#: APRNRESP:172
+msgid  "[2][Printer is not |responding.][Continue|Abort]"
+msgstr ""
+
+#: AERADISK:173
+msgid  "[1][All data on the target|floppy disk will be erased! ][ OK |Cancel]"
+msgstr ""
+
+#: AFMTERR:174
+msgid  "[1][Error in formatting track %d |on floppy disk.|%s][Retry|Continue|Abort]"
+msgstr ""
+
+#: AERRACC:175
+msgid  "[1][Error while trying to access |the floppy disk.|%s][ OK ]"
+msgstr ""
+
+#: ADUPKEY:176
+msgid  "[1][This key has already been|assigned, or else it is not |a valid shortcut key: %s ][ OK ]"
+msgstr ""
+
+#: AABOOP:177
+msgid  "[2][Abort current operation? ][Abort|Continue]"
+msgstr ""
+
+#: AGENALRT:178
+msgid  "[1][%s. ][ OK ]"
+msgstr ""
+
+#: AFILEDEF:179
+msgid  "[1][This file or filetype has |already been assigned:| |%s ][ OK ]"
+msgstr ""
+
+#: AGFALERT:180
+msgid  "[1][%s |%s: |%s.][%s]"
+msgstr ""
+
+#: AUNKRTYP:181
+msgid  "[1][Unknown record type found in|configuration or palette file: |\"%s\" |ignored in or after|\"%s\". ][ OK ]"
+msgstr ""
+
+#: AVALIDCF:182
+msgid  "[1][This may not be a valid|configuration or palette file. |Illegal or missing value near|\"%s\". ][ OK ]"
+msgstr ""
+
+#: ADUPFLG:183
+msgid  "[1][Same flag or function key is |already set for application|%s. ][ Set |Cancel]"
+msgstr ""
+
+#: AWOPERR:184
+msgid  "[1][Can not open a window: |%s. ][ OK ]"
+msgstr ""
+
+#: ARESCH:185
+msgid  "[1][A change of video mode |will terminate all|running applications.][ OK |Cancel]"
+msgstr ""
+
+#: AFABORT:186
+msgid  "[3][%s][ Abort ]"
+msgstr ""
+
+#: AQUERY:187
+msgid  "[2][%s][ OK |Cancel]"
+msgstr ""
+
+#: AREMICNS:188
+msgid  "[2][Remove icons or delete |directory items?][Remove|Delete|Cancel]"
+msgstr ""
+
+#: ACANTDO:189
+msgid  "[1][%s|%s. ][ Abort ]"
+msgstr ""
+
