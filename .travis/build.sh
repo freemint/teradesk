@@ -54,7 +54,7 @@ export HCP
 
 make clean
 make CPU=v4e
-mv desktop.prg desk_cf.prg
+mv desktop.prg desk_cf.prg || exit 1
 
 make -C doc
 
