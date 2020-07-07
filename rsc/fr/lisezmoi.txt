@@ -1,7 +1,120 @@
-Fichier ressource fran‡ais pour Tera Desktop version 4.04
+        Le fichier de ressource francophone pour TeraDesk V.4.06
+        --------------------------------------------------------
 
-Merci …: Xerus, Rajah, Pinky, Gloky, Adoru et … tous les
-autres noctambule sur ircnet #atari.fr
+COPYRIGHT TERADESK ET PATERNITES
+--------------------------------
+Tera Desktop V1.41          Copyright 1991-1995 W. Klaren.
+             V2.1           Copyright 2002      H. Robbers.
+             V2.3 and V3.0  Copyright 2003      H. Robbers, Dj.Vukovic.
+             V3.01 to V4.06 Copyright 2003-2014 Dj. Vukovic.
+
+Le bureau  TeraDesk  est une alternative  au bureau  TOS  livr‚  avec  les
+ordinateurs  Atari 16 et 32 bits.  L'application  est publi‚e sous licence
+GNU-GPL  (General  Public  License),  ce  qui  signifie  qu'elle peut ˆtre
+librement  copi‚e  et  modifi‚e,  tant que la paternit‚  des  auteurs  est
+reconnue  et que l'application et ses d‚riv‚es  soient redistribu‚es  sous
+les mˆmes conditions, avec les nouvelles sources modifi‚es. Se r‚f‚rer au
+fichier COPYING (en anglais) pour les d‚tails relatifs … la licence GPL.
 
 
-[ProToS][2013]
+NOTE
+----
+Pour toutes questions relatives … l'utilisation de TeraDesk, veuillez vous
+r‚f‚rer aux documents TeraDesk.
+
+La version la plus r‚cente de Teradesk se trouve sur:
+
+                 http://solair.eunet.rs/~vdjole/teradesk.htm
+
+                 ===========================================
+
+FICHIER DE RESSOURCES FRANCAIS
+------------------------------
+Ce fichier de ressources est uniquement destin‚ … la vers. 4.06 du bureau
+Teradesk. Veuillez  noter que  ceci est  une version  ® one-shot ¯.  Leurs
+auteurs ne garantissent ni de support, ni corrections de bug ou de futures
+versions. Toute  personne  d‚sirant  continuer  le  d‚veloppement  est  la
+bienvenue, tant  que les  termes de  la GNU  General Public  Licence  sont
+respect‚s.
+
+Pour tout ‚ventuels nouveaux d‚veloppements,  veuillez vous r‚f‚rer  …  la
+page Internet de Tera Desktop:
+
+          http://solair.eunet.rs/~vdjole/teradesk.htm
+
+L'EQUIPE DE TRADUCTION
+22/10/2014
+
+COPYRIGHTS
+----------
+FR RSC: V3.80 to V3.83 Copyright           Emmanuel Baranger.
+        V4.04 to v4.06 Copyright 2013-2014 Jean-Christophe Beumier,
+                                           Robert Siani & Lodovico Zanier. 
+
+La traduction  fran‡aise  du fichier DESKTOP.RSC  pour  la version 4.06 du
+bureau alternatif  TeraDesk  h‚rite de la licence du document originel. De
+ce fait, elle est publi‚e sous la licence General Public License (GPL), ce
+qui signifie  qu'elle peut ˆtre copi‚e et librement modifi‚e pourvu que la
+paternit‚ des auteurs  soit respect‚e  et qu'elle  et ses d‚riv‚es  soient
+distribu‚es  aux mˆmes conditions.  Se r‚f‚rer au fichier  COPYING  inclus
+pour les d‚tails sur la GPL.
+
+
+CLAUSE DE NON-RESPONSABILITE
+----------------------------
+Cette archive  est FOURNIES  EN  L'ETAT, et  les auteurs  DECLINENT  TOUTE
+RESPONSABILITE  POUR   TOUTES  LES   PERTES  ET   DOMMAGES   r‚sultant  de
+l'utilisation de ces fichiers, et ne pourrait ˆtre tenue pour responsables
+de quelque maniŠres que ce  soit en cas de  pertes ou de dommages  caus‚s,
+ainsi  pour  les   erreurs  possibles  de   traduction  ou  de   proc‚dure
+d'installation.
+
+CONTENU
+-------
+-DESKTOP.RSC  : fichier de ressource francophone;
+-LISEZMOI     : ce fichier;
+-README       : ce fichier en Anglais;
+-COPYING      : GNU-GPL (fichier en Anglais);
+-COPYING.FRA  : adaptation fran‡aise non officielle de la Licence Publique 
+                G‚n‚rale.
+
+PREMIERS PAS
+------------
+V‚rifiez le num‚ro de version de  TeraDesk et le fichier de ressource  RSC
+fran‡ais: ils doivent concorder. Si ce  n'est pas le cas, visitez la  page
+TeraDesk pour  trouver des  versions les  plus r‚centes  et les  notes  de
+compatibilit‚:
+
+http://solair.eunet.rs/~vdjole/teradesk.htm. 
+
+Si les versions  ne concordent pas  ou que les  notes de compatibilit‚  ne
+vous  le  permettent  pas,  nous  vous  convions  …  NE  PAS  PROCEDER   A
+L'INSTALLATION.
+
+
+PROCEDURE D'INSTALLATION
+------------------------
+- Sauvegardez pr‚alablement le fichier DESKTOP.RSC original situ‚ dans  le
+  dossier principal (par ex. C:\TERADESK\);
+- Renommez ce fichier DESKTOP.RSC (par ex. en DESKTOP.RSX);
+- Copiez le fichier fran‡ais DESKTOP.RSC du dossier source dans le dossier
+  principal; 
+- Lancez ou relancez TeraDesk. Si  vous acc‚dez au bureau TeraDesk et  que
+  vous pouvez vous en servir, c'est que la proc‚dure a ‚t‚ r‚ussie.
+
+
+SI QUELQUE CHOSE N'A PAS FONCTIONNE:
+------------------------------------
+Si TeraDesk plante au lancement, ou si une boŒte de dialogue est  ouverte,
+ou si quelque  chose semble bizarre  ou ne fonctionne  pas comme  attendu,
+cela peut ˆtre  le sympt“me  d'un fichier  de ressources  corrompu ou  non
+appropri‚.
+
+Le seul remŠde est  alors de restaurer le  fichier de ressources  original
+(DESKTOP.RSC) que vous  aviez pr‚alablement sauvegard‚  ou renomm‚, et  de
+relancer TeraDesk. Pour toute nouvelle mise … jour, merci de se r‚f‚rer eu
+site internet:
+
+
+             http://solair.eunet.rs/~vdjole/teradesk.htm
+

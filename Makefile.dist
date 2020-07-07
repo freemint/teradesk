@@ -27,11 +27,11 @@ bindist:: .bindistdir
 	cp -a doc/de/teradesk.hyp doc/ru/teradesk.ref $${BINDISTDIR}/doc/ru; \
 	mkdir -p $${BINDISTDIR}/rsc/{en,de,ru,fr,it}; \
 	cp -a "rsc/resource.txt" "$${BINDISTDIR}/rsc"; \
-	cp -a desktop.rsc desktop.rso desktop.hrd "$${BINDISTDIR}/rsc/en"; \
-	cp -a rsc/de/desktop.rsc rsc/de/desktop.rso rsc/de/desktop.hrd rsc/de/readme.txt "$${BINDISTDIR}/rsc/de"; \
-	cp -a rsc/ru/desktop.rsc rsc/ru/desktop.rso rsc/ru/desktop.hrd rsc/ru/readme.txt rsc/ru/read_eng.txt "$${BINDISTDIR}/rsc/ru"; \
-	cp -a rsc/fr/desktop.rsc rsc/fr/desktop.rso rsc/fr/desktop.hrd rsc/fr/lisezmoi.txt "$${BINDISTDIR}/rsc/ru"; \
-	cp -a rsc/it/desktop.rsc rsc/it/desktop.rso rsc/it/desktop.hrd rsc/it/readme.txt rsc/it/leggimi.txt rsc/it/copy_ita.txt "$${BINDISTDIR}/rsc/ru"; \
+	cp -a desktop.rsc desktop.rso desktop.hrd rsc/en/teradesk.pot "$${BINDISTDIR}/rsc/en"; \
+	cp -a rsc/de/desktop.rsc rsc/de/desktop.rso rsc/de/desktop.hrd rsc/de/terade.po rsc/de/readme.txt "$${BINDISTDIR}/rsc/de"; \
+	cp -a rsc/ru/desktop.rsc rsc/ru/desktop.rso rsc/ru/desktop.hrd rsc/ru/teraru.po rsc/ru/readme.txt rsc/ru/read_eng.txt "$${BINDISTDIR}/rsc/ru"; \
+	cp -a rsc/fr/desktop.rsc rsc/fr/desktop.rso rsc/fr/desktop.hrd rsc/fr/terafr.po rsc/fr/readme.txt rsc/fr/lisezmoi.txt "$${BINDISTDIR}/rsc/fr"; \
+	cp -a rsc/it/desktop.rsc rsc/it/desktop.rso rsc/it/desktop.hrd rsc/it/terait.po rsc/it/readme.txt rsc/it/leggimi.txt rsc/it/copy_ita.txt "$${BINDISTDIR}/rsc/it"; \
 	$(MAKE) clean; \
 	echo "Binary distribution in $${BINDISTDIR}"
 

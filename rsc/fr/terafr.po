@@ -1,15 +1,18 @@
 # French translation for Teradesk.
 # Copyright (C) 2020
 # This file is distributed under the same license as the teradesk package.
-# Jean-Paul Mata, 2020.
+#
+# Copyright Emmanuel Baranger.
+# Copyright 2013-2014 Jean-Christophe Beumier
+# Robert Siani & Lodovico Zanier.
 #
 msgid  ""
 msgstr ""
-"Project-Id-Version: teradesk HEAD\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-07-06 20:55+0200\n"
+"POT-Creation-Date: 2020-07-07 13:55+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Jean-Paul Mata\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: French\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +23,7 @@ msgstr ""
 
 #: MENU:0:3
 msgid  " Desk"
-msgstr " Bureau"
+msgstr " TeraDesk"
 
 #: MENU:0:4
 msgid  " File"
@@ -68,123 +71,123 @@ msgstr "  6"
 
 #: MENU:0:19
 msgid  "  Open...        ____"
-msgstr "  Ouvrir...         ____"
+msgstr "  Ouvrir...    ____"
 
 #: MENU:0:20
 msgid  "  Info...        ____"
-msgstr "  Information...    ____"
+msgstr "  Info...      ____"
 
 #: MENU:0:21
 msgid  "  New...         ____"
-msgstr "  Nouveau...        ____"
+msgstr "  Nouveau...   ____"
 
 #: MENU:0:22
 msgid  "  Compare...     ____"
-msgstr "  Comparer...       ____"
+msgstr "  Comparer...  ____"
 
 #: MENU:0:23
 msgid  "  Search...      ____"
-msgstr "  Chercher...       ____"
+msgstr "  Chercher...  ____"
 
 #: MENU:0:24
 msgid  "  Print...       ____"
-msgstr "  Imprimer...       ____"
+msgstr "  Imprimer...  ____"
 
 #: MENU:0:25
 msgid  "  Delete...      ____"
-msgstr "  Effacer...        ____"
+msgstr "  Effacer...   ____"
 
 #: MENU:0:27
 msgid  "  Select all     ____"
-msgstr "  Sélectionner tout ____"
+msgstr "  Tout         ____"
 
 #: MENU:0:29
 msgid  "  Copy disk...   ____"
-msgstr "  Copier disque     ____"
+msgstr "  Copier...    ____"
 
 #: MENU:0:30
 msgid  "  Format disk... ____"
-msgstr "  Formater disque   ____"
+msgstr "  Formater...  ____"
 
 #: MENU:0:32
 msgid  "  Quit/Shutdown  ____"
-msgstr "  Quitter/Arrêter   ____"
+msgstr "  Quitter      ____"
 
 #: MENU:0:34
 msgid  "  Show as icons     ____"
-msgstr "  Voir en icônes  ____"
+msgstr "  Voir en icônes        ____"
 
 #: MENU:0:35
 msgid  "  Auto arrange      ____"
-msgstr "  Auto rangement  ____"
+msgstr "  Auto arrangement      ____"
 
 #: MENU:0:37
 msgid  "  Sort by name      ____"
-msgstr "  par Nom         ____"
+msgstr "  par Nom               ____"
 
 #: MENU:0:38
 msgid  "  Sort by extension ____"
-msgstr "  par Extension   ____"
+msgstr "  par Extension         ____"
 
 #: MENU:0:39
 msgid  "  Sort by date      ____"
-msgstr "  par Date        ____"
+msgstr "  par Date              ____"
 
 #: MENU:0:40
 msgid  "  Sort by size      ____"
-msgstr "  par Taille      ____"
+msgstr "  par Taille            ____"
 
 #: MENU:0:41
 msgid  "  View unsorted     ____"
-msgstr "  Pas de tri      ____"
+msgstr "  Pas de tri            ____"
 
 #: MENU:0:42
 msgid  "  Reverse order     ____"
-msgstr "  Inversé         ____"
+msgstr "  Inversé               ____"
 
 #: MENU:0:43
 msgid  "  Case insensitive  ____"
-msgstr "  Case insens.    ____"
+msgstr "  insensible à la casse ____"
 
 #: MENU:0:45
 msgid  "  Show size         ____"
-msgstr "  Taille          ____"
+msgstr "  Taille                ____"
 
 #: MENU:0:46
 msgid  "  Show date         ____"
-msgstr "  Date            ____"
+msgstr "  Date                  ____"
 
 #: MENU:0:47
 msgid  "  Show time         ____"
-msgstr "  Heure           ____"
+msgstr "  Heure                 ____"
 
 #: MENU:0:48
 msgid  "  Show attributes   ____"
-msgstr "  Attributs       ____"
+msgstr "  Attributs             ____"
 
 #: MENU:0:49
 msgid  "  Show owner        ____"
-msgstr "  Propriétaire    ____"
+msgstr "  Propriétaire          ____"
 
 #: MENU:0:51
 msgid  "  Set mask...       ____"
-msgstr "  Masque...       ____"
+msgstr "  Masque...             ____"
 
 #: MENU:0:53
 msgid  "  Iconified      ____"
-msgstr "  Iconifiée(s)    ____"
+msgstr "  Icônifié        ____"
 
 #: MENU:0:54
 msgid  "  Full           ____"
-msgstr "  Complète(s)     ____"
+msgstr "  Plein écran     ____"
 
 #: MENU:0:55
 msgid  "  Close          ____"
-msgstr "  Remonter        ____"
+msgstr "  Fermer          ____"
 
 #: MENU:0:56
 msgid  "  Close window   ____"
-msgstr "  Fermer          ____"
+msgstr "  Fermer fenêtre  ____"
 
 #: MENU:0:57
 msgid  "  Close all      ____"
@@ -196,7 +199,7 @@ msgstr "  Dupliquer       ____"
 
 #: MENU:0:59
 msgid  "  Cycle windows  ____"
-msgstr "  Permuter        ____"
+msgstr "  Cycler fenêtres ____"
 
 #: MENU:0:61
 msgid  "  Set applications... ____"
@@ -276,11 +279,11 @@ msgstr "_________ octets TT-RAM"
 
 #: INFOBOX:1:10
 msgid  "TOS-version:__.__"
-msgstr "TOS version:__.__"
+msgstr "TOS-version:__.__"
 
 #: INFOBOX:1:11
 msgid  "AES-version:__.__"
-msgstr "AES version:__.__"
+msgstr "AES-version:__.__"
 
 #: INFOBOX:1:12
 #: GETCML:2:4
@@ -372,11 +375,11 @@ msgstr "Nom:"
 #: FILEINFO:6:37
 #: COPYINFO:7:5
 msgid  "To:"
-msgstr "Vers:"
+msgstr "vers:"
 
 #: ADDICON:4:3
 msgid  "Drive : _"
-msgstr "Lecteur : _"
+msgstr "Lecteur: _"
 
 #: ADDICON:4:5
 #: APPLIKAT:5:3
@@ -386,7 +389,7 @@ msgstr "Chemin:"
 
 #: ADDICON:4:8
 msgid  "Icon label:           ____________"
-msgstr "Label de l'icône:     ____________"
+msgstr "Label Icône:          ____________"
 
 #: ADDICON:4:9
 #: ADDFTYPE:18:6
@@ -497,7 +500,7 @@ msgstr "de ___:"
 
 #: FILEINFO:6:14
 msgid  "String match #___"
-msgstr "Similarité #___"
+msgstr "String match #___"
 
 #: FILEINFO:6:15
 msgid  "Cluster size:                ______"
@@ -506,7 +509,7 @@ msgstr "Taille cluster:              ______"
 #: FILEINFO:6:21
 #: TACCTIM:108
 msgid  "Last access:"
-msgstr "Dernier accès:"
+msgstr "Dernier accés:"
 
 #: FILEINFO:6:25
 msgid  "Number of folders:           ______"
@@ -538,7 +541,7 @@ msgstr "Octets libres:           __________"
 
 #: FILEINFO:6:39
 msgid  "World:"
-msgstr "Autres:"
+msgstr "Mots:"
 
 #: FILEINFO:6:40
 msgid  "Group: ____"
@@ -546,7 +549,7 @@ msgstr "Groupe: ____"
 
 #: FILEINFO:6:41
 msgid  "Owner: ____"
-msgstr "Propr.: ____"
+msgstr "Owner : ____"
 
 #: FILEINFO:6:42
 #: FILEINFO:6:46
@@ -605,7 +608,7 @@ msgstr "Fichier:"
 
 #: COPYINFO:7:7
 msgid  "Reset date/time"
-msgstr "Réinitialiser date/heure"
+msgstr "Raz date/heure"
 
 #: COPYINFO:7:9
 msgid  "Folders:"
@@ -648,7 +651,7 @@ msgstr "Données Raw"
 
 #: COPYINFO:7:28
 msgid  "Print to file"
-msgstr "Dans fichier"
+msgstr "Fichier"
 
 #: NAMECONF:8:4
 msgid  "Copy:"
@@ -699,27 +702,27 @@ msgstr "Voir Programmes"
 
 #: SETMASK:9:29
 msgid  "Show Hidden"
-msgstr "Voir Caché"
+msgstr "Voir Cachés"
 
 #: SETMASK:9:30
 msgid  "Show System"
-msgstr "Voir Système"
+msgstr "Voir Systême"
 
 #: SETMASK:9:31
 msgid  "Show Subfolders"
-msgstr "Voir SousDossier"
+msgstr "Voir Sous-fich."
 
 #: SETMASK:9:32
 msgid  "Show Parent    "
-msgstr "Voir Parent    "
+msgstr "Voir Parent"
 
 #: SETMASK:9:34
 msgid  "Wait for key after TOS programs"
-msgstr "Attendre touche après prg TOS"
+msgstr "Fermer TOS prg. par une touche"
 
 #: SETMASK:9:35
 msgid  "Use handle 2 as stderr"
-msgstr "Utiliser handle 2 pour stderr"
+msgstr "Use handle 2 as stderr"
 
 #: OPTIONS:10:1
 msgid  "Desktop Preferences"
@@ -856,7 +859,7 @@ msgstr "Couleur fenêtre:"
 
 #: WOPTIONS:14:7
 msgid  "Directory font"
-msgstr "Répertoire fonte"
+msgstr "Dossiers"
 
 #: WOPTIONS:14:8
 msgid  "Viewer font"
@@ -864,7 +867,7 @@ msgstr "Visualiseur"
 
 #: WOPTIONS:14:21
 msgid  "Tab size:  __"
-msgstr "Taille onglet: __"
+msgstr "Tabulateur: __"
 
 #: WOPTIONS:14:22
 msgid  "Save windows"
@@ -872,11 +875,11 @@ msgstr "Sauve fenêtre"
 
 #: WOPTIONS:14:23
 msgid  "Hor.grid: ___"
-msgstr "Hor.grid: ___"
+msgstr "Grille Hor.: ___"
 
 #: WOPTIONS:14:25
 msgid  "Ver.grid: ___"
-msgstr "Ver.grid: ___"
+msgstr "Grille Ver.: ___"
 
 #: WDFONT:15:5
 #: COMPARE:24:11
@@ -918,15 +921,15 @@ msgstr "Souligné"
 
 #: WDFONT:15:30
 msgid  "Hollow"
-msgstr "Creuse"
+msgstr "Contour"
 
 #: WDFONT:15:31
 msgid  "Shadowed"
-msgstr "Ombrée"
+msgstr "Ombré"
 
 #: WDFONT:15:32
 msgid  "Inverse"
-msgstr "Inversée"
+msgstr "Inversé"
 
 #: FLOPPY:16:3
 msgid  "Drive: _:"
@@ -934,11 +937,11 @@ msgstr "Lecteur: _:"
 
 #: FLOPPY:16:4
 msgid  "to  _:"
-msgstr "to  _:"
+msgstr "vers  _:"
 
 #: FLOPPY:16:5
 msgid  "Format type"
-msgstr "Type de format"
+msgstr "Format type"
 
 #: FLOPPY:16:6
 msgid  "Single sided"
@@ -950,39 +953,39 @@ msgstr "Double face"
 
 #: FLOPPY:16:8
 msgid  "High density  "
-msgstr "Haute densité  "
+msgstr "Haute densité"
 
 #: FLOPPY:16:9
 msgid  "Extra density "
-msgstr "Extra densité "
+msgstr "Extra-densité"
 
 #: FLOPPY:16:10
 msgid  "Previous "
-msgstr "Précédent "
+msgstr "Précédent"
 
 #: FLOPPY:16:11
 msgid  "Parameters"
-msgstr "Paramètres"
+msgstr "Parametre"
 
 #: FLOPPY:16:13
 msgid  "Sides:      _"
-msgstr "Faces:       _"
+msgstr "Faces:      _"
 
 #: FLOPPY:16:14
 msgid  "Tracks:    __"
-msgstr "Pistes:     __"
+msgstr "Pistes:    __"
 
 #: FLOPPY:16:15
 msgid  "Sectors:   __"
-msgstr "Secteurs:   __"
+msgstr "Secteurs:  __"
 
 #: FLOPPY:16:16
 msgid  "Dir.size: ___"
-msgstr "Taille D.: ___"
+msgstr "Taille D.:___"
 
 #: FLOPPY:16:17
 msgid  "Retries:    _"
-msgstr "Tentatives:  _"
+msgstr "Tentatives: _"
 
 #: FLOPPY:16:21
 msgid  "Label: ________.___"
@@ -990,11 +993,11 @@ msgstr "Label: ________.___"
 
 #: FLOPPY:16:23
 msgid  "Completed: ___%"
-msgstr "Completé: ___%"
+msgstr "Complété : ___%"
 
 #: FLOPPY:16:24
 msgid  "Quick format"
-msgstr "Form. rapide"
+msgstr "Format rapide"
 
 #: VOPTIONS:17:1
 msgid  "Video Options"
@@ -1002,7 +1005,7 @@ msgstr "Options vidéo"
 
 #: VOPTIONS:17:3
 msgid  "Standard resolution"
-msgstr "Résolutions standard"
+msgstr "Résolution standard"
 
 #: VOPTIONS:17:4
 msgid  "ST-Low"
@@ -1062,7 +1065,7 @@ msgstr "Confirmer les copies"
 
 #: COPTIONS:19:5
 msgid  "Confirm Overwrites"
-msgstr "Confirmer les remplacements"
+msgstr "Confirmer remplacements"
 
 #: COPTIONS:19:6
 msgid  "Confirm Deletes"
@@ -1078,11 +1081,11 @@ msgstr "Toujours voir le dialogue"
 
 #: COPTIONS:19:9
 msgid  "Keep selection"
-msgstr "Garder la sélection"
+msgstr "Passer la sélection"
 
 #: COPTIONS:19:10
 msgid  "Truncate long names"
-msgstr "Tronquer les noms longs"
+msgstr "Tronquer un long nom"
 
 #: COPTIONS:19:11
 msgid  "Print header & separator"
@@ -1102,19 +1105,19 @@ msgstr "Chercher fichiers et dossiers"
 
 #: SEARCH:20:5
 msgid  "Date from:  __-__-__"
-msgstr "Date de:     __-__-__"
+msgstr "Date de:    __-__-__"
 
 #: SEARCH:20:6
 msgid  "to:  __-__-__"
-msgstr " à:  __-__-__"
+msgstr "à:   __-__-__"
 
 #: SEARCH:20:7
 msgid  "Size from: _________"
-msgstr "Taille de:  _________"
+msgstr "Taille de: _________"
 
 #: SEARCH:20:8
 msgid  "to: _________"
-msgstr " à: _________"
+msgstr "à:  _________"
 
 #: SEARCH:20:9
 msgid  "String:"
@@ -1139,7 +1142,7 @@ msgstr "Auto lancé"
 #: SPECAPP:21:7
 #: QUITOPT:25:5
 msgid  "Shutdown"
-msgstr "Arrêter"
+msgstr "Eteindre"
 
 #: SPECAPP:21:8
 msgid  "Video mode change"
@@ -1159,7 +1162,7 @@ msgstr "Formateur de disque"
 
 #: SPECAPP:21:12
 msgid  "Right button extension"
-msgstr "Extension bouton droit"
+msgstr "Extension clic droit"
 
 #: OPENW:22:1
 msgid  "Open Unassigned Item"
@@ -1179,19 +1182,19 @@ msgstr "Avec"
 
 #: OPENW:22:8
 msgid  "This item is neither a program, nor"
-msgstr "Cet item n'est pas un programme. Il"
+msgstr "Cet item n'est pas un programme."
 
 #: OPENW:22:9
 msgid  "a document of a type assigned to an"
-msgstr "est un document non assigné à une"
+msgstr "Ce document n'est pas assigné à une"
 
 #: OPENW:22:10
 msgid  "application, or else its assignment"
-msgstr "application, ou son assignement ne"
+msgstr "application, ou bien son assignement"
 
 #: OPENW:22:11
 msgid  "has been overridden."
-msgstr "fonctionne plus."
+msgstr "ne fonctionne plus."
 
 #: HELP1:23:1
 msgid  "Help on Keyboard Commands"
@@ -1204,151 +1207,151 @@ msgstr "Plus"
 
 #: HELP1:23:6
 msgid  "Folder Operations:"
-msgstr "Opérations dossier:"
+msgstr "Opérations sur dossier:"
 
 #: HELP1:23:7
 msgid  "[Alt]+<open>    - Open folder in a"
-msgstr "[Alt]+<open>    - Ouvrir dossier ds"
+msgstr "[Alt]+<open>- Ouvrir un dossier dans"
 
 #: HELP1:23:8
 msgid  "new window"
-msgstr "nouvelle fenêtre"
+msgstr "une nouvelle fenêtre"
 
 #: HELP1:23:9
 msgid  "- View/Print file"
-msgstr "- Voir/Imprm fichier"
+msgstr "- Voir/Imprimer ficher"
 
 #: HELP1:23:10
 msgid  "[Alt][?]        - Show directory of"
-msgstr "[Alt][?]        - Voir répertoire du"
+msgstr "[Alt][?]    - Montrer le dossier du"
 
 #: HELP1:23:11
 msgid  "drive ? in a new"
-msgstr "disque ? dans une"
+msgstr "périphérique ? dans"
 
 #: HELP1:23:12
 msgid  "window"
-msgstr "nouvelle fenêtre"
+msgstr "une nouvelle fenêtre"
 
 #: HELP1:23:13
 msgid  "[Alt][Shift][?] - Show directory of"
-msgstr "[Alt][Shift][?] - Voir répertoire du"
+msgstr "[Alt][Shift][?]- Voir le dossier du"
 
 #: HELP1:23:14
 msgid  "drive ? in the"
-msgstr "disque ? dans la"
+msgstr "périphérique ? dans"
 
 #: HELP1:23:15
 msgid  "same window"
-msgstr "même fenêtre"
+msgstr "la même fenêtre"
 
 #: HELP1:23:16
 msgid  "[Undo]        - Deselect all"
-msgstr "[Undo]        - Désélectionner tout"
+msgstr "[Undo]       - Tout désélectionner"
 
 #: HELP1:23:17
 msgid  "[Insert]      - Toggle autoselector"
-msgstr "[Insert]      - Toggle autoselector"
+msgstr "[Insert]- Basculer sélection automat."
 
 #: HELP1:23:19
 msgid  "Window Operations:"
-msgstr "Opérations fenêtre:"
+msgstr "Opérations sur les fenêtres:"
 
 #: HELP1:23:20
 msgid  "[Home]        - Page to window top"
-msgstr "[Home]        - Page en haut"
+msgstr "[Home]        - Haut de la fenêtre"
 
 #: HELP1:23:21
 msgid  "[⇧⇩⇦⇨]        - Scroll window"
-msgstr "[⇧⇩⇦⇨]        - Défiler la fenêtre"
+msgstr "[⇧⇩⇦⇨]        - Défilement"
 
 #: HELP1:23:22
 msgid  "[Return]      - Scroll text window"
-msgstr "[Return]      - Défiler texte"
+msgstr "[Return]      - Une ligne plus bas"
 
 #: HELP1:23:23
 msgid  "[Space]       - Page text window"
-msgstr "[Space]       - Page text window"
+msgstr "[Space]       - Une page plus bas"
 
 #: HELP1:23:24
 msgid  "[Shift][⇧⇩⇦⇨] - Page window"
-msgstr "[Shift][⇧⇩⇦⇨] - Page window"
+msgstr "[Shift][⇧⇩⇦⇨] - Saut de page"
 
 #: HELP1:23:25
 msgid  "[Esc]         - Refresh window"
-msgstr "[Esc]         - Actualiser"
+msgstr "[Esc]         - Rafraîchissement"
 
 #: HELP1:23:26
 msgid  "[PageUp]      - Page window up"
-msgstr "[PageUp]      - Page vers le haut"
+msgstr "[PageUp]      - Une page plus haut"
 
 #: HELP1:23:27
 msgid  "[PageDown]    - Page window down"
-msgstr "[PageDown]    - Page vers le bas"
+msgstr "[PageDown]    - Une page plus bas"
 
 #: HELP1:23:28
 msgid  "[Shift][Home] - Page to bottom"
-msgstr "[Shift][Home] - Page en bas"
+msgstr "[Shift][Home] - Bas de la fenêtre"
 
 #: HELP1:23:30
 msgid  "Drag and Drop Operations:"
-msgstr "Operations Glisser-Déposer:"
+msgstr "Glisser et déposer:"
 
 #: HELP1:23:31
 msgid  "<drag>             - Copy items"
-msgstr "<drag>             - Copier objets"
+msgstr "<drag>           - Copier items"
 
 #: HELP1:23:32
 msgid  "[Ctl]+<drag>       - Move items"
-msgstr "[Ctl]+<drag>       - Déplacer objets"
+msgstr "[Ctl]+<drag>     - Transférer items"
 
 #: HELP1:23:33
 msgid  "[Alt]+<drag>       - Copy & rename"
-msgstr "[Alt]+<drag>       - Copier renommer"
+msgstr "[Alt]+<drag>     - Copier & renommer"
 
 #: HELP1:23:34
 msgid  "[Ctl][Alt]+<drag>  - Move & rename"
-msgstr "[Ctl][Alt]+<drag>  - Déplacer rnmmer"
+msgstr "[Ctl][Alt]+<drag>- Transf.& renommer"
 
 #: HELP1:23:35
 msgid  "[LShift]+<drag>    - Update copy"
-msgstr "[LShift]+<drag>    - M.a.j. copie"
+msgstr "[LShift]+<drag>- Rafraîchir la copie"
 
 #: HELP1:23:36
 msgid  "[RShift]+<drag>    - Restore copy"
-msgstr "[RShift]+<drag>    - Restaurer copie"
+msgstr "[RShift]+<drag>- Restaurer la copie"
 
 #: HELP1:23:37
 msgid  "[Esc]              - Cancel action"
-msgstr "[Esc]              - Annuler action"
+msgstr "[Esc]          - Annuler l'action"
 
 #: HELP1:23:39
 msgid  "Other:"
-msgstr "Autre:"
+msgstr "Autres:"
 
 #: HELP1:23:40
 msgid  "[Help]        - Show Help dialog"
-msgstr "[Help]        - Afficher l'aide"
+msgstr "[Help]       - Voir dialogue d'aide"
 
 #: HELP1:23:41
 msgid  "[Shift][Help] - Show hypertext help"
-msgstr "[Shift][Help] - Hypertexte d'aide"
+msgstr "[Shift][Help]- Voir aide hypertexte"
 
 #: HELP1:23:42
 msgid  "Dialog and Menu Operations:"
-msgstr "Opérations Dialogue et Menu:"
+msgstr "Dialogue et Menu Opérations:"
 
 #: HELP1:23:43
 msgid  "[Ctl][⇧⇩]  - Scroll item selector"
-msgstr "[Ctl][⇧⇩]  - Scroll selecteur objet"
+msgstr "[Ctl][⇧⇩]- Scroll Sélecteur fichier"
 
 #: HELP1:23:44
 msgid  "[Insert]   - Fileselector in"
-msgstr "[Insert]   - Sélecteur de fichiers"
+msgstr "[Insert] - Sélecteur de fichier"
 
 #: HELP1:23:45
 msgid  "editable text field"
-msgstr "ds champ texte éditable"
+msgstr "dans un champ editable"
 
 #: HELP1:23:46
 msgid  "[?]        - Shortcut to menu"
@@ -1384,27 +1387,27 @@ msgstr "2:"
 
 #: COMPARE:24:15
 msgid  "Match-window width: __"
-msgstr "Niv. concordance: __"
+msgstr "Match-window: __"
 
 #: QUITOPT:25:1
 msgid  "Quit / Shutdown Options"
-msgstr "Options Quitter/Arrêter"
+msgstr "Quitter / Eteindre"
 
 #: QUITOPT:25:2
 msgid  "You are now about to"
-msgstr "Vous êtes sur le point"
+msgstr "Vous êtes sur le point de"
 
 #: QUITOPT:25:3
 msgid  "quit Tera Desktop or to"
-msgstr "de quitter Tera Desktop"
+msgstr "quitter Tera Desktop ou"
 
 #: QUITOPT:25:4
 msgid  "shut down the computer."
-msgstr "ou arrêter l'ordinateur."
+msgstr "d'éteindre l'ordinateur."
 
 #: QUITOPT:25:6
 msgid  "Reboot"
-msgstr "Redémarrer"
+msgstr "Relancer"
 
 #: QUITOPT:25:7
 msgid  "Quit"
@@ -1444,11 +1447,11 @@ msgstr "Conflit de nom"
 
 #: DTADDICN:8
 msgid  "Install Desk Icon"
-msgstr "Installer une icône bureau"
+msgstr "Installer un icône bureau"
 
 #: DTCHNICN:9
 msgid  "Change Desk Icon"
-msgstr "Changer une icône bureau"
+msgstr "Changer un icône bureau"
 
 #: DTADDPRG:10
 msgid  "Add Program Type"
@@ -1468,23 +1471,23 @@ msgstr "Editer un type d'icône"
 
 #: DTDFONT:14
 msgid  "Directory Font"
-msgstr "Répertoire des polices"
+msgstr "Police des dossiers"
 
 #: DTVFONT:15
 msgid  "Viewer Font"
-msgstr "Visualiseur des polices"
+msgstr "Police du visualiseur"
 
 #: FSTLFILE:16
 msgid  "Locate File"
-msgstr "Chercher un fichier"
+msgstr "Rechercher un fichier"
 
 #: FSTLPRG:17
 msgid  "Locate Program"
-msgstr "Chercher un programme"
+msgstr "Rechercher un programme"
 
 #: FSTLFLDR:18
 msgid  "Locate Folder"
-msgstr "Chercher un dossier"
+msgstr "Rechercher un dossier"
 
 #: FSTLOADS:19
 msgid  "Load Settings"
@@ -1516,11 +1519,11 @@ msgstr "Programme"
 
 #: MITEMS:26
 msgid  "%s %s bytes used in %d %s."
-msgstr "%s %s octets utilisés dans %d %s."
+msgstr "%s %s octets utilisés par %d %s."
 
 #: MSITEMS:27
 msgid  "%s %s bytes used in %d selected %s."
-msgstr "%s %s octets utilisés dans %d sélectionné %s."
+msgstr "%s %s octets utilisés par la selection de %d %s."
 
 #: MIPLURAL:28
 msgid  "items"
@@ -1544,7 +1547,7 @@ msgstr ""
 
 #: TERROR:32
 msgid  "TOS error #%d"
-msgstr "TOS-error #%d"
+msgstr "TOS-erreur #%d"
 
 #: TFILNF:33
 msgid  "File not found"
@@ -1556,7 +1559,7 @@ msgstr "Chemin non trouvé"
 
 #: TACCDN:35
 msgid  "Access denied.|Item is protected |or it already exists"
-msgstr "Accès refusé.|Objet protégé |ou déjà existant"
+msgstr "Accés refusé.|Objet protégé |ou déjà existant"
 
 #: TENSMEM:36
 msgid  "Insufficient memory"
@@ -1568,7 +1571,7 @@ msgstr "Disque plein"
 
 #: TLOCKED:38
 msgid  "File is locked"
-msgstr "Fichier verrouillé"
+msgstr "Disque protégé"
 
 #: TPLFMT:39
 msgid  "This item is not a |GEMDOS program file"
@@ -1588,11 +1591,11 @@ msgstr "Erreur de lecture sur fichier"
 
 #: TEOF:43
 msgid  "Unexpected end of file"
-msgstr "Fin de fichier inattendue"
+msgstr "Fin de fichier incorrecte"
 
 #: TABORT:44
 msgid  " Abort "
-msgstr " Annuler "
+msgstr " Annuler"
 
 #: TSKIPABT:45
 msgid  " Skip | Abort "
@@ -1600,23 +1603,23 @@ msgstr " Passer | Annuler "
 
 #: FLINAME:46
 msgid  "FLOPPY"
-msgstr "DISQUETTE"
+msgstr "FLOPPY"
 
 #: HDINAME:47
 msgid  "HARD DISC"
-msgstr "DISQUE DUR"
+msgstr "HARD DISC"
 
 #: TRINAME:48
 msgid  "TRASH"
-msgstr "CORBEILLE"
+msgstr "TRASH"
 
 #: PRINAME:49
 msgid  "PRINTER"
-msgstr "IMPRIMANTE"
+msgstr "PRINTER"
 
 #: FIINAME:50
 msgid  "FILE"
-msgstr "FICHIER"
+msgstr "FILE"
 
 #: APINAME:51
 msgid  "APP"
@@ -1624,7 +1627,7 @@ msgstr "APP"
 
 #: FOINAME:52
 msgid  "FOLDER"
-msgstr "DOSSIER"
+msgstr "FOLDER"
 
 #: TCMDTLNG:53
 msgid  "Command line too long"
@@ -1636,7 +1639,7 @@ msgstr "Impression de fichier"
 
 #: DTPRINTD:55
 msgid  "Print Directory"
-msgstr "Impression du répertoire"
+msgstr "Impression de dossier"
 
 #: DTFFMT:56
 msgid  "Format Floppy Disk"
@@ -1652,7 +1655,7 @@ msgstr "Disque protégé en écriture"
 
 #: TDIROF:59
 msgid  "Directory of "
-msgstr "Répertoire de"
+msgstr "Dossier de"
 
 #: DTFTYPES:60
 msgid  "Set Name Mask"
@@ -1708,7 +1711,7 @@ msgstr "Editer les informations"
 
 #: MECOPY:74
 msgid  "Can not copy "
-msgstr "Ne peut être copié "
+msgstr "ne peut être copié "
 
 #: MEMOVE:75
 msgid  "Can not move/rename "
@@ -1724,27 +1727,27 @@ msgstr "Ne peut être imprimé"
 
 #: MESHOWIF:78
 msgid  "Can not read or set info for "
-msgstr "Ne peut lire ou modifier |l'information pour "
+msgstr "L'information ne peut etre |lue ou modifiée"
 
 #: MINVSRCH:79
 msgid  "Invalid or missing |parameters set"
-msgstr "Paramètres invalides |ou manquants"
+msgstr "Invalide ou mauvais |paramètres"
 
 #: MDIFERR:80
 msgid  "Source and target disks |do not have the same format."
-msgstr "Les disques source et cible |n'ont pas le même format."
+msgstr "Format incompatible entre | les disques source et destination."
 
 #: MFPARERR:81
 msgid  "Invalid format parameters."
-msgstr "Format de paramètres invalide"
+msgstr "format de paramètre invalide"
 
 #: MCANTACC:82
 msgid  "Accessories can not be|started in singletasking OS"
-msgstr "Les accessoires ne peuvent pas|être démarrés en os monotâche"
+msgstr "Les accessoires ne peuvent être| demarrés sur un OS monotâche"
 
 #: MECOLORS:83
 msgid  "The saved colour palette|does not have the same size|as the palette of the|current screen mode."
-msgstr "La palette de couleurs|sauvée n'a pas la même taille|que la palette du|mode d'écran actuel."
+msgstr "La palette de couleurs sauvées | n'a pas la même taille | que la palette du | mode d'écran actuel."
 
 #: MFSELERR:84
 msgid  "Error in file selector."
@@ -1756,11 +1759,11 @@ msgstr "Trop d'icônes."
 
 #: APPNOEXT:86
 msgid  "Destination application|does not know the type|of object dropped to it"
-msgstr "L'application désignée|ne connait pas le type|d'objet glissé sur elle"
+msgstr "L'application désignée|ne reconnait pas le type | d'objet glissé sur elle"
 
 #: APPNODD:87
 msgid  "Destination application|does not know of|Drag and Drop, or it |does not accept data"
-msgstr "L'application désignée|ne connait pas le|Glisser-Déposer, ou|n'accepte pas les données"
+msgstr "L'application désignée ne| gère pas le Drag and Drop|ou bien les données |ne sont pas acceptées"
 
 #: MDRVEXIS:88
 msgid  "Drive does not exist"
@@ -1768,11 +1771,11 @@ msgstr "Le lecteur n'existe pas"
 
 #: MDIRTBIG:89
 msgid  "Directory is too big"
-msgstr "Le répertoire est trop gros"
+msgstr "Le dossier est trop volumineux"
 
 #: MDEXISTS:90
 msgid  "An object with that name|already exists"
-msgstr "Un fichier avec le même|nom existe déjà"
+msgstr "Un dossier ayant le même|nom éxiste déjà"
 
 #: MTMWIND:91
 msgid  "Too many windows opened"
@@ -1792,15 +1795,15 @@ msgstr "Ce fichier n'est pas|un fichier de configuration|ou de palette valide"
 
 #: BADCFG:95
 msgid  "This may not be a valid |configuration or palette |file at all"
-msgstr "Cela n'est peut-être pas|un fichier de configuration|ou palette valide"
+msgstr "Ce n'est pas une |configuration valide |ou un fichier palette correct"
 
 #: TFRVAL:96
 msgid  "Invalid values in file"
-msgstr "Valeurs incorrectes dans le fichier"
+msgstr "Valeur invalide dans le fichier"
 
 #: MCOMPOK:97
 msgid  "Contents of compared files |are identical"
-msgstr "Le contenu des fichiers|comparés est identique"
+msgstr "Le contenu des fichiers |est identique."
 
 #: DTFONSEL:98
 msgid  "Font Selector"
@@ -1816,15 +1819,15 @@ msgstr "Ouvrir un objet"
 
 #: MNOITEM:101
 msgid  "Item not found or item type |can not be determined"
-msgstr "Objet non trouvé ou le type|d'objet ne peut être déterminé"
+msgstr "Objet non trouvé ou de |type indéterminé"
 
 #: TDONTEDI:102
 msgid  "; Avoid editing this file by hand !!!"
-msgstr "; L'édition de ce fichier à la main est déconseillé !!!"
+msgstr "; L'édition de ce fichier à la main est déconseillée !!!"
 
 #: TNOLOCK:103
 msgid  "Floppy device can not |be locked for (X)BIOS |operations"
-msgstr "Lecteur de disquette ne peut|pas être verrouillé pour les|opérations du (X)BIOS "
+msgstr "Le périphérique visé |ne peut etre locké |par (X)Bios.."
 
 #: DTFIINF:104
 msgid  "File Information"
@@ -1848,31 +1851,31 @@ msgstr "Pas d'éditeur installé"
 
 #: DTAFONT:110
 msgid  "Application font"
-msgstr "Police des applications"
+msgstr "Police de l'application"
 
 #: DTNEWLNK:111
 msgid  "New Symbolic Link"
-msgstr "Nouveau Lien Symbolique"
+msgstr "Nouveau lien symbolique"
 
 #: TLINKTO:112
 msgid  "Link_to_"
-msgstr "Lien_vers_"
+msgstr "Lier à"
 
 #: DTLIINF:113
 msgid  "Symbolic Link Information"
-msgstr "Information Lien Symbolique"
+msgstr "Information de lien symbolique"
 
 #: TNOTGT:114
 msgid  "Linked object |does not exist"
-msgstr "L'objet Lié |n'existe pas"
+msgstr "L'objet lié | n'existe pas"
 
 #: DTUPDAT:115
 msgid  "Update Files and Folders"
-msgstr "Mise à jour des Fichiers et Dossiers"
+msgstr "Rafraîchir fichiers et dossiers"
 
 #: DTRESTO:116
 msgid  "Restore Files and Folders"
-msgstr "Restaurer les Fichiers et Dossiers"
+msgstr "Restaurer fichiers et dossiers"
 
 #: TNFILES:117
 msgid  "Number of files:             "
@@ -1884,7 +1887,7 @@ msgstr "Fichier:"
 
 #: TMULTI:119
 msgid  "Multitask-OS version"
-msgstr "Version OS Multitâche"
+msgstr "version OS multitaches"
 
 #: DWTITLE:120
 msgid  "Tera Desktop"
@@ -1896,7 +1899,7 @@ msgstr "  Tera Desktop"
 
 #: DTSELAPP:122
 msgid  "Select Application"
-msgstr "Sélectionner une application"
+msgstr "Choix d'une application"
 
 #: CANCTXT:123
 msgid  "|Cancel|Abort|"
@@ -1904,11 +1907,11 @@ msgstr "|Annuler|Abandonner|"
 
 #: MSRFINI:124
 msgid  "Search finished.|No (more) matches found"
-msgstr "Recherche finie.|Pas (plus) de résultat."
+msgstr "Recherche terminée.|Plus rien de trouvé."
 
 #: FSPRINT:125
 msgid  "Locate Print File"
-msgstr "Rechercher le fichier d'impression"
+msgstr "Localiser le fichier d'impression"
 
 #: TFALLOW:126
 msgid  "VGA-40-column"
@@ -1924,39 +1927,39 @@ msgstr "Double ligne"
 
 #: MRESTLOW:129
 msgid  "Screen resolution is too low |(or default font too large)  |to run Tera Desktop."
-msgstr "Résolution de l'écran est trop faible | (ou la police par défaut trop grande)  |pour lancer Tera Desktop."
+msgstr "La résolution d'écran est trop faible |(ou la fonte systême est trop grande) |pour lancer Tera Desktop."
 
 #: MICNFRD:130
 msgid  "Read error on icons file |or file not found. "
-msgstr "Erreur de lecture sur le fichier d'icônes | ou fichier non trouvé. "
+msgstr "Erreur de lecture sur le fichier d'icônes |ou fichier non trouvé. "
 
 #: MVDIERR:131
 msgid  "Unable to open|VDI-workstation. "
-msgstr "VDI-workstation |Impossible à ouvrir."
+msgstr "Ouverture d'une VDI-workstation | impossible."
 
 #: MDUPAPP:132
 msgid  "This application is |already running. |Start it again? "
-msgstr "Cette application est | déjà en cours d'exécution. |La démarrer à nouveau? "
+msgstr "Cette application est |déjà lancé. |Lancer encore? "
 
 #: MFAILPRG:133
 msgid  "Failed to start|selected application. |It may be protected |or maybe is not|a valid program file"
-msgstr "Impossible de démarrer | l'application sélectionnée. | Elle peut être protégée | ou cela n'est peut-être pas | un fichier programme valide"
+msgstr "L'application sélectionnée|n'a pu être lancée. |Elle est peut-être protégée|ou peut-être n'est-ce |pas un fichier programme."
 
 #: MICNFND:134
 msgid  "Icon(s) not found |in the resource file"
-msgstr "Icône(s) introuvable | dans le fichier ressource"
+msgstr "L'icône n'a pu être trouvée|dans le fichier ressource"
 
 #: DTDEVINF:135
 msgid  "Special BIOS File or Device Info"
-msgstr "Fichier Special BIOS ou Device Info"
+msgstr "Fichier BIOS spécial ou information du périphérique"
 
 #: DTPIPINF:136
 msgid  "Pipe Information"
-msgstr "Information Pipe"
+msgstr "Information pipe"
 
 #: DTMEMINF:137
 msgid  "Process or Shared memory Info"
-msgstr "Processus ou Info mémoire partagée"
+msgstr "Info sur la mémoire processeur ou partagée"
 
 #: DTPRGINF:138
 msgid  "Program File Information"
@@ -1992,7 +1995,7 @@ msgstr " Super"
 
 #: PPREAD:146
 msgid  " Readonly"
-msgstr " Lecture seule"
+msgstr " Lecture"
 
 #: PPSHARE:147
 msgid  " ShareText"
@@ -2000,11 +2003,11 @@ msgstr " ShareText"
 
 #: FSTLANY:148
 msgid  "Locate Object"
-msgstr "Chercher un objet"
+msgstr "Rechercher un objet"
 
 #: TDOPEN:149
 msgid  "The requested dialog |is already open"
-msgstr "La boîte de dialogue demandée|est déjà ouverte"
+msgstr "Le dialogue requis |est déjà ouvert"
 
 #: TFNVALID:150
 msgid  "fffffffffff"
@@ -2044,7 +2047,7 @@ msgstr "ne peut être ouvert"
 
 #: TBADS:159
 msgid  "Bad sectors."
-msgstr "secteurs défectueux."
+msgstr "Mauvais secteurs."
 
 #: TXBERROR:160
 msgid  "BIOS/XBIOS error #%d"
@@ -2056,11 +2059,11 @@ msgstr "Secteur non trouvé."
 
 #: TUNKM:162
 msgid  "Unknown media format."
-msgstr "Format du support inconnu."
+msgstr "Format de média inconnu."
 
 #: XFNVALID:165
 msgid  "FFFFFFFFFFF"
-msgstr "FFFFFFFFFFF"
+msgstr "fffffffffff"
 
 #: TCFIRE:166
 msgid  "Version for Coldfire"
@@ -2076,7 +2079,7 @@ msgstr "[1][Le programme|%s |n'a pas été trouvé][ OK ]"
 
 #: AAPPNFND:169
 msgid  "[2][Item named|%s |could not be found.|What do you want to do? ][Locate|Remove|Cancel]"
-msgstr "[2][L'item|%s |n'a pu être trouvé.|Que désirez-vous faire ? ][Chercher|Enlever|Annuler]"
+msgstr "[2][L'objet|%s |n'a pu être trouvé.|Que désirez-vous faire ? ][Chercher|Enlever|Annuler]"
 
 #: AILLCOPY:170
 msgid  "[1][Illegal copy operation. ][ Abort ]"
@@ -2092,19 +2095,19 @@ msgstr "[2][L'imprimante ne|répond pas!][Continuer|Annuler]"
 
 #: AERADISK:173
 msgid  "[1][All data on the target|floppy disk will be erased! ][ OK |Cancel]"
-msgstr "[1][Toutes les données du disque|désignées seront effacées.][ OK |Annuler]"
+msgstr "[1][Toutes les données du disque|désigné seront effacées.][ OK |Annuler]"
 
 #: AFMTERR:174
 msgid  "[1][Error in formatting track %d |on floppy disk.|%s][Retry|Continue|Abort]"
-msgstr "[1][Erreur formatage piste %d |sur disquette. |%s][Réessayer|Continuer|Abandonner]"
+msgstr "[1][Erreur durant le formatage |de la piste %d |sur la disquette.|%s ][Réessayer|Continuer|Annuler]"
 
 #: AERRACC:175
 msgid  "[1][Error while trying to access |the floppy disk.|%s][ OK ]"
-msgstr "[1][Erreur lors de l'accès |à la disquette.|%s][ OK ]"
+msgstr "[1][Erreur en essayant d'accéder |à la disquette.|%s][ OK ]"
 
 #: ADUPKEY:176
 msgid  "[1][This key has already been|assigned, or else it is not |a valid shortcut key: %s ][ OK ]"
-msgstr "[1][Cette touche est déjà assignée|ou n'est pas une touche de|raccourcis valide: %s ][ OK ]"
+msgstr "[1][Cette touche est déjà assignée|ou n'est pas une touche de|raccourci valide: %s ][ OK ]"
 
 #: AABOOP:177
 msgid  "[2][Abort current operation? ][Abort|Continue]"
@@ -2116,7 +2119,7 @@ msgstr "[1][%s. ][ OK ]"
 
 #: AFILEDEF:179
 msgid  "[1][This file or filetype has |already been assigned:| |%s ][ OK ]"
-msgstr "[1][Ce fichier ou type de fichier|est déjà assigné:| |%s ][ OK ]"
+msgstr "[1][Ce fichier ou type de fichier|est déjà assigné !| |%s ][ OK ]"
 
 #: AGFALERT:180
 msgid  "[1][%s |%s: |%s.][%s]"
@@ -2124,11 +2127,11 @@ msgstr "[1][%s |%s: |%s.][%s]"
 
 #: AUNKRTYP:181
 msgid  "[1][Unknown record type found in|configuration or palette file: |\"%s\" |ignored in or after|\"%s\". ][ OK ]"
-msgstr "[1][Type de donnée inconnu trouvé dans|le fichier configuration ou palette: |\"%s\" |ignorés pendant ou après|\"%s\". ][ OK ]"
+msgstr "[1][Type d'enregistrement inconnu|dans le fichier de config.|\"%s\" |ignoré dans ou après|\"%s\". ][ OK ]"
 
 #: AVALIDCF:182
 msgid  "[1][This may not be a valid|configuration or palette file. |Illegal or missing value near|\"%s\". ][ OK ]"
-msgstr "[1][Cela n'est peut être pas un fichier de|configuration ou palette valide. Valeur |incorrecte ou manquante à proximité de|\"%s\". ][ OK ]"
+msgstr "[1][Fichier de configuration ou|de palette invalide. |Valeur illégale ou manquante|\"%s\". ][ OK ]"
 
 #: ADUPFLG:183
 msgid  "[1][Same flag or function key is |already set for application|%s. ][ Set |Cancel]"
@@ -2136,11 +2139,11 @@ msgstr "[1][Drapeau ou touche de fonction|déjà assigné à ce programme.|%s. ]
 
 #: AWOPERR:184
 msgid  "[1][Can not open a window: |%s. ][ OK ]"
-msgstr "[1][Impossible d'ouvrir une fenêtre: |%s. ][ OK ]"
+msgstr "[1][Ouverture de la fenêtre |%s. |impossible][ OK ]"
 
 #: ARESCH:185
 msgid  "[1][A change of video mode |will terminate all|running applications.][ OK |Cancel]"
-msgstr "[1][Un changement de mode vidéo|terminera toutes les|applications en cours.][ OK |Annuler]"
+msgstr "[1][Un changement de mode vidéo|mettra fin à toutes les|applications en cours.][ OK |Annuler]"
 
 #: AFABORT:186
 msgid  "[3][%s][ Abort ]"
@@ -2152,7 +2155,7 @@ msgstr "[2][%s][ OK |Annuler]"
 
 #: AREMICNS:188
 msgid  "[2][Remove icons or delete |directory items?][Remove|Delete|Cancel]"
-msgstr "[2][Enlever les icônes ou effacer|des éléments du répertoire?][Enlever|Effacer|Annuler]"
+msgstr "[2][Enlever l'icône ou effacer|l'objet de son dossier?][Enlever|Effacer|Annuler]"
 
 #: ACANTDO:189
 msgid  "[1][%s|%s. ][ Abort ]"
