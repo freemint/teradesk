@@ -40,8 +40,9 @@ echo ""
 echo "##################################"
 echo "error output from emulator run:"
 echo "##################################"
-mtype C:/errors.txt | grep -v "entering directory"
-mtype "$SRCDIR/pcerr.txt" | grep -F "Error |
+mtype C:/errors.txt | grep -v "entering directory" | grep -v ": processing "
+mtype "$SRCDIR/pcerr.txt" | grep -F "Error 
+Fatal 
 Warning "
 echo ""
 status=`mtype -t C:/status.txt`

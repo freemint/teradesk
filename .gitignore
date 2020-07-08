@@ -52,6 +52,7 @@ m4/mkdirp.m4
 *.prg
 *.gtp
 *.pdb
+*.adb
 *.lib
 *.hyp
 *.ref

@@ -126,6 +126,5 @@ library\utility\nf_shutd.c
 
 ;Standard libraries
 
-pcstdlib.lib
-pctoslib.lib
-pcgemlib.lib
+ahccstdf.lib
+ahccgemf.lib

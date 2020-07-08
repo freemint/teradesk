@@ -298,6 +298,8 @@ WINDOW *xw_last(void)
 
 void xw_note_top(WINDOW *w)
 {
+	const WD_FUNC *func;
+
 	if (w && w != windows)
 	{
 		if (xw_next(w))
@@ -309,8 +311,9 @@ void xw_note_top(WINDOW *w)
 		w->xw_next = windows;
 		windows = w;
 
-		if (w->xw_func->wd_top != 0)
-			w->xw_func->wd_top(w);
+		func = w->xw_func;
+		if (func->wd_top != 0)
+			func->wd_top(w);
 	}
 }
 
@@ -664,7 +667,10 @@ static _WORD xw_do_menu(WINDOW *w, _WORD x, _WORD y)
 		xd_endupdate();
 
 		if (item >= 0)
-			w->xw_func->wd_hndlmenu(w, title, item);
+		{
+			const WD_FUNC *func = w->xw_func;
+			func->wd_hndlmenu(w, title, item);
+		}
 	}
 
 	return TRUE;
@@ -782,9 +788,10 @@ _WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 	{
 		if (!xw_do_menu(w, x, y))
 		{
-			if (w->xw_func->wd_hndlbutton != 0)
+			const WD_FUNC *func = w->xw_func;
+			if (func->wd_hndlbutton != 0)
 			{
-				w->xw_func->wd_hndlbutton(w, x, y, n, bstate, kstate);
+				func->wd_hndlbutton(w, x, y, n, bstate, kstate);
 				return TRUE;
 			}
 		} else
@@ -812,6 +819,7 @@ _WORD xw_hndlbutton(_WORD x, _WORD y, _WORD n, _WORD bstate, _WORD kstate)
 _WORD xw_hndlkey(_WORD scancode, _WORD keystate)
 {
 	WINDOW *w = xw_top();
+	const WD_FUNC *func;
 
 	if (w != NULL)
 	{
@@ -819,9 +827,13 @@ _WORD xw_hndlkey(_WORD scancode, _WORD keystate)
 		{
 			xw_cycle();
 			return TRUE;
-		} else if (w->xw_func->wd_hndlkey != 0)
+		} else
 		{
-			return w->xw_func->wd_hndlkey(w, scancode, keystate);
+			func = w->xw_func;
+			if (func->wd_hndlkey != 0)
+			{
+				return func->wd_hndlkey(w, scancode, keystate);
+			}
 		}
 	}
 
@@ -1253,6 +1265,8 @@ WINDOW *xw_create(_WORD type, const WD_FUNC *functions, _WORD flags,
 
 void xw_open(WINDOW *w, GRECT *size)
 {
+	const WD_FUNC *func;
+
 	wind_open_grect(w->xw_handle, size);
 
 	w->xw_size = *size;
@@ -1263,8 +1277,9 @@ void xw_open(WINDOW *w, GRECT *size)
 
 	w->xw_xflags |= XWF_OPN;
 
-	if (w->xw_func->wd_top != 0)
-		w->xw_func->wd_top(w);
+	func = w->xw_func;
+	if (func->wd_top != 0)
+		func->wd_top(w);
 }
 
 
@@ -1307,6 +1322,7 @@ static void xw_rem(WINDOW *w)
 void xw_close(WINDOW *w)
 {
 	WINDOW *tw;
+	const WD_FUNC *func;
 
 	if (xw_exist(w))
 	{
@@ -1319,11 +1335,14 @@ void xw_close(WINDOW *w)
 
 		if ((tw = xw_top()) != NULL)
 		{
-			if (tw->xw_func->wd_top != 0)
-				tw->xw_func->wd_top(tw);
-		} else if (xw_deskwin != NULL && xw_deskwin->xw_func->wd_top != 0)
+			func = tw->xw_func;
+			if (func->wd_top != 0)
+				func->wd_top(tw);
+		} else if (xw_deskwin != NULL)
 		{
-			xw_deskwin->xw_func->wd_top(tw);
+			func = xw_deskwin->xw_func;
+			if (func->wd_top != 0)
+				func->wd_top(tw);
 		}
 	}
 }

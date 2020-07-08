@@ -1667,7 +1667,7 @@ bool wait_to_quit(void)
 	loopevents.ev_mflags = MU_TIMER | MU_MESAG;
 	loopevents.ev_mtlocount = 2000;		/* wait 2 seconds */
 
-	do
+	for (;;)
 	{
 		(void) Syield();						/* some other shutdown apps do this? */
 
@@ -1697,7 +1697,7 @@ bool wait_to_quit(void)
 			shutting = FALSE;
 			return FALSE;
 		}
-	} while (TRUE);
+	}
 }
 
 

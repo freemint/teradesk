@@ -1509,7 +1509,7 @@ _WORD rsrc_icon(const char *name)
 	OBJECT *ic = icons;
 	_WORD i = 0;
 
-	while (TRUE)
+	for (;;)
 	{
 		if (ic->ob_type == G_ICON || ic->ob_type == G_CICON)
 		{
