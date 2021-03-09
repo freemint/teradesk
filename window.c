@@ -2696,15 +2696,15 @@ void wd_type_sized(WINDOW *w, GRECT *newsize)
 	 * to be a bug in XaAES?) and the inquiry is therefore somewhat simplified- 
 	 * but this may result in double redraws. It is now assumed that realtime 
 	 * resizing exists only in those AESes that need mint. 
-	 * Later: this is an unsolved problem related to wheter an AES employs
+	 * Later: this is an unsolved problem related to whether an AES employs
 	 * a "smart redraw" mechanism- i.e. whether it draws the complete window
 	 * or just the new portions. wd_type_draw() below is needed only if
 	 * "smart_redraw()" is on. Currently this affects only XaAES and Magic
 	 */
 
 #if _MINT_
-	if ((((TYP_WINDOW *) w)->px != ox || (((TYP_WINDOW *) w)->py != oy) || dc != oc) && (w->xw_size.g_w > oldsize.g_w || w->xw_size.g_h > oldsize.g_h) && mint && !geneva	/* but this may cause double redraws sometimes */
-		)
+	if ((((TYP_WINDOW *) w)->px != ox || (((TYP_WINDOW *) w)->py != oy) || dc != oc) &&
+		(w->xw_size.g_w > oldsize.g_w || w->xw_size.g_h > oldsize.g_h))
 		draw = TRUE;
 #endif
 
@@ -2952,7 +2952,7 @@ static long find_firstlast(_WORD wy, _WORD ay, _WORD ah, bool *prev, _WORD ch, _
 		line--;
 	}
 
-	return (long) (line / ch);
+	return line / ch;
 }
 
 
@@ -2995,6 +2995,7 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 		if ((w->py + w->nrows) >= w->nlines)
 			return;
 		w->py += 1;
+		dl = -1;
 		vert = TRUE;
 		break;
 	case WA_LFLINE:
@@ -3067,7 +3068,6 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 				}
 
 				line = find_firstlast(wy, in.g_y, in.g_h, &prev, ch, last);
-
 				line += w->py;
 				dest.g_h -= ch;
 				src.g_h -= ch;
@@ -3105,6 +3105,25 @@ void w_scroll(TYP_WINDOW *w, _WORD type)
 
 			if (vert)					/* up/down */
 			{
+				/*
+				 * clear the portion of the window that was *not* moved,
+				 * and also isn't redrawn by the code below.
+				 * This currently can only happen when scrolling up,
+				 * and only for text-like windows
+				 */
+				if (type == WA_DNLINE &&
+					(wtype == TEXT_WIND ||
+					 (wtype == DIR_WIND && options.mode == TEXTMODE)))
+				{
+					GRECT clr;
+
+					clr.g_x = in.g_x;
+					clr.g_y = dest.g_y + dest.g_h;
+					clr.g_w = in.g_h;
+					clr.g_h = in.g_y + in.g_h - clr.g_y;
+					if (clr.g_h > 0)
+						pclear(&clr);
+				}
 			  again:;
 
 				if (wtype == TEXT_WIND)

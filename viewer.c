@@ -438,7 +438,7 @@ void txt_prtline(TXT_WINDOW *w,		/* Pointer to window */
 	r2 = r;
 	r2.g_w = work->g_w;
 
-	if (rc_intersect2(area, &r2))
+	if (rc_intersect(area, &r2))
 		pclear(&r2);
 
 	if (rc_intersect2(area, &r))
