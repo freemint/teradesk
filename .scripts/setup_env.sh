@@ -20,6 +20,10 @@ LONG_ID=$(echo ${GITHUB_SHA} | cut -c 1-8)
 echo "LONG_ID=$LONG_ID" >> $GITHUB_ENV
 BRANCH=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
 
+if test "$CPU_TARGET" != ""; then
+	echo "CPU_TARGET=$CPU_TARGET" >> $GITHUB_ENV
+fi
+
 # GITHUB_HEAD_REF is only set for pull requests
 if [ "${GITHUB_HEAD_REF}" = "" ]
 then

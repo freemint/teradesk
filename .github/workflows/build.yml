@@ -22,7 +22,6 @@ jobs:
           SYSROOT_DIR="/" ./.scripts/install-freemint.sh binutils gcc mintbin
           ./.scripts/install-freemint.sh mintlib fdlibm gemlib
           ./.scripts/install-hcp.sh
-          ./.scripts/install-udo.sh
           ./.scripts/install-aranym.sh
       - name: Setup environment
         run: ./.scripts/setup_env.sh

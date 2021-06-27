@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -ex
 
 UPLOAD_DIR=web196@server43.webgo24.de:/home/www/snapshots
 
@@ -17,3 +17,6 @@ if test -z "${CPU_TARGET}"
 then
 	scp -o "StrictHostKeyChecking no" "$ARCHIVE_PATH" "${UPLOAD_DIR}/${PROJECT_DIR}/${PROJECT_DIR}-latest.${DEPLOY_ARCHIVE}"
 fi
+
+echo ${ARCHIVE_NAME} > .latest_version
+scp -o "StrictHostKeyChecking no" .latest_version "${UPLOAD_DIR}/${PROJECT_DIR}/.latest_version"
