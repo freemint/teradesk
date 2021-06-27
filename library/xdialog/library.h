@@ -47,10 +47,40 @@
 #define _UWORD unsigned short
 #include <gem.h>
 typedef _WORD _CDECL (*PARMBLKFUNC)(PARMBLK *pb);
+
+#ifndef _LONG_PTR
+#define _LONG_PTR long
+#endif
+
+#ifndef _AES_GLOBAL_defined
+#define _AES_GLOBAL_defined
+typedef union
+{
+	void *spec;			/* PC_GEM */
+	_LONG_PTR l;
+	short pi[2];
+} aes_private;
+
+/* At last give in to the fact that it is a struct, NOT an array */
+typedef struct _aes_global {
+	_WORD ap_version;
+	_WORD ap_count;
+	_WORD ap_id;
+	aes_private ap_private;
+	OBJECT **ap_ptree;
+	void *ap_rscmem; /* RSHDR or RSXHDR */
+	_UWORD ap_rsclen; /* note: short only; unusable with resource >64k */
+	_WORD ap_planes;
+	void *ap_3resv;                  /* ptr to AES global area D (struct THEGLO) */
+	_WORD ap_bvdisk;
+	_WORD ap_bvhard;
+} AES_GLOBAL;
+#endif
+
 #undef _AESrscfile
-#define	_AESrscfile   ((*((OBJECT ***)&aes_global[5])))
+#define	_AESrscfile   (((AES_GLOBAL *)aes_global)->ap_ptree)
 #undef _AESrscmem
-#define	_AESrscmem    ((*((void **)&aes_global[7])))
+#define	_AESrscmem    (((AES_GLOBAL *)aes_global)->ap_rscmem)
 #define bfobspec BFOBSPEC
 #include <mint/mintbind.h>
 #endif
