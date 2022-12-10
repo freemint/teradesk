@@ -554,11 +554,14 @@ static void ins_shorts(void)
 
 				str = menu[menui].ob_spec.free_string;
 				where = str + strlen(str);	/* includes trailing spaces */
-				while (where > str && where[-1] == ' ')
-					where--;
-				while (where > str && where[-1] == '_')
-					where--;
-				disp_short(where, shortcut, FALSE);
+				/* beware: assumes exactly 4 '_' in initial resource
+				   (but we cannot search for it anymore once shortcuts had been inserted)
+				 */
+				if (where > str + 4)
+				{
+					where -= 4;
+					disp_short(where, shortcut, FALSE);
+				}
 			}
 		} else
 		{
