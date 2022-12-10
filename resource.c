@@ -795,13 +795,14 @@ void rsc_ltoftext(OBJECT *tree,		/* object tree */
 	{
 		_WORD s1 = (_WORD) (strlen(ti->te_pvalid) - s2);
 
-		while (s1)
+		while (s1 > 0)
 		{
 			*p++ = ' ';
 			s1--;
 		}
 	}
 
+	/* can overflow if string is too large for field */
 	while (*s)
 		*p++ = *s++;
 
