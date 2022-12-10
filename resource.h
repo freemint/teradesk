@@ -67,12 +67,6 @@ extern char *cfile2;
 extern char *tgname;
 extern char *drvid;
 extern char *iconlabel;
-#if _EDITLABELS
-#if _MINT_
-extern char *lblvalid;
-extern char *lbltmplt;
-#endif
-#endif
 
 extern VLNAME openline;
 extern VLNAME flname;

@@ -70,12 +70,6 @@ char *cfile2;
 char *tgname;
 char *drvid;
 char *iconlabel;
-#if _EDITLABELS
-#if _MINT_
-char *lblvalid;
-char *lbltmplt;
-#endif
-#endif
 
 
 /* scrolled text fields for file/folder/path names */
@@ -347,11 +341,19 @@ static void rsc_fixmenus(void)
 
 void rsc_fixtmplt(TEDINFO *ted, char *valid, char *tmplt)
 {
-	strcpy(ted->te_pvalid, valid);
-	strcpy(ted->te_ptmplt, tmplt);
+	_WORD txtlen;
+	/*
+	 * we cannot copy string into ted->te_pvalid, since
+	 * that is from resource and could be shortened
+	 */
+	ted->te_pvalid = valid;
+	ted->te_ptmplt = tmplt;
 	ted->te_tmplen = (_WORD) strlen(tmplt) + 1;
-	ted->te_txtlen = (_WORD) strlen(valid) + 1;
-	ted->te_ptext[ted->te_txtlen] = 0;
+	for (txtlen = 0; *tmplt != '\0'; tmplt++)
+		if (*tmplt == '_')
+			txtlen++;
+	ted->te_txtlen = txtlen + 1;
+	ted->te_ptext[txtlen] = 0;
 }
 
 
@@ -415,7 +417,7 @@ static void tos_fnform(OBJECT *tree, _WORD object, _WORD just, bool extra)
 
 	/* Change validation and template strings */
 
-	rsc_fixtmplt(ted, get_freestring((extra) ? XFNVALID : TFNVALID), get_freestring(TFNTMPLT));
+	rsc_fixtmplt(ted, get_freestring(extra ? XFNVALID : TFNVALID), get_freestring(TFNTMPLT));
 }
 
 
@@ -650,9 +652,7 @@ void rsc_init(void)
 	 * hopefully failure will not occur, as this is done 
 	 * only at startup of TeraDesk
 	 */
-
-	lblvalid = strdup(xd_pvalid(&fileinfo[FLLABEL]));
-	lbltmplt = strdup((char *) fileinfo[FLLABEL].ob_spec.tedinfo->te_ptmplt);
+	/* no need to make a copy of these at all */
 #endif
 #else
 	tos_bform(fileinfo, FLLABEL);

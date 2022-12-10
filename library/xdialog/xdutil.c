@@ -318,7 +318,7 @@ void xd_set_obspec(OBJECT *object, OBSPEC *obspec)
 		if (IS_XUSER(userblk))
 			((XUSERBLK *) userblk)->ob_spec = *obspec;
 		else
-			userblk->ub_parm = *(long *) obspec;
+			userblk->ub_parm = obspec->index;
 	} else
 		object->ob_spec = *obspec;
 }

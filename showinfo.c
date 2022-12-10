@@ -988,7 +988,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 #if _EDITLABELS
 #if _MINT_
 				if ((fs_type & FS_UID) != 0)
-					rsc_fixtmplt(lblted, lblvalid, lbltmplt);
+					rsc_fixtmplt(lblted, xd_pvalid(&fileinfo[FLLABEL]), xd_get_obspecp(&fileinfo[FLLABEL])->tedinfo->te_ptmplt);
 				else
 #endif
 					rsc_tostmplt(lblted);
