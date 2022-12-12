@@ -1435,7 +1435,7 @@ static void hndlkey(_WORD key,			/* code of the key pressed */
 	)
 {
 	APPLINFO *appl;						/* pointer to data for application assigned to F-key */
-	_WORD i = 0;						/* aux. counter */
+	_WORD i;							/* aux. counter */
 	_WORD k;							/* key code with CTRL masked */
 	_WORD title;						/* rsc index of current menu title */
 	unsigned short uk = (unsigned short) key;
@@ -1474,7 +1474,8 @@ static void hndlkey(_WORD key,			/* code of the key pressed */
 
 		title = TFIRST;
 
-		while ((options.kbshort[i] != k) && (i <= (MLAST - MFIRST)))
+		i = 0;
+		while (i <= NITEM && options.kbshort[i] != k)
 		{
 			if ((options.kbshort[i] & XD_ALT) != 0)
 				title++;
@@ -1484,7 +1485,7 @@ static void hndlkey(_WORD key,			/* code of the key pressed */
 
 		/* Handle keyboard shortcuts or opening of root directories */
 
-		if (options.kbshort[i] == k)
+		if (i <= NITEM && options.kbshort[i] == k)
 		{
 			/* A keyboard shortcut has been recognized */
 
