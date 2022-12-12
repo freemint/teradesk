@@ -17,7 +17,7 @@
  * Number of Trees:          26
  * Number of Userblks:       0
  * Number of Images:         0
- * Total file size:          32660
+ * Total file size:          33500
  */
 
 #ifdef RSC_NAME
@@ -61,6 +61,8 @@
 #define TWINDOW            6 /* TITLE in tree MENU */
 #define TOPTIONS           7 /* TITLE in tree MENU */
 #define MINFO             10 /* STRING in tree MENU */
+#define ACC1              12 /* STRING in tree MENU */
+#define ACC6              17 /* STRING in tree MENU */
 #define MNFILEBX          18 /* BOX in tree MENU */
 #define MOPEN             19 /* STRING in tree MENU */
 #define MSHOWINF          20 /* STRING in tree MENU */
