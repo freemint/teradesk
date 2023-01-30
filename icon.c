@@ -48,6 +48,7 @@
 #include "video.h"
 #include "filetype.h"					/* must be before applik.h */
 #include "applik.h"
+#include "rsc_load.h"
 
 
 typedef enum
@@ -2705,6 +2706,7 @@ bool load_icons(void)
 {
 	OBJECT **svtree = _AESrscfile;
 	void *svrshdr = _AESrscmem;
+	bool ok = TRUE;
 
 	/*
 	 * Geneva 4 returns information that it supports colour icons, but
@@ -2719,24 +2721,33 @@ bool load_icons(void)
 	 */
 
 	/* try to load colour icons */
-	if (!rsrc_load("cicons.rsc"))
+	if (colour_icons)
 	{
-		colour_icons = FALSE;
-	} else if (!aes_supports_coloricons())
-	{
-		colour_icons = FALSE;
-		rsrc_free();
+		if (!rsrc_load("cicons.rsc"))
+		{
+			colour_icons = FALSE;
+		} else if (!aes_supports_coloricons())
+		{
+			rsrc_free();
+			colour_icons = FALSE;
+		}
 	}
 
-	if (!colour_icons && !rsrc_load("icons.rsc"))	/* try to load mono icons */
+	if (!colour_icons && !xrsrc_load("icons.rsc"))	/* try to load mono icons */
 	{
+		/*
+		 * alert_abort will call rsrc_gaddr(),
+		 * need to reset globals here to point to desktop.rsc
+		 */
+		_AESrscfile = svtree;
+		_AESrscmem = svrshdr;
 		alert_abort(MICNFRD);			/* no icons loaded */
-		return FALSE;
+		ok = FALSE;
 	} else
 	{
 		_WORD i = 0;
 
-		rsrc_gaddr(R_TREE, 0, &icons);	/* That's all you need. */
+		xrsrc_gaddr(R_TREE, 0, &icons);	/* That's all you need. */
 		svicntree = _AESrscfile;
 		svicnrshdr = _AESrscmem;
 		n_icons = 0;
@@ -2751,22 +2762,26 @@ bool load_icons(void)
 	_AESrscfile = svtree;
 	_AESrscmem = svrshdr;
 
-	return TRUE;
+	return ok;
 }
 
 
 void free_icons(void)
 {
-	OBJECT **svtree = _AESrscfile;
-	void *svrshdr = _AESrscmem;
+	if (svicnrshdr)
+	{
+		OBJECT **svtree = _AESrscfile;
+		void *svrshdr = _AESrscmem;
 
-	_AESrscfile = svicntree;
-	_AESrscmem = svicnrshdr;
+		_AESrscfile = svicntree;
+		_AESrscmem = svicnrshdr;
 
-	rsrc_free();
+		xrsrc_free();
 
-	_AESrscfile = svtree;
-	_AESrscmem = svrshdr;
+		_AESrscfile = svtree;
+		_AESrscmem = svrshdr;
+		svicnrshdr = NULL;
+	}
 }
 
 

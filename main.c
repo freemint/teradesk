@@ -24,7 +24,6 @@
 #include <xdialog.h>
 #include <xscncode.h>
 #include <mint/cookie.h>
-#include <mint/arch/nf_ops.h>
 
 #include "resource.h"
 #include "desk.h"

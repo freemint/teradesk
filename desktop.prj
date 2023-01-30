@@ -75,6 +75,7 @@ showinfo.c
 font.c
 va.c
 dragdrop.c
+rsc_load.c
 
 ;TOS part
 

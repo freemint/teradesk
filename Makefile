@@ -68,6 +68,7 @@ SRCS = \
 	stringf.c stringf.h \
 	xfilesys.c xfilesys.h \
 	error.c error.h \
+	rsc_load.c rsc_load.h \
 	\
 	library/xdialog/xscncode.h \
 	library/xdialog/internal.h \
