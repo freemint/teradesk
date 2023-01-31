@@ -108,13 +108,13 @@ static _WORD _CDECL new_critic(_WORD error /*,_WORD drive */ )
 
 static void install_critic(void)
 {
-	old_critic = (_WORD _CDECL (*)(_WORD error)) Setexc(0x101, (void (*)()) new_critic);
+	old_critic = (_WORD _CDECL (*)(_WORD error)) Setexc(0x101, (void (*)()) (long)new_critic);
 }
 
 
 static void remove_critic(void)
 {
-	(void) Setexc(0x101, (void (*)()) old_critic);
+	(void) Setexc(0x101, (void (*)()) (long)old_critic);
 }
 
 
@@ -339,7 +339,7 @@ static _WORD exec_com(const char *name, COMMAND *cml, char *envp, _WORD appl_typ
 
 			{
 				VLNAME cmd;				/* maybe LNAME is enough ? */
-				char tail[128];
+				char tail[sizeof(COMMAND)];
 
 				shel_read(cmd, tail);
 

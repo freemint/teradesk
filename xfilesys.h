@@ -118,7 +118,7 @@ extern const char *presets[];
 typedef struct          /* used by Pexec */
 {
 	unsigned char length;
-	char command_tail[128];
+	char command_tail[128]; /* FIXME: should that be 127? */
 } COMMAND;
 
 
