@@ -411,8 +411,20 @@ static int xrsrc_fix(RSHDR *rscHdr)
 		OBJECT **_rs_trindex;
 
 		_rs_trindex = (OBJECT **)rschdr_pointer(rsh_trindex);
+#ifdef __GNUC__
+		/* avoid type-punned pointer */
+		{
+			OBJECT ***rscfile = (OBJECT ***)&aes_global[5];
+			*rscfile = _rs_trindex;
+		}
+		{
+			void **rscmem = (void **)&aes_global[7];
+			*rscmem = buf;
+		}
+#else
 		_AESrscfile = _rs_trindex;
 		_AESrscmem = buf;
+#endif
 
 		for (UObj = 0; UObj < xrsc_header.rsh_ntree; UObj++)
 		{
@@ -467,7 +479,17 @@ _WORD xrsrc_load(const char *fname)
 
 _WORD xrsrc_free(void)
 {
-	RSHDR *useRsc = _AESrscmem;
+	RSHDR *useRsc;
+
+#ifdef __GNUC__
+	/* avoid type-punned pointer */
+	{
+		void **rscmem = (void **)&aes_global[7];
+		useRsc = *rscmem;
+	}
+#else
+	useRsc = _AESrscmem;
+#endif
 	Mfree(useRsc);
 	return TRUE;
 }
@@ -476,9 +498,18 @@ _WORD xrsrc_free(void)
 
 _WORD xrsrc_gaddr(_WORD type, _WORD idx, void *gaddr)
 {
-	RSHDR *useRsc = _AESrscmem;
+	RSHDR *useRsc;
 	RSXHDR xrsc_header;
 
+#ifdef __GNUC__
+	/* avoid type-punned pointer */
+	{
+		void **rscmem = (void **)&aes_global[7];
+		useRsc = *rscmem;
+	}
+#else
+	useRsc = _AESrscmem;
+#endif
 #if WITH_CHECKS
 	if (gaddr == NULL || useRsc == NULL)
 		return FALSE;
