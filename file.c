@@ -812,26 +812,27 @@ bool cmp_wildcard(const char *fname, const char *pat)
 
 static _WORD chdrv;
 
-static long _CDECL (*Oldgetbpb) (_WORD);
+struct drivearg { short d; short pad; };
+struct rwabs_args { _WORD rwflag; void *buf; _WORD cnt; _WORD recnr; _WORD dev; long lrecno; };
 
-static long _CDECL (*Oldmediach) (_WORD);
+static long _CDECL (*Oldgetbpb) (struct drivearg);
 
-static long _CDECL (*Oldrwabs) (_WORD, void *, _WORD, _WORD, _WORD, long);
+static long _CDECL (*Oldmediach) (struct drivearg);
 
-#define hdv_bpb              ( *( long _CDECL (**)( _WORD dev ) ) 0x472L )
-#define hdv_rw               ( *( long _CDECL (**)( _WORD rwflag,void *buf,_WORD cnt,_WORD recnr,_WORD dev,long lrecno)) 0x476L )
-#define hdv_mediach  ( *( long _CDECL (**)( _WORD dev ) ) 0x47EL )
+static long _CDECL (*Oldrwabs) (struct rwabs_args);
+
+#define hdv_bpb              ( *( long _CDECL (**)( struct drivearg ) ) 0x472L )
+#define hdv_rw               ( *( long _CDECL (**)( struct rwabs_args)) 0x476L )
+#define hdv_mediach  ( *( long _CDECL (**)( struct drivearg ) ) 0x47EL )
 
 /* HR: The AHCC generated code uses a6, which wasnt good on my MILAN Tos */
 /*     04'10 Coldfire */
 
 #ifdef __AHCC__
-static long __asm__ _CDECL Newgetbpb(_WORD d)
+static long __asm__ _CDECL Newgetbpb(struct drivearg d)
 {
-	move.l	d2,-(a7)
-	move.l	d3,-(a7)
-	move	12(sp),d3		; 4(sp) + 8
-	cmp		chdrv.l,d3
+	move.w	4(sp),d0		; 4(sp) + 8
+	cmp.w	chdrv.l,d0
 	bne.s	L44
 	lea 	1138,a0
 	move.l	Oldgetbpb.l,(a0)
@@ -840,25 +841,23 @@ static long __asm__ _CDECL Newgetbpb(_WORD d)
 	lea 	1150,a0
 	move.l	Oldmediach.l,(a0)
 L44:
-	move	d3,-(a7)
 	movea.l	Oldgetbpb.l,a0
-	jsr		(a0)
-	addq.l	#2,a7
-	move.l	(a7)+,d3
-	move.l	(a7)+,d2
-	rts
+	jmp		(a0)
 }
 #else
-static long _CDECL Newgetbpb(_WORD d)
+#ifdef __PUREC__
+#pragma warn -stv
+#endif
+static long _CDECL Newgetbpb(struct drivearg drv)
 {
-	if (d == chdrv)
+	if (drv.d == chdrv)
 	{
 		hdv_bpb = Oldgetbpb;			/*  *((Func *)0x472L)  */
 		hdv_rw = Oldrwabs;				/*  *((Func *)0x476L)  */
 		hdv_mediach = Oldmediach;		/*  *((Func *)0x47eL)  */
 	}
 
-	return (*Oldgetbpb) (d);
+	return (*Oldgetbpb) (drv);
 }
 #endif
 
@@ -870,67 +869,49 @@ static long _CDECL Newgetbpb(_WORD d)
  */
 
 #if 0									/* __AHCC__ */
-static long __asm__ _CDECL Newmediach(_WORD d)
+static long __asm__ _CDECL Newmediach(struct drivearg drv)
 {
-	movem.l	d2-d3,-(a7)
-	move	12(sp),d3		; 4(sp) + 8
-	cmp		chdrv.l,d3
+	move.w	4(sp),d0		; 4(sp) + 8
+	cmp.w	chdrv.l,d0
 	bne.s	L94
 	moveq	#2,d0
-L86:
-	movem.l	(a7)+,d2-d3
 	rts
 
 L94:
-	move	d3,-(a7)
 	movea.l	Oldmediach.l,a0
-	jsr		(a0)
-	addq	#2,a7
-	bra.s	L86
+	jmp		(a0)
 }
 #else
-static long _CDECL Newmediach(_WORD d)
+static long _CDECL Newmediach(struct drivearg drv)
 {
-	if (d == chdrv)
+	if (drv.d == chdrv)
 		return 2;
 	else
-		return (*Oldmediach) (d);
+		return (*Oldmediach) (drv);
 }
 #endif
 
 
 #if 0									/* __AHCC__ */
-static long __asm__ _CDECL Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
+static long __asm__ _CDECL Newrwabs(struct rwabs_args args)
 {
-	move.l	sp,a0			; stackframe pointer --> a0
-	movem.l	d2-d3,-(a7)
-	move	12(sp),d3		; 4(sp) + 8
-	cmp		chdrv.l,d3
+	move.w	14(sp),d0		; 4(sp) + 8
+	cmp.w	chdrv.l,d0
 	bne.s	L158
 	moveq	#-14,d0
-L150:
-	movem.l	(a7)+,d2-d3
 	rts
 
 L158:
-	move.l	16(a0),-(a7)	; l
-	move	14(a0),-(a7)	; c
-	move	12(a0),-(a7)	; b
-	move	10(a0),-(a7)	; a
-	move.l	 6(a0),-(a7)	; buf
-	move	 4(a0),-(a7)	; d
 	movea.l	Oldrwabs.l,a0
-	jsr		(a0)
-	lea 	16(a7),a7
-	bra.s	L150
+	jmp		(a0)
 }
 #else
-static long _CDECL Newrwabs(_WORD d, void *buf, _WORD a, _WORD b, _WORD c, long l)
+static long _CDECL Newrwabs(struct rwabs_args args)
 {
-	if (d == chdrv)
+	if (args.dev == chdrv)
 		return ECHMEDIA;
 	else
-		return (*Oldrwabs) (d, buf, a, b, c, l);
+		return (*Oldrwabs) (args);
 }
 #endif
 
@@ -978,7 +959,7 @@ void force_mediach(const char *path)
 		if (r >= 0)
 			Fclose((_WORD) r);
 
-		if (*((void **) 0x476L) == (void *) Newrwabs)
+		if (hdv_rw == Newrwabs)
 		{
 			hdv_bpb = Oldgetbpb;
 			hdv_rw = Oldrwabs;
