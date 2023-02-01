@@ -295,7 +295,7 @@ int nf_debugvprintf(const char *format, va_list args)
 		return -1;
 	}	
 	{
-		char buf[2048];
+		static char buf[2048];
 		
 #ifdef HAVE_VSNPRINTF
 		ret = vsnprintf(buf, sizeof(buf), format, args);

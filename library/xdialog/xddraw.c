@@ -98,7 +98,7 @@ static void prt_text(const char *s, _WORD x, _WORD y, _WORD state)
 	if (state & OS_DISABLED)
 		attrib ^= 2;
 
-	vst_effects(xd_vhandle, attrib);
+	udef_vst_effects(xd_vhandle, attrib);
 	strcpy(tmp, s);
 
 	/* uses AES 4 WHITEBAK */
@@ -132,7 +132,7 @@ static void prt_text(const char *s, _WORD x, _WORD y, _WORD state)
 		}
 #endif
 
-	v_gtext(xd_vhandle, x, y, tmp);
+	udef_v_gtext(xd_vhandle, x, y, tmp);
 
 	if (p)
 	{
@@ -141,11 +141,11 @@ static void prt_text(const char *s, _WORD x, _WORD y, _WORD state)
 		_WORD xtnd[8];
 
 		*p = 0;
-		vqt_extent(xd_vhandle, tmp, xtnd);
-		vst_effects(xd_vhandle, attrib ^ 8);	/* XOR due to text-style extensions! */
-		vst_color(xd_vhandle, G_RED);
-		v_gtext(xd_vhandle, x + (xtnd[2] - xtnd[0]), y, " ");
-		vst_color(xd_vhandle, G_BLACK);
+		udef_vqt_extent(xd_vhandle, tmp, xtnd);
+		udef_vst_effects(xd_vhandle, attrib ^ 8);	/* XOR due to text-style extensions! */
+		udef_vst_color(xd_vhandle, G_RED);
+		udef_v_gtext(xd_vhandle, x + (xtnd[2] - xtnd[0]), y, " ");
+		udef_vst_color(xd_vhandle, G_BLACK);
 	}
 }
 
@@ -171,7 +171,7 @@ void draw_xdrect(_WORD x, _WORD y, _WORD w, _WORD h)
 	*pxyp++ = x;						/* [8] */
 	*pxyp = y;							/* [9] */
 
-	v_pline(xd_vhandle, 5, pxy);
+	udef_v_pline(xd_vhandle, 5, pxy);
 }
 
 
@@ -207,10 +207,10 @@ static void draw_frame(GRECT *frame, _WORD start, _WORD eind)
  */
 void set_linedef(_WORD colour)
 {
-	vsl_color(xd_vhandle, colour);
-	vsl_ends(xd_vhandle, 0, 0);
-	vsl_type(xd_vhandle, 1);
-	vsl_width(xd_vhandle, 1);
+	udef_vsl_color(xd_vhandle, colour);
+	udef_vsl_ends(xd_vhandle, 0, 0);
+	udef_vsl_type(xd_vhandle, 1);
+	udef_vsl_width(xd_vhandle, 1);
 }
 
 
@@ -223,11 +223,11 @@ static void set_textdef(void)
 {
 	_WORD dummy;
 
-	vst_font(xd_vhandle, xd_regular_font.id);
-	vst_rotation(xd_vhandle, 0);
-	vst_alignment(xd_vhandle, 0, 5, &dummy, &dummy);
+	udef_vst_font(xd_vhandle, xd_regular_font.id);
+	udef_vst_rotation(xd_vhandle, 0);
+	udef_vst_alignment(xd_vhandle, 0, 5, &dummy, &dummy);
 	xd_vst_point(xd_regular_font.size, &dummy);
-	vst_color(xd_vhandle, G_BLACK);
+	udef_vst_color(xd_vhandle, G_BLACK);
 	xd_vswr_trans_mode();
 }
 
@@ -237,13 +237,13 @@ static void set_textdef(void)
  */
 void xd_vswr_trans_mode(void)
 {
-	vswr_mode(xd_vhandle, MD_TRANS);
+	udef_vswr_mode(xd_vhandle, MD_TRANS);
 }
 
 
 void xd_vswr_repl_mode(void)
 {
-	vswr_mode(xd_vhandle, MD_REPLACE);
+	udef_vswr_mode(xd_vhandle, MD_REPLACE);
 }
 
 
@@ -271,13 +271,13 @@ void clr_object(GRECT *r, _WORD colour, _WORD pattern)
 			fillmode = FIS_HATCH;
 		}
 
-		vsf_style(xd_vhandle, pn);
+		udef_vsf_style(xd_vhandle, pn);
 	}
 
-	vsf_interior(xd_vhandle, fillmode);
-	vsf_color(xd_vhandle, colour);
-	vswr_mode(xd_vhandle, MD_REPLACE);	/* for speed do not use xd_vswr_repl_mode() */
-	v_bar(xd_vhandle, pxy);
+	udef_vsf_interior(xd_vhandle, fillmode);
+	udef_vsf_color(xd_vhandle, colour);
+	udef_vswr_mode(xd_vhandle, MD_REPLACE);	/* for speed do not use xd_vswr_repl_mode() */
+	udef_v_bar(xd_vhandle, pxy);
 }
 
 
@@ -478,9 +478,9 @@ static void xd_drawbox(GRECT *r,		/* size of the box      */
 		}
 
 		set_linedef(colour);
-		v_pline(xd_vhandle, 3, pxy);	/* lower & right sides of rectangle */
-		vsl_color(xd_vhandle, colour2);
-		v_pline(xd_vhandle, 3, &pxy[4]);	/* upper & left sides of rectangle */
+		udef_v_pline(xd_vhandle, 3, pxy);	/* lower & right sides of rectangle */
+		udef_vsl_color(xd_vhandle, colour2);
+		udef_v_pline(xd_vhandle, 3, &pxy[4]);	/* upper & left sides of rectangle */
 	}
 }
 
@@ -533,7 +533,7 @@ static _WORD _CDECL ub_drag(PARMBLK *pb)
 	pxy[3] = size.g_y + size.g_h + dvd - 1;
 
 	set_linedef(xd_sel_col);
-	v_pline(xd_vhandle, 2, pxy);
+	udef_v_pline(xd_vhandle, 2, pxy);
 
 	/* Draw something looking like a part of the border visible behind the "ear" */
 
@@ -543,7 +543,7 @@ static _WORD _CDECL ub_drag(PARMBLK *pb)
 	{
 		_WORD i;
 
-		vsl_color(xd_vhandle, (_WORD) (obspec->obspec.framecol));
+		udef_vsl_color(xd_vhandle, (_WORD) (obspec->obspec.framecol));
 
 		pxy[0] = size.g_x + 1;
 		pxy[1] = size.g_y;
@@ -556,7 +556,7 @@ static _WORD _CDECL ub_drag(PARMBLK *pb)
 		{
 			pxy[3] = pxy[1];
 			pxy[4] = pxy[2];
-			v_pline(xd_vhandle, 3, pxy);
+			udef_v_pline(xd_vhandle, 3, pxy);
 			pxy[0]++;
 			pxy[1]++;
 			pxy[2]--;
@@ -820,7 +820,7 @@ static _WORD _CDECL ub_roundrb(PARMBLK *pb)
 	for (i = 0; i < 3; i++)
 	{
 		smfdb.fd_addr = (void *) (long) rb[i];
-		vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i]);
+		udef_vrt_cpyfm(xd_vhandle, dmode[i], pxy, &smfdb, &dmfdb, &ci[2 * i]);
 	}
 
 	/* Write the text, always transparent, beside the button */
@@ -894,8 +894,8 @@ static _WORD _CDECL ub_rectbut(PARMBLK *pb)
 		*pxyp = pxy[3];
 
 		set_linedef(G_BLACK);
-		v_pline(xd_vhandle, 2, pxy);
-		v_pline(xd_vhandle, 2, &pxy[4]);
+		udef_v_pline(xd_vhandle, 2, pxy);
+		udef_v_pline(xd_vhandle, 2, &pxy[4]);
 	}
 
 	/* Draw object text beside the box, always in transparent mode */
@@ -1033,7 +1033,7 @@ static _WORD _CDECL ub_scrledit(PARMBLK *pb)
 
 	/* Write the text */
 
-	vswr_mode(xd_vhandle, tmode);
+	udef_vswr_mode(xd_vhandle, tmode);
 	prt_text(s, x, y, pb->pb_currstate);
 
 	/* Set clipping off */
@@ -1076,7 +1076,7 @@ static _WORD _CDECL ub_button(PARMBLK *pb)
 		if (xd_is3dobj(flags))
 			offset = 1;
 		else
-			vswr_mode(xd_vhandle, MD_XOR);
+			udef_vswr_mode(xd_vhandle, MD_XOR);
 	}
 
 	x = pb->pb_x + (pb->pb_w - (_WORD) xd_strlen(string) * xd_regular_font.cw) / 2 + offset;
@@ -1203,15 +1203,15 @@ static _WORD _CDECL ub_title(PARMBLK *pb)
 
 		xd_vswr_repl_mode();
 		set_linedef(G_BLACK);
-		v_pline(xd_vhandle, 2, pxy);
+		udef_v_pline(xd_vhandle, 2, pxy);
 	}
 
 	/* Draw title text in blue, then turn back to black */
 
 	set_textdef();
-	vst_color(xd_vhandle, G_LBLUE);
+	udef_vst_color(xd_vhandle, G_LBLUE);
 	prt_text(string, pb->pb_x + dx, pb->pb_y + (pb->pb_h - xd_regular_font.ch - 1) / 2, pb->pb_currstate);
-	vst_color(xd_vhandle, G_BLACK);
+	udef_vst_color(xd_vhandle, G_BLACK);
 
 	/* Turn clipping off */
 
@@ -1308,7 +1308,7 @@ static void xd_credraw(XDINFO *info, GRECT *area)
 			*pxyp++ = pxy[4] + r.g_w - 1;
 			*pxyp = pxy[5] + r.g_h - 1;
 
-			vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb, &cursor_mfdb);
+			udef_vro_cpyfm(xd_vhandle, S_ONLY, pxy, &smfdb, &cursor_mfdb);
 
 			/* Draw cursor. */
 
@@ -1320,7 +1320,7 @@ static void xd_credraw(XDINFO *info, GRECT *area)
 			pxy[1] = cursor.g_y;
 			pxy[3] = cursor.g_y + cursor.g_h - 1;
 
-			v_pline(xd_vhandle, 2, pxy);
+			udef_v_pline(xd_vhandle, 2, pxy);
 			xd_clip_off();
 		}
 	}

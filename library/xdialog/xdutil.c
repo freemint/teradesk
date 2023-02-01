@@ -361,7 +361,7 @@ void xd_clip_on(GRECT *r)
 	_WORD pxy[4];
 
 	xd_rect2pxy(r, pxy);
-	vs_clip(xd_vhandle, 1, pxy);
+	udef_vs_clip(xd_vhandle, 1, pxy);
 }
 
 
@@ -373,7 +373,7 @@ void xd_clip_off(void)
 {
 	_WORD pxy[4];
 
-	vs_clip(xd_vhandle, 0, pxy);
+	udef_vs_clip(xd_vhandle, 0, pxy);
 }
 
 
