@@ -479,18 +479,15 @@ _WORD xrsrc_load(const char *fname)
 
 _WORD xrsrc_free(void)
 {
-	RSHDR *useRsc;
-
 #ifdef __GNUC__
 	/* avoid type-punned pointer */
 	{
 		void **rscmem = (void **)&aes_global[7];
-		useRsc = *rscmem;
+		Mfree(*rscmem);
 	}
 #else
-	useRsc = _AESrscmem;
+	Mfree(_AESrscmem);
 #endif
-	Mfree(useRsc);
 	return TRUE;
 }
 
