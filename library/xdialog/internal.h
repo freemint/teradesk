@@ -45,13 +45,10 @@
 
 /* Macro's for 3D-buttons. */
 
-#define AES3D_1			0x200
-#define AES3D_2			0x400
-
-#define GET_3D(flags)	(flags & (AES3D_1 | AES3D_2))
-#define IS_ACT(flags)	(GET_3D(flags) == (AES3D_1 | AES3D_2))
-#define IS_IND(flags)	(GET_3D(flags) == AES3D_1)
-#define IS_BG(flags)	(GET_3D(flags) == AES3D_2)
+#define GET_3D(flags)	(flags & (OF_FL3DIND | OF_FL3DACT))
+#define IS_ACT(flags)	(GET_3D(flags) == (OF_FL3DIND | OF_FL3DACT))
+#define IS_IND(flags)	(GET_3D(flags) == OF_FL3DIND)
+#define IS_BG(flags)	(GET_3D(flags) == OF_FL3DACT)
 
 /* Defines for internal fill style. */
 

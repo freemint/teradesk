@@ -143,7 +143,7 @@ void xd_xuserdef(OBJECT *object, XUSERBLK *userblk, PARMBLKFUNC code)
 	object->ob_type |= G_USERDEF;
 
 #if 0									/* no need here */
-	object->ob_flags &= ~(AES3D_1 | AES3D_2);	/* see XDDRAW.C - xd_set_userobjects */
+	object->ob_flags &= ~(OF_FL3DIND | OF_FL3DACT);	/* see XDDRAW.C - xd_set_userobjects */
 #endif
 	object->ob_spec.userblk = (USERBLK *) userblk;
 }

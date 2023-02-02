@@ -293,9 +293,9 @@ void clr_object(GRECT *r, _WORD colour, _WORD pattern)
 
 static bool xd_is3dobj(_WORD flags)
 {
-	_WORD f3d = flags & (AES3D_1 | AES3D_2);
+	_WORD f3d = flags & (OF_FL3DIND | OF_FL3DACT);
 
-	if (f3d && (f3d != AES3D_2) && (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes))
+	if (f3d && (f3d != OF_FL3DACT) && (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes))
 		return TRUE;
 
 	return FALSE;
@@ -585,7 +585,7 @@ _WORD _CDECL ub_bckbox(PARMBLK *pb)
 	{
 		/* Only the indicator flag is recognized */
 
-		flags = blk->ob_flags & AES3D_1;
+		flags = blk->ob_flags & OF_FL3DIND;
 
 		xd_clip_on((GRECT *) & pb->pb_xc);	/* define clipping area */
 
@@ -970,7 +970,7 @@ static _WORD _CDECL ub_scrledit(PARMBLK *pb)
 		if (aes_hor3d == 0 && ted->te_thickness != 0 && aes_version == 0x399)
 		{
 			/* hopefully this branch is valid for Magic only */
-			xd_drawbox(&size, AES3D_1, OS_SELECTED, XD_SCRLEDIT);
+			xd_drawbox(&size, OF_FL3DIND, OS_SELECTED, XD_SCRLEDIT);
 		} else
 		{
 			/* other "gray background" AESes V4 */
@@ -1740,7 +1740,7 @@ void xd_set_userobjects(OBJECT *tree)
 				 * and then disabled so that only user code will draw 3d effects.
 				 */
 
-				newflags = c_obj->ob_flags & ~(AES3D_1 | AES3D_2);
+				newflags = c_obj->ob_flags & ~(OF_FL3DIND | OF_FL3DACT);
 				xuserblk = TRUE;		/* but only if AES does not support this type */
 
 				switch (etype)
@@ -1844,7 +1844,7 @@ void xd_set_userobjects(OBJECT *tree)
 				case XD_BCKBOX:
 					/* window background box. Always userdefined  */
 
-					if (c_obj->ob_flags & AES3D_1)
+					if (c_obj->ob_flags & OF_FL3DIND)
 					{
 						c_obj->ob_y -= 1;
 						c_obj->ob_height += 2;
