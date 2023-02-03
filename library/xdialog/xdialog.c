@@ -28,7 +28,7 @@
 #include "xerror.h"
 
 
-/* 
+/*
  * It seems that information on the small font is not in fact needed,
  * and so that code is disabled by seting _SMALL_FONT to 0
  */
@@ -39,6 +39,7 @@ _WORD aes_flags = 0;					/* proper appl_info protocol (works with ALL Tos) */
 _WORD colour_icons = 0;					/* result of appl_getinfo(2,,,)  */
 _WORD aes_wfunc = 0;					/* result of appl_getinfo(11,,,) */
 _WORD aes_ctrl = 0;						/* result of appl_getinfo(65,,,) */
+_WORD xd_aes4_0;						/* flag that AES 4 is present    */
 _WORD xd_colaes = 0;					/* more than 4 colours available */
 _WORD xd_has3d = 0;						/* result of appl-getinfo(13...) */
 _WORD aes_hor3d = 0;					/* 3d enlargement value */
@@ -545,7 +546,8 @@ _WORD xd_set_keys(OBJECT *tree, KINFO *kinfo)
 	{
 		char *h = NULL;
 		OBJECT *c_obj = &tree[cur];
-		_WORD etype = xd_xobtype(c_obj), state = c_obj->ob_state;
+		_WORD etype = xd_xobtype(c_obj);
+		_WORD state = c_obj->ob_state;
 
 		/* Use AES 4 extended object state if it is there. */
 
@@ -1019,10 +1021,10 @@ _WORD xd_edit_char(XDINFO *info, _WORD key)
 	char *str;
 	OBJECT *tree;
 	_WORD edit_obj;
-	_WORD newpos;				/* new position in edited string (in tedinfo->te_ptext) */
-	_WORD oldpos;							/* previous position in same */
-	_WORD curlen;							/* length of edited string   */
-	_WORD maxlen;							/* maximum possible length of editable string */
+	_WORD newpos;						/* new position in edited string (in tedinfo->te_ptext) */
+	_WORD oldpos;						/* previous position in same */
+	_WORD curlen;						/* length of edited string   */
+	_WORD maxlen;						/* maximum possible length of editable string */
 	_WORD flen;							/* length of editable field (of tedinfo->te_pvalid) */
 	_WORD pos;
 	_WORD ch;
@@ -1058,7 +1060,7 @@ _WORD xd_edit_char(XDINFO *info, _WORD key)
 	{
 		maxlen = flen;
 	}
-	
+
 	if (xd_ischar(key))
 		key &= 0xFF;
 
@@ -1347,7 +1349,8 @@ static _WORD xd_find_cancel(OBJECT *ob)
 _WORD xd_form_keybd(XDINFO *info, _WORD kobnext, _WORD kchar, _WORD *knxtobject, _WORD *knxtchar)
 {
 	OBJECT *tree = info->tree;
-	_WORD i = xd_find_cancel(tree), mode = FMD_FORWARD;
+	_WORD i = xd_find_cancel(tree);
+	_WORD mode = FMD_FORWARD;
 
 	*knxtobject = kobnext;
 	*knxtchar = 0;
@@ -1460,10 +1463,9 @@ _WORD xd_form_button(XDINFO *info, _WORD object, _WORD clicks, _WORD *result)
 		} else if (flags & OF_SELECTABLE)
 		{
 			XDEVENT events;
-
-			_WORD evflags,
-			 newstate,
-			 state;
+			_WORD evflags;
+			_WORD newstate;
+			_WORD state;
 
 #if 0									/* there are currently no tristate objects in Teradesk */
 
@@ -1801,11 +1803,11 @@ _WORD xd_form_do_draw(XDINFO *info)
  */
 
 static _WORD xd_open_wzoom(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
-   OBJECT *menu,
+	OBJECT *menu,
 #if _DOZOOM
-   GRECT *xywh, _WORD zoom
+	GRECT *xywh, _WORD zoom
 #endif
-    const char *title)
+	const char *title)
 {
 	XDINFO *prev;
 	_WORD db, dialmode;
@@ -2057,9 +2059,9 @@ _WORD xd_nmopen(OBJECT *tree, XDINFO *info, XD_NMFUNC *funcs, _WORD start,
 
 static void xd_close_wzoom(XDINFO *info,
 #if _DOZOOM
-   GRECT *xywh, _WORD zoom,
+	GRECT *xywh, _WORD zoom,
 #endif
-   _WORD nmd)
+	_WORD nmd)
 {
 	XDINFO *h, *prev;
 
@@ -2210,7 +2212,7 @@ _WORD xd_dialog(OBJECT *tree, _WORD start)
  ********************************************************************/
 
 _WORD xd_setdialmode(_WORD new, _WORD(*hndl_message) (_WORD *message), OBJECT *menu, _WORD nmnitems,
-					 const _WORD *mnitems)
+	const _WORD *mnitems)
 {
 	_WORD old = xd_dialmode;
 
@@ -2312,9 +2314,12 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 	/* 
 	 * Note: Magic (V6.20 at least) returns AES version 3.99.
 	 * In that case, after an inquiry ?AGI has been made,
+	 * xd_aes4_0 is set to true.
 	 * On the other hand, TOS 4.0 returns AES version 3.40
 	 * but still is a "3D" AES
 	 */
+
+	xd_aes4_0 = aes_version >= 0x400;
 
 	xd_min_timer = 5;					/* Minimum time passed to xe_multi(); was 10 earlier */
 
@@ -2356,6 +2361,10 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 	if (has_appl_getinfo())
 	{
+		/* This is surely (or hopefully?) some sort of "3D" AES 4 */
+
+		xd_aes4_0 = TRUE;
+
 		/* Assume some colour settings */
 
 		xd_aes4col();
@@ -2436,8 +2445,10 @@ _WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
 
 		if (get_tosversion() >= 0x400 && aes_version >= 0x330)
 		{
+			xd_aes4_0 = TRUE;
 			aes_hor3d = 2;
 			aes_ver3d = 2;
+			colour_icons = TRUE;
 			xd_aes4col();
 		}
 

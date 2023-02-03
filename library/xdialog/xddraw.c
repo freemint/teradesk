@@ -295,7 +295,7 @@ static bool xd_is3dobj(_WORD flags)
 {
 	_WORD f3d = flags & (OF_FL3DIND | OF_FL3DACT);
 
-	if (f3d && (f3d != OF_FL3DACT) && (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes))
+	if (f3d && (f3d != OF_FL3DACT) && xd_aes4_0 && (xd_has3d || aes_hor3d > 0 || aes_ver3d > 0 || xd_colaes))
 		return TRUE;
 
 	return FALSE;
@@ -414,7 +414,7 @@ static void xd_drawbox(GRECT *r,		/* size of the box      */
 	 * Also draw the frame if the object is flagged as an activator.
 	 */
 
-	if (!xd_colaes || xtype == XD_BUTTON || xtype == XD_DRAGBOX || xtype == XD_BCKBOX || IS_ACT(flags))
+	if (!xd_colaes || !xd_aes4_0 || xtype == XD_BUTTON || xtype == XD_DRAGBOX || xtype == XD_BCKBOX || IS_ACT(flags))
 	{
 		if (flags & OF_DEFAULT)
 			border = 2;					/* actual border thickness will be 3 pixels */
@@ -700,7 +700,7 @@ static _WORD _CDECL ub_roundrb(PARMBLK *pb)
 	_WORD x = pb->pb_x;
 	_WORD y = pb->pb_y;
 	_WORD pxy[8] = { 0, 0, 15 };
-	_WORD ci[6] = { G_WHITE, G_WHITE, G_BLACK, G_WHITE, G_BLACK, G_WHITE} ;	/* colour indices for three steps */
+	_WORD ci[6] = { G_WHITE, G_WHITE, G_BLACK, G_WHITE, G_BLACK, G_WHITE };	/* colour indices for three steps */
 
 	const short *t;						/* aux, for swapping pointers to bitmaps   */
 
@@ -965,7 +965,7 @@ static _WORD _CDECL ub_scrledit(PARMBLK *pb)
 
 	tmode = MD_REPLACE;
 
-	if (xd_colaes)
+	if (xd_aes4_0 && xd_colaes)
 	{
 		if (aes_hor3d == 0 && ted->te_thickness != 0 && aes_version == 0x399)
 		{
@@ -1230,7 +1230,7 @@ static _WORD _CDECL ub_unknown(PARMBLK *pb)
 	/* this would be a mistake anyway, so why draw anything at all ? */
 
 	GRECT *clip = (GRECT *) &pb->pb_xc;
-	GRECT *frame = (GRECT *) & pb->pb_x;
+	GRECT *frame = (GRECT *) &pb->pb_x;
 
 	xd_clip_on(clip);
 
