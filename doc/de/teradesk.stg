@@ -3819,7 +3819,7 @@ Mit [Backspace] wird der zuletzt eingegebene Buchstabe im Auto-Selektor
 gel”scht.
 
 Mit [Esc] wird der Verzeichnis-@{"Inhalt" LINK "Main"} neu eingelesen und im Fenster dar-
-gestellt.
+gestellt. Mit [Shift][Esc] wird vorher ein Medien-Wechsel erzwungen.
 
 Dateien und Ordner, die in ein Verzeichnis-Fenster ge-'dragged' werden,
 werden je nach zus„tzlich gedrckter Taste in dieses Verzeichnis kopiert,

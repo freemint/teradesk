@@ -3964,7 +3964,8 @@ is pressed.  One can  use [Backspace]  to delete  the  last  character
 entered into the autoselector.
 
 Pressing the  [Esc] key causes  the directory of the  top window to be
-read again and the window contents to be refreshed.
+read  again and the window contents to be refreshed. To force a  media
+change, use [Shift][Esc].
 
 Files and folders dragged to a directory window will be  either copied
 or moved to that directory,  depending on the keyboard key  being held

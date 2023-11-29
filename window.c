@@ -3279,7 +3279,8 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 		{
 			/* refresh a directory window */
 
-			force_mediach(((DIR_WINDOW *) w)->path);
+			if (keystate & (K_LSHIFT | K_RSHIFT))
+				force_mediach(((DIR_WINDOW *) w)->path);
 			dir_refresh_wd((DIR_WINDOW *) w);
 		} else
 		{
