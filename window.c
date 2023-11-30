@@ -3275,6 +3275,7 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 
 		break;
 	case ESCAPE:						/* refresh a window */
+	case ESCAPE | XD_SHIFT:
 		if (wt == DIR_WIND)
 		{
 			/* refresh a directory window */
