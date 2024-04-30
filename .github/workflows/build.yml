@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cross_tool: [ "m68k-atari-mint" ]
     steps:
       - uses: actions/checkout@v4
       - name: Install SSH keys
@@ -16,6 +20,10 @@ jobs:
         env:
           SSH_ID: ${{ secrets.SSH_ID }}
         run: ./.scripts/install_ssh_id.sh
+      - name: Setup environment
+        env:
+          CROSS_TOOL: ${{ matrix.cross_tool }}
+        run: ./.scripts/setup_env.sh
       - name: Install packages
         run: |
           sudo apt-get update
@@ -24,8 +32,6 @@ jobs:
           ./.scripts/install-freemint.sh mintlib fdlibm gemlib
           ./.scripts/install-hcp.sh
           ./.scripts/install-aranym.sh
-      - name: Setup environment
-        run: ./.scripts/setup_env.sh
       - name: build
         run: ./.scripts/build.sh
       - name: deploy
