@@ -23,7 +23,7 @@ mmd $clash_option $SRCDIR
 # get some files out of the way that we don't want to copy to the harddisk image
 mkdir -p ../mcopytmp
 mv .git .gitattributes .gitignore ../mcopytmp
-mcopy $clash_option -bsov . $SRCDIR
+mcopy $clash_option -sov . $SRCDIR
 mv ../mcopytmp/.git ../mcopytmp/.gitattributes ../mcopytmp/.gitignore .
 rmdir ../mcopytmp
 
