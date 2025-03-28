@@ -59,4 +59,4 @@ void app_update(wd_upd_type type, const char *fname1, const char *fname2);
 _WORD app_specstart(_WORD flags, WINDOW *w, _WORD *list, _WORD n, _WORD kstate);
 bool app_checkspec(_WORD flag, _WORD pos);
 void log_shortname( char *dest, const char* appname ); 
-char *app_find_name(const char *path, bool full);
+const char *app_find_name(const char *path, bool full);

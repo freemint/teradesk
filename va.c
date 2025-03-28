@@ -768,6 +768,7 @@ void handle_av_protocol(const _WORD *message)
 	bool status;
 	int error;
 	bool reply = TRUE;
+	_WORD kstate = 0;
 
 #if 0									/* not used for the time being, see below */
 	AVTYPE *oldclient;
@@ -1027,6 +1028,8 @@ void handle_av_protocol(const _WORD *message)
 		 */
 
 		answer[0] = VA_VIEWED;
+		if (message[5] == 1)
+			kstate = K_ALT;
 
 	  openit:;
 
@@ -1043,7 +1046,7 @@ void handle_av_protocol(const _WORD *message)
 
 			if (!mask && x_netob(path) && strlen(path) >= sizeof(VLNAME))
 			{
-				char *app = app_find_name(path, TRUE);
+				const char *app = app_find_name(path, TRUE);
 
 				if (app)
 				{
@@ -1054,7 +1057,7 @@ void handle_av_protocol(const _WORD *message)
 
 			/* Now open the item */
 
-			status = item_open(NULL, 0, 0, path, mask);
+			status = item_open(NULL, 0, kstate, path, mask);
 		} else
 		{
 			status = FALSE;

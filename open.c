@@ -158,7 +158,7 @@ bool item_open(WINDOW *inw,				/* window in which the selection is made */
 		/* Is this really needed ? */
 
 		if (realname && type != ITM_NOTUSED && !trash_or_print(type))
-			type = diritem_type((char *) realname);
+			type = diritem_type(realname);
 
 		/* If "Alternate" is pressed a program is treated like ordinary file */
 
@@ -378,7 +378,7 @@ bool item_open(WINDOW *inw,				/* window in which the selection is made */
 
 			if (theitem)
 			{
-				button = OWSHOW;
+				button = alternate ? OWEDIT : OWSHOW;
 			} else
 			{
 				memclr(&awork, sizeof(awork));

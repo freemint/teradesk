@@ -904,7 +904,7 @@ APPLINFO *app_find(const char *file, bool dial)
  * Find the (short) name of the first application associated with a filename
  */
 
-char *app_find_name(const char *fname, bool full)
+const char *app_find_name(const char *fname, bool full)
 {
 	APPLINFO *theapp;
 

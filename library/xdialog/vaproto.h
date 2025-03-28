@@ -8,7 +8,7 @@
 
 /* AES-Messages */
 
-typedef enum
+enum
 {
 	AV_PROTOKOLL      = 0x4700,
 	VA_PROTOSTATUS    = 0x4701,
@@ -59,7 +59,7 @@ typedef enum
 	AV_SETWINDPOS     = 0x4759,
 	VA_PATH_UPDATE    = 0x4760,
 	VA_HIGH							/* HR please always do this! */
-} AV_VA;
+};
 
 
 /* Objekttypen fÅr VA_THAT_IZIT */

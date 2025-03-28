@@ -890,7 +890,7 @@ _WORD object_info(ITMTYPE type,			/* Item type: ITM_FOLDER, ITM_FILE, etc. */
 			default:
 #endif
 				{
-					char *appname = app_find_name(fname, FALSE);
+					const char *appname = app_find_name(fname, FALSE);
 	
 					if (appname && *search_pattern == 0)
 					{
