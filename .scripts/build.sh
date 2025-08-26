@@ -12,7 +12,7 @@ mkdir -p "${BUILDROOT}"
 mkdir -p "${DEPLOY_DIR}"
 
 ARANYM="${HOME}/.aranym"
-aranym="$ARANYM/usr/bin/aranym-jit"
+aranym="$ARANYM/usr/bin/aranym"
 
 unset CC CXX
 
