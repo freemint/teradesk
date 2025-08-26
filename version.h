@@ -25,7 +25,11 @@
 
 #define MIN_VERSION		0x0360		/* min. acceptabe version id. of inf file */	 
 
+#ifdef RELEASE_BUILD
 #define INFO_VERSION	"Tera Desktop V4.08 19-FEB-2017"		/* program version */
+#else
+#define INFO_VERSION	"Tera Desktop V4.08 " __DATE__			/* program version */
+#endif
 #define INFO_COPYRIGHT	"\xBD W.Klaren, H.Robbers, Dj.Vukovic"	/* authors         */
 #define INFO_OTHER "1991-1994, 2002-2017"						/* release date    */
 
