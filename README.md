@@ -1,3 +1,8 @@
+[![Build Status](https://github.com/freemint/teradesk/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/freemint/teradesk/actions) 
+
+* Latest snapshot: [Download](https://atari.joska.no/snapshots/teradesk/teradesk-latest.zip)
+* [Archive](https://atari.joska.no/snapshots/teradesk/)
+
 Tera Desktop V1.41		Copyright 1991-1995  W. Klaren.
              V2.1	 	Copyright 2002       H. Robbers.
              V2.3 to V4.08  	Copyright 2003-2017  H. Robbers, Dj. Vukovic

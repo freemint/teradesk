@@ -17,7 +17,7 @@ bindist:: .bindistdir
 	mkdir -p $${BINDISTDIR}/doc/de; \
 	mkdir -p $${BINDISTDIR}/doc/ru; \
 	cp -a desktop.prg desktop.rsc desktos.prg desk_cf.prg $${BINDISTDIR}; \
-	cp -a readme.txt $${BINDISTDIR}; \
+	cp -a README.md $${BINDISTDIR}/README.TXT; \
 	cp -a icons.rsc $${BINDISTDIR}; \
 	cp -a cicons.rsc $${BINDISTDIR}; \
 	cp -a doc/hist_v34.txt $${BINDISTDIR}/doc; \

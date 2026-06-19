@@ -59,8 +59,7 @@ make -C doc
 isrelease=false
 export isrelease
 
-ATAG=${PROJECT_VERSION}
-ARCHIVE_NAME="${PROJECT_NAME}-${ATAG}-bin.zip"
+ARCHIVE_NAME="${PROJECT_NAME}-${PROJECT_VERSION}-${LONG_ID}.zip"
 
 export ARCHIVE_NAME
 echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV

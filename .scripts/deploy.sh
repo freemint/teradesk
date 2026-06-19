@@ -3,6 +3,12 @@
 SERVER=joska@login.domeneshop.no
 UPLOAD_DIR=$SERVER:www/atari/snapshots
 
+if [ -z "${DEPLOY_ARCHIVE+x}" ]
+then
+	# zip is default
+	DEPLOY_ARCHIVE="zip"
+fi
+
 toolsuffix=${CROSS_TOOL##*-}
 
 ARCHIVE_PATH="${DEPLOY_DIR}/${ARCHIVE_NAME}"
@@ -45,5 +51,3 @@ then
 	link_file "$ARCHIVE_NAME" "${PROJECT_DIR}-latest.${DEPLOY_ARCHIVE}"
 fi
 
-echo ${ARCHIVE_NAME} > .latest_version
-upload_file .latest_version "${UPLOAD_DIR}/${PROJECT_DIR}/.latest_version"
