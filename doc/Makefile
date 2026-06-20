@@ -1,18 +1,13 @@
-BUILD := $(shell gcc -dumpmachine)
-
-ifeq ($(HCP),)
-HCP = ${BUILD}-hcp
-endif
+HCP ?= hcp
 
 .PHONY: all
 
 %.hyp: %.stg
-	 @$(AM_V_GEN)HCP="$(HCP)"; \
-	 if test "$$HCP" != "" && $$HCP --version >/dev/null 2>&1; then \
-	   $$HCP -o$@ $< || exit 1; \
-	 else \
-	   echo "HCP not found, output left in $<" >&2; \
-	 fi
+	@if command -v $(HCP) >/dev/null 2>&1 && test -f $<; then \
+		$(HCP) -o $@ $<; \
+	else \
+		echo "HCP not found, help file not compiled" >&2; \
+	fi
 
 %.ref: %.hyp
 	@test -f $@

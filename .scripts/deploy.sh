@@ -51,3 +51,7 @@ then
 	link_file "$ARCHIVE_NAME" "${PROJECT_DIR}-latest.${DEPLOY_ARCHIVE}"
 fi
 
+upload_file "doc/en/teradesk.hyp" "${UPLOAD_DIR}/guides/teradesk.hyp"
+upload_file "doc/de/teradesk.hyp" "${UPLOAD_DIR}/guides/teradesk_de.hyp"
+upload_file "doc/ru/teradesk.hyp" "${UPLOAD_DIR}/guides/teradesk_ru.hyp"
+
