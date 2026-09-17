@@ -208,7 +208,7 @@ _WORD xd_setposmode(_WORD new);
 
 /* Funkties voor initialisatie bibliotheek */
 
-_WORD init_xdialog(_WORD *vdi_handle, void *(*malloc) (unsigned long size),
+_WORD init_xdialog(_WORD *vdi_handle, void *(*malloc) (size_t size),
 						void (*free) (void *block), const char *prgname,
 						_WORD load_fonts, _WORD *nfonts);
 void exit_xdialog(void);

@@ -991,7 +991,7 @@ void compare_files(WINDOW *w, _WORD n, _WORD *list)
 	long i2n;							/* new i2 */
 	long i2o = 0;						/* previous i2 */
 	long nc;							/* number of bytes to compare */
-	long ii;							/* counter of synchronization attempts */
+	long ii = 0;						/* counter of synchronization attempts */
 
 	XDINFO info;						/* dialog info structure */
 

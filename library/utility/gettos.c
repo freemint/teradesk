@@ -23,6 +23,7 @@
 
 #include <library.h>
 #include <mint/sysvars.h>
+#include <mint/mintbind.h>
 
 #undef _sysbase
 #define _sysbase     ( * ( (OSHEADER **) 0x4F2L ) )
@@ -34,6 +35,9 @@
 
 _WORD get_tosversion(void)
 {
+#if defined(__arm__)
+	return (_WORD)Ssystem(S_OSVERSION, 0L, 0L);
+#else
 	void *stack;
 	_WORD version;
 
@@ -41,6 +45,7 @@ _WORD get_tosversion(void)
 	version = _sysbase->os_version;
 	Super(stack);
 	return version;
+#endif
 }
 
 

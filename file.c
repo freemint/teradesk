@@ -810,8 +810,8 @@ bool cmp_wildcard(const char *fname, const char *pat)
 }
 
 
+#if !defined(__arm__)
 static _WORD chdrv;
-
 struct drivearg { short d; short pad; };
 struct rwabs_args { _WORD rwflag; void *buf; _WORD cnt; _WORD recnr; _WORD dev; long lrecno; };
 
@@ -914,6 +914,7 @@ static long _CDECL Newrwabs(struct rwabs_args args)
 		return (*Oldrwabs) (args);
 }
 #endif
+#endif /* !__arm__ */
 
 
 /*
@@ -924,6 +925,9 @@ static long _CDECL Newrwabs(struct rwabs_args args)
 
 void force_mediach(const char *path)
 {
+#if defined(__arm__)
+	(void)path;
+#else
 	_WORD drive, p = *path;
 
 	if (!isdisk(path))
@@ -968,6 +972,7 @@ void force_mediach(const char *path)
 
 		Super(stack);
 	}
+#endif
 }
 
 

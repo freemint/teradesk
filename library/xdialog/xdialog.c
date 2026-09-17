@@ -379,8 +379,13 @@ void xd_calcpos(XDINFO *info, XDINFO *prev, _WORD pmode)
 void xd_screensize(void)
 {
 	_WORD work_out[57];
+	extern void tdlog(const char *);
+	static const char *t1 = "tDk: xd_screensize before vq_extnd\r\n";
+	static const char *t2 = "tDk: xd_screensize after vq_extnd\r\n";
+	tdlog(t1);
 
 	vq_extnd(xd_vhandle, 0, work_out);
+	tdlog(t2);
 
 	xd_screen.g_x = 0;
 	xd_screen.g_y = 0;
@@ -2299,7 +2304,7 @@ static _WORD appl_x_getinfo(_WORD type, _WORD *out1, _WORD *out2, _WORD *out3, _
  *																	*
  ********************************************************************/
 
-_WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (unsigned long size),
+_WORD init_xdialog(_WORD *vdi_handle, void *(*malloc_func) (size_t size),
 				   void (*free_func) (void *block), const char *prgname, _WORD load_fonts, _WORD *nfonts)
 {
 	_WORD dummy, i;

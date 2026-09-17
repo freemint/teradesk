@@ -6,6 +6,8 @@ srcdir=.
 include support/config.am
 include support/silent.am
 
+ARCH ?= m68k
+
 # Additional defines.
 DEFS =
 INCLUDES = -I$(srcdir)/library/xdialog  -I$(srcdir)/library/utility
@@ -25,10 +27,21 @@ WARN = \
 
 CFLAGS = $(DEFS) $(OPTS) $(INCLUDES) $(WARN)
 
+ifeq ($(ARCH),arm)
+PTOS_SYSROOT ?= /usr
+INCLUDES += -I$(PTOS_SYSROOT)/include -I$(PTOS_SYSROOT)/include/mint
+CFLAGS += -mfloat-abi=hard -mfpu=vfp -mword-relocations -fno-short-enums
+LDFLAGS = -nostdlib $(PTOS_SYSROOT)/lib/crt0.o -L$(PTOS_SYSROOT)/lib -Wl,-q -Wl,-Ttext=0 -Wl,-e_start
+LIBS = -lgem -lcmini -lgcc -lcmini
+else
+
 ifeq ($(CPU),v4e)
 CFLAGS += -mcpu=5475
 else
 CFLAGS += -m68000
+endif
+
+LIBS = -lgem
 endif
 
 PROGRAMS = desktop.prg
@@ -94,8 +107,6 @@ SRCS = \
 	$(empty)
 
 OBJS = $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
-
-LIBS = -lgem
 
 all: $(PROGRAMS)
 

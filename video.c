@@ -25,7 +25,9 @@
 #include <xdialog.h>
 #include "error.h"
 #include <mint/cookie.h>
+#if !defined(__arm__)
 #include <mint/falcon.h>
+#endif
 
 #include "xfilesys.h"
 #include "resource.h"
@@ -169,6 +171,7 @@ void get_set_video(_WORD set)
 		 * in actual resolution change
 		 */
 
+#if !defined(__arm__)
 		if (vdohi == FAL_VIDEO || vdohi == MIL_VIDEO || vdohi == ARA_VIDEO)
 		{
 			fal_mil = TRUE;
@@ -199,7 +202,9 @@ void get_set_video(_WORD set)
 						currez = ST_MEDRES;
 				}
 			}
-		} else if (vdohi == ST_VIDEO || vdohi == STE_VIDEO)
+		} else
+#endif
+		if (vdohi == ST_VIDEO || vdohi == STE_VIDEO)
 		{
 			st_ste = TRUE;
 

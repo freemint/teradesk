@@ -15,7 +15,26 @@
 #define TRUE    1
 #endif
 
-#if defined(__AHCC__)
+#if defined(__arm__)
+
+static long _nf_get_id(const char *feature_name)
+{
+	UNUSED(feature_name);
+	return 0;
+}
+
+static long _nf_call(long id, ...)
+{
+	UNUSED(id);
+	return 0;
+}
+
+static long _nf_detect(void)
+{
+	return 0;
+}
+
+#elif defined(__AHCC__)
 
 static long __asm__ __CDECL _nf_get_id(const char *feature_name)
 {

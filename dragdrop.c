@@ -23,7 +23,6 @@
 
 #include <library.h>
 #include <errno.h>
-#include <signal.h>
 #include <xerror.h>
 #include "dragdrop.h"
 

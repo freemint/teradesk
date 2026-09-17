@@ -142,7 +142,7 @@ static CfgEntry const fnt_table[] = {
 static CfgEntry const positions_table[] = {
 	CFG_HDR("pos"),
 	CFG_BEG(),
-	CFG_X("flag", thisw.flags),
+	CFG_L("flag", thisw.flags),
 	CFG_D("xpos", thisw.pos.g_x),		/* note: can't go off the left edge */
 	CFG_D("ypos", thisw.pos.g_y),
 	CFG_D("winw", thisw.pos.g_w),

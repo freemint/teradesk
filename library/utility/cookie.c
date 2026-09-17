@@ -22,7 +22,7 @@
 
 
 #include <library.h>
-#include <mint/ssystem.h>
+#include <mint/mintbind.h>
 
 #undef p_cookie
 #define p_cookie	( * (COOKIE **) 0x5A0L )

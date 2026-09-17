@@ -24,6 +24,23 @@
 #include <xdialog.h>
 #include <xscncode.h>
 #include <mint/cookie.h>
+#include <mint/osbind.h>
+#define tdbg(s) ((void)(s))
+
+void tdlog(const char *s); /* prototype for external debug logging */
+void tdlog(const char *s) { (void)s; }
+
+static void tdlogdec(const char *label, long v)
+{
+	char out[40];
+	int i = 0, j;
+	long t = v;
+	do { out[i++] = (char)('0' + (t % 10)); t /= 10; } while (t);
+	for (j = 0; j < i / 2; j++) { char c = out[j]; out[j] = out[i - 1 - j]; out[i - 1 - j] = c; }
+	out[i] = 0;
+	tdlog(out);
+	tdlog(label);
+}
 
 #include "resource.h"
 #include "desk.h"
@@ -138,6 +155,25 @@ static char const msg_resnfnd[] = "[1][Can not find the resource file.|"
 	"Impossible de trouver le|fichier resource.][ OK ]";
 
 static XDEVENT loopevents;				/* events awaited for in the main loop */
+
+static const char *tdk_started = "tDk: main start\r\n";
+static const char *tdk_aes    = "tDk: appl_init ok\r\n";
+static const char *tdk_rsrcok = "tDk: rsrc_load ok\r\n";
+static const char *tdk_rsrcf  = "tDk: rsrc_load FAILED\r\n";
+static const char *tdk_xdlg   = "tDk: init_xdialog err=<0\r\n";
+static const char *tdk_mlow   = "tDk: screen too small\r\n";
+static const char *tdk_alloc  = "tDk: alloc_global_memory fail\r\n";
+static const char *tdk_icons  = "tDk: load_icons FAILED\r\n";
+static const char *tdk_init   = "tDk: init FAILED\r\n";
+static const char *tdk_loop   = "tDk: entering evntloop\r\n";
+static const char *tdk_leaved = "tDk: evntloop returned\r\n";
+static const char *tdk_s1 = "tDk: after init_xdialog(+)\r\n";
+static const char *tdk_s2 = "tDk: after init_vdi\r\n";
+static const char *tdk_s3 = "tDk: after rsc_init\r\n";
+static const char *tdk_s4 = "tDk: after alloc_global_memory\r\n";
+static const char *tdk_s5 = "tDk: after strdup\r\n";
+static const char *tdk_s6 = "tDk: after load_icons\r\n";
+static const char *tdk_s7 = "tDk: after init\r\n";
 
 
 /*
@@ -1217,19 +1253,29 @@ static bool init(void)
 }
 
 
-/* 
- * Initialize some stuff related to VDI
+static const char *tdk_v1 = "tDk: init_vdi enter\r\n";
+static const char *tdk_v2 = "tDk: after xd_screensize\r\n";
+static const char *tdk_v3 = "tDk: after vqt_attributes\r\n";
+static const char *tdk_v4 = "tDk: after fnt_setfont\r\n";
+
+/*
+ * Initialize things related to vdi. Set default font
  */
 
 static void init_vdi(void)
 {
 	_WORD lwork_out[10];
 
+	tdbg(tdk_v1);
+
 	/* Note: graf_handle returns screen physical handle, but it is not needed */
 
 	xd_screensize();
+	tdbg(tdk_v2);
 	vqt_attributes(vdi_handle, lwork_out);
+	tdbg(tdk_v3);
 	fnt_setfont(1, (_WORD) (((long) lwork_out[7] * xd_pix_height * 72L + 12700L) / 25400L), &def_font);
+	tdbg(tdk_v4);
 	def_font.effects = FE_NONE;
 	def_font.colour = G_BLACK;
 }
@@ -1713,6 +1759,7 @@ bool wait_to_quit(void)
  * In multittasking environments, proper shutdown is used.
  */
 
+#if !defined(__arm__)
 static void loopcpu(void)
 {
 	for (;;)
@@ -1735,6 +1782,7 @@ static long lobo(void)
 	loopcpu();
 	return 0;
 }
+#endif
 
 
 /* 
@@ -1747,6 +1795,8 @@ static long lobo(void)
 int main(void)
 {
 	int error;							/* return code from diverse routines */
+
+	tdbg(tdk_started);
 
 	/*
 	 * Get the value of the environment variable TERAENV
@@ -1821,6 +1871,8 @@ int main(void)
 	if ((ap_id = appl_init()) < 0)
 		return -1;
 
+	tdbg(tdk_aes);
+
 	/* 
 	 * Get the version of the TOS and the AES.
 	 * aes_version can not be determined earlier than appl_init()
@@ -1847,20 +1899,25 @@ int main(void)
 	if (rsrc_load(RSRCNAME) == 0)
 	{
 		/* Failed, probably file not found */
+		tdbg(tdk_rsrcf);
 		form_alert(1, msg_resnfnd);
 	} else
 	{
 		/* The resource file has been loaded. Initialize x-dialogs. */
+		tdbg(tdk_rsrcok);
 
-		error = init_xdialog(&vdi_handle, malloc_chk, free, get_freestring(DWTITLE), 1, &nfonts);
+error = init_xdialog(&vdi_handle, malloc_chk, free, get_freestring(DWTITLE), 1, &nfonts);
 
 		/* Proceed only if successful */
 
 		if (error < 0)
 		{
+			tdbg(tdk_xdlg);
 			xform_error(error);
 		} else
 		{
+			tdbg(tdk_s1);
+
 			/*
 			 * Inform AES of TeraDesk's capabilities regarding messages 
 			 * (should here be version 0x340, 0x399 or 0x400 ?).
@@ -1878,10 +1935,12 @@ int main(void)
 			/* Initialize things related to vdi. Set default font */
 
 			init_vdi();
+			tdbg(tdk_s2);
 
 			/* Initialize the resource structure, fix some positions, etc. */
 
 			rsc_init();
+			tdbg(tdk_s3);
 
 			/* Some details about xdialogs (possible words for 'Cancel') */
 
@@ -1894,6 +1953,11 @@ int main(void)
 
 			if (((xd_screen.g_w / xd_fnt_w) < 40) || ((xd_screen.g_h / xd_fnt_h) < 25))
 			{
+				tdlogdec("=g_w ", xd_screen.g_w);
+				tdlogdec("=g_h ", xd_screen.g_h);
+				tdlogdec("=fnt_w ", xd_fnt_w);
+				tdlogdec("=fnt_h ", xd_fnt_h);
+				tdbg(tdk_mlow);
 				alert_abort(MRESTLOW);
 			} else
 			{
@@ -1904,6 +1968,8 @@ int main(void)
 
 				if ((error = alloc_global_memory()) == 0)
 				{
+					tdbg(tdk_s4);
+
 					/* Remove the ARGV variable from the environment. */
 
 					clr_argv();
@@ -1917,16 +1983,22 @@ int main(void)
 					 * Proceed only of OK
 					 */
 
-					if ((palname = strdup("teradesk.pal")) != NULL && (infname = strdup("teradesk.inf")) != NULL)
+if ((palname = strdup("teradesk.pal")) != NULL && (infname = strdup("teradesk.inf")) != NULL)
 					{
+						tdbg(tdk_s5);
+
 						/* Proceed if icons are loaded from icons resource file */
 
 						if (load_icons())
 						{
+							tdbg(tdk_s6);
+
 							/* Proceed if defaults set, configuration loaded, etc. */
 
 							if (init())
 							{
+								tdbg(tdk_s7);
+
 								arrow_mouse();
 
 								/* 
@@ -1934,7 +2006,9 @@ int main(void)
 								 * All of the work in TeraDesk happens in here
 								 */
 
+								tdbg(tdk_loop);
 								evntloop();
+								tdbg(tdk_leaved);
 
 								/* 
 								 * Start quitting / shutting down 
@@ -1949,10 +2023,13 @@ int main(void)
 
 								wd_del_all();	/* remove all windows        */
 								menu_bar(menu, 0);	/* remove menu bar       */
-							}
+							} else
+								tdbg(tdk_init);
+						} else
+							tdbg(tdk_icons);
 
-							free_icons();
-							regen_desktop(NULL);
+						free_icons();
+						regen_desktop(NULL);
 
 							/* This is a cosmetic clearing of the screen at the end */
 
@@ -1966,18 +2043,18 @@ int main(void)
 								clr_object(&xd_screen, G_BLACK, 4);
 							}
 						}
+
+						/* Release global memory buffer */
+
+						Mfree(global_memory);
+					} else
+					{
+						tdbg(tdk_alloc);
+						xform_error(error);
 					}
-
-					/* Release global memory buffer */
-
-					Mfree(global_memory);
-				} else
-				{
-					xform_error(error);
 				}
-			}
 
-			/* Unload loaded fonts */
+				/* Unload loaded fonts */
 
 			if (vq_gdos() != 0)
 				vst_unload_fonts(vdi_handle, 0);
@@ -2061,6 +2138,7 @@ int main(void)
 
 		if (!shutting && !chrez)
 		{
+#if !defined(__arm__)
 			long (*rv) (void);	/* reset vector */
 
 #if _MINT_
@@ -2071,7 +2149,7 @@ int main(void)
 			/* shutopt: 0 = halt/poweroff,  1 = reset,  2 = coldreset */
 
 			Shutdown((long) shutopt);
-			/*
+			/* 
 			 * If we get here, Shutdown did not happen. Try NatFeats instead
 			 */
 			if (shutopt == 0)
@@ -2093,11 +2171,11 @@ int main(void)
 			{
 				/* This is supposed to be a cold reset */
 
-				rv = (long (*)(void)) (*((long *) os_start + 4));	/* pointer to reset handler */
-				memval = 0L;			/* corrupt some variables for a reset */
-				memval2 = 0L;			/* same... */
-				resvector = 0L;			/* same... */
-				resvalid = 0L;			/* same... */
+				rv = (long (*)(void)) (*((long *) os_start + 4));
+				memval = 0L;
+				memval2 = 0L;
+				resvector = 0L;
+				resvalid = 0L;
 			} else
 			{
 				/* 
@@ -2116,6 +2194,8 @@ int main(void)
 			 * Stopping is currently simulated by an endless loop
 			 */
 			Supexec(rv);
+
+#endif /* !__arm__ */
 		}
 	}
 
