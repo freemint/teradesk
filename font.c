@@ -517,13 +517,16 @@ bool fnt_dialog(_WORD title, XDFONT *wd_font, bool prop)
 	*(&static_fbl.font) = *wd_font;
 
 	font_count(&static_fbl, prop);
-	static_fbl.cursize = get_size(&static_fbl);
-	static_fbl.font.size = static_fbl.fsizes[static_fbl.cursize];
 	set_effects(&static_fbl);
 
-	/* Initialize slider */
+	/* Initialize slider; this also sets static_fbl.fdfont */
 
 	fnt_sl_init(static_fbl.nf, set_fselector, &sl_info, wd_font->id, &static_fbl.fdfont, static_fbl.fd);
+
+	/* get_size() indexes fd[] with fdfont, so it must run after the slider init */
+
+	static_fbl.cursize = get_size(&static_fbl);
+	static_fbl.font.size = static_fbl.fsizes[static_fbl.cursize];
 
 	/* Open the dialog */
 
@@ -729,13 +732,15 @@ void fnt_mdialog(_WORD cl_ap_id, _WORD win, _WORD id, _WORD size, _WORD colour, 
 	thefbl->font.effects = effect;
 	set_effects(thefbl);
 
-	thefbl->cursize = get_size(thefbl);
-	thefbl->font.size = thefbl->fsizes[thefbl->cursize];
-
-	/* Initialize slider */
+	/* Initialize slider; this also sets thefbl->fdfont */
 
 	fnt_dial->sl_info.fnt_dial = fnt_dial;
 	fnt_sl_init(thefbl->nf, mset_fselector, &(fnt_dial->sl_info.slider), id, &(fnt_dial->fbl.fdfont), fnt_dial->fbl.fd);
+
+	/* get_size() indexes fd[] with fdfont, so it must run after the slider init */
+
+	thefbl->cursize = get_size(thefbl);
+	thefbl->font.size = thefbl->fsizes[thefbl->cursize];
 
 	/* This dialog is -always- windowed. Set window and dialog titles now */
 
