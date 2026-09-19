@@ -3343,8 +3343,6 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 						else
 							lm = lmin(lm, sizeof(LNAME) - 1);
 
-						autoloc_upd = TRUE;
-
 						if (key == BACKSPC ||	/* backspace ?     */
 							(unsigned short) key == INSERT ||	/* insert ?        */
 							(key >= ' ' && key <= '~') ||	/* ASCII printable */
@@ -3450,7 +3448,9 @@ _WORD wd_type_hndlkey(WINDOW *w, _WORD scancode, _WORD keystate)
 
 							/* Select items in the window */
 
+							autoloc_upd = TRUE;
 							dir_autoselect((DIR_WINDOW *) w);
+							autoloc_upd = FALSE;
 						} else
 						{
 							result = 0;
