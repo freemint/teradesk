@@ -1104,6 +1104,33 @@ void load_settings(char *newinfname)
 }
 
 
+static char *cfg_defname(const char *cfgname, _WORD *error)
+{
+	const char *home = getenv("HOME");
+	char hpath[sizeof(VLNAME)];
+	char *p;
+
+	if (home == NULL || *home == 0 || strlen(home) >= sizeof(hpath) - 3)
+		return x_fullname(cfgname, error);
+
+	/* TeraDesk handles names of the "X:\..." form only */
+
+	strcpy(hpath, (*home == '/' || *home == '\\') ? "U:" : "");
+	strcat(hpath, home);
+
+	for (p = hpath; *p != 0; p++)
+	{
+		if (*p == '/')
+			*p = '\\';
+	}
+
+	if (!isdisk(hpath) || !x_exist(hpath, EX_DIR))
+		return x_fullname(cfgname, error);
+
+	return x_makepath(hpath, cfgname, error);
+}
+
+
 /*
  * Set complete specification for configuration file(s)
  */
@@ -1119,7 +1146,7 @@ static bool find_cfgfiles(char **cfgname)
 		*cfgname = fullname;
 	} else								/* fullname is NULL, so error must be nonzero */
 	{
-		if (error == ENOENT && (fullname = x_fullname(*cfgname, &error)) != NULL)
+		if (error == ENOENT && (fullname = cfg_defname(*cfgname, &error)) != NULL)
 		{
 			free(*cfgname);
 			*cfgname = fullname;
